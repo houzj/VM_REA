@@ -1,0 +1,12 @@
+"""Export bounded, source-bound original observations; never infer parity."""
+import argparse, hashlib, json
+from pathlib import Path
+p=argparse.ArgumentParser();p.add_argument('--runtime',required=True);a=p.parse_args()
+root=Path(__file__).resolve().parents[1];run=Path(a.runtime).resolve();raw=run/'probe.json';records=json.loads(raw.read_text(encoding='utf-8-sig'))
+def file(path):
+    path=Path(path);return {'path':str(path),'sha256':hashlib.sha256(path.read_bytes()).hexdigest()}
+plugin=Path('D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageAcquisitionModule')
+native=root/'analysis/full-audit/image-acquisition/native'
+report={'schema':1,'plugin':'ImageAcquisitionModule','completeParity':False,'runtime':file(raw),'producer':file(run/'OriginalImageAcquisitionProbe.cs' if (run/'OriginalImageAcquisitionProbe.cs').exists() else root/'tests/NativeEvidence/OriginalImageAcquisitionProbe.cs'),'currentProducer':file(root/'tests/NativeEvidence/OriginalImageAcquisitionProbe.cs'),'acceptanceScope':'Code reconstruction; physical device testing excluded by user','provenance':json.loads((run/'provenance.json').read_text(encoding='utf-8-sig')),'artifacts':[file(f) for f in sorted(plugin.iterdir()) if f.suffix.lower() in ('.dll','.xml','.png')],'nativeDecompilation':{'producer':'Ghidra 12.1.4 CLI with VmAcquisitionAudit.java; not REA runtime evidence','script':file(root/'tests/NativeEvidence/VmAcquisitionAudit.java'),'functions':[file(native/(name+'.c')) for name in ('18000d6c0','18000e0a0','180010a80','1800111e0','180011a90','1800120c0','180012460','180012580','180012650','180012720','180012940')]},'observations':records,'sdkUi':[file(f) for f in sorted(run.glob('*.png'))],'desktopUi':[file(f) for f in sorted((root/'analysis/full-audit/image-acquisition/user-ui').glob('*.png'))],'limitations':['SDK-hosted controls differ from installed desktop context. User screenshots independently confirm camera layout.','No connected physical light-controller execution evidence.','Physical positive packet/frame loss not induced.','Independent VMX persistence does not imply original SOL binary compatibility.','Source decoder damage-input undefined behavior is not an implementation specification.']}
+(root/'docs/plugins/image-acquisition-evidence.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print('Exported',len(records),'observations;',len(report['desktopUi']),'desktop screenshots')

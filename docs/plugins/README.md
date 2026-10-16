@@ -25,8 +25,6 @@
 
 ## 实现状态
 
-只有 VisionPlugins.ImageSource 已作为独立插件注册。工具箱 ModuleId 映射和 VisionModules 内置算法不代表原插件等价实现。catalog.csv 中的 native_analysis/runtime_comparison 是原清点时状态，后续图像源证据见 IMAGE-SOURCE.md，不能把旧列解释为当前全部证据状态。
+当前注册图像源和多图采集两个独立工具插件；两者暂共用 VisionPlugins.ImageSource 程序集以复用已验证的解码器和 UI 资源。工具箱映射不代表原生等价。catalog.csv 是初次声明清点状态，后续进度以 CHECKLIST.md 与逐工具证据记录为准。
 
-## 首个交付：图像源
-
-已取得原厂 SDK 的本地 SN、读前切换、选中列表顺序、缓存和 SDK 路径提交运行证据；随仓库 MONO8 样本的像素哈希与重建一致。独立实现已补首 N 路径缓存、可取消间隔和模式参数行，60 项检查通过。完整模式 UI、通用解码、相机/RGB 服务、触发、拼接及原生保存格式仍未验收；末张停止和目录监视不再使用错误替代行为。详见 [图像源记录](IMAGE-SOURCE.md) 和 [公共接口需求](../CONTRACT-REQUESTS.md)。
+图像源当前验证与边界见 [IMAGE-SOURCE.md](IMAGE-SOURCE.md)；多图采集的源码、资源、原厂运行、用户桌面截图及实现边界见 [IMAGE-ACQUISITION.md](IMAGE-ACQUISITION.md)。公共服务和宿主调整持续记录在 [CONTRACT-REQUESTS.md](../CONTRACT-REQUESTS.md)。

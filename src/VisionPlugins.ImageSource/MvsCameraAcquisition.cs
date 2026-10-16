@@ -11,7 +11,7 @@ using VisionFramework;
 namespace VisionPlugins.ImageSource;
 
 /// <summary>Optional adapter to an explicitly selected installed MVS camera SDK.</summary>
-public sealed class MvsCameraAcquisition:IImageAcquisitionService,IDisposable {
+public sealed class MvsCameraAcquisition:IImageAcquisitionService,IAcquisitionCameraSettingsService,IDisposable {
  // The vendor runtime owns process-wide transport threads. Keep its library
  // loaded across solution reloads; device handles remain session-owned.
  static readonly System.Collections.Concurrent.ConcurrentDictionary<string,Lazy<IntPtr>> libraries=new(StringComparer.OrdinalIgnoreCase);
@@ -64,11 +64,12 @@ public sealed class MvsCameraAcquisition:IImageAcquisitionService,IDisposable {
   handle=Activator.CreateInstance(api)!;object?[] arguments=[device];Check(Invoke(handle,"MV_CC_CreateDevice_NET",arguments),"Create camera");
   try{Check(Invoke(handle,"MV_CC_OpenDevice_NET"),"Open camera");Check(Invoke(handle,"MV_CC_StartGrabbing_NET"),"Start acquisition");handles.Add(id,handle);return handle;}catch{Invoke(handle,"MV_CC_CloseDevice_NET");Invoke(handle,"MV_CC_DestroyDevice_NET");throw;}
  }
+ public AcquisitionCameraSettings ReadSettings(int cameraId){lock(gate){ObjectDisposedException.ThrowIf(disposed,this);var handle=Open(cameraId);CameraFloatRange Read(string key,string fallback){object?[] query=[key,Create("MVCC_FLOATVALUE")];int result=Invoke(handle,"MV_CC_GetFloatValue_NET",query);if(result!=0){query=[fallback,Create("MVCC_FLOATVALUE")];Check(Invoke(handle,"MV_CC_GetFloatValue_NET",query),fallback);}return new(Convert.ToDouble(Get(query[1]!,"fCurValue")),Convert.ToDouble(Get(query[1]!,"fMin")),Convert.ToDouble(Get(query[1]!,"fMax")));}return new(Read("ExposureTime","ExposureTimeAbs"),Read("Gain","GainRaw"));}}
  public ValueTask<CameraFrame> AcquireAsync(CameraRequest request,CancellationToken cancellationToken)=>new(Task.Run(()=>{
   lock(gate){ObjectDisposedException.ThrowIf(disposed,this);cancellationToken.ThrowIfCancellationRequested();var handle=Open(request.CameraId);
    // Original ImageSource tries the fallback name but does not fail acquisition
    // when both parameter writes are rejected (confirmed with negative inputs).
-   void Write(double? value,string key,string fallback){if(value is null)return;float number=float.Parse(((float)value.Value).ToString("F3",CultureInfo.InvariantCulture),CultureInfo.InvariantCulture);int result=Invoke(handle,"MV_CC_SetFloatValue_NET",key,number);if(result!=0)_=Invoke(handle,"MV_CC_SetFloatValue_NET",fallback,number);}
+   void Write(double? value,string key,string fallback){if(value is null)return;double input=request.ConvertParametersToFloatBeforeFormatting?(float)value.Value:value.Value;float number=float.Parse(input.ToString("F3",CultureInfo.InvariantCulture),CultureInfo.InvariantCulture);int result=Invoke(handle,"MV_CC_SetFloatValue_NET",key,number);if(result!=0)_=Invoke(handle,"MV_CC_SetFloatValue_NET",fallback,number);}
    void Wait(){if(request.SetParameterWaitTimeMs>0&&cancellationToken.WaitHandle.WaitOne(request.SetParameterWaitTimeMs))cancellationToken.ThrowIfCancellationRequested();}
    Write(request.ExposureTime,"ExposureTime","ExposureTimeAbs");Wait();Write(request.Gain,"Gain","GainRaw");Wait();
    uint ReadEnum(string key){object?[] query=[key,Create("MVCC_ENUMVALUE")];Check(Invoke(handle,"MV_CC_GetEnumValue_NET",query),key);return Convert.ToUInt32(Get(query[1]!,"nCurValue"));}

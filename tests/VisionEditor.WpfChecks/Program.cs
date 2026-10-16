@@ -76,9 +76,9 @@ static class Program
             var popup=(Popup)typeof(MainWindow).GetField("toolPopup",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
             var tiles=Children(popup.Child).OfType<Button>().ToArray();
             Check(tiles.Length==5,"Collection popup exposes five original tools");
-            Check(tiles.Count(t=>t.IsEnabled)==1&&tiles.Single(t=>t.IsEnabled).Tag?.ToString()=="ImageSourceModule","Only implemented image source can be dragged");
+            Check(tiles.Where(t=>t.IsEnabled).Select(t=>t.Tag?.ToString()).OrderBy(x=>x).SequenceEqual(new[]{"ImageAcquisitionModule","ImageSourceModule"}),"Implemented acquisition tools can be dragged");
             int nodeCount=document.CurrentProcedure.Nodes.Count;
-            tiles.Single(t=>t.IsEnabled).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+            tiles.Single(t=>t.Tag?.ToString()=="ImageSourceModule").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
             Check(document.CurrentProcedure.Nodes.Count==nodeCount,"Clicking a tool alone does not create a node");
             popup.IsOpen=false;
             var dragData=(DataObject)Invoke("CreateToolDragData","vision.image-source")!;
@@ -94,6 +94,16 @@ static class Program
             Check(document.CurrentProcedure.Nodes.Count==nodeCount+1,"Drop creates one document node");
             var dropped=document.CurrentProcedure.Nodes.Last();
             Check(dropped.X%5==0&&dropped.Y%5==0,"Tool drop uses source 5-unit snapping");
+            document.Undo();Pump();
+            var multiData=(DataObject)Invoke("CreateToolDragData","vision.image-acquisition")!;
+            var multiDrag=(DragEventArgs)Activator.CreateInstance(typeof(DragEventArgs),BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[multiData,DragDropKeyStates.LeftMouseButton,DragDropEffects.Move,Find<Canvas>("GraphLayer"),new Point(175,115)],null)!;
+            multiDrag.RoutedEvent=DragDrop.DropEvent;Invoke("ToolDrop",Find<Canvas>("GraphLayer"),multiDrag);Pump();
+            var multiNode=document.CurrentProcedure.Nodes.Last();
+            Check(multiNode.ModuleId=="vision.image-acquisition"&&multiNode.Parameters["Interval"].GetInt32()==1000,"Multi-image drop uses native defaults");
+            var imageChoices=Find<ComboBox>("ImageSelector").Items.Cast<ComboBoxItem>().Where(item=>(string?)item.Tag==multiNode.Id).ToArray();
+            Check(imageChoices.Length==8&&imageChoices[7].ToolTip?.ToString()=="OutImage7Image","Multi-image host exposes eight distinct output previews");
+            Find<ComboBox>("ImageSelector").SelectedItem=imageChoices[7];Pump();
+            Check(!Find<ComboBox>("ImageRunMode").IsEnabled&&!Find<System.Windows.Controls.Primitives.ToggleButton>("AutoSwitch").IsEnabled,"Multi-image previews cannot invoke single-image controls");
             document.Undo();Pump();
             var tabs=Find<TabControl>("ProcedureTabs");
             Check(tabs.Items.Count==document.Document.Procedures.Count,"Tab count matches actual document");

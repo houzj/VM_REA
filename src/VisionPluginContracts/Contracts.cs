@@ -29,7 +29,9 @@ public sealed class ToolPluginRegistry {
 }
 
 public sealed record ToolImageEntry(string Path,bool Selected);
-public interface IToolImageListProvider {IReadOnlyList<ToolImageEntry> GetImages(VisionFramework.NodeDocument node);IReadOnlyList<ToolImageEntry> GetImages(NodeDocument node,ModuleExecutionScope scope)=>GetImages(node);}
+public sealed record ToolImageOutput(string Port,string Label);
+public interface IToolImageOutputProvider {IReadOnlyList<ToolImageOutput> ImageOutputs{get;}}
+public interface IToolImageListProvider {bool SupportsSingleImageExecution=>true;IReadOnlyList<ToolImageEntry> GetImages(VisionFramework.NodeDocument node);IReadOnlyList<ToolImageEntry> GetImages(NodeDocument node,ModuleExecutionScope scope)=>GetImages(node);}
 public interface IToolImagePreviewProvider {VisionCore.IImageData LoadPreview(NodeDocument node,string path,string baseDirectory,ResourceCatalog? resources=null);Stream OpenEncodedImage(NodeDocument node,string path,string baseDirectory,ResourceCatalog? resources=null);}
 public sealed record ToolAssetSnapshot(NodeDocument Node,IReadOnlyList<ResourceDocument> Resources);
 public interface IToolAssetPersistence {ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources);ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources,ModuleExecutionScope? scope)=>PrepareSave(node,baseDirectory,resources);}

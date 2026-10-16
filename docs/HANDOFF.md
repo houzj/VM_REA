@@ -75,3 +75,13 @@ Fixed missing TriggerSoftware, camera SN, failed-stitch partial outputs, paramet
 Final solution build succeeds without warnings/errors. 767 ImageSource + 242 actual WPF + 460 other checks pass (1,469 total across 17 programs); evidence identities and commands are in docs/plugins/image-source-verification.json. Test solution now includes ImageSource and workflow data/call checks. Fixed read-only routing oracle path selection and a stale last-procedure-delete rejection test; unrelated generated example changes were removed. No other worktree touched, no merge/push performed.
 
 Not complete native parity: full desktop modes, camera/subscription/folder UI need human-assisted original desktop capture; remote folder selection needs an original remote environment/protocol. Vendor window classes rendered inside the SDK probe are separately labeled and not accepted as desktop equivalence. Other camera models, positive physical loss-counter semantics, other CPU dispatch paths and documented malformed-format policies remain bounded limitations. Continue ImageSource when evidence is supplied; do not start the next tool.
+# 多图采集：代码范围交付（2026-10-16）
+
+- 按 CHECKLIST 的 P1 顺序实现 ImageAcquisitionModule，注册 `vision.image-acquisition@1.0.0`。与图像源暂共用现有插件程序集，复用已经验证的独立解码器和原厂控件资源，不依赖原厂多图采集 DLL 执行产品算法。
+- 原厂托管/UI 反编译、原生 Ghidra Process/SetParam/本地图像/逐槽输出/光源配置函数、XML/图标和实际 SDK 控件均已取证。两张用户提供的相机桌面截图纳入哈希索引。原厂本地循环、缺图部分输出/恢复、角度float32、SOL内嵌保存重载记录可重放。
+- 实现本地3～8张循环采集、相机按配置项数量采集、逐图曝光/增益/角度、失败计数与继续后续槽、会话状态、目录手动清空与浏览导入差异、SDK递归追加、VMX资源内嵌。相机逐槽取帧失败保持原厂继续行为，不误把计数增加等同于整个工具返回错误。
+- 光源边界实现完整 `LightDeviceParamSetTrigger` 748字节结构，正确保留+24触发时长及+28首通道，不误用旧托管744字节结构。按原厂只支持1～4通道执行，5/6不启用；结束阶段重置本地暂存，不伪造额外物理OFF。具体设备连接与驱动属于全局资源传输提供器，接口及独立编码器已实现，不虚构串口/网口协议。
+- 框架调整全部位于当前插件 worktree：相机设置范围/格式化策略、光源模块传输接口、多输出预览接口、注册及工具箱启用。宿主可分别选择8个输出槽位，禁用多图节点的单图运行操作。接口和迁移见 CONTRACT-REQUESTS.md IA-001～005。
+- 最终全解决方案构建0警告/0错误；18个检查程序合计 **1799** 项通过：多图 **327**、图像源 **767**、实际WPF宿主 **245**、其他15程序 **460**。来源/程序/日志/截图哈希在 `docs/plugins/image-acquisition-verification.json`，证据在 `image-acquisition-evidence.json` 和 `image-acquisition-managed-evidence.json`。
+- 用户明确只做代码复现，不做设备测试。本要求到达前已产生的相机记录作为历史证据保留，之后未再运行设备测试，不计入1799项。新验证入口无硬件模式；原厂探针默认不执行设备测试分支，历史设备分支需显式 `-ProbeCamera`。
+- 验收结论是当前代码范围完成，不是原生全场景完全等价。原厂本地桌面/全局管理弹层未逐像素比对；VMX不是SOL二进制兼容格式；损坏解码输入未定义内存行为不复刻。未修改另一 worktree，未合并或推送。

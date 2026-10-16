@@ -88,3 +88,15 @@ The following supersedes earlier unavailable/pending implementation descriptions
 - Exposure/gain inputs use float32 and three decimal places. Both native parameter wait slots apply; rejected writes try the fallback name and do not abort acquisition. Software-trigger mode issues one TriggerSoftware command per requested frame without changing device trigger configuration.
 - `IToolAssetPersistence` adds a scope-aware save overload with a default implementation forwarding to the old method. Existing two-argument registry save callers remain valid. WPF supplies its opened-solution scope so folder images come from the active catalog; an unstarted folder uses a fresh catalog. SaveAs normalizes configured image and folder paths against the old base directory.
 - New embedded-resource fields and CameraIdentity require the updated host/plugin. Reading older documents remains supported; compatibility with older binaries reading newly extended documents is not claimed. Contracts are still under reconstruction.
+# 多图采集 IA-001～005（当前插件 worktree 内实施）
+
+用户已将插件必需框架调整授权给插件线。本批只改当前 worktree，不动框架线目录。
+
+- IA-001：CameraRequest 新增可选 ConvertParametersToFloatBeforeFormatting，默认true保持图像源行为；多图采集为false，double直接按三位小数格式化（原生1800111e0的%.3f路径）。MVS提供器据此格式化写入，不改默认触发源。
+- IA-002：IAcquisitionCameraSettingsService 提供曝光/增益当前值和最小/最大范围；MVS已实现读取。供新增逐图配置和实机验证使用，不把模拟相机值当设备能力。
+- IA-003：IAcquisitionLightService 提供设备列表、逐图 TriggerAsync 和 CompleteAsync；请求携带设备ID、通道、亮度、触发时间。CompleteAsync对应原生重置本地暂存结构，不自动发送物理OFF；触发/结束错误保留诊断并继续采集。取消清理属于独立宿主生命周期支持。设备实测按用户要求排除。
+- 宿主：注册 vision.image-acquisition、映射采集工具箱项目。IToolImageListProvider.SupportsSingleImageExecution 默认true，多图采集为false，避免单图列表操作写入多图插件没有的CurrentImagePath/AutoPlay等参数。
+
+- IA-004：IToolImageOutputProvider 返回多图输出端口和显示名；宿主分别预览OutImage0Image～OutImage7Image，未产生的槽位显示为空，不能复用上一槽帧。
+
+- IA-005：IAcquisitionLightModuleTransport提供全局光源资源目录和模块二进制命令传输，AcquisitionLightProtocolService已实现LightDeviceParamSetTrigger完整748字节编码。设备驱动/传输属于全局资源提供器，不把原厂托管744字节结构误用为多图采集748字节载荷；设备测试不再作为代码交付阻塞项。

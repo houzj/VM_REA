@@ -30,3 +30,5 @@ Original evidence remains in the original checkout's analysis directory. It is e
 
 ## 2026-10-16 user-assigned integration exception
 The user explicitly assigns framework adjustments required by plugin reconstruction to the plugin line. Implement and validate ImageSource-required shared changes in this worktree, record contracts and migrations in CONTRACT-REQUESTS.md, and keep the other worktree untouched. This supersedes the request-only ownership restriction for this work; it does not authorize merging or pushing the other branch.
+
+The user extends that assignment to the next tool, ImageAcquisitionModule. Its necessary shared camera/light contracts, registration and multi-output previews are implemented here. The user subsequently excludes physical-device testing from this line: finish code from original source/resources and controlled regression evidence, without requesting devices or treating equipment availability as a delivery blocker. This does not establish native equivalence for unobserved behavior.
