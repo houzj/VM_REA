@@ -10,7 +10,7 @@
 - VisionGraphRunner：无界面的通用模块图执行入口。
 - VisionReplica.slnx：统一工程。
 
-架构和具体边界见 docs/architecture.md。计划和状态见 ROADMAP.md。
+架构和具体边界见 docs/architecture.md。双线计划和当前状态见 [ROADMAP.md](ROADMAP.md)，框架逐项逆向/实现/验收清单见 [FRAMEWORK-REVERSE-CHECKLIST.md](docs/FRAMEWORK-REVERSE-CHECKLIST.md)。
 
 ## 验证主体闭环
 
@@ -23,7 +23,7 @@ dotnet run --project src/VisionGraphRunner -- validate examples/architecture-dem
 dotnet run --project src/VisionGraphRunner -- run examples/architecture-demo.vmx.json
 ```
 
-当前独立格式 *.vmx.json，与原.sol不同；编辑器坐标已保存但通用图编辑器尚未实现。SessionStatus.Success不是检测合格，需检查具体节点输出。
+当前独立格式 *.vmx.json，与原.sol不同；现有 WPF 通用图编辑器已具备部分流程编辑和 Group 内部画布能力，仍有循环、累积输出及完整交互差异未完成。SessionStatus.Success不是检测合格，需检查具体节点输出。
 
 ## 测试
 
@@ -37,4 +37,4 @@ dotnet run --project src/VisionGraphRunner -- run examples/architecture-demo.vmx
 
 Start-Workbench.cmd 是此前的专用找圆验证界面，不是新主体架构的通用编辑器。SolutionInspector保留为原方案只读分析工具。analysis/phase-2.md、phase-3.md记录历史成果；安装清单、SDK契约、REA证据和兼容矩阵同在analysis。
 
-接下来按主框架路线建设通用节点编辑器与图像/ROI交互；随后扩展运行调试、原方案往返、算法、设备、通信和SDK兼容。完整兼容须逐项与真实VM行为验收。
+当前拆为框架与工具插件两条线：框架优先补公共契约、Group循环/累积输出及交互边界；插件线逐工具交付，框架线持续集成。原方案往返、设备、SDK及完整兼容须单独逐项验收。
