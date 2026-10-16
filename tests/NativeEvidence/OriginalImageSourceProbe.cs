@@ -63,6 +63,33 @@ public static class OriginalImageSourceProbe
         Call(module,"SetImagePath",sample);Scenario(module,"sdk-submitted-path",output);
         Parameter(parameters,"ImageSourceType",1);
     }
+    static void StitchScenarios(object module,object parameters,string output) {
+        string directory=Path.Combine(Path.GetDirectoryName(output),"stitch-fixtures");Directory.CreateDirectory(directory);
+        string a=Path.Combine(directory,"rows-a.bmp"),b=Path.Combine(directory,"rows-b.bmp");
+        WriteRows(a,new byte[]{10,20,30,40});WriteRows(b,new byte[]{50,60,70,80});
+        Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",a);Call(module,"AddInputImageByPath",b);
+        foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","True"},new[]{"StitchEnable","True"},new[]{"StitchHeight","2"},new[]{"StitchStartHeight","1"},new[]{"ClearTrigger","False"},new[]{"PathCache","0"}})Parameter(parameters,setting[0],setting[1]);
+        Scenario(module,"stitch-first",output);Scenario(module,"stitch-second",output);
+        Parameter(parameters,"StitchStartHeight",0);Scenario(module,"stitch-start-change",output);
+        Parameter(parameters,"StitchHeight",1);Scenario(module,"stitch-height-change",output);
+        Parameter(parameters,"StitchStartHeight",4);Scenario(module,"stitch-invalid-crop",output);
+        Parameter(parameters,"StitchStartHeight",0);Scenario(module,"stitch-after-error",output);
+        Parameter(parameters,"StitchEnable",false);Scenario(module,"stitch-disabled",output);
+        Parameter(parameters,"StitchEnable",true);Scenario(module,"stitch-reenabled",output);
+        Parameter(parameters,"StitchHeight",0);Scenario(module,"stitch-zero-height",output);
+        Parameter(parameters,"StitchHeight",1);Parameter(parameters,"AutoPlay",false);StringParameter(module,"CurrentImagePath",a);
+        WriteRows(a,new byte[]{10,20,30,40},5);Scenario(module,"stitch-width-change",output);
+        WriteRows(a,new byte[]{10,20,30,40});Scenario(module,"stitch-width-restored",output);
+        Parameter(parameters,"StitchEnable",false);
+    }
+    static void WriteRows(string path,byte[] rows,int width=4) {
+        using(BinaryWriter writer=new BinaryWriter(File.Create(path))) {
+            int stride=(width+3)&~3,length=rows.Length*stride;writer.Write((ushort)0x4d42);writer.Write(1078+length);writer.Write(0);writer.Write(1078);
+            writer.Write(40);writer.Write(width);writer.Write(rows.Length);writer.Write((ushort)1);writer.Write((ushort)8);writer.Write(0);writer.Write(length);writer.Write(0);writer.Write(0);writer.Write(256);writer.Write(0);
+            for(int i=0;i<256;i++){writer.Write((byte)i);writer.Write((byte)i);writer.Write((byte)i);writer.Write((byte)0);}
+            for(int y=rows.Length-1;y>=0;y--)for(int x=0;x<stride;x++)writer.Write(x<width?rows[y]:(byte)0);
+        }
+    }
     static IEnumerable<DependencyObject> Descendants(DependencyObject parent) {
         for(int i=0;i<VisualTreeHelper.GetChildrenCount(parent);i++) {
             DependencyObject child=VisualTreeHelper.GetChild(parent,i);yield return child;
@@ -163,6 +190,7 @@ public static class OriginalImageSourceProbe
                 }
                 Parameter(parameters,"ShowImageName",false);Snapshot(module,"display-change",output);
                 Scenarios(module,parameters,args[2],output);
+                if(args.Length>4&&args[4]=="stitch")StitchScenarios(module,parameters,output);
                 if(args.Length>4&&args[4]=="ui") { phase="capture-sdk-ui"; CaptureModes(module,parameters,output); }
                 break;
             }

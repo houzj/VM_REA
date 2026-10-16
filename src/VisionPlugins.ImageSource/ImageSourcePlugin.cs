@@ -20,6 +20,8 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
   public int Index=-1;
   public int InitialSN=-1;
   public int Sequence;
+  public int StitchWidth;
+  public byte[] StitchBuffer=[];
  }
 
  internal static string[] ReadPaths(string json) {
@@ -62,7 +64,7 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
     if(c.Integer("PixelFormat")!=1)return Failed("PixelFormatUnavailable","RGB24 输出契约尚未接入（IS-001）");
     if(c.Boolean("AutoPlay")&&c.Boolean("AutoStop"))return Failed("ProcedureStopUnavailable","末张停止需要所属流程停止服务（IS-003）");
     if(c.Boolean("IsSubscribeFolderMode"))return Failed("FolderWatchUnavailable","目录监视与更新生命周期尚未接入（IS-004）");
-    if(c.Boolean("StitchEnable")&&c.Integer("StitchHeight")>0)return Failed("StitchUnavailable","拼接状态与原生像素输出尚未完成验证");
+    if(c.Boolean("StitchEnable")&&c.Integer("StitchHeight")>0&&c.Boolean("ClearTrigger"))return Failed("StitchTriggerUnavailable","拼接触发清空需要整数订阅服务（IS-003）");
     if(c.Boolean("SolSaveImageData"))return Failed("ModelEmbeddingUnavailable","方案嵌入图像尚未实现（IS-003）");
     if(c.Boolean("TriggerStringEnable")||c.Boolean("TriggerProcessRun"))return Failed("TriggerUnavailable","触发订阅与流程控制尚未接入（IS-003）");
 
@@ -104,6 +106,20 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
      if(state.Cache.Count<c.Integer("PathCache"))state.Cache.Add(selectedPath,image);
     }
     token.ThrowIfCancellationRequested();
+    if(c.Boolean("StitchEnable")&&c.Integer("StitchHeight")>0) {
+     int height=c.Integer("StitchHeight"),start=c.Integer("StitchStartHeight");
+     // StitchImageOutput rejects a changed width before touching its retained buffer.
+     if((state.StitchWidth!=0&&state.StitchWidth!=image.Width)||(long)start+height>image.Height)
+      return Failed("StitchGeometryInvalid","拼接起始高度与高度超出图像，或拼接图像宽度发生变化（原厂 0xe0000502）");
+     int length=checked(image.Width*(image.Height+height)),prefix=checked(image.Width*height);
+     // Native reallocates and zeroes only when the complete output byte count changes.
+     if(state.StitchBuffer.Length!=length)state.StitchBuffer=new byte[length];
+     image.Pixels.CopyTo(state.StitchBuffer.AsSpan(prefix));
+     var stitched=new VisionCore.GrayImage(image.Width,image.Height+height,state.StitchBuffer);
+     image.Pixels.Slice(start*image.Width,prefix).CopyTo(state.StitchBuffer);
+     state.StitchWidth=image.Width;
+     image=stitched;
+    }
     state.Sequence=unchecked(state.Sequence+1);
     var outputs=new Dictionary<string,PortValue> {
      ["Image"]=PortValue.Image(image),["Width"]=PortValue.Integer(image.Width),["Height"]=PortValue.Integer(image.Height),

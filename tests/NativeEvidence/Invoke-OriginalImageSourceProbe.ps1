@@ -2,7 +2,8 @@
 param(
     [string]$Applications = 'D:/Program Files/VisionMaster4.4.0/Applications',
     [string]$Solution = 'D:/Program Files/VisionMaster4.4.0/Development/V4.x/Samples/C#/PlatformSDKSampleCS/CircleFind/CircleFind.sol',
-    [switch]$CaptureSdkUi
+    [switch]$CaptureSdkUi,
+    [switch]$ProbeStitch
 )
 $ErrorActionPreference = 'Stop'
 $workspace = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -26,7 +27,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Probe compile failed' }
 '<configuration><appSettings><add key="StartServerByExe" value="0"/><add key="ServerPath" value=""/><add key="StartClientMode" value="1"/></appSettings><startup><supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.6.1"/></startup></configuration>' | Set-Content -LiteralPath ($exe + '.config') -Encoding utf8
 $result = Join-Path $output 'probe.json'
 $arguments = @($Applications, $Solution, (Join-Path $workspace 'analysis/images/circle-find-sample.bmp'), $result)
+if ($CaptureSdkUi -and $ProbeStitch) { throw 'CaptureSdkUi and ProbeStitch use separate fixture runs' }
 if ($CaptureSdkUi) { $arguments += 'ui' }
+if ($ProbeStitch) { $arguments += 'stitch' }
 $quotedArguments = $arguments | ForEach-Object {
     if ($_.Contains('"')) { throw 'Probe paths cannot contain a quote' }
     '"' + $_ + '"'

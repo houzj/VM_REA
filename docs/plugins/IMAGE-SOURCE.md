@@ -91,18 +91,41 @@ SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在
 
 已补三种模式的相机订阅行、RGB 的 OutMono8、拼接和过滤依赖行。本轮依据原厂截图校正文案、方案存图 120 张提示、曝光/增益等订阅文本框、数值和文本订阅图标、相机图标、文件夹文本长度 200。图标来自原厂提取资源，来源哈希已记录。缺少服务的控件保持禁用；实际订阅弹层、目录选择器和相机枚举尚未接入，不能宣称外观和操作完整等价。
 
-末张停止、目录订阅、RGB、相机/SDK、内嵌图像、拼接、字符过滤仍明确报告缺口；已移除永久 NoMatch 和逐次扫描 BMP 的错误替代。BmpReader 为独立实现，仅上述样本已做像素哈希对照。
+末张停止、目录订阅、RGB、相机/SDK、内嵌图像、拼接触发清空、字符过滤仍明确报告缺口；本地 MONO8 基础拼接现已实现，见下节。已移除永久 NoMatch 和逐次扫描 BMP 的错误替代。BmpReader 为独立实现，已对上述样本和本轮小尺寸拼接语料做像素对照，不代表通用解码等价。
 
-构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。136 项通过，0 警告/0 错误。覆盖源码映射的本地状态、缓存、错误、参数边界、同节点并发、间隔取消、宿主持久化后运行、原厂三模式 72 项显隐对照、订阅字段和布局宽度，以及该样本的原厂像素哈希。四张重建 QA 图经检查；截图/原厂探针均在 tests，框架源文件未修改。
+构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。178 项通过，0 警告/0 错误。覆盖源码映射的本地状态、缓存、错误、参数边界、同节点并发、间隔取消、宿主持久化后运行、原厂三模式 72 项显隐对照、订阅字段和布局宽度、样本像素哈希，以及下述 11 步原厂拼接操作对照。截图/原厂探针均在 tests，框架源文件未修改。
+
+## 本地 MONO8 拼接：原厂逐帧对照
+
+源码入口仍为原始 `image-source-native-7.c` 的 CMyAlgorithmManager::StitchImageOutput（0x180020980）；SetParam 的 StitchHeight/StitchStartHeight 赋值不清理缓冲区。原厂新探针：`Invoke-OriginalImageSourceProbe.ps1 -ProbeStitch`；有效记录为本工作树 `analysis/full-audit/image-source-runtime/run-70d41c7b16174235ab6bd43c8993aa6f/probe.json`。11 步的原生错误码、SN、尺寸、逐行值、像素哈希及源码/探针哈希见 [image-source-stitch-evidence.json](image-source-stitch-evidence.json)。
+
+语料 A/B 为 4×4、8 位灰度调色板 BMP，每行分别全为 A=[10,20,30,40]、B=[50,60,70,80]，从上到下排列。以下为每行首像素，且探针已确认每行均匀：
+
+| 操作 | 原厂输出行 | 结果 |
+|---|---|---|
+| 高度 2、起点 1，首帧 A | 0,0,10,20,30,40 | 首帧前缀补零 |
+| 下一帧 B | 20,30,50,60,70,80 | 取前帧从起点开始的 2 行 |
+| 起点改 0，再读 A | 60,70,10,20,30,40 | 已缓存前缀不受新起点追溯改变 |
+| 拼接高度改 1，读 B | 0,50,60,70,80 | 完整输出字节数变化时重新分配并清零 |
+| 起点改 4 | 空帧，0xe0000502 | 消耗 A 的列表位置，SN 不增长 |
+| 起点恢复 0，读 B | 50,50,60,70,80 | 错误保留前缀 |
+| 关闭拼接读 A，再开启读 B | A 原图；50,50,60,70,80 | 关闭不释放历史 |
+| 高度改 0，读 A | 10,20,30,40 | 旁路，不更新拼接历史 |
+| A 宽度改 5，再恢复 4（手动选 A） | 先 0xe0000502，后 50,10,20,30,40 | 宽度变化失败，恢复后继续 |
+
+插件现以每节点保留字节缓冲区实现这些行为，先保存输出副本，再更新下帧所需的前缀，避免后续运行改写已发布帧；只缓存解码原图。拼接开关已启用。错误映射为插件 `StitchGeometryInvalid`，其原厂数值对应关系保留在证据中；当前共享执行器的失败输出政策仍待 IS-003。
+
+范围限制：仅本地图像 MONO8、ClearTrigger=False；RGB 和相机/SDK 拼接未接入。ClearTrigger=True 且高度非零仍返回 StitchTriggerUnavailable，不能用界面开关代替整数订阅。原生 ClearTriggerValue 非零时会在拼接前清零缓存并清除已记录宽度；实际订阅取得、清除时机和错误需公共服务接入后继续对照。插件 Reset 释放状态是独立生命周期处理，未据此声称原厂 Reset 等价；完整 session 身份仍待 IS-002。
 
 ## 未完成验收项
 
 - [x] 本地关键状态源码映射、4 个辅助函数反编译和原厂 SDK 操作对照。
 - [x] 三种模式声明/托管规则；未绑定相机、SDK 未提交和已提交的实际运行结果。
-- [x] MONO8 样本像素对照与 136 项重建检查。
+- [x] MONO8 样本像素对照与 178 项重建检查。
 - [x] 原厂 SDK 宿主三模式与展开状态截图、25 项实时参数模型及显隐对照。
 - [ ] 本地/相机/SDK 完整桌面截图及操作序列，含下部区域、OutMono8 联动和订阅弹层。
 - [ ] 彩色、调色板、损坏图像、多格式语料以及原生转换系数。
 - [ ] 目录排序比较器、事件合并、RefreshImage/TriggerProcessRun、释放和重载。
-- [ ] 拼接、过滤、预览文字、内嵌图像、真实流程停止。
+- [x] 本地 MONO8 基础拼接及 11 步原厂像素/错误/SN 对照。
+- [ ] RGB/提供器拼接与触发清空、字符过滤、预览文字、内嵌图像、真实流程停止。
 - [ ] IS-001/002/003/004 由框架线落地后接入公共服务并完成集成验收。

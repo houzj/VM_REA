@@ -29,7 +29,7 @@ public partial class ImageSourceWindow:System.Windows.Window {
   Number("InitialSN","SN初始值");
   Number("PathCache","图片缓存");
   Toggle("OutMono8","输出Mono8");
-  Toggle("StitchEnable","拼接使能",false);
+  Toggle("StitchEnable","拼接使能");
   Number("StitchStartHeight","起始高度");
   Number("StitchHeight","拼接高度");
   Toggle("ClearTrigger","触发清空",false);

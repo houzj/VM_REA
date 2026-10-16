@@ -4,7 +4,7 @@
 
 | 优先级 | 类别 | 插件 | 名称 | 参数/输入/输出 | UI类型 | 逆向状态 |
 |---|---|---|---|---|---|---|
-|P0|Collection|ImageSourceModule|图像源|23/5/11|Boolean, BooleanTips, ButtonSelecter, ButtonSelecter_ImageList, Enumeration, EnumerationCameraForImage, Integer, OpenFolderDialog|本地状态/样本像素及SDK三模式UI已有原厂对照；桌面UI与公共服务待验收|
+|P0|Collection|ImageSourceModule|图像源|23/5/11|Boolean, BooleanTips, ButtonSelecter, ButtonSelecter_ImageList, Enumeration, EnumerationCameraForImage, Integer, OpenFolderDialog|本地状态/MONO8拼接及SDK三模式UI已有原厂对照；桌面UI与公共服务待验收|
 |P1|Collection|ImageAcquisitionModule|多图采集|7/0/6|Enumeration, EnumerationCameraForAcq, ImageConfig, Integer, OpenFileForAcquisition|声明已清点；语义与运行待逆向|
 |P1|Collection|ImageBufferModule|缓存图像|0/3/17|ButtonSelecter|声明已清点；语义与运行待逆向|
 |P1|Collection|LightModule|光源|32/7/26|Boolean, ButtonSelecter, Enumeration, EnumerationLightForLight, Integer, RadioSelecter|声明已清点；语义与运行待逆向|
