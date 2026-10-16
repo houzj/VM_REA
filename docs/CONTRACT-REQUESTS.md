@@ -11,10 +11,10 @@ Each request identifies source evidence, caller, typed payload, lifecycle, compa
 - Compatibility: existing scalar defaults/constructors retained. New array JSON requires the new reader; native binary ABI/precision is not implemented.
 - Accepted scope: registry/type validation, execution, subscriptions, owned Group I/O, persistence and readable output display. Group looping, accumulation semantics and full array selector UI remain open.
 
-## FCR-002 — WPF debug session lifecycle (framework-originated, under source analysis)
+## FCR-002 — WPF debug session lifecycle (framework-originated, runtime foundation implemented)
 
-- Owner: framework; status: source entrypoints identified, API not frozen/implemented.
-- Evidence: DynamicParamsTabControl command setters SelfExcuteModule / ContinuousSelfExcuteModule / StopSelfExcuteModule and disposal path.
-- Current gap: editor factory exists, but old contract includes Form; host Run executes whole owning flow and there is no unified per-editor cancellation/continuous/stop-and-await service.
-- Required next analysis: trace actual native execution semantics, dependencies, config commit timing, image/event ownership and closing behavior. Names alone are not proof of scheduling semantics.
-- Compatibility policy: keep current plugin factories usable until a reviewed session interface and adapter are actually wired/tested; do not ask plugin line to guess an unstable interface.
+- Owner: main/framework; scope: ordinary WPF tool nodes. Details: DEBUG-SESSION-CONTRACT.md.
+- Confirmed source chain: DynamicParamsTabControl → BottomCommand → VmModule.Run → ModuleManager.SelfRun → IMVS_SelfExecuteOneModule(module ID). Continuous loop waits for callback; close paths stop the continuous flag and dispose parameter trees.
+- Implemented: IToolDebugSession with single/continuous/stop/dispose; optional ToolEditorContext.Session; existing Run delegate routes through the session. Per-node execution uses explicit cached inputs and actual invocation argument snapshots. WPF editor and main window await active cleanup before closing.
+- Compatibility: old constructors/factories and scalar/array contracts retained; plugin implementations and plugin worktree untouched. Plugin line may consume Session after integrating the main commit; buttons are not fabricated by the host.
+- Open native boundaries: upstream preparation/first self-run, native in-flight cancellation, device resource ownership, full debug page UI, and Group configuration execution. The independent stop/failed-round policies are documented rather than claimed as native equivalence.

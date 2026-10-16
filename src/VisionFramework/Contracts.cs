@@ -38,7 +38,7 @@ public enum NodeRunStatus { Pending, Running, Success, NoMatch, Failed, Skipped,
 public enum SessionStatus { Success, Failed, Cancelled, TimedOut }
 public sealed record ExecutionEvent(string NodeId,NodeRunStatus Status,string? Message=null);
 public sealed record NodeRunRecord(string NodeId,NodeRunStatus Status,IReadOnlyDictionary<string,PortValue> Outputs,double ElapsedMilliseconds,string? ErrorCode=null,string? Message=null);
-public sealed record ExecutionSessionResult(SessionStatus Status,IReadOnlyList<NodeRunRecord> Nodes){public IReadOnlyDictionary<string,ExecutionSessionResult> Calls{get;init;}=new Dictionary<string,ExecutionSessionResult>();public IReadOnlyDictionary<string,PortValue> WorkflowOutputs{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyDictionary<string,PortValue> LocalVariables{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyList<string> OutputErrors{get;init;}=[];}
+public sealed record ExecutionSessionResult(SessionStatus Status,IReadOnlyList<NodeRunRecord> Nodes){public IReadOnlyDictionary<string,PortValue> WorkflowInputs{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyDictionary<string,ExecutionSessionResult> Calls{get;init;}=new Dictionary<string,ExecutionSessionResult>();public IReadOnlyDictionary<string,PortValue> WorkflowOutputs{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyDictionary<string,PortValue> LocalVariables{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyList<string> OutputErrors{get;init;}=[];}
 public sealed class ModuleExecutionContext {
     public string NodeId {get;} public string BaseDirectory {get;}
     public IReadOnlyDictionary<string,PortValue> Inputs {get;}

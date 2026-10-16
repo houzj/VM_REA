@@ -30,6 +30,7 @@ dotnet run --project src/VisionGraphRunner -- run examples/architecture-demo.vmx
 - tests/VisionFramework.PersistenceChecks：多流程、保存、ROI和资源。
 - tests/VisionFramework.ExecutionChecks：类型/拓扑/错误/取消/超时/生命周期/快照。
 - tests/VisionModules.Checks：实际模块行为。
+- tests/VisionFramework.DebugChecks：独立模块调试、缓存输入、连续/停止/关闭等待；接口见 docs/DEBUG-SESSION-CONTRACT.md。
 - tests/VisionFramework.IntegrationChecks：真实样例的两条数据链和异常传播。
 - 其他tests：已有算法、BMP、参数容器和旧固定计划的回归基线。
 

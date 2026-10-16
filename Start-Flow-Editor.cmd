@@ -1,3 +1,3 @@
 @echo off
 cd /d "%~dp0"
-start "" "%~dp0dist\VisionEditor-WpfArrayContract\VisionEditor.exe"
+start "" "%~dp0dist\VisionEditor-WpfDebugSession\VisionEditor.exe"

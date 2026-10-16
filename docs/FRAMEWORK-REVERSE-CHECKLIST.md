@@ -42,7 +42,7 @@
 
 ## 2026-10-16 实施记录
 
-F-01新增基础类型数组运行契约，已接通连线/订阅/Group/保存重开；源码确认的数据形态与独立托管接口见 [FRAMEWORK-CONTRACTS.md](FRAMEWORK-CONTRACTS.md)。此子项有独立运行验证，F-01整体仍未关闭：完整类型、原生精度/ABI及数组配置UI未完成。F-02完成调试命令入口审计，宿主生命周期接口仍在分析，未改动插件线接口。
+F-01新增基础类型数组运行契约，已接通连线/订阅/Group/保存重开；源码确认的数据形态与独立托管接口见 [FRAMEWORK-CONTRACTS.md](FRAMEWORK-CONTRACTS.md)。此子项有独立运行验证，F-01整体仍未关闭：完整类型、原生精度/ABI及数组配置UI未完成。F-02随后完成单模块命令链与关闭路径审计，并接通WPF普通工具的调试会话及关闭等待，接口和未恢复边界见 [DEBUG-SESSION-CONTRACT.md](DEBUG-SESSION-CONTRACT.md)。新增Context.Session可空属性兼容旧构造函数，插件实现文件未修改；Group/设备及完整参数UI仍开放。
 
 ## 当前优先队列与依赖
 

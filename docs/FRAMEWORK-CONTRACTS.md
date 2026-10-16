@@ -1,4 +1,4 @@
-# 框架公共数据契约 v0.2（framework 分支）
+# 框架公共数据契约 v0.2（main；v0.2数据接口）
 
 日期：2026-10-16。范围：F-01 的整数/数值/文本数组基础，F-02 的调试命令入口审计。不是原生 Group 循环或 SDK ABI 的完成声明。
 
@@ -38,14 +38,14 @@ var items = values.As<IReadOnlyList<long>>();
 ## 兼容与集成
 
 - 旧 .vmx.json 没有Cardinality时按Scalar读取。新数组声明需要v0.2读者；不能假设旧严格JSON读取器能读取新字段。
-- 原有 IVisionToolPlugin / ToolEditorContext / IWpfToolEditorFactory 尚未更改；不要求插件线重写在途插件。
+- 原有 IVisionToolPlugin / IWpfToolEditorFactory 及ToolEditorContext构造参数保持；后续v0.3在Context新增可空Session，不要求插件线重写在途插件。
 - 现有类型选择器还未完整提供数组形态选择/原生参数页交互；不能把运行层支持当成完整UI完成。
 - Accumulate配置标志仍没有执行逻辑；本次数组传播不等于循环累积输出。
 - 不自动拉取/合并插件分支，也不修改插件worktree。框架线记录契约与提交，插件交付时再集成。
 
-## F-02下一待处理边界
+## F-02后续实施
 
-当前WPF工厂已接入主窗；旧IVisionToolPlugin仍强制包含WinForms的CreateEditor方法。宿主Run回调当前调用整个所属流程；没有统一调试会话、连续/停止/等待释放契约。下一步应继续追踪原生SelfExcuteModule等命令及窗口事件，建立可取消会话与配置提交契约，再与插件线集成，不根据命令名称臆造运行行为。
+WPF普通模块宿主已接入独立调试会话；原有构造函数和Run委托保留，新增可空Session。单次/连续/停止及关闭等待的证据、缓存输入策略和未恢复原生边界见 [DEBUG-SESSION-CONTRACT.md](DEBUG-SESSION-CONTRACT.md)。Group调试入口、设备释放及全部插件UI仍未完成。
 
 ## 验证
 

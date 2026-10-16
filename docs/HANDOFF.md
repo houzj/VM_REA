@@ -16,3 +16,13 @@ For each handoff record: branch/commit, source evidence, changed tool or framewo
 ## 2026-10-16 — main branch policy
 
 At the user's request, the original checkout now develops framework and integration directly on main. The former framework commits were fast-forwarded without rewriting history. tool-plugins remains isolated and was not modified. Follow main for current shared contracts; framework is a historical branch.
+
+## 2026-10-16 — F-02 ordinary WPF tool debug sessions
+
+- Source chain recovered through DynamicParamsTabControl → BottomCommand → VmModule.Run → ModuleManager.SelfRun → IMVS_SelfExecuteOneModule(moduleId), plus callback-gated continuous execution and parameter-window shutdown disposal paths. Details: DEBUG-SESSION-CONTRACT.md.
+- Implemented: NodeDebugExecutor; ToolDebugSession single/continuous/stop/dispose; optional ToolEditorContext.Session; WPF Run adapter uses isolated module execution with explicit cached inputs. ExecutionSessionResult preserves actual invocation input snapshots for internal Group-style tool inputs.
+- Host behavior: clears target/downstream stale results, updates actual image preview, prevents concurrent workflow run while module debugging, waits for module disposal before editor or main window shutdown. Screenshot helpers and slow cleanup-gate modules remain in tests.
+- Verification: 21 debug runtime checks; 253 actual WPF checks including a real image-source window with incomplete downstream workflow and controlled active-runtime close; 28 array, 34 Group-call, 31 data, 115 core checks. Final core/plugin/WPF/editor-close lifecycle checks all exit0.
+- Release: dist/VisionEditor-WpfDebugSession. Startup entry updated only after final checks.
+- Compatibility: old ToolEditorContext constructor and Run delegate retained; no plugin implementation or plugin worktree changed. Context/host UI APIs must be invoked on the WPF dispatcher.
+- Remaining boundaries: native upstream preparation/first-run behavior, native in-flight cancellation and device cleanup are not reconstructed; explicit cached-input/cooperative-cancel/failure-stop policies are independent. Group configuration run remains separate; Group loop/break/accumulation and full plugin debug UI remain open. This supersedes the earlier ordinary-WPF-host whole-workflow Run gap, not every legacy WinForms or Group path.

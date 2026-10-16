@@ -9,7 +9,7 @@ public partial class MainWindow
  void ClearInvalidWorkflowResults(){if(doc.HasCurrentProcedure)ClearWorkflowCallResults(doc.CurrentProcedureId);results.Clear();RefreshRight();if(configurationProcedureId==doc.CurrentProcedureId)workflowConfigurationWindow?.RefreshResults();}
  bool CanStartWorkflow()
  {
-  if(!doc.HasCurrentProcedure||doc.CurrentProcedure.Nodes.Count==0){ClearInvalidWorkflowResults();StatusText.Text="请先添加流程和模块";return false;}
+  if(toolDebugSessions.Any(s=>s.IsBusy)){StatusText.Text="请先停止模块调试。";return false;}if(!doc.HasCurrentProcedure||doc.CurrentProcedure.Nodes.Count==0){ClearInvalidWorkflowResults();StatusText.Text="请先添加流程和模块";return false;}
   var validation=doc.Validate();if(!validation.IsValid){ClearInvalidWorkflowResults();StatusText.Text="流程有连接或参数错误："+string.Join("；",validation.Issues.Select(i=>i.Message));return false;}return true;
  }
  async Task Run()=>await StartRun();
@@ -38,11 +38,11 @@ public partial class MainWindow
   catch(Exception e){if(!windowClosed)StatusText.Text="运行失败："+e.Message;}
   return false;
  }
- void ClearWorkflowCallResults(string procedure){var seen=new HashSet<string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}
+ void ClearWorkflowCallResults(string procedure){var seen=new HashSet<string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);ClearToolDebugResults(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}
  void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}
  void RestoreWorkflowResults()
  {
-  results.Clear();if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;
+  results.Clear();if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;RestoreToolDebugResults(doc.CurrentProcedureId);
  }
  async Task RunProcedure(string id){SelectWorkflow(id);await StartRun();}
  void StartContinuous()
