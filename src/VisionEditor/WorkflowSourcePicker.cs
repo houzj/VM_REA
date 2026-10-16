@@ -11,6 +11,8 @@ namespace VisionEditor;
 public sealed record WorkflowSourceOption(string NodeId,string Port,DataKind Kind,string Label){public ValueCardinality Cardinality{get;init;}=ValueCardinality.Scalar;public bool IsInput{get;init;} public WorkflowValueReference? Reference{get;init;} public override string ToString()=>Label;}
 public sealed class WorkflowSourcePicker:Window
 {
+ Action<Func<WorkflowSourceOption,bool>>? setInitial;public void SetInitialSelection(Func<WorkflowSourceOption,bool> selected)=>setInitial?.Invoke(selected);
+
  public WorkflowSourceOption? Selection=>Selections.FirstOrDefault();
  public IReadOnlyList<WorkflowSourceOption> Selections{get;private set;}=[];
  public bool IncludeModuleName{get;private set;}=true;
@@ -22,7 +24,7 @@ public sealed class WorkflowSourcePicker:Window
   var bar=new DockPanel {Height=32,Background=new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(228,229,231))};DockPanel.SetDock(bar,Dock.Bottom);var include=new CheckBox {Content="包含模块名",IsChecked=true,Margin=new Thickness(18,0,0,0),VerticalAlignment=VerticalAlignment.Center,Visibility=multiple?Visibility.Visible:Visibility.Collapsed};var buttons=new StackPanel {Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right};DockPanel.SetDock(buttons,Dock.Right);
   var cancel=new Button {Content="取消",Width=66,Height=24,Margin=new Thickness(0,0,15,0),IsCancel=true};var ok=new Button {Content="确定",Width=66,Height=24,Margin=new Thickness(0,0,15,0),IsDefault=true};buttons.Children.Add(cancel);buttons.Children.Add(ok);bar.Children.Add(buttons);bar.Children.Add(include);root.Children.Add(bar);
   var heading=new TextBlock {Text="选择列表",FontWeight=FontWeights.Bold,Height=52,Margin=new Thickness(18,0,0,0),VerticalAlignment=VerticalAlignment.Center};DockPanel.SetDock(heading,Dock.Top);root.Children.Add(heading);
-  var tree=new TreeView {Margin=new Thickness(18,0,18,10),BorderBrush=System.Windows.Media.Brushes.LightGray,BorderThickness=new Thickness(1)};var checks=new List<(CheckBox Box,WorkflowSourceOption Option)>();
+  var tree=new TreeView {Margin=new Thickness(18,0,18,10),BorderBrush=System.Windows.Media.Brushes.LightGray,BorderThickness=new Thickness(1)};var checks=new List<(CheckBox Box,WorkflowSourceOption Option)>();setInitial=selected=>{foreach(var item in checks)item.Box.IsChecked=selected(item.Option);};
   foreach(var group in options.GroupBy(item=>item.NodeId))
   {
    string label=group.First().Label.Contains('.')?group.First().Label[..group.First().Label.LastIndexOf('.')]:group.First().Label;
