@@ -1,7 +1,7 @@
 using System.Text.Json;
 using VisionCore;
 namespace VisionFramework;
-public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle }
+public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle, Region, Fixture, Point }
 public enum ParameterKind { Number, Integer, Boolean, Text }
 public sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true){public ValueCardinality Cardinality{get;init;}=ValueCardinality.Scalar;}
 public enum ParameterEditorKind{File,Folder,Enumeration,Range,Roi}
@@ -10,7 +10,7 @@ public sealed record ParameterEditorDefinition(ParameterEditorKind Kind,IReadOnl
 public sealed record ParameterDescriptor(string Name,ParameterKind Kind,bool Required,JsonElement? DefaultValue=null,double? Minimum=null,double? Maximum=null){public ParameterEditorDefinition? Editor{get;init;}}
 public sealed record ModuleDescriptor(string Id,string Version,string DisplayName,IReadOnlyList<PortDescriptor> Inputs,IReadOnlyList<PortDescriptor> Outputs,IReadOnlyList<ParameterDescriptor> Parameters);
 public sealed record ResourceDocument(string Id,string Path,string? Sha256=null);
-public sealed record NodeDocument(string Id,string ModuleId,string ModuleVersion,string Name,Dictionary<string,JsonElement> Parameters,double X=0,double Y=0,int TimeoutMs=0,bool Enabled=true,IReadOnlyList<RoiDocument>? Rois=null){public WorkflowCallDocument? Call{get;init;}[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public GroupBreakBindings? GroupBreak{get;init;}};
+public sealed record NodeDocument(string Id,string ModuleId,string ModuleVersion,string Name,Dictionary<string,JsonElement> Parameters,double X=0,double Y=0,int TimeoutMs=0,bool Enabled=true,IReadOnlyList<RoiDocument>? Rois=null){[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public IReadOnlyDictionary<string,RoiDisplayStyle>? DisplayStyles{get;init;}public WorkflowCallDocument? Call{get;init;}[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public GroupBreakBindings? GroupBreak{get;init;}};
 public sealed record ConnectionDocument(string FromNode,string FromPort,string ToNode,string ToPort){public int SourceIndex{get;init;}=3;public int TargetIndex{get;init;}=1;}
 public sealed record WirePointDocument(double X,double Y);
 public sealed record ExecutionLinkDocument(string FromNode,string ToNode){public int SourceIndex{get;init;}=3;public int TargetIndex{get;init;}=1;public IReadOnlyList<WirePointDocument>? PathPoints{get;init;}}
@@ -32,6 +32,9 @@ public sealed partial class PortValue {
     public static PortValue Boolean(bool v)=>new(DataKind.Boolean,v);
     public static PortValue Text(string v)=>new(DataKind.Text,v??throw new ArgumentNullException(nameof(v)));
     public static PortValue Components(IReadOnlyList<Component> v)=>new(DataKind.Components,Array.AsReadOnly(v.ToArray()));
+    public static PortValue Point(Point2 point){if(!double.IsFinite(point.X)||!double.IsFinite(point.Y))throw new ArgumentException("点坐标无效。");return new(DataKind.Point,point);}
+    public static PortValue Region(IEnumerable<RoiDocument> regions)=>new(DataKind.Region,new RoiRegionValue(regions));
+    public static PortValue Fixture(FixtureValue value){value.Validate();return new(DataKind.Fixture,value);}
     public static PortValue Circle(CircleFit v)=>new[]{v.CenterX,v.CenterY,v.Radius,v.RadialRmsError}.All(double.IsFinite)&&v.Radius>0&&v.RadialRmsError>=0?new(DataKind.Circle,v):throw new ArgumentException("Invalid circle value.");
     public T As<T>()=>Value is T v?v:throw new InvalidOperationException($"Value {Kind} cannot be read as {typeof(T).Name}.");
 }

@@ -71,3 +71,12 @@ Evidence: `docs/roi-source-inventory.json`, original IMVSBinaryModuAlgorithmTab.
 ### FCR-008 integration follow-up
 
 Shared VisionUi now owns source-guided ROI templates, native button resources and coordinate conversions; ImageBinary uses the dedicated parameter factory and scoped debug host. ToolEditorContext adds optional input label/edit callbacks and atomic configuration writes. Normalized storage retains coordinate space through pixel editing; Fixture requires an explicit transform. Original ImageSource and the plugin worktree remain unchanged. This is main integration only, not an assertion of plugin-line adoption or ABI equivalence.
+
+## FCR-009 — ROI显示样式、继承区域与Fixture数据（框架线集成）
+
+- NodeDocument.DisplayStyles为独立显示配置；Core负责校验、快照、撤销和持久化。算法参数不承担颜色等显示状态。
+- ToolEditorContext增加可选ApplyDisplayStyles、PreviewInput(port)、ClearInput(port)，旧工厂构造参数保持不变。按明确端口读取实际缓存数据，并由作用域Guard防止写入过期节点。
+- DataKind尾部追加Region/Fixture/Point，PortValue工厂验证并快照数据。它们是独立托管协议，不是原SDK二进制ABI。数组累积仍只支持原有数值/字符串，不能把新复合类型计为累积已完成。
+- 继承区和Fixture接入main中的真实ImageBinary，不改插件工作树。原InputBlindPolygonString编码和Fixture原生舍入未恢复，详见ROI-DISPLAY-FIXTURE.md；本记录不表示插件线已采用这些接口。
+
+- FCR-009补充：可选ApplyConfigurationChange(values,rois,clearInputs)将参数、ROI和失效订阅合并为一次原子编辑/撤销。关联选择器补充同类型局部变量输入；原ClearInput回调保留兼容。

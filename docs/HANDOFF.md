@@ -83,3 +83,14 @@ At the user's request, the original checkout now develops framework and integrat
 - Validation: 185 ROI/tool checks; 6 actual main-shell factory/input/ROI/runtime/close checks; 5 normalized-coordinate checks; 330 existing WPF regressions. Actual main-shell 400x400 ROI consumes160000 pixels. Real screenshots inspected; they are reconstructed-program captures, not original VM UI acceptance.
 - Remaining fidelity gates explicitly open: full display-object styling popup, all combo/slider/scrollbar templates, some auxiliary/multi-select ROI behaviors, Fixture and inherited blind-region paths, unsupported binary modes, full original VM runtime comparison. Source properties alone and passing checks do not establish complete parity.
 - Final self-contained release: dist/VisionEditor-WpfRoiSource; launcher updated after Core/Plugin/WPF/EditorClose all exit0 (0.980/2.513/37.175/5.391s). Retained own process handles only; report roi-native-final-lifecycle. No native SDK dependencies in product.
+
+## 2026-10-16 — ROI显示、区域继承与位置修正实际闭环
+
+- main框架线集成，未修改插件工作树、现有ImageSource实现或其他对话的进程。中文范围与限制：ROI-DISPLAY-FIXTURE.md；证据哈希：roi-control-template-sources.json；本地HTML：analysis/full-audit/roi-display-fixture.html。
+- 显示页独立DisplayStyles接通眼睛、OK/NG颜色、透明度、粗细、保存和撤销。按ImageViewConfig实际引用的VM.PcUI版本迁移调色板、高级取色器、RGB显示和持续更新；没有使用同名Apps.XmlUI版本的自动关闭行为。原组合框、滚动条、滑块、单选、布尔开关、关联/编辑入口资源已迁移。真实ColorStyle1配置和148项画刷已核对。
+- 绘制/继承区分矩形、圆环的区域/参数方式；独立屏蔽继承；真实参数关联含局部变量。ApplyConfigurationChange将模式参数、ROI与失效订阅合并为一次原子编辑，一次撤销恢复状态和订阅。FCR-009记录可选回调和追加Region/Fixture/Point独立协议。
+- Fixture信息、点和坐标输入进入真实算法，平移/非等比缩放改变OutMask；显示实际解析区域，不再残留手工ROI。多图像输入预览按明确Image端口解析，开始绘制回到输入图像，防止只读预览阻断绘制。
+- 最终专项212项通过，另输出归一化5项检查；包括原SDK120组扇形/圆环零像素差分、Group实工具、连续停止、真实窗口取色/亮度/透明度、保存、变量关联和原子撤销。20×10继承参数处理200像素，Fixture平移50改变真实掩膜，切回手工恢复160000像素。实际截图逐张检查，捕获代码仅在tests。
+- 原生缺口仍明确开放：Fixture底层仿射及舍入/边界未恢复，当前为独立最近邻逆映射；InputBlindPolygonString编码未恢复，使用托管InputBlindRegion；Fixture变换坐标直接编辑、全部原生来源树和复合滑块模式尚未完成。结果预览只读，正缩放是独立约束。通过上述验证不等于原VM同状态像素级验收。
+- 最终发布：dist/VisionEditor-WpfRoiDisplayFixture，启动入口已更新。最新115核心、18插件、330 WPF及发布窗口关闭检查均退出0，耗时0.587/1.851/41.407/2.329秒；报告roi-native-display-fixture-lifecycle/exit-results.json。仅管理自身启动的进程，无原SDK产品依赖。
+- 提交前显示边界复核：透明度/线宽越界文字已修复为限制到有效范围；最终真实宿主24项操作检查通过（roi-display-fixture-final-host.log）。完整专项212项及其原SDK样例结果保留，未以单独边界检查替代完整运行证据。
