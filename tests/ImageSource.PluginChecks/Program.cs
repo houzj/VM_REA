@@ -88,16 +88,31 @@ static class Program {
    values=Defaults();List(values,"ImagePaths",file);var result=await Execute(phase,values);
    if(phase is "codec-truncated.bmp" or "codec-not-image.bmp"){Check(result.ErrorCode=="ImageReadFailed",phase+" strict invalid-data policy");continue;}
    if(phase=="codec-color.jpg"){
-    Check(result.ErrorCode=="ImageCodecUnavailable","JPEG mismatch is explicit, not silently emitted");
     using var input=File.OpenRead(file);var frame=BitmapDecoder.Create(input,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];var color=new FormatConvertedBitmap(frame,PixelFormats.Bgr24,null,0);byte[] bgr=new byte[frame.PixelWidth*frame.PixelHeight*3],candidate=new byte[frame.PixelWidth*frame.PixelHeight];color.CopyPixels(bgr,frame.PixelWidth*3,0);for(int i=0;i<candidate.Length;i++)candidate[i]=(byte)((76*bgr[i*3+2]+150*bgr[i*3+1]+30*bgr[i*3])>>8);
     byte[] original=Convert.FromHexString(record.GetProperty("pixelsHex").GetString()!);int differences=Enumerable.Range(0,candidate.Length).Count(i=>candidate[i]!=original[i]),maxError=Enumerable.Range(0,candidate.Length).Max(i=>Math.Abs(candidate[i]-original[i]));
-    File.WriteAllText(Path.Combine(output,"jpeg-decoder-gap.json"),JsonSerializer.Serialize(new{nativeSha256=record.GetProperty("pixelSha256").GetString(),wicSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(candidate)).ToLowerInvariant(),differences,maxError,completeParity=false},new JsonSerializerOptions{WriteIndented=true}));continue;
+    var comparisons=new List<object>();byte[] nativeRgb=Convert.FromHexString(evidence.RootElement.GetProperty("jpegRgbReference").GetProperty("pixelsHex").GetString()!);
+    foreach(int flags in new[]{0,0x800,0x100,0x900}){using var jpeg=File.OpenRead(file);var decoded=LocalJpegDecoder.DecodeRgb(jpeg,flags);int rgbDifferences=Enumerable.Range(0,nativeRgb.Length).Count(i=>decoded.Rgb[i]!=nativeRgb[i]);comparisons.Add(new{flags,rgbDifferences,rgbSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(decoded.Rgb)).ToLowerInvariant()});if(flags==0)Check(rgbDifferences==0,"independent JPEG backend matches original RGB bytes");}
+    File.WriteAllText(Path.Combine(output,"jpeg-decoder-comparisons.json"),JsonSerializer.Serialize(new{nativeSha256=record.GetProperty("pixelSha256").GetString(),wicSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(candidate)).ToLowerInvariant(),differences,maxError,comparisons,completeParity=false},new JsonSerializerOptions{WriteIndented=true}));
    }
    Check(result.Status==ModuleStatus.Success,phase+" decode success");var image=result.Outputs["Image"].As<VisionCore.GrayImage>();
    Check(image.Width==record.GetProperty("width").GetInt32()&&image.Height==record.GetProperty("height").GetInt32(),phase+" original dimensions");
    string actualHash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(image.Pixels)).ToLowerInvariant();
    Check(actualHash==record.GetProperty("pixelSha256").GetString(),phase+" original MONO8 pixel hash");
   }}
+  var jpegBoundaries=new List<object>();
+  using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-jpeg-evidence.json"))){foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray()){
+   string name=record.GetProperty("name").GetString()!,file=Path.GetFullPath(Path.Combine("tests/ImageSource.PluginChecks/Fixtures/Jpeg",name));
+   Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(file))).ToLowerInvariant()==record.GetProperty("fixtureSha256").GetString(),name+" original JPEG fixture identity");
+   var rgb=record.GetProperty("rgb");
+   if(rgb.GetProperty("nativeErrorCode").GetUInt32()==0){using var input=File.OpenRead(file);var decoded=LocalJpegDecoder.DecodeRgb(input);Check(decoded.Width==rgb.GetProperty("width").GetInt32()&&decoded.Height==rgb.GetProperty("height").GetInt32(),name+" original RGB dimensions");Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(decoded.Rgb)).ToLowerInvariant()==rgb.GetProperty("pixelSha256").GetString(),name+" original RGB pixels");}
+   values=Defaults();List(values,"ImagePaths",file);var result=await Execute("jpeg-"+name,values);var mono=record.GetProperty("mono");
+   if(rgb.GetProperty("nativeErrorCode").GetUInt32()!=0){Check(result.ErrorCode=="ImageReadFailed",name+" invalid JPEG rejected");continue;}
+   if(mono.GetProperty("nativeErrorCode").GetUInt32()!=0){jpegBoundaries.Add(new{name,nativeErrorCode=mono.GetProperty("nativeErrorCode").GetUInt32(),independentStatus=result.Status.ToString(),limitation="Original small-color RGB to MONO conversion fails; general geometry rule not source-confirmed"});continue;}
+   Check(result.Status==ModuleStatus.Success,name+" JPEG MONO success");var image=result.Outputs["Image"].As<VisionCore.GrayImage>();Check(image.Width==mono.GetProperty("width").GetInt32()&&image.Height==mono.GetProperty("height").GetInt32(),name+" original MONO dimensions");Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(image.Pixels)).ToLowerInvariant()==mono.GetProperty("pixelSha256").GetString(),name+" original MONO pixels");
+  }}
+  File.WriteAllText(Path.Combine(output,"jpeg-known-boundaries.json"),JsonSerializer.Serialize(new{observations=jpegBoundaries,completeParity=false},new JsonSerializerOptions{WriteIndented=true}));
+  string parallelJpeg=Path.GetFullPath("tests/ImageSource.PluginChecks/Fixtures/Jpeg/progressive-420.jpg");byte[] parallelReference;using(var input=File.OpenRead(parallelJpeg))parallelReference=LocalJpegDecoder.DecodeRgb(input).Rgb;
+  var jpegJobs=await Task.WhenAll(Enumerable.Range(0,12).Select(_=>Task.Run(()=>{using var input=File.OpenRead(parallelJpeg);return LocalJpegDecoder.DecodeRgb(input).Rgb.SequenceEqual(parallelReference);})));Check(jpegJobs.All(x=>x),"JPEG decoder handles remain isolated across concurrent reads");
   using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-folder-evidence.json"))){foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray().Where(r=>r.GetProperty("phase").GetString()=="folder-syntax")){
    string name=record.GetProperty("name").GetString()!,value=name switch{"local"=>scratch,"relative"=>"images","unc"=>@"\\server\images","forward-slash"=>"D:/images","control"=>"D:\\im\tages","unicode"=>"D:\\图像",_=>throw new Exception(name)};
    Check(LocalFolderSelection.HasLocalSyntax(value)==record.GetProperty("accepted").GetBoolean(),"original folder syntax "+name);

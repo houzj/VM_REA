@@ -101,6 +101,15 @@ public static class OriginalImageSourceProbe
             records.Add(new {phase="folder-syntax",name=input[0],accepted=syntax.Invoke(dialog,new object[]{input[1]})});
         records.Add(new {phase="folder-write-access",accepted=type.GetMethod("IsHaveRWAccess",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(dialog,new object[]{directory,false}),probeFileRemains=File.Exists(Path.Combine(directory,"test.txt"))});
     }
+    static void JpegScenarios(object module,object parameters,string directory,string output) {
+        Parameter(parameters,"ImageSourceType",1);Parameter(parameters,"StitchEnable",false);Parameter(parameters,"PathCache",0);Parameter(parameters,"AutoPlay",false);
+        foreach(string path in Directory.GetFiles(directory,"*.jpg").OrderBy(p=>p,StringComparer.Ordinal)) {
+            Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);
+            string name=Path.GetFileName(path);records.Add(new {phase="jpeg-fixture",name=name,fileSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(path))).Replace("-","").ToLowerInvariant()});
+            Parameter(parameters,"PixelFormat",1);Scenario(module,"jpeg-mono-"+name,output);
+            Parameter(parameters,"PixelFormat",2);Scenario(module,"jpeg-rgb-"+name,output);
+        }
+    }
     static void WriteRows(string path,byte[] rows,int width=4) {
         using(BinaryWriter writer=new BinaryWriter(File.Create(path))) {
             int stride=(width+3)&~3,length=rows.Length*stride;writer.Write((ushort)0x4d42);writer.Write(1078+length);writer.Write(0);writer.Write(1078);
@@ -212,6 +221,7 @@ public static class OriginalImageSourceProbe
                 if(args.Length>4&&args[4]=="stitch")StitchScenarios(module,parameters,output);
                 if(args.Length>4&&args[4]=="codecs")CodecScenarios(module,parameters,output);
                 if(args.Length>4&&args[4]=="folder")FolderScenarios(output);
+                if(args.Length>5&&args[4]=="jpeg")JpegScenarios(module,parameters,args[5],output);
                 if(args.Length>4&&args[4]=="ui") { phase="capture-sdk-ui"; CaptureModes(module,parameters,output); }
                 break;
             }

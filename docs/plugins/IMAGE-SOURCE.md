@@ -91,9 +91,9 @@ SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在
 
 已补三种模式的相机订阅行、RGB 的 OutMono8、拼接和过滤依赖行。依据原厂截图校正文案、方案存图 120 张提示、曝光/增益等订阅文本框、数值和文本订阅图标、相机图标、文件夹文本长度 200；本轮另补本地目录选择按钮与校验，详见下节。图标来自原厂提取资源，来源哈希已记录。缺少服务的控件保持禁用；实际订阅弹层、远程目录选择和相机枚举尚未接入，不能宣称外观和操作完整等价。
 
-末张停止、目录订阅、RGB 输出、相机/SDK、内嵌图像、拼接触发清空、字符过滤仍明确报告缺口；本地 MONO8 基础拼接已实现。本轮插件独立加入 LocalImageDecoder，支持 BMP/PNG/TIFF 到 MONO8；未修改共享 VisionIO/BmpReader。JPEG 兼容解码仍有独立缺口。已移除永久 NoMatch 和逐次扫描 BMP 的错误替代；有效语料对照不代表通用解码等价。
+末张停止、目录订阅、RGB 输出、相机/SDK、内嵌图像、拼接触发清空、字符过滤仍明确报告缺口；本地 MONO8 基础拼接已实现。本轮插件独立加入 LocalImageDecoder，支持 BMP/PNG/TIFF 到 MONO8；未修改共享 VisionIO/BmpReader。JPEG 已接入独立构建的同版本后端；小尺寸彩色转灰度仍有已知差异。已移除永久 NoMatch 和逐次扫描 BMP 的错误替代；有效语料对照不代表通用解码等价。
 
-构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。239 项通过，0 警告/0 错误。新增 13 个解码语料的逐文件身份/像素或明确缺口验证，以及原厂目录校验助手和本地目录行为对照；保留此前的本地状态、并发/取消、持久化宿主运行、三模式显隐、样本像素和 11 步拼接检查。目录展开 QA 截图已检查。截图/原厂探针均在 tests，框架源文件未修改。
+构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。362 项通过，0 警告/0 错误。新增 13 个解码语料的逐文件身份/像素或明确缺口验证，以及原厂目录校验助手和本地目录行为对照；保留此前的本地状态、并发/取消、持久化宿主运行、三模式显隐、样本像素和 11 步拼接检查。目录展开 QA 截图已检查。截图/原厂探针均在 tests，框架源文件未修改。
 
 ## 图像解码：彩色、调色板、多格式与异常语料
 
@@ -107,11 +107,11 @@ SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在
 | 灰度、反向灰度、彩色 8 位调色板 BMP | 实际应用调色板；重建逐像素哈希一致 |
 | 彩色 PNG、TIFF | 解码后 MONO8 哈希与原厂一致 |
 | BMP 改名 .png、PNG 改名 .bmp | 原厂按内容识别；重建同样按内容解码并对真实 BMP 做完整性检查 |
-| JPEG | 原厂成功；WIC 解码后有 24/323 像素与原厂不同，最大差 1。原厂 JPEG RGB24 再按观测灰度规则转换与原厂 MONO8 全字节相同，差异已定位在 RGB 解码阶段。插件明确返回 ImageCodecUnavailable，尚未完成 JPEG 兼容解码 |
+| JPEG | 原厂成功；WIC 解码后有 24/323 像素与原厂不同，最大差 1。原厂 JPEG RGB24 再按观测灰度规则转换与原厂 MONO8 全字节相同，差异已定位在 RGB 解码阶段。本轮已改用独立编译 libjpeg-turbo 2.1.3，首个样本 RGB/MONO8 全字节匹配；扩展语料与已知边界见下节 |
 | 截短 BMP | 原厂返回成功，但三个运行输出的缺失像素不稳定；本轮独立实施严格拒绝，返回 ImageReadFailed，不声明该错误行为等价 |
 | 非图像 .bmp | 原厂错误 0x80100001；插件返回 ImageReadFailed；数值错误输出统一政策仍待 IS-003 |
 
-彩色语料中原厂纯 R/G/B 输出为 75/149/29，现有共享 BmpReader 的四舍五入公式为 76/150/29。插件使用独立整数规则 `(76R+150G+30B)>>8`；它与本批有效无损语料及原厂 JPEG RGB→MONO8 对照吻合，不代表已证明所有色彩空间、配置文件和位深。WIC 负责容器解码，64M 像素和严格 BMP 完整性检查是独立资源/有效性政策。JPEG、CMYK、16 位、特殊压缩、ICC、多帧 TIFF 等仍待扩展验证；不得据此标记全解码器等价。
+彩色语料中原厂纯 R/G/B 输出为 75/149/29，现有共享 BmpReader 的四舍五入公式为 76/150/29。插件使用独立整数规则 `(76R+150G+30B)>>8`；它与本批有效无损语料及原厂 JPEG RGB→MONO8 对照吻合，不代表已证明所有色彩空间、配置文件和位深。WIC 负责容器解码，64M 像素和严格 BMP 完整性检查是独立资源/有效性政策。JPEG 的小尺寸原厂转换错误边界、CMYK、16 位、特殊压缩、ICC、多帧 TIFF 等仍待扩展验证；不得据此标记全解码器等价。
 
 ## 本地目录选择与校验
 
@@ -143,16 +143,24 @@ SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在
 
 范围限制：仅本地图像 MONO8、ClearTrigger=False；RGB 和相机/SDK 拼接未接入。ClearTrigger=True 且高度非零仍返回 StitchTriggerUnavailable，不能用界面开关代替整数订阅。原生 ClearTriggerValue 非零时会在拼接前清零缓存并清除已记录宽度；实际订阅取得、清除时机和错误需公共服务接入后继续对照。插件 Reset 释放状态是独立生命周期处理，未据此声称原厂 Reset 等价；完整 session 身份仍待 IS-002。
 
+## JPEG 后端与扩展像素证据（2026-10-16）
+
+- 原厂媒体 DLL SHA256 `eea3f2310ead31fbfebe0dc187f270b11cf686344275d3ddcaeb95e2051868a7` 在文件偏移 `0x3bf208` 包含 libjpeg-turbo 2.1.3/build 20220324 标识。独立 Ghidra CLI 分析 `0x18038c8a0`、`0x1802b5590`、`0x1802b5980`，结合上游源码确认 RGB 格式 0、pitch 0、flags 0；warning 0 可接受、fatal 1 报错。源码、原始运行、编译产物及输入/输出哈希见 [image-source-jpeg-evidence.json](image-source-jpeg-evidence.json)，不将 CLI 结果冒称 REA MCP 证据。
+- 实现使用官方 2.1.3 未修改源码的独立 Windows x64 标量构建，未复制原厂媒体 DLL。本地构建脚本、许可证、来源与部署说明随插件提交；无需新增 NuGet 依赖。SIMD 性能、其他平台及架构未对齐。
+- 27 个自有 JPEG 语料经过原厂 SDK 实际运行：26 个有效 RGB 输出逐字节匹配；原厂成功的 13 个 MONO8 输出逐字节匹配。涵盖 4:4:4/4:2:2/4:2:0、质量变化、渐进式、重启标记、灰度、EXIF Orientation=6 不旋转、缺 EOI 警告接受、非法头拒绝。旧样本 WIC 24/323 个 MONO8 像素差异现为 0。
+- 已知差异：13 个小尺寸彩色语料原厂 RGB 成功、MONO8 返回 `0x801000ff`，重建仍能输出灰度。1x1 灰度原厂成功；3x3 彩色失败而 4x4 成功，但未把这些观测硬编码为通用最小尺寸规则。原厂转换调用已追到 `0x18038b190 -> 0x180389440 -> 0x1800031b0`，底层内核/失败条件尚未恢复。测试将差异单独写入 `analysis/full-audit/image-source-checks/jpeg-known-boundaries.json`，不计作匹配。
+- 原厂重放：`tests/NativeEvidence/Invoke-OriginalImageSourceProbe.ps1 -ProbeJpeg`；紧凑证据导出：`tests/Export-ImageSourceJpegEvidence.py --runtime PATH`。普通重建检查使用已跟踪输入与原厂预期值，无需原厂安装。12 路并发解码检查句柄隔离。CMYK/YCCK、ICC、更多损坏数据及性能仍未验证，不能据此宣称完整等价。
+
 ## 未完成验收项
 
 - [x] 本地关键状态源码映射、4 个辅助函数反编译和原厂 SDK 操作对照。
 - [x] 三种模式声明/托管规则；未绑定相机、SDK 未提交和已提交的实际运行结果。
-- [x] MONO8 样本像素对照与 239 项重建检查。
+- [x] MONO8 样本像素对照与 362 项重建检查。
 - [x] 原厂 SDK 宿主三模式与展开状态截图、25 项实时参数模型及显隐对照。
 - [ ] 本地/相机/SDK 完整桌面截图及操作序列，含下部区域、OutMono8 联动和订阅弹层。
 - [x] 彩色/调色板/BMP 行布局、PNG/TIFF、改名容器、JPEG 和损坏文件语料；已识别转换差异并实现无损语料对齐。
 - [x] 本地目录选择、路径校验和原厂助手运行对照。
-- [ ] 原生转换内核源码、JPEG 兼容解码、更多位深/压缩/ICC/多帧语料，以及原厂目录弹窗操作。
+- [ ] 原生转换内核源码与 JPEG 小尺寸转换错误边界、更多位深/压缩/ICC/多帧语料，以及原厂目录弹窗操作。
 - [ ] 目录排序比较器、事件合并、RefreshImage/TriggerProcessRun、释放和重载。
 - [x] 本地 MONO8 基础拼接及 11 步原厂像素/错误/SN 对照。
 - [ ] RGB/提供器拼接与触发清空、字符过滤、预览文字、内嵌图像、真实流程停止。

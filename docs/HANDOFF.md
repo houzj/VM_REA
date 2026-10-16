@@ -1,5 +1,13 @@
 # Integration handoff
 
+## 2026-10-16 / tool-plugins: JPEG source correlation and independent backend
+
+- Supersedes the previous JPEG-unavailable implementation. Original MVDMediaProcess identity/version plus focused decompilation establish libjpeg-turbo 2.1.3, default RGB decoding flags/pitch and warning acceptance. Correlated source hashes and 27 original SDK fixture observations are tracked in docs/plugins/image-source-jpeg-evidence.json. The original conversion wrapper is traced further, but its kernel remains unrecovered.
+- Independently compiled official upstream source supplies the plugin-local Windows x64 turbojpeg.dll, with source archive hash, rebuild script and redistributed licenses. No vendor binary or new NuGet package is used. Preserve runtimes/win-x64/native and ThirdParty/libjpeg-turbo during integration/deployment. Static CRT, scalar SIMD-off build; performance and other architectures are not equivalent.
+- Pixel verification: all 26 valid RGB fixtures and all 13 successful native MONO8 fixtures match byte-for-byte. Includes progressive/subsampling/quality/grayscale/restart/EXIF/no-EOI cases; invalid header rejected. Historical WIC 24/323 mono pixel discrepancy is eliminated. Thirteen small-color fixtures still diverge in error behavior: native RGB succeeds but MONO conversion fails; reconstruction emits gray. Preserve this explicit gap rather than inventing a minimum geometry rule.
+- Validation: 362 checks passed, build zero warnings/errors, including 12 concurrent JPEG reads and existing lossless/stitch/UI/state checks. Original outputs and independent mismatch report distinguish matched pixels from native failure boundaries. This is not complete ImageSource parity.
+- No framework/shared contract sources or other worktree modified. CONTRACT-REQUESTS.md clarifies plugin-native content deployment and retained RGB/provider/lifecycle service gaps. Next independent work: recover small-color conversion failure/kernel, broaden CMYK/ICC/malformed coverage, folder sort semantics and original popup/desktop evidence.
+
 Initial baseline: existing independent reconstruction, including owned Group navigation and Tab return fix. Not complete VM parity.
 
 For each handoff record: branch/commit, source evidence, changed tool or framework behavior, real UI/run verification, remaining gaps, and shared contract requirements.

@@ -15,6 +15,11 @@ internal static class LocalImageDecoder
   // Keep the existing strict BMP integrity/resource policy. Native acceptance of
   // a truncated BMP does not establish defined values for its missing pixels.
   int first=stream.ReadByte(),second=stream.ReadByte();stream.Position=0;
+  if(first==0xff&&second==0xd8) {
+   var decoded=LocalJpegDecoder.DecodeRgb(stream);byte[] mono=new byte[decoded.Width*decoded.Height];
+   for(int i=0;i<mono.Length;i++)mono[i]=(byte)((76*decoded.Rgb[i*3]+150*decoded.Rgb[i*3+1]+30*decoded.Rgb[i*3+2])>>8);
+   return new GrayImage(decoded.Width,decoded.Height,mono);
+  }
   if(first=='B'&&second=='M') {
    _=BmpReader.Read(stream);stream.Position=0;
   }
@@ -22,7 +27,6 @@ internal static class LocalImageDecoder
    BitmapDecoder decoder;
    try {decoder=BitmapDecoder.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);}
    catch(NotSupportedException ex){throw new InvalidDataException("无法识别或解码图像文件。",ex);}
-   if(decoder is JpegBitmapDecoder)throw new NotSupportedException("JPEG 原厂解码像素与 Windows 解码器不同，兼容解码器尚未完成。");
    if(decoder is not (BmpBitmapDecoder or PngBitmapDecoder or TiffBitmapDecoder))throw new NotSupportedException("此图像容器尚未完成原厂对照。");
    var frame=decoder.Frames[0];
    if((long)frame.PixelWidth*frame.PixelHeight>BmpReader.MaxPixels)throw new InvalidDataException("Image exceeds pixel resource limit.");
