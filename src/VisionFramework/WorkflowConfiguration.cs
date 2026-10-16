@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 namespace VisionFramework;
-public sealed record WorkflowInterfaceItem(string Id,string Name,DataKind Kind,string? NodeId=null,string? Port=null,bool Display=false,bool Accumulate=false);
+public sealed record WorkflowInterfaceItem(string Id,string Name,DataKind Kind,string? NodeId=null,string? Port=null,bool Display=false,bool Accumulate=false){public ValueCardinality Cardinality{get;init;}=ValueCardinality.Scalar;}
 public sealed record WorkflowRunParameter(string Id,string NodeId,string Parameter,string Label,bool IsInput=false);
 public sealed record WorkflowVariableGroup(string Id,string Name);
 public sealed record WorkflowLocalVariable(string Id,string GroupId,string Name,string Type,string Value,string Remark="",string? SourceNode=null,string? SourcePort=null);
@@ -39,13 +39,13 @@ public sealed record WorkflowConfiguration
   Unique(Groups.Select(g=>g.Id));Unique(Groups.Select(g=>g.Name));foreach(var g in Groups)CheckName(g.Name);
   Unique(Variables.Select(v=>v.Id));Unique(Variables.Select(v=>v.Name));
   foreach(var v in Variables){CheckName(v.Name.Trim('%'));if(!Groups.Any(g=>g.Id==v.GroupId))throw new InvalidDataException("Missing variable group.");_=NormalizeValue(v.Type,v.Value);CheckSource(v.SourceNode,v.SourcePort,v.Type=="int"?DataKind.Integer:v.Type=="float"?DataKind.Number:DataKind.Text);}
-  foreach(var list in new[]{Inputs,Outputs,Displays}){Unique(list.Select(v=>v.Id));Unique(list.Select(v=>v.Name));foreach(var item in list){CheckName(item.Name);if(!Enum.IsDefined(item.Kind))throw new InvalidDataException("Unknown interface type.");CheckSource(item.NodeId,item.Port,item.Kind);}}
+  foreach(var list in new[]{Inputs,Outputs,Displays}){Unique(list.Select(v=>v.Id));Unique(list.Select(v=>v.Name));foreach(var item in list){CheckName(item.Name);if(!PortTypes.Valid(item.Kind,item.Cardinality))throw new InvalidDataException("Unknown interface type.");CheckSource(item.NodeId,item.Port,item.Kind,item.Cardinality);}}
   Unique(RunParameters.Select(r=>r.Id));foreach(var item in RunParameters){var n=procedure.Nodes.FirstOrDefault(n=>n.Id==item.NodeId)??throw new InvalidDataException("Missing runtime parameter node.");if(registry is not null&&!(item.IsInput?registry.GetDescriptor(n).Inputs.Any(p=>p.Name==item.Parameter):registry.GetDescriptor(n).Parameters.Any(p=>p.Name==item.Parameter)))throw new InvalidDataException("Missing runtime parameter.");}
   if(Subscriptions.Any(b=>b is null||b.Source is null))throw new InvalidDataException("Null subscription.");
   if(Subscriptions.Select(b=>(b.NodeId,b.Target,b.IsParameter)).Distinct().Count()!=Subscriptions.Count)throw new InvalidDataException("Duplicate subscription target.");
   if(Subscriptions.Count>100000)throw new InvalidDataException("Too many subscriptions.");
   foreach(var b in Subscriptions){if(b is null||b.Source is null||string.IsNullOrWhiteSpace(b.Target)||!procedure.Nodes.Any(n=>n.Id==b.NodeId)||!Enum.IsDefined(b.Source.Kind)||string.IsNullOrWhiteSpace(b.Source.Id))throw new InvalidDataException("Invalid subscription identity.");if(b.Source.Kind==WorkflowSourceKind.LocalVariable&&!Variables.Any(v=>v.Id==b.Source.Id)||b.Source.Kind==WorkflowSourceKind.WorkflowInput&&!Inputs.Any(v=>v.Id==b.Source.Id)||b.Source.Kind==WorkflowSourceKind.NodeOutput&&(!procedure.Nodes.Any(n=>n.Id==b.Source.Id)||string.IsNullOrWhiteSpace(b.Source.Port)))throw new InvalidDataException("Missing subscription source.");}
   if(registry is not null)WorkflowSubscriptions.Validate(procedure with{Configuration=this},registry);
-  void CheckSource(string? nodeId,string? port,DataKind? kind){if(nodeId is null&&port is null)return;if(nodeId is null||port is null)throw new InvalidDataException("Incomplete source reference.");var n=procedure.Nodes.FirstOrDefault(n=>n.Id==nodeId)??throw new InvalidDataException("Missing source node.");if(registry is not null){var output=registry.GetDescriptor(n).Outputs.FirstOrDefault(p=>p.Name==port)??throw new InvalidDataException("Missing source output.");if(kind.HasValue&&output.Kind!=kind)throw new InvalidDataException("Source type mismatch.");}}
+  void CheckSource(string? nodeId,string? port,DataKind? kind,ValueCardinality cardinality=ValueCardinality.Scalar){if(nodeId is null&&port is null)return;if(nodeId is null||port is null)throw new InvalidDataException("Incomplete source reference.");var n=procedure.Nodes.FirstOrDefault(n=>n.Id==nodeId)??throw new InvalidDataException("Missing source node.");if(registry is not null){var output=registry.GetDescriptor(n).Outputs.FirstOrDefault(p=>p.Name==port)??throw new InvalidDataException("Missing source output.");if(kind.HasValue&&(output.Kind!=kind||output.Cardinality!=cardinality))throw new InvalidDataException("Source type mismatch.");}}
  }
 }

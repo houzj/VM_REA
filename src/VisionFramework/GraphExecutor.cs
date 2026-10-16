@@ -20,7 +20,7 @@ public sealed class GraphExecutor(ModuleRegistry registry){
  var problem=Outputs(d,result);if(problem is not null){Record(NodeRunStatus.Failed,code:"InvalidOutput",message:problem);continue;}Record(result.Status==ModuleStatus.NoMatch?NodeRunStatus.NoMatch:NodeRunStatus.Success,new ReadOnlyDictionary<string,PortValue>(result.Outputs.ToDictionary(x=>x.Key,x=>x.Value)),result.ErrorCode,result.Message);
  }
  var all=validation.ExecutionOrder.Select(id=>records[id]).ToArray();var status=all.Any(n=>n.Status==NodeRunStatus.Cancelled)?SessionStatus.Cancelled:all.Any(n=>n.Status==NodeRunStatus.TimedOut)?SessionStatus.TimedOut:all.Any(n=>n.Status==NodeRunStatus.Failed)?SessionStatus.Failed:SessionStatus.Success;return workflow.Complete(new(status,Array.AsReadOnly(all)){Calls=new ReadOnlyDictionary<string,ExecutionSessionResult>(calls)});}
- static string? Outputs(ModuleDescriptor d,ModuleResult r){if(r.Outputs is null)return "Null outputs";foreach(var pair in r.Outputs){var port=d.Outputs.FirstOrDefault(x=>x.Name==pair.Key);if(port is null)return "Unknown output: "+pair.Key;if(pair.Value is null||pair.Value.Kind!=port.Kind)return "Type mismatch: "+pair.Key;}foreach(var port in d.Outputs.Where(x=>x.Required))if(!r.Outputs.ContainsKey(port.Name))return "Missing output: "+port.Name;return null;}
+ static string? Outputs(ModuleDescriptor d,ModuleResult r){if(r.Outputs is null)return "Null outputs";foreach(var pair in r.Outputs){var port=d.Outputs.FirstOrDefault(x=>x.Name==pair.Key);if(port is null)return "Unknown output: "+pair.Key;if(!PortTypes.Matches(port,pair.Value))return "Type mismatch: "+pair.Key;}foreach(var port in d.Outputs.Where(x=>x.Required))if(!r.Outputs.ContainsKey(port.Name))return "Missing output: "+port.Name;return null;}
 }
 
 

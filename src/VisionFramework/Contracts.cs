@@ -3,7 +3,7 @@ using VisionCore;
 namespace VisionFramework;
 public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle }
 public enum ParameterKind { Number, Integer, Boolean, Text }
-public sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true);
+public sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true){public ValueCardinality Cardinality{get;init;}=ValueCardinality.Scalar;}
 public sealed record ParameterDescriptor(string Name,ParameterKind Kind,bool Required,JsonElement? DefaultValue=null,double? Minimum=null,double? Maximum=null);
 public sealed record ModuleDescriptor(string Id,string Version,string DisplayName,IReadOnlyList<PortDescriptor> Inputs,IReadOnlyList<PortDescriptor> Outputs,IReadOnlyList<ParameterDescriptor> Parameters);
 public sealed record ResourceDocument(string Id,string Path,string? Sha256=null);
@@ -19,9 +19,10 @@ public static class ProcedureGraph {
  public static ProcedureDocument Separate(ProcedureDocument p)=>p with{ExecutionLinks=ExecutionEdges(p).ToArray()};
 }
 public sealed record SolutionDocument(int FormatVersion,string Id,string Name,IReadOnlyList<ProcedureDocument> Procedures,IReadOnlyList<ResourceDocument> Resources);
-public sealed class PortValue {
+public sealed partial class PortValue {
     public DataKind Kind {get;} public object Value {get;}
-    private PortValue(DataKind kind,object value){Kind=kind;Value=value;}
+    public ValueCardinality Cardinality{get;}
+    private PortValue(DataKind kind,object value,ValueCardinality cardinality=ValueCardinality.Scalar){Kind=kind;Value=value;Cardinality=cardinality;}
     public static PortValue Image(GrayImage v)=>new(DataKind.GrayImage,v??throw new ArgumentNullException(nameof(v)));
     public static PortValue Number(double v)=>double.IsFinite(v)?new(DataKind.Number,v):throw new ArgumentOutOfRangeException(nameof(v));
     public static PortValue Integer(long v)=>new(DataKind.Integer,v);
@@ -58,7 +59,7 @@ public sealed class ModuleRegistry {
     public void Register(ModuleDescriptor descriptor,Func<IModule> factory){
         ArgumentNullException.ThrowIfNull(descriptor);ArgumentNullException.ThrowIfNull(factory);
         if(string.IsNullOrWhiteSpace(descriptor.Id)||string.IsNullOrWhiteSpace(descriptor.Version)||string.IsNullOrWhiteSpace(descriptor.DisplayName)||descriptor.Inputs is null||descriptor.Outputs is null||descriptor.Parameters is null)throw new ArgumentException("Invalid module descriptor.");
-        bool BadPorts(IReadOnlyList<PortDescriptor> ports)=>ports.Any(p=>p is null||string.IsNullOrWhiteSpace(p.Name)||!Enum.IsDefined(p.Kind))||ports.Select(p=>p.Name).Distinct(StringComparer.Ordinal).Count()!=ports.Count;
+        bool BadPorts(IReadOnlyList<PortDescriptor> ports)=>ports.Any(p=>p is null||string.IsNullOrWhiteSpace(p.Name)||!PortTypes.Valid(p.Kind,p.Cardinality))||ports.Select(p=>p.Name).Distinct(StringComparer.Ordinal).Count()!=ports.Count;
         if(BadPorts(descriptor.Inputs)||BadPorts(descriptor.Outputs)||descriptor.Parameters.Any(p=>p is null||string.IsNullOrWhiteSpace(p.Name)||!Enum.IsDefined(p.Kind)||p.Minimum is double min&&!double.IsFinite(min)||p.Maximum is double max&&!double.IsFinite(max)||p.Minimum>p.Maximum)||descriptor.Parameters.Select(p=>p.Name).Distinct(StringComparer.Ordinal).Count()!=descriptor.Parameters.Count)throw new ArgumentException("Invalid module ports or parameters.");
         var frozen=descriptor with {Inputs=Array.AsReadOnly(descriptor.Inputs.ToArray()),Outputs=Array.AsReadOnly(descriptor.Outputs.ToArray()),Parameters=Array.AsReadOnly(descriptor.Parameters.Select(p=>p with {DefaultValue=p.DefaultValue?.Clone()}).ToArray())};
         if(!modules.TryAdd((frozen.Id,frozen.Version),(frozen,factory)))throw new InvalidOperationException("Duplicate module registration.");

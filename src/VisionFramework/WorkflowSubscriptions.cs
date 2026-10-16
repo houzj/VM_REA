@@ -17,6 +17,11 @@ public static class WorkflowSubscriptions
   WorkflowSourceKind.NodeOutput=>OutputType(p,registry,source.Id,source.Port),
   _=>throw new InvalidDataException("Unknown subscription source.")
  };
+ public static ValueCardinality SourceCardinality(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch{
+  WorkflowSourceKind.LocalVariable=>ValueCardinality.Scalar,
+  WorkflowSourceKind.WorkflowInput=>p.Configuration.Inputs.SingleOrDefault(v=>v.Id==source.Id)?.Cardinality??throw new InvalidDataException("Missing workflow input."),
+  WorkflowSourceKind.NodeOutput=>registry.GetDescriptor(p.Nodes.SingleOrDefault(n=>n.Id==source.Id)??throw new InvalidDataException("Missing source node.")).Outputs.SingleOrDefault(o=>o.Name==source.Port)?.Cardinality??throw new InvalidDataException("Missing source output."),
+  _=>throw new InvalidDataException("Unknown subscription source.")};
  static DataKind OutputType(ProcedureDocument p,ModuleRegistry registry,string id,string? port){var n=p.Nodes.SingleOrDefault(n=>n.Id==id)??throw new InvalidDataException("Missing source node.");return registry.GetDescriptor(n).Outputs.SingleOrDefault(o=>o.Name==port)?.Kind??throw new InvalidDataException("Missing source output.");}
  public static string? Producer(ProcedureDocument p,WorkflowValueReference source)=>source.Kind switch
  {
@@ -28,12 +33,12 @@ public static class WorkflowSubscriptions
  public static void Validate(ProcedureDocument p,ModuleRegistry registry)
  {
   var targets=new HashSet<(string,string,bool)>();
-  foreach(var b in p.Configuration.Subscriptions){if(!targets.Add((b.NodeId,b.Target,b.IsParameter)))throw new InvalidDataException("Duplicate subscription target.");var n=p.Nodes.SingleOrDefault(n=>n.Id==b.NodeId)??throw new InvalidDataException("Missing consumer node.");var d=registry.GetDescriptor(n);var kind=b.IsParameter?ParameterType(d.Parameters.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException("Missing target parameter.")):d.Inputs.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException("Missing target input.");if(kind!=SourceType(p,registry,b.Source))throw new InvalidDataException("Subscription type mismatch.");if(!b.IsParameter&&p.Connections.Any(c=>c.ToNode==b.NodeId&&c.ToPort==b.Target))throw new InvalidDataException("Input already has a subscription.");if(b.Source.Kind!=WorkflowSourceKind.NodeOutput&&b.Source.Port is not null)throw new InvalidDataException("Unexpected subscription source port.");}
+  foreach(var b in p.Configuration.Subscriptions){if(!targets.Add((b.NodeId,b.Target,b.IsParameter)))throw new InvalidDataException("Duplicate subscription target.");var n=p.Nodes.SingleOrDefault(n=>n.Id==b.NodeId)??throw new InvalidDataException("Missing consumer node.");var d=registry.GetDescriptor(n);var kind=b.IsParameter?ParameterType(d.Parameters.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException("Missing target parameter.")):d.Inputs.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException("Missing target input.");var cardinality=b.IsParameter?ValueCardinality.Scalar:d.Inputs.Single(v=>v.Name==b.Target).Cardinality;if(kind!=SourceType(p,registry,b.Source)||cardinality!=SourceCardinality(p,registry,b.Source))throw new InvalidDataException("Subscription type mismatch.");if(!b.IsParameter&&p.Connections.Any(c=>c.ToNode==b.NodeId&&c.ToPort==b.Target))throw new InvalidDataException("Input already has a subscription.");if(b.Source.Kind!=WorkflowSourceKind.NodeOutput&&b.Source.Port is not null)throw new InvalidDataException("Unexpected subscription source port.");}
  }
  public static PortValue Initial(WorkflowLocalVariable v)=>v.Type switch{"int"=>PortValue.Integer(int.Parse(v.Value,CultureInfo.InvariantCulture)),"float"=>PortValue.Number(float.Parse(v.Value,CultureInfo.InvariantCulture)),_=>PortValue.Text(v.Value)};
  public static JsonElement Parameter(ParameterDescriptor spec,PortValue value)
  {
-  if(ParameterType(spec.Kind)!=value.Kind)throw new InvalidDataException("Parameter subscription type mismatch.");
+  if(ParameterType(spec.Kind)!=value.Kind||value.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException("Parameter subscription type mismatch.");
   JsonElement json=spec.Kind==ParameterKind.Integer?JsonSerializer.SerializeToElement(checked((int)value.As<long>())):JsonSerializer.SerializeToElement(value.Value);
   if(!GraphValidator.ValidParameter(spec,json))throw new InvalidDataException("Subscribed parameter outside declared range: "+spec.Name);return json;
  }

@@ -203,7 +203,7 @@ public sealed partial class GraphEditorDocument
         var output=registry.GetDescriptor(a).Outputs.SingleOrDefault(p=>p.Name==fromPort);
         var input=registry.GetDescriptor(b).Inputs.SingleOrDefault(p=>p.Name==toPort);
         if(output is null||input is null)throw new InvalidOperationException("Invalid port direction or name.");
-        if(output.Kind!=input.Kind)throw new InvalidOperationException("Port type mismatch.");
+        if(output.Kind!=input.Kind||output.Cardinality!=input.Cardinality)throw new InvalidOperationException("Port type mismatch.");
         if(p.Connections.Any(c=>c.ToNode==toNode&&c.ToPort==toPort))throw new InvalidOperationException("Input already connected.");
         var pending=new Stack<string>(); var visited=new HashSet<string>(); pending.Push(toNode);
         while(pending.TryPop(out var id)) { if(id==fromNode)throw new InvalidOperationException("Connection creates a cycle."); if(!visited.Add(id))continue; foreach(var c in p.Connections.Where(c=>c.FromNode==id))pending.Push(c.ToNode);if(addExecutionLink)foreach(var link in ProcedureGraph.ExecutionEdges(p).Where(e=>e.FromNode==id))pending.Push(link.ToNode); }
