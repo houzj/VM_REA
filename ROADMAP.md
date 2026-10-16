@@ -1,6 +1,6 @@
 # 双线逆向总清单
 
-更新：2026-10-16。适用基线：framework 分支当前源码；最近功能基线为 Group Tab 返回修复。本文替代早期“流程编辑器待实现”的路线图，不代表完成了一次全量重新逆向。
+更新：2026-10-16。适用基线：main 分支当前源码；最近功能基线为 Group Tab 返回修复。本文替代早期“流程编辑器待实现”的路线图，不代表完成了一次全量重新逆向。
 
 目标仍为：授权内部测试、独立运行、算法独立实现、依据原始源码/资源/运行证据复刻。完成状态不能由窗口存在或测试通过直接推导。
 
@@ -8,7 +8,7 @@
 
 | 线 | 工作目录/分支 | 维护内容 |
 |---|---|---|
-| 框架与集成（当前对话） | 原目录，framework | 主界面、Tab/画布、Group、执行器、变量订阅、存储、公共接口、集成验收 |
+| 框架与集成（当前对话） | 原目录，main | 主界面、Tab/画布、Group、执行器、变量订阅、存储、公共接口、集成验收 |
 | 工具插件（另一个对话） | worktrees/tool-plugins，tool-plugins | 工具全量清点、每工具源码证据、算法、参数调试页、工具专用验证 |
 
 框架逐项清单见 [FRAMEWORK-REVERSE-CHECKLIST.md](docs/FRAMEWORK-REVERSE-CHECKLIST.md)。协作与变更入口见 [PARALLEL-WORK.md](docs/PARALLEL-WORK.md)、[CONTRACT-REQUESTS.md](docs/CONTRACT-REQUESTS.md)、[HANDOFF.md](docs/HANDOFF.md)。插件线正在工作；本次不修改其工作目录，不代填其进度，不自动合并其代码。

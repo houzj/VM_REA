@@ -12,3 +12,7 @@ For each handoff record: branch/commit, source evidence, changed tool or framewo
 - Release: dist/VisionEditor-WpfArrayContract. Screenshot code remains in tests. No plugin worktree or tool implementation was changed.
 - Compatibility: plugin interfaces untouched; scalar callers unchanged. New Cardinality JSON fields require the new strict reader; do not cherry-pick regenerated sample files alone into an older engine.
 - Open: native numeric ABI/precision, remaining types, full array selection UI, loop/break/LoopIndex, actual accumulation behavior, debug-session lifetime. F-01 and F-02 remain open overall. Existing host editor Run still executes owning workflow; self-command native scheduling needs further tracing before changing it.
+
+## 2026-10-16 — main branch policy
+
+At the user's request, the original checkout now develops framework and integration directly on main. The former framework commits were fast-forwarded without rewriting history. tool-plugins remains isolated and was not modified. Follow main for current shared contracts; framework is a historical branch.

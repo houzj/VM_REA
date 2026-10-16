@@ -1,9 +1,9 @@
 # Two-line reconstruction workflow
 
 ## Workspaces
-- Framework/integration: original checkout, branch framework.
+- Framework/integration: original checkout, branch main.
 - Tool plugins: worktrees/tool-plugins, branch tool-plugins.
-- main: integrated baseline only. Integration is performed by the framework conversation after reviewing plugin commits.
+- main: active framework development and integration. The user explicitly chose main for the original checkout. The old framework branch is historical; do not continue development there. Integration is performed by the framework conversation after reviewing plugin commits.
 
 Use two long-lived Codex conversations, each opened in its own directory. Conversations do not automatically synchronize; source commits and these documents are the handoff record. Creating these branches does not create or message a conversation.
 
