@@ -17,6 +17,7 @@ public static class OriginalImageSourceProbe
     [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] static extern bool SetDllDirectory(string path);
     static string root;
     static readonly List<object> records = new List<object>();
+    static readonly List<string> uiErrors = new List<string>();
     static object Get(object instance, string name) { return instance.GetType().GetProperty(name).GetValue(instance, null); }
     static object Call(object instance, string name, params object[] args) {
         return instance.GetType().GetMethods().Where(m => m.Name == name && m.GetParameters().Length == args.Length).OrderBy(m=>m.DeclaringType==instance.GetType()?0:1).First().Invoke(instance, args);
@@ -71,27 +72,52 @@ public static class OriginalImageSourceProbe
     static void CaptureModes(object module,object parameters,string output) {
         object moduleParameters=Get(module,"Params");
         string installedXml=Path.Combine(root,"Module(sp)/x64/Collection/ImageSourceModule/ImageSourceModuleAlgorithmTab.xml");
-        records.Add(new {phase="sdk-ui-path",original=Get(moduleParameters,"XmlPath"),supplied=installedXml});
-        moduleParameters.GetType().GetProperty("XmlPath").SetValue(moduleParameters,installedXml,null);
-        // GetParamRoot caches the model in ModuleParam.Data; invalidate the empty
-        // model created against the SDK installation's missing XML path.
+        // Vendor loadXml changes file attributes before reading. Use an exact
+        // byte copy in this probe's writable output, never mutate installed evidence.
+        string localXml=Path.Combine(Path.GetDirectoryName(output),Path.GetFileName(installedXml));
+        File.Copy(installedXml,localXml,true);File.SetAttributes(localXml,FileAttributes.Normal);
+        Assembly.LoadFrom(Path.Combine(root,"Module(sp)/x64/Collection/ImageSourceModule/ImageSourceModuleControl.dll"));
+        records.Add(new {phase="sdk-ui-path",original=Get(moduleParameters,"XmlPath"),supplied=localXml,installed=installedXml,xmlSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(localXml))).Replace("-","").ToLowerInvariant()});
+        moduleParameters.GetType().GetProperty("XmlPath").SetValue(moduleParameters,localXml,null);
+        // Rebuild the cached model so diagnostics describe this exact XML.
         moduleParameters.GetType().GetProperty("Data").SetValue(moduleParameters,null,null);
+        AppDomain.CurrentDomain.FirstChanceException += ObserveUiException;
         Type type=Assembly.LoadFrom(Path.Combine(root,"myLibs/VMControls.WPF.dll")).GetType("VMControls.WPF.ParamsConfigControlBase",true);
         FrameworkElement control=(FrameworkElement)Activator.CreateInstance(type);
         type.GetProperty("ParamsConfig").SetValue(control,moduleParameters,null);
         Window window=new Window{Width=420,Height=700,Left=-30000,Top=-30000,ShowActivated=false,Content=control};
         window.Show();
         try {
-            foreach(int mode in new[]{1,2,3}) {
+            int capture=0;
+            foreach(int mode in new[]{1,2,3,1,1}) {
+                capture++;
+                string variant=capture<=3?"mode-"+mode:capture==4?"local-expanded":"local-rgb24";
+                if(capture==4)foreach(string key in new[]{"AutoPlay","StitchEnable","ClearTrigger","TriggerStringEnable","IsSubscribeFolderMode"})Parameter(parameters,key,true);
+                if(capture==5)Parameter(parameters,"PixelFormat",2);
                 Parameter(parameters,"ImageSourceType",mode);Call(control,"UpdateAllItem");
                 window.Dispatcher.Invoke(delegate{},System.Windows.Threading.DispatcherPriority.ApplicationIdle);window.UpdateLayout();
-                var nodes=Descendants(control).OfType<FrameworkElement>().Where(e=>e.DataContext!=null&&e.DataContext.GetType().GetProperty("Name")!=null).Select(e=>new { type=e.GetType().FullName,name=e.DataContext.GetType().GetProperty("Name").GetValue(e.DataContext,null),visible=e.IsVisible,visibility=e.Visibility.ToString() }).ToArray();
+                var items=((IEnumerable)Call(control.DataContext,"GetAllItems")).Cast<object>().Select(item=>new {type=item.GetType().FullName,fields=item.GetType().GetFields().Where(f=>new[]{"Name","CustomVisible","IsVisible","CurValue","DisplayName"}.Contains(f.Name)).ToDictionary(f=>f.Name,f=>Convert.ToString(f.GetValue(item))),properties=item.GetType().GetProperties().Where(p=>p.GetIndexParameters().Length==0&&new[]{"Name","CustomVisible","IsVisible","CurValue","Value","DisplayName"}.Contains(p.Name)).ToDictionary(p=>p.Name,p=>Convert.ToString(p.GetValue(item,null)))}).ToArray();
+                records.Add(new {phase="sdk-ui-model",mode=mode,variant=variant,items=items});
+                records.Add(new {phase="sdk-ui-diagnostic",mode=mode,xmlExists=File.Exists(installedXml),context=control.DataContext==null?null:control.DataContext.GetType().FullName,width=control.ActualWidth,height=control.ActualHeight,visuals=Descendants(control).OfType<FrameworkElement>().Select(e=>new {type=e.GetType().FullName,width=e.ActualWidth,height=e.ActualHeight,context=e.DataContext==null?null:e.DataContext.GetType().FullName}).Take(35).ToArray(),exceptions=uiErrors.Distinct().Take(30).ToArray()});
+                var nodes=Descendants(control).OfType<FrameworkElement>().Where(e=>e.DataContext!=null&&e.DataContext.GetType().GetProperty("Name")!=null).Select(e=>new { type=e.GetType().FullName,name=Convert.ToString(e.DataContext.GetType().GetProperty("Name").GetValue(e.DataContext,null)),visible=e.IsVisible,visibility=e.Visibility.ToString() }).Distinct().ToArray();
                 RenderTargetBitmap bitmap=new RenderTargetBitmap(420,700,96,96,PixelFormats.Pbgra32);bitmap.Render(window);
                 PngBitmapEncoder encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using(FileStream file=File.Create(Path.Combine(Path.GetDirectoryName(output),"original-sdk-ui-mode-"+mode+".png")))encoder.Save(file);
-                records.Add(new {phase="sdk-hosted-ui",mode=mode,nodes=nodes,accepted=nodes.Length>0,limitation="Original SDK embedded control with explicitly supplied installed XML path; not the desktop debug window. Offscreen WPF rendering, not desktop capture; empty nodes are rejected."});
+                string imagePath=Path.Combine(Path.GetDirectoryName(output),"original-sdk-ui-"+variant+".png");
+                using(FileStream file=File.Create(imagePath))encoder.Save(file);
+                records.Add(new {phase="sdk-hosted-ui",mode=mode,variant=variant,nodes=nodes,accepted=nodes.Length>0&&items.Length>0,imageSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(imagePath))).Replace("-","").ToLowerInvariant(),limitation="Original SDK embedded control with byte-identical writable XML copy; not the desktop debug window. Offscreen WPF rendering; full expanded content can exceed viewport."});
+                if(capture>=4) {
+                    window.Height=1600;window.UpdateLayout();
+                    RenderTargetBitmap full=new RenderTargetBitmap(420,1600,96,96,PixelFormats.Pbgra32);full.Render(window);
+                    PngBitmapEncoder fullEncoder=new PngBitmapEncoder();fullEncoder.Frames.Add(BitmapFrame.Create(full));
+                    using(FileStream file=File.Create(Path.Combine(Path.GetDirectoryName(output),"original-sdk-ui-"+variant+"-tall.png")))fullEncoder.Save(file);
+                    window.Height=700;window.UpdateLayout();
+                }
+                File.WriteAllText(output,new JavaScriptSerializer{MaxJsonLength=8388608}.Serialize(records));
             }
-        }finally{window.Close();if(control is IDisposable)((IDisposable)control).Dispose();}
+        }finally{AppDomain.CurrentDomain.FirstChanceException -= ObserveUiException;window.Close();if(control is IDisposable)((IDisposable)control).Dispose();}
+    }
+    static void ObserveUiException(object sender,System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs args) {
+        if(uiErrors.Count<100)uiErrors.Add(args.Exception.ToString());
     }
     [STAThread] public static int Main(string[] args)
     {

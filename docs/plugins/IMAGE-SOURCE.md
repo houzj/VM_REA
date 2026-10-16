@@ -13,7 +13,7 @@ P0 进行中。已建立本地执行的源码和原厂 SDK 运行对照；三种
 - GetParam/SetParam：native-2.c、native-3.c；缓存/拼接/目录监视另见 native-7.c、native-9.c、native-extra-25.c、native-extra-26.c。
 - 托管 UI：decompiled/ImageSourceModuleControl；VMControls.WPF/ParamsConfigControlBase；Apps.XmlParser/AlgorithmTabRoot。
 - 新补 4 个列表函数：0x18000b430 按索引取项、0x18000b4c0 游标前移、0x18000b550 按路径定位、0x18000b8e0 末项判断。使用已有 Ghidra 12.1.4/JDK 21 CLI 分析校验过哈希的副本；结果在当前 worktree。它们是 CLI 新证据，不冒称 REA MCP Evidence。脚本在 tests/NativeEvidence/VmNativeCapability.java。
-- 原厂运行探针：tests/NativeEvidence/OriginalImageSourceProbe.cs。最终原始记录为当前 worktree analysis/full-audit/image-source-runtime/probe11.json。
+- 原厂运行探针：tests/NativeEvidence/OriginalImageSourceProbe.cs。早期状态记录为当前 worktree analysis/full-audit/image-source-runtime/probe11.json；本轮运行与有效 UI 记录为下文 run-85fcec94893c4a63bd0106b9b2889789/probe.json。
 
 可重放入口：`tests/NativeEvidence/Invoke-OriginalImageSourceProbe.ps1`。该脚本已在独立输出目录重新运行成功；可用 `-CaptureSdkUi` 尝试 SDK 控件宿主，空内容仍应拒绝验收。SDK 安装副本的 ImageSourceModule.dll 哈希与分析目标相同；这属于文件身份核对，不是运行调用栈归因。
 
@@ -57,7 +57,7 @@ REA MCP 当前缺少 Ghidra 环境配置，Windows 原生 UI 操作也不支持�
 
 ## 三种模式 UI
 
-机器可读证据保留了全部 25 个声明及触发 Setter；下表是静态规则，不冒称三种模式都已运行截图确认。
+机器可读证据保留了全部 25 个声明及触发 Setter；本轮另取得原厂 SDK 控件的三模式截图、25 项实时参数模型，以及本地展开和 RGB24 展开截图。桌面独立参数窗口仍未完整采集，不能把 SDK 宿主等同于桌面窗口。
 
 | 控件 | 本地 | 相机 | SDK |
 |---|---|---|---|
@@ -65,7 +65,7 @@ REA MCP 当前缺少 Ghidra 环境配置，Windows 原生 UI 操作也不支持�
 | CameraID / ExposureTimeInput / GainInput | 隐藏 | 可见 | 隐藏 |
 | InitialSN / StitchEnable | 无模式隐藏 Setter | 同左 | 同左 |
 | AutoStop | AutoPlay 关闭时隐藏 | 隐藏 | 隐藏 |
-| OutMono8 | MONO8 且 PixelFormat 可见时隐藏 | 联动待运行确认 | 联动待运行确认 |
+| OutMono8 | MONO8 隐藏、RGB24 显示 | 原厂 SDK 控件实测可见 | 原厂 SDK 控件实测可见 |
 | StitchStartHeight / StitchHeight / ClearTrigger | StitchEnable 开启显示 | 同左 | 同左 |
 | ClearTriggerCondition | 另依赖 ClearTrigger | 同左 | 同左 |
 | TriggerString / TriggerFilter | 字符过滤开启显示 | 同左 | 同左 |
@@ -77,23 +77,30 @@ UI XML 的 StitchEnable、OutMono8、AutoStop 默认值为 True，算法 XML 为
 
 桌面窄窗口与 SDK LocalImageList 是不同上下文；LocalImageList.Init 只有 SDK 模式才强制显示列表。当前未把 SDK 列表复制进桌面参数窗口。
 
-本轮桌面捕获失败：原始主窗口可访问性可读，但 Windows.Graphics.Capture 超时，点击返回 coordinate input geometry is unavailable。原厂 SDK 控件离屏宿主渲染为空，三张图和空控件树全部拒绝作为有效 UI 证据。失败日记在 image-source-runtime/desktop-journal.json。当前本地/RGB/相机/SDK 的四张新 QA 截图均来自重建端，不能当作原厂截图。
+此前桌面捕获失败：原始主窗口可访问性可读，但 Windows.Graphics.Capture 超时，点击返回 coordinate input geometry is unavailable。失败日记在 image-source-runtime/desktop-journal.json，问题尚未解决。
+
+SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在读取前设置 FileInfo.Attributes；直接加载只读证据路径会抛出访问拒绝，AlgorithmTabRoot 构造函数捕获异常后留下空模型。探针将安装 XML 按原字节复制到本工作树输出，先显式加载原厂 ImageSourceModuleControl.dll，再建立原厂 ParamsConfigControlBase。未修改安装目录的 XML、DLL 或属性。此前空白图继续拒绝，原来“XML 不存在”的推测已撤回：路径存在，问题是写属性权限。
+
+有效原始记录：`analysis/full-audit/image-source-runtime/run-85fcec94893c4a63bd0106b9b2889789/probe.json`。7 张原厂控件图包括 mode-1/2/3（420×700）、local-expanded/local-rgb24 及两张 420×1600 tall 图；每张路径、尺寸、SHA256 已写入 image-source-evidence.json。tall 图仅扩大测试宿主以检查下部内容，不代表原厂窗口的默认高度。原厂模型实测确认相机/SDK OutMono8 可见，以及空“订阅图片文件夹”标题保留。默认三模式 72 项行显隐已逐项纳入重建测试。
+
+限制：原厂宿主仍记录 zh-cn.xaml 回退异常和 LocalImageList BooleanConverter 绑定异常；截图中的中文标签可见，列表缩略图已出现，但本轮不宣称本地化或列表选中状态等价。相机未绑定，订阅浮窗未操作。SDK 列表不应直接放进桌面窗口。重新采集使用 `tests/NativeEvidence/Invoke-OriginalImageSourceProbe.ps1 -CaptureSdkUi`，生成后将新 probe.json 路径传给 Export-ImageSourceEvidence.py 的 --runtime。
 
 ## 当前实现和验证
 
 已修正本地 MONO8 列表、SN、读前游标、手动选择、选中执行顺序、去重、失败后游标、首 N 路径缓存及可取消间隔。普通参数变化不再重置全部运行状态；同节点以 SemaphoreSlim 串行，不持有全插件锁睡眠；不同方案目录分离状态。并发/取消是独立托管实现，完整 session 身份仍待框架服务。
 
-已补三种模式的相机订阅行、RGB 的 OutMono8、拼接和过滤依赖行。缺少服务的控件保持禁用；禁用状态、缺少订阅图标、空类别标题以及 camera/SDK 的 OutMono8 推导规则均不是已证明的 UI 等价。
+已补三种模式的相机订阅行、RGB 的 OutMono8、拼接和过滤依赖行。本轮依据原厂截图校正文案、方案存图 120 张提示、曝光/增益等订阅文本框、数值和文本订阅图标、相机图标、文件夹文本长度 200。图标来自原厂提取资源，来源哈希已记录。缺少服务的控件保持禁用；实际订阅弹层、目录选择器和相机枚举尚未接入，不能宣称外观和操作完整等价。
 
 末张停止、目录订阅、RGB、相机/SDK、内嵌图像、拼接、字符过滤仍明确报告缺口；已移除永久 NoMatch 和逐次扫描 BMP 的错误替代。BmpReader 为独立实现，仅上述样本已做像素哈希对照。
 
-构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。60 项通过，0 警告/0 错误。覆盖源码映射的本地状态、缓存、错误、参数边界、同节点并发、间隔取消、宿主持久化后运行、WPF 显隐和该样本的原厂像素哈希。截图/原厂探针均在 tests，框架源文件未修改。
+构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。136 项通过，0 警告/0 错误。覆盖源码映射的本地状态、缓存、错误、参数边界、同节点并发、间隔取消、宿主持久化后运行、原厂三模式 72 项显隐对照、订阅字段和布局宽度，以及该样本的原厂像素哈希。四张重建 QA 图经检查；截图/原厂探针均在 tests，框架源文件未修改。
 
 ## 未完成验收项
 
 - [x] 本地关键状态源码映射、4 个辅助函数反编译和原厂 SDK 操作对照。
 - [x] 三种模式声明/托管规则；未绑定相机、SDK 未提交和已提交的实际运行结果。
-- [x] MONO8 样本像素对照与 60 项重建检查。
+- [x] MONO8 样本像素对照与 136 项重建检查。
+- [x] 原厂 SDK 宿主三模式与展开状态截图、25 项实时参数模型及显隐对照。
 - [ ] 本地/相机/SDK 完整桌面截图及操作序列，含下部区域、OutMono8 联动和订阅弹层。
 - [ ] 彩色、调色板、损坏图像、多格式语料以及原生转换系数。
 - [ ] 目录排序比较器、事件合并、RefreshImage/TriggerProcessRun、释放和重载。

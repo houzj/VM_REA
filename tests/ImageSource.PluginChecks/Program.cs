@@ -71,7 +71,7 @@ static class Program {
   values=Defaults();var document=new GraphEditorDocument(registry);document.NewSolution();string id=document.AddNode(plugin.Manifest.Id,plugin.Manifest.Version,100,100,values);string path=Path.Combine(output,"restored.vmx.json");document.Save(path);document.Load(path);var session=await new SolutionExecutor(registry).RunAsync(new SolutionWorkspace(document.Document,document.BaseDirectory),document.CurrentProcedureId);Check(session.Status==SessionStatus.Success&&session.Nodes.Single().Outputs.ContainsKey("Image"),"persisted plugin executes through host");
   // WPF checks must run on their own STA after async runtime checks resume on a worker.
   Exception? uiError=null;var uiThread=new Thread(()=>{try{CheckUi(plugin,document.CurrentProcedure.Nodes.Single(),output);}catch(Exception ex){uiError=ex;}});uiThread.SetApartmentState(ApartmentState.STA);uiThread.Start();uiThread.Join();if(uiError is not null)throw uiError;
-  File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{checks,passed=true,originalRuntimeEquivalence=false,nativeBasis="source-confirmed state transitions and original SDK sample pixel hash; complete mode UI capture unavailable"},new JsonSerializerOptions{WriteIndented=true}));
+  File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{checks,passed=true,originalRuntimeEquivalence=false,nativeBasis="source-confirmed state transitions and original SDK sample pixel hash; original SDK three-mode model visibility confirmed; desktop capture and service parity remain open"},new JsonSerializerOptions{WriteIndented=true}));
   Console.WriteLine($"PASS {checks} image-source checks; original runtime equivalence remains unverified");
  }
  static void CheckUi(ImageSourcePlugin plugin,NodeDocument node,string output){
@@ -82,11 +82,20 @@ static class Program {
    bool Visible(string key)=>Descendants(editor).OfType<WGrid>().Single(g=>Equals(g.Tag,key)).Visibility==Visibility.Visible;
    void Capture(string name){editor.UpdateLayout();var dpi=VisualTreeHelper.GetDpi(editor);var bitmap=new RenderTargetBitmap((int)Math.Round(editor.ActualWidth*dpi.DpiScaleX),(int)Math.Round(editor.ActualHeight*dpi.DpiScaleY),dpi.PixelsPerInchX,dpi.PixelsPerInchY,PixelFormats.Pbgra32);bitmap.Render(editor);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using var stream=File.Create(Path.Combine(output,name+".png"));encoder.Save(stream);}
    Check(editor.Width==420&&editor.Height==500,"source logical dimensions");Check(Visible("PixelFormat")&&!Visible("CameraID"),"local UI mode");Capture("local-mono8");
-   Control<ToggleButton>("AutoPlay").IsChecked=false;Check(!Visible("AutoStop"),"autoplay false hides AutoStop");Control<ToggleButton>("AutoPlay").IsChecked=true;
+   Control<ToggleButton>("AutoPlay").IsChecked=false;Check(!Visible("AutoStop"),"autoplay false hides AutoStop");
+   using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-evidence.json"))) {
+    var models=evidence.RootElement.GetProperty("runtimeResults").EnumerateArray().Where(r=>r.GetProperty("phase").GetString()=="sdk-ui-model"&&r.GetProperty("variant").GetString()!.StartsWith("mode-"));
+    int modelCount=0;
+    foreach(var model in models){modelCount++;Control<WCombo>("ImageSourceType").SelectedIndex=model.GetProperty("mode").GetInt32()-1;foreach(var item in model.GetProperty("items").EnumerateArray()){var fields=item.GetProperty("fields");string key=fields.GetProperty("Name").GetString()!;if(key=="CurrentImagePath")continue;Check(Visible(key)==bool.Parse(fields.GetProperty("CustomVisible").GetString()!),"original SDK model visibility: "+model.GetProperty("variant").GetString()+"/"+key);}}
+    Check(modelCount==3,"all three original SDK model captures used");
+   }
+   Control<WCombo>("ImageSourceType").SelectedIndex=0;Control<ToggleButton>("AutoPlay").IsChecked=true;
    var number=Control<WpfNumericControl>("InitialSN");number.Text="100001";Check(number.Text!="100001","SN UI maximum");number.Text="-1";Check(number.Text!="-1","SN UI minimum");
    var cache=Control<WpfNumericControl>("PathCache");cache.Text="6";Check(cache.Text!="6","cache UI maximum");
    Control<WCombo>("PixelFormat").SelectedIndex=1;Check(Visible("OutMono8"),"RGB UI enables extra Mono8 row");Capture("local-rgb24");
    Control<WCombo>("ImageSourceType").SelectedIndex=1;Check(Visible("CameraID")&&Visible("ExposureTimeInput")&&Visible("GainInput")&&!Visible("PixelFormat")&&!Visible("SolSaveImageData"),"camera UI rows");Check(!Control<WCombo>("CameraID").IsEnabled,"camera selector exposes unavailable service honestly");Capture("camera");
+   Check(Control<System.Windows.Controls.TextBox>("ExposureTimeInput").IsReadOnly,"exposure uses subscription text field");Check(Control<System.Windows.Controls.TextBox>("SubscribeFolderPath").MaxLength==200,"folder input source length bound");
+   editor.UpdateLayout();Check(Control<WCombo>("CameraID").ActualWidth>200&&Control<System.Windows.Controls.TextBox>("ExposureTimeInput").ActualWidth>200&&number.ActualWidth>200,"decorated editors retain usable width");
    Control<WCombo>("ImageSourceType").SelectedIndex=2;Check(!Visible("CameraID")&&!Visible("AutoPlay")&&Visible("InitialSN"),"SDK UI rows");Capture("sdk");
    Control<ToggleButton>("StitchEnable").IsChecked=true;Check(Visible("StitchHeight")&&Visible("ClearTrigger"),"persisted stitching shows dependent controls");Control<ToggleButton>("ClearTrigger").IsChecked=true;Check(Visible("ClearTriggerCondition"),"clear trigger subscription row");
    Control<ToggleButton>("TriggerStringEnable").IsChecked=true;Check(Visible("TriggerString")&&Visible("TriggerFilter"),"trigger subscription rows");
