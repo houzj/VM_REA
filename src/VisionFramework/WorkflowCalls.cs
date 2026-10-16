@@ -14,7 +14,7 @@ public static class WorkflowCalls
   public ModuleDescriptor Descriptor=>WorkflowCalls.Descriptor;
   public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context,CancellationToken token)=>throw new InvalidOperationException("Subprogram requires a solution execution context.");
  }
- public static WorkflowCallDocument From(ProcedureDocument target)=>new(target.Id,target.Configuration.Inputs.Select(p=>new WorkflowCallPort(p.Id,p.Name,p.Kind){Cardinality=p.Cardinality}).ToArray(),target.Configuration.Outputs.Select(p=>new WorkflowCallPort(p.Id,p.Name,p.Kind){Cardinality=p.Cardinality}).ToArray());
+ public static WorkflowCallDocument From(ProcedureDocument target)=>new(target.Id,target.Configuration.Inputs.Select(p=>new WorkflowCallPort(p.Id,p.Name,p.Kind){Cardinality=p.Cardinality}).ToArray(),target.Configuration.Outputs.Select(p=>new WorkflowCallPort(p.Id,p.Name,p.Kind){Cardinality=target.GroupOwner is not null&&p.Accumulate&&GroupBreak.Accumulatable(p.Kind)?ValueCardinality.Array:p.Cardinality}).ToArray());
  public static ModuleDescriptor Describe(NodeDocument node)
  {
   if(node.Call is null)return Descriptor;

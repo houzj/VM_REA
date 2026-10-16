@@ -8,7 +8,7 @@ using Button=System.Windows.Controls.Button;
 using CheckBox=System.Windows.Controls.CheckBox;
 using Orientation=System.Windows.Controls.Orientation;
 namespace VisionEditor;
-public sealed record WorkflowSourceOption(string NodeId,string Port,DataKind Kind,string Label){public bool IsInput{get;init;} public WorkflowValueReference? Reference{get;init;} public override string ToString()=>Label;}
+public sealed record WorkflowSourceOption(string NodeId,string Port,DataKind Kind,string Label){public ValueCardinality Cardinality{get;init;}=ValueCardinality.Scalar;public bool IsInput{get;init;} public WorkflowValueReference? Reference{get;init;} public override string ToString()=>Label;}
 public sealed class WorkflowSourcePicker:Window
 {
  public WorkflowSourceOption? Selection=>Selections.FirstOrDefault();

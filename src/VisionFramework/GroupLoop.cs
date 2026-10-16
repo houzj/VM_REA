@@ -6,6 +6,9 @@ namespace VisionFramework;
 public sealed record GroupLoop(bool Enabled,int Start,int End,int IntervalMs)
 {
  public static IReadOnlyList<ParameterDescriptor> Parameters {get;} = [
+  new("EnableBreak",ParameterKind.Boolean,false,JsonSerializer.SerializeToElement(false)),
+  new("DataType",ParameterKind.Integer,false,JsonSerializer.SerializeToElement(1),1,3),
+  new("CmpType",ParameterKind.Integer,false,JsonSerializer.SerializeToElement(1),1,6),
   new("EnableLoop",ParameterKind.Boolean,false,JsonSerializer.SerializeToElement(false)),
   new("StartIndex",ParameterKind.Integer,false,JsonSerializer.SerializeToElement(0),int.MinValue,int.MaxValue),
   new("EndIndex",ParameterKind.Integer,false,JsonSerializer.SerializeToElement(1),int.MinValue,int.MaxValue),

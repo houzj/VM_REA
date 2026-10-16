@@ -1,3 +1,5 @@
+> 更新：本文记录前一阶段范围。中断与累积的当前实现及未完成边界见 [GROUP-BREAK-ACCUMULATION.md](GROUP-BREAK-ACCUMULATION.md)。
+
 # Group loop range reconstruction
 
 Date: 2026-10-16. Scope: owned Group range execution and private LoopIndex. This is a partial implementation, not full Group parity.

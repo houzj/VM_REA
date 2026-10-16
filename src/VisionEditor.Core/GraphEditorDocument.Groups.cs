@@ -12,6 +12,9 @@ public sealed partial class GraphEditorDocument
   var ownerId=CurrentProcedureId;var body=new ProcedureDocument(Guid.NewGuid().ToString("N"),node.Name,[],[],[]){GroupOwner=new(ownerId,nodeId)};
   Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==ownerId?p with{Nodes=p.Nodes.Select(n=>n.Id==nodeId?n with{Call=WorkflowCalls.From(body)}:n).ToArray()}:p).Append(body).ToArray()},body.Id);return body.Id;
  }
+  public void SetGroupBreak(string nodeId,bool enabled,int dataType,int comparison,GroupBreakBindings? bindings){
+  var node=Node(nodeId);var body=Procedure(node.Call?.ProcedureId??throw new InvalidOperationException("Group未配置。"));var values=node.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone());values["EnableBreak"]=System.Text.Json.JsonSerializer.SerializeToElement(enabled);values["DataType"]=System.Text.Json.JsonSerializer.SerializeToElement(dataType);values["CmpType"]=System.Text.Json.JsonSerializer.SerializeToElement(comparison);var proposed=node with{Parameters=values,GroupBreak=bindings?.Snapshot()};GroupBreak.Validate(CurrentProcedure,proposed,body,registry);if(dataType is <1 or >3||comparison is <1 or >6)throw new ArgumentException("无效的中断条件。");var candidate=CurrentProcedure with{Nodes=CurrentProcedure.Nodes.Select(n=>n.Id==nodeId?proposed:n).ToArray()};var issue=GraphValidator.Validate(candidate,registry).Issues.FirstOrDefault(i=>i.Code is "GroupBreakType" or "GroupBreakSource" or "DataExecutionOrder" or "Cycle");if(issue is not null)throw new InvalidOperationException(issue.Message);ChangeNode(nodeId,_=>proposed);
+ }
  public void LeaveGroup(){var owner=CurrentProcedure.GroupOwner??throw new InvalidOperationException("当前不是 Group 内部画布。");SelectProcedure(owner.ProcedureId);}
  public string RootProcedureId(string id){var p=Procedure(id);var seen=new HashSet<string>();while(p.GroupOwner is {} owner){if(!seen.Add(p.Id))throw new InvalidDataException("Group ownership cycle.");p=Procedure(owner.ProcedureId);}return p.Id;}
  static SolutionDocument CloneOwnedCopies(SolutionDocument d)
@@ -19,17 +22,22 @@ public sealed partial class GraphEditorDocument
   var source=d.Procedures.ToDictionary(p=>p.Id);var appended=new List<ProcedureDocument>();
   ProcedureDocument Clone(ProcedureDocument body,GroupOwnership owner){
    var ids=body.Nodes.ToDictionary(n=>n.Id,_=>Guid.NewGuid().ToString("N"));var id=Guid.NewGuid().ToString("N");
-   var nodes=body.Nodes.Select(n=>{var copied=n with{Id=ids[n.Id]};if(n.Call is {} call&&source.TryGetValue(call.ProcedureId,out var nested)&&nested.GroupOwner is not null){var child=Clone(nested,new(id,copied.Id));copied=copied with{Call=WorkflowCalls.From(child)};}return copied;}).ToArray();
+   var nodes=body.Nodes.Select(n=>{var copied=n with{Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false)};if(n.Call is {} call&&source.TryGetValue(call.ProcedureId,out var nested)&&nested.GroupOwner is not null){var child=Clone(nested,new(id,copied.Id));var childIds=nested.Nodes.Zip(child.Nodes).ToDictionary(pair=>pair.First.Id,pair=>pair.Second.Id);copied=copied with{Call=WorkflowCalls.From(child),GroupBreak=copied.GroupBreak?.Remap(childIds,true)};}return copied;}).ToArray();
    var result=body with{Id=id,GroupOwner=owner,Configuration=body.Configuration.RemapNodes(ids),Nodes=nodes,Connections=body.Connections.Select(c=>c with{FromNode=ids[c.FromNode],ToNode=ids[c.ToNode]}).ToArray(),ExecutionLinks=body.ExecutionLinks?.Select(e=>e with{FromNode=ids[e.FromNode],ToNode=ids[e.ToNode]}).ToArray()};appended.Add(result);return result;
   }
   var parents=d.Procedures.Select(parent=>parent with{Nodes=parent.Nodes.Select(n=>{
    if(n.Call is not {} call||!source.TryGetValue(call.ProcedureId,out var body)||body.GroupOwner is not {} owner||owner==new GroupOwnership(parent.Id,n.Id))return n;
-   var clone=Clone(body,new(parent.Id,n.Id));return n with{Call=WorkflowCalls.From(clone)};
+   var clone=Clone(body,new(parent.Id,n.Id));var childIds=body.Nodes.Zip(clone.Nodes).ToDictionary(pair=>pair.First.Id,pair=>pair.Second.Id);return n with{Call=WorkflowCalls.From(clone),GroupBreak=n.GroupBreak?.Remap(childIds,true)};
   }).ToArray()}).ToArray();return d with{Procedures=parents.Concat(appended).ToArray()};
- } static SolutionDocument PruneOwnedGroups(SolutionDocument d)
+ } SolutionDocument PruneOwnedGroups(SolutionDocument d)
  {
   var list=d.Procedures.ToList();bool removed;
   do{removed=list.RemoveAll(p=>p.GroupOwner is {} owner&&!list.Any(parent=>parent.Id==owner.ProcedureId&&parent.Nodes.Any(n=>n.Id==owner.NodeId&&n.Call?.ProcedureId==p.Id)))>0;}while(removed);
+    var byId=list.ToDictionary(p=>p.Id);list=list.Select(parent=>parent with{Nodes=parent.Nodes.Select(node=>{
+   if(node.GroupBreak is null||node.Call is null||!byId.TryGetValue(node.Call.ProcedureId,out var body)||body.GroupOwner is null)return node;
+   GroupOperand? Clean(GroupOperand? operand){if(operand?.Source is not {} source)return operand;try{var scope=operand.Inside?body:parent;_=WorkflowSubscriptions.SourceType(scope,registry,source);if(operand.Index!=0&&WorkflowSubscriptions.SourceCardinality(scope,registry,source)==ValueCardinality.Scalar)return null;return operand;}catch(InvalidDataException){return null;}catch(KeyNotFoundException){return operand;}}
+   return node with{GroupBreak=new(Clean(node.GroupBreak.Left),Clean(node.GroupBreak.Right))};
+  }).ToArray()}).ToList();
   return d with{Procedures=list.ToArray()};
  }
 }

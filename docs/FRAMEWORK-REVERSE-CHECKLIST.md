@@ -26,8 +26,8 @@
 | F-10 / P0 | Group 所有权和内部画布 E1/I2/V1 | OwnedGroups.cs、GraphEditorDocument.Groups.cs；VmGroupDecorator、VmProcedureDecorator | 三层嵌套、父流程归属、内部图编辑、接口同步、复制/删除/撤销、保存重开、跨方案剪贴板；旧跨顶层调用单独标识 |
 | F-11 / P0 | Group Tab Up 返回 E2/I2/V1 | ProcedureConfigControl.xaml:btnUp/UpEnable；VmProcedureDecorator.UpCommandExecute；WorkflowTabs.cs | 当前已有按钮逐层返回/根层隐藏/再进入测试；还须 VM 多层名称、状态资源、焦点/当前选择/视口以及运行中行为对照 |
 | F-12 / P0 | Group 循环/LoopIndex E1/I1/V1 | GROUP-LOOP-RECONSTRUCTION.md；ModuleFrame CGroupNode::DoWork 0x1800a0930；IMVSGroup资源 | 恢复开始/结束订阅、端点包含性、零/反向范围、索引可见时机、间隔、取消/超时、每轮上下文；托管 SDK 包装不足以证明原生调度语义 |
-| F-13 / P0 | Group 中断条件 E1/I0/V0 | 原始 EnableBreak、DataType、CmpType、CmpSrc/Dst 字段 | int/float/string比较、空值、错误、执行前/后判断、中断轮次与结果；需与原生执行行为核对 |
-| F-14 / P0 | Group 累积输出/显示 E1/I0/V0 | VmIODecorate、DisplayObjectDecorate、Get/SetGroupIOReportMode | 已知 nMode=0累积、1普通；仍需数组/顺序/本轮与上次隔离、清空、展平规则、部分失败/中断、下游读取、图像例外及显示契约 |
+| F-13 / P0 | Group 中断条件 E1/I1/V1（部分） | 原始 EnableBreak、DataType、CmpType、CmpSrc/Dst 字段 | int/float/string比较、空值、错误、执行前/后判断、中断轮次与结果；需与原生执行行为核对 |
+| F-14 / P0 | Group 累积输出/显示 E1/I1/V1（部分） | VmIODecorate、DisplayObjectDecorate、Get/SetGroupIOReportMode | 已知 nMode=0累积、1普通；仍需数组/顺序/本轮与上次隔离、清空、展平规则、部分失败/中断、下游读取、图像例外及显示契约 |
 | F-15 / P1 | Group 配置窗口 E1/I1/V1 | SubprogramCallWindow；DynamicParamsTabControl、DynamicIOConfigControl | 输入/输出增删改名、订阅、运行参数代理、显示、循环控件可见性、提交/取消、单次运行/停止；隐藏旧目标选择器不等于原生配置完成 |
 | F-16 / P1 | 调度和运行控制 E1/I1/V1 | GraphExecutor、SolutionExecutor、WorkflowExecution；VM.Core/原生调度边界 | 单次/连续/单步语义、分支、使能、超时取消、停止NG、顺序、重入并发与跨 Group 传播；原生引擎未完整恢复 |
 | F-17 / P1 | 局部变量/输入输出/订阅 E1/I2/V1 | WorkflowRunContext、Subscriptions、Configuration；DynamicObjectConfigControl | 变量初始化/更新顺序、类型、源失效、跨轮隔离、代理参数、父子传参、缺失输出、编辑事务；必须检查下游真实结果 |
@@ -71,3 +71,5 @@ F-01新增基础类型数组运行契约，已接通连线/订阅/Group/保存�
 - 框架线维护本文件；插件线维护其详细插件台账。交付时由 HANDOFF 登记工具和提交编号；CONTRACT-REQUESTS 登记接口需求。
 - 同一个工具的算法/UI验收由插件线记录，宿主导航/运行/订阅/保存/释放由框架线记录；最终集成仍需再次验证。
 - 最近本地证据：analysis/full-audit/group-tab-return.html、group-tab-return-lifecycle/exit-results.json、group-owned-canvas.html、subprogram-runtime/results.json。测试数只说明已覆盖的回归，不升级全部条目状态。
+
+2026-10-16 F-13/F-14：三种比较、首轮依赖、固定索引、自身输出，primitive累积、图像替换、基础显示和关联图像输出已接UI/运行。未达到全原生等价；详见 GROUP-BREAK-ACCUMULATION.md 与完整清单。

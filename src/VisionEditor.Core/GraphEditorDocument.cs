@@ -51,9 +51,9 @@ public sealed partial class GraphEditorDocument
         Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==id?p with{ContinuousRunIntervalMs=intervalMs,StopOnNg=stopOnNg}:p).ToArray()});
     }
     public void SetWorkflowConfiguration(string id,WorkflowConfiguration configuration) {
-        var p=Procedure(id);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();
+        var p=Procedure(id);if(p.GroupOwner is not null)configuration=GroupDisplayLinks.Synchronize(p.Configuration,configuration);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();
         if(JsonSerializer.Serialize(p.Configuration)==JsonSerializer.Serialize(snapshot))return;
-        Edit(d=>{var changed=p with{Configuration=snapshot};var signature=WorkflowCalls.From(changed);return d with{Procedures=d.Procedures.Select(item=>item.Id==id?changed:changed.GroupOwner is {} owner&&item.Id==owner.ProcedureId?item with{Nodes=item.Nodes.Select(n=>n.Id==owner.NodeId?n with{Call=signature}:n).ToArray()}:item).ToArray()};});
+        Edit(d=>PropagateGroupInterface(d,p with{Configuration=snapshot}));
     }
     public void SetProcedureNodeParameters(string procedureId,string nodeId,Dictionary<string,JsonElement> values) {
         var p=Procedure(procedureId);var node=p.Nodes.FirstOrDefault(n=>n.Id==nodeId)??throw new KeyNotFoundException(nodeId);var parameters=CheckedParameters(node,values);
@@ -84,7 +84,7 @@ public sealed partial class GraphEditorDocument
         var ids=original.Nodes.ToDictionary(n=>n.Id,_=>Guid.NewGuid().ToString("N"));
         var duplicate=original with {
             Id=newId,Name=copyName,Configuration=original.Configuration.RemapNodes(ids),OverviewX=overviewX??original.OverviewX,OverviewY=overviewY??original.OverviewY,
-            Nodes=original.Nodes.Select(n=>n with {Id=ids[n.Id]}).ToArray(),
+            Nodes=original.Nodes.Select(n=>n with {Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false)}).ToArray(),
             Connections=original.Connections.Select(c=>c with {FromNode=ids[c.FromNode],ToNode=ids[c.ToNode]}).ToArray(),
             ExecutionLinks=original.ExecutionLinks?.Select(e=>e with {FromNode=ids[e.FromNode],ToNode=ids[e.ToNode]}).ToArray()
         };
@@ -138,7 +138,7 @@ public sealed partial class GraphEditorDocument
         string UniqueName(string name){if(names.Add(name))return name;var stem=System.Text.RegularExpressions.Regex.Replace(name,@"\d+$","");int index=1;while(!names.Add(stem+index))index++;return stem+index;}
         double left=fragment.Nodes.Min(n=>n.X),top=fragment.Nodes.Min(n=>n.Y);
         double Coordinate(double value)=>Math.Round(Math.Clamp(value,0,4850)/5)*5;
-        var nodes=fragment.Nodes.Select(n=>n with {Id=ids[n.Id],Name=UniqueName(n.Name),X=Coordinate(x+n.X-left),Y=Coordinate(y+n.Y-top),Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone()),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray();
+        var nodes=fragment.Nodes.Select(n=>n with {Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false),Name=UniqueName(n.Name),X=Coordinate(x+n.X-left),Y=Coordinate(y+n.Y-top),Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone()),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray();
         var connections=fragment.Connections.Select(c=>c with {FromNode=ids[c.FromNode],ToNode=ids[c.ToNode]}).ToArray();
         IReadOnlyList<WirePointDocument>? TranslatedPath(ExecutionLinkDocument edge){
             if(edge.PathPoints is null)return null;var source=fragment.Nodes.Single(n=>n.Id==edge.FromNode);var target=fragment.Nodes.Single(n=>n.Id==edge.ToNode);var copiedSource=nodes.Single(n=>n.Id==ids[source.Id]);var copiedTarget=nodes.Single(n=>n.Id==ids[target.Id]);
@@ -224,7 +224,7 @@ public sealed partial class GraphEditorDocument
     void Restore(Stack<Snapshot> source,Stack<Snapshot> destination) { if(source.Count==0)return; var s=source.Peek();var next=Rebase(s.Document,s.BaseDirectory,BaseDirectory);destination.Push(Capture());source.Pop();document=next;CurrentProcedureId=s.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke(); }
     static void Position(double x,double y) { if(!double.IsFinite(x)||!double.IsFinite(y))throw new ArgumentOutOfRangeException(nameof(x)); }
     static void RequireName(string name) { if(string.IsNullOrWhiteSpace(name))throw new ArgumentException("Name is required."); }
-    static SolutionDocument Copy(SolutionDocument d)=>d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=>p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with {Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone()),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray()}).ToArray()};
+    static SolutionDocument Copy(SolutionDocument d)=>d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=>p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with {Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone()),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray()}).ToArray()};
     static SolutionDocument Rebase(SolutionDocument d,string oldBase,string newBase) {
         var copy=Copy(d); string PathValue(string path)=>Path.IsPathFullyQualified(path)?path:Path.GetRelativePath(newBase,Path.GetFullPath(path,oldBase));
         return copy with { Resources=copy.Resources.Select(r=>r with {Path=PathValue(r.Path)}).ToArray(),Procedures=copy.Procedures.Select(p=>p with {Nodes=p.Nodes.Select(n=> {if(n.ModuleId!="vision.image-file"||!n.Parameters.TryGetValue("Path",out var v)||v.ValueKind!=JsonValueKind.String)return n; var values=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone());values["Path"]=JsonSerializer.SerializeToElement(PathValue(v.GetString()!));return n with {Parameters=values};}).ToArray()}).ToArray() };

@@ -51,7 +51,7 @@ public partial class MainWindow
  }
  protected override async void OnClosing(CancelEventArgs e)
  {
-  base.OnClosing(e);if(e.Cancel||toolCloseReady||toolDebugSessions.Count==0)return;e.Cancel=true;if(toolClosePending)return;toolClosePending=true;activeRun?.Cancel();
-  try{foreach(var session in toolDebugSessions.ToArray()){try{await session.DisposeAsync();}catch(Exception error){StatusText.Text="调试关闭："+error.Message;}}}finally{toolDebugSessions.Clear();toolCloseReady=true;_ = Dispatcher.BeginInvoke(new Action(Close));}
+  base.OnClosing(e);if(e.Cancel||toolCloseReady||(toolDebugSessions.Count==0&&groupConfigurationWindows.Count==0))return;e.Cancel=true;if(toolClosePending)return;toolClosePending=true;activeRun?.Cancel();
+  try{foreach(var groupWindow in groupConfigurationWindows.ToArray())await groupWindow.StopAndCloseAsync();foreach(var session in toolDebugSessions.ToArray()){try{await session.DisposeAsync();}catch(Exception error){StatusText.Text="调试关闭："+error.Message;}}}finally{toolDebugSessions.Clear();toolCloseReady=true;_ = Dispatcher.BeginInvoke(new Action(Close));}
  }
 }

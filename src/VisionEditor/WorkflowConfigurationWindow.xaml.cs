@@ -54,7 +54,7 @@ public partial class WorkflowConfigurationWindow:Window
  }
  void BindInterface(string section,WorkflowInterfaceItem item)
  {
-  var none=new WorkflowSourceOption("","",item.Kind,"解除订阅");var picker=new WorkflowSourcePicker(new[]{none}.Concat(sources(item.Kind))){Owner=this};if(picker.ShowDialog()==true&&picker.Selection is {} selected)Safe(()=>{SaveItems(section,Items(section).Select(p=>p.Id==item.Id?p with{NodeId=selected.NodeId==""?null:selected.NodeId,Port=selected.Port==""?null:selected.Port}:p));Refresh();});
+  var none=new WorkflowSourceOption("","",item.Kind,"解除订阅");var picker=new WorkflowSourcePicker(new[]{none}.Concat(sources(item.Kind))){Owner=this};if(picker.ShowDialog()==true&&picker.Selection is {} selected)Safe(()=>{SaveItems(section,Items(section).Select(p=>p.Id==item.Id?p with{NodeId=selected.NodeId==""?null:selected.NodeId,Port=selected.Port==""?null:selected.Port,Cardinality=selected.Cardinality}:p));Refresh();});
  }
  FrameworkElement BuildRunParameters(WorkflowConfiguration c)
  {
