@@ -1,8 +1,96 @@
+using System.Diagnostics;
 using System.Text.Json;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using VisionFramework;
 using VisionPluginContracts;
 using VisionPlugins.ImageSource;
 using VisionEditor.Core;
+using Window=System.Windows.Window;
+using WCombo=System.Windows.Controls.ComboBox;
+using WGrid=System.Windows.Controls.Grid;
+
 static class Program {
- [STAThread]static int Main(string[] args){try{return Run();}catch(Exception ex){Console.Error.WriteLine(ex);Environment.Exit(1);return 1;}}static int Run(){ApplicationConfiguration.Initialize();int checks=0;void Check(bool condition,string message){checks++;if(!condition)throw new Exception(message);}var registry=new ModuleRegistry();var host=new ToolPluginRegistry();var plugin=new ImageSourcePlugin();host.Register(plugin,registry);Check(host.Find(plugin.Manifest.Id)==plugin,"Registration");var values=plugin.Descriptor.Parameters.ToDictionary(p=>p.Name,p=>p.DefaultValue!.Value.Clone());string file=Path.GetFullPath("analysis/images/circle-find-sample.bmp");values["ImagePaths"]=JsonSerializer.SerializeToElement(JsonSerializer.Serialize(new[]{file,file}));values["AutoStop"]=JsonSerializer.SerializeToElement(true);values["InitialSN"]=JsonSerializer.SerializeToElement(7);ModuleResult Run()=>registry.Create(plugin.Manifest.Id,plugin.Manifest.Version).ExecuteAsync(new ModuleExecutionContext("node",Environment.CurrentDirectory,new Dictionary<string,PortValue>(),values),CancellationToken.None).GetAwaiter().GetResult();var first=Run();Check(first.Status==ModuleStatus.Success,"Read first image");Check(first.Outputs["SNCode"].As<long>()==7,"Initial sequence");var second=Run();Check(second.Outputs["SNCode"].As<long>()==8,"Next sequence across module factories");Check(Run().ErrorCode=="EndOfImages","Auto-stop");plugin.Reset("node");Check(Run().Outputs["SNCode"].As<long>()==7,"Reset");values["AutoStop"]=JsonSerializer.SerializeToElement(false);Check(Run().Status==ModuleStatus.Success,"Changed parameters reset sequence");Check(Run().Status==ModuleStatus.Success&&Run().Status==ModuleStatus.Success,"Cycle images");values["ImageSourceType"]=JsonSerializer.SerializeToElement(2);Check(Run().ErrorCode=="InputProviderUnavailable","Explicit camera boundary");values["ImageSourceType"]=JsonSerializer.SerializeToElement(1);values["PixelFormat"]=JsonSerializer.SerializeToElement(2);Check(Run().ErrorCode=="PixelFormatUnavailable","Explicit RGB boundary");values["PixelFormat"]=JsonSerializer.SerializeToElement(1);var document=new GraphEditorDocument(registry);document.NewSolution();string id=document.AddNode(plugin.Manifest.Id,plugin.Manifest.Version,100,100,values);string path=Path.GetFullPath("analysis/full-audit/image-source-plugin.vmx.json");document.Save(path);document.Load(path);Check(document.CurrentProcedure.Nodes.Single().Parameters["ImagePaths"].GetString()==values["ImagePaths"].GetString(),"List persisted");var session=new SolutionExecutor(registry).RunAsync(new SolutionWorkspace(document.Document,document.BaseDirectory),document.CurrentProcedureId).GetAwaiter().GetResult();Check(session.Status==SessionStatus.Success&&session.Nodes.Single().Outputs.ContainsKey("Image"),"Restored plugin executes through host executor");var node=document.CurrentProcedure.Nodes.Single();var editor=plugin.CreateWpfEditor(new ToolEditorContext(node,Environment.CurrentDirectory,p=>document.SetParameters(id,p),p=>Task.FromResult(new NodeRunRecord(id,NodeRunStatus.Success,first.Outputs,0))));editor.WindowStartupLocation=System.Windows.WindowStartupLocation.Manual;editor.Left=-30000;editor.Top=-30000;editor.Show();editor.Dispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.Render);editor.UpdateLayout();Check(editor.Width==420&&editor.Height==500,"Original WPF logical dimensions");IEnumerable<System.Windows.DependencyObject> Descendants(System.Windows.DependencyObject c){for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(c);i++){var child=System.Windows.Media.VisualTreeHelper.GetChild(c,i);yield return child;foreach(var inner in Descendants(child))yield return inner;}}var toggle=Descendants(editor).OfType<System.Windows.Controls.Primitives.ToggleButton>().First(t=>t.IsEnabled&&t.Style==editor.Resources["Switch"]);bool before=toggle.IsChecked==true;toggle.IsChecked=!before;Check(toggle.IsChecked!=before,"WPF toggle change");toggle.IsChecked=before;Check(toggle.IsChecked==before,"WPF toggle restore");Check(toggle.Content is null,"WPF switch has no caption");var numeric=Descendants(editor).OfType<WpfNumericControl>().First();string originalNumber=numeric.Text;numeric.Text="8";Check(document.CurrentProcedure.Nodes.Single().Parameters["InitialSN"].GetInt32()==8,"WPF number binding");numeric.Text="-1";Check(numeric.Text=="8","WPF rejects invalid number");numeric.Text=originalNumber;var dpi=System.Windows.Media.VisualTreeHelper.GetDpi(editor);var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Round(editor.ActualWidth*dpi.DpiScaleX),(int)Math.Round(editor.ActualHeight*dpi.DpiScaleY),dpi.PixelsPerInchX,dpi.PixelsPerInchY,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(editor);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));using(var output=File.Create("analysis/full-audit/image-source-wpf-editor.png"))encoder.Save(output);editor.Close();File.WriteAllText("analysis/full-audit/image-source-plugin-checks.json",JsonSerializer.Serialize(new{checks,passed=true,originalRuntimeEquivalence=false}));Console.WriteLine($"PASS {checks} image-source plugin checks");return 0;}
+ static int checks;
+ static void Check(bool condition,string message){checks++;if(!condition)throw new Exception(message);}
+ static void Set<T>(Dictionary<string,JsonElement> p,string key,T value)=>p[key]=JsonSerializer.SerializeToElement(value);
+ static void List(Dictionary<string,JsonElement> p,string key,params string[] paths)=>Set(p,key,JsonSerializer.Serialize(paths));
+ static IEnumerable<DependencyObject> Descendants(DependencyObject parent){for(int i=0;i<VisualTreeHelper.GetChildrenCount(parent);i++){var child=VisualTreeHelper.GetChild(parent,i);yield return child;foreach(var inner in Descendants(child))yield return inner;}}
+ [STAThread] static int Main(){try{Run().GetAwaiter().GetResult();return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ static async Task Run(){
+  ApplicationConfiguration.Initialize();
+  string output=Path.GetFullPath("analysis/full-audit/image-source-checks");Directory.CreateDirectory(output);
+  string scratch=Path.Combine(output,Guid.NewGuid().ToString("N"));Directory.CreateDirectory(scratch);
+  string sample=Path.GetFullPath("analysis/images/circle-find-sample.bmp");
+  string a=Path.Combine(scratch,"a.bmp"),b=Path.Combine(scratch,"b.bmp"),c=Path.Combine(scratch,"c.bmp");
+  foreach(var file in new[]{a,b,c})File.Copy(sample,file);
+  var plugin=new ImageSourcePlugin();var registry=new ModuleRegistry();var host=new ToolPluginRegistry();host.Register(plugin,registry);
+  Check(host.Find(plugin.Manifest.Id)==plugin,"plugin registration");
+  Dictionary<string,JsonElement> Defaults(){var p=plugin.Descriptor.Parameters.ToDictionary(d=>d.Name,d=>d.DefaultValue!.Value.Clone());List(p,"ImagePaths",a,b,c);Set(p,"InitialSN",7);return p;}
+  ValueTask<ModuleResult> Execute(string node,Dictionary<string,JsonElement> p,CancellationToken token=default,string? root=null)=>registry.Create(plugin.Manifest.Id,plugin.Manifest.Version).ExecuteAsync(new(node,root??Environment.CurrentDirectory,new Dictionary<string,PortValue>(),p),token);
+  long SN(ModuleResult r)=>r.Outputs["SNCode"].As<long>();
+  string FileName(ModuleResult r)=>r.Outputs["CurImageName"].As<string>();
+  var values=Defaults();var first=await Execute("sequence",values);
+  Check(first.Status==ModuleStatus.Success&&FileName(first)=="a.bmp","first advance from -1");
+  Check(SN(first)==8,"native pre-increment SN");
+  Check(first.Outputs["Width"].As<long>()>0&&first.Outputs["Image"].As<VisionCore.GrayImage>().Pixels.Length>0,"real decoded data");
+  Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(first.Outputs["Image"].As<VisionCore.GrayImage>().Pixels)).ToLowerInvariant()=="96187178e18c6e0104e79909116de929b6dceab22a595c6ab8abeefdd57d2098","sample pixels match original SDK capture");
+  Check(FileName(await Execute("sequence",values))=="b.bmp","next runtime factory retains cursor");
+  Set(values,"ShowImageName",false);Check(SN(await Execute("sequence",values))==10,"display parameter does not reset SN");
+  Check(FileName(await Execute("sequence",values))=="a.bmp","wrap cursor");
+  Set(values,"InitialSN",42);Check(SN(await Execute("sequence",values))==43,"only InitialSN updates sequence");
+  plugin.Reset("sequence");Check(SN(await Execute("sequence",values))==43,"explicit reset");
+  Check(SN(await Execute("sequence",values,root:scratch))==43,"different solution base directory isolates state");
+  values=Defaults();Set(values,"CurrentImagePath",a);Check(FileName(await Execute("current",values))=="b.bmp","manual current followed by native auto-advance");
+  Set(values,"AutoPlay",false);Set(values,"CurrentImagePath",c);Check(FileName(await Execute("current",values))=="c.bmp","manual current without autoplay");
+  Check(FileName(await Execute("current",values))=="c.bmp","manual mode holds current");
+  values=Defaults();Set(values,"ExecuteType",2);List(values,"SelectedPaths",c,a);Check(FileName(await Execute("selected",values))=="a.bmp","selected execution follows original list order");
+  Check(FileName(await Execute("selected",values))=="c.bmp","selected skips unselected");
+  List(values,"SelectedPaths");Set(values,"CurrentImagePath",a);Check((await Execute("selected",values)).ErrorCode=="NoImage","empty selection never falls back");
+  List(values,"SelectedPaths",sample);Check((await Execute("selected",values)).ErrorCode=="NoImage","selection must belong to full list");
+  values=Defaults();List(values,"ImagePaths");Set(values,"CurrentImagePath",a);Check((await Execute("empty",values)).ErrorCode=="NoImage","current selector does not submit one-shot image");
+  values=Defaults();List(values,"ImagePaths",a,a,b);Check(FileName(await Execute("duplicate",values))=="a.bmp"&&FileName(await Execute("duplicate",values))=="b.bmp","AddImageCheck ignores literal duplicates");
+  values=Defaults();List(values,"ImagePaths","missing.bmp",a);Check((await Execute("failure",values)).ErrorCode=="ImageReadFailed","missing file error");
+  var recovered=await Execute("failure",values);Check(FileName(recovered)=="a.bmp"&&SN(recovered)==8,"failed read advances position but does not increment SN");
+  values=Defaults();List(values,"ImagePaths","");Check((await Execute("blank",values)).Status==ModuleStatus.Failed,"blank path rejected");
+  Set(values,"ImagePaths","[");Check((await Execute("json",values)).Status==ModuleStatus.Failed,"invalid JSON rejected");
+  foreach(var pair in new[]{("InitialSN",100001),("PathCache",6),("Interval",1001),("StitchHeight",20001)}){values=Defaults();Set(values,pair.Item1,pair.Item2);Check((await Execute("invalid",values)).ErrorCode=="InvalidParameter","parameter bound "+pair.Item1);}
+  values=Defaults();List(values,"ImagePaths",a);Set(values,"PathCache",1);Check((await Execute("cache",values)).Status==ModuleStatus.Success,"cache admission");File.Delete(a);
+  Check((await Execute("cache",values)).Status==ModuleStatus.Success,"cached bytes survive source removal");plugin.Reset("cache");Check((await Execute("cache",values)).Status==ModuleStatus.Failed,"reset releases cache");File.Copy(sample,a);
+  values=Defaults();Set(values,"Interval",100);var wall=Stopwatch.StartNew();var delayed=await Execute("interval",values);wall.Stop();Check(wall.ElapsedMilliseconds>=90,"local interval delays execution");Check(delayed.Outputs["ModuRunTime"].As<double>()<wall.Elapsed.TotalMilliseconds-60,"interval excluded from module runtime");
+  values=Defaults();Set(values,"Interval",1000);using(var cancel=new CancellationTokenSource(30)){bool cancelled=false;try{await Execute("cancel",values,cancel.Token);}catch(OperationCanceledException){cancelled=true;}Check(cancelled,"interval cooperatively cancels");}
+  values=Defaults();var concurrent=await Task.WhenAll(Enumerable.Range(0,12).Select(_=>Execute("concurrent",values).AsTask()));Check(concurrent.Select(SN).Order().SequenceEqual(Enumerable.Range(8,12).Select(n=>(long)n)),"same-node executions serialize state");
+  values=Defaults();Set(values,"OutMono8",true);Check(!(await Execute("mono",values)).Outputs.ContainsKey("ImageMono8"),"no duplicate Mono8 output for Mono8 source");
+  foreach(var mode in new[]{2,3}){values=Defaults();Set(values,"ImageSourceType",mode);Check((await Execute("provider",values)).ErrorCode=="InputProviderUnavailable","provider boundary "+mode);}
+  values=Defaults();Set(values,"PixelFormat",2);Check((await Execute("rgb",values)).ErrorCode=="PixelFormatUnavailable","typed RGB boundary");
+  foreach(var pair in new[]{("AutoStop","ProcedureStopUnavailable"),("IsSubscribeFolderMode","FolderWatchUnavailable"),("SolSaveImageData","ModelEmbeddingUnavailable"),("StitchEnable","StitchUnavailable"),("TriggerStringEnable","TriggerUnavailable")}){values=Defaults();Set(values,pair.Item1,true);Check((await Execute("boundary",values)).ErrorCode==pair.Item2,"explicit service boundary "+pair.Item1);}
+  values=Defaults();Set(values,"AutoPlay",false);Set(values,"AutoStop",true);Check((await Execute("autostop-hidden",values)).Status==ModuleStatus.Success,"AutoStop ignored without autoplay");
+  values=Defaults();var document=new GraphEditorDocument(registry);document.NewSolution();string id=document.AddNode(plugin.Manifest.Id,plugin.Manifest.Version,100,100,values);string path=Path.Combine(output,"restored.vmx.json");document.Save(path);document.Load(path);var session=await new SolutionExecutor(registry).RunAsync(new SolutionWorkspace(document.Document,document.BaseDirectory),document.CurrentProcedureId);Check(session.Status==SessionStatus.Success&&session.Nodes.Single().Outputs.ContainsKey("Image"),"persisted plugin executes through host");
+  // WPF checks must run on their own STA after async runtime checks resume on a worker.
+  Exception? uiError=null;var uiThread=new Thread(()=>{try{CheckUi(plugin,document.CurrentProcedure.Nodes.Single(),output);}catch(Exception ex){uiError=ex;}});uiThread.SetApartmentState(ApartmentState.STA);uiThread.Start();uiThread.Join();if(uiError is not null)throw uiError;
+  File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{checks,passed=true,originalRuntimeEquivalence=false,nativeBasis="source-confirmed state transitions and original SDK sample pixel hash; complete mode UI capture unavailable"},new JsonSerializerOptions{WriteIndented=true}));
+  Console.WriteLine($"PASS {checks} image-source checks; original runtime equivalence remains unverified");
+ }
+ static void CheckUi(ImageSourcePlugin plugin,NodeDocument node,string output){
+  var editor=plugin.CreateWpfEditor(new(node,Environment.CurrentDirectory,_=>{},_=>Task.FromResult(new NodeRunRecord(node.Id,NodeRunStatus.Success,new Dictionary<string,PortValue>(),0))));
+  editor.WindowStartupLocation=WindowStartupLocation.Manual;editor.Left=-30000;editor.Top=-30000;editor.Show();editor.UpdateLayout();
+  try{
+   T Control<T>(string key)where T:FrameworkElement=>Descendants(editor).OfType<T>().Single(e=>e.Name==key);
+   bool Visible(string key)=>Descendants(editor).OfType<WGrid>().Single(g=>Equals(g.Tag,key)).Visibility==Visibility.Visible;
+   void Capture(string name){editor.UpdateLayout();var dpi=VisualTreeHelper.GetDpi(editor);var bitmap=new RenderTargetBitmap((int)Math.Round(editor.ActualWidth*dpi.DpiScaleX),(int)Math.Round(editor.ActualHeight*dpi.DpiScaleY),dpi.PixelsPerInchX,dpi.PixelsPerInchY,PixelFormats.Pbgra32);bitmap.Render(editor);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using var stream=File.Create(Path.Combine(output,name+".png"));encoder.Save(stream);}
+   Check(editor.Width==420&&editor.Height==500,"source logical dimensions");Check(Visible("PixelFormat")&&!Visible("CameraID"),"local UI mode");Capture("local-mono8");
+   Control<ToggleButton>("AutoPlay").IsChecked=false;Check(!Visible("AutoStop"),"autoplay false hides AutoStop");Control<ToggleButton>("AutoPlay").IsChecked=true;
+   var number=Control<WpfNumericControl>("InitialSN");number.Text="100001";Check(number.Text!="100001","SN UI maximum");number.Text="-1";Check(number.Text!="-1","SN UI minimum");
+   var cache=Control<WpfNumericControl>("PathCache");cache.Text="6";Check(cache.Text!="6","cache UI maximum");
+   Control<WCombo>("PixelFormat").SelectedIndex=1;Check(Visible("OutMono8"),"RGB UI enables extra Mono8 row");Capture("local-rgb24");
+   Control<WCombo>("ImageSourceType").SelectedIndex=1;Check(Visible("CameraID")&&Visible("ExposureTimeInput")&&Visible("GainInput")&&!Visible("PixelFormat")&&!Visible("SolSaveImageData"),"camera UI rows");Check(!Control<WCombo>("CameraID").IsEnabled,"camera selector exposes unavailable service honestly");Capture("camera");
+   Control<WCombo>("ImageSourceType").SelectedIndex=2;Check(!Visible("CameraID")&&!Visible("AutoPlay")&&Visible("InitialSN"),"SDK UI rows");Capture("sdk");
+   Control<ToggleButton>("StitchEnable").IsChecked=true;Check(Visible("StitchHeight")&&Visible("ClearTrigger"),"persisted stitching shows dependent controls");Control<ToggleButton>("ClearTrigger").IsChecked=true;Check(Visible("ClearTriggerCondition"),"clear trigger subscription row");
+   Control<ToggleButton>("TriggerStringEnable").IsChecked=true;Check(Visible("TriggerString")&&Visible("TriggerFilter"),"trigger subscription rows");
+   Control<WCombo>("ImageSourceType").SelectedIndex=0;Control<ToggleButton>("IsSubscribeFolderMode").IsChecked=true;Check(Visible("SubscribeFolderPath")&&Visible("RefreshImage")&&Visible("TriggerProcessRun"),"folder dependent rows");
+  }finally{editor.Close();}
+ }
 }

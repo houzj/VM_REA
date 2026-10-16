@@ -37,9 +37,9 @@ $records = @(foreach ($plugin in $audit.plugins) {
         })
         declaredLibraries = $dependencies
         dependencyStatus = 'declarations-and-binary-identity-only; transitive imports not verified'
-        staticStatus = if ($imageSource) { 'managed source and native pseudocode available; see IMAGE-SOURCE.md' } else { 'XML-and-PE-inventory; semantic audit pending' }
+        staticStatus = if ($imageSource) { 'managed mode rules, native Process mapping and four list helpers analyzed; see IMAGE-SOURCE.md' } else { 'XML-and-PE-inventory; semantic audit pending' }
         implementationStatus = if ($imageSource) { 'partial-independent-local-BMP-MONO8' } else { 'native-equivalent-plugin-not-established' }
-        runtimeStatus = 'original-versus-reconstruction-comparison-pending'
+        runtimeStatus = if ($imageSource) { 'original SDK state scenarios and sample pixel hash matched; complete mode UI/provider comparison pending' } else { 'original-versus-reconstruction-comparison-pending' }
         nextAction = if ($imageSource) { 'map Process state, decode, list selection and mode UI; resolve shared contracts' } else { 'trace registration, managed UI, native execution, resources and dependencies' }
     }
 })
@@ -62,7 +62,7 @@ $lines = @('# 逐插件逆向任务表', '', '机器可读完整声明、二进�
 foreach ($record in ($records | Sort-Object priority,category,plugin)) {
     $types = @($record.uiControls.type | Sort-Object -Unique) -join ', '
     $counts = "$($record.algorithmParameters.Count)/$($record.inputs.Count)/$($record.outputs.Count)"
-    $state = if ($record.plugin -eq 'ImageSourceModule') { '部分源码和原生伪代码；独立实现未完整验收' } else { '声明已清点；语义与运行待逆向' }
+    $state = if ($record.plugin -eq 'ImageSourceModule') { '本地状态和样本像素已有原厂对照；全模式UI及服务未完整验收' } else { '声明已清点；语义与运行待逆向' }
     $lines += "|$($record.priority.Split('-')[0])|$($record.category)|$($record.plugin)|$($record.displayName)|$counts|$types|$state|"
 }
 $lines += @('', '## 每项验收顺序', '', '1. 确认二进制身份、注册信息、版本、资源和依赖，追踪托管到原生的调用入口。', '2. 记录参数默认值、范围、显隐、输入输出类型、数组、订阅和持久化语义。', '3. 跟踪真实执行路径、状态机、错误、取消及资源释放；未知项保持未知。', '4. 实现插件算法和专用配置界面；公共服务需求写入 ../CONTRACT-REQUESTS.md。', '5. 用原始程序与重建程序的同输入结果、模式界面和生命周期验证，记录差异。', '6. 专用测试通过后更新 HANDOFF.md；测试通过不能单独证明原生等价。')
