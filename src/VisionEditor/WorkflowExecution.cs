@@ -21,6 +21,7 @@ public partial class MainWindow
  }
  async Task<bool> RunCore(string procedureId,CancellationToken token)
  {
+  EnsureToolDebugSolution();
   try
   {
    ClearWorkflowCallResults(procedureId);if(doc.CurrentProcedureId==procedureId){results.Clear();RefreshRight();}if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();

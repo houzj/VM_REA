@@ -32,8 +32,8 @@ public partial class MainWindow
   ToolDebugSession? session=null;
   session=new ToolDebugSession(async(values,token)=>{
    Guard();if(toolDebugSessions.Any(s=>!ReferenceEquals(s,session)&&s.IsBusy))throw new InvalidOperationException("其他模块正在调试。");
-   var procedure=ConfigurationProcedure(flow);var cached=ToolDebugInputs(flow);var baseDirectory=doc.BaseDirectory;var invocationInputs=workflowSessions.GetValueOrDefault(flow)?.WorkflowInputs;InvalidateToolDebugResult(flow,id);NodeRunRecord record;
-   try{record=await Task.Run(()=>new NodeDebugExecutor(modules).RunAsync(procedure,id,baseDirectory,values,cached,invocationInputs,cancellationToken:token));}catch(InvalidDataException e){record=new(id,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),0,"DebugInputUnavailable",e.Message);}
+   var procedure=ConfigurationProcedure(flow);var cached=ToolDebugInputs(flow);var baseDirectory=doc.BaseDirectory;var invocationInputs=workflowSessions.GetValueOrDefault(flow)?.WorkflowInputs;var invocationIndex=workflowSessions.GetValueOrDefault(flow)?.GroupLoopIndex;InvalidateToolDebugResult(flow,id);NodeRunRecord record;
+   try{record=await Task.Run(()=>new NodeDebugExecutor(modules).RunAsync(procedure,id,baseDirectory,values,cached,invocationInputs,cancellationToken:token,groupLoopIndex:invocationIndex));}catch(InvalidDataException e){record=new(id,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),0,"DebugInputUnavailable",e.Message);}
    if(!windowClosed&&doc.SolutionId==solution)StoreToolDebugResult(flow,record);return record;
   });toolDebugSessions.Add(session);
   return new(node,doc.BaseDirectory,values=>{Guard();doc.SetProcedureNodeParameters(flow,id,values);},values=>session.RunOnceAsync(values),doc.CurrentProcedure.Nodes.ToList().FindIndex(n=>n.Id==id)){Session=session};

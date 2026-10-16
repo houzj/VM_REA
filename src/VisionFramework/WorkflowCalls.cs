@@ -7,7 +7,7 @@ public static class WorkflowCalls
 {
  public const string ModuleId="workflow.subprogram";
  public const string Version="1.0.0";
- public static ModuleDescriptor Descriptor{get;}=new(ModuleId,Version,"Group",[],[],[]);
+ public static ModuleDescriptor Descriptor{get;}=new(ModuleId,Version,"Group",[],[],GroupLoop.Parameters);
  public static void Register(ModuleRegistry registry)=>registry.Register(Descriptor,()=>new CallModule());
  sealed class CallModule:IModule
  {

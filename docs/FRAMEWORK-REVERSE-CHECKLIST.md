@@ -25,7 +25,7 @@
 | F-09 / P1 | 视口/小地图/缩放 E1/I2/V1 | WorkflowCanvas.cs/Presentation；DiagramPage、ZoomArea | 5000范围、独立流程视口、鹰眼矩形公式、点击/拖动、展开收起、滚动同步、DPI、无节点及超界 |
 | F-10 / P0 | Group 所有权和内部画布 E1/I2/V1 | OwnedGroups.cs、GraphEditorDocument.Groups.cs；VmGroupDecorator、VmProcedureDecorator | 三层嵌套、父流程归属、内部图编辑、接口同步、复制/删除/撤销、保存重开、跨方案剪贴板；旧跨顶层调用单独标识 |
 | F-11 / P0 | Group Tab Up 返回 E2/I2/V1 | ProcedureConfigControl.xaml:btnUp/UpEnable；VmProcedureDecorator.UpCommandExecute；WorkflowTabs.cs | 当前已有按钮逐层返回/根层隐藏/再进入测试；还须 VM 多层名称、状态资源、焦点/当前选择/视口以及运行中行为对照 |
-| F-12 / P0 | Group 循环/LoopIndex E1/I0/V0 | IMVSGroupAlgorithmTab.xml、IMVSGroupCs/GroupParam.cs、IMVSGroup/VmModuleSet | 恢复开始/结束订阅、端点包含性、零/反向范围、索引可见时机、间隔、取消/超时、每轮上下文；托管 SDK 包装不足以证明原生调度语义 |
+| F-12 / P0 | Group 循环/LoopIndex E1/I1/V1 | GROUP-LOOP-RECONSTRUCTION.md；ModuleFrame CGroupNode::DoWork 0x1800a0930；IMVSGroup资源 | 恢复开始/结束订阅、端点包含性、零/反向范围、索引可见时机、间隔、取消/超时、每轮上下文；托管 SDK 包装不足以证明原生调度语义 |
 | F-13 / P0 | Group 中断条件 E1/I0/V0 | 原始 EnableBreak、DataType、CmpType、CmpSrc/Dst 字段 | int/float/string比较、空值、错误、执行前/后判断、中断轮次与结果；需与原生执行行为核对 |
 | F-14 / P0 | Group 累积输出/显示 E1/I0/V0 | VmIODecorate、DisplayObjectDecorate、Get/SetGroupIOReportMode | 已知 nMode=0累积、1普通；仍需数组/顺序/本轮与上次隔离、清空、展平规则、部分失败/中断、下游读取、图像例外及显示契约 |
 | F-15 / P1 | Group 配置窗口 E1/I1/V1 | SubprogramCallWindow；DynamicParamsTabControl、DynamicIOConfigControl | 输入/输出增删改名、订阅、运行参数代理、显示、循环控件可见性、提交/取消、单次运行/停止；隐藏旧目标选择器不等于原生配置完成 |

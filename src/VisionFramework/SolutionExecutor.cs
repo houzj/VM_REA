@@ -14,10 +14,25 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
         WorkflowCalls.Validate(document,procedureId);
         var resources=document.Resources.ToArray();var catalog=new ResourceCatalog(workspace.BaseDirectory,resources);
         foreach(var resource in resources){if(cancellationToken.IsCancellationRequested)break;using var stream=catalog.OpenVerified(resource.Id);}
-        async Task<ExecutionSessionResult> Execute(string id,IReadOnlyDictionary<string,PortValue>? arguments,CancellationToken token,int depth){
+        async Task<ExecutionSessionResult> Execute(string id,IReadOnlyDictionary<string,PortValue>? arguments,CancellationToken token,int depth,int? groupLoopIndex=null){
             if(depth>32)throw new InvalidDataException("Independent subprogram depth limit is 32.");
             var procedure=document.Procedures.SingleOrDefault(p=>p.Id==id)??throw new InvalidDataException("Unknown procedure: "+id);
-            return await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,token,arguments,(node,values,childToken)=>Execute(node.Call!.ProcedureId,values,childToken,depth+1));
+            async Task<ExecutionSessionResult> Call(NodeDocument node,IReadOnlyDictionary<string,PortValue> values,CancellationToken childToken){
+                var body=document.Procedures.Single(p=>p.Id==node.Call!.ProcedureId);
+                // Legacy cross-flow calls retain one-shot behavior. Native Group loops own their body.
+                if(body.GroupOwner is null)return await Execute(body.Id,values,childToken,depth+1);
+                var loop=GroupLoop.Read(node);ExecutionSessionResult? last=null;int completed=0;
+                for(long index=loop.Start;index<loop.End;index++){
+                    childToken.ThrowIfCancellationRequested();
+                    // Independent resource guard; this is not a recovered VM iteration limit.
+                    if(completed>=10000)throw new InvalidOperationException("Independent Group iteration limit is 10000.");
+                    last=await Execute(body.Id,values,childToken,depth+1,(int)index);completed++;
+                    if(last.Status!=SessionStatus.Success)break;
+                    if(loop.IntervalMs>0)await Task.Delay(loop.IntervalMs,childToken);
+                }
+                return (last??new ExecutionSessionResult(SessionStatus.Success,[])) with{CompletedGroupIterations=completed};
+            }
+            return (await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,token,arguments,Call,groupLoopIndex)) with{GroupLoopIndex=groupLoopIndex};
         }
         return await Execute(procedureId,inputs,cancellationToken,0);
     }

@@ -5,13 +5,13 @@ namespace VisionFramework;
 // Native SelfRun's upstream preparation is not reconstructed by this class.
 public sealed class NodeDebugExecutor(ModuleRegistry registry)
 {
- public async Task<NodeRunRecord> RunAsync(ProcedureDocument procedure,string nodeId,string baseDirectory,IReadOnlyDictionary<string,JsonElement> values,IReadOnlyList<NodeRunRecord>? cachedResults=null,IReadOnlyDictionary<string,PortValue>? workflowInputs=null,CancellationToken cancellationToken=default)
+ public async Task<NodeRunRecord> RunAsync(ProcedureDocument procedure,string nodeId,string baseDirectory,IReadOnlyDictionary<string,JsonElement> values,IReadOnlyList<NodeRunRecord>? cachedResults=null,IReadOnlyDictionary<string,PortValue>? workflowInputs=null,CancellationToken cancellationToken=default,int? groupLoopIndex=null)
  {
   var node=procedure.Nodes.SingleOrDefault(n=>n.Id==nodeId)??throw new InvalidDataException("Debug node no longer exists.");
   if(node.ModuleId==WorkflowCalls.ModuleId)throw new InvalidOperationException("Group debugging requires its module-set execution service.");
   if(!node.Enabled)throw new InvalidOperationException("Disabled node cannot self-run.");
   var descriptor=registry.GetDescriptor(node);var records=(cachedResults??[]).Where(r=>r.NodeId!=nodeId).ToDictionary(r=>r.NodeId);
-  var scoped=procedure with{Configuration=procedure.Configuration with{Subscriptions=procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId).ToArray()}};var context=new WorkflowRunContext(scoped,workflowInputs,records);
+  var scoped=procedure with{Configuration=procedure.Configuration with{Subscriptions=procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId).ToArray()}};var context=new WorkflowRunContext(scoped,workflowInputs,records,groupLoopIndex);
   foreach(var source in records.Keys)context.Update(source);
   var inputs=new Dictionary<string,PortValue>(StringComparer.Ordinal);
   foreach(var edge in procedure.Connections.Where(c=>c.ToNode==nodeId))inputs.Add(edge.ToPort,context.Resolve(new(WorkflowSourceKind.NodeOutput,edge.FromNode,edge.FromPort)));

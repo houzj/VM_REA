@@ -3,13 +3,13 @@ namespace VisionFramework;
 
 internal sealed class WorkflowRunContext
 {
- readonly ProcedureDocument procedure;
+ readonly ProcedureDocument procedure; readonly int? groupLoopIndex;
  readonly Dictionary<string,PortValue> arguments;
  readonly Dictionary<string,PortValue> variables=new(StringComparer.Ordinal);
  readonly Dictionary<string,NodeRunRecord> records;
- public WorkflowRunContext(ProcedureDocument procedure,IReadOnlyDictionary<string,PortValue>? inputs,Dictionary<string,NodeRunRecord> records)
+ public WorkflowRunContext(ProcedureDocument procedure,IReadOnlyDictionary<string,PortValue>? inputs,Dictionary<string,NodeRunRecord> records,int? groupLoopIndex=null)
  {
-  this.procedure=procedure;this.records=records;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);
+  this.procedure=procedure;this.records=records;this.groupLoopIndex=groupLoopIndex;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);
   foreach(var pair in arguments){var spec=procedure.Configuration.Inputs.SingleOrDefault(i=>i.Name==pair.Key)??throw new InvalidDataException("Unknown workflow input: "+pair.Key);if(pair.Value is null||pair.Value.Kind!=spec.Kind||pair.Value.Cardinality!=spec.Cardinality)throw new InvalidDataException("Workflow input type mismatch: "+pair.Key);}
   foreach(var b in procedure.Configuration.Subscriptions.Where(b=>b.Source.Kind==WorkflowSourceKind.WorkflowInput)){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==b.Source.Id);if(!arguments.ContainsKey(spec.Name)&&spec.NodeId is null)throw new InvalidDataException("Missing workflow input: "+spec.Name);}
   foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);
@@ -17,6 +17,7 @@ internal sealed class WorkflowRunContext
  PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException("Current-run source unavailable: "+node+"."+port);
  public PortValue Resolve(WorkflowValueReference source)=>source.Kind switch
  {
+  WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException("Group LoopIndex requires an owned invocation context."),
   WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),
   WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException("Current-run variable unavailable: "+source.Id),
   WorkflowSourceKind.WorkflowInput=>Input(source.Id),

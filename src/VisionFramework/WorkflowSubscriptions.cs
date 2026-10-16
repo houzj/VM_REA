@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace VisionFramework;
 
 // Typed identities deliberately separate a subscription from a literal parameter.
-public enum WorkflowSourceKind { LocalVariable, WorkflowInput, NodeOutput }
+public enum WorkflowSourceKind { LocalVariable, WorkflowInput, NodeOutput, GroupLoopIndex }
 public sealed record WorkflowValueReference(WorkflowSourceKind Kind,string Id,string? Port=null);
 public sealed record WorkflowSubscription(string NodeId,string Target,bool IsParameter,WorkflowValueReference Source);
 public static class WorkflowSubscriptions
@@ -12,16 +12,19 @@ public static class WorkflowSubscriptions
  public static DataKind ParameterType(ParameterKind kind)=>kind switch{ParameterKind.Integer=>DataKind.Integer,ParameterKind.Number=>DataKind.Number,ParameterKind.Boolean=>DataKind.Boolean,_=>DataKind.Text};
  public static DataKind SourceType(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch
  {
+  WorkflowSourceKind.GroupLoopIndex=>PrivateLoopIndex(p,source),
   WorkflowSourceKind.LocalVariable=>VariableKind(p.Configuration.Variables.SingleOrDefault(v=>v.Id==source.Id)?.Type??throw new InvalidDataException("Missing local variable.")),
   WorkflowSourceKind.WorkflowInput=>p.Configuration.Inputs.SingleOrDefault(v=>v.Id==source.Id)?.Kind??throw new InvalidDataException("Missing workflow input."),
   WorkflowSourceKind.NodeOutput=>OutputType(p,registry,source.Id,source.Port),
   _=>throw new InvalidDataException("Unknown subscription source.")
  };
  public static ValueCardinality SourceCardinality(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch{
+  WorkflowSourceKind.GroupLoopIndex=>PrivateLoopIndex(p,source)==DataKind.Integer?ValueCardinality.Scalar:throw new InvalidDataException(),
   WorkflowSourceKind.LocalVariable=>ValueCardinality.Scalar,
   WorkflowSourceKind.WorkflowInput=>p.Configuration.Inputs.SingleOrDefault(v=>v.Id==source.Id)?.Cardinality??throw new InvalidDataException("Missing workflow input."),
   WorkflowSourceKind.NodeOutput=>registry.GetDescriptor(p.Nodes.SingleOrDefault(n=>n.Id==source.Id)??throw new InvalidDataException("Missing source node.")).Outputs.SingleOrDefault(o=>o.Name==source.Port)?.Cardinality??throw new InvalidDataException("Missing source output."),
   _=>throw new InvalidDataException("Unknown subscription source.")};
+ static DataKind PrivateLoopIndex(ProcedureDocument p,WorkflowValueReference source){if(p.GroupOwner is null||source.Id!="LoopIndex"||source.Port is not null)throw new InvalidDataException("LoopIndex is private to an owned Group body.");return DataKind.Integer;}
  static DataKind OutputType(ProcedureDocument p,ModuleRegistry registry,string id,string? port){var n=p.Nodes.SingleOrDefault(n=>n.Id==id)??throw new InvalidDataException("Missing source node.");return registry.GetDescriptor(n).Outputs.SingleOrDefault(o=>o.Name==port)?.Kind??throw new InvalidDataException("Missing source output.");}
  public static string? Producer(ProcedureDocument p,WorkflowValueReference source)=>source.Kind switch
  {

@@ -75,10 +75,11 @@ public partial class WorkflowConfigurationWindow:Window
   }
   return new ScrollViewer {Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
  }
- string SourceLabel(WorkflowValueReference reference)=>reference.Kind switch{WorkflowSourceKind.LocalVariable=>"局部变量."+read().Configuration.Variables.First(v=>v.Id==reference.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+read().Configuration.Inputs.First(v=>v.Id==reference.Id).Name,_=>sources(null).FirstOrDefault(s=>s.NodeId==reference.Id&&s.Port==reference.Port)?.Label??"来源已失效"};
+ string SourceLabel(WorkflowValueReference reference)=>reference.Kind switch{WorkflowSourceKind.GroupLoopIndex=>"Group.LoopIndex",WorkflowSourceKind.LocalVariable=>"局部变量."+read().Configuration.Variables.First(v=>v.Id==reference.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+read().Configuration.Inputs.First(v=>v.Id==reference.Id).Name,_=>sources(null).FirstOrDefault(s=>s.NodeId==reference.Id&&s.Port==reference.Port)?.Label??"来源已失效"};
  IEnumerable<WorkflowSourceOption> SubscriptionSources(DataKind kind)
  {
   var p=read();
+  if(kind==DataKind.Integer&&p.GroupOwner is not null)yield return new("group:loop","LoopIndex",kind,"Group.LoopIndex"){Reference=new(WorkflowSourceKind.GroupLoopIndex,"LoopIndex")};
   foreach(var v in p.Configuration.Variables.Where(v=>WorkflowSubscriptions.VariableKind(v.Type)==kind))yield return new("variable:"+v.Id,v.Name,kind,"局部变量."+v.Name){Reference=new(WorkflowSourceKind.LocalVariable,v.Id)};
   foreach(var v in p.Configuration.Inputs.Where(v=>v.Kind==kind))yield return new("input:"+v.Id,v.Name,kind,"流程输入."+v.Name){Reference=new(WorkflowSourceKind.WorkflowInput,v.Id)};
   foreach(var s in sources(kind))yield return s with{Reference=new(WorkflowSourceKind.NodeOutput,s.NodeId,s.Port)};

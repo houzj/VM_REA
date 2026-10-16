@@ -11,16 +11,18 @@ public partial class SubprogramCallWindow:Window
 {
  readonly Func<ProcedureDocument> owner;readonly Func<NodeDocument> node;readonly Func<IReadOnlyList<ProcedureDocument>> procedures;
  readonly Action<string> configure;readonly Action<string,WorkflowValueReference?> bind;readonly Func<DataKind,IEnumerable<WorkflowSourceOption>> sources;
+ readonly Action<string,System.Text.Json.JsonElement>? setLoopParameter; readonly Action<string,WorkflowValueReference?>? bindLoopParameter;
  readonly Func<Task> run;readonly Action stop;readonly Func<ExecutionSessionResult?> result;bool refreshing,running;
  public string? EnterProcedureId{get;private set;}
- public SubprogramCallWindow(Func<ProcedureDocument> owner,Func<NodeDocument> node,Func<IReadOnlyList<ProcedureDocument>> procedures,Action<string> configure,Action<string,WorkflowValueReference?> bind,Func<DataKind,IEnumerable<WorkflowSourceOption>> sources,Func<Task> run,Action stop,Func<ExecutionSessionResult?> result)
+ public SubprogramCallWindow(Func<ProcedureDocument> owner,Func<NodeDocument> node,Func<IReadOnlyList<ProcedureDocument>> procedures,Action<string> configure,Action<string,WorkflowValueReference?> bind,Func<DataKind,IEnumerable<WorkflowSourceOption>> sources,Func<Task> run,Action stop,Func<ExecutionSessionResult?> result,Action<string,System.Text.Json.JsonElement>? setLoopParameter=null,Action<string,WorkflowValueReference?>? bindLoopParameter=null)
  {
-  this.owner=owner;this.node=node;this.procedures=procedures;this.configure=configure;this.bind=bind;this.sources=sources;this.run=run;this.stop=stop;this.result=result;InitializeComponent();Heading.Text=node().Name;Loaded+=(_,_)=>Refresh();
+  this.setLoopParameter=setLoopParameter;this.bindLoopParameter=bindLoopParameter;this.owner=owner;this.node=node;this.procedures=procedures;this.configure=configure;this.bind=bind;this.sources=sources;this.run=run;this.stop=stop;this.result=result;InitializeComponent();Heading.Text=node().Name;Loaded+=(_,_)=>Refresh();
  }
  void Safe(Action action){try{action();Error.Text="";}catch(Exception e){Error.Text=e.Message;}Refresh();}
  void Refresh()
  {
   if(!IsInitialized)return;refreshing=true;var ownedBody=procedures().FirstOrDefault(p=>p.Id==node().Call?.ProcedureId&&p.GroupOwner is not null);TargetSelectionPanel.Visibility=ownedBody is null?Visibility.Visible:Visibility.Collapsed;Targets.ItemsSource=procedures().Where(p=>p.Id!=owner().Id&&(p.GroupOwner is null||p.Id==ownedBody?.Id)).ToArray();Targets.SelectedValue=node().Call?.ProcedureId;refreshing=false;
+  ((TabItem)ConfigurationTabs.Items[4]).IsEnabled=ownedBody is not null&&setLoopParameter is not null;
   foreach(var tab in ConfigurationTabs.Items.OfType<TabItem>())tab.Content=null;
   if(ConfigurationTabs.SelectedItem is not TabItem selected)return;var call=node().Call;var panel=new StackPanel {Margin=new Thickness(18,0,2,0)};
   if(call is null)panel.Children.Add(new TextBlock {Text="请选择调用流程。",Foreground=System.Windows.Media.Brushes.DimGray});
@@ -31,8 +33,23 @@ public partial class SubprogramCallWindow:Window
   }
   else if(ConfigurationTabs.SelectedIndex==1){foreach(var output in call.Outputs){var row=new DockPanel {Height=32,Margin=new Thickness(0,0,0,6)};row.Children.Add(new TextBox {Text=output.Name,Width=120,IsReadOnly=true});row.Children.Add(new TextBox {Text=TypeName(output.Kind),Width=80,IsReadOnly=true});row.Children.Add(new TextBlock {Text=result()?.WorkflowOutputs.GetValueOrDefault(output.Name)?.Value is VisionCore.GrayImage gray?$"{gray.Width}×{gray.Height}":result()?.WorkflowOutputs.GetValueOrDefault(output.Name)?.Value.ToString()??"------",VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(8,0,0,0)});panel.Children.Add(row);}}
   else if(ConfigurationTabs.SelectedIndex==2){var target=procedures().FirstOrDefault(p=>p.Id==call.ProcedureId);if(target is not null)foreach(var proxy in target.Configuration.RunParameters)panel.Children.Add(new TextBlock {Text=proxy.Label,Margin=new Thickness(0,6,0,6)});panel.Children.Add(new TextBlock {Text=target is null?"目标流程已不存在，请重新选择。":"进入Group后编辑其运行参数。",TextWrapping=TextWrapping.Wrap,Foreground=System.Windows.Media.Brushes.DimGray});}
+  else if(ConfigurationTabs.SelectedIndex==4)BuildLoopPanel(panel,ownedBody is not null);
   else if(ConfigurationTabs.SelectedIndex==3)panel.Children.Add(new TextBlock {Text="右侧显示当前调用返回的图像和具名结果。",TextWrapping=TextWrapping.Wrap});
   selected.Content=new ScrollViewer {Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};RefreshResults();
+ }
+ void BuildLoopPanel(StackPanel panel,bool owned)
+ {
+  panel.IsEnabled=owned&&setLoopParameter is not null;
+  var settings=GroupLoop.Read(node());var enabled=new System.Windows.Controls.CheckBox{Content="循环使能",IsChecked=settings.Enabled,Margin=new Thickness(0,12,0,12)};
+  enabled.Click+=(_,_)=>Safe(()=>setLoopParameter!("EnableLoop",System.Text.Json.JsonSerializer.SerializeToElement(enabled.IsChecked==true)));panel.Children.Add(enabled);
+  if(!settings.Enabled)return;
+  foreach(var item in new[]{("StartIndex","循环起始值",settings.Start),("EndIndex","循环结束值",settings.End)}){
+   var row=new DockPanel{Margin=new Thickness(0,6,0,6)};row.Children.Add(new TextBlock{Text=item.Item2,Width=130,VerticalAlignment=VerticalAlignment.Center});
+   var subscription=owner().Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node().Id&&b.IsParameter&&b.Target==item.Item1);
+   var button=new Button{Content=subscription is null?item.Item3.ToString():sources(DataKind.Integer).FirstOrDefault(s=>s.Reference==subscription.Source)?.Label??"------"};
+   button.Click+=(_,_)=>{var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("","",DataKind.Integer,"解除订阅")}.Concat(sources(DataKind.Integer))){Owner=this};if(picker.ShowDialog()==true&&picker.Selection is {} chosen)Safe(()=>bindLoopParameter!(item.Item1,chosen.Reference));};row.Children.Add(button);panel.Children.Add(row);
+  }
+  var gap=new DockPanel{Margin=new Thickness(0,6,0,6)};gap.Children.Add(new TextBlock{Text="循环间隔(ms)",Width=130,VerticalAlignment=VerticalAlignment.Center});var input=new TextBox{Text=settings.IntervalMs.ToString()};input.LostKeyboardFocus+=(_,_)=>Safe(()=>{if(!int.TryParse(input.Text,out var value)||value is <0 or >10000)throw new ArgumentException("循环间隔范围为0～10000ms。");setLoopParameter!("LoopTimeGap",System.Text.Json.JsonSerializer.SerializeToElement(value));});gap.Children.Add(input);panel.Children.Add(gap);
  }
  static string TypeName(DataKind kind)=>kind switch{DataKind.GrayImage=>"图像",DataKind.Integer=>"int",DataKind.Number=>"float",DataKind.Text=>"string",_=>kind.ToString()};
  string InputLabel(string port){var p=owner();var subscription=p.Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node().Id&&b.Target==port&&!b.IsParameter);if(subscription is not null){var s=subscription.Source;return s.Kind switch{WorkflowSourceKind.LocalVariable=>"局部变量."+p.Configuration.Variables.Single(v=>v.Id==s.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+p.Configuration.Inputs.Single(v=>v.Id==s.Id).Name,_=>p.Nodes.Single(n=>n.Id==s.Id).Name+"."+s.Port};}var c=p.Connections.FirstOrDefault(c=>c.ToNode==node().Id&&c.ToPort==port);return c is null?"------":p.Nodes.Single(n=>n.Id==c.FromNode).Name+"."+c.FromPort;}
