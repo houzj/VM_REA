@@ -73,3 +73,5 @@ F-01新增基础类型数组运行契约，已接通连线/订阅/Group/保存�
 - 最近本地证据：analysis/full-audit/group-tab-return.html、group-tab-return-lifecycle/exit-results.json、group-owned-canvas.html、subprogram-runtime/results.json。测试数只说明已覆盖的回归，不升级全部条目状态。
 
 2026-10-16 F-13/F-14：三种比较、首轮依赖、固定索引、自身输出，primitive累积、图像替换、基础显示和关联图像输出已接UI/运行。未达到全原生等价；详见 GROUP-BREAK-ACCUMULATION.md 与完整清单。
+
+2026-10-16 F-15/F-16/F-17增量：拥有型Group输入增删/改名/批量选择及事务化父级绑定、基础运行参数/输入代理实际编辑与订阅、Group隔离单次/连续/停止已接通。未配置父级兄弟节点不执行；缺失缓存明确失败。原生运行参数类别/多目标关系同步、复杂控件、首次SelfRun准备及回调仍未完成，见 GROUP-INPUT-RUNTIME-SELFRUN.md。

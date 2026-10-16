@@ -51,7 +51,7 @@ public sealed partial class GraphEditorDocument
         Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==id?p with{ContinuousRunIntervalMs=intervalMs,StopOnNg=stopOnNg}:p).ToArray()});
     }
     public void SetWorkflowConfiguration(string id,WorkflowConfiguration configuration) {
-        var p=Procedure(id);if(p.GroupOwner is not null)configuration=GroupDisplayLinks.Synchronize(p.Configuration,configuration);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();
+        var p=Procedure(id);configuration=configuration with{Subscriptions=configuration.Subscriptions.Where(b=>b.Source.Kind!=WorkflowSourceKind.WorkflowInput||configuration.Inputs.Any(i=>i.Id==b.Source.Id)).ToArray()};if(p.GroupOwner is not null)configuration=GroupDisplayLinks.Synchronize(p.Configuration,configuration);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();
         if(JsonSerializer.Serialize(p.Configuration)==JsonSerializer.Serialize(snapshot))return;
         Edit(d=>PropagateGroupInterface(d,p with{Configuration=snapshot}));
     }

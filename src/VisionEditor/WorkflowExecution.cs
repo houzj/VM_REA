@@ -7,15 +7,16 @@ public partial class MainWindow
  bool windowClosed;
  readonly Dictionary<string,ExecutionSessionResult> workflowSessions=new(StringComparer.Ordinal);
  void ClearInvalidWorkflowResults(){if(doc.HasCurrentProcedure)ClearWorkflowCallResults(doc.CurrentProcedureId);results.Clear();RefreshRight();if(configurationProcedureId==doc.CurrentProcedureId)workflowConfigurationWindow?.RefreshResults();}
- bool CanStartWorkflow()
+ bool CanStartWorkflow(bool allowGroup=false)
  {
-  if(toolDebugSessions.Any(s=>s.IsBusy)){StatusText.Text="请先停止模块调试。";return false;}if(!doc.HasCurrentProcedure||doc.CurrentProcedure.Nodes.Count==0){ClearInvalidWorkflowResults();StatusText.Text="请先添加流程和模块";return false;}
+  if(toolDebugSessions.Any(s=>s.IsBusy)||(!allowGroup&&groupConfigurationWindows.Any(w=>w.IsExecuting))){StatusText.Text="请先停止模块调试。";return false;}if(!doc.HasCurrentProcedure||doc.CurrentProcedure.Nodes.Count==0){ClearInvalidWorkflowResults();StatusText.Text="请先添加流程和模块";return false;}
   var validation=doc.Validate();if(!validation.IsValid){ClearInvalidWorkflowResults();StatusText.Text="流程有连接或参数错误："+string.Join("；",validation.Issues.Select(i=>i.Message));return false;}return true;
  }
  async Task Run()=>await StartRun();
- async Task StartRun()
+ Task StartRun()=>StartRunCore(false);
+ async Task StartRunCore(bool allowGroup)
  {
-  if(activeRun is not null||!CanStartWorkflow())return;
+  if(activeRun is not null||!CanStartWorkflow(allowGroup))return;
   continuousRun=false;runningProcedureId=doc.CurrentProcedureId;var owner=new CancellationTokenSource();activeRun=owner;RefreshAll();
   try{await RunCore(runningProcedureId,owner.Token);}finally{FinishWorkflowRun(owner);}
  }
@@ -46,6 +47,7 @@ public partial class MainWindow
   results.Clear();if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;RestoreToolDebugResults(doc.CurrentProcedureId);
  }
  async Task RunProcedure(string id){SelectWorkflow(id);await StartRun();}
+ async Task RunLegacyGroupProcedure(string id){SelectWorkflow(id);await StartRunCore(true);}
  void StartContinuous()
  {
   if(activeRun is not null){activeRun.Cancel();return;}

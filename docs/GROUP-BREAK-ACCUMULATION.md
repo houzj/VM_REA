@@ -1,3 +1,5 @@
+> 后续更新：输入编辑、基础运行参数代理和Group独立运行见 [GROUP-INPUT-RUNTIME-SELFRUN.md](GROUP-INPUT-RUNTIME-SELFRUN.md)。本文“父流程运行”等限制描述的是本阶段交付时状态。
+
 # Group 中断、累积输出与显示联动
 
 2026-10-16，框架 main。当前完成的是下列类型和调用链的独立重建，不是整个原生 Group 已完成。全范围缺口见 [完整清单](GROUP-FULL-RECONSTRUCTION-CHECKLIST.md)。

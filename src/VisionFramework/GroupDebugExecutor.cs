@@ -1,0 +1,15 @@
+namespace VisionFramework;
+// Native SelfExcuteModule targets Group itself. Independent preparation uses explicit cached parent records.
+public sealed class GroupDebugExecutor(ModuleRegistry registry){
+ public async Task<ExecutionSessionResult> RunAsync(SolutionWorkspace workspace,string procedureId,string nodeId,IReadOnlyList<NodeRunRecord>? cachedResults=null,IReadOnlyDictionary<string,PortValue>? workflowInputs=null,CancellationToken cancellationToken=default,int? groupLoopIndex=null){
+  var parent=workspace.Document.Procedures.Single(p=>p.Id==procedureId);var node=parent.Nodes.Single(n=>n.Id==nodeId);if(node.ModuleId!=WorkflowCalls.ModuleId||node.Call is null||!node.Enabled)throw new InvalidDataException("Group不可独立运行。");
+  var records=(cachedResults??[]).Where(r=>r.NodeId!=nodeId).ToDictionary(r=>r.NodeId);var scoped=parent with{Configuration=parent.Configuration with{Subscriptions=parent.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId).ToArray()}};var context=new WorkflowRunContext(scoped,workflowInputs,records,groupLoopIndex);foreach(var id in records.Keys)context.Update(id);
+  var inputs=new Dictionary<string,PortValue>();foreach(var edge in parent.Connections.Where(e=>e.ToNode==nodeId))inputs.Add(edge.ToPort,context.Resolve(new(WorkflowSourceKind.NodeOutput,edge.FromNode,edge.FromPort)));
+  var parameters=node.Parameters.ToDictionary(v=>v.Key,v=>v.Value.Clone());var descriptor=registry.GetDescriptor(node);foreach(var binding in scoped.Configuration.Subscriptions){var value=context.Resolve(binding.Source);if(binding.IsParameter)parameters[binding.Target]=WorkflowSubscriptions.Parameter(descriptor.Parameters.Single(p=>p.Name==binding.Target),value);else if(!inputs.TryAdd(binding.Target,value))throw new InvalidDataException("Duplicate Group input.");}
+  var prepared=node with{Parameters=parameters,GroupBreak=GroupBreak.Capture(node,context.Resolve)};var specs=inputs.Select(p=>new WorkflowInterfaceItem(p.Key,p.Key,p.Value.Kind){Cardinality=p.Value.Cardinality}).ToArray();
+  var isolated=parent with{GroupOwner=null,Nodes=[prepared],Connections=[],ExecutionLinks=[],Configuration=new(){Inputs=specs,Subscriptions=specs.Select(p=>new WorkflowSubscription(nodeId,p.Name,false,new(WorkflowSourceKind.WorkflowInput,p.Id))).ToArray()}};
+  var needed=new HashSet<string>{procedureId};void Include(string id){if(!needed.Add(id))return;foreach(var n in workspace.Document.Procedures.Single(p=>p.Id==id).Nodes)if(n.Call is {} call)Include(call.ProcedureId);}Include(node.Call.ProcedureId);
+  var document=workspace.Document with{Procedures=workspace.Document.Procedures.Where(p=>needed.Contains(p.Id)).Select(p=>p.Id==procedureId?isolated:p).ToArray()};
+  var run=await new SolutionExecutor(registry).RunAsync(new(document,workspace.BaseDirectory),procedureId,cancellationToken:cancellationToken,inputs:inputs);return run with{WorkflowInputs=workflowInputs?.ToDictionary(p=>p.Key,p=>p.Value)??new Dictionary<string,PortValue>()};
+ }
+}
