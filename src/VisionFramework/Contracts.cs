@@ -28,7 +28,7 @@ public sealed class PortValue {
     public DataKind Kind {get;} public object Value {get;}
     private PortValue(DataKind kind,object value){Kind=kind;Value=value;}
     public static PortValue Image(GrayImage v)=>new(DataKind.GrayImage,v??throw new ArgumentNullException(nameof(v)));
-    public static PortValue Image(IImageData v)=>v switch{GrayImage gray=>Image(gray),RgbImage rgb=>new(DataKind.RgbImage,rgb),_=>throw new ArgumentException("Unsupported owned image format.",nameof(v))};
+    public static PortValue Image(IImageData v)=>v switch{GrayImage gray=>Image(gray),RgbImage rgb=>new(DataKind.RgbImage,rgb),RawImage raw=>new(DataKind.Image,raw),_=>throw new ArgumentException("Unsupported owned image format.",nameof(v))};
     public static PortValue Number(double v)=>double.IsFinite(v)?new(DataKind.Number,v):throw new ArgumentOutOfRangeException(nameof(v));
     public static PortValue Integer(long v)=>new(DataKind.Integer,v);
     public static PortValue Boolean(bool v)=>new(DataKind.Boolean,v);

@@ -75,7 +75,7 @@ public partial class WorkflowConfigurationWindow:Window
   }
   return new ScrollViewer {Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
  }
- string SourceLabel(WorkflowValueReference reference)=>reference.Kind switch{WorkflowSourceKind.LocalVariable=>"局部变量."+read().Configuration.Variables.First(v=>v.Id==reference.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+read().Configuration.Inputs.First(v=>v.Id==reference.Id).Name,_=>sources(null).FirstOrDefault(s=>s.NodeId==reference.Id&&s.Port==reference.Port)?.Label??"来源已失效"};
+ string SourceLabel(WorkflowValueReference reference)=>reference.Kind switch{WorkflowSourceKind.IntegerConstant=>reference.Id,WorkflowSourceKind.LocalVariable=>"局部变量."+read().Configuration.Variables.First(v=>v.Id==reference.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+read().Configuration.Inputs.First(v=>v.Id==reference.Id).Name,_=>sources(null).FirstOrDefault(s=>s.NodeId==reference.Id&&s.Port==reference.Port)?.Label??"来源已失效"};
  IEnumerable<WorkflowSourceOption> SubscriptionSources(DataKind kind)
  {
   var p=read();

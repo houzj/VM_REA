@@ -100,3 +100,12 @@ The following supersedes earlier unavailable/pending implementation descriptions
 - IA-004：IToolImageOutputProvider 返回多图输出端口和显示名；宿主分别预览OutImage0Image～OutImage7Image，未产生的槽位显示为空，不能复用上一槽帧。
 
 - IA-005：IAcquisitionLightModuleTransport提供全局光源资源目录和模块二进制命令传输，AcquisitionLightProtocolService已实现LightDeviceParamSetTrigger完整748字节编码。设备驱动/传输属于全局资源提供器，不把原厂托管744字节结构误用为多图采集748字节载荷；设备测试不再作为代码交付阻塞项。
+
+# 缓存图像 IB-001～004（当前插件 worktree 内实施）
+
+- IB-001：原厂 `ButtonSelecter/SetFilterSourceOperation` 支持整数常量输入。追加 `WorkflowSourceKind.IntegerConstant`，`Id` 保存有符号32位整数文本，`Port` 必须为空；接通配置校验、输入解析、标签及持久化，保留原枚举值。`ToolEditorContext.InputInteger/SetInputInteger` 提供读写和清空；宿主通过已有文档编辑事务维护撤销并移除被替代的绑定。新常量文档需更新宿主读取，旧文档不受影响。
+- IB-002：`IToolImageOutputProvider` 作为独立预览发现接口，输出提供器无需实现图像列表接口；缓存图像暴露15路。单图列表、加图及轮播仍仅由图像列表接口启用。未产生槽位必须清空预览。
+- IB-003：原生 `CopyImage` 只复制载荷，不校验图像格式/长度。新增不可变 `RawImage` 与 `PortValue.Image(RawImage)` 的通用图像类型，保留尺寸、格式标记和原始字节。已知格式仅在 `ImagePreview.Packed` 中转换预览；未知格式不伪造灰度预览。独立框架仍拒绝非法指针、非正尺寸、空载荷。
+- IB-004：原厂底部 `SelfExcuteModule` 仅调用当前模块 `Run`。WPF配置宿主改为从当前结果及订阅读取输入、执行当前运行器、更新结果与预览，避免每次缓存追加都重跑前序采集工具。状态仍归属当前 `ModuleExecutionScope`，撤销配置不清除缓存，节点移除/会话结束清理。调度与共享选择器是独立宿主实现，原厂全部弹层及线程时序仍不宣称相同。
+
+依据、运行序列、来源身份与边界详见 `docs/plugins/IMAGE-BUFFER.md`。用户授权插件线实施这些必要调整，并在闭合节点使用中文说明提交、推送当前分支；不修改或合并另一 worktree。

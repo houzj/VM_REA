@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace VisionFramework;
 
 // Typed identities deliberately separate a subscription from a literal parameter.
-public enum WorkflowSourceKind { LocalVariable, WorkflowInput, NodeOutput }
+public enum WorkflowSourceKind { LocalVariable, WorkflowInput, NodeOutput, IntegerConstant }
 public sealed record WorkflowValueReference(WorkflowSourceKind Kind,string Id,string? Port=null);
 public sealed record WorkflowSubscription(string NodeId,string Target,bool IsParameter,WorkflowValueReference Source);
 public static class WorkflowSubscriptions
@@ -12,6 +12,7 @@ public static class WorkflowSubscriptions
  public static DataKind ParameterType(ParameterKind kind)=>kind switch{ParameterKind.Integer=>DataKind.Integer,ParameterKind.Number=>DataKind.Number,ParameterKind.Boolean=>DataKind.Boolean,_=>DataKind.Text};
  public static DataKind SourceType(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch
  {
+  WorkflowSourceKind.IntegerConstant=>int.TryParse(source.Id,NumberStyles.Integer,CultureInfo.InvariantCulture,out _)?DataKind.Integer:throw new InvalidDataException("Invalid integer constant."),
   WorkflowSourceKind.LocalVariable=>VariableKind(p.Configuration.Variables.SingleOrDefault(v=>v.Id==source.Id)?.Type??throw new InvalidDataException("Missing local variable.")),
   WorkflowSourceKind.WorkflowInput=>p.Configuration.Inputs.SingleOrDefault(v=>v.Id==source.Id)?.Kind??throw new InvalidDataException("Missing workflow input."),
   WorkflowSourceKind.NodeOutput=>OutputType(p,registry,source.Id,source.Port),

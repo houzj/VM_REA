@@ -9,6 +9,8 @@ public sealed record ToolEditorContext(NodeDocument Node,string BaseDirectory,Ac
  public ToolEditorMode Mode {get;init;}
  public Func<System.Windows.Window,string,bool,DataKind,string?>? PickSubscription {get;init;}
  public Func<string,bool,string?>? SubscriptionLabel {get;init;}
+ public Func<string,int?>? InputInteger {get;init;}
+ public Action<string,int?>? SetInputInteger {get;init;}
  public Func<IReadOnlyList<CameraInfo>>? Cameras {get;init;}
  public Action? ConfigureCameras {get;init;}
 }

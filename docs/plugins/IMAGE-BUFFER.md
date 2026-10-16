@@ -1,0 +1,49 @@
+# 缓存图像（ImageBufferModule）
+
+本工具的代码范围交付：`vision.image-buffer@1.0.0`。按用户要求不做设备测试；必要的公共调整在插件 worktree 内实施。验收区分原厂源码确认、受控运行确认和独立宿主实现，不以测试通过宣称原生全场景等价。
+
+## 原厂证据
+
+- 安装目录：`D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageBufferModule`。10 个文件的大小和 SHA256 在 [运行证据](image-buffer-evidence.json) 中。原生 DLL SHA256 为 `ab8850d7a747df693152ef7e095a5e0ef87eff9410c2424e9b7c84e435717869`。
+- REA 托管身份检查见 [managed-evidence](image-buffer-managed-evidence.json)，证据 ID `ev_55fb472136534032f802d8994577614bd1f68c1c28e44139a4938f0838a55e89`。ILSpy 提取 SDK 包装层到当前 `analysis/full-audit/image-buffer/managed`，产品不加载这些 DLL。
+- 原生分析采用本地 **Ghidra CLI**，不是 REA 深度提供器。当前 worktree 内的 `ghidra-project/buffer`、`native/*.c`、日志保留原始分析输出；不写原证据目录。关键函数：`Process` RVA `0xde30`、`GetInImage` `0xe540`、`CopyImage` `0xe6a0`、`SetOutImage` `0xe760`、`DeInit` `0xdd20`、`LoadModuleData` `0xe9a0`、`SaveModuleData` `0xea80`。
+- 声明是 0 个算法参数、3 个逻辑输入、17 个逻辑输出；展开图像组合后是 62 个端口。SDK `ImageBufferParam.InputImage/RefreshFlag/BufferCount` 均为输入设置器；后两者取整数列表的第一个元素。
+- 参数区来自 `ImageBufferModuleAlgorithmTab.xml`；共享 `Applications/Module(sp)/Group.xml` 定义图像输入及底部执行组。`Apps.XmlParser.ParamTab.GroupLinkItem.AfterAddedToArray` 实施组展开，`GroupsRoot` 默认从应用运行目录寻找文件。独立探针显式加载原始组 XML，解决 SDK 测试程序运行目录导致共享组缺失的问题，未改原文件。
+- `ButtonSelecter`、`GetFrontFilterTreeOperation`、`GetSelectedFilterOperation`、`SetFilterSourceOperation.GetOutputInfo/CheckValue` 源码确认支持整数常量、空绑定和订阅。`InputItem.SetInputImageValue` 源码确认 SDK 把非标准格式标记归为 Mono8，但保留载荷；原生缓存算法本身不做此归一化。
+
+## 状态机与运行对照
+
+原厂独立 SDK 进程执行 **55 组**合成图像序列及 **2 组**无输入对照，逐槽记录尺寸、格式、长度、所有像素的 SHA256，覆盖 15 路输出。清单包含正常序列、混合尺寸/格式、原始格式元数据以及 SOL 重载。生成器逐文件核对 `.pixels` 与摘要后才导出可跟踪 JSON。
+
+| 条件 | 原厂源码与受控运行确认的行为 |
+|---|---|
+| 未绑定刷新/数量 | 默认刷新 `1`，默认数量 `15` |
+| `RefreshFlag == 1` | 复制本次输入，追加队尾，然后从队首裁剪到指定数量 |
+| 刷新为 `0`、`-1`、`2` | 保持缓存；不读取本次图像，不裁剪队列 |
+| 输出顺序 | `OutImage0` 最旧，随后依次到最新；未填满的槽位无图像 |
+| 数量 `0` | 刷新时仍先读取/复制输入，再清空队列；暂停刷新时不清空 |
+| 数量小于 `0` 或大于 `15` | 先返回 `0xe000031c`，不读图、不改队列；本次无图像输出、状态为 `0` |
+| 刷新时无图像 | `GetInImage` 返回 `0xe0000510`；原有队列不变 |
+| 尺寸、灰度、RGB、RGB平面变化 | 逐帧保留；不要求所有缓存帧同形、同格式 |
+| 字节/格式标记 | 原生 `CopyImage` 按输入长度复制；不解码、不归一化格式、不截断多余字节 |
+| 保存重载 | 只保存动态输入/输出元数据，不保存图像队列；恢复后暂停刷新得到空缓存 |
+
+原厂样例加载及重载均报告 `0xe0000333` 的部分加载错误，已保留，不称为完整样例加载成功。探针继续操作自己创建的流程和缓存模块；自有 SOL 中的该模块能恢复，恢复后的 15 路均为空。没有运行设备、操作原厂桌面或保存安装目录样例。
+
+## 实现与宿主
+
+- `ImageBufferPlugin` 独立维护每个会话、每个节点的有界 FIFO，复制拥有所有权的图像；运行器重建不会重置队列。删除节点、释放会话、重开方案均清理状态；取消在修改前检查。无会话调用采用插件实例内按目录/节点隔离的兼容缓存，可用 `Reset` 清理。
+- 无图像的输出槽在独立框架中以缺席的可选端口表示，不伪造零尺寸图像，也不复用旧结果。成功发布 `ModuStatus=1` 和运行时间，失败发布状态 `0` 和原厂错误码。
+- `RawImage` 承载不可解码或带额外字节的原始图像；`ImagePreview.Packed` 仅为预览转换已知灰度/RGB/平面格式，缓存载荷及格式不变。未知标记保持可传递，预览为空；损坏内存与任意非法指针不复刻。
+- `ImageBufferWindow` 实现图像输入、缓存使能、缓存数量、整数键入/清空、订阅回填、执行/连续执行/停止/确定。桌面适配有宿主标题，SDK适配不加标题。订阅复用当前宿主选择器，其整体外观和路径键入交互属于独立宿主实现，不声称复刻原厂全部共享弹层。
+- 宿主注册第三个独立工具并提供 15 路预览；输出提供器不必伪装成图像列表提供器。缓存节点不显示单图列表操作。
+- `WorkflowSourceKind.IntegerConstant` 追加在枚举尾部，存储有符号 32 位整数字面值；执行、类型校验、持久化、撤销与标签均接通。它不是新增原厂算法参数。新文档需要更新后的宿主，旧枚举值保持不变。
+- 模块自执行从当前上游结果、变量或订阅取输入，只执行当前节点并更新预览；不重新运行前序图像源。连续按钮串行调度，停止后不再启动下一次；其调度时序是独立实现，不宣称与原厂线程/回调时序一致。
+
+## 验证与边界
+
+入口：`tests/NativeEvidence/Invoke-OriginalImageBufferProbe.ps1`（原厂受控探针，无设备分支）、`tests/Export-ImageBufferEvidence.py`、`tests/ImageBuffer.PluginChecks`。原厂完整共享参数区截图、独立两种宿主截图及原始像素留在当前 `analysis/full-audit/image-buffer`；文件身份见证据及最终验证索引。
+
+原始程序集、Ghidra 数据库、SOL、像素及 SDK 截图有意不随 Git 分发，需要本地原厂安装重放。未逐像素核对原厂桌面外壳和全部共享订阅弹层；未测试物理设备；VMX不是SOL二进制兼容格式；内存分配失败及非法输入造成的原厂未定义行为不复刻。这些不影响本工具当前明确的代码交付范围，不标记为原生完全等价。
+
+最终全解决方案构建 **0 警告、0 错误**。19 个检查程序共 **3429 项**通过：缓存图像 **1623**、图像源 **767**、多图采集 **327**、实际 WPF 宿主 **252**、其他 15 程序 **460**。日志、源码与原厂/独立界面摘要见 [最终验证索引](image-buffer-verification.json)。

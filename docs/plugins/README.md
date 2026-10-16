@@ -25,6 +25,6 @@
 
 ## 实现状态
 
-当前注册图像源和多图采集两个独立工具插件；两者暂共用 VisionPlugins.ImageSource 程序集以复用已验证的解码器和 UI 资源。工具箱映射不代表原生等价。catalog.csv 是初次声明清点状态，后续进度以 CHECKLIST.md 与逐工具证据记录为准。
+当前注册图像源、多图采集和缓存图像三个独立工具插件；三者暂共用 VisionPlugins.ImageSource 程序集以复用已验证的解码器和 UI 资源。工具箱映射不代表原生等价。catalog.csv 是初次声明清点状态，后续进度以 CHECKLIST.md 与逐工具证据记录为准。
 
-图像源当前验证与边界见 [IMAGE-SOURCE.md](IMAGE-SOURCE.md)；多图采集的源码、资源、原厂运行、用户桌面截图及实现边界见 [IMAGE-ACQUISITION.md](IMAGE-ACQUISITION.md)。公共服务和宿主调整持续记录在 [CONTRACT-REQUESTS.md](../CONTRACT-REQUESTS.md)。
+图像源当前验证与边界见 [IMAGE-SOURCE.md](IMAGE-SOURCE.md)；多图采集的源码、资源、原厂运行、用户桌面截图及实现边界见 [IMAGE-ACQUISITION.md](IMAGE-ACQUISITION.md)。缓存图像的原生FIFO、完整SDK参数区、原始图像载荷与55组像素序列见 [IMAGE-BUFFER.md](IMAGE-BUFFER.md)。公共服务和宿主调整持续记录在 [CONTRACT-REQUESTS.md](../CONTRACT-REQUESTS.md)。
