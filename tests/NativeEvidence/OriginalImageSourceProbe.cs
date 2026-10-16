@@ -15,6 +15,28 @@ using System.Windows.Media.Imaging;
 public static class OriginalImageSourceProbe
 {
     [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] static extern bool SetDllDirectory(string path);
+    [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] static extern IntPtr GetModuleHandle(string name);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate byte NativeLess(IntPtr left,IntPtr right);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate IntPtr NativeFiles(IntPtr owner,IntPtr result,IntPtr directory);
+    static IntPtr SmallString(string text) {
+        byte[] bytes=System.Text.Encoding.Default.GetBytes(text);if(bytes.Length>15)throw new ArgumentException("Probe SSO input too long");
+        IntPtr result=Marshal.AllocHGlobal(32);Marshal.Copy(new byte[32],0,result,32);Marshal.Copy(bytes,0,result,bytes.Length);Marshal.WriteInt64(result,16,bytes.Length);Marshal.WriteInt64(result,24,15);return result;
+    }
+    static void FolderCatalogScenarios(string output) {
+        // Bound to the already loaded, hash-checked original. No patching or injected hooks.
+        IntPtr binary=GetModuleHandle("ImageSourceModule.dll");if(binary==IntPtr.Zero)throw new Exception("Original native module missing");
+        NativeLess less=(NativeLess)Marshal.GetDelegateForFunctionPointer(IntPtr.Add(binary,0x23550),typeof(NativeLess));
+        string[] names={"img1.bmp","img2.bmp","img10.bmp","Img2.bmp","img02.bmp","a.bmp","B.bmp","a-2.png","a_2.png","图2.bmp","图10.bmp"};
+        foreach(string left in names)foreach(string right in names){IntPtr a=SmallString(left),b=SmallString(right);try{records.Add(new{phase="folder-less",left,right,less=less(a,b)!=0});}finally{Marshal.FreeHGlobal(a);Marshal.FreeHGlobal(b);}}
+        string directory=Path.Combine(Path.GetDirectoryName(output),"catalog");Directory.CreateDirectory(directory);
+        foreach(string name in new[]{"img10.bmp","img2.bmp","img1.jpg","upper.JPG","color.png","multi.part.tif","long.jpeg","long.tiff","raw.BMP","bad.txt","dotless","noext.","almost.bm","图3.png"})File.WriteAllText(Path.Combine(directory,name),"fixture");
+        Directory.CreateDirectory(Path.Combine(directory,"subdir.bmp"));File.WriteAllText(Path.Combine(directory,"subdir.bmp","nested.jpg"),"fixture");
+        NativeFiles enumerate=(NativeFiles)Marshal.GetDelegateForFunctionPointer(IntPtr.Add(binary,0x22750),typeof(NativeFiles));
+        IntPtr owner=Marshal.AllocHGlobal(0x26000),vector=Marshal.AllocHGlobal(24),input=SmallString("catalog");Marshal.Copy(new byte[0x26000],0,owner,0x26000);Marshal.Copy(new byte[24],0,vector,24);
+        try {enumerate(owner,vector,input);long begin=Marshal.ReadInt64(vector),end=Marshal.ReadInt64(vector,8);long count=(end-begin)/32;if(count<0||count>100)throw new Exception("Unexpected original vector bounds");var paths=new List<string>();for(int i=0;i<count;i++){IntPtr item=new IntPtr(begin+i*32);int length=checked((int)Marshal.ReadInt64(item,16));IntPtr data=Marshal.ReadInt64(item,24)>15?Marshal.ReadIntPtr(item):item;paths.Add(Marshal.PtrToStringAnsi(data,length));}records.Add(new{phase="folder-catalog",paths=paths});}
+        finally {Marshal.FreeHGlobal(owner);Marshal.FreeHGlobal(vector);Marshal.FreeHGlobal(input);}
+        // Returned vendor-owned vector allocations intentionally die with this isolated probe.
+    }
     static string root;
     static readonly List<object> records = new List<object>();
     static readonly List<string> uiErrors = new List<string>();
@@ -109,6 +131,21 @@ public static class OriginalImageSourceProbe
             Parameter(parameters,"PixelFormat",1);Scenario(module,"jpeg-mono-"+name,output);
             Parameter(parameters,"PixelFormat",2);Scenario(module,"jpeg-rgb-"+name,output);
         }
+    }
+    static void FormatScenarios(object module,object parameters,string output) {
+        Parameter(parameters,"ImageSourceType",1);Parameter(parameters,"StitchEnable",false);Parameter(parameters,"PathCache",0);Parameter(parameters,"AutoPlay",false);
+        foreach(string path in ImageSourceCodecFixtures.CreateExtended(Path.Combine(Path.GetDirectoryName(output),"format-fixtures"))) {
+            Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);string name=Path.GetFileName(path);records.Add(new{phase="format-fixture",name=name,fileSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(path))).Replace("-","").ToLowerInvariant()});
+            Parameter(parameters,"PixelFormat",1);Scenario(module,"format-mono-"+name,output);Parameter(parameters,"PixelFormat",2);Scenario(module,"format-rgb-"+name,output);
+        }
+    }
+    static void ClearScenarios(object module,object parameters,string output) {
+        string directory=Path.Combine(Path.GetDirectoryName(output),"clear-fixtures");Directory.CreateDirectory(directory);string a=Path.Combine(directory,"a.bmp"),b=Path.Combine(directory,"b.bmp");WriteRows(a,new byte[]{10,20,30,40});WriteRows(b,new byte[]{50,60,70,80});
+        Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",a);Call(module,"AddInputImageByPath",b);
+        foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","True"},new[]{"StitchEnable","True"},new[]{"StitchHeight","1"},new[]{"StitchStartHeight","0"},new[]{"ClearTrigger","True"},new[]{"PathCache","0"}})Parameter(parameters,setting[0],setting[1]);
+        Scenario(module,"clear-missing-input",output);
+        foreach(var value in new[]{0,1,1,0,-1}){Call(parameters,"SetInputInt","ClearTriggerValue",new int[]{value});Scenario(module,"clear-value-"+records.Count+"-"+value,output);}
+        WriteRows(a,new byte[]{10,20,30,40},5);Parameter(parameters,"AutoPlay",false);StringParameter(module,"CurrentImagePath",a);Call(parameters,"SetInputInt","ClearTriggerValue",new int[]{0});Scenario(module,"clear-width-rejected",output);Call(parameters,"SetInputInt","ClearTriggerValue",new int[]{1});Scenario(module,"clear-width-accepted",output);
     }
     static void WriteRows(string path,byte[] rows,int width=4) {
         using(BinaryWriter writer=new BinaryWriter(File.Create(path))) {
@@ -221,6 +258,9 @@ public static class OriginalImageSourceProbe
                 if(args.Length>4&&args[4]=="stitch")StitchScenarios(module,parameters,output);
                 if(args.Length>4&&args[4]=="codecs")CodecScenarios(module,parameters,output);
                 if(args.Length>4&&args[4]=="folder")FolderScenarios(output);
+                if(args.Length>4&&args[4]=="catalog")FolderCatalogScenarios(output);
+                if(args.Length>4&&args[4]=="formats")FormatScenarios(module,parameters,output);
+                if(args.Length>4&&args[4]=="clear")ClearScenarios(module,parameters,output);
                 if(args.Length>5&&args[4]=="jpeg")JpegScenarios(module,parameters,args[5],output);
                 if(args.Length>4&&args[4]=="ui") { phase="capture-sdk-ui"; CaptureModes(module,parameters,output); }
                 break;

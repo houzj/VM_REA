@@ -31,7 +31,7 @@ static class Program {
   var plugin=new ImageSourcePlugin();var registry=new ModuleRegistry();var host=new ToolPluginRegistry();host.Register(plugin,registry);
   Check(host.Find(plugin.Manifest.Id)==plugin,"plugin registration");
   Dictionary<string,JsonElement> Defaults(){var p=plugin.Descriptor.Parameters.ToDictionary(d=>d.Name,d=>d.DefaultValue!.Value.Clone());List(p,"ImagePaths",a,b,c);Set(p,"InitialSN",7);return p;}
-  ValueTask<ModuleResult> Execute(string node,Dictionary<string,JsonElement> p,CancellationToken token=default,string? root=null)=>registry.Create(plugin.Manifest.Id,plugin.Manifest.Version).ExecuteAsync(new(node,root??Environment.CurrentDirectory,new Dictionary<string,PortValue>(),p),token);
+  ValueTask<ModuleResult> Execute(string node,Dictionary<string,JsonElement> p,CancellationToken token=default,string? root=null,IReadOnlyDictionary<string,PortValue>? inputs=null)=>registry.Create(plugin.Manifest.Id,plugin.Manifest.Version).ExecuteAsync(new(node,root??Environment.CurrentDirectory,inputs??new Dictionary<string,PortValue>(),p),token);
   long SN(ModuleResult r)=>r.Outputs["SNCode"].As<long>();
   string FileName(ModuleResult r)=>r.Outputs["CurImageName"].As<string>();
   var values=Defaults();var first=await Execute("sequence",values);
@@ -80,7 +80,14 @@ static class Program {
   }Check(observed==11,"all original stitch scenarios compared");}
   plugin.Reset("stitch-native");var resetStitch=await Execute("stitch-native",values);Check(resetStitch.Outputs["Image"].As<VisionCore.GrayImage>()[0,0]==0,"explicit reset releases stitch history");
   Check(retainedFirstStitch![0,0]==0&&retainedFirstStitch[0,5]==40,"later stitching does not mutate previously published frame");
-  Set(values,"ClearTrigger",true);Check((await Execute("stitch-native",values)).ErrorCode=="StitchTriggerUnavailable","clear trigger remains explicit subscription boundary");
+  Set(values,"ClearTrigger",true);Check((await Execute("stitch-native",values)).Status==ModuleStatus.Success,"missing clear input continues without clearing as native does");
+  string clearA=Path.Combine(scratch,"clear-a.bmp"),clearB=Path.Combine(scratch,"clear-b.bmp");WriteRows(clearA,[10,20,30,40]);WriteRows(clearB,[50,60,70,80]);values=Defaults();List(values,"ImagePaths",clearA,clearB);Set(values,"StitchEnable",true);Set(values,"StitchHeight",1);Set(values,"StitchStartHeight",0);Set(values,"ClearTrigger",true);
+  using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-clear-evidence.json"))){foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray()){
+   string phase=record.GetProperty("phase").GetString()!;if(phase=="clear-width-rejected"){WriteRows(clearA,[10,20,30,40],5);Set(values,"AutoPlay",false);Set(values,"CurrentImagePath",clearA);}
+   var inputs=new Dictionary<string,PortValue>();if(record.GetProperty("inputValue").ValueKind!=JsonValueKind.Null)inputs["ClearTriggerValue"]=PortValue.Integer(record.GetProperty("inputValue").GetInt64());var result=await Execute("clear-native",values,inputs:inputs);
+   if(record.GetProperty("nativeErrorCode").GetUInt32()!=0){Check(result.ErrorCode=="StitchGeometryInvalid",phase+" original retained width error");continue;}
+   Check(result.Status==ModuleStatus.Success,phase+" clear success");var image=result.Outputs["Image"].As<VisionCore.GrayImage>();Check(image.Width==record.GetProperty("width").GetInt32()&&image.Height==record.GetProperty("height").GetInt32(),phase+" clear original dimensions");Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(image.Pixels)).ToLowerInvariant()==record.GetProperty("pixelSha256").GetString(),phase+" clear original pixels");
+  }}
   string codecs=Path.Combine(scratch,"codecs");ImageSourceCodecFixtures.Create(codecs);
   using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-codec-evidence.json"))){Check(evidence.RootElement.GetProperty("observations").GetArrayLength()==13,"complete original codec corpus retained");foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray()){
    string phase=record.GetProperty("phase").GetString()!,file=Path.Combine(codecs,phase[6..]);
@@ -99,6 +106,14 @@ static class Program {
    string actualHash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(image.Pixels)).ToLowerInvariant();
    Check(actualHash==record.GetProperty("pixelSha256").GetString(),phase+" original MONO8 pixel hash");
   }}
+  string extended=Path.Combine(scratch,"formats");ImageSourceCodecFixtures.CreateExtended(extended);var formatReport=new List<object>();
+  using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-format-evidence.json"))){foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray()){
+   string name=record.GetProperty("name").GetString()!,file=Path.Combine(extended,name);Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(file))).ToLowerInvariant()==record.GetProperty("fixtureSha256").GetString(),name+" extended fixture identity");values=Defaults();List(values,"ImagePaths",file);var result=await Execute("formats-"+name,values);var mono=record.GetProperty("mono");string? hash=result.Status==ModuleStatus.Success?Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(result.Outputs["Image"].As<VisionCore.GrayImage>().Pixels)).ToLowerInvariant():null;
+   formatReport.Add(new{name,nativeErrorCode=mono.GetProperty("nativeErrorCode").GetUInt32(),expectedHash=mono.GetProperty("pixelSha256").GetString(),actualHash=hash,independentStatus=result.Status.ToString(),result.ErrorCode});
+   if(name=="palette4.png"){Check(result.ErrorCode=="ImageCodecUnavailable","packed-palette PNG native undefined-row policy remains explicit");continue;}
+   if(mono.GetProperty("nativeErrorCode").GetUInt32()!=0){Check(result.ErrorCode=="ImageReadFailed",name+" original unsupported format/geometry");continue;}
+   Check(result.Status==ModuleStatus.Success&&hash==mono.GetProperty("pixelSha256").GetString(),name+" extended original MONO pixels");
+  }}File.WriteAllText(Path.Combine(output,"format-comparisons.json"),JsonSerializer.Serialize(formatReport,new JsonSerializerOptions{WriteIndented=true}));
   var jpegBoundaries=new List<object>();
   using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-jpeg-evidence.json"))){foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray()){
    string name=record.GetProperty("name").GetString()!,file=Path.GetFullPath(Path.Combine("tests/ImageSource.PluginChecks/Fixtures/Jpeg",name));
@@ -107,7 +122,7 @@ static class Program {
    if(rgb.GetProperty("nativeErrorCode").GetUInt32()==0){using var input=File.OpenRead(file);var decoded=LocalJpegDecoder.DecodeRgb(input);Check(decoded.Width==rgb.GetProperty("width").GetInt32()&&decoded.Height==rgb.GetProperty("height").GetInt32(),name+" original RGB dimensions");Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(decoded.Rgb)).ToLowerInvariant()==rgb.GetProperty("pixelSha256").GetString(),name+" original RGB pixels");}
    values=Defaults();List(values,"ImagePaths",file);var result=await Execute("jpeg-"+name,values);var mono=record.GetProperty("mono");
    if(rgb.GetProperty("nativeErrorCode").GetUInt32()!=0){Check(result.ErrorCode=="ImageReadFailed",name+" invalid JPEG rejected");continue;}
-   if(mono.GetProperty("nativeErrorCode").GetUInt32()!=0){jpegBoundaries.Add(new{name,nativeErrorCode=mono.GetProperty("nativeErrorCode").GetUInt32(),independentStatus=result.Status.ToString(),limitation="Original small-color RGB to MONO conversion fails; general geometry rule not source-confirmed"});continue;}
+   if(mono.GetProperty("nativeErrorCode").GetUInt32()!=0){Check(result.ErrorCode=="ImageReadFailed"&&!result.Outputs.ContainsKey("Image"),name+" original small-color conversion failure");jpegBoundaries.Add(new{name,nativeErrorCode=mono.GetProperty("nativeErrorCode").GetUInt32(),independentError=result.ErrorCode,condition="Source-confirmed color width<4 or height<4",matched=true});continue;}
    Check(result.Status==ModuleStatus.Success,name+" JPEG MONO success");var image=result.Outputs["Image"].As<VisionCore.GrayImage>();Check(image.Width==mono.GetProperty("width").GetInt32()&&image.Height==mono.GetProperty("height").GetInt32(),name+" original MONO dimensions");Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(image.Pixels)).ToLowerInvariant()==mono.GetProperty("pixelSha256").GetString(),name+" original MONO pixels");
   }}
   File.WriteAllText(Path.Combine(output,"jpeg-known-boundaries.json"),JsonSerializer.Serialize(new{observations=jpegBoundaries,completeParity=false},new JsonSerializerOptions{WriteIndented=true}));
@@ -117,6 +132,10 @@ static class Program {
    string name=record.GetProperty("name").GetString()!,value=name switch{"local"=>scratch,"relative"=>"images","unc"=>@"\\server\images","forward-slash"=>"D:/images","control"=>"D:\\im\tages","unicode"=>"D:\\图像",_=>throw new Exception(name)};
    Check(LocalFolderSelection.HasLocalSyntax(value)==record.GetProperty("accepted").GetBoolean(),"original folder syntax "+name);
   }}
+  using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-catalog-evidence.json"))){foreach(var record in evidence.RootElement.GetProperty("comparisons").EnumerateArray())Check((LocalFolderCatalog.Compare(record.GetProperty("left").GetString()!,record.GetProperty("right").GetString()!)<0)==record.GetProperty("less").GetBoolean(),"original folder natural comparator");
+   string catalog=Path.Combine(scratch,"catalog");Directory.CreateDirectory(catalog);foreach(string name in new[]{"img10.bmp","img2.bmp","img1.jpg","upper.JPG","color.png","multi.part.tif","long.jpeg","long.tiff","raw.BMP","bad.txt","dotless","noext.","almost.bm","图3.png"})File.WriteAllText(Path.Combine(catalog,name),"fixture");Directory.CreateDirectory(Path.Combine(catalog,"subdir.bmp"));File.WriteAllText(Path.Combine(catalog,"subdir.bmp","nested.jpg"),"fixture");
+   Check(LocalFolderCatalog.Read(catalog).Select(Path.GetFileName).SequenceEqual(evidence.RootElement.GetProperty("catalog").GetProperty("paths").EnumerateArray().Select(p=>Path.GetFileName(p.GetString()))),"original folder extension/nonrecursive/natural order snapshot");
+  }
   string folder=Path.Combine(scratch,"folder-select"),sentinel=Path.Combine(folder,"test.txt");Directory.CreateDirectory(folder);File.WriteAllText(sentinel,"keep");
   Check(LocalFolderSelection.Prepare(folder)==folder,"folder selection applies local directory");Check(File.ReadAllText(sentinel)=="keep"&&Directory.GetFiles(folder).Length==1,"folder write probe preserves existing test.txt and leaves no temp file");
   string created=Path.Combine(folder,"新建目录");Check(LocalFolderSelection.Prepare(created)==created&&Directory.Exists(created),"manual folder selection creates missing local directory");
@@ -153,7 +172,7 @@ static class Program {
    editor.UpdateLayout();Check(Control<WCombo>("CameraID").ActualWidth>200&&Control<System.Windows.Controls.TextBox>("ExposureTimeInput").ActualWidth>200&&number.ActualWidth>200,"decorated editors retain usable width");
    Control<WCombo>("ImageSourceType").SelectedIndex=2;Check(!Visible("CameraID")&&!Visible("AutoPlay")&&Visible("InitialSN"),"SDK UI rows");Capture("sdk");
    Control<ToggleButton>("StitchEnable").IsChecked=true;Check(Visible("StitchHeight")&&Visible("ClearTrigger"),"persisted stitching shows dependent controls");Control<ToggleButton>("ClearTrigger").IsChecked=true;Check(Visible("ClearTriggerCondition"),"clear trigger subscription row");
-   Check(Control<ToggleButton>("StitchEnable").IsEnabled&&!Control<ToggleButton>("ClearTrigger").IsEnabled,"local stitch enabled independently of trigger service");
+   Check(Control<ToggleButton>("StitchEnable").IsEnabled&&Control<ToggleButton>("ClearTrigger").IsEnabled,"stitch and clear accept existing optional integer input port");
    Control<ToggleButton>("TriggerStringEnable").IsChecked=true;Check(Visible("TriggerString")&&Visible("TriggerFilter"),"trigger subscription rows");
    Control<WCombo>("ImageSourceType").SelectedIndex=0;Control<ToggleButton>("IsSubscribeFolderMode").IsChecked=true;Check(Visible("SubscribeFolderPath")&&Visible("RefreshImage")&&Visible("TriggerProcessRun"),"folder dependent rows");
    Descendants(editor).OfType<ScrollViewer>().First().ScrollToEnd();editor.UpdateLayout();Capture("local-folder-expanded");

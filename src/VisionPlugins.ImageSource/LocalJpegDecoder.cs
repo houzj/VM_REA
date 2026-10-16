@@ -7,7 +7,7 @@ namespace VisionPlugins.ImageSource;
 /// <summary>Independent upstream TurboJPEG backend; never loads a vendor DLL.</summary>
 internal static class LocalJpegDecoder
 {
- internal static (int Width,int Height,byte[] Rgb) DecodeRgb(Stream stream,int flags=0)
+ internal static (int Width,int Height,byte[] Rgb,bool IsGrayscale) DecodeRgb(Stream stream,int flags=0)
  {
   if(!OperatingSystem.IsWindows()||RuntimeInformation.ProcessArchitecture!=Architecture.X64)throw new NotSupportedException("JPEG 后端当前仅支持 Windows x64。");
   if(stream.CanSeek&&stream.Length>256L*1024*1024)throw new InvalidDataException("JPEG exceeds encoded resource limit.");
@@ -16,14 +16,14 @@ internal static class LocalJpegDecoder
   try {api=Backend.Value;}catch(Exception ex)when(ex is DllNotFoundException or BadImageFormatException or EntryPointNotFoundException){throw new NotSupportedException("JPEG 解码后端未正确部署。",ex);}
   IntPtr decoder=api.Init();if(decoder==IntPtr.Zero)throw new InvalidDataException("JPEG decoder creation failed.");
   try {
-   if(api.Header(decoder,encoded,checked((uint)encoded.Length),out int width,out int height,out _,out _)!=0)throw Error(api,decoder);
+   if(api.Header(decoder,encoded,checked((uint)encoded.Length),out int width,out int height,out int sampling,out _)!=0)throw Error(api,decoder);
    if(width<=0||height<=0||(long)width*height>BmpReader.MaxPixels)throw new InvalidDataException("JPEG exceeds image resource limit.");
    byte[] pixels=new byte[checked(width*height*3)];
    // Original FUN_18038c8a0 -> tjDecompress2: TJPF_RGB=0, pitch=0, flags=0.
    int result=api.Decode(decoder,encoded,checked((uint)encoded.Length),pixels,width,0,height,0,flags);
    // Original wrapper accepts TurboJPEG warning=0, rejects fatal=1.
    if(result!=0&&api.ErrorCode(decoder)!=0)throw Error(api,decoder);
-   return(width,height,pixels);
+   return(width,height,pixels,sampling==3);
   } finally {api.Destroy(decoder);}
  }
  static InvalidDataException Error(Api api,IntPtr decoder)=>new(Marshal.PtrToStringUTF8(api.Error(decoder))??"Invalid JPEG.");

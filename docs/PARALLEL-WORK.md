@@ -27,3 +27,6 @@ Group owned internal canvas and tab Up navigation exist. Native loop scheduling,
 
 ## Local evidence and reports
 Original evidence remains in the original checkout's analysis directory. It is excluded from remote history. Build-required UI assets and sample image are tracked. Store new reports/build outputs inside the active worktree, not the other conversation's directory. Reports that require original binary evidence are not portable solely from Git.
+
+## 2026-10-16 user-assigned integration exception
+The user explicitly assigns framework adjustments required by plugin reconstruction to the plugin line. Implement and validate ImageSource-required shared changes in this worktree, record contracts and migrations in CONTRACT-REQUESTS.md, and keep the other worktree untouched. This supersedes the request-only ownership restriction for this work; it does not authorize merging or pushing the other branch.

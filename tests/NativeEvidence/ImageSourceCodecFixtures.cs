@@ -5,10 +5,30 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Color=System.Windows.Media.Color;
 
 public static class ImageSourceCodecFixtures
 {
     public const int Width=17,Height=19;
+    public static string[] CreateExtended(string directory) {
+        Directory.CreateDirectory(directory);var files=new List<string>();
+        foreach(string kind in new[]{"tiny-color","tiny-gray","tiny-palette8","gray16","mono1","alpha32","palette4","palette8","multi","lzw"}) {
+            int w=kind.StartsWith("tiny")?3:Width,h=kind.StartsWith("tiny")?3:Height;
+            PixelFormat format=kind=="tiny-gray"?PixelFormats.Gray8:kind=="gray16"?PixelFormats.Gray16:kind=="mono1"?PixelFormats.BlackWhite:kind=="alpha32"?PixelFormats.Bgra32:kind=="palette4"?PixelFormats.Indexed4:kind.EndsWith("palette8")?PixelFormats.Indexed8:PixelFormats.Bgr24;
+            int stride=(w*format.BitsPerPixel+7)/8;byte[] bytes=new byte[stride*h];for(int i=0;i<bytes.Length;i++)bytes[i]=(byte)((i*73+31)%256);
+            var palette=kind=="palette4"||kind.EndsWith("palette8")?new BitmapPalette(new[]{Colors.Red,Colors.Green,Colors.Blue,Colors.Black,Colors.White,Colors.Yellow,Colors.Cyan,Colors.Magenta,Colors.Gray,Colors.Orange,Colors.Purple,Colors.Brown,Colors.Pink,Colors.Lime,Colors.Navy,Colors.Teal}):null;
+            if(kind.EndsWith("palette8")){var colors=new List<Color>();for(int i=0;i<256;i++)colors.Add(Color.FromRgb((byte)(i*73),(byte)(i*151+31),(byte)(i*199+17)));palette=new BitmapPalette(colors);}
+            if(kind.EndsWith("palette8"))for(int i=0;i<bytes.Length;i++)bytes[i]=(byte)(bytes[i]%16);
+            BitmapSource source=BitmapSource.Create(w,h,96,96,format,palette,bytes,stride);
+            foreach(string extension in new[]{"bmp","png","tif"}) {
+                if((kind=="multi"||kind=="lzw")&&extension!="tif")continue;
+                BitmapEncoder encoder=extension=="bmp"?(BitmapEncoder)new BmpBitmapEncoder():extension=="png"?(BitmapEncoder)new PngBitmapEncoder():new TiffBitmapEncoder{Compression=kind=="lzw"?TiffCompressOption.Lzw:TiffCompressOption.None};
+                encoder.Frames.Add(BitmapFrame.Create(source));if(kind=="multi")encoder.Frames.Add(BitmapFrame.Create(BitmapSource.Create(5,7,96,96,PixelFormats.Gray8,null,new byte[35],5)));
+                string path=Path.Combine(directory,kind+"."+extension);using(FileStream output=File.Create(path))encoder.Save(output);files.Add(path);
+            }
+        }
+        return files.ToArray();
+    }
     public static byte[] ColorBytes() {
         byte[] data=new byte[Width*Height*3];
         byte[][] primary={new byte[]{0,0,0},new byte[]{255,255,255},new byte[]{0,0,255},new byte[]{0,255,0},new byte[]{255,0,0},new byte[]{0,255,255},new byte[]{255,0,255},new byte[]{255,255,0}};

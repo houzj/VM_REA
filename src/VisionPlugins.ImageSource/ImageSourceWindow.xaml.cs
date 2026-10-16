@@ -32,7 +32,7 @@ public partial class ImageSourceWindow:System.Windows.Window {
   Toggle("StitchEnable","拼接使能");
   Number("StitchStartHeight","起始高度");
   Number("StitchHeight","拼接高度");
-  Toggle("ClearTrigger","触发清空",false);
+  Toggle("ClearTrigger","触发清空");
   Subscription("ClearTriggerCondition","触发变量");
   Group("触发设置",true);
   Toggle("AutoPlay","自动切换");

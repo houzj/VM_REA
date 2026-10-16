@@ -165,3 +165,11 @@ SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在
 - [x] 本地 MONO8 基础拼接及 11 步原厂像素/错误/SN 对照。
 - [ ] RGB/提供器拼接与触发清空、字符过滤、预览文字、内嵌图像、真实流程停止。
 - [ ] IS-001/002/003/004 由框架线落地后接入公共服务并完成集成验收。
+
+## 2026-10-16 续批：小尺寸条件、格式边界、目录与触发清空
+此前 JPEG 小尺寸与触发清空缺口由本节替代；P0 尚在继续，不标记完整等价。
+- 源码 0x18000c4d0 的命令 4 要求宽高>3，否则返回 0x10000008，SDK 最终为 0x801000ff；灰度 JPEG 旁路。0x180142980 确认现代 SIMD 系数 76/150/30 和右移8；标量浮点分支的跨CPU行为尚未对齐。35 个原厂 JPEG 语料：34 个有效 RGB、17 个成功 MONO8 全字节匹配，17 个小尺寸转换失败与非法头拒绝均对齐。源码与运行见更新后的 image-source-jpeg-evidence.json。
+- 26 个扩展格式语料见 image-source-format-evidence.json：Gray16 PNG/TIFF 取高字节，彩色小尺寸限制扩展到 BMP/PNG/TIFF，补齐低位深拒绝、alpha、TIFF 首帧/LZW、8位调色板对照。packed palette PNG 明确返回 ImageCodecUnavailable：原厂 0x18038cc20 按逐字节读取未解包数据，输出受行外字节影响；同一文件原厂 MONO 与 RGB 再转 MONO 也不一致。未模拟越过行边界读取。
+- 目录比较器源码确认 StrCmpLogicalW<0；121 对原厂调用与目录快照确认自然排序、小写扩展名 jpg/png/bmp/tif、非递归。见 image-source-catalog-evidence.json。LocalFolderCatalog 是会话监视的快照组件；事件与释放仍待接入，等值项顺序与原厂 ANSI 路径限制不宣称一致。
+- 触发清空通过现有 ClearTriggerValue 可选整数端口实现：缺失不清空，任意非零每帧清空，先清宽度再检查几何。8 步原厂像素/错误对照见 image-source-clear-evidence.json；UI开关已启用，订阅选择器继续接入。
+- 本批 611 项检查通过，构建零警告、零错误。用户已将必要框架调整交由插件线，接下来在当前 worktree 完成公共接口与插件接入，不改另一工作目录。

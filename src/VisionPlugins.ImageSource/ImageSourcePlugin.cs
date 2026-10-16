@@ -7,7 +7,7 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
  public ToolManifest Manifest{get;}=new("vision.image-source","1.0.0","图像源","collection","tool-image-file.png");
  static JsonElement J<T>(T value)=>JsonSerializer.SerializeToElement(value);
  static ParameterDescriptor P<T>(string name,ParameterKind kind,T value,double? min=null,double? max=null)=>new(name,kind,true,J(value),min,max);
- public ModuleDescriptor Descriptor{get;}=new("vision.image-source","1.0.0","图像源",[],[new("Image",DataKind.GrayImage),new("Width",DataKind.Integer),new("Height",DataKind.Integer),new("PixelFormat",DataKind.Integer),new("SNCode",DataKind.Integer),new("CurImageName",DataKind.Text),new("CurImagePath",DataKind.Text),new("ModuStatus",DataKind.Integer),new("ModuRunTime",DataKind.Number),new("ImageMono8",DataKind.GrayImage,false),new("WidthMono8",DataKind.Integer,false),new("HeightMono8",DataKind.Integer,false),new("PixelFormatMono8",DataKind.Integer,false)],[
+ public ModuleDescriptor Descriptor{get;}=new("vision.image-source","1.0.0","图像源",[new("ClearTriggerValue",DataKind.Integer,false)],[new("Image",DataKind.GrayImage),new("Width",DataKind.Integer),new("Height",DataKind.Integer),new("PixelFormat",DataKind.Integer),new("SNCode",DataKind.Integer),new("CurImageName",DataKind.Text),new("CurImagePath",DataKind.Text),new("ModuStatus",DataKind.Integer),new("ModuRunTime",DataKind.Number),new("ImageMono8",DataKind.GrayImage,false),new("WidthMono8",DataKind.Integer,false),new("HeightMono8",DataKind.Integer,false),new("PixelFormatMono8",DataKind.Integer,false)],[
  P("ImageSourceType",ParameterKind.Integer,1,1,3),P("PixelFormat",ParameterKind.Integer,1,1,2),P("SolSaveImageData",ParameterKind.Boolean,false),P("ShowImageName",ParameterKind.Boolean,true),P("InitialSN",ParameterKind.Integer,1,0,100000),P("PathCache",ParameterKind.Integer,0,0,5),P("StitchEnable",ParameterKind.Boolean,false),P("AutoPlay",ParameterKind.Boolean,true),P("AutoStop",ParameterKind.Boolean,false),P("TriggerStringEnable",ParameterKind.Boolean,false),P("IsSubscribeFolderMode",ParameterKind.Boolean,false),P("SubscribeFolderPath",ParameterKind.Text,""),P("RefreshImage",ParameterKind.Boolean,true),P("TriggerProcessRun",ParameterKind.Boolean,false),P("CameraID",ParameterKind.Integer,-1),P("CurrentImagePath",ParameterKind.Text,""),P("ImagePaths",ParameterKind.Text,"[]"),P("Interval",ParameterKind.Integer,0,0,1000),P("ExecuteType",ParameterKind.Integer,1,1,2),P("SelectedPaths",ParameterKind.Text,"[]"),P("StitchStartHeight",ParameterKind.Integer,0,0,20000),P("StitchHeight",ParameterKind.Integer,2000,0,20000),P("ClearTrigger",ParameterKind.Boolean,false),P("OutMono8",ParameterKind.Boolean,false),P("SetCameraParamWaitTime",ParameterKind.Integer,0,0)]);
 
  readonly Dictionary<(string Directory,string NodeId),State> states=new();
@@ -64,7 +64,7 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
     if(c.Integer("PixelFormat")!=1)return Failed("PixelFormatUnavailable","RGB24 输出契约尚未接入（IS-001）");
     if(c.Boolean("AutoPlay")&&c.Boolean("AutoStop"))return Failed("ProcedureStopUnavailable","末张停止需要所属流程停止服务（IS-003）");
     if(c.Boolean("IsSubscribeFolderMode"))return Failed("FolderWatchUnavailable","目录监视与更新生命周期尚未接入（IS-004）");
-    if(c.Boolean("StitchEnable")&&c.Integer("StitchHeight")>0&&c.Boolean("ClearTrigger"))return Failed("StitchTriggerUnavailable","拼接触发清空需要整数订阅服务（IS-003）");
+
     if(c.Boolean("SolSaveImageData"))return Failed("ModelEmbeddingUnavailable","方案嵌入图像尚未实现（IS-003）");
     if(c.Boolean("TriggerStringEnable")||c.Boolean("TriggerProcessRun"))return Failed("TriggerUnavailable","触发订阅与流程控制尚未接入（IS-003）");
 
@@ -107,6 +107,7 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
     token.ThrowIfCancellationRequested();
     if(c.Boolean("StitchEnable")&&c.Integer("StitchHeight")>0) {
      int height=c.Integer("StitchHeight"),start=c.Integer("StitchStartHeight");
+     if(c.Boolean("ClearTrigger")&&c.Inputs.TryGetValue("ClearTriggerValue",out var clear)&&clear.As<long>()!=0){Array.Clear(state.StitchBuffer);state.StitchWidth=0;}
      // StitchImageOutput rejects a changed width before touching its retained buffer.
      if((state.StitchWidth!=0&&state.StitchWidth!=image.Width)||(long)start+height>image.Height)
       return Failed("StitchGeometryInvalid","拼接起始高度与高度超出图像，或拼接图像宽度发生变化（原厂 0xe0000502）");

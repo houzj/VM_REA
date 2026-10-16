@@ -7,7 +7,7 @@ from pathlib import Path
 parser=argparse.ArgumentParser();parser.add_argument('--runtime',type=Path,required=True);args=parser.parse_args()
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 records=json.loads(args.runtime.read_text(encoding='utf-8-sig'))
-fixtures=[r for r in records if r.get('phase')=='jpeg-fixture'];assert len(fixtures)==27
+fixtures=[r for r in records if r.get('phase')=='jpeg-fixture'];assert len(fixtures)==35
 results={r['phase']:r for r in records if r.get('phase','').startswith(('jpeg-mono-','jpeg-rgb-'))}
 observations=[]
 for fixture in fixtures:
@@ -26,8 +26,12 @@ upstream=Path('analysis/downloads/jpeg/libjpeg-turbo-2.1.3');archive=upstream.pa
 assert sha(archive)=='cc868c30e5ed5ae08a103ed726e7cd235d8d7208124cea1a4740bd8b94482eb9'
 backend=Path('src/VisionPlugins.ImageSource/runtimes/win-x64/native/turbojpeg.dll')
 result={'schema':1,'runtimeSource':str(args.runtime),'runtimeSha256':sha(args.runtime),'targetMediaSha256':sha(media),'observedVersion':{'fileOffset':version_offset,'text':version.decode()},'nativeSourceAnalysis':[{'path':str(p),'sha256':sha(p)} for p in [analysis/'18038c8a0.c',analysis/'1802b5590.c',analysis/'1802b5980.c']],'nativeParameters':{'header':'0x1802b5590: tjDecompressHeader3 signature and body correlate with upstream','decode':'0x1802b5980: tjDecompress2 signature and body correlate with upstream','flags':0,'rgbPixelFormat':0,'grayPixelFormat':6,'pitch':0,'warningPolicy':'warning code 0 accepted, fatal code 1 rejected'},'independentBackend':{'path':str(backend),'sha256':sha(backend),'upstream':'https://github.com/libjpeg-turbo/libjpeg-turbo/tree/2.1.3','archiveSha256':sha(archive),'configuration':'Windows x64, MSVC Release, WITH_SIMD=OFF, WITH_CRT_DLL=OFF','sourceHashes':{p.name:sha(p) for p in [upstream/'turbojpeg.c',upstream/'jdapimin.c',upstream/'jdsample.c',upstream/'jidctint.c']},'limitation':'Independent upstream build; scalar backend performance is not equivalent to vendor SIMD build'},'observations':observations,'completeParity':False}
-result['nativeSourceAnalysis'] += [{'path':str(p),'sha256':sha(p)} for p in [analysis/'18038b190.c',analysis/'180389440.c',analysis/'1803889b0.c']]
-result['conversionBoundary'] = 'Original RGB-to-MONO conversion dispatches through 0x18038b190 -> 0x180389440 -> 0x1800031b0. Observed small-color failures are retained without assuming a general minimum geometry rule; kernel remains unrecovered.'
+result['nativeSourceAnalysis'] += [{'path':str(p),'sha256':sha(p)} for p in [analysis/'18038b190.c',analysis/'180389440.c',analysis/'1803889b0.c',analysis/'1800031b0.c',analysis/'18000c4d0.c',analysis/'180021040.c']]
+result['conversionBoundary'] = 'Original RGB-to-MONO dispatch: 0x18038b190 -> 0x180389440 -> command 4 at 0x1800031b0 -> 0x18000c4d0. Both dimensions must exceed 3 or return 0x10000008, ultimately SDK 0x801000ff. Grayscale JPEG sampling=3 bypasses color conversion. The kernel dispatcher 0x180021040 selects scalar/SIMD by CPU feature level.'
 result['fixtureGenerator']={'path':'tests/NativeEvidence/Create-JpegCorpus.py','sha256':sha(Path('tests/NativeEvidence/Create-JpegCorpus.py')),'encoderSha256':sha(Path('analysis/build/jpeg-backend/cjpeg.exe'))}
+result['nativeSourceAnalysis'] += [{'path':str(p),'sha256':sha(p)} for p in [analysis/'180021310.c',analysis/'180142980.c']]
+result['monoKernel']='0x180021040 dispatches by CPU features. Modern SIMD branch 0x180142980 sets R/G/B coefficients 0x4c/0x96/0x1e and shifts right by 8. Scalar branch 0x180021310 uses floats; cross-CPU parity remains unverified.'
+result['nativeSourceAnalysis'] += [{'path':str(p),'sha256':sha(p)} for p in [analysis/'180021310.c',analysis/'180142980.c']]
+result['monoKernel']='0x180021040 dispatches by CPU features. Modern SIMD branch 0x180142980 sets R/G/B coefficients 0x4c/0x96/0x1e and shifts right by 8. Scalar branch uses floats; cross-CPU parity unverified.'
 Path('docs/plugins/image-source-jpeg-evidence.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
-print('Exported 27 original JPEG MONO8/RGB observations and source/backend identities')
+print('Exported 35 original JPEG MONO8/RGB observations and source/backend identities')
