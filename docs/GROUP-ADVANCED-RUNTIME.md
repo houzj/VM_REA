@@ -1,3 +1,5 @@
+> 后续实现：双栏配置器、图形ROI与真实图像源Group接入见 [GROUP-NATIVE-EDITORS.md](GROUP-NATIVE-EDITORS.md)。原生ROI算法工具、全部复杂模板仍未完成。下文适配器状态保留为历史阶段记录。
+
 # Group 类别、关联、复杂编辑及首次 SelfRun
 
 2026-10-16，框架 main。原始反编译文件哈希：group-advanced-source-manifest.json。当前实现和仍未还原的原生部分分开记录。

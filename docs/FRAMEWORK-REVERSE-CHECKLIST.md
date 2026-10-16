@@ -77,3 +77,7 @@ F-01新增基础类型数组运行契约，已接通连线/订阅/Group/保存�
 2026-10-16 F-15/F-16/F-17增量：拥有型Group输入增删/改名/批量选择及事务化父级绑定、基础运行参数/输入代理实际编辑与订阅、Group隔离单次/连续/停止已接通。未配置父级兄弟节点不执行；缺失缓存明确失败。原生运行参数类别/多目标关系同步、复杂控件、首次SelfRun准备及回调仍未完成，见 GROUP-INPUT-RUNTIME-SELFRUN.md。
 
 Group运行参数：类别稳定ID/排序/确认删除、多关联回显/解绑/同步、多个目标原子编辑及订阅已接通；新增显式复杂编辑元数据及首次SelfRun准备阶段。原生双栏配置UI、SliderArrange/图像ROI/训练模板编辑器和真实工具声明集成仍开放；见GROUP-ADVANCED-RUNTIME.md，不标为全原生完成。
+
+## Group configuration and graphical ROI — current subset
+
+E2/I2 only for the named structure and operations in GROUP-NATIVE-EDITORS.md: two-pane settings, category selection/batch bounds, four-shape independent ROI editor and scoped image-source editor/run. E3 remains absent. Native complex-editor/theme/shape coverage and real ROI algorithm integration remain open (FCR-007). UI and lifecycle verification details are in the handoff; passing counts are not parity status.

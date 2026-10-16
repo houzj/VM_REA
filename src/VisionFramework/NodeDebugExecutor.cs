@@ -5,6 +5,13 @@ namespace VisionFramework;
 // Native SelfRun's upstream preparation is not reconstructed by this class.
 public sealed class NodeDebugExecutor(ModuleRegistry registry)
 {
+ // Read a particular tool input from its actual binding. Never execute producers or choose another image.
+ public PortValue ResolveInput(ProcedureDocument procedure,string nodeId,string inputName,IReadOnlyList<NodeRunRecord>? cachedResults=null,IReadOnlyDictionary<string,PortValue>? workflowInputs=null,int? groupLoopIndex=null)
+ {
+  var node=procedure.Nodes.Single(n=>n.Id==nodeId);var spec=registry.GetDescriptor(node).Inputs.Single(p=>p.Name==inputName);var records=(cachedResults??[]).Where(r=>r.NodeId!=nodeId).ToDictionary(r=>r.NodeId);var scoped=procedure with{Configuration=procedure.Configuration with{Subscriptions=procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId).ToArray()}};var context=new WorkflowRunContext(scoped,workflowInputs,records,groupLoopIndex);foreach(var id in records.Keys)context.Update(id);
+  var sources=procedure.Connections.Where(e=>e.ToNode==nodeId&&e.ToPort==inputName).Select(e=>new WorkflowValueReference(WorkflowSourceKind.NodeOutput,e.FromNode,e.FromPort)).Concat(procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId&&!b.IsParameter&&b.Target==inputName).Select(b=>b.Source)).ToArray();
+  if(sources.Length!=1)throw new InvalidDataException("Tool preview requires exactly one input binding: "+inputName);var value=context.Resolve(sources[0]);if(!PortTypes.Matches(spec,value))throw new InvalidDataException("Tool preview input type/cardinality mismatch: "+inputName);return value;
+ }
  public async Task<NodeRunRecord> RunAsync(ProcedureDocument procedure,string nodeId,string baseDirectory,IReadOnlyDictionary<string,JsonElement> values,IReadOnlyList<NodeRunRecord>? cachedResults=null,IReadOnlyDictionary<string,PortValue>? workflowInputs=null,CancellationToken cancellationToken=default,int? groupLoopIndex=null)
  {
   var node=procedure.Nodes.SingleOrDefault(n=>n.Id==nodeId)??throw new InvalidDataException("Debug node no longer exists.");

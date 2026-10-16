@@ -27,3 +27,7 @@ Group owned internal canvas and tab Up navigation exist. Owned Group range execu
 
 ## Local evidence and reports
 Original evidence remains in the original checkout's analysis directory. It is excluded from remote history. Build-required UI assets and sample image are tracked. Store new reports/build outputs inside the active worktree, not the other conversation's directory. Reports that require original binary evidence are not portable solely from Git.
+
+## Group configuration/ROI update
+
+Source-guided two-pane runtime configuration and graphical ROI infrastructure now run in main; scoped image-source full editor and actual Group execution are integrated. See GROUP-NATIVE-EDITORS.md and FCR-007. This does not complete native complex UI, original ROI type coverage or a real ROI algorithm tool. No plugin worktree changes were made.

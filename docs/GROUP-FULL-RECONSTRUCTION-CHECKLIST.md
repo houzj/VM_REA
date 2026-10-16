@@ -1,3 +1,5 @@
+> 后续实现：双栏配置器、图形ROI与真实图像源Group接入见 [GROUP-NATIVE-EDITORS.md](GROUP-NATIVE-EDITORS.md)。原生ROI算法工具、全部复杂模板仍未完成。下文适配器状态保留为历史阶段记录。
+
 > 本轮更新：类别、多关联同步、显式复杂编辑能力和首次SelfRun预检见 [GROUP-ADVANCED-RUNTIME.md](GROUP-ADVANCED-RUNTIME.md)。原生复杂UI和工具专属集成仍未完成，不能把功能适配器当作全还原。
 
 > 2026-10-16更新：输入编辑、基础运行参数代理和拥有型Group独立单次/连续运行已接通，详见 [GROUP-INPUT-RUNTIME-SELFRUN.md](GROUP-INPUT-RUNTIME-SELFRUN.md)。下面保留完整范围，不能将基础闭环当作原生全部类型和配置器完成。

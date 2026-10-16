@@ -27,8 +27,12 @@ public partial class MainWindow
  }
  ToolEditorContext CreateToolEditorContext(string id)
  {
-  EnsureToolDebugSolution();string flow=doc.CurrentProcedureId,solution=doc.SolutionId;var node=doc.CurrentProcedure.Nodes.Single(n=>n.Id==id);
-  void Guard(){Dispatcher.VerifyAccess();if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||doc.CurrentProcedureId!=flow||!ConfigurationProcedure(flow).Nodes.Any(n=>n.Id==id))throw new InvalidOperationException("当前模块调试会话已失效或流程正在运行。");}
+  var flow=doc.CurrentProcedureId;return CreateScopedToolEditorContext(flow,id,()=>flow);
+ }
+ ToolEditorContext CreateScopedToolEditorContext(string flow,string id,Func<string> activeScope)
+ {
+  EnsureToolDebugSolution();string solution=doc.SolutionId;var node=ConfigurationProcedure(flow).Nodes.Single(n=>n.Id==id);
+  void Guard(){Dispatcher.VerifyAccess();if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||activeScope()!=doc.CurrentProcedureId||!ConfigurationProcedure(flow).Nodes.Any(n=>n.Id==id))throw new InvalidOperationException("当前模块调试会话已失效或流程正在运行。");}
   ToolDebugSession? session=null;
   session=new ToolDebugSession(async(values,token)=>{
    Guard();if(toolDebugSessions.Any(s=>!ReferenceEquals(s,session)&&s.IsBusy))throw new InvalidOperationException("其他模块正在调试。");
@@ -36,7 +40,7 @@ public partial class MainWindow
    try{record=await Task.Run(()=>new NodeDebugExecutor(modules).RunAsync(procedure,id,baseDirectory,values,cached,invocationInputs,cancellationToken:token,groupLoopIndex:invocationIndex));}catch(InvalidDataException e){record=new(id,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),0,"DebugInputUnavailable",e.Message);}
    if(!windowClosed&&doc.SolutionId==solution)StoreToolDebugResult(flow,record);return record;
   });toolDebugSessions.Add(session);
-  return new(node,doc.BaseDirectory,values=>{Guard();doc.SetProcedureNodeParameters(flow,id,values);},values=>session.RunOnceAsync(values),doc.CurrentProcedure.Nodes.ToList().FindIndex(n=>n.Id==id)){Session=session};
+  return new(node,doc.BaseDirectory,values=>{Guard();doc.SetProcedureNodeParameters(flow,id,values);InvalidateToolDebugResult(flow,id);},values=>session.RunOnceAsync(values),ConfigurationProcedure(flow).Nodes.ToList().FindIndex(n=>n.Id==id)){Session=session};
  }
  Window CreateToolEditorWindow(string id)
  {
@@ -44,6 +48,21 @@ public partial class MainWindow
   var context=CreateToolEditorContext(id);Window window;
   try{window=factory.CreateWpfEditor(context);}catch{toolDebugSessions.Remove(context.Session!);_=context.Session!.DisposeAsync();throw;}
   BindToolEditorLifetime(window,context);return window;
+ }
+ VisionCore.GrayImage? ResolveGroupToolImage(string flow,string nodeId)
+ {
+  var procedure=ConfigurationProcedure(flow);var node=procedure.Nodes.Single(n=>n.Id==nodeId);var descriptor=modules.GetDescriptor(node);var records=ToolDebugInputs(flow);var previous=workflowSessions.GetValueOrDefault(flow);var inputs=descriptor.Inputs.Where(p=>p.Kind==DataKind.GrayImage&&p.Cardinality==ValueCardinality.Scalar).ToArray();
+  if(inputs.Length==1){try{return new NodeDebugExecutor(modules).ResolveInput(procedure,nodeId,inputs[0].Name,records,previous?.WorkflowInputs,previous?.GroupLoopIndex).Value as VisionCore.GrayImage;}catch(InvalidDataException){return null;}}
+  if(inputs.Length>1)return null;var images=records.SingleOrDefault(r=>r.NodeId==nodeId)?.Outputs.Values.Select(v=>v.Value).OfType<VisionCore.GrayImage>().ToArray();return images?.Length==1?images[0]:null;
+ }
+ void OpenOwnedGroupToolEditor(string parentFlow,string groupId,string bodyFlow,string nodeId,Window owner)
+ {
+  var node=ConfigurationProcedure(bodyFlow).Nodes.Single(n=>n.Id==nodeId);
+  if(plugins.Find(node.ModuleId)is not IWpfToolEditorFactory factory)throw new InvalidOperationException("此工具尚未提供专用WPF编辑器，不能用通用窗口替代。");
+  var context=CreateScopedToolEditorContext(bodyFlow,nodeId,()=>parentFlow);Window editor;
+  try{editor=factory.CreateWpfEditor(context);}catch{toolDebugSessions.Remove(context.Session!);_=context.Session!.DisposeAsync();throw;}
+  BindToolEditorLifetime(editor,context);editor.Owner=owner;
+  try{editor.ShowDialog();}finally{InvalidateToolDebugResult(parentFlow,groupId);}
  }
  void BindToolEditorLifetime(Window window,ToolEditorContext context){window.Owner=this;bool ready=false,pending=false;
   window.Closing+=async(_,e)=>{if(ready||e.Cancel)return;e.Cancel=true;if(pending)return;pending=true;try{await context.Session!.DisposeAsync();}catch(Exception error){if(!windowClosed)StatusText.Text="调试关闭："+error.Message;}finally{toolDebugSessions.Remove(context.Session!);ready=true;_ = window.Dispatcher.BeginInvoke(new Action(window.Close));}};
