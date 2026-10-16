@@ -1,0 +1,35 @@
+using VisionCore;
+using System.Text.Json.Serialization;
+namespace VisionFramework;
+// Fields in the original Sector/Caliper/MatrixCircle/Coordinate/Box3D ROI data templates.
+public sealed record RoiShapeParameters(double StartAngle=0,double SweepAngle=360,double EndX=0,double EndY=0,int CaliperCount=10,double CaliperWidth=5,double CaliperHeight=10,int Rows=3,int Columns=3,double CenterZ=0,double Depth=100,double AngleX=0,double AngleY=0,bool IsClockwise=true,bool IsLargeArc=false,bool ShowCaliperParameters=true);
+public sealed record RoiEditorCapabilities(IReadOnlyList<RoiKind> Kinds,int Maximum=8,int PolygonPointMaximum=32,bool FullImage=true,bool Exclusions=false);
+public static class RoiGeometry {
+ public static RoiShapeParameters Parameters(RoiDocument r)=>r.Shape??new();
+ public static Point2 Local(RoiDocument r,double x,double y){var angle=-r.AngleDegrees*Math.PI/180;var dx=x-r.CenterX;var dy=y-r.CenterY;return new(dx*Math.Cos(angle)-dy*Math.Sin(angle),dx*Math.Sin(angle)+dy*Math.Cos(angle));}
+ public static Point2 World(RoiDocument r,double x,double y){var angle=r.AngleDegrees*Math.PI/180;return new(r.CenterX+x*Math.Cos(angle)-y*Math.Sin(angle),r.CenterY+x*Math.Sin(angle)+y*Math.Cos(angle));}
+ public static bool InAngle(double angle,double start,double sweep){if(Math.Abs(sweep)>=360)return true;static double Norm(double a)=>(a%360+360)%360;return sweep>=0?Norm(angle-start)<=sweep+1e-9:Norm(start-angle)<=-sweep+1e-9;}
+ public static bool Contains(RoiDocument r,double x,double y){var p=Local(r,x,y);var s=Parameters(r);var distance=Math.Sqrt(p.X*p.X+p.Y*p.Y);return r.Kind switch{
+  RoiKind.FullImage=>true,
+  RoiKind.Rectangle or RoiKind.UprightRectangle or RoiKind.LineBox or RoiKind.SequentialBox=>p.X>=-r.Width/2&&p.X<r.Width/2&&p.Y>=-r.Height/2&&p.Y<r.Height/2,
+  RoiKind.Circle=>distance<=r.Radius,
+  RoiKind.Annulus or RoiKind.SectorRing=>distance>=r.InnerRadius&&distance<=r.Radius,
+  RoiKind.Sector or RoiKind.OverSector=>distance>=r.InnerRadius&&distance<=r.Radius&&InAngle(Math.Atan2(p.Y,p.X)*180/Math.PI,s.StartAngle,s.SweepAngle),
+  RoiKind.Polygon=>PolygonContains(r.Vertices??[],x,y),
+  RoiKind.Point=>Math.Abs(p.X)<=.5&&Math.Abs(p.Y)<=.5,
+  RoiKind.Line or RoiKind.LineCaliper=>LineContains(r,x,y),
+  RoiKind.CircleCaliper or RoiKind.PolygonCaliper=>throw new NotSupportedException("此卡尺类型的原生采样区域尚未验证。"),
+  RoiKind.SectorCaliper=>throw new NotSupportedException("原生端点圆弧卡尺区域尚未验证。"),
+  RoiKind.MatrixCircle=>MatrixCenters(r).Any(c=>{double d=Math.Sqrt((x-c.X)*(x-c.X)+(y-c.Y)*(y-c.Y));return d>=r.InnerRadius&&d<=r.Radius;}),
+  _=>throw new NotSupportedException("ROI has no 2D area: "+r.Kind)
+ };}
+ // Original SDK pixel probes distinguish scan conversion from continuous hit testing.
+ public static bool ContainsPixel(RoiDocument r,int x,int y){if(r.Kind!=RoiKind.Polygon)return Contains(r,x,y);var points=r.Vertices??[];var intersections=new List<int>();for(int i=0;i<points.Count;i++){var a=points[i];var b=points[(i+1)%points.Count];if(Math.Min(a.Y,b.Y)<y&&y<=Math.Max(a.Y,b.Y))intersections.Add((int)Math.Floor(a.X+(y-a.Y)*(b.X-a.X)/(b.Y-a.Y)+.5));}intersections.Sort();for(int i=0;i+1<intersections.Count;i+=2)if(x>=intersections[i]&&x<intersections[i+1])return true;return false;}
+ static bool LineContains(RoiDocument r,double x,double y){var s=Parameters(r);double dx=s.EndX-r.CenterX,dy=s.EndY-r.CenterY,length=Math.Sqrt(dx*dx+dy*dy);if(length==0)return false;double along=((x-r.CenterX)*dx+(y-r.CenterY)*dy)/length,across=Math.Abs((x-r.CenterX)*dy-(y-r.CenterY)*dx)/length;return along>=0&&along<=length&&across<=(r.Kind==RoiKind.Line?.5:s.CaliperHeight/2);}
+ public static bool PolygonContains(IReadOnlyList<Point2> points,double x,double y){bool inside=false;for(int i=0,j=points.Count-1;i<points.Count;j=i++){var a=points[j];var b=points[i];double cross=(x-a.X)*(b.Y-a.Y)-(y-a.Y)*(b.X-a.X);if(Math.Abs(cross)<1e-9&&x>=Math.Min(a.X,b.X)&&x<=Math.Max(a.X,b.X)&&y>=Math.Min(a.Y,b.Y)&&y<=Math.Max(a.Y,b.Y))return true;if((a.Y>y)!=(b.Y>y)&&x<(b.X-a.X)*(y-a.Y)/(b.Y-a.Y)+a.X)inside=!inside;}return inside;}
+ public static IReadOnlyList<Point2> MatrixCenters(RoiDocument r){var s=Parameters(r);var result=new List<Point2>();for(int y=0;y<s.Rows;y++)for(int x=0;x<s.Columns;x++)result.Add(World(r,-r.Width/2+(s.Columns==1?0:x*r.Width/(s.Columns-1)),-r.Height/2+(s.Rows==1?0:y*r.Height/(s.Rows-1))));return result;}
+ static (double Width,double Height) CaliperScale(RoiKind kind,int width,int height)=>kind is RoiKind.CircleCaliper or RoiKind.SectorCaliper?(height,width):(width,height);
+ public static RoiDocument ToPixels(RoiDocument r,int width,int height){if(width<=0||height<=0)throw new ArgumentOutOfRangeException();if(r.CoordinateSpace==RoiCoordinateSpace.ImagePixels)return r;if(r.CoordinateSpace==RoiCoordinateSpace.Fixture)throw new InvalidOperationException("ROI fixture transform is unavailable.");if(r.Kind==RoiKind.Box3D)throw new InvalidDataException("3D ROI cannot use 2D normalized coordinates.");var s=Parameters(r);var scale=CaliperScale(r.Kind,width,height);return r with{CoordinateSpace=RoiCoordinateSpace.ImagePixels,CenterX=r.CenterX*width,CenterY=r.CenterY*height,Width=r.Width*width,Height=r.Height*height,Radius=r.Radius*width,InnerRadius=r.InnerRadius*width,Vertices=r.Vertices?.Select(p=>new Point2(p.X*width,p.Y*height)).ToArray(),Shape=r.Shape is null?null:s with{EndX=s.EndX*width,EndY=s.EndY*height,CaliperWidth=s.CaliperWidth*scale.Width,CaliperHeight=s.CaliperHeight*scale.Height}};}
+ public static RoiDocument ToNormalized(RoiDocument r,int width,int height){if(width<=0||height<=0)throw new ArgumentOutOfRangeException();if(r.CoordinateSpace==RoiCoordinateSpace.Normalized)return r;if(r.CoordinateSpace!=RoiCoordinateSpace.ImagePixels||r.Kind==RoiKind.Box3D)throw new InvalidOperationException("Unsupported normalization space.");var s=Parameters(r);var scale=CaliperScale(r.Kind,width,height);return r with{CoordinateSpace=RoiCoordinateSpace.Normalized,CenterX=r.CenterX/width,CenterY=r.CenterY/height,Width=r.Width/width,Height=r.Height/height,Radius=r.Radius/width,InnerRadius=r.InnerRadius/width,Vertices=r.Vertices?.Select(p=>new Point2(p.X/width,p.Y/height)).ToArray(),Shape=r.Shape is null?null:s with{EndX=s.EndX/width,EndY=s.EndY/height,CaliperWidth=s.CaliperWidth/scale.Width,CaliperHeight=s.CaliperHeight/scale.Height}};}
+ public static void ValidateForEditor(IReadOnlyList<RoiDocument> regions,RoiEditorCapabilities? capability){int max=capability?.Maximum??8,points=capability?.PolygonPointMaximum??32;if(regions.Count>max||regions.Select(r=>r.Id).Distinct().Count()!=regions.Count)throw new InvalidDataException("ROI数量或标识无效，最多"+max+"个。");foreach(var r in regions){RoiValidator.Validate(r);if(capability is not null&&!capability.Kinds.Contains(r.Kind)&&!(r.Kind==RoiKind.FullImage&&capability.FullImage))throw new InvalidDataException("工具不支持ROI类型："+r.Kind);if(r.Exclusion&&capability?.Exclusions!=true)throw new InvalidDataException("工具不支持屏蔽ROI。");if(r.Vertices?.Count>points)throw new InvalidDataException("ROI顶点不能超过"+points);}}
+}

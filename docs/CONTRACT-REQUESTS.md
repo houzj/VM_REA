@@ -56,3 +56,18 @@ Required from plugin line before claiming real ROI-tool/native Group editor comp
 - Readonly input resolver is now NodeDebugExecutor.ResolveInput (connection/subscription/workflow input; no producer execution); no existing plugin contract was changed.
 - Native shapes beyond Rectangle/Circle/Annulus/Polygon, normalized coordinates and transforms need a reviewed shared schema extension; don't silently map native sector/caliper values to annuli.
 - Main has not integrated tool-plugins commits after the current baseline. Review selected commits separately and run end-to-end acceptance before using their claimed capabilities.
+## FCR-008 — tool-declared ROI capabilities and dedicated parameter editor
+
+Implemented additively in main for the source-audited ImageBinary integration. This does not assert adoption by the plugin line; no other worktree or ImageSource implementation was changed.
+
+- `ParameterEditorDefinition.Roi`: exact allowlisted kinds, count, polygon point bound, full-image/exclusion capability. Group validates all relation targets before a single edit; related ROI declarations must match.
+- `IWpfToolParameterEditorFactory`: dedicated per-parameter WPF window. Immutable node/parameter/image snapshot plus the existing atomic multi-target Apply callback. Full-tool editor remains separate.
+- `ToolEditorContext.PreviewImage`: exact invocation input lookup; `ApplyConfiguration`: single validated parameter-and-ROI edit. Existing session cancellation/disposal is retained.
+- New `VisionUi` assembly owns shared source-guided ROI presentation; product assemblies contain no screenshot helpers.
+- New `VisionPlugins.ImageBinary` is a main integration addition explicitly required by the current request for a real ROI consumer, not a merge of plugin-line work. It implements only independent MONO8 hard threshold. Its full tool window and remaining ROI editors are not certified native UI replicas. Do not extend other plugin implementations concurrently; coordinate future adoption through this request.
+
+Evidence: `docs/roi-source-inventory.json`, original IMVSBinaryModuAlgorithmTab.xml / Algorithm.xml, native SDK probe in tests. Runtime observations and unresolved raster differences are in `docs/ROI-REAL-TOOL.md`.
+
+### FCR-008 integration follow-up
+
+Shared VisionUi now owns source-guided ROI templates, native button resources and coordinate conversions; ImageBinary uses the dedicated parameter factory and scoped debug host. ToolEditorContext adds optional input label/edit callbacks and atomic configuration writes. Normalized storage retains coordinate space through pixel editing; Fixture requires an explicit transform. Original ImageSource and the plugin worktree remain unchanged. This is main integration only, not an assertion of plugin-line adoption or ABI equivalence.
