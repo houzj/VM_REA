@@ -9,7 +9,11 @@ param(
     [switch]$ProbeJpeg,
     [switch]$ProbeCatalog,
     [switch]$ProbeFormats,
-    [switch]$ProbeClear
+    [switch]$ProbeClear,
+    [switch]$ProbeRgb,
+    [switch]$ProbeControl,
+    [switch]$ProbeWatch,
+    [switch]$ProbeEmbed
 )
 $ErrorActionPreference = 'Stop'
 $workspace = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -33,7 +37,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Probe compile failed' }
 '<configuration><appSettings><add key="StartServerByExe" value="0"/><add key="ServerPath" value=""/><add key="StartClientMode" value="1"/></appSettings><startup><supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.6.1"/></startup></configuration>' | Set-Content -LiteralPath ($exe + '.config') -Encoding utf8
 $result = Join-Path $output 'probe.json'
 $arguments = @($Applications, $Solution, (Join-Path $workspace 'analysis/images/circle-find-sample.bmp'), $result)
-if (@($CaptureSdkUi,$ProbeStitch,$ProbeCodecs,$ProbeFolder,$ProbeJpeg,$ProbeCatalog,$ProbeFormats,$ProbeClear).Where({$_}).Count -gt 1) { throw 'Probes use separate fixture runs' }
+if (@($CaptureSdkUi,$ProbeStitch,$ProbeCodecs,$ProbeFolder,$ProbeJpeg,$ProbeCatalog,$ProbeFormats,$ProbeClear,$ProbeRgb,$ProbeControl,$ProbeWatch,$ProbeEmbed).Where({$_}).Count -gt 1) { throw 'Probes use separate fixture runs' }
 if ($CaptureSdkUi) { $arguments += 'ui' }
 if ($ProbeStitch) { $arguments += 'stitch' }
 if ($ProbeCodecs) { $arguments += 'codecs' }
@@ -42,6 +46,10 @@ if ($ProbeJpeg) { $arguments += @('jpeg',(Join-Path $workspace 'tests/ImageSourc
 if ($ProbeCatalog) { $arguments += 'catalog' }
 if ($ProbeFormats) { $arguments += 'formats' }
 if ($ProbeClear) { $arguments += 'clear' }
+if ($ProbeRgb) { $arguments += 'rgb' }
+if ($ProbeControl) { $arguments += 'control' }
+if ($ProbeWatch) { $arguments += 'watch' }
+if ($ProbeEmbed) { $arguments += 'embed' }
 $quotedArguments = $arguments | ForEach-Object {
     if ($_.Contains('"')) { throw 'Probe paths cannot contain a quote' }
     '"' + $_ + '"'

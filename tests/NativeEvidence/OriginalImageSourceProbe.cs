@@ -54,6 +54,8 @@ public static class OriginalImageSourceProbe
         Call(module,"Run"); object result=Get(module,"ModuResult"); object image=Get(result,"ImageData");
         int length=Convert.ToInt32(Get(image,"DataLen")); byte[] pixels=new byte[length];
         if(length>0)Marshal.Copy((IntPtr)Get(image,"ImageDataPtr"),pixels,0,length);
+        object mono=Get(result,"ImageDataMono8");int monoLength=Convert.ToInt32(Get(mono,"DataLen"));byte[] monoPixels=new byte[monoLength];if(monoLength>0)Marshal.Copy((IntPtr)Get(mono,"ImageDataPtr"),monoPixels,0,monoLength);File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(output),phase+".mono.pixels"),monoPixels);
+        records.Add(new{phase=phase+"-extra-mono",width=Get(mono,"Width"),height=Get(mono,"Height"),format=Get(mono,"Pixelformat"),length=monoLength,pixelSha256=BitConverter.ToString(SHA256.Create().ComputeHash(monoPixels)).Replace("-","").ToLowerInvariant()});
         File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(output),phase+".pixels"),pixels);
         records.Add(new { phase=phase,nativeErrorCode=Get(result,"ErrorCode"),sn=Get(result,"SNCode"),path=Get(result,"CurImagePath"),name=Get(result,"CurImageName"),width=Get(image,"Width"),height=Get(image,"Height"),format=Get(image,"Pixelformat"),length=length,extraMonoLength=Get(Get(result,"ImageDataMono8"),"DataLen"),pixelSha256=BitConverter.ToString(SHA256.Create().ComputeHash(pixels)).Replace("-","").ToLowerInvariant() });
     }
@@ -146,6 +148,33 @@ public static class OriginalImageSourceProbe
         Scenario(module,"clear-missing-input",output);
         foreach(var value in new[]{0,1,1,0,-1}){Call(parameters,"SetInputInt","ClearTriggerValue",new int[]{value});Scenario(module,"clear-value-"+records.Count+"-"+value,output);}
         WriteRows(a,new byte[]{10,20,30,40},5);Parameter(parameters,"AutoPlay",false);StringParameter(module,"CurrentImagePath",a);Call(parameters,"SetInputInt","ClearTriggerValue",new int[]{0});Scenario(module,"clear-width-rejected",output);Call(parameters,"SetInputInt","ClearTriggerValue",new int[]{1});Scenario(module,"clear-width-accepted",output);
+    }
+    static void RgbScenarios(object module,object parameters,string output) {
+        string directory=Path.Combine(Path.GetDirectoryName(output),"rgb-fixtures");string path=ImageSourceCodecFixtures.Create(directory).First(p=>Path.GetFileName(p)=="color.png");
+        Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","False"},new[]{"StitchEnable","False"},new[]{"PathCache","1"},new[]{"OutMono8","False"}})Parameter(parameters,setting[0],setting[1]);
+        Scenario(module,"rgb-cache-admit-mono",output);byte[] encoded=File.ReadAllBytes(path);File.Delete(path);try{Parameter(parameters,"PixelFormat",2);Scenario(module,"rgb-cache-format-change",output);}finally{File.WriteAllBytes(path,encoded);}
+        Parameter(parameters,"PathCache",0);Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);Parameter(parameters,"OutMono8",true);Scenario(module,"rgb-extra-mono",output);
+        Parameter(parameters,"StitchEnable",true);Parameter(parameters,"ClearTrigger",false);Parameter(parameters,"StitchHeight",1);Parameter(parameters,"StitchStartHeight",0);Scenario(module,"rgb-stitch-first",output);Scenario(module,"rgb-stitch-second",output);
+    }
+    static void InputString(object parameters,string key,string value){
+        MethodInfo method=parameters.GetType().GetMethod("SetInputString");Type element=method.GetParameters()[1].ParameterType.GetElementType();object item=Activator.CreateInstance(element);element.GetField("strValue").SetValue(item,value);element.GetField("strReserved").SetValue(item,new byte[32]);Array array=Array.CreateInstance(element,1);array.SetValue(item,0);method.Invoke(parameters,new object[]{key,array});
+    }
+    static void ControlScenarios(object module,object parameters,string sample,string output){
+        Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",sample);foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","False"},new[]{"StitchEnable","False"},new[]{"PathCache","0"},new[]{"TriggerStringEnable","True"},new[]{"AutoStop","True"}})Parameter(parameters,setting[0],setting[1]);
+        int index=0;foreach(var pair in new[]{new[]{"go","go"},new[]{"go","stop"},new[]{"","stop"},new[]{"go",""},new[]{"##RunProcedureSilently##","stop"},new[]{"go","##RunProcedureSilently##"},new[]{"GO","go"}}){string phase="filter-"+index++;InputString(parameters,"TriggerString",pair[0]);InputString(parameters,"TriggerFilter",pair[1]);records.Add(new{phase="filter-input",name=phase,trigger=pair[0],filter=pair[1]});Scenario(module,phase,output);}
+        Parameter(parameters,"TriggerStringEnable",false);Parameter(parameters,"ImageSourceType",3);Parameter(parameters,"OutMono8",true);Call(module,"SetImagePath",sample);Scenario(module,"sdk-fresh-submission",output);Scenario(module,"sdk-submission-consumed",output);Call(module,"SetImagePath",sample);Scenario(module,"sdk-resubmitted",output);
+    }
+    static void WatchScenarios(object module,object parameters,string output){
+        string directory=Path.Combine(Path.GetDirectoryName(output),"watch-fixtures");Directory.CreateDirectory(directory);string a=Path.Combine(directory,"a2.bmp"),b=Path.Combine(directory,"a10.bmp"),added=Path.Combine(directory,"a1.bmp");WriteRows(a,new byte[]{10,20,30,40});WriteRows(b,new byte[]{50,60,70,80});
+        Call(module,"ClearAllInputImage");foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","False"},new[]{"StitchEnable","False"},new[]{"PathCache","0"},new[]{"IsSubscribeFolderMode","True"},new[]{"RefreshImage","True"},new[]{"TriggerProcessRun","False"}})Parameter(parameters,setting[0],setting[1]);StringParameter(module,"SubscribeFolderPath",directory);System.Threading.Thread.Sleep(200);Scenario(module,"watch-initial",output);
+        WriteRows(added,new byte[]{90,100,110,120});System.Threading.Thread.Sleep(200);Scenario(module,"watch-create-preserve-index",output);File.Delete(added);System.Threading.Thread.Sleep(200);Scenario(module,"watch-delete",output);WriteRows(a,new byte[]{77,78,79,80});System.Threading.Thread.Sleep(200);Scenario(module,"watch-modify",output);File.Move(a,Path.Combine(directory,"renamed.bmp"));System.Threading.Thread.Sleep(200);Scenario(module,"watch-rename",output);Parameter(parameters,"IsSubscribeFolderMode",false);
+    }
+    static void EmbedScenarios(object module,object parameters,string output){
+        string directory=Path.Combine(Path.GetDirectoryName(output),"embed-fixtures");Directory.CreateDirectory(directory);string path=Path.Combine(directory,"owned.bmp");WriteRows(path,new byte[]{10,20,30,40});Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);
+        foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","False"},new[]{"StitchEnable","False"},new[]{"PathCache","0"},new[]{"SolSaveImageData","True"}})Parameter(parameters,setting[0],setting[1]);Scenario(module,"embed-before-save",output);
+        Type type=Assembly.LoadFrom(Path.Combine(root,"myLibs/VM.Core.dll")).GetType("VM.Core.VmSolution",true);string saved=Path.Combine(Path.GetDirectoryName(output),"owned-embedded.sol");type.GetMethod("SaveAs",new[]{typeof(string),typeof(string)}).Invoke(null,new object[]{saved,null});records.Add(new{phase="embed-save-as",exists=File.Exists(saved),length=new FileInfo(saved).Length,sha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(saved))).Replace("-","").ToLowerInvariant()});File.Delete(path);
+        try{type.GetMethod("Load",new[]{typeof(string),typeof(string),typeof(bool)}).Invoke(null,new object[]{saved,"",false});}catch(TargetInvocationException ex){PropertyInfo code=ex.InnerException.GetType().GetProperty("errorCode");if(code==null||Convert.ToInt32(code.GetValue(ex.InnerException,null))!=-536870093)throw;records.Add(new{phase="embed-partial-reload",code=-536870093});}
+        object solution=type.GetProperty("Instance").GetValue(null,null);foreach(object info in (IEnumerable)Call(solution,"GetFullModuleList",new object[]{null})){Type infoType=info.GetType();string full=(string)infoType.GetField("FullName").GetValue(info)+"."+(string)infoType.GetField("Name").GetValue(info);object reloaded=type.GetProperty("Item").GetValue(solution,new object[]{full});if(reloaded!=null&&reloaded.GetType().FullName=="ImageSourceModuleCs.ImageSourceModuleTool"){Scenario(reloaded,"embed-after-source-removed",output);break;}}
     }
     static void WriteRows(string path,byte[] rows,int width=4) {
         using(BinaryWriter writer=new BinaryWriter(File.Create(path))) {
@@ -261,6 +290,10 @@ public static class OriginalImageSourceProbe
                 if(args.Length>4&&args[4]=="catalog")FolderCatalogScenarios(output);
                 if(args.Length>4&&args[4]=="formats")FormatScenarios(module,parameters,output);
                 if(args.Length>4&&args[4]=="clear")ClearScenarios(module,parameters,output);
+                if(args.Length>4&&args[4]=="rgb")RgbScenarios(module,parameters,output);
+                if(args.Length>4&&args[4]=="control")ControlScenarios(module,parameters,args[2],output);
+                if(args.Length>4&&args[4]=="watch")WatchScenarios(module,parameters,output);
+                if(args.Length>4&&args[4]=="embed")EmbedScenarios(module,parameters,output);
                 if(args.Length>5&&args[4]=="jpeg")JpegScenarios(module,parameters,args[5],output);
                 if(args.Length>4&&args[4]=="ui") { phase="capture-sdk-ui"; CaptureModes(module,parameters,output); }
                 break;

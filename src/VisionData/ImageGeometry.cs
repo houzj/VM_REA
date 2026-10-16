@@ -1,11 +1,13 @@
 namespace VisionCore;
 
 // Independent baseline; no claim of equivalence to any vendor algorithm.
-public sealed class GrayImage
+public sealed class GrayImage:IImageData
 {
     private readonly byte[] pixels;
     public int Width { get; }
     public int Height { get; }
+    public int Stride=>Width;
+    public ImagePixelFormat Format=>ImagePixelFormat.Mono8;
     public ReadOnlySpan<byte> Pixels => pixels;
     public byte this[int x, int y] => pixels[Offset(x, y)];
     private int Offset(int x, int y)

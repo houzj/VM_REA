@@ -22,19 +22,22 @@ public sealed partial class GraphEditorDocument
     public bool CanUndo => undo.Count != 0;
     public bool CanRedo => redo.Count != 0;
     public event Action? Changed;
+    public event Action? SolutionReplaced;
+    public Func<SolutionDocument,string,SolutionDocument>? PrepareSave {get;set;}
     public void NewSolution(bool createProcedure=true) {
         document = new(SolutionStore.CurrentVersion, Guid.NewGuid().ToString("N"), "New solution", createProcedure?[new("main", "Main", [], [], [])]:[], []);
         CurrentProcedureId = createProcedure?"main":""; BaseDirectory = Path.GetFullPath(Environment.CurrentDirectory); FilePath = null;
-        undo.Clear(); redo.Clear(); IsDirty = true; Revision++; Changed?.Invoke();
+        undo.Clear(); redo.Clear(); IsDirty = true; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Load(string path) {
         string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);
         document = Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()}); CurrentProcedureId = loaded.Procedures.FirstOrDefault()?.Id??"";
-        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; undo.Clear(); redo.Clear(); IsDirty = false; Revision++; Changed?.Invoke();
+        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; undo.Clear(); redo.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Save(string path) {
         string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;
-        var rebased = Rebase(document, BaseDirectory, directory);
+        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;
+        var rebased = Rebase(prepared, BaseDirectory, directory);
         SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.
         document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();
     }

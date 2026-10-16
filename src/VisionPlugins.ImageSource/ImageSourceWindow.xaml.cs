@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using VisionPluginContracts;
+using VisionFramework;
 using W=System.Windows.Controls;
 using Primitives=System.Windows.Controls.Primitives;
 namespace VisionPlugins.ImageSource;
@@ -20,7 +21,7 @@ public partial class ImageSourceWindow:System.Windows.Window {
   Group("基本参数",false);
   Enum("ImageSourceType","图像源",["本地图像","相机","SDK"]);
   Enum("PixelFormat","像素格式",["MONO8","RGB24"]);
-  Toggle("SolSaveImageData","方案存图",false);
+  Toggle("SolSaveImageData","方案存图");
   var saveHint=new W.TextBlock{Text="最大保存120张图片",Foreground=System.Windows.Media.Brushes.DarkOrange,FontSize=12,Margin=new Thickness(53,0,0,0),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false};W.Grid.SetColumn(saveHint,1);rows["SolSaveImageData"].Children.Add(saveHint);
   Toggle("ShowImageName","显示图像名称");
   Subscription("CameraID","关联相机");
@@ -36,24 +37,30 @@ public partial class ImageSourceWindow:System.Windows.Window {
   Subscription("ClearTriggerCondition","触发变量");
   Group("触发设置",true);
   Toggle("AutoPlay","自动切换");
-  Toggle("AutoStop","最后一张停止",false);
-  Toggle("TriggerStringEnable","字符触发过滤",false);
+  Toggle("AutoStop","最后一张停止");
+  Toggle("TriggerStringEnable","字符触发过滤");
   Subscription("TriggerString","输入字符");
   Subscription("TriggerFilter","触发字符");
   Group("订阅图片文件夹",true);
-  Toggle("IsSubscribeFolderMode","订阅文件夹",false);
+  Toggle("IsSubscribeFolderMode","订阅文件夹",context.Scope is not null);
   Folder("SubscribeFolderPath","图像路径");
-  Toggle("RefreshImage","更新缩略图",false);
-  Toggle("TriggerProcessRun","触发流程执行",false);
+  Toggle("RefreshImage","更新缩略图",context.Scope is not null);
+  Toggle("TriggerProcessRun","触发流程执行",context.Scope is not null);
   loading=false;
   UpdateVisibility();
  }
  void Subscription(string key,string caption) {
-  if(key=="CameraID"){Row(key,caption,new W.ComboBox{IsEnabled=false,Text="请选择",ToolTip="需要连接相机服务"});Decorate(key,"ic_modal_camera_normal.png",true);}
-  else {var box=new W.TextBox{IsReadOnly=true,IsEnabled=false,Height=29,ToolTip="需要连接变量订阅服务"};Row(key,caption,box);Decorate(key,"ic_btn_link_disable.png",false);}
+  if(key=="CameraID"){var cameras=context.Cameras?.Invoke()??[];var combo=new W.ComboBox{ItemsSource=cameras,DisplayMemberPath="Name",SelectedValuePath="Id",SelectedValue=values[key].GetInt32(),IsEnabled=cameras.Count>0,ToolTip=cameras.Count>0?null:"未发现可用相机"};combo.SelectionChanged+=(_,_)=>{if(!loading&&combo.SelectedValue is int id){values[key]=JsonSerializer.SerializeToElement(id);Apply();}};Row(key,caption,combo);Decorate(key,"ic_modal_camera_normal.png",true);}
+  else {string target=key=="ClearTriggerCondition"?"ClearTriggerValue":key;var box=new W.TextBox{IsReadOnly=true,IsEnabled=context.PickSubscription is not null,Text=context.SubscriptionLabel?.Invoke(target,false),Height=29,Padding=new Thickness(8,2,30,0),ToolTip="订阅类型匹配的输入值"};Row(key,caption,box);Decorate(key,"ic_btn_link_disable.png",false);}
  }
  W.Image ResourceIcon(string file)=>new(){Source=new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/VisionPlugins.ImageSource;component/Resources/"+file)),Stretch=System.Windows.Media.Stretch.None};
- void Decorate(string key,string file,bool outside) {var row=rows[key];var editor=controls[key];row.Children.Remove(editor);var grid=new W.Grid();grid.ColumnDefinitions.Add(new W.ColumnDefinition());grid.ColumnDefinitions.Add(new W.ColumnDefinition{Width=new GridLength(28)});W.Grid.SetColumn(editor,0);grid.Children.Add(editor);var icon=ResourceIcon(file);icon.IsHitTestVisible=false;icon.ToolTip="需要连接变量订阅服务";W.Grid.SetColumn(icon,1);grid.Children.Add(icon);if(!outside)W.Grid.SetColumnSpan(editor,2);W.Grid.SetColumn(grid,1);row.Children.Add(grid);}
+ void Decorate(string key,string file,bool outside) {
+  var row=rows[key];var editor=controls[key];row.Children.Remove(editor);var grid=new W.Grid();grid.ColumnDefinitions.Add(new W.ColumnDefinition());grid.ColumnDefinitions.Add(new W.ColumnDefinition{Width=new GridLength(28)});W.Grid.SetColumn(editor,0);grid.Children.Add(editor);
+  bool camera=key=="CameraID",parameter=key is "InitialSN" or "StitchHeight" or "StitchStartHeight";string target=key=="ClearTriggerCondition"?"ClearTriggerValue":key;bool enabled=camera?context.ConfigureCameras is not null:context.PickSubscription is not null;
+  var button=new W.Button{Name="Bind"+key,Content=ResourceIcon(enabled?file.Replace("_disable","_normal"):file),IsEnabled=enabled,Width=28,Height=27,Background=System.Windows.Media.Brushes.Transparent,BorderThickness=new Thickness(0),ToolTip=camera?"相机配置":"订阅关系"};
+  void Refresh(){string? label=context.SubscriptionLabel?.Invoke(target,parameter);if(editor is W.TextBox text)text.Text=label??"";if(parameter){editor.IsEnabled=string.IsNullOrEmpty(label);editor.ToolTip=label;}}
+  button.Click+=(_,_)=>{if(camera){context.ConfigureCameras?.Invoke();if(editor is W.ComboBox combo){var cameras=context.Cameras?.Invoke()??[];combo.ItemsSource=cameras;combo.IsEnabled=cameras.Count>0;combo.SelectedValue=values[key].GetInt32();}}else {DataKind kind=parameter||key=="ClearTriggerCondition"?DataKind.Integer:key is "ExposureTimeInput" or "GainInput"?DataKind.Number:DataKind.Text;context.PickSubscription?.Invoke(this,target,parameter,kind);Refresh();}};Refresh();W.Grid.SetColumn(button,1);grid.Children.Add(button);if(!outside)W.Grid.SetColumnSpan(editor,2);W.Grid.SetColumn(grid,1);row.Children.Add(grid);
+ }
  void Group(string caption,bool separator){if(separator)Rows.Children.Add(new W.Border{Height=1,Background=new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(218,218,218)),Margin=new Thickness(0,3,0,17)});Rows.Children.Add(new W.TextBlock{Text=caption,FontWeight=FontWeights.Bold,FontSize=14,Foreground=new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(50,54,57)),Margin=new Thickness(0,0,0,9)});}
  void Row(string key,string caption,System.Windows.FrameworkElement editor){var row=new W.Grid{Height=36};row.ColumnDefinitions.Add(new W.ColumnDefinition{Width=new GridLength(91)});row.ColumnDefinitions.Add(new W.ColumnDefinition{Width=new GridLength(262)});row.Children.Add(new W.TextBlock{Text=caption,Foreground=new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(90,96,101)),VerticalAlignment=VerticalAlignment.Center});editor.Name=key;row.Tag=key;editor.VerticalAlignment=VerticalAlignment.Center;W.Grid.SetColumn(editor,1);row.Children.Add(editor);Rows.Children.Add(row);controls[key]=editor;rows[key]=row;}
  void Enum(string key,string caption,string[] options){var c=new W.ComboBox{ItemsSource=options,SelectedIndex=values[key].GetInt32()-1};c.SelectionChanged+=(_,_)=>{if(c.SelectedIndex>=0){values[key]=JsonSerializer.SerializeToElement(c.SelectedIndex+1);Apply();UpdateVisibility();}};Row(key,caption,c);}

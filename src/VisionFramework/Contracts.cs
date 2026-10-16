@@ -1,12 +1,17 @@
 using System.Text.Json;
 using VisionCore;
 namespace VisionFramework;
-public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle }
+public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle, RgbImage, Image }
+public static class DataKinds {
+ public static bool IsImage(DataKind kind)=>kind is DataKind.GrayImage or DataKind.RgbImage or DataKind.Image;
+ // A generic image port admits either owned format. Concrete consumers retain runtime checks.
+ public static bool CanFlow(DataKind source,DataKind target)=>source==target||source==DataKind.Image&&IsImage(target)||target==DataKind.Image&&IsImage(source);
+}
 public enum ParameterKind { Number, Integer, Boolean, Text }
 public sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true);
 public sealed record ParameterDescriptor(string Name,ParameterKind Kind,bool Required,JsonElement? DefaultValue=null,double? Minimum=null,double? Maximum=null);
 public sealed record ModuleDescriptor(string Id,string Version,string DisplayName,IReadOnlyList<PortDescriptor> Inputs,IReadOnlyList<PortDescriptor> Outputs,IReadOnlyList<ParameterDescriptor> Parameters);
-public sealed record ResourceDocument(string Id,string Path,string? Sha256=null);
+public sealed record ResourceDocument(string Id,string Path,string? Sha256=null){[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public string? EmbeddedBase64{get;init;}}
 public sealed record NodeDocument(string Id,string ModuleId,string ModuleVersion,string Name,Dictionary<string,JsonElement> Parameters,double X=0,double Y=0,int TimeoutMs=0,bool Enabled=true,IReadOnlyList<RoiDocument>? Rois=null){public WorkflowCallDocument? Call{get;init;}};
 public sealed record ConnectionDocument(string FromNode,string FromPort,string ToNode,string ToPort){public int SourceIndex{get;init;}=3;public int TargetIndex{get;init;}=1;}
 public sealed record WirePointDocument(double X,double Y);
@@ -23,6 +28,7 @@ public sealed class PortValue {
     public DataKind Kind {get;} public object Value {get;}
     private PortValue(DataKind kind,object value){Kind=kind;Value=value;}
     public static PortValue Image(GrayImage v)=>new(DataKind.GrayImage,v??throw new ArgumentNullException(nameof(v)));
+    public static PortValue Image(IImageData v)=>v switch{GrayImage gray=>Image(gray),RgbImage rgb=>new(DataKind.RgbImage,rgb),_=>throw new ArgumentException("Unsupported owned image format.",nameof(v))};
     public static PortValue Number(double v)=>double.IsFinite(v)?new(DataKind.Number,v):throw new ArgumentOutOfRangeException(nameof(v));
     public static PortValue Integer(long v)=>new(DataKind.Integer,v);
     public static PortValue Boolean(bool v)=>new(DataKind.Boolean,v);
@@ -32,13 +38,18 @@ public sealed class PortValue {
     public T As<T>()=>Value is T v?v:throw new InvalidOperationException($"Value {Kind} cannot be read as {typeof(T).Name}.");
 }
 public enum ModuleStatus { Success, NoMatch, Failed }
-public sealed record ModuleResult(ModuleStatus Status,IReadOnlyDictionary<string,PortValue> Outputs,string? ErrorCode=null,string? Message=null);
+public enum ModuleContinuation { Continue, SuppressSuccessors }
+public sealed record ModuleResult(ModuleStatus Status,IReadOnlyDictionary<string,PortValue> Outputs,string? ErrorCode=null,string? Message=null){public ModuleContinuation Continuation{get;init;}public uint? NativeErrorCode{get;init;}}
 public enum NodeRunStatus { Pending, Running, Success, NoMatch, Failed, Skipped, Cancelled, TimedOut }
 public enum SessionStatus { Success, Failed, Cancelled, TimedOut }
 public sealed record ExecutionEvent(string NodeId,NodeRunStatus Status,string? Message=null);
-public sealed record NodeRunRecord(string NodeId,NodeRunStatus Status,IReadOnlyDictionary<string,PortValue> Outputs,double ElapsedMilliseconds,string? ErrorCode=null,string? Message=null);
+public sealed record NodeRunRecord(string NodeId,NodeRunStatus Status,IReadOnlyDictionary<string,PortValue> Outputs,double ElapsedMilliseconds,string? ErrorCode=null,string? Message=null){public uint? NativeErrorCode{get;init;}}
 public sealed record ExecutionSessionResult(SessionStatus Status,IReadOnlyList<NodeRunRecord> Nodes){public IReadOnlyDictionary<string,ExecutionSessionResult> Calls{get;init;}=new Dictionary<string,ExecutionSessionResult>();public IReadOnlyDictionary<string,PortValue> WorkflowOutputs{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyDictionary<string,PortValue> LocalVariables{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyList<string> OutputErrors{get;init;}=[];}
 public sealed class ModuleExecutionContext {
+    public ModuleExecutionScope? Scope {get;init;}
+    public ModuleRunControl? Control {get;init;}
+    public string? ProcedureId {get;init;}
+    public ResourceCatalog? Resources {get;init;}
     public string NodeId {get;} public string BaseDirectory {get;}
     public IReadOnlyDictionary<string,PortValue> Inputs {get;}
     public IReadOnlyDictionary<string,JsonElement> Parameters {get;}

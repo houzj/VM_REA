@@ -3,7 +3,7 @@ import argparse,hashlib,json
 from pathlib import Path
 parser=argparse.ArgumentParser();parser.add_argument('--runtime',type=Path,required=True);args=parser.parse_args()
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-records=json.loads(args.runtime.read_text(encoding='utf-8-sig'));rows=[r for r in records if r.get('phase','').startswith('clear-')];assert len(rows)==8
+records=json.loads(args.runtime.read_text(encoding='utf-8-sig'));rows=[r for r in records if r.get('phase','').startswith('clear-') and 'nativeErrorCode' in r];assert len(rows)==8
 for row,value in zip(rows,[None,0,1,1,0,-1,0,1]):
  row['inputValue']=value;path=args.runtime.parent/(row['phase']+'.pixels');assert sha(path)==row['pixelSha256'];row['pixelsHex']=path.read_bytes().hex()
 root=Path('D:/MyWork/REA逆向测试/analysis/full-audit')

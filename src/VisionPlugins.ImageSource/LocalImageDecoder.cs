@@ -9,14 +9,20 @@ namespace VisionPlugins.ImageSource;
 /// <summary>Independent WIC decoding with source-correlated, corpus-verified MONO8 conversion.</summary>
 internal static class LocalImageDecoder
 {
- public static GrayImage Read(string path)
+ public static GrayImage Read(string path)=>(GrayImage)ReadImage(path,false);
+ public static IImageData ReadImage(string path,bool rgb)
  {
   using var stream=File.OpenRead(path);
+  return ReadImage(stream,rgb);
+ }
+ internal static IImageData ReadImage(Stream stream,bool rgb)
+ {
   // Keep the existing strict BMP integrity/resource policy. Native acceptance of
   // a truncated BMP does not establish defined values for its missing pixels.
   int first=stream.ReadByte(),second=stream.ReadByte();stream.Position=0;
   if(first==0xff&&second==0xd8) {
    var decoded=LocalJpegDecoder.DecodeRgb(stream);
+   if(rgb)return new RgbImage(decoded.Width,decoded.Height,decoded.Rgb);
    // Original color-to-MONO command 4 (0x18000c4d0) requires both dimensions >=4.
    // Grayscale JPEG is decoded directly to gray by the original wrapper and bypasses it.
    if(!decoded.IsGrayscale&&(decoded.Width<4||decoded.Height<4))throw new InvalidDataException("彩色图像转 MONO8 要求宽高均不小于4（原厂 0x801000ff）。");
@@ -40,22 +46,30 @@ internal static class LocalImageDecoder
    if(frame.Format==PixelFormats.Gray16) {
     byte[] source=new byte[checked(frame.PixelWidth*frame.PixelHeight*2)],gray=new byte[frame.PixelWidth*frame.PixelHeight];frame.CopyPixels(source,frame.PixelWidth*2,0);
     // Native unsigned 16-bit grayscale conversion takes the high byte, without WIC gamma conversion.
-    for(int i=0;i<gray.Length;i++)gray[i]=source[i*2+1];return new GrayImage(frame.PixelWidth,frame.PixelHeight,gray);
+    for(int i=0;i<gray.Length;i++)gray[i]=source[i*2+1];return Gray(frame.PixelWidth,frame.PixelHeight,gray,rgb);
    }
    if(decoder is TiffBitmapDecoder&&frame.Format==PixelFormats.Indexed8) {
-    byte[] indices=new byte[frame.PixelWidth*frame.PixelHeight];frame.CopyPixels(indices,frame.PixelWidth,0);return new GrayImage(frame.PixelWidth,frame.PixelHeight,indices);
+    byte[] indices=new byte[frame.PixelWidth*frame.PixelHeight];frame.CopyPixels(indices,frame.PixelWidth,0);return Gray(frame.PixelWidth,frame.PixelHeight,indices,rgb);
    }
    bool grayscale=frame.Format==PixelFormats.Gray8||decoder is BmpBitmapDecoder&&frame.Format.BitsPerPixel==8;
-   if(!grayscale&&(frame.PixelWidth<4||frame.PixelHeight<4))throw new InvalidDataException("彩色图像转 MONO8 要求宽高均不小于4（原厂 0x801000ff）。");
+   if(!rgb&&!grayscale&&(frame.PixelWidth<4||frame.PixelHeight<4))throw new InvalidDataException("彩色图像转 MONO8 要求宽高均不小于4（原厂 0x801000ff）。");
    var color=new FormatConvertedBitmap(frame,PixelFormats.Bgr24,null,0);
    byte[] pixels=new byte[checked(frame.PixelWidth*frame.PixelHeight)],bgr=new byte[checked(pixels.Length*3)];
    color.CopyPixels(bgr,frame.PixelWidth*3,0);
+   if(rgb&&!(decoder is BmpBitmapDecoder&&frame.Format.BitsPerPixel==8)) {
+    for(int i=0;i<pixels.Length;i++)(bgr[i*3],bgr[i*3+2])=(bgr[i*3+2],bgr[i*3]);
+    return new RgbImage(frame.PixelWidth,frame.PixelHeight,bgr);
+   }
    // Native corpus: pure R/G/B -> 75/149/29. Existing rounded BT.601 differs.
    // This is an independently implemented integer rule, not recovered vendor source.
    for(int i=0;i<pixels.Length;i++)pixels[i]=(byte)((76*bgr[i*3+2]+150*bgr[i*3+1]+30*bgr[i*3])>>8);
-   return new GrayImage(frame.PixelWidth,frame.PixelHeight,pixels);
+   return Gray(frame.PixelWidth,frame.PixelHeight,pixels,rgb);
   } catch(FileFormatException ex) {
    throw new InvalidDataException("Unsupported or invalid image.",ex);
   }
+ }
+ static IImageData Gray(int width,int height,byte[] pixels,bool rgb){
+  if(!rgb)return new GrayImage(width,height,pixels);
+  byte[] color=new byte[checked(pixels.Length*3)];for(int i=0;i<pixels.Length;i++)color[i*3]=color[i*3+1]=color[i*3+2]=pixels[i];return new RgbImage(width,height,color);
  }
 }

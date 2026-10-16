@@ -24,7 +24,9 @@ public partial class MainWindow
   try
   {
    ClearWorkflowCallResults(procedureId);if(doc.CurrentProcedureId==procedureId){results.Clear();RefreshRight();}if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
-   var session=await new SolutionExecutor(modules).RunAsync(new SolutionWorkspace(doc.Document,doc.BaseDirectory),procedureId,cancellationToken:token);
+   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};
+   var session=await new SolutionExecutor(modules).RunAsync(new SolutionWorkspace(doc.Document,doc.BaseDirectory),procedureId,cancellationToken:token,scope:executionScope,control:control);
+   if(control.StopRequested)continuousRun=false;
    StoreWorkflowCallResults(procedureId,session);var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);RecordWorkflowRun(procedureId,elapsed);
    if(windowClosed)return false;
    var name=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId)?.Name??procedureId;
@@ -54,7 +56,7 @@ public partial class MainWindow
  void StartProcedureLoop(string id){if(activeRun is not null){activeRun.Cancel();return;}SelectWorkflow(id);StartContinuous();}
  async Task ContinuousRun(string procedureId,CancellationTokenSource owner)
  {
-  try{while(!owner.IsCancellationRequested){bool ok=await RunCore(procedureId,owner.Token);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){if(!windowClosed)StatusText.Text="流程 NG，已停止连续运行";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}
+  try{while(!owner.IsCancellationRequested&&continuousRun){bool ok=await RunCore(procedureId,owner.Token);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){if(!windowClosed)StatusText.Text="流程 NG，已停止连续运行";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}
   catch(OperationCanceledException){if(!windowClosed)StatusText.Text="连续运行已停止";}
   catch(Exception error){if(!windowClosed)StatusText.Text="连续运行失败："+error.Message;}
   finally{FinishWorkflowRun(owner);}
@@ -65,6 +67,7 @@ public partial class MainWindow
  }
  protected override void OnClosed(EventArgs e)
  {
+  executionScope.Dispose();
   windowClosed=true;ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
  }
 }
