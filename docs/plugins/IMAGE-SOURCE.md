@@ -89,11 +89,37 @@ SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在
 
 已修正本地 MONO8 列表、SN、读前游标、手动选择、选中执行顺序、去重、失败后游标、首 N 路径缓存及可取消间隔。普通参数变化不再重置全部运行状态；同节点以 SemaphoreSlim 串行，不持有全插件锁睡眠；不同方案目录分离状态。并发/取消是独立托管实现，完整 session 身份仍待框架服务。
 
-已补三种模式的相机订阅行、RGB 的 OutMono8、拼接和过滤依赖行。本轮依据原厂截图校正文案、方案存图 120 张提示、曝光/增益等订阅文本框、数值和文本订阅图标、相机图标、文件夹文本长度 200。图标来自原厂提取资源，来源哈希已记录。缺少服务的控件保持禁用；实际订阅弹层、目录选择器和相机枚举尚未接入，不能宣称外观和操作完整等价。
+已补三种模式的相机订阅行、RGB 的 OutMono8、拼接和过滤依赖行。依据原厂截图校正文案、方案存图 120 张提示、曝光/增益等订阅文本框、数值和文本订阅图标、相机图标、文件夹文本长度 200；本轮另补本地目录选择按钮与校验，详见下节。图标来自原厂提取资源，来源哈希已记录。缺少服务的控件保持禁用；实际订阅弹层、远程目录选择和相机枚举尚未接入，不能宣称外观和操作完整等价。
 
-末张停止、目录订阅、RGB、相机/SDK、内嵌图像、拼接触发清空、字符过滤仍明确报告缺口；本地 MONO8 基础拼接现已实现，见下节。已移除永久 NoMatch 和逐次扫描 BMP 的错误替代。BmpReader 为独立实现，已对上述样本和本轮小尺寸拼接语料做像素对照，不代表通用解码等价。
+末张停止、目录订阅、RGB 输出、相机/SDK、内嵌图像、拼接触发清空、字符过滤仍明确报告缺口；本地 MONO8 基础拼接已实现。本轮插件独立加入 LocalImageDecoder，支持 BMP/PNG/TIFF 到 MONO8；未修改共享 VisionIO/BmpReader。JPEG 兼容解码仍有独立缺口。已移除永久 NoMatch 和逐次扫描 BMP 的错误替代；有效语料对照不代表通用解码等价。
 
-构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。178 项通过，0 警告/0 错误。覆盖源码映射的本地状态、缓存、错误、参数边界、同节点并发、间隔取消、宿主持久化后运行、原厂三模式 72 项显隐对照、订阅字段和布局宽度、样本像素哈希，以及下述 11 步原厂拼接操作对照。截图/原厂探针均在 tests，框架源文件未修改。
+构建：`dotnet build tests/ImageSource.PluginChecks --artifacts-path analysis/build/image-source --disable-build-servers`，运行产物 ImageSource.PluginChecks.exe。239 项通过，0 警告/0 错误。新增 13 个解码语料的逐文件身份/像素或明确缺口验证，以及原厂目录校验助手和本地目录行为对照；保留此前的本地状态、并发/取消、持久化宿主运行、三模式显隐、样本像素和 11 步拼接检查。目录展开 QA 截图已检查。截图/原厂探针均在 tests，框架源文件未修改。
+
+## 图像解码：彩色、调色板、多格式与异常语料
+
+源码关联：原始 CMyAlgorithmManager::Process、ConvertFileImage（0x18001c8d0，native-4.c），以及 MVDMediaProcess.dll 的文件解码入口 FUN_180383ef0。入口读文件并分派解码，再由图像层提供像素；本轮未反编译出最终灰度内核系数，不能把观测公式称作源码确认。
+
+原厂记录为本工作树 `analysis/full-audit/image-source-runtime/run-4f8687bcc001476bbd34f5409be3345a/probe.json`；13 个输入语料的 SHA256、输出字节/哈希、原生错误码，以及额外 JPEG RGB24 参考见 [image-source-codec-evidence.json](image-source-codec-evidence.json)。用 `Invoke-OriginalImageSourceProbe.ps1 -ProbeCodecs` 和 `Export-ImageSourceCodecEvidence.py --runtime PATH` 重放。输入生成代码共享给原厂探针与重建测试，仅生成语料，不含解码或预期结果算法。
+
+| 语料 | 原厂观测与本轮处理 |
+|---|---|
+| 17×19 彩色 24 位 BMP、顶向下 BMP、含变化 alpha 的 32 位 BMP | 行方向、非 4 字节对齐宽度、alpha 忽略；重建逐像素哈希一致 |
+| 灰度、反向灰度、彩色 8 位调色板 BMP | 实际应用调色板；重建逐像素哈希一致 |
+| 彩色 PNG、TIFF | 解码后 MONO8 哈希与原厂一致 |
+| BMP 改名 .png、PNG 改名 .bmp | 原厂按内容识别；重建同样按内容解码并对真实 BMP 做完整性检查 |
+| JPEG | 原厂成功；WIC 解码后有 24/323 像素与原厂不同，最大差 1。原厂 JPEG RGB24 再按观测灰度规则转换与原厂 MONO8 全字节相同，差异已定位在 RGB 解码阶段。插件明确返回 ImageCodecUnavailable，尚未完成 JPEG 兼容解码 |
+| 截短 BMP | 原厂返回成功，但三个运行输出的缺失像素不稳定；本轮独立实施严格拒绝，返回 ImageReadFailed，不声明该错误行为等价 |
+| 非图像 .bmp | 原厂错误 0x80100001；插件返回 ImageReadFailed；数值错误输出统一政策仍待 IS-003 |
+
+彩色语料中原厂纯 R/G/B 输出为 75/149/29，现有共享 BmpReader 的四舍五入公式为 76/150/29。插件使用独立整数规则 `(76R+150G+30B)>>8`；它与本批有效无损语料及原厂 JPEG RGB→MONO8 对照吻合，不代表已证明所有色彩空间、配置文件和位深。WIC 负责容器解码，64M 像素和严格 BMP 完整性检查是独立资源/有效性政策。JPEG、CMYK、16 位、特殊压缩、ICC、多帧 TIFF 等仍待扩展验证；不得据此标记全解码器等价。
+
+## 本地目录选择与校验
+
+原厂源码：Apps.XmlParser.ParamTab.OpenFolderDialog 的 CurValueA、DoOpenFile、IsCorrectDir、IsHaveRWAccess；路径图标来自原厂 Apps.Style BtnFolderStyle。当前 worktree 的 `run-8fdfdc1bf96c4561b6d877015860d013/probe.json` 直接调用原厂托管助手，确认 6 种路径语法结果和自建目录的写访问探测，记录与源码/资源/原始程序集哈希见 [image-source-folder-evidence.json](image-source-folder-evidence.json)。重放开关为 `-ProbeFolder`。
+
+插件已补本地 FolderBrowserDialog 按钮，选中后去首尾空白；手工输入在失焦时校验。接受本地盘符加反斜杠路径，限制 200 字符，检查磁盘存在、按需创建目录并探测可写性；失败保持旧值。原厂写探测会创建并删除固定 test.txt；插件使用独立随机名和 DeleteOnClose，验证保留已有 test.txt，这是明确的独立差异。相对路径、UNC、正斜杠和中间控制字符的语法行为已有原厂助手对照。
+
+范围限制：尚未操作原厂目录弹窗，不宣称弹窗外观/键盘行为等价。目录监视开关仍禁用，持久化开启的配置可显示选择器。原厂远程分支使用 DirectoryBrowser 与不同校验策略，缺少编辑器宿主上下文；SetParamUnit 报告、PreExecuteRun 自动重跑也需公共服务接入，不能用本地选目录冒充已完成目录订阅。
 
 ## 本地 MONO8 拼接：原厂逐帧对照
 
@@ -121,10 +147,12 @@ SDK 空白问题现已定位并修复测试宿主：Hik.Xml.BaseNode.loadXml 在
 
 - [x] 本地关键状态源码映射、4 个辅助函数反编译和原厂 SDK 操作对照。
 - [x] 三种模式声明/托管规则；未绑定相机、SDK 未提交和已提交的实际运行结果。
-- [x] MONO8 样本像素对照与 178 项重建检查。
+- [x] MONO8 样本像素对照与 239 项重建检查。
 - [x] 原厂 SDK 宿主三模式与展开状态截图、25 项实时参数模型及显隐对照。
 - [ ] 本地/相机/SDK 完整桌面截图及操作序列，含下部区域、OutMono8 联动和订阅弹层。
-- [ ] 彩色、调色板、损坏图像、多格式语料以及原生转换系数。
+- [x] 彩色/调色板/BMP 行布局、PNG/TIFF、改名容器、JPEG 和损坏文件语料；已识别转换差异并实现无损语料对齐。
+- [x] 本地目录选择、路径校验和原厂助手运行对照。
+- [ ] 原生转换内核源码、JPEG 兼容解码、更多位深/压缩/ICC/多帧语料，以及原厂目录弹窗操作。
 - [ ] 目录排序比较器、事件合并、RefreshImage/TriggerProcessRun、释放和重载。
 - [x] 本地 MONO8 基础拼接及 11 步原厂像素/错误/SN 对照。
 - [ ] RGB/提供器拼接与触发清空、字符过滤、预览文字、内嵌图像、真实流程停止。

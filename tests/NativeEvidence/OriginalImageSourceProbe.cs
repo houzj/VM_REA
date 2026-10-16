@@ -82,6 +82,25 @@ public static class OriginalImageSourceProbe
         WriteRows(a,new byte[]{10,20,30,40});Scenario(module,"stitch-width-restored",output);
         Parameter(parameters,"StitchEnable",false);
     }
+    static void CodecScenarios(object module,object parameters,string output) {
+        string directory=Path.Combine(Path.GetDirectoryName(output),"codec-fixtures");
+        Parameter(parameters,"ImageSourceType",1);Parameter(parameters,"PixelFormat",1);Parameter(parameters,"StitchEnable",false);Parameter(parameters,"PathCache",0);Parameter(parameters,"AutoPlay",false);
+        foreach(string path in ImageSourceCodecFixtures.Create(directory)) {
+            Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);
+            string name="codec-"+Path.GetFileName(path);
+            records.Add(new {phase="codec-fixture",name=name,fileSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(path))).Replace("-","").ToLowerInvariant()});
+            Scenario(module,name,output);
+            if(Path.GetExtension(path)==".jpg") {Parameter(parameters,"PixelFormat",2);Scenario(module,"codec-rgb-color.jpg",output);Parameter(parameters,"PixelFormat",1);}
+        }
+    }
+    static void FolderScenarios(string output) {
+        Type type=Assembly.LoadFrom(Path.Combine(root,"myLibs/Apps.XmlParser.dll")).GetType("Apps.XmlParser.ParamTab.OpenFolderDialog",true);
+        object dialog=Activator.CreateInstance(type);MethodInfo syntax=type.GetMethod("IsCorrectDir",BindingFlags.Instance|BindingFlags.NonPublic);
+        string directory=Path.Combine(Path.GetDirectoryName(output),"folder-fixture");Directory.CreateDirectory(directory);
+        foreach(var input in new[]{new[]{"local",directory},new[]{"relative","images"},new[]{"unc",@"\\server\images"},new[]{"forward-slash","D:/images"},new[]{"control","D:\\im\tages"},new[]{"unicode","D:\\图像"}})
+            records.Add(new {phase="folder-syntax",name=input[0],accepted=syntax.Invoke(dialog,new object[]{input[1]})});
+        records.Add(new {phase="folder-write-access",accepted=type.GetMethod("IsHaveRWAccess",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(dialog,new object[]{directory,false}),probeFileRemains=File.Exists(Path.Combine(directory,"test.txt"))});
+    }
     static void WriteRows(string path,byte[] rows,int width=4) {
         using(BinaryWriter writer=new BinaryWriter(File.Create(path))) {
             int stride=(width+3)&~3,length=rows.Length*stride;writer.Write((ushort)0x4d42);writer.Write(1078+length);writer.Write(0);writer.Write(1078);
@@ -191,6 +210,8 @@ public static class OriginalImageSourceProbe
                 Parameter(parameters,"ShowImageName",false);Snapshot(module,"display-change",output);
                 Scenarios(module,parameters,args[2],output);
                 if(args.Length>4&&args[4]=="stitch")StitchScenarios(module,parameters,output);
+                if(args.Length>4&&args[4]=="codecs")CodecScenarios(module,parameters,output);
+                if(args.Length>4&&args[4]=="folder")FolderScenarios(output);
                 if(args.Length>4&&args[4]=="ui") { phase="capture-sdk-ui"; CaptureModes(module,parameters,output); }
                 break;
             }

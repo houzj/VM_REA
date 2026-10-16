@@ -81,11 +81,36 @@ static class Program {
   plugin.Reset("stitch-native");var resetStitch=await Execute("stitch-native",values);Check(resetStitch.Outputs["Image"].As<VisionCore.GrayImage>()[0,0]==0,"explicit reset releases stitch history");
   Check(retainedFirstStitch![0,0]==0&&retainedFirstStitch[0,5]==40,"later stitching does not mutate previously published frame");
   Set(values,"ClearTrigger",true);Check((await Execute("stitch-native",values)).ErrorCode=="StitchTriggerUnavailable","clear trigger remains explicit subscription boundary");
+  string codecs=Path.Combine(scratch,"codecs");ImageSourceCodecFixtures.Create(codecs);
+  using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-codec-evidence.json"))){Check(evidence.RootElement.GetProperty("observations").GetArrayLength()==13,"complete original codec corpus retained");foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray()){
+   string phase=record.GetProperty("phase").GetString()!,file=Path.Combine(codecs,phase[6..]);
+   Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(file))).ToLowerInvariant()==record.GetProperty("fixtureSha256").GetString(),phase+" exact original fixture bytes");
+   values=Defaults();List(values,"ImagePaths",file);var result=await Execute(phase,values);
+   if(phase is "codec-truncated.bmp" or "codec-not-image.bmp"){Check(result.ErrorCode=="ImageReadFailed",phase+" strict invalid-data policy");continue;}
+   if(phase=="codec-color.jpg"){
+    Check(result.ErrorCode=="ImageCodecUnavailable","JPEG mismatch is explicit, not silently emitted");
+    using var input=File.OpenRead(file);var frame=BitmapDecoder.Create(input,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];var color=new FormatConvertedBitmap(frame,PixelFormats.Bgr24,null,0);byte[] bgr=new byte[frame.PixelWidth*frame.PixelHeight*3],candidate=new byte[frame.PixelWidth*frame.PixelHeight];color.CopyPixels(bgr,frame.PixelWidth*3,0);for(int i=0;i<candidate.Length;i++)candidate[i]=(byte)((76*bgr[i*3+2]+150*bgr[i*3+1]+30*bgr[i*3])>>8);
+    byte[] original=Convert.FromHexString(record.GetProperty("pixelsHex").GetString()!);int differences=Enumerable.Range(0,candidate.Length).Count(i=>candidate[i]!=original[i]),maxError=Enumerable.Range(0,candidate.Length).Max(i=>Math.Abs(candidate[i]-original[i]));
+    File.WriteAllText(Path.Combine(output,"jpeg-decoder-gap.json"),JsonSerializer.Serialize(new{nativeSha256=record.GetProperty("pixelSha256").GetString(),wicSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(candidate)).ToLowerInvariant(),differences,maxError,completeParity=false},new JsonSerializerOptions{WriteIndented=true}));continue;
+   }
+   Check(result.Status==ModuleStatus.Success,phase+" decode success");var image=result.Outputs["Image"].As<VisionCore.GrayImage>();
+   Check(image.Width==record.GetProperty("width").GetInt32()&&image.Height==record.GetProperty("height").GetInt32(),phase+" original dimensions");
+   string actualHash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(image.Pixels)).ToLowerInvariant();
+   Check(actualHash==record.GetProperty("pixelSha256").GetString(),phase+" original MONO8 pixel hash");
+  }}
+  using(var evidence=JsonDocument.Parse(File.ReadAllText("docs/plugins/image-source-folder-evidence.json"))){foreach(var record in evidence.RootElement.GetProperty("observations").EnumerateArray().Where(r=>r.GetProperty("phase").GetString()=="folder-syntax")){
+   string name=record.GetProperty("name").GetString()!,value=name switch{"local"=>scratch,"relative"=>"images","unc"=>@"\\server\images","forward-slash"=>"D:/images","control"=>"D:\\im\tages","unicode"=>"D:\\图像",_=>throw new Exception(name)};
+   Check(LocalFolderSelection.HasLocalSyntax(value)==record.GetProperty("accepted").GetBoolean(),"original folder syntax "+name);
+  }}
+  string folder=Path.Combine(scratch,"folder-select"),sentinel=Path.Combine(folder,"test.txt");Directory.CreateDirectory(folder);File.WriteAllText(sentinel,"keep");
+  Check(LocalFolderSelection.Prepare(folder)==folder,"folder selection applies local directory");Check(File.ReadAllText(sentinel)=="keep"&&Directory.GetFiles(folder).Length==1,"folder write probe preserves existing test.txt and leaves no temp file");
+  string created=Path.Combine(folder,"新建目录");Check(LocalFolderSelection.Prepare(created)==created&&Directory.Exists(created),"manual folder selection creates missing local directory");
+  foreach(string invalid in new[]{"","relative",@"\\server\images",scratch+"\\"+new string('x',201)}){bool rejected=false;try{LocalFolderSelection.Prepare(invalid);}catch(ArgumentException){rejected=true;}Check(rejected,"invalid folder selection rejected");}
   values=Defaults();Set(values,"AutoPlay",false);Set(values,"AutoStop",true);Check((await Execute("autostop-hidden",values)).Status==ModuleStatus.Success,"AutoStop ignored without autoplay");
   values=Defaults();var document=new GraphEditorDocument(registry);document.NewSolution();string id=document.AddNode(plugin.Manifest.Id,plugin.Manifest.Version,100,100,values);string path=Path.Combine(output,"restored.vmx.json");document.Save(path);document.Load(path);var session=await new SolutionExecutor(registry).RunAsync(new SolutionWorkspace(document.Document,document.BaseDirectory),document.CurrentProcedureId);Check(session.Status==SessionStatus.Success&&session.Nodes.Single().Outputs.ContainsKey("Image"),"persisted plugin executes through host");
   // WPF checks must run on their own STA after async runtime checks resume on a worker.
   Exception? uiError=null;var uiThread=new Thread(()=>{try{CheckUi(plugin,document.CurrentProcedure.Nodes.Single(),output);}catch(Exception ex){uiError=ex;}});uiThread.SetApartmentState(ApartmentState.STA);uiThread.Start();uiThread.Join();if(uiError is not null)throw uiError;
-  File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{checks,passed=true,originalRuntimeEquivalence=false,nativeBasis="source-confirmed state transitions and original SDK sample pixel hash; original SDK three-mode model visibility confirmed; desktop capture and service parity remain open"},new JsonSerializerOptions{WriteIndented=true}));
+  File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{checks,passed=true,originalRuntimeEquivalence=false,nativeBasis="original SDK state, sample/lossless codec/stitch pixel hashes, folder helper and three-mode visibility comparisons; JPEG, desktop capture and service parity remain open"},new JsonSerializerOptions{WriteIndented=true}));
   Console.WriteLine($"PASS {checks} image-source checks; original runtime equivalence remains unverified");
  }
  static void CheckUi(ImageSourcePlugin plugin,NodeDocument node,string output){
@@ -109,12 +134,14 @@ static class Program {
    Control<WCombo>("PixelFormat").SelectedIndex=1;Check(Visible("OutMono8"),"RGB UI enables extra Mono8 row");Capture("local-rgb24");
    Control<WCombo>("ImageSourceType").SelectedIndex=1;Check(Visible("CameraID")&&Visible("ExposureTimeInput")&&Visible("GainInput")&&!Visible("PixelFormat")&&!Visible("SolSaveImageData"),"camera UI rows");Check(!Control<WCombo>("CameraID").IsEnabled,"camera selector exposes unavailable service honestly");Capture("camera");
    Check(Control<System.Windows.Controls.TextBox>("ExposureTimeInput").IsReadOnly,"exposure uses subscription text field");Check(Control<System.Windows.Controls.TextBox>("SubscribeFolderPath").MaxLength==200,"folder input source length bound");
+   Check(Control<System.Windows.Controls.Button>("BrowseImageFolder").IsEnabled,"local folder picker works independently of watcher service");
    editor.UpdateLayout();Check(Control<WCombo>("CameraID").ActualWidth>200&&Control<System.Windows.Controls.TextBox>("ExposureTimeInput").ActualWidth>200&&number.ActualWidth>200,"decorated editors retain usable width");
    Control<WCombo>("ImageSourceType").SelectedIndex=2;Check(!Visible("CameraID")&&!Visible("AutoPlay")&&Visible("InitialSN"),"SDK UI rows");Capture("sdk");
    Control<ToggleButton>("StitchEnable").IsChecked=true;Check(Visible("StitchHeight")&&Visible("ClearTrigger"),"persisted stitching shows dependent controls");Control<ToggleButton>("ClearTrigger").IsChecked=true;Check(Visible("ClearTriggerCondition"),"clear trigger subscription row");
    Check(Control<ToggleButton>("StitchEnable").IsEnabled&&!Control<ToggleButton>("ClearTrigger").IsEnabled,"local stitch enabled independently of trigger service");
    Control<ToggleButton>("TriggerStringEnable").IsChecked=true;Check(Visible("TriggerString")&&Visible("TriggerFilter"),"trigger subscription rows");
    Control<WCombo>("ImageSourceType").SelectedIndex=0;Control<ToggleButton>("IsSubscribeFolderMode").IsChecked=true;Check(Visible("SubscribeFolderPath")&&Visible("RefreshImage")&&Visible("TriggerProcessRun"),"folder dependent rows");
+   Descendants(editor).OfType<ScrollViewer>().First().ScrollToEnd();editor.UpdateLayout();Capture("local-folder-expanded");
   }finally{editor.Close();}
  }
 }

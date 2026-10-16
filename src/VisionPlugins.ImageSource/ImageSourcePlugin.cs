@@ -99,8 +99,7 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
     await Task.Delay(c.Integer("Interval"),token);
     var clock=System.Diagnostics.Stopwatch.StartNew(); // Native interval is excluded from module runtime.
     if(!state.Cache.TryGetValue(selectedPath,out var image)) {
-     using var stream=File.OpenRead(c.ResolvePath(selectedPath));
-     image=BmpReader.Read(stream);
+     image=LocalImageDecoder.Read(c.ResolvePath(selectedPath));
      token.ThrowIfCancellationRequested();
      // The native cache admits the first N paths and retains hits; it is not an LRU cache.
      if(state.Cache.Count<c.Integer("PathCache"))state.Cache.Add(selectedPath,image);
@@ -129,6 +128,8 @@ public sealed class ImageSourcePlugin:IVisionToolPlugin,IToolImageListProvider,I
     };
     // Native OutMono8 is an additional conversion for RGB, not a duplicate MONO8 port emission.
     return new(ModuleStatus.Success,outputs);
+   } catch(NotSupportedException ex) {
+    return Failed("ImageCodecUnavailable",ex.Message);
    } catch(Exception ex)when(ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException) {
     return Failed("ImageReadFailed",ex.Message);
    } finally {

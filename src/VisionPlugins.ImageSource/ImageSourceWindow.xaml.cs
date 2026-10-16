@@ -42,7 +42,7 @@ public partial class ImageSourceWindow:System.Windows.Window {
   Subscription("TriggerFilter","触发字符");
   Group("订阅图片文件夹",true);
   Toggle("IsSubscribeFolderMode","订阅文件夹",false);
-  Text("SubscribeFolderPath","图像路径");
+  Folder("SubscribeFolderPath","图像路径");
   Toggle("RefreshImage","更新缩略图",false);
   Toggle("TriggerProcessRun","触发流程执行",false);
   loading=false;
@@ -59,7 +59,13 @@ public partial class ImageSourceWindow:System.Windows.Window {
  void Enum(string key,string caption,string[] options){var c=new W.ComboBox{ItemsSource=options,SelectedIndex=values[key].GetInt32()-1};c.SelectionChanged+=(_,_)=>{if(c.SelectedIndex>=0){values[key]=JsonSerializer.SerializeToElement(c.SelectedIndex+1);Apply();UpdateVisibility();}};Row(key,caption,c);}
  void Toggle(string key,string caption,bool enabled=true){var c=new Primitives.ToggleButton{Style=(Style)Resources["Switch"],IsChecked=values[key].GetBoolean(),IsEnabled=enabled,ToolTip=enabled?null:"此功能需要运行服务接入"};c.Checked+=Changed;c.Unchecked+=Changed;void Changed(object? sender,RoutedEventArgs e){values[key]=JsonSerializer.SerializeToElement(c.IsChecked==true);Apply();UpdateVisibility();}Row(key,caption,c);}
  void Number(string key,string caption){var box=new WpfNumericControl{Maximum=key=="InitialSN"?100000:key=="PathCache"?5:key is "StitchHeight" or "StitchStartHeight"?20000:int.MaxValue,Text=values[key].ToString()};box.ValueChanged+=text=>{if(int.TryParse(text,out int n)&&n>=0){values[key]=JsonSerializer.SerializeToElement(n);Apply();}};Row(key,caption,box);if(key!="PathCache")Decorate(key,"ic_btn_link切换_disable.png",true);}
- void Text(string key,string caption){var c=new W.TextBox{Text=values[key].GetString(),MaxLength=200,Height=27,Padding=new Thickness(8,2,0,0)};c.LostKeyboardFocus+=(_,_)=>{values[key]=JsonSerializer.SerializeToElement(c.Text);Apply();};Row(key,caption,c);}
+ void Folder(string key,string caption){
+  var box=new W.TextBox{Text=values[key].GetString(),MaxLength=200,Height=29,Padding=new Thickness(8,2,30,0)};
+  void Save(string path){if(path==values[key].GetString())return;try{values[key]=JsonSerializer.SerializeToElement(LocalFolderSelection.Prepare(path));box.Text=path;Apply();}catch(Exception ex)when(ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException){box.Text=values[key].GetString();System.Windows.MessageBox.Show(this,ex.Message,"图像路径未应用");}}
+  box.LostKeyboardFocus+=(_,_)=>Save(box.Text??"");Row(key,caption,box);
+  var browse=new W.Button{Name="BrowseImageFolder",Content=ResourceIcon("ic_文件路径_normal.png"),Width=28,Height=27,HorizontalAlignment=System.Windows.HorizontalAlignment.Right,Background=System.Windows.Media.Brushes.Transparent,BorderThickness=new Thickness(0),ToolTip="选择图像目录"};W.Grid.SetColumn(browse,1);rows[key].Children.Add(browse);
+  browse.Click+=(_,_)=>{using var picker=new System.Windows.Forms.FolderBrowserDialog{SelectedPath=values[key].GetString()??"",ShowNewFolderButton=true};if(picker.ShowDialog()==System.Windows.Forms.DialogResult.OK)Save(picker.SelectedPath.Trim());};
+ }
  void Apply(){if(loading)return;try{context.Apply(new(values));}catch(Exception ex){System.Windows.MessageBox.Show(this,ex.Message,"参数未应用");}}
  void UpdateVisibility() {
   if(loading)return;
