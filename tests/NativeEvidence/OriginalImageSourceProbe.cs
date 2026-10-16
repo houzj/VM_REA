@@ -38,6 +38,24 @@ public static class OriginalImageSourceProbe
         // Returned vendor-owned vector allocations intentionally die with this isolated probe.
     }
     static string root;
+    static object Fields(object value){return value.GetType().GetFields().ToDictionary(f=>f.Name,f=>f.GetValue(value));}
+    static void CameraScenarios(object solution,object module,object parameters,string output){
+        Type cameraType=Assembly.LoadFrom(Path.Combine(root,"Module(sp)/x64/Global/GlobalCameraModule/GlobalCameraModuleCs.dll")).GetType("GlobalCameraModuleCs.GlobalCameraModuleTool",true);
+        object camera=Activator.CreateInstance(cameraType,new object[]{solution});object cp=Get(camera,"ModuParams");
+        try{
+            object list=Call(cp,"GetCameraInfoList");records.Add(new{phase="camera-catalog",data=Fields(list)});
+            int count=Convert.ToInt32(list.GetType().GetField("nNum").GetValue(list));if(count!=1)throw new Exception("Exactly one original camera required");object info=((Array)list.GetType().GetField("astCameraInfo").GetValue(list)).GetValue(0);string serial=Convert.ToString(info.GetType().GetField("strCameraSN").GetValue(info));
+            Call(cp,"SetChosenCameraSN",serial);records.Add(new{phase="camera-bind",serial,chosen=Call(cp,"GetChosenCameraSN"),connected=Call(camera,"bIsCameraConnect"),id=Get(camera,"ID")});
+            Parameter(parameters,"ImageSourceType",2);StringParameter(module,"CameraID",Convert.ToString(Get(camera,"ID")));Parameter(parameters,"OutMono8",true);
+            double exposure=Convert.ToDouble(Get(cp,"ExposureTime")),gain=Convert.ToDouble(Get(cp,"Gain"));records.Add(new{phase="camera-settings",exposure,gain,triggerSource=Get(cp,"TriggerSource"),width=Get(cp,"Width"),height=Get(cp,"Height")});
+            for(int i=0;i<3;i++){Scenario(module,"camera-frame-"+i,output);object result=Get(module,"ModuResult");records.Add(new{phase="camera-counters-"+i,frameNum=Get(result,"FrameNum"),lostFrames=Get(result,"LostFrameCount"),lostPackets=Get(result,"LostPacketCount"),failures=Get(result,"GetCameraFailCount")});}
+            try{int index=0;foreach(float[] values in new[]{new[]{1000.1234f,1.2345f},new[]{5000.5678f,3.4567f},new[]{-1f,-1f}}){Call(parameters,"SetInputFloat","ExposureTimeInput",new float[]{values[0]});Call(parameters,"SetInputFloat","GainInput",new float[]{values[1]});StringParameter(module,"SetCameraParamWaitTime","10");Scenario(module,"camera-parameters-"+index,output);records.Add(new{phase="camera-readback-"+index++,requestedExposure=values[0],requestedGain=values[1],exposure=Get(cp,"ExposureTime"),gain=Get(cp,"Gain")});}}finally{Parameter(cp,"ExposureTime",exposure);Parameter(cp,"Gain",gain);records.Add(new{phase="camera-settings-restored",exposure=Get(cp,"ExposureTime"),gain=Get(cp,"Gain")});}
+            Call(parameters,"SetInputFloat","ExposureTimeInput",new float[]{(float)exposure});Call(parameters,"SetInputFloat","GainInput",new float[]{(float)gain});
+            int source=Convert.ToInt32(Get(cp,"TriggerSource"));try{Parameter(cp,"TriggerSource",0);Scenario(module,"camera-no-trigger",output);object failed=Get(module,"ModuResult");records.Add(new{phase="camera-failure-counters",failures=Get(failed,"GetCameraFailCount"),frame=Get(failed,"FrameNum")});}finally{Parameter(cp,"TriggerSource",source);}
+            Scenario(module,"camera-recovered",output);object recovered=Get(module,"ModuResult");records.Add(new{phase="camera-recovered-counters",failures=Get(recovered,"GetCameraFailCount"),frame=Get(recovered,"FrameNum")});
+            Parameter(parameters,"StitchEnable",true);Parameter(parameters,"StitchHeight",1);Parameter(parameters,"StitchStartHeight",2048);Scenario(module,"camera-invalid-stitch",output);object invalid=Get(module,"ModuResult");records.Add(new{phase="camera-invalid-stitch-counters",frame=Get(invalid,"FrameNum"),failures=Get(invalid,"GetCameraFailCount")});Parameter(parameters,"StitchEnable",false);Scenario(module,"camera-after-invalid-stitch",output);
+        }finally{Call(camera,"Dispose");}
+    }
     static readonly List<object> records = new List<object>();
     static readonly List<string> uiErrors = new List<string>();
     static object Get(object instance, string name) { return instance.GetType().GetProperty(name).GetValue(instance, null); }
@@ -155,6 +173,8 @@ public static class OriginalImageSourceProbe
         Scenario(module,"rgb-cache-admit-mono",output);byte[] encoded=File.ReadAllBytes(path);File.Delete(path);try{Parameter(parameters,"PixelFormat",2);Scenario(module,"rgb-cache-format-change",output);}finally{File.WriteAllBytes(path,encoded);}
         Parameter(parameters,"PathCache",0);Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);Parameter(parameters,"OutMono8",true);Scenario(module,"rgb-extra-mono",output);
         Parameter(parameters,"StitchEnable",true);Parameter(parameters,"ClearTrigger",false);Parameter(parameters,"StitchHeight",1);Parameter(parameters,"StitchStartHeight",0);Scenario(module,"rgb-stitch-first",output);Scenario(module,"rgb-stitch-second",output);
+        Parameter(parameters,"StitchEnable",false);string tiny=Path.Combine(directory,"tiny.bmp");WriteRows(tiny,new byte[]{10,20,30,40},2);Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",tiny);Scenario(module,"rgb-small-extra-mono",output);
+        string tinyColor=ImageSourceCodecFixtures.CreateExtended(Path.Combine(directory,"tiny-formats")).First(p=>Path.GetFileName(p)=="tiny-color.bmp");Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",tinyColor);Scenario(module,"rgb-small-color-extra-mono",output);
     }
     static void InputString(object parameters,string key,string value){
         MethodInfo method=parameters.GetType().GetMethod("SetInputString");Type element=method.GetParameters()[1].ParameterType.GetElementType();object item=Activator.CreateInstance(element);element.GetField("strValue").SetValue(item,value);element.GetField("strReserved").SetValue(item,new byte[32]);Array array=Array.CreateInstance(element,1);array.SetValue(item,0);method.Invoke(parameters,new object[]{key,array});
@@ -169,9 +189,9 @@ public static class OriginalImageSourceProbe
         Call(module,"ClearAllInputImage");foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","False"},new[]{"StitchEnable","False"},new[]{"PathCache","0"},new[]{"IsSubscribeFolderMode","True"},new[]{"RefreshImage","True"},new[]{"TriggerProcessRun","False"}})Parameter(parameters,setting[0],setting[1]);StringParameter(module,"SubscribeFolderPath",directory);System.Threading.Thread.Sleep(200);Scenario(module,"watch-initial",output);
         WriteRows(added,new byte[]{90,100,110,120});System.Threading.Thread.Sleep(200);Scenario(module,"watch-create-preserve-index",output);File.Delete(added);System.Threading.Thread.Sleep(200);Scenario(module,"watch-delete",output);WriteRows(a,new byte[]{77,78,79,80});System.Threading.Thread.Sleep(200);Scenario(module,"watch-modify",output);File.Move(a,Path.Combine(directory,"renamed.bmp"));System.Threading.Thread.Sleep(200);Scenario(module,"watch-rename",output);Parameter(parameters,"IsSubscribeFolderMode",false);
     }
-    static void EmbedScenarios(object module,object parameters,string output){
+    static void EmbedScenarios(object module,object parameters,string output,bool folder=false){
         string directory=Path.Combine(Path.GetDirectoryName(output),"embed-fixtures");Directory.CreateDirectory(directory);string path=Path.Combine(directory,"owned.bmp");WriteRows(path,new byte[]{10,20,30,40});Call(module,"ClearAllInputImage");Call(module,"AddInputImageByPath",path);
-        foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","False"},new[]{"StitchEnable","False"},new[]{"PathCache","0"},new[]{"SolSaveImageData","True"}})Parameter(parameters,setting[0],setting[1]);Scenario(module,"embed-before-save",output);
+        foreach(var setting in new[]{new[]{"ImageSourceType","1"},new[]{"PixelFormat","1"},new[]{"AutoPlay","False"},new[]{"StitchEnable","False"},new[]{"PathCache","0"},new[]{"SolSaveImageData","True"}})Parameter(parameters,setting[0],setting[1]);if(folder){Parameter(parameters,"IsSubscribeFolderMode",true);StringParameter(module,"SubscribeFolderPath",directory);Call(module,"ClearAllInputImage");}Scenario(module,"embed-before-save",output);
         Type type=Assembly.LoadFrom(Path.Combine(root,"myLibs/VM.Core.dll")).GetType("VM.Core.VmSolution",true);string saved=Path.Combine(Path.GetDirectoryName(output),"owned-embedded.sol");type.GetMethod("SaveAs",new[]{typeof(string),typeof(string)}).Invoke(null,new object[]{saved,null});records.Add(new{phase="embed-save-as",exists=File.Exists(saved),length=new FileInfo(saved).Length,sha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(saved))).Replace("-","").ToLowerInvariant()});File.Delete(path);
         try{type.GetMethod("Load",new[]{typeof(string),typeof(string),typeof(bool)}).Invoke(null,new object[]{saved,"",false});}catch(TargetInvocationException ex){PropertyInfo code=ex.InnerException.GetType().GetProperty("errorCode");if(code==null||Convert.ToInt32(code.GetValue(ex.InnerException,null))!=-536870093)throw;records.Add(new{phase="embed-partial-reload",code=-536870093});}
         object solution=type.GetProperty("Instance").GetValue(null,null);foreach(object info in (IEnumerable)Call(solution,"GetFullModuleList",new object[]{null})){Type infoType=info.GetType();string full=(string)infoType.GetField("FullName").GetValue(info)+"."+(string)infoType.GetField("Name").GetValue(info);object reloaded=type.GetProperty("Item").GetValue(solution,new object[]{full});if(reloaded!=null&&reloaded.GetType().FullName=="ImageSourceModuleCs.ImageSourceModuleTool"){Scenario(reloaded,"embed-after-source-removed",output);break;}}
@@ -190,7 +210,7 @@ public static class OriginalImageSourceProbe
             foreach(DependencyObject inner in Descendants(child))yield return inner;
         }
     }
-    static void CaptureModes(object module,object parameters,string output) {
+    static void CaptureModes(object module,object parameters,string output,bool desktop=false) {
         object moduleParameters=Get(module,"Params");
         string installedXml=Path.Combine(root,"Module(sp)/x64/Collection/ImageSourceModule/ImageSourceModuleAlgorithmTab.xml");
         // Vendor loadXml changes file attributes before reading. Use an exact
@@ -204,10 +224,11 @@ public static class OriginalImageSourceProbe
         moduleParameters.GetType().GetProperty("Data").SetValue(moduleParameters,null,null);
         AppDomain.CurrentDomain.FirstChanceException += ObserveUiException;
         Type type=Assembly.LoadFrom(Path.Combine(root,"myLibs/VMControls.WPF.dll")).GetType("VMControls.WPF.ParamsConfigControlBase",true);
-        FrameworkElement control=(FrameworkElement)Activator.CreateInstance(type);
+        Window ownedHost=null;if(desktop){ownedHost=new Window{Width=800,Height=600,Left=-30000,Top=-30000,ShowActivated=false,ShowInTaskbar=false};Application.Current.MainWindow=ownedHost;ownedHost.Show();}
+        FrameworkElement control;Window window;
+        if(desktop){window=(Window)Activator.CreateInstance(type.Assembly.GetType("VMControls.WPF.ParamsTabControlBase",true));window.Owner=ownedHost;window.Left=-30000;window.Top=-30000;window.ShowActivated=false;window.Show();control=(FrameworkElement)window.FindName("paramstab");}
+        else{control=(FrameworkElement)Activator.CreateInstance(type);window=new Window{Width=420,Height=700,Left=-30000,Top=-30000,ShowActivated=false,Content=control};window.Show();}
         type.GetProperty("ParamsConfig").SetValue(control,moduleParameters,null);
-        Window window=new Window{Width=420,Height=700,Left=-30000,Top=-30000,ShowActivated=false,Content=control};
-        window.Show();
         try {
             int capture=0;
             foreach(int mode in new[]{1,2,3,1,1}) {
@@ -221,11 +242,15 @@ public static class OriginalImageSourceProbe
                 records.Add(new {phase="sdk-ui-model",mode=mode,variant=variant,items=items});
                 records.Add(new {phase="sdk-ui-diagnostic",mode=mode,xmlExists=File.Exists(installedXml),context=control.DataContext==null?null:control.DataContext.GetType().FullName,width=control.ActualWidth,height=control.ActualHeight,visuals=Descendants(control).OfType<FrameworkElement>().Select(e=>new {type=e.GetType().FullName,width=e.ActualWidth,height=e.ActualHeight,context=e.DataContext==null?null:e.DataContext.GetType().FullName}).Take(35).ToArray(),exceptions=uiErrors.Distinct().Take(30).ToArray()});
                 var nodes=Descendants(control).OfType<FrameworkElement>().Where(e=>e.DataContext!=null&&e.DataContext.GetType().GetProperty("Name")!=null).Select(e=>new { type=e.GetType().FullName,name=Convert.ToString(e.DataContext.GetType().GetProperty("Name").GetValue(e.DataContext,null)),visible=e.IsVisible,visibility=e.Visibility.ToString() }).Distinct().ToArray();
-                RenderTargetBitmap bitmap=new RenderTargetBitmap(420,700,96,96,PixelFormats.Pbgra32);bitmap.Render(window);
+                RenderTargetBitmap bitmap=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(window);
                 PngBitmapEncoder encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));
                 string imagePath=Path.Combine(Path.GetDirectoryName(output),"original-sdk-ui-"+variant+".png");
                 using(FileStream file=File.Create(imagePath))encoder.Save(file);
-                records.Add(new {phase="sdk-hosted-ui",mode=mode,variant=variant,nodes=nodes,accepted=nodes.Length>0&&items.Length>0,imageSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(imagePath))).Replace("-","").ToLowerInvariant(),limitation="Original SDK embedded control with byte-identical writable XML copy; not the desktop debug window. Offscreen WPF rendering; full expanded content can exceed viewport."});
+                if(desktop&&mode==2){
+                    object model=control.DataContext;model.GetType().GetProperty("IsSubscribeInWindow").SetValue(model,true,null);object item=Call(model,"FindBaseNodeByName","ExposureTimeInput");var command=(System.Windows.Input.ICommand)Get(model,"ChangeSelectedSubParamCommand");command.Execute(item);window.Dispatcher.Invoke(delegate{},System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                    foreach(Window popup in Application.Current.Windows.Cast<Window>().Where(w=>w!=window&&w.GetType().Name=="ParamSubscribeWindow").ToArray()){popup.Left=-30000;popup.Top=-30000;popup.UpdateLayout();var popupBitmap=new RenderTargetBitmap((int)Math.Ceiling(popup.ActualWidth),(int)Math.Ceiling(popup.ActualHeight),96,96,PixelFormats.Pbgra32);popupBitmap.Render(popup);var popupEncoder=new PngBitmapEncoder();popupEncoder.Frames.Add(BitmapFrame.Create(popupBitmap));string popupPath=Path.Combine(Path.GetDirectoryName(output),"original-subscription-exposure.png");using(var file=File.Create(popupPath))popupEncoder.Save(file);records.Add(new{phase="original-subscription-window",type=popup.GetType().FullName,width=popup.ActualWidth,height=popup.ActualHeight,imageSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(popupPath))).Replace("-","").ToLowerInvariant(),texts=Descendants(popup).OfType<System.Windows.Controls.TextBlock>().Select(t=>t.Text).Where(t=>!String.IsNullOrEmpty(t)).Distinct().ToArray()});popup.Close();}
+                }
+                records.Add(new {phase="sdk-hosted-ui",mode=mode,variant=variant,nodes=nodes,accepted=nodes.Length>0&&items.Length>0,imageSha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(imagePath))).Replace("-","").ToLowerInvariant(),windowType=window.GetType().FullName,windowWidth=window.ActualWidth,windowHeight=window.ActualHeight,limitation=desktop?"Original ParamsTabControlBase window hosted by SDK probe with byte-identical XML. SDK backend retained; not the installed desktop application process.":"Original SDK embedded control with byte-identical writable XML copy; not the desktop debug window. Offscreen WPF rendering; full expanded content can exceed viewport."});
                 if(capture>=4) {
                     window.Height=1600;window.UpdateLayout();
                     RenderTargetBitmap full=new RenderTargetBitmap(420,1600,96,96,PixelFormats.Pbgra32);full.Render(window);
@@ -235,7 +260,7 @@ public static class OriginalImageSourceProbe
                 }
                 File.WriteAllText(output,new JavaScriptSerializer{MaxJsonLength=8388608}.Serialize(records));
             }
-        }finally{AppDomain.CurrentDomain.FirstChanceException -= ObserveUiException;window.Close();if(control is IDisposable)((IDisposable)control).Dispose();}
+        }finally{AppDomain.CurrentDomain.FirstChanceException -= ObserveUiException;window.Close();if(control is IDisposable)((IDisposable)control).Dispose();if(ownedHost!=null)ownedHost.Close();}
     }
     static void ObserveUiException(object sender,System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs args) {
         if(uiErrors.Count<100)uiErrors.Add(args.Exception.ToString());
@@ -243,7 +268,7 @@ public static class OriginalImageSourceProbe
     [STAThread] public static int Main(string[] args)
     {
         root = args[0]; string output = args[3]; string phase = "resolve";
-        if(args.Length>4&&args[4]=="ui"&&Application.Current==null)new Application { ShutdownMode=ShutdownMode.OnExplicitShutdown };
+        if(args.Length>4&&(args[4]=="ui"||args[4]=="desktop-ui")&&Application.Current==null)new Application { ShutdownMode=ShutdownMode.OnExplicitShutdown };
         AppDomain.CurrentDomain.AssemblyResolve += delegate(object sender, ResolveEventArgs request) {
             string file = new AssemblyName(request.Name).Name + ".dll";
             foreach (string dir in new[] { "myLibs", "PublicFile/x64", "Module(sp)/x64/Collection/ImageSourceModule", ".CommonControl" }) {
@@ -294,8 +319,11 @@ public static class OriginalImageSourceProbe
                 if(args.Length>4&&args[4]=="control")ControlScenarios(module,parameters,args[2],output);
                 if(args.Length>4&&args[4]=="watch")WatchScenarios(module,parameters,output);
                 if(args.Length>4&&args[4]=="embed")EmbedScenarios(module,parameters,output);
+                if(args.Length>4&&args[4]=="embed-folder")EmbedScenarios(module,parameters,output,true);
+                if(args.Length>4&&args[4]=="camera")CameraScenarios(solution,module,parameters,output);
                 if(args.Length>5&&args[4]=="jpeg")JpegScenarios(module,parameters,args[5],output);
                 if(args.Length>4&&args[4]=="ui") { phase="capture-sdk-ui"; CaptureModes(module,parameters,output); }
+                if(args.Length>4&&args[4]=="desktop-ui") { phase="capture-desktop-window"; CaptureModes(module,parameters,output,true); }
                 break;
             }
             records.Add(new { phase="finished", originalRuntimeEquivalence=false, ranImageSource=records.Any(r=>r.GetType().GetProperty("sn")!=null) });

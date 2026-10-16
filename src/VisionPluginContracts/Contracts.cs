@@ -18,11 +18,12 @@ public sealed class ToolPluginRegistry {
  public IEnumerable<IVisionToolPlugin> Plugins=>plugins.Values;
  public void Register(IVisionToolPlugin plugin,ModuleRegistry modules){if(plugin.Manifest.Id!=plugin.Descriptor.Id||plugin.Manifest.Version!=plugin.Descriptor.Version)throw new ArgumentException("Plugin identity mismatch");if(!plugins.TryAdd(plugin.Manifest.Id,plugin))throw new InvalidOperationException("Duplicate plugin");modules.Register(plugin.Descriptor,plugin.CreateRuntime);}
  public IVisionToolPlugin? Find(string id)=>plugins.GetValueOrDefault(id);
- public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory){
+ public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory)=>PrepareSave(document,baseDirectory,null);
+ public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){
   var catalog=new ResourceCatalog(baseDirectory,document.Resources);var resources=document.Resources.Where(r=>!plugins.Values.Any(p=>p is IToolAssetPersistence&&r.Id.StartsWith("plugin:"+p.Manifest.Id+":",StringComparison.Ordinal))).ToDictionary(r=>r.Id,StringComparer.Ordinal);
   var procedures=document.Procedures.Select(procedure=>procedure with{Nodes=procedure.Nodes.Select(node=>{
    if(Find(node.ModuleId) is not IToolAssetPersistence participant)return node;
-   var snapshot=participant.PrepareSave(node,baseDirectory,catalog);foreach(var resource in snapshot.Resources)resources[resource.Id]=resource;return snapshot.Node;
+   var snapshot=participant.PrepareSave(node,baseDirectory,catalog,scope);foreach(var resource in snapshot.Resources)resources[resource.Id]=resource;return snapshot.Node;
   }).ToArray()}).ToArray();return document with{Procedures=procedures,Resources=resources.Values.ToArray()};
  }
 }
@@ -31,4 +32,4 @@ public sealed record ToolImageEntry(string Path,bool Selected);
 public interface IToolImageListProvider {IReadOnlyList<ToolImageEntry> GetImages(VisionFramework.NodeDocument node);IReadOnlyList<ToolImageEntry> GetImages(NodeDocument node,ModuleExecutionScope scope)=>GetImages(node);}
 public interface IToolImagePreviewProvider {VisionCore.IImageData LoadPreview(NodeDocument node,string path,string baseDirectory,ResourceCatalog? resources=null);Stream OpenEncodedImage(NodeDocument node,string path,string baseDirectory,ResourceCatalog? resources=null);}
 public sealed record ToolAssetSnapshot(NodeDocument Node,IReadOnlyList<ResourceDocument> Resources);
-public interface IToolAssetPersistence {ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources);}
+public interface IToolAssetPersistence {ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources);ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources,ModuleExecutionScope? scope)=>PrepareSave(node,baseDirectory,resources);}

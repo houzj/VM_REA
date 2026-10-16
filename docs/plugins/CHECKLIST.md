@@ -4,7 +4,7 @@
 
 | 优先级 | 类别 | 插件 | 名称 | 参数/输入/输出 | UI类型 | 逆向状态 |
 |---|---|---|---|---|---|---|
-|P0|Collection|ImageSourceModule|图像源|23/5/11|Boolean, BooleanTips, ButtonSelecter, ButtonSelecter_ImageList, Enumeration, EnumerationCameraForImage, Integer, OpenFolderDialog|JPEG小尺寸源码/像素、RGB、SDK提交、过滤、目录监听和内嵌已有原厂对照；公共服务已接入；750插件/242 WPF检查通过；待真实相机、桌面弹层、目录内嵌与已列明边界验收|
+|P0|Collection|ImageSourceModule|图像源|23/5/11|Boolean, BooleanTips, ButtonSelecter, ButtonSelecter_ImageList, Enumeration, EnumerationCameraForImage, Integer, OpenFolderDialog|实机取帧/参数/计数/恢复、JPEG边界、RGB、SDK、过滤、目录监听与内嵌已有原厂对照；767插件/242 WPF/460其他回归通过；待用户协助原厂桌面弹层/远程环境，明确覆盖限制，不标记完整等价|
 |P1|Collection|ImageAcquisitionModule|多图采集|7/0/6|Enumeration, EnumerationCameraForAcq, ImageConfig, Integer, OpenFileForAcquisition|声明已清点；语义与运行待逆向|
 |P1|Collection|ImageBufferModule|缓存图像|0/3/17|ButtonSelecter|声明已清点；语义与运行待逆向|
 |P1|Collection|LightModule|光源|32/7/26|Boolean, ButtonSelecter, Enumeration, EnumerationLightForLight, Integer, RadioSelecter|声明已清点；语义与运行待逆向|

@@ -13,7 +13,10 @@ param(
     [switch]$ProbeRgb,
     [switch]$ProbeControl,
     [switch]$ProbeWatch,
-    [switch]$ProbeEmbed
+    [switch]$ProbeEmbed,
+    [switch]$ProbeCamera,
+    [switch]$ProbeEmbedFolder,
+    [switch]$CaptureDesktopUi
 )
 $ErrorActionPreference = 'Stop'
 $workspace = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -34,10 +37,12 @@ $wpf = 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/WPF'
 $compiler = 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 & $compiler /nologo /target:exe /platform:x64 /r:System.Web.Extensions.dll /r:System.Core.dll "/r:$wpf/PresentationCore.dll" "/r:$wpf/PresentationFramework.dll" "/r:$wpf/WindowsBase.dll" /r:System.Xaml.dll "/out:$exe" (Join-Path $alias 'tests/NativeEvidence/OriginalImageSourceProbe.cs') (Join-Path $alias 'tests/NativeEvidence/ImageSourceCodecFixtures.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Probe compile failed' }
+$provenance = @($binary, $exe, (Join-Path $PSScriptRoot 'OriginalImageSourceProbe.cs'), (Join-Path $PSScriptRoot 'ImageSourceCodecFixtures.cs')) | ForEach-Object { @{path=[IO.Path]::GetFullPath($_); sha256=(Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.ToLowerInvariant()} }
+$provenance | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $output 'provenance.json') -Encoding utf8
 '<configuration><appSettings><add key="StartServerByExe" value="0"/><add key="ServerPath" value=""/><add key="StartClientMode" value="1"/></appSettings><startup><supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.6.1"/></startup></configuration>' | Set-Content -LiteralPath ($exe + '.config') -Encoding utf8
 $result = Join-Path $output 'probe.json'
 $arguments = @($Applications, $Solution, (Join-Path $workspace 'analysis/images/circle-find-sample.bmp'), $result)
-if (@($CaptureSdkUi,$ProbeStitch,$ProbeCodecs,$ProbeFolder,$ProbeJpeg,$ProbeCatalog,$ProbeFormats,$ProbeClear,$ProbeRgb,$ProbeControl,$ProbeWatch,$ProbeEmbed).Where({$_}).Count -gt 1) { throw 'Probes use separate fixture runs' }
+if (@($CaptureSdkUi,$ProbeStitch,$ProbeCodecs,$ProbeFolder,$ProbeJpeg,$ProbeCatalog,$ProbeFormats,$ProbeClear,$ProbeRgb,$ProbeControl,$ProbeWatch,$ProbeEmbed,$ProbeCamera,$ProbeEmbedFolder,$CaptureDesktopUi).Where({$_}).Count -gt 1) { throw 'Probes use separate fixture runs' }
 if ($CaptureSdkUi) { $arguments += 'ui' }
 if ($ProbeStitch) { $arguments += 'stitch' }
 if ($ProbeCodecs) { $arguments += 'codecs' }
@@ -50,6 +55,9 @@ if ($ProbeRgb) { $arguments += 'rgb' }
 if ($ProbeControl) { $arguments += 'control' }
 if ($ProbeWatch) { $arguments += 'watch' }
 if ($ProbeEmbed) { $arguments += 'embed' }
+if ($ProbeCamera) { $arguments += 'camera' }
+if ($ProbeEmbedFolder) { $arguments += 'embed-folder' }
+if ($CaptureDesktopUi) { $arguments += 'desktop-ui' }
 $quotedArguments = $arguments | ForEach-Object {
     if ($_.Contains('"')) { throw 'Probe paths cannot contain a quote' }
     '"' + $_ + '"'

@@ -45,7 +45,7 @@ public sealed class MvsCameraAcquisition:IImageAcquisitionService,IDisposable {
    SdkVersion=Convert.ToUInt32(api.GetMethod("MV_CC_GetSDKVersion_NET")!.Invoke(null,null));
    object list=Create("MV_CC_DEVICE_INFO_LIST");Set(list,"pDeviceInfo",new IntPtr[256]);object?[] arguments=[5u,list];Check(Invoke(null,"MV_CC_EnumDevices_NET",arguments),"Enumerate devices");list=arguments[1]!;
    uint count=Convert.ToUInt32(Get(list,"nDeviceNum"));if(count>256)throw new InvalidDataException("Invalid camera enumeration count.");var pointers=(IntPtr[])Get(list,"pDeviceInfo");var cameras=new List<CameraInfo>();
-   for(int i=0;i<count;i++){object info=Marshal.PtrToStructure(pointers[i],Nested("MV_CC_DEVICE_INFO"))!;int id=i+1;devices.Add(id,info);cameras.Add(new(id,Describe(info,id)));}
+   for(int i=0;i<count;i++){object info=Marshal.PtrToStructure(pointers[i],Nested("MV_CC_DEVICE_INFO"))!;int id=i+1;devices.Add(id,info);var label=Describe(info,id);cameras.Add(new(id,label.Name){PersistentId=label.Serial});}
    Cameras=cameras.AsReadOnly();
   } catch {loadContext.Unload();throw;}
  }
@@ -55,9 +55,9 @@ public sealed class MvsCameraAcquisition:IImageAcquisitionService,IDisposable {
  static void Set(object value,string name,object item)=>value.GetType().GetField(name)!.SetValue(value,item);
  int Invoke(object? handle,string name,params object?[] arguments){var method=api.GetMethods().Single(m=>m.Name==name&&m.GetParameters().Length==arguments.Length);try{return Convert.ToInt32(method.Invoke(handle,arguments));}catch(TargetInvocationException ex)when(ex.InnerException is not null){System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();throw;}}
  static void Check(int result,string operation){if(result!=0)throw new CameraAcquisitionException(unchecked((uint)result),operation+" failed: 0x"+unchecked((uint)result).ToString("x8"));}
- string Describe(object info,int id){
+ (string Name,string Serial) Describe(object info,int id){
   uint layer=Convert.ToUInt32(Get(info,"nTLayerType"));object special=Get(info,"SpecialInfo");string member=layer==1?"stGigEInfo":"stUsb3VInfo",type=layer==1?"MV_GIGE_DEVICE_INFO":"MV_USB3_DEVICE_INFO";var raw=(byte[])Get(special,member);IntPtr pointer=Marshal.AllocHGlobal(raw.Length);
-  try{Marshal.Copy(raw,0,pointer,raw.Length);object detail=Marshal.PtrToStructure(pointer,Nested(type))!;string Text(string name){object value=Get(detail,name);if(value is string text)return text.TrimEnd('\0');byte[] bytes=(byte[])value;int end=Array.IndexOf(bytes,(byte)0);return Encoding.UTF8.GetString(bytes,0,end<0?bytes.Length:end);}return $"{id}: {Text("chModelName")} {Text("chSerialNumber")}".Trim();}finally{Marshal.FreeHGlobal(pointer);}
+  try{Marshal.Copy(raw,0,pointer,raw.Length);object detail=Marshal.PtrToStructure(pointer,Nested(type))!;string Text(string name){object value=Get(detail,name);if(value is string text)return text.TrimEnd('\0');byte[] bytes=(byte[])value;int end=Array.IndexOf(bytes,(byte)0);return Encoding.UTF8.GetString(bytes,0,end<0?bytes.Length:end);}string serial=Text("chSerialNumber");return ($"{id}: {Text("chModelName")} {serial}".Trim(),serial);}finally{Marshal.FreeHGlobal(pointer);}
  }
  object Open(int id){
   if(handles.TryGetValue(id,out var handle))return handle;if(!devices.TryGetValue(id,out var device))throw new CameraAcquisitionException(0xe0000309,"Camera not bound.");
@@ -66,8 +66,15 @@ public sealed class MvsCameraAcquisition:IImageAcquisitionService,IDisposable {
  }
  public ValueTask<CameraFrame> AcquireAsync(CameraRequest request,CancellationToken cancellationToken)=>new(Task.Run(()=>{
   lock(gate){ObjectDisposedException.ThrowIf(disposed,this);cancellationToken.ThrowIfCancellationRequested();var handle=Open(request.CameraId);
-   void Write(double? value,string key,string fallback){if(value is null)return;float number=float.Parse(value.Value.ToString("F3",CultureInfo.InvariantCulture),CultureInfo.InvariantCulture);int result=Invoke(handle,"MV_CC_SetFloatValue_NET",key,number);if(result!=0)result=Invoke(handle,"MV_CC_SetFloatValue_NET",fallback,number);Check(result,key);if(request.SetParameterWaitTimeMs>0){if(cancellationToken.WaitHandle.WaitOne(request.SetParameterWaitTimeMs))cancellationToken.ThrowIfCancellationRequested();}}
-   Write(request.ExposureTime,"ExposureTime","ExposureTimeAbs");Write(request.Gain,"Gain","GainRaw");
+   // Original ImageSource tries the fallback name but does not fail acquisition
+   // when both parameter writes are rejected (confirmed with negative inputs).
+   void Write(double? value,string key,string fallback){if(value is null)return;float number=float.Parse(((float)value.Value).ToString("F3",CultureInfo.InvariantCulture),CultureInfo.InvariantCulture);int result=Invoke(handle,"MV_CC_SetFloatValue_NET",key,number);if(result!=0)_=Invoke(handle,"MV_CC_SetFloatValue_NET",fallback,number);}
+   void Wait(){if(request.SetParameterWaitTimeMs>0&&cancellationToken.WaitHandle.WaitOne(request.SetParameterWaitTimeMs))cancellationToken.ThrowIfCancellationRequested();}
+   Write(request.ExposureTime,"ExposureTime","ExposureTimeAbs");Wait();Write(request.Gain,"Gain","GainRaw");Wait();
+   uint ReadEnum(string key){object?[] query=[key,Create("MVCC_ENUMVALUE")];Check(Invoke(handle,"MV_CC_GetEnumValue_NET",query),key);return Convert.ToUInt32(Get(query[1]!,"nCurValue"));}
+   // Do not overwrite the device's trigger configuration. A software-triggered
+   // camera requires one command per requested image; external triggers wait.
+   if(ReadEnum("TriggerMode")!=0&&ReadEnum("TriggerSource")==7)Check(Invoke(handle,"MV_CC_SetCommandValue_NET","TriggerSoftware"),"Software trigger");
    object payload=Create("MVCC_INTVALUE_EX");object?[] query=["PayloadSize",payload];Check(Invoke(handle,"MV_CC_GetIntValueEx_NET",query),"Read payload size");long size=Convert.ToInt64(Get(query[1]!,"nCurValue"));if(size<=0||size>256L*1024*1024)throw new InvalidDataException("Camera payload exceeds resource limit.");IntPtr buffer=Marshal.AllocHGlobal(checked((int)size));
    try{
     object?[] frame=[buffer,(uint)size,Create("MV_FRAME_OUT_INFO_EX"),100];var clock=Stopwatch.StartNew();int result;
