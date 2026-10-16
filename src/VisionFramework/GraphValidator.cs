@@ -1,0 +1,34 @@
+using System.Text.Json;
+namespace VisionFramework;
+public static class GraphValidator {
+ public static ProcedureValidationResult Validate(ProcedureDocument p,ModuleRegistry registry){
+ var issues=new List<ValidationIssue>(); void Error(string code,string message,string? id=null)=>issues.Add(new(code,message,id));
+  if(p is null||p.Nodes is null||p.Connections is null){Error("Document","Missing procedure, nodes or connections");return new(issues,[]);}
+ if(p.Nodes.Any(n=>n is null||n.Parameters is null)||p.Connections.Any(c=>c is null||string.IsNullOrWhiteSpace(c.FromNode)||string.IsNullOrWhiteSpace(c.ToNode)||string.IsNullOrWhiteSpace(c.FromPort)||string.IsNullOrWhiteSpace(c.ToPort))){Error("Document","Null node parameters or incomplete connection");return new(issues,[]);}
+ if(p.Configuration is null||p.Configuration.Subscriptions is null||p.Configuration.Subscriptions.Any(b=>b is null||b.Source is null)){Error("WorkflowConfiguration","Missing workflow configuration or subscription");return new(issues,[]);}
+ var nodes=new Dictionary<string,NodeDocument>();var ds=new Dictionary<string,ModuleDescriptor>();
+ foreach(var n in p.Nodes){if(string.IsNullOrWhiteSpace(n.Id)||!nodes.TryAdd(n.Id,n)){Error("NodeId","Duplicate or empty node ID",n.Id);continue;}if(n.ModuleId==WorkflowCalls.ModuleId&&n.Call is null)Error("CallTarget","Subprogram target is not configured",n.Id);if(n.TimeoutMs<0)Error("Timeout","Negative timeout",n.Id);ModuleDescriptor d;try{d=registry.GetDescriptor(n);ds[n.Id]=d;}catch(Exception e)when(e is KeyNotFoundException or InvalidDataException){Error("Module",e.Message,n.Id);continue;}
+ if(n.Rois is not null){var ids=new HashSet<string>();foreach(var roi in n.Rois){try{RoiValidator.Validate(roi);if(!ids.Add(roi.Id))Error("ROI","Duplicate ROI id",n.Id);}catch(Exception ex)when(ex is ArgumentException or InvalidDataException){Error("ROI",ex.Message,n.Id);}}}
+foreach(var key in n.Parameters.Keys)if(!d.Parameters.Any(x=>x.Name==key))Error("UnknownParameter",key,n.Id);
+ foreach(var spec in d.Parameters){if(!n.Parameters.TryGetValue(spec.Name,out var v)){if(spec.DefaultValue is {} def)v=def;else{if(spec.Required&&!p.Configuration.Subscriptions.Any(b=>b.NodeId==n.Id&&b.IsParameter&&b.Target==spec.Name))Error("MissingParameter",spec.Name,n.Id);continue;}}if(!ValidParameter(spec,v))Error("ParameterValue",spec.Name,n.Id);}}
+ try{p.Configuration.Validate(p,registry);}catch(Exception e)when(e is InvalidDataException or ArgumentException or InvalidOperationException or KeyNotFoundException){Error("WorkflowConfiguration",e.Message);return new(issues,[]);}
+ var seen=new HashSet<ConnectionDocument>();var bound=new HashSet<(string,string)>();var edges=nodes.Keys.ToDictionary(x=>x,x=>new List<string>());var degree=nodes.Keys.ToDictionary(x=>x,x=>0);
+ foreach(var c in p.Connections){if(!seen.Add(c))Error("DuplicateConnection","Duplicate connection",c.ToNode);if(!nodes.TryGetValue(c.FromNode,out var a)||!nodes.TryGetValue(c.ToNode,out var b)){Error("ConnectionNode","Missing node");continue;}if(!a.Enabled||!b.Enabled)Error("DisabledDependency","Disabled node dependency",b.Id);if(!bound.Add((b.Id,c.ToPort)))Error("MultipleBinding",c.ToPort,b.Id);if(!ds.TryGetValue(a.Id,out var ad)||!ds.TryGetValue(b.Id,out var bd))continue;var op=ad.Outputs.FirstOrDefault(x=>x.Name==c.FromPort);var ip=bd.Inputs.FirstOrDefault(x=>x.Name==c.ToPort);if(op is null||ip is null)Error("Port","Invalid port direction/name",b.Id);else if(op.Kind!=ip.Kind)Error("PortType","Type mismatch",b.Id);}
+ var controlSeen=new HashSet<ExecutionLinkDocument>();
+ foreach(var link in ProcedureGraph.ExecutionEdges(p)){
+ if(link is null||!nodes.ContainsKey(link.FromNode)||!nodes.ContainsKey(link.ToNode)){Error("ExecutionNode","Missing execution node");continue;}
+ if(!controlSeen.Add(link)){Error("DuplicateExecutionLink","Duplicate execution link",link.ToNode);continue;}
+ if(!nodes[link.FromNode].Enabled||!nodes[link.ToNode].Enabled)Error("DisabledDependency","Disabled execution dependency",link.ToNode);
+ edges[link.FromNode].Add(link.ToNode);degree[link.ToNode]++;
+ }
+ foreach(var b in p.Configuration.Subscriptions){if(!b.IsParameter)bound.Add((b.NodeId,b.Target));var producer=WorkflowSubscriptions.Producer(p,b.Source);if(p.ExecutionLinks is null&&producer is not null&&nodes.ContainsKey(producer)&&nodes.ContainsKey(b.NodeId)){edges[producer].Add(b.NodeId);degree[b.NodeId]++;}}
+ bool Precedes(string source,string target){var seenNodes=new HashSet<string>();var pending=new Stack<string>();pending.Push(source);while(pending.TryPop(out var id)){if(!seenNodes.Add(id))continue;foreach(var next in edges[id]){if(next==target)return true;pending.Push(next);}}return false;}
+ if(p.ExecutionLinks is not null)foreach(var c in p.Connections)if(nodes.ContainsKey(c.FromNode)&&nodes.ContainsKey(c.ToNode)&&!Precedes(c.FromNode,c.ToNode))Error("DataExecutionOrder","Data source must precede consumer through execution links",c.ToNode);
+ foreach(var b in p.Configuration.Subscriptions){var producer=WorkflowSubscriptions.Producer(p,b.Source);if(producer is not null&&nodes.ContainsKey(producer)&&nodes.ContainsKey(b.NodeId)&&!Precedes(producer,b.NodeId))Error("DataExecutionOrder","Subscribed source must precede consumer",b.NodeId);}
+ foreach(var n in nodes.Values.Where(x=>x.Enabled))if(ds.TryGetValue(n.Id,out var d))foreach(var i in d.Inputs.Where(x=>x.Required))if(!bound.Contains((n.Id,i.Name)))Error("MissingInput",i.Name,n.Id);
+ var order=new List<string>();var done=new HashSet<string>();while(true){var n=p.Nodes.FirstOrDefault(x=>nodes.ContainsKey(x.Id)&&!done.Contains(x.Id)&&degree[x.Id]==0);if(n is null)break;done.Add(n.Id);order.Add(n.Id);foreach(var target in edges[n.Id])degree[target]--;}
+ if(order.Count!=nodes.Count)Error("Cycle","DAG executor rejects cycles");return new(issues.AsReadOnly(),order.AsReadOnly());}
+ public static bool ValidParameter(ParameterDescriptor p,JsonElement v){if(p.Kind==ParameterKind.Text)return v.ValueKind==JsonValueKind.String;if(p.Kind==ParameterKind.Boolean)return v.ValueKind is JsonValueKind.True or JsonValueKind.False;if(v.ValueKind!=JsonValueKind.Number||!v.TryGetDouble(out var n)||!double.IsFinite(n))return false;if(p.Kind==ParameterKind.Integer&&!v.TryGetInt32(out _))return false;return (!p.Minimum.HasValue||n>=p.Minimum.Value)&&(!p.Maximum.HasValue||n<=p.Maximum.Value);}
+}
+
+

@@ -1,0 +1,33 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+namespace VisionFramework;
+public sealed record SolutionWorkspace(SolutionDocument Document,string BaseDirectory);
+public static class SolutionStore {
+    public const int CurrentVersion=1;
+    const int MaximumBytes=32*1024*1024;
+    static readonly JsonSerializerOptions Options=new(){WriteIndented=true,UnmappedMemberHandling=JsonUnmappedMemberHandling.Disallow,Converters={new JsonStringEnumConverter()}};
+    public static SolutionDocument Load(string path) {
+        using var input=File.OpenRead(path);if(input.Length>MaximumBytes)throw new InvalidDataException("Solution exceeds size limit.");
+        using var json=JsonDocument.Parse(input);RejectDuplicateProperties(json.RootElement);
+        var solution=json.RootElement.Deserialize<SolutionDocument>(Options)??throw new InvalidDataException("Missing solution.");ValidateStructure(solution);return solution;
+    }
+    public static SolutionWorkspace OpenWorkspace(string path)=>new(Load(path),Path.GetDirectoryName(Path.GetFullPath(path))!);
+    public static void Save(string path,SolutionDocument solution) {
+        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException("Solution exceeds size limit.");
+        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,"."+Path.GetFileName(full)+"."+Guid.NewGuid().ToString("N")+".tmp");
+        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}
+    }
+    public static void ValidateStructure(SolutionDocument solution){
+        ArgumentNullException.ThrowIfNull(solution);if(solution.FormatVersion!=CurrentVersion)throw new InvalidDataException("Unsupported independent solution version.");
+        Require(solution.Id,"Solution id");Require(solution.Name,"Solution name");if(solution.Procedures is null||solution.Resources is null)throw new InvalidDataException("Procedure and resource lists are required.");
+        if(solution.Procedures.Count>1000||solution.Resources.Count>100000)throw new InvalidDataException("Solution item limit exceeded.");
+        var procedures=new HashSet<string>(StringComparer.Ordinal);foreach(var p in solution.Procedures){if(p is null)throw new InvalidDataException("Null procedure.");if(p.ContinuousRunIntervalMs is <0 or >100000)throw new InvalidDataException("Invalid workflow interval.");if(p.Configuration is null)throw new InvalidDataException("Missing workflow configuration.");p.Configuration.Validate(p);Require(p.Id,"Procedure id");Require(p.Name,"Procedure name");if(!procedures.Add(p.Id))throw new InvalidDataException("Duplicate procedure id.");if(p.Nodes is null||p.Connections is null||p.Nodes.Count>10000||p.Connections.Count>100000)throw new InvalidDataException("Invalid procedure lists.");var ids=new HashSet<string>(StringComparer.Ordinal);foreach(var n in p.Nodes){if(n is null)throw new InvalidDataException("Null node.");Require(n.Id,"Node id");Require(n.Name,"Node name");Require(n.ModuleId,"Module id");Require(n.ModuleVersion,"Module version");if(!ids.Add(n.Id)||n.Parameters is null||!double.IsFinite(n.X)||!double.IsFinite(n.Y)||n.TimeoutMs<0)throw new InvalidDataException("Invalid or duplicate node.");if(n.Rois is not null){var roiIds=new HashSet<string>(StringComparer.Ordinal);foreach(var roi in n.Rois){RoiValidator.Validate(roi);if(!roiIds.Add(roi.Id))throw new InvalidDataException("Duplicate ROI id.");}}foreach(var kv in n.Parameters){Require(kv.Key,"Parameter name");if(kv.Value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)throw new InvalidDataException("Undefined parameter value.");}}foreach(var c in p.Connections){if(c is null)throw new InvalidDataException("Null connection.");Require(c.FromNode,"Source node");Require(c.FromPort,"Source port");Require(c.ToNode,"Destination node");Require(c.ToPort,"Destination port");if(!ids.Contains(c.FromNode)||!ids.Contains(c.ToNode))throw new InvalidDataException("Connection references a missing node.");}}
+        foreach(var p in solution.Procedures)if(p.ExecutionLinks is not null){if(p.ExecutionLinks.Count>100000)throw new InvalidDataException("Execution link limit exceeded.");var nodeIds=p.Nodes.Select(n=>n.Id).ToHashSet(StringComparer.Ordinal);var links=new HashSet<(string,string)>();foreach(var link in p.ExecutionLinks){if(link is null||string.IsNullOrWhiteSpace(link.FromNode)||string.IsNullOrWhiteSpace(link.ToNode)||!nodeIds.Contains(link.FromNode)||!nodeIds.Contains(link.ToNode)||!links.Add((link.FromNode,link.ToNode)))throw new InvalidDataException("Invalid or duplicate execution link.");if(link.SourceIndex is <0 or >3||link.TargetIndex is <0 or >3)throw new InvalidDataException("Invalid execution connector.");if(link.PathPoints is {} points){if(points.Count<2||points.Count>10000||points.Any(q=>q is null||!double.IsFinite(q.X)||!double.IsFinite(q.Y)||q.X<0||q.Y<0||q.X>5000||q.Y>5000))throw new InvalidDataException("Invalid execution path.");for(int j=1;j<points.Count;j++)if(points[j].X!=points[j-1].X&&points[j].Y!=points[j-1].Y)throw new InvalidDataException("Non-orthogonal execution path.");}}}
+        OwnedGroups.Validate(solution);var resources=new HashSet<string>(StringComparer.Ordinal);foreach(var r in solution.Resources){if(r is null)throw new InvalidDataException("Null resource.");Require(r.Id,"Resource id");Require(r.Path,"Resource path");if(!resources.Add(r.Id))throw new InvalidDataException("Duplicate resource id.");if(r.Sha256 is not null&&!Regex.IsMatch(r.Sha256,"\\A[0-9a-fA-F]{64}\\z"))throw new InvalidDataException("Invalid resource digest.");}
+    }
+    static void Require(string? value,string field){if(string.IsNullOrWhiteSpace(value))throw new InvalidDataException(field+" is required.");}
+    static void RejectDuplicateProperties(JsonElement element){if(element.ValueKind==JsonValueKind.Object){var seen=new HashSet<string>(StringComparer.Ordinal);foreach(var p in element.EnumerateObject()){if(!seen.Add(p.Name))throw new InvalidDataException("Duplicate JSON property: "+p.Name);RejectDuplicateProperties(p.Value);}}else if(element.ValueKind==JsonValueKind.Array)foreach(var item in element.EnumerateArray())RejectDuplicateProperties(item);}
+}
+
+

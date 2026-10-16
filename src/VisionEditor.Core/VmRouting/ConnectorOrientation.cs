@@ -1,0 +1,13 @@
+// Ported from VMControls.WPF.dll SHA256 99FFA401C8784472913AD43813D68A8A5577890C00E149506E3E5664FA61C97D; ILSpy 11.1.0.9782. Algorithm statements retained; namespace/geometry adapter changed.
+#nullable disable
+namespace VisionEditor.Core.VmRouting.Original;
+
+internal enum ConnectorOrientation
+{
+	None,
+	Left,
+	Top,
+	Right,
+	Bottom
+}
+

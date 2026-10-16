@@ -1,0 +1,315 @@
+{
+  "FormatVersion": 1,
+  "Id": "workflow-data-demo",
+  "Name": "\u771F\u5B9E\u5C40\u90E8\u53D8\u91CF\u4E0E\u6D41\u7A0B\u8C03\u7528",
+  "Procedures": [
+    {
+      "Id": "image-analysis",
+      "Name": "\u56FE\u50CF\u5206\u6790",
+      "Nodes": [
+        {
+          "Id": "source",
+          "ModuleId": "vision.image-file",
+          "ModuleVersion": "1.0.0",
+          "Name": "source",
+          "Parameters": {
+            "Path": "../analysis/images/circle-find-sample.bmp"
+          },
+          "X": 160,
+          "Y": 90,
+          "TimeoutMs": 0,
+          "Enabled": true,
+          "Rois": null,
+          "Call": null
+        },
+        {
+          "Id": "threshold",
+          "ModuleId": "vision.threshold",
+          "ModuleVersion": "1.0.0",
+          "Name": "threshold",
+          "Parameters": {
+            "Threshold": 1
+          },
+          "X": 160,
+          "Y": 210,
+          "TimeoutMs": 0,
+          "Enabled": true,
+          "Rois": null,
+          "Call": null
+        },
+        {
+          "Id": "components",
+          "ModuleId": "vision.components",
+          "ModuleVersion": "1.0.0",
+          "Name": "components",
+          "Parameters": {},
+          "X": 160,
+          "Y": 330,
+          "TimeoutMs": 0,
+          "Enabled": true,
+          "Rois": null,
+          "Call": null
+        }
+      ],
+      "Connections": [
+        {
+          "FromNode": "source",
+          "FromPort": "Image",
+          "ToNode": "threshold",
+          "ToPort": "Image",
+          "SourceIndex": 3,
+          "TargetIndex": 1
+        },
+        {
+          "FromNode": "threshold",
+          "FromPort": "Image",
+          "ToNode": "components",
+          "ToPort": "Image",
+          "SourceIndex": 3,
+          "TargetIndex": 1
+        }
+      ],
+      "ExecutionLinks": [
+        {
+          "FromNode": "source",
+          "ToNode": "threshold",
+          "SourceIndex": 3,
+          "TargetIndex": 1,
+          "PathPoints": null
+        },
+        {
+          "FromNode": "threshold",
+          "ToNode": "components",
+          "SourceIndex": 3,
+          "TargetIndex": 1,
+          "PathPoints": null
+        }
+      ],
+      "OverviewX": null,
+      "OverviewY": null,
+      "ContinuousRunIntervalMs": 80,
+      "StopOnNg": false,
+      "Configuration": {
+        "Subscriptions": [
+          {
+            "NodeId": "threshold",
+            "Target": "Threshold",
+            "IsParameter": true,
+            "Source": {
+              "Kind": "LocalVariable",
+              "Id": "threshold-var",
+              "Port": null
+            }
+          }
+        ],
+        "Inputs": [],
+        "Outputs": [
+          {
+            "Id": "count-out",
+            "Name": "count",
+            "Kind": "Integer",
+            "NodeId": "components",
+            "Port": "Count",
+            "Display": false,
+            "Accumulate": false
+          },
+          {
+            "Id": "image-out",
+            "Name": "image",
+            "Kind": "GrayImage",
+            "NodeId": "threshold",
+            "Port": "Image",
+            "Display": false,
+            "Accumulate": false
+          }
+        ],
+        "Displays": [],
+        "RunParameters": [
+          {
+            "Id": "threshold-editor",
+            "NodeId": "threshold",
+            "Parameter": "Threshold",
+            "Label": "\u9608\u503C",
+            "IsInput": false
+          }
+        ],
+        "Groups": [
+          {
+            "Id": "g",
+            "Name": "\u5206\u7EC40"
+          }
+        ],
+        "Variables": [
+          {
+            "Id": "threshold-var",
+            "GroupId": "g",
+            "Name": "%threshold%",
+            "Type": "int",
+            "Value": "50",
+            "Remark": "",
+            "SourceNode": null,
+            "SourcePort": null
+          },
+          {
+            "Id": "observed-count",
+            "GroupId": "g",
+            "Name": "%count%",
+            "Type": "int",
+            "Value": "0",
+            "Remark": "",
+            "SourceNode": "components",
+            "SourcePort": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "Id": "call-target",
+      "Name": "\u5916\u90E8\u56FE\u50CF\u8C03\u7528",
+      "Nodes": [
+        {
+          "Id": "threshold",
+          "ModuleId": "vision.threshold",
+          "ModuleVersion": "1.0.0",
+          "Name": "threshold",
+          "Parameters": {
+            "Threshold": 1
+          },
+          "X": 0,
+          "Y": 0,
+          "TimeoutMs": 0,
+          "Enabled": true,
+          "Rois": null,
+          "Call": null
+        },
+        {
+          "Id": "components",
+          "ModuleId": "vision.components",
+          "ModuleVersion": "1.0.0",
+          "Name": "components",
+          "Parameters": {},
+          "X": 0,
+          "Y": 0,
+          "TimeoutMs": 0,
+          "Enabled": true,
+          "Rois": null,
+          "Call": null
+        }
+      ],
+      "Connections": [
+        {
+          "FromNode": "threshold",
+          "FromPort": "Image",
+          "ToNode": "components",
+          "ToPort": "Image",
+          "SourceIndex": 3,
+          "TargetIndex": 1
+        }
+      ],
+      "ExecutionLinks": [
+        {
+          "FromNode": "threshold",
+          "ToNode": "components",
+          "SourceIndex": 3,
+          "TargetIndex": 1,
+          "PathPoints": null
+        }
+      ],
+      "OverviewX": null,
+      "OverviewY": null,
+      "ContinuousRunIntervalMs": 80,
+      "StopOnNg": false,
+      "Configuration": {
+        "Subscriptions": [
+          {
+            "NodeId": "threshold",
+            "Target": "Image",
+            "IsParameter": false,
+            "Source": {
+              "Kind": "WorkflowInput",
+              "Id": "image-in",
+              "Port": null
+            }
+          },
+          {
+            "NodeId": "threshold",
+            "Target": "Threshold",
+            "IsParameter": true,
+            "Source": {
+              "Kind": "LocalVariable",
+              "Id": "threshold-var",
+              "Port": null
+            }
+          }
+        ],
+        "Inputs": [
+          {
+            "Id": "image-in",
+            "Name": "image",
+            "Kind": "GrayImage",
+            "NodeId": null,
+            "Port": null,
+            "Display": false,
+            "Accumulate": false
+          }
+        ],
+        "Outputs": [
+          {
+            "Id": "count-out",
+            "Name": "count",
+            "Kind": "Integer",
+            "NodeId": "components",
+            "Port": "Count",
+            "Display": false,
+            "Accumulate": false
+          },
+          {
+            "Id": "image-out",
+            "Name": "image",
+            "Kind": "GrayImage",
+            "NodeId": "threshold",
+            "Port": "Image",
+            "Display": false,
+            "Accumulate": false
+          }
+        ],
+        "Displays": [],
+        "RunParameters": [
+          {
+            "Id": "input-editor",
+            "NodeId": "threshold",
+            "Parameter": "Image",
+            "Label": "\u8F93\u5165\u56FE\u50CF",
+            "IsInput": true
+          },
+          {
+            "Id": "threshold-editor",
+            "NodeId": "threshold",
+            "Parameter": "Threshold",
+            "Label": "\u9608\u503C",
+            "IsInput": false
+          }
+        ],
+        "Groups": [
+          {
+            "Id": "g",
+            "Name": "\u5206\u7EC40"
+          }
+        ],
+        "Variables": [
+          {
+            "Id": "threshold-var",
+            "GroupId": "g",
+            "Name": "%threshold%",
+            "Type": "int",
+            "Value": "50",
+            "Remark": "",
+            "SourceNode": null,
+            "SourcePort": null
+          }
+        ]
+      }
+    }
+  ],
+  "Resources": []
+}

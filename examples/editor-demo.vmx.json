@@ -1,0 +1,137 @@
+﻿{
+  "FormatVersion": 1,
+  "Id": "architecture-demo",
+  "Name": "独立模块图示例",
+  "Procedures": [
+    {
+      "Id": "main",
+      "Name": "图像分析与尺寸判定",
+      "Nodes": [
+        {
+          "Id": "source",
+          "ModuleId": "vision.image-file",
+          "ModuleVersion": "1.0.0",
+          "Name": "文件图像源",
+          "Parameters": {
+            "Path": "assets/circle-sample.bmp"
+          },
+          "X": 220,
+          "Y": 40,
+          "TimeoutMs": 0,
+          "Enabled": true
+        },
+        {
+          "Id": "threshold",
+          "ModuleId": "vision.threshold",
+          "ModuleVersion": "1.0.0",
+          "Name": "阈值分割",
+          "Parameters": {
+            "Threshold": 128
+          },
+          "X": 100,
+          "Y": 190,
+          "TimeoutMs": 0,
+          "Enabled": true
+        },
+        {
+          "Id": "components",
+          "ModuleId": "vision.components",
+          "ModuleVersion": "1.0.0",
+          "Name": "连通域统计",
+          "Parameters": {},
+          "X": 100,
+          "Y": 350,
+          "TimeoutMs": 0,
+          "Enabled": true
+        },
+        {
+          "Id": "circle",
+          "ModuleId": "vision.circle",
+          "ModuleVersion": "1.0.0",
+          "Name": "圆查找",
+          "Parameters": {
+            "CenterX": 717,
+            "CenterY": 507,
+            "InitialRadius": 375,
+            "SearchHalfWidth": 12,
+            "SampleCount": 64,
+            "GradientThreshold": 15,
+            "Polarity": "Both",
+            "RadialStep": 0.5,
+            "GradientHalfSpan": 1,
+            "MinimumEdges": 6
+          },
+          "X": 430,
+          "Y": 190,
+          "TimeoutMs": 0,
+          "Enabled": true
+        },
+        {
+          "Id": "compare",
+          "ModuleId": "logic.number-compare",
+          "ModuleVersion": "1.0.0",
+          "Name": "半径比较",
+          "Parameters": {
+            "Operator": ">",
+            "Reference": 370
+          },
+          "X": 430,
+          "Y": 350,
+          "TimeoutMs": 0,
+          "Enabled": true
+        }
+      ],
+      "Connections": [
+        {
+          "FromNode": "source",
+          "FromPort": "Image",
+          "ToNode": "threshold",
+          "ToPort": "Image"
+        },
+        {
+          "FromNode": "threshold",
+          "FromPort": "Image",
+          "ToNode": "components",
+          "ToPort": "Image"
+        },
+        {
+          "FromNode": "source",
+          "FromPort": "Image",
+          "ToNode": "circle",
+          "ToPort": "Image"
+        },
+        {
+          "FromNode": "circle",
+          "FromPort": "Radius",
+          "ToNode": "compare",
+          "ToPort": "Number"
+        }
+      ],
+      "ExecutionLinks": [
+        {
+          "FromNode": "source",
+          "ToNode": "threshold"
+        },
+        {
+          "FromNode": "threshold",
+          "ToNode": "components"
+        },
+        {
+          "FromNode": "source",
+          "ToNode": "circle"
+        },
+        {
+          "FromNode": "circle",
+          "ToNode": "compare"
+        }
+      ]
+    }
+  ],
+  "Resources": [
+    {
+      "Id": "sample",
+      "Path": "assets/circle-sample.bmp",
+      "Sha256": "690b17333ce8a9f6fe8961c90d7f21fbd6472dbf0f7cc3443fc89da43bb33aba"
+    }
+  ]
+}

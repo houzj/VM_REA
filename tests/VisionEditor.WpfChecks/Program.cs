@@ -1,0 +1,495 @@
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using VisionEditor;
+using VisionEditor.Core;
+
+static class Program
+{
+    [STAThread]
+    static int Main()
+    {
+        try { Run(); return 0; }
+        catch(Exception ex) { Console.Error.WriteLine(ex); return 1; }
+    }
+
+    static void Run()
+    {
+        var errors=new StringWriter();
+        PresentationTraceSources.DataBindingSource.Listeners.Add(new TextWriterTraceListener(errors));
+        PresentationTraceSources.DataBindingSource.Switch.Level=SourceLevels.Error;
+        var app=new Application { ShutdownMode=ShutdownMode.OnExplicitShutdown };
+        var window=new MainWindow { ShowActivated=false, ShowInTaskbar=false, WindowStartupLocation=WindowStartupLocation.Manual, Left=-20000, Top=-20000 };
+        // app.Run installs this context in production. These off-screen checks pump explicitly.
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
+        int checks=0;
+        void Check(bool condition,string message) { checks++; if(!condition)throw new Exception(message); }
+        void Pump() { window.UpdateLayout(); window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle); }
+        void Capture(FrameworkElement element,string name){element.UpdateLayout();var bitmap=new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth),(int)Math.Ceiling(element.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(element);var output=new PngBitmapEncoder();output.Frames.Add(BitmapFrame.Create(bitmap));using var file=File.Create(Path.Combine("analysis/full-audit",name));output.Save(file);}
+        T Find<T>(string name) where T:class => window.FindName(name) as T??throw new Exception("Missing "+name);
+        object? Invoke(string name,params object[] args)=>typeof(MainWindow).GetMethod(name,BindingFlags.Instance|BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(window,args);
+        IEnumerable<DependencyObject> Children(DependencyObject root)
+        {
+            for(int i=0;i<VisualTreeHelper.GetChildrenCount(root);i++) { var child=VisualTreeHelper.GetChild(root,i);yield return child;foreach(var item in Children(child))yield return item; }
+        }
+        try
+        {
+            window.Show(); Pump();
+            Check(window.IsLoaded,"Actual WPF window loads");
+            var chrome=System.Windows.Shell.WindowChrome.GetWindowChrome(window);
+            Check(chrome is not null&&chrome.GlassFrameThickness==new Thickness(0)&&chrome.NonClientFrameEdges==System.Windows.Shell.NonClientFrameEdges.None&&chrome.CaptionHeight==0,"Recovered window chrome removes native caption while retaining custom title controls");
+            int nativeTopInset=NativeWindowFrame.MeasureTopInset(window,Path.GetFullPath("analysis/full-audit/wpf-native-window-frame.json"));Check(nativeTopInset==0,"Native window top has no retained non-client band; inset="+nativeTopInset);
+            for(int cycle=0;cycle<2;cycle++)
+            {
+                window.WindowState=WindowState.Maximized;Pump();
+                Check(NativeWindowFrame.FitsWorkArea(window,Find<DockPanel>("WindowContent"),Path.GetFullPath("analysis/full-audit/wpf-maximized-work-area.json")),"Maximized window and content stay inside monitor work area, cycle "+cycle);
+                if(cycle==0)Capture(window,"wpf-maximized-work-area.png");
+                window.WindowState=WindowState.Normal;Pump();
+            }
+            var foldButton=Find<Button>("ToggleToolboxButton");foldButton.ApplyTemplate();
+            var foldImage=(Image)foldButton.Template.FindName("ToolboxFoldImage",foldButton);
+            Check(foldButton.ActualHeight==22&&foldImage.HorizontalAlignment==HorizontalAlignment.Right&&foldImage.Stretch==Stretch.None&&foldImage.Source is not null,"Toolbox uses recovered 22-pixel bottom strip and natural-size right-aligned image");
+            var statusBar=Find<Grid>("WindowStatusBar");
+            Check(Math.Abs(foldButton.TranslatePoint(new Point(0,foldButton.ActualHeight),window).Y-statusBar.TranslatePoint(new Point(0,statusBar.ActualHeight),window).Y)<1,"Toolbox fold strip aligns with status-bar bottom instead of floating above it");
+            Invoke("ToggleToolbox");Pump();
+            Check(((ScaleTransform)foldImage.RenderTransform).ScaleX==-1,"Expanded toolbox mirrors the original double-arrow bitmap");
+            var expandedRail=Find<StackPanel>("Rail");var categories=expandedRail.Children.OfType<Expander>().ToArray();
+            Check(categories.Length==15&&categories.All(x=>!x.IsExpanded&&x.Width==230),"Expanded toolbox uses original category width and default collapsed groups");
+            categories[0].IsExpanded=true;Pump();
+            Check(Children(categories[0]).OfType<Button>().Count(x=>x.Tag is string)==5,"Expanding collection displays five tools within category");
+            categories[1].IsExpanded=true;Pump();Check(categories[0].IsExpanded,"Toolbox category expansion is independent, not an accordion");
+            Capture(Find<Grid>("ToolRail"),"wpf-toolbox-expanded.png");
+            Invoke("ToggleToolbox");Pump();
+            Check(((ScaleTransform)foldImage.RenderTransform).ScaleX==1,"Folding restores the double-arrow direction");
+            var document=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var rail=Find<StackPanel>("Rail");
+            Check(rail.Children.OfType<Button>().Count()==15,"Tool groups match exported VM configuration");
+            Check(rail.Children.OfType<Button>().First().ToolTip?.ToString()=="采集","VM priority orders collection first");
+            Invoke("ShowToolPicker","Collection",rail.Children[0]);Pump();
+            var popup=(Popup)typeof(MainWindow).GetField("toolPopup",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var tiles=Children(popup.Child).OfType<Button>().ToArray();
+            Check(tiles.Length==5,"Collection popup exposes five original tools");
+            Check(tiles.Count(t=>t.IsEnabled)==1&&tiles.Single(t=>t.IsEnabled).Tag?.ToString()=="ImageSourceModule","Only implemented image source can be dragged");
+            int nodeCount=document.CurrentProcedure.Nodes.Count;
+            tiles.Single(t=>t.IsEnabled).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+            Check(document.CurrentProcedure.Nodes.Count==nodeCount,"Clicking a tool alone does not create a node");
+            popup.IsOpen=false;
+            var dragData=(DataObject)Invoke("CreateToolDragData","vision.image-source")!;
+            var drag=(DragEventArgs)Activator.CreateInstance(typeof(DragEventArgs),BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[dragData,DragDropKeyStates.LeftMouseButton,DragDropEffects.Move,Find<Canvas>("GraphLayer"),new Point(175,115)],null)!;
+            drag.RoutedEvent=DragDrop.DragOverEvent;
+            Invoke("ToolDropOver",Find<Canvas>("GraphLayer"),drag);Pump();
+            Check(document.CurrentProcedure.Nodes.Count==nodeCount,"Drag preview does not create a document node");
+            Check(typeof(MainWindow).GetField("toolDragGhost",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is Border,"Drag creates transient WPF node preview");
+            Invoke("ClearToolGhost");
+            Check(document.CurrentProcedure.Nodes.Count==nodeCount,"Cancelled drag preserves document");
+            drag.RoutedEvent=DragDrop.DropEvent;
+            Invoke("ToolDrop",Find<Canvas>("GraphLayer"),drag);Pump();
+            Check(document.CurrentProcedure.Nodes.Count==nodeCount+1,"Drop creates one document node");
+            var dropped=document.CurrentProcedure.Nodes.Last();
+            Check(dropped.X%5==0&&dropped.Y%5==0,"Tool drop uses source 5-unit snapping");
+            document.Undo();Pump();
+            var tabs=Find<TabControl>("ProcedureTabs");
+            Check(tabs.Items.Count==document.Document.Procedures.Count,"Tab count matches actual document");
+            var originalTab=tabs.Items[0];Invoke("RefreshAll");Pump();Check(ReferenceEquals(originalTab,tabs.Items[0]),"Unchanged refresh preserves actual TabItem identity");
+            Check(Children(Find<WorkflowImageButton>("AddProcedureButton")).OfType<System.Windows.Controls.Image>().Any(x=>x.Source is not null),"Add button renders recovered image template");
+            var first=(TabItem)tabs.Items[0];
+            var row=(StackPanel)first.Header;
+            int nameIndex=row.Children.OfType<FrameworkElement>().ToList().FindIndex(x=>x is Border {Child:TextBlock});
+            Check(nameIndex>0&&row.Children[nameIndex+1] is Button,"Run controls follow tab name");
+            Check(first.ContextMenu is not null,"Procedure tab context menu exists");
+            foreach(var icon in row.Children.OfType<WorkflowImageButton>())
+            {var picture=Children(icon).OfType<System.Windows.Controls.Image>().Single();Check(picture.ActualWidth>=picture.Source.Width&&picture.ActualHeight>=picture.Source.Height,"Workflow image is not cropped by artificial dimensions");}
+            string[] expected=["导出流程","复制流程","导出算法代码","设置运行间隔","删除","NG时停止流程","重命名","流程超时设置"];
+            Check(first.ContextMenu!.Items.OfType<MenuItem>().Select(x=>x.Header?.ToString()).SequenceEqual(expected),"OperateMenu order matches recovered XAML");
+            string id=document.CurrentProcedureId;
+            first.ContextMenu.Items.OfType<MenuItem>().Single(x=>Equals(x.Header,"重命名")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Pump();
+            var rename=Children(tabs).OfType<TextBox>().Single();
+            Check(rename.MaxLength==64,"Inline rename respects source MaxLength");
+            rename.Text="WPF流程核验";
+            rename.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice,0,rename,window) { RoutedEvent=Keyboard.LostKeyboardFocusEvent }); Pump();
+            Check(document.CurrentProcedure.Name=="WPF流程核验","Inline rename commits to document on lost focus");
+            Check(!Children(tabs).OfType<TextBox>().Any(),"Rename editor closes after commit");
+            var add=Find<Button>("AddProcedureButton");int before=document.Document.Procedures.Count;
+            add.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+            Check(document.Document.Procedures.Count==before+1,"Add click adds exactly one workflow");
+            Check(document.CurrentProcedureId!=id,"Added workflow becomes active");
+            Invoke("ProcedureListClick",Find<Button>("ProcedureListButton"),new RoutedEventArgs());Pump();
+            var flowPopup=(Popup)typeof(MainWindow).GetField("workflowListPopup",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var workflowTree=Children(flowPopup.Child).OfType<TreeView>().Single();Check(workflowTree.Items.Count==document.Document.Procedures.Count,"Workflow selector is actual tree popup");Capture((FrameworkElement)flowPopup.Child,"wpf-workflow-selector.png");
+            var sourceFlow=workflowTree.Items.OfType<TreeViewItem>().First(x=>x.Items.Count>0);var sourceLeaf=(TreeViewItem)sourceFlow.Items[0];sourceLeaf.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.PreviewMouseLeftButtonDownEvent});Pump();
+            Check(!flowPopup.IsOpen&&document.CurrentProcedureId==(string)sourceFlow.Tag&&Find<TextBlock>("Breadcrumb").Text.Contains(sourceLeaf.Header.ToString()!),"Workflow tree leaf selects correct workflow and node then closes");
+            // Use the actual menu factory for copy/delete; no dialog or test hook in product.
+            var menu=(ContextMenu)Invoke("ProcedureMenu",document.CurrentProcedureId)!;
+            menu.Items.OfType<MenuItem>().Single(x=>Equals(x.Header,"复制流程")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));Pump();
+            Check(document.Document.Procedures.Count==before+2,"Copy duplicates workflow");
+            string copiedFlow=document.CurrentProcedureId;var targetTab=tabs.Items.OfType<TabItem>().First();long switchRevision=document.Revision;targetTab.IsSelected=true;Pump();Check(document.CurrentProcedureId==(string)targetTab.Tag&&document.Revision==switchRevision,"Native TabItem selection switches workflow without document edit");document.SelectProcedure(copiedFlow);Pump();
+            ((TabItem)tabs.SelectedItem).Focus();tabs.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(window),0,Key.Home){RoutedEvent=Keyboard.KeyDownEvent});Pump();Check(document.CurrentProcedureId==(string)((TabItem)tabs.Items[0]).Tag,"Native Home key switches to first workflow");document.SelectProcedure(copiedFlow);Pump();
+            menu=(ContextMenu)Invoke("ProcedureMenu",document.CurrentProcedureId)!;
+            Check(menu.Items.OfType<MenuItem>().Single(x=>Equals(x.Header,"删除")).IsEnabled,"Delete enabled with multiple workflows");
+            Invoke("DeleteProcedure",document.CurrentProcedureId,false);Pump();
+            Check(document.Document.Procedures.Count==before+1,"Delete removes selected workflow");
+            Invoke("WorkflowViewClick",Find<Button>("WorkflowViewButton"),new RoutedEventArgs());Pump();
+            Check(Find<Canvas>("GraphLayer").Children.OfType<Grid>().Count(x=>x.Width==140&&x.Height==120)==document.Document.Procedures.Count,"Overview uses recovered 140 by 120 process card surface");
+            Check(tabs.IsVisible==false&&Find<Button>("WorkflowViewButton").Visibility==Visibility.Visible,"Overview hides workflow tabs and retains view switch as original allProcess template");Capture(window,"wpf-workflow-overview.png");
+            Check(rail.Children.OfType<Button>().Select(x=>x.Tag?.ToString()).SequenceEqual(new[]{"ProcedureModule","GlobalCameraModule","DataQueueModule"})&&rail.IsEnabled,"Overview switches to source-filtered global tools instead of disabling toolbox");
+            Check(Find<Button>("ToggleToolboxButton").Visibility==Visibility.Collapsed&&Find<Grid>("ToolRail").RowDefinitions[1].Height.Value==0,"Global toolbox hides fold strip without reserving an empty row");
+            DragEventArgs OverviewEvent(DataObject data,DragDropEffects effect,DragDropKeyStates keys,Point point){var result=(DragEventArgs)Activator.CreateInstance(typeof(DragEventArgs),BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[data,keys,effect,Find<Canvas>("GraphLayer"),point],null)!;result.RoutedEvent=DragDrop.PreviewDragOverEvent;return result;}
+            long overviewRevision=document.Revision;int overviewCount=document.Document.Procedures.Count;
+            var globalData=(DataObject)Invoke("CreateToolDragData","__procedure")!;var globalOver=OverviewEvent(globalData,DragDropEffects.Move,DragDropKeyStates.LeftMouseButton,new Point(300,220));Invoke("CanvasDragOver",Find<Canvas>("GraphLayer"),globalOver);Pump();
+            Check(globalOver.Effects==DragDropEffects.Move&&document.Revision==overviewRevision,"Global flow tool creates preview without editing document");
+            var globalDrop=OverviewEvent(globalData,DragDropEffects.Move,0,new Point(300,220));globalDrop.RoutedEvent=DragDrop.PreviewDropEvent;Invoke("CanvasDrop",Find<Canvas>("GraphLayer"),globalDrop);Pump();
+            Check(document.Document.Procedures.Count==overviewCount+1&&document.Revision==overviewRevision+1&&document.CurrentProcedure.OverviewX==230&&document.CurrentProcedure.OverviewY==160,"Dropping global flow tool creates positioned workflow in one transaction");document.Undo();Pump();Invoke("ReleaseToolDragData");
+            string draggedOverviewId=document.CurrentProcedureId;var beforeOverviewMove=document.CurrentProcedure;long overviewMoveRevision=document.Revision;
+            var overviewData=(DataObject)Invoke("CreateOverviewDragData",draggedOverviewId,new Point(20,10))!;
+            var overviewOver=OverviewEvent(overviewData,DragDropEffects.Move,DragDropKeyStates.LeftMouseButton,new Point(300,220));Invoke("CanvasDragOver",Find<Canvas>("GraphLayer"),overviewOver);Pump();
+            Check(document.CurrentProcedure.OverviewX==beforeOverviewMove.OverviewX&&document.Revision==overviewMoveRevision,"Overview movement leaves original card position unchanged until drop");Capture(window,"wpf-overview-drag-preview.png");
+            var overviewDrop=OverviewEvent(overviewData,DragDropEffects.Move,0,new Point(300,220));overviewDrop.RoutedEvent=DragDrop.PreviewDropEvent;Invoke("CanvasDrop",Find<Canvas>("GraphLayer"),overviewDrop);Pump();Check(document.CurrentProcedure.OverviewX==280&&document.CurrentProcedure.OverviewY==210,"Overview move commits snapped pointer offset");document.Undo();Pump();
+            overviewData=(DataObject)Invoke("CreateOverviewDragData",draggedOverviewId,new Point(20,10))!;
+            var overviewCopy=OverviewEvent(overviewData,DragDropEffects.Copy,DragDropKeyStates.ControlKey,new Point(300,220));overviewCopy.RoutedEvent=DragDrop.PreviewDropEvent;Invoke("CanvasDrop",Find<Canvas>("GraphLayer"),overviewCopy);Pump();Check(document.Document.Procedures.Count==overviewCount+1&&document.CurrentProcedure.OverviewX==280,"Ctrl overview drop makes real positioned workflow copy");document.Undo();Pump();
+            var expiredOverview=OverviewEvent(overviewData,DragDropEffects.Move,0,new Point(200,220));expiredOverview.RoutedEvent=DragDrop.PreviewDropEvent;Invoke("CanvasDrop",Find<Canvas>("GraphLayer"),expiredOverview);Check(expiredOverview.Effects==DragDropEffects.None,"Old overview payload rejected after document revision change");
+            string overviewId=document.CurrentProcedureId;document.MoveProcedure(overviewId,450,300);Pump();Check(Find<Canvas>("GraphLayer").Children.OfType<Grid>().Any(x=>(string)x.Tag==overviewId&&Canvas.GetLeft(x)==450&&Canvas.GetTop(x)==300),"Overview reflects saved root workflow position");document.Undo();Pump();
+            Invoke("WorkflowViewClick",Find<Button>("WorkflowViewButton"),new RoutedEventArgs());Pump();
+            for(int i=0;i<8;i++)document.AddProcedure("溢出核验"+i);Pump();
+            Check(Find<Button>("PinnedAddProcedureButton").Visibility==Visibility.Visible,"Overflow pins add button");
+            var tabScroll=Find<ScrollViewer>("ProcedureTabScroll");var activeTab=(TabItem)tabs.SelectedItem;
+            double selectedX=activeTab.TranslatePoint(new Point(),tabScroll).X;
+            Check(tabScroll.HorizontalOffset>0&&selectedX>=0&&selectedX+activeTab.ActualWidth<=tabScroll.ViewportWidth+1,"New workflow tab scrolls fully into view after overflow");
+            var staleMenu=(ContextMenu)Invoke("ProcedureMenu",document.CurrentProcedureId)!;int staleCount=document.Document.Procedures.Count;
+            Invoke("ToggleLock");Pump();
+            staleMenu.Items.OfType<MenuItem>().Single(x=>Equals(x.Header,"复制流程")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            Check(document.Document.Procedures.Count==staleCount,"A menu retained from before lock cannot copy workflow");
+            Check(Find<Button>("AddProcedureButton").Visibility==Visibility.Collapsed&&Find<Button>("PinnedAddProcedureButton").Visibility==Visibility.Collapsed,"Locked work area hides both add buttons");
+            Check(tabs.Items.OfType<TabItem>().All(x=>x.ContextMenu is null),"Locked tabs disable context menus");
+            Invoke("ToggleLock");Pump();
+            typeof(MainWindow).GetField("parameterEditorOpen",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,true);
+            staleMenu.Items.OfType<MenuItem>().Single(x=>Equals(x.Header,"复制流程")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            Check(document.Document.Procedures.Count==staleCount,"Retained menu cannot edit while parameter window is open");
+            typeof(MainWindow).GetField("parameterEditorOpen",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,false);
+            document.SelectProcedure((string)((TabItem)tabs.Items[0]).Tag);Pump();
+            Check(tabScroll.HorizontalOffset==0,"Switching back to first workflow returns tab strip to its start");
+            document.SelectProcedure(id);Pump();
+            var mode=Find<ComboBox>("ImageRunMode");mode.SelectedIndex=1;Pump();
+            var source=document.CurrentProcedure.Nodes.First(n=>n.ModuleId=="vision.image-source");
+            Check(source.Parameters["ExecuteType"].GetInt32()==2,"Image mode updates actual plugin parameter");
+            Check(Children(Find<ListBox>("ImageList")).OfType<CheckBox>().Any(x=>x.Visibility==Visibility.Visible),"Selected mode displays checkboxes");
+            mode.SelectedIndex=0;Pump();
+            Check(Children(Find<ListBox>("ImageList")).OfType<CheckBox>().All(x=>x.Visibility==Visibility.Collapsed),"All-images mode hides checkboxes");
+            document.SelectProcedure(id);Pump();
+            document.Load(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));Pump();
+            Check(Find<Grid>("MiniMapPanel").Width==187&&Find<Grid>("MiniMapPanel").Height==150,"Eagle eye uses original 187 by 150 dimensions");
+            Check(Find<Grid>("MiniMapPanel").Visibility==Visibility.Visible,"Eagle eye defaults expanded");
+            Check(Find<System.Windows.Shapes.Rectangle>("MiniMapPreview").Fill is VisualBrush,"Eagle eye uses live WPF visual, no screenshot in product");
+            var chosen=(HashSet<string>)typeof(MainWindow).GetField("selectedNodes",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            string movingId=document.CurrentProcedure.Nodes.Single().Id;chosen.Clear();chosen.Add(movingId);
+            var oldNode=document.CurrentProcedure.Nodes.Single();long moveRevision=document.Revision;
+            Invoke("BeginNodeMove",new Point(oldNode.X,oldNode.Y));Invoke("PreviewNodeMove",new Point(oldNode.X+83,oldNode.Y+42));
+            Check(document.Revision==moveRevision&&document.CurrentProcedure.Nodes.Single().X==oldNode.X,"Move preview preserves original document position");
+            Check(Find<Canvas>("GraphLayer").Children.OfType<Canvas>().Count(x=>x.Opacity==.7)==1,"Move preview uses source opacity 0.7");
+            Invoke("CommitNodeMove");Pump();
+            Check(document.Revision==moveRevision+1&&document.CurrentProcedure.Nodes.Single().X==oldNode.X+85,"Drop snaps and commits one undo transaction");
+            document.Undo();Pump();Check(document.CurrentProcedure.Nodes.Single().X==oldNode.X,"Undo restores original position");
+            chosen.Clear();chosen.Add(movingId);Invoke("BeginNodeMove",new Point(oldNode.X,oldNode.Y));Invoke("PreviewNodeMove",new Point(oldNode.X+100,oldNode.Y));Invoke("CancelNodeMove");
+            Check(document.CurrentProcedure.Nodes.Single().X==oldNode.X,"Cancelled move leaves original position");
+            var canvas=Find<Canvas>("GraphLayer");var scroll=Find<ScrollViewer>("CanvasScrollViewer");scroll.ScrollToHorizontalOffset(500);scroll.ScrollToVerticalOffset(400);Pump();
+            var anchor=new Point(140,120);var worldBefore=(Point)Invoke("World",anchor)!;long viewRevision=document.Revision;
+            Invoke("SetCanvasZoom",.5,anchor);Pump();var worldAfter=(Point)Invoke("World",anchor)!;
+            Check((worldAfter-worldBefore).Length<.001,"Zoom preserves world point under pointer");
+            Check(document.Revision==viewRevision,"View zoom does not edit scheme");
+            Invoke("MiniMapToggleClick",Find<Button>("MiniMapToggle"),new RoutedEventArgs());Check(Find<Grid>("MiniMapPanel").Visibility==Visibility.Collapsed,"Eagle eye collapses");
+            Invoke("MiniMapToggleClick",Find<Button>("MiniMapToggle"),new RoutedEventArgs());
+            string firstFlow=document.CurrentProcedureId;var firstView=Find<Grid>("GraphSurface").LayoutTransform.Value;double firstOffset=scroll.HorizontalOffset;
+            string otherFlow=document.AddProcedure("视口独立核验");Pump();Invoke("SetCanvasZoom",1.7,new Point(50,50));document.SelectProcedure(firstFlow);Pump();
+            Check(Math.Abs(Find<Grid>("GraphSurface").LayoutTransform.Value.M11-firstView.M11)<.001&&Math.Abs(scroll.HorizontalOffset-firstOffset)<.001,"Switching workflows restores independent viewport");
+            Check(canvas.Width==5000&&canvas.Height==5000,"Original DiagramPage extent is fixed at 5000 square");
+            Check(canvas.RenderTransform.Value.IsIdentity,"Mini-map source visual has no camera transform");
+            Check(Math.Abs(Find<System.Windows.Shapes.Rectangle>("MiniMapViewport").Width-Math.Min(scroll.ActualWidth/scroll.ExtentWidth*187,187))<.001,"Mini-map width follows recovered extent formula");
+            document.Load(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));Pump();
+            var n1=document.CurrentProcedure.Nodes.Single();string n2=document.AddNode("vision.threshold","1.0.0",450,280);string n3=document.AddNode("vision.components","1.0.0",160,470);
+            document.ConnectExecution(n1.Id,n2,3,1);document.ConnectExecution(n2,n3,3,1);Pump();
+            Check(canvas.Children.OfType<System.Windows.Shapes.Path>().Count(p=>p.Stroke==Brushes.Transparent)==2,"Execution links render even without data subscriptions");
+            chosen.Clear();chosen.Add(n2);chosen.Add(n3);long batchRevision=document.Revision;
+            Invoke("BeginNodeMove",new Point(0,0));Invoke("PreviewNodeMove",new Point(25,35));Invoke("CommitNodeMove");Pump();
+            Check(document.Revision==batchRevision+1,"Box-group move is one undo transaction");
+            document.Undo();Pump();Check(document.CurrentProcedure.Nodes.Single(n=>n.Id==n2).X==450&&document.CurrentProcedure.Nodes.Single(n=>n.Id==n3).X==160,"Undo restores entire node group");
+            Invoke("SetCanvasZoom",1d,new Point(0,0));scroll.ScrollToHorizontalOffset(0);scroll.ScrollToVerticalOffset(0);Pump();
+            Invoke("SetBoxSelection",new Rect(170,90,400,240));Pump();
+            Check(chosen.SetEquals(new[]{n1.Id,n2}),"Box selection includes fully contained nodes and excludes outside node");
+            var groupFrame=(System.Windows.Shapes.Rectangle)typeof(MainWindow).GetField("groupSelectionFrame",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(Canvas.GetLeft(groupFrame)==170&&Canvas.GetTop(groupFrame)==90&&groupFrame.Width==400&&groupFrame.Height==230,"Group drag region inflates node bounds by original ten units");
+            Check((bool)Invoke("IsCanvasBackground",canvas)!&&!(bool)Invoke("IsCanvasBackground",groupFrame)!,"Ctrl pan accepts blank canvas and excludes selected group");
+            var cardMap=(Dictionary<string,Canvas>)typeof(MainWindow).GetField("nodeCards",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(!(bool)Invoke("IsCanvasBackground",cardMap[n1.Id].Children[0])!,"Ctrl on node does not get intercepted as background pan");
+            long gestureRevision=document.Revision;int originalCount=document.CurrentProcedure.Nodes.Count;
+            Invoke("BeginNodeGesture",new Point(180,100),true);Invoke("PreviewNodeMove",new Point(230,150));Pump();
+            Check(document.Revision==gestureRevision&&canvas.Children.OfType<Canvas>().Count(c=>c.Opacity==.7)==2,"Ctrl group copy preview keeps original model and shows two ghosts");Capture(window,"wpf-node-group-copy-preview.png");
+            Invoke("CommitNodeMove");Pump();
+            Check(document.CurrentProcedure.Nodes.Count==originalCount+2&&document.Revision==gestureRevision+1,"Ctrl drop copies entire group in one transaction");
+            Check(document.CurrentProcedure.Nodes.Single(n=>n.Id==n1.Id).X==180&&document.CurrentProcedure.Nodes.Single(n=>n.Id==n2).X==450,"Ctrl copy does not move originals");
+            Check(chosen.Count==2&&!chosen.Contains(n1.Id)&&!chosen.Contains(n2),"Ctrl drop selects copied identities");document.Undo();Pump();
+            Invoke("SetBoxSelection",new Rect(170,90,400,240));Invoke("CopySelection");gestureRevision=document.Revision;Invoke("PasteSelection",new object[]{null!});Pump();
+            Check(document.Revision==gestureRevision+1&&chosen.Count==2&&document.CurrentProcedure.Nodes.Where(n=>chosen.Contains(n.Id)).Min(n=>n.X)==280,"Keyboard paste policy offsets copied group by original hundred units");document.Undo();Pump();
+            Invoke("SetBoxSelection",new Rect(170,90,400,240));gestureRevision=document.Revision;Invoke("BeginNodeGesture",new Point(0,0),false);Invoke("PreviewNodeMove",new Point(75,25));Invoke("CancelCanvasGesture");Pump();
+            Check(document.Revision==gestureRevision&&!canvas.Children.OfType<Canvas>().Any(c=>c.Opacity==.7),"Cancelled group move removes every ghost without undo entry");
+            Invoke("BeginNodeGesture",new Point(0,0),false);Invoke("PreviewNodeMove",new Point(50,50));Invoke("CompleteNodeDrop",new Point(-10,100));Pump();Check(document.Revision==gestureRevision,"Drop outside workflow cancels instead of committing clamped coordinates");
+            chosen.Clear();chosen.Add(n1.Id);typeof(MainWindow).GetField("boxSelectionActive",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,false);Invoke("BeginNodeGesture",new Point(0,0),false);Invoke("PreviewNodeMove",new Point(270,0));Pump();
+            Check(canvas.Children.OfType<System.Windows.Shapes.Line>().Any(l=>l.Stroke==Brushes.LightGreen),"Single-node exact-axis movement shows recovered green alignment guides");Invoke("CancelCanvasGesture");Pump();
+            Check(!canvas.Children.OfType<System.Windows.Shapes.Line>().Any(),"Cancel removes alignment guides");
+            Invoke("BeginNodeGesture",new Point(0,0),false);Invoke("DrawAlignmentGuides",450d,280d);Check(canvas.Children.OfType<System.Windows.Shapes.Line>().Count()==6,"Exact coincident neighbor produces all six recovered alignment axes");Invoke("CancelCanvasGesture");
+            Invoke("BeginNodeGesture",new Point(0,0),false);Invoke("PreviewNodeMove",new Point(270,245));Pump();
+            var hotRegion=(System.Windows.Shapes.Rectangle)typeof(MainWindow).GetField("nodeHotRegion",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(hotRegion.Visibility==Visibility.Visible&&hotRegion.Width==66&&hotRegion.Height==22,"Recovered ordinary-node hot area is 66 by 22");
+            Check(Canvas.GetTop(hotRegion)==354&&document.CurrentProcedure.Nodes.Single(n=>n.Id==n1.Id).Y==100,"Hot preview retains original node and link geometry");
+            Invoke("PreviewNodeMove",new Point(280,250));Pump();Check(hotRegion.Visibility==Visibility.Visible,"Hot area keeps source twenty-unit horizontal hysteresis");Capture(window,"wpf-node-alignment-hot-region.png");
+            gestureRevision=document.Revision;Invoke("CommitNodeMove");Pump();Check(document.CurrentProcedure.Nodes.Single(n=>n.Id==n1.Id).X==450&&document.CurrentProcedure.Nodes.Single(n=>n.Id==n1.Id).Y==350&&document.Revision==gestureRevision+1,"Drop snaps to predecessor plus seventy only at commit");document.Undo();Pump();
+            chosen.Clear();chosen.Add(n1.Id);Invoke("BeginNodeGesture",new Point(0,0),false);Invoke("PreviewNodeMove",new Point(270,245));Invoke("PreviewNodeMove",new Point(320,245));Pump();
+            Check(hotRegion.Visibility!=Visibility.Visible||!canvas.Children.Contains(hotRegion),"Previous hot view removed on gesture end");
+            var activeHot=(System.Windows.Shapes.Rectangle)typeof(MainWindow).GetField("nodeHotRegion",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;Check(activeHot.Visibility==Visibility.Collapsed,"Leaving horizontal retention clears active snap");Invoke("CancelCanvasGesture");Pump();
+            Invoke("SetBoxSelection",new Rect(170,90,400,240));gestureRevision=document.Revision;Invoke("AlignSelection","left");Pump();Check(document.CurrentProcedure.Nodes.Where(n=>chosen.Contains(n.Id)).All(n=>n.X==180)&&document.Revision==gestureRevision+1,"Group left alignment is a single transaction");document.Undo();Pump();
+            Invoke("SetBoxSelection",new Rect(170,90,400,240));gestureRevision=document.Revision;Invoke("DistributeSelection",true);Pump();Check(document.CurrentProcedure.Nodes.Where(n=>chosen.Contains(n.Id)).Select(n=>n.Y).Distinct().Count()==1&&document.Revision==gestureRevision+1,"Horizontal distribution aligns centers atomically");document.Undo();Pump();
+            Invoke("UpdateNodeHotRegion",160d,535d,Array.Empty<string>());Check((string?)Invoke("AvailableHotPredecessor")==n3,"Unused bottom connector is eligible for toolbox auto-connect");
+            int beforeTool=document.CurrentProcedure.Nodes.Count;gestureRevision=document.Revision;Invoke("AddModuleAt","vision.image-source",160d,540d,n3);Pump();Check(document.CurrentProcedure.Nodes.Count==beforeTool+1&&document.Revision==gestureRevision+1&&document.CurrentProcedure.ExecutionLinks!.Any(e=>e.FromNode==n3&&e.SourceIndex==3&&e.TargetIndex==1),"Tool hot-drop creates node and execution connection in one transaction");document.Undo();Pump();
+            Invoke("ClearNodeHotRegion");Invoke("UpdateNodeHotRegion",180d,165d,Array.Empty<string>());Check(Invoke("AvailableHotPredecessor") is null,"Occupied bottom connector prevents extra automatic branch");Invoke("ClearNodeHotRegion");
+            Invoke("BeginConnection",n1.Id,3);Invoke("UpdateConnectionPreview",new Point(215,485));Pump();
+            var hovered=typeof(MainWindow).GetField("connectionTarget",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window);
+            Check(hovered is ValueTuple<string,int> destination&&destination.Item1==n3&&destination.Item2==1,"Connection targets node body and chooses nearest endpoint");
+            var portViews=(Dictionary<(string Node,int Port),Border>)typeof(MainWindow).GetField("executionPorts",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var targetHandle=((Canvas)portViews[(n3,1)].Child).Children.OfType<Border>().Single();Check(targetHandle.Width==12&&targetHandle.Height==8.5&&targetHandle.BorderThickness.Top==0,"Hovered top port uses recovered rotated dimensions and open outer border");
+            Check(portViews.Where(p=>p.Key.Node==n3).All(p=>p.Value.Visibility==Visibility.Visible),"Target node ports remain visible during captured connection drag");
+            Check(canvas.Children.OfType<System.Windows.Shapes.Path>().Any(p=>p.StrokeDashArray.SequenceEqual(new[]{5d,2.5})),"Connecting preview uses original dashed pattern");Capture(window,"wpf-node-connection-preview.png");
+            gestureRevision=document.Revision;int linkCount=document.CurrentProcedure.ExecutionLinks!.Count;Invoke("FinishConnection",new Point(215,485));Pump();Check(document.Revision==gestureRevision+1&&document.CurrentProcedure.ExecutionLinks!.Count==linkCount+1,"Release over node body commits one execution link");document.Undo();Pump();
+            Invoke("BeginConnection",n1.Id,3);Invoke("UpdateConnectionPreview",new Point(490,295));gestureRevision=document.Revision;Invoke("FinishConnection",new Point(490,295));Pump();Check(document.Revision==gestureRevision,"Duplicate link rejection does not create undo transaction");
+            Invoke("BeginConnection",n1.Id,3);Invoke("UpdateConnectionPreview",new Point(900,800));gestureRevision=document.Revision;Invoke("FinishConnection",new Point(900,800));Pump();Check(document.Revision==gestureRevision,"Release in blank area cancels without a link");
+            var wireUnderTest=document.CurrentProcedure.ExecutionLinks!.Single(e=>e.FromNode==n1.Id&&e.ToNode==n2);
+            document.SetExecutionPath(wireUnderTest,[new(235,130),new(235,205),new(505,205),new(505,280)]);Pump();
+            typeof(MainWindow).GetField("selectedWire",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,n1.Id+">"+n2);Invoke("RenderGraph");Pump();
+            var wireHandles=(List<System.Windows.Shapes.Rectangle>)typeof(MainWindow).GetField("wireHandles",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(wireHandles.Count==3&&wireHandles.All(h=>h.Width==6&&h.Height==6),"Selected wire exposes recovered six-unit segment midpoint handles");Check(!(bool)Invoke("IsCanvasBackground",wireHandles[1])!,"Wire midpoint does not trigger parent box selection");
+            var selectedWireColor=Color.FromRgb(231,105,0);Check(canvas.Children.OfType<System.Windows.Shapes.Path>().Any(p=>p.Stroke is SolidColorBrush brush&&brush.Color==selectedWireColor),"Selected connection uses original theme selected color");
+            var downArrow=(PointCollection)Invoke("OriginalWireArrow",new[]{new RoutePoint(0,0),new RoutePoint(0,100)})!;Check(downArrow.Count==3&&Math.Abs(downArrow[0].X-5)<.001&&Math.Abs(downArrow[0].Y-94)<.001&&Math.Abs(downArrow[1].X)<.001&&Math.Abs(downArrow[1].Y-102)<.001,"Arrow geometry follows recovered Connection.SetPath matrix formula");
+            gestureRevision=document.Revision;Invoke("BeginWireDrag",wireUnderTest,1);Invoke("FinishWireDrag",true);Pump();Check(document.Revision==gestureRevision,"Clicking a midpoint without movement does not create an undo entry");
+            gestureRevision=document.Revision;Invoke("BeginWireDrag",wireUnderTest,1);Invoke("PreviewWireDrag",new Point(350,237));Pump();Check(document.Revision==gestureRevision,"Segment preview leaves model and undo unchanged");Capture(window,"wpf-wire-midpoint-preview.png");
+            Invoke("FinishWireDrag",true);Pump();var custom=document.CurrentProcedure.ExecutionLinks!.Single(e=>e.FromNode==n1.Id&&e.ToNode==n2).PathPoints!;
+            Check(custom[1].Y==235&&custom[2].Y==235&&custom[0]==new VisionFramework.WirePointDocument(235,130)&&custom[^1]==new VisionFramework.WirePointDocument(505,280),"Recovered segment drag snaps by five and retains terminal anchors");Check(document.Revision==gestureRevision+1,"Segment release creates one undo record");document.Undo();Pump();
+            gestureRevision=document.Revision;Invoke("BeginWireDrag",wireUnderTest,1);Invoke("PreviewWireDrag",new Point(350,235));Invoke("FinishWireDrag",false);Pump();Check(document.Revision==gestureRevision&&document.CurrentProcedure.ExecutionLinks!.Single(e=>e.FromNode==n1.Id&&e.ToNode==n2).PathPoints![1].Y==205,"Segment cancellation restores display without saving preview");
+            gestureRevision=document.Revision;Invoke("BeginWireDrag",wireUnderTest,1);Invoke("PreviewWireDrag",new Point(350,208));Invoke("FinishWireDrag",true);Pump();Check(document.Revision==gestureRevision,"Source three-unit drag threshold does not modify route");
+            Invoke("BeginWireDrag",wireUnderTest,0);Invoke("PreviewWireDrag",new Point(255,167));Pump();var boundaryDrag=typeof(MainWindow).GetField("wireDrag",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;var boundaryPoints=(IReadOnlyList<Point>)boundaryDrag.GetType().GetProperty("PathPoints")!.GetValue(boundaryDrag)!;
+            Check(boundaryPoints[0]==new Point(235,130)&&boundaryPoints[^1]==new Point(505,280),"Dragging source-adjacent segment retains both terminal anchors through source LineMove");Invoke("FinishWireDrag",false);Pump();
+            Invoke("BeginWireDrag",wireUnderTest,1);Invoke("PreviewWireDrag",new Point(350,235));document.SetNodeName(n3,"临时修改");Pump();Check(typeof(MainWindow).GetField("wireDrag",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null&&document.CurrentProcedure.ExecutionLinks!.Single(e=>e.FromNode==n1.Id&&e.ToNode==n2).PathPoints![1].Y==205,"External document edit cancels stale wire preview without overwriting saved route");document.Undo();Pump();
+            Invoke("UpdateInsertionWire",new Point(350,205),Array.Empty<string>());Pump();var foundWire=Invoke("FindInsertionWire",new Point(350,205),Array.Empty<string>()) as VisionFramework.ExecutionLinkDocument;
+            Check(foundWire is not null&&foundWire.FromNode==n1.Id&&foundWire.ToNode==n2,"Insertion uses rendered wire geometry rather than node proximity");Check(canvas.Children.OfType<System.Windows.Shapes.Path>().Any(p=>p.StrokeThickness==10),"Drag over insertion wire uses source ten-unit emphasis");Capture(window,"wpf-wire-insertion-hover.png");Invoke("ClearInsertionWire");
+            Check(Invoke("FindInsertionWire",new Point(350,205),new[]{n1.Id}) is null,"Insertion excludes a node's own incident edges");
+            gestureRevision=document.Revision;int originalNodes=document.CurrentProcedure.Nodes.Count;Invoke("DropToolModule","vision.image-source",300d,190d,wireUnderTest,null!);Pump();
+            Check(document.Revision==gestureRevision+1&&document.CurrentProcedure.Nodes.Count==originalNodes+1&&!document.CurrentProcedure.ExecutionLinks!.Any(e=>e.FromNode==n1.Id&&e.ToNode==n2),"Toolbox insertion atomically replaces original edge");document.Undo();Pump();Check(document.CurrentProcedure.Nodes.Count==originalNodes&&document.CurrentProcedure.ExecutionLinks!.Any(e=>e.FromNode==n1.Id&&e.ToNode==n2),"Undo toolbox insertion restores node count and original wire");
+            string isolated=document.AddNode("vision.image-source","1.0.0",700,400);Pump();chosen.Clear();chosen.Add(isolated);typeof(MainWindow).GetField("boxSelectionActive",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,false);Invoke("BeginNodeGesture",new Point(700,400),false);Invoke("PreviewNodeMove",new Point(350,205));Pump();gestureRevision=document.Revision;Invoke("CommitNodeMove");Pump();
+            Check(document.Revision==gestureRevision+1&&document.CurrentProcedure.ExecutionLinks!.Any(e=>e.FromNode==n1.Id&&e.ToNode==isolated)&&document.CurrentProcedure.ExecutionLinks.Any(e=>e.FromNode==isolated&&e.ToNode==n2),"Dragging existing isolated node onto wire inserts it in one move transaction");document.Undo();Pump();Check(document.CurrentProcedure.Nodes.Single(n=>n.Id==isolated).X==700&&document.CurrentProcedure.ExecutionLinks!.Any(e=>e.FromNode==n1.Id&&e.ToNode==n2),"Undo existing-node insertion restores original position and topology");document.DeleteNode(isolated);Pump();
+            // Real WPF routed drag events exercise the product Drop/Over handlers without
+            // synthesizing OS mouse input or pretending that this drives the OLE modal loop.
+            void SetField(string name,object? value)=>typeof(MainWindow).GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,value);
+            System.Windows.DataObject NodeData(string? solution=null,string? procedure=null){var type=typeof(MainWindow).GetNestedType("NodeDragPayload",BindingFlags.NonPublic)!;string token=Guid.NewGuid().ToString("N");var store=(System.Collections.IDictionary)typeof(MainWindow).GetField("canvasDragData",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;store[token]=Activator.CreateInstance(type,window,solution??document.Document.Id,procedure??document.CurrentProcedureId,document.Revision)!;return new System.Windows.DataObject("VisionEditor.NodeDrag.v1",token,false);}
+            DragEventArgs DragArgs(System.Windows.IDataObject data,DragDropKeyStates keys,DragDropEffects effects,Point world,RoutedEvent route){var ctor=typeof(DragEventArgs).GetConstructor(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,new[]{typeof(System.Windows.IDataObject),typeof(DragDropKeyStates),typeof(DragDropEffects),typeof(DependencyObject),typeof(Point)},null)!;var args=(DragEventArgs)ctor.Invoke(new object[]{data,keys,effects,canvas,world});args.RoutedEvent=route;return args;}
+            void ArmOne(bool copy){chosen.Clear();chosen.Add(n1.Id);SetField("boxSelectionActive",false);Invoke("BeginNodeGesture",new Point(180,100),copy);}
+            Invoke("SetCanvasZoom",1d,new Point(0,0));scroll.ScrollToHorizontalOffset(0);scroll.ScrollToVerticalOffset(0);Pump();
+            Check(Find<Border>("CanvasViewport").AllowDrop,"Native OLE drop scope covers the viewport instead of individual child nodes");
+            var ctrl=DragDropKeyStates.ControlKey;var leftButton=DragDropKeyStates.LeftMouseButton;
+            Check((DragDropEffects)Invoke("NodeDropEffect",DragDropEffects.Copy,ctrl|leftButton)! ==DragDropEffects.Copy,"Copy allowed mode keeps Ctrl during hover");
+            Check((DragDropEffects)Invoke("NodeDropEffect",DragDropEffects.Copy,DragDropKeyStates.None)! ==DragDropEffects.None,"Releasing Ctrl after copy entry rejects copy drop");
+            Check((DragDropEffects)Invoke("NodeDropEffect",DragDropEffects.Move,ctrl)! ==DragDropEffects.None,"Ctrl pressed after move entry cannot enable unallowed Copy");
+            Check((DragDropEffects)Invoke("NodeDropEffect",DragDropEffects.Copy,ctrl|DragDropKeyStates.ShiftKey)! ==DragDropEffects.None,"Copy release requires exact Ctrl modifier as recovered ItemsPage branch");
+            ArmOne(true);var nodeData=NodeData();gestureRevision=document.Revision;originalNodes=document.CurrentProcedure.Nodes.Count;
+            var over=DragArgs(nodeData,ctrl|leftButton,DragDropEffects.Copy,new Point(350,400),DragDrop.PreviewDragOverEvent);Find<Border>("CanvasViewport").RaiseEvent(over);Pump();Check(over.Handled&&over.Effects==DragDropEffects.Copy&&canvas.Children.OfType<Canvas>().Any(c=>c.Opacity==.7),"Routed OLE drag over creates temporary copy preview");
+            var drop=DragArgs(nodeData,ctrl,DragDropEffects.Copy,new Point(350,400),DragDrop.PreviewDropEvent);Find<Border>("CanvasViewport").RaiseEvent(drop);Pump();Check(document.Revision==gestureRevision+1&&document.CurrentProcedure.Nodes.Count==originalNodes+1,"Routed Ctrl drop commits exactly one copied node transaction");document.Undo();Pump();
+            ArmOne(true);nodeData=NodeData();gestureRevision=document.Revision;over=DragArgs(nodeData,ctrl|leftButton,DragDropEffects.Copy,new Point(350,400),DragDrop.PreviewDragOverEvent);Find<Border>("CanvasViewport").RaiseEvent(over);
+            drop=DragArgs(nodeData,DragDropKeyStates.None,DragDropEffects.Copy,new Point(350,400),DragDrop.PreviewDropEvent);Find<Border>("CanvasViewport").RaiseEvent(drop);Pump();Check(document.Revision==gestureRevision&&!canvas.Children.OfType<Canvas>().Any(c=>c.Opacity==.7),"Releasing Ctrl before native drop cancels preview with no edit");
+            ArmOne(false);nodeData=NodeData();gestureRevision=document.Revision;drop=DragArgs(nodeData,DragDropKeyStates.None,DragDropEffects.Move,new Point(9000,9000),DragDrop.PreviewDropEvent);Find<Border>("CanvasViewport").RaiseEvent(drop);Pump();Check(drop.Effects==DragDropEffects.None&&document.Revision==gestureRevision,"Drop beyond viewport or over scrollbars cannot commit");
+            ArmOne(false);nodeData=NodeData(solution:"foreign");gestureRevision=document.Revision;over=DragArgs(nodeData,leftButton,DragDropEffects.Move,new Point(350,400),DragDrop.PreviewDragOverEvent);Find<Border>("CanvasViewport").RaiseEvent(over);Check(over.Effects==DragDropEffects.None&&document.Revision==gestureRevision,"Foreign document drag payload is rejected");Invoke("CancelCanvasGesture");
+            var toolData=(System.Windows.DataObject)Invoke("CreateToolDragData","vision.image-source")!;document.SetNodeName(n3,"拖动中修改");Pump();gestureRevision=document.Revision;drop=DragArgs(toolData,DragDropKeyStates.None,DragDropEffects.Move,new Point(350,400),DragDrop.PreviewDropEvent);Find<Border>("CanvasViewport").RaiseEvent(drop);Check(drop.Effects==DragDropEffects.None&&document.Revision==gestureRevision,"Stale toolbox drag cannot add after document revision changes");document.Undo();Pump();
+            var forged=new System.Windows.DataObject(typeof(string),"vision-module:vision.image-source");over=DragArgs(forged,leftButton,DragDropEffects.Move,new Point(350,400),DragDrop.PreviewDragOverEvent);Find<Border>("CanvasViewport").RaiseEvent(over);Check(over.Effects==DragDropEffects.None,"Unowned external text does not act as a live plugin drag");
+            ArmOne(false);Invoke("PreviewNodeMove",new Point(220,140));gestureRevision=document.Revision;Invoke("ToggleLock");Pump();Check(document.Revision==gestureRevision&&!canvas.Children.OfType<Canvas>().Any(c=>c.Opacity==.7)&&typeof(MainWindow).GetField("movingNodes",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null,"Lock transition cancels node preview without mutation");Invoke("BeginConnection",n1.Id,3);Check(typeof(MainWindow).GetField("pendingConnection",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null,"Locked canvas refuses new connection gesture");Invoke("ToggleLock");Pump();
+            Invoke("BeginConnection",n1.Id,3);Invoke("UpdateConnectionPreview",new Point(350,400));using(var boundaryRun=new CancellationTokenSource()){SetField("activeRun",boundaryRun);Invoke("RenderGraph");Check(typeof(MainWindow).GetField("pendingConnection",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null&&!canvas.Children.OfType<System.Windows.Shapes.Path>().Any(p=>p.StrokeDashArray.Count>0),"Run transition cancels pending connection and its adorners");SetField("activeRun",null);}Invoke("RenderGraph");
+            ArmOne(false);Invoke("PreviewNodeMove",new Point(220,140));gestureRevision=document.Revision;document.SetNodeName(n3,"外部修改");Pump();Check(typeof(MainWindow).GetField("movingNodes",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null&&document.CurrentProcedure.Nodes.Single(n=>n.Id==n1.Id).X==180,"External edit invalidates pending node move without replaying stale coordinates");document.Undo();Pump();
+            ArmOne(false);Invoke("PreviewNodeMove",new Point(220,140));SetField("parameterEditorOpen",true);Invoke("RenderGraph");Check(typeof(MainWindow).GetField("movingNodes",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null,"Open parameter editor blocks outstanding canvas edit gesture");SetField("parameterEditorOpen",false);Invoke("RenderGraph");
+            ArmOne(false);Invoke("PreviewNodeMove",new Point(220,140));gestureRevision=document.Revision;typeof(Window).GetMethod("OnDeactivated",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(window,new object[]{EventArgs.Empty});Pump();Check(document.Revision==gestureRevision&&!canvas.Children.OfType<Canvas>().Any(c=>c.Opacity==.7),"Window deactivation cancels captured edit instead of committing");
+            Check((bool)Invoke("IsCanvasBackground",new System.Windows.Documents.Run("内容命中"))! ==false,"ContentElement hit does not crash VisualTreeHelper traversal");
+            Invoke("SetBoxSelection",new Rect(170,90,400,240));gestureRevision=document.Revision;Invoke("ClearCanvasFocusAdorners");Pump();Check(!canvas.Children.OfType<System.Windows.Shapes.Rectangle>().Any(r=>r==typeof(MainWindow).GetField("groupSelectionFrame",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window))&&document.Revision==gestureRevision,"Focus loss removes group adorners without deleting selected document nodes or adding undo history");
+            ArmOne(false);gestureRevision=document.Revision;Invoke("RunNodeOleDrag",(DragDropEffects)64);Pump();Check(document.Revision==gestureRevision&&typeof(MainWindow).GetField("movingNodes",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null&&Find<TextBlock>("StatusText").Text.StartsWith("拖动已取消："),"Unsupported mode is rejected by host before entering native OLE with no document edit");
+            string originFlow=document.CurrentProcedureId;string foreignFlow=document.AddProcedure("拖放上下文核验");document.SelectProcedure(originFlow);Pump();toolData=(System.Windows.DataObject)Invoke("CreateToolDragData","vision.image-source")!;gestureRevision=document.Revision;document.SelectProcedure(foreignFlow);Pump();
+            drop=DragArgs(toolData,DragDropKeyStates.None,DragDropEffects.Move,new Point(350,400),DragDrop.PreviewDropEvent);Find<Border>("CanvasViewport").RaiseEvent(drop);Check(drop.Effects==DragDropEffects.None&&document.Revision==gestureRevision&&document.CurrentProcedure.Nodes.Count==0,"Workflow switch rejects previous tool drag even when document revision is unchanged");document.SelectProcedure(originFlow);document.DeleteProcedure(foreignFlow);Pump();
+            foreach(double zoom in new[]{.4,1.5,2d}){Invoke("SetCanvasZoom",zoom,new Point(0,0));scroll.ScrollToHorizontalOffset(0);scroll.ScrollToVerticalOffset(0);Pump();ArmOne(false);nodeData=NodeData();gestureRevision=document.Revision;over=DragArgs(nodeData,leftButton,DragDropEffects.Move,new Point(260,180),DragDrop.PreviewDragOverEvent);Find<Border>("CanvasViewport").RaiseEvent(over);Check(over.Effects==DragDropEffects.Move&&document.Revision==gestureRevision,"OLE preview remains in document units at zoom "+zoom);Invoke("CancelCanvasGesture");}Invoke("SetCanvasZoom",1d,new Point(0,0));Pump();
+            string distant=document.AddNode("vision.image-source","1.0.0",1300,900);Pump();Invoke("SetCanvasZoom",1d,new Point(0,0));Pump();
+            long navigationRevision=document.Revision;Invoke("NavigateMiniMap",new Point(150,120));Pump();
+            Check(scroll.HorizontalOffset>0&&scroll.VerticalOffset>0,"Eagle eye navigates actual ScrollViewer offsets");
+            Check(Math.Abs(scroll.HorizontalOffset-150d/187*scroll.ExtentWidth)<.01&&Math.Abs(scroll.VerticalOffset-120d/150*scroll.ExtentHeight)<.01,"Eagle eye position follows recovered inverse mapping");
+            Invoke("NavigateMiniMap",new Point(-30,-40));Pump();
+            Check(scroll.HorizontalOffset==0&&scroll.VerticalOffset==0,"Eagle eye navigation clamps at canvas origin");
+            Invoke("NavigateMiniMap",new Point(187,150));Pump();
+            Check(Math.Abs(scroll.HorizontalOffset-scroll.ScrollableWidth)<.01&&Math.Abs(scroll.VerticalOffset-scroll.ScrollableHeight)<.01,"Eagle eye navigation clamps at canvas far edge");
+            Check(document.Revision==navigationRevision,"Eagle eye navigation does not edit nodes");
+            Invoke("Fit");Pump();
+            Check(document.Revision==navigationRevision,"Fit-to-graph preserves node document");
+            Invoke("SetCanvasZoom",1d,new Point(0,0));scroll.ScrollToHorizontalOffset(0);scroll.ScrollToVerticalOffset(0);Pump();
+            var navImage=new RenderTargetBitmap((int)window.ActualWidth,(int)window.ActualHeight,96,96,PixelFormats.Pbgra32);navImage.Render(window);var navEncoder=new PngBitmapEncoder();navEncoder.Frames.Add(BitmapFrame.Create(navImage));using(var stream=File.Create("analysis/full-audit/wpf-workflow-canvas.png"))navEncoder.Save(stream);
+            document.Load(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));Pump();
+            Check(string.IsNullOrWhiteSpace(errors.ToString()),"WPF binding errors: "+errors);
+            string runFlow=document.CurrentProcedureId;string viewedFlow=document.AddProcedure("仅查看流程");document.SelectProcedure(runFlow);Pump();Invoke("StartContinuous");
+            var runCancellation=(CancellationTokenSource?)typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window);Check(runCancellation is not null,"Continuous run starts: "+Find<TextBlock>("StatusText").Text);
+            string cancelStack="";using var runRegistration=runCancellation!.Token.Register(()=>cancelStack=Environment.StackTrace);document.SelectProcedure(viewedFlow);Pump();
+            var frame=new DispatcherFrame();var stopPump=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(180)};stopPump.Tick+=(_,_)=>{stopPump.Stop();frame.Continue=false;};stopPump.Start();Dispatcher.PushFrame(frame);
+            Check((string?)typeof(MainWindow).GetField("runningProcedureId",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)==runFlow,"Continuous execution remains bound to starting workflow after tab switch; actual="+typeof(MainWindow).GetField("runningProcedureId",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)+" status="+Find<TextBlock>("StatusText").Text+" cancel="+cancelStack);
+            var runStats=(Dictionary<string,(long Count,double Milliseconds)>)typeof(MainWindow).GetField("workflowRunStats",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(runStats[runFlow].Count>=2&&!runStats.ContainsKey(viewedFlow),"Tab viewing does not execute viewed workflow");Invoke("StartContinuous");Pump();
+            Check(typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null,"Stop finishes continuous task and releases cancellation source");
+            document.SelectProcedure(runFlow);Pump();document.SetProcedureRunPolicy(runFlow,500,false);Pump();
+            long countBeforeInterval=runStats.GetValueOrDefault(runFlow).Count;Invoke("StartContinuous");Pump();
+            var intervalFrame=new DispatcherFrame();var intervalTimer=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(120)};intervalTimer.Tick+=(_,_)=>{intervalTimer.Stop();intervalFrame.Continue=false;};intervalTimer.Start();Dispatcher.PushFrame(intervalFrame);
+            Check(runStats[runFlow].Count==countBeforeInterval+1,"Configured 500ms interval prevents hard-coded 50ms repeat");Invoke("StartContinuous");Pump();
+            var ngMenu=(ContextMenu)Invoke("ProcedureMenu",runFlow)!;var ngItem=ngMenu.Items.OfType<MenuItem>().Single(x=>Equals(x.Header,"NG时停止流程"));var ngSwitch=(ToggleButton)ngItem.Icon;
+            ngMenu.PlacementTarget=tabs;ngMenu.IsOpen=true;Pump();Capture(ngMenu,"wpf-workflow-menu.png");ngMenu.IsOpen=false;ngSwitch.IsChecked=true;Pump();Check(document.CurrentProcedure.StopOnNg,"Original NG switch writes actual workflow policy");document.Undo();Pump();Check(!document.CurrentProcedure.StopOnNg,"NG switch policy is undoable");
+            document.SetProcedureRunPolicy(runFlow,0,true);var ngSource=document.CurrentProcedure.Nodes.Single();var ngValues=ngSource.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone());ngValues["AutoStop"]=System.Text.Json.JsonSerializer.SerializeToElement(true);document.SetParameters(ngSource.Id,ngValues);Pump();
+            long beforeNg=runStats.GetValueOrDefault(runFlow).Count;Invoke("StartContinuous");Pump();
+            var ngFrame=new DispatcherFrame();var ngTimer=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(120)};ngTimer.Tick+=(_,_)=>{ngTimer.Stop();ngFrame.Continue=false;};ngTimer.Start();Dispatcher.PushFrame(ngFrame);
+            Check(typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null&&runStats[runFlow].Count==beforeNg+2&&Find<TextBlock>("StatusText").Text.Contains("流程 NG"),"Continuous run stops after actual image source NoMatch result");
+            var intervalDialog=new WorkflowRunIntervalWindow(500){Owner=window,ShowActivated=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};Exception? dialogError=null;
+            intervalDialog.Loaded+=(_,_)=>{try{Capture(intervalDialog,"wpf-workflow-run-interval.png");Check(intervalDialog.Width==370&&intervalDialog.Height==200,"Run interval window retains recovered dialog dimensions");var control=(VisionPlugins.ImageSource.WpfNumericControl)intervalDialog.FindName("Interval");Check(control.Text=="500"&&control.Increment==10&&control.Maximum==100000,"Run interval editor loads saved value and source increment");control.Text="100000";control.Text="100001";Check(control.Text=="100000","Numeric editor rejects values above source maximum before confirmation");control.Text="250";typeof(WorkflowRunIntervalWindow).GetMethod("Apply",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(intervalDialog,[intervalDialog,new RoutedEventArgs()]);}catch(Exception error){dialogError=error;intervalDialog.Close();}};
+            bool appliedInterval=intervalDialog.ShowDialog()==true;if(dialogError is not null)throw dialogError;Check(appliedInterval&&intervalDialog.IntervalMs==250,"Run interval confirmation returns edited value");
+            document.Load(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));Pump();
+            document.DeleteProcedure(document.CurrentProcedureId);Pump();Check(Find<Grid>("EmptyWorkflowPanel").Visibility==Visibility.Visible,"Deleting last workflow shows recovered noProcess state");
+            Find<Button>("EmptyAddWorkflowButton").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(document.HasCurrentProcedure&&Find<Grid>("EmptyWorkflowPanel").Visibility==Visibility.Collapsed,"Empty state add button creates real workflow");
+            Check(Children((StackPanel)((TabItem)tabs.SelectedItem).Header).OfType<WorkflowImageButton>().Where(x=>Equals(x.ToolTip,"单次运行")||Equals(x.ToolTip,"连续运行")).All(x=>!x.IsEnabled),"Empty workflow run controls disabled as recovered commonstyle");
+            document.Load(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));Pump();
+            string output=Path.GetFullPath("analysis/full-audit/wpf-workflow-parity.png");
+            object? WindowCall(object target,string method,params object[] args)=>target.GetType().GetMethod(method,BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public)!.Invoke(target,args);
+            string configuredFlow=document.CurrentProcedureId;var configuredNode=document.CurrentProcedure.Nodes.Single();
+            Invoke("OpenWorkflowConfiguration",configuredFlow);Pump();
+            var configurationWindow=(WorkflowConfigurationWindow)typeof(MainWindow).GetField("workflowConfigurationWindow",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;configurationWindow.Left=-20000;configurationWindow.Top=-20000;Pump();
+            Check(configurationWindow.IsVisible&&window.IsEnabled&&ReferenceEquals(configurationWindow.Owner,window),"Workflow configuration opens as owned modeless window per recovered Show call");
+            var configurationTabs=(TabControl)configurationWindow.FindName("ConfigurationTabs");Check(configurationTabs.Items.Count==5&&configurationWindow.Width==1100&&configurationWindow.Height==680,"Workflow configuration retains XML tab count and Chinese dimensions");
+            WindowCall(configurationWindow,"AddInterface","output",VisionFramework.DataKind.GrayImage,new WorkflowSourceOption(configuredNode.Id,"Image",VisionFramework.DataKind.GrayImage,"图像源1.Image"));configurationTabs.SelectedIndex=1;configurationWindow.Refresh();Pump();
+            Check(document.CurrentProcedure.Configuration.Outputs.Count==1&&document.CurrentProcedure.Configuration.Outputs[0].NodeId==configuredNode.Id,"Workflow output subscription edits actual document");
+            Capture(configurationWindow,"wpf-workflow-configuration-output.png");
+            document.SetWorkflowConfiguration(configuredFlow,document.CurrentProcedure.Configuration with{RunParameters=[new("run-sample",configuredNode.Id,"InitialSN","SN初始值")]});configurationTabs.SelectedIndex=2;configurationWindow.Refresh();Pump();
+            var runtimeEditor=Children(configurationWindow).OfType<TextBox>().Single();runtimeEditor.Text="35";runtimeEditor.RaiseEvent(new RoutedEventArgs(UIElement.LostFocusEvent));Pump();
+            Check(document.CurrentProcedure.Nodes.Single().Parameters["InitialSN"].GetInt32()==35,"Exposed workflow runtime editor changes real image-source parameter");Capture(configurationWindow,"wpf-workflow-configuration-run.png");
+            ((Button)configurationWindow.FindName("RunOnce")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+            Check(((Image)configurationWindow.FindName("Preview")).Source is not null,"Workflow configuration preview uses real executed output"); Capture(configurationWindow,"wpf-workflow-configuration-executed.png");
+            Check(NativeWindowFrame.MeasureTopInset(configurationWindow,Path.GetFullPath("analysis/full-audit/workflow-configuration-native-frame.json"))==0,"Workflow configuration has no extra native top frame");
+            ((Button)configurationWindow.FindName("Repeat")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(!configurationTabs.IsEnabled&&((Button)configurationWindow.FindName("Stop")).IsEnabled,"Workflow window continuous run locks edits and enables stop");((Button)configurationWindow.FindName("Stop")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(configurationTabs.IsEnabled,"Workflow window stop restores editing");
+            configurationWindow.Close();Pump();Check(!(bool)typeof(MainWindow).GetField("parameterEditorOpen",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!,"Modeless workflow window close releases parameter edit boundary");
+            var localWindow=(WorkflowLocalVariablesWindow)Invoke("CreateWorkflowLocalVariablesWindow",configuredFlow)!;localWindow.ShowActivated=false;localWindow.WindowStartupLocation=WindowStartupLocation.Manual;localWindow.Left=-20000;localWindow.Top=-20000;localWindow.Show();Pump();
+            Check(Math.Abs(localWindow.Width-997)<1&&Math.Abs(localWindow.Height-683)<1&&document.CurrentProcedure.Configuration.Groups.Single().Name=="分组0","Local variable mode uses source dimensions, no communication-init column, and default group; actual="+localWindow.Width+"x"+localWindow.Height+" groups="+System.Text.Json.JsonSerializer.Serialize(document.CurrentProcedure.Configuration.Groups));
+            WindowCall(localWindow,"AddVariable",localWindow,new RoutedEventArgs());Pump();var variableGrid=(DataGrid)localWindow.FindName("Variables");Check(variableGrid.Columns.Count==8&&document.CurrentProcedure.Configuration.Variables.Single().Name=="%var0%","Local add uses native int/0/default var naming and source columns");
+            var variableRow=variableGrid.Items[0];variableRow.GetType().GetProperty("Name")!.SetValue(variableRow,"sampleCount");variableRow.GetType().GetProperty("Value")!.SetValue(variableRow,"25");WindowCall(localWindow,"Commit",variableRow);Pump();
+            Check(document.CurrentProcedure.Configuration.Variables.Single().Name=="%sampleCount%"&&document.CurrentProcedure.Configuration.Variables.Single().Value=="25","Local variable edit commits real scoped value immediately");
+            WindowCall(localWindow,"AddVariable",localWindow,new RoutedEventArgs());WindowCall(localWindow,"AddVariable",localWindow,new RoutedEventArgs());Pump();variableGrid.SelectedIndex=2;WindowCall(localWindow,"Move",0,true);Pump();Check(document.CurrentProcedure.Configuration.Variables[0].Name=="%var1%"&&document.CurrentProcedure.Configuration.Variables[1].Name=="%sampleCount%","Local top command shifts group order instead of swapping distant rows");
+            WindowCall(localWindow,"AddGroup",localWindow,new RoutedEventArgs());Pump();Check(document.CurrentProcedure.Configuration.Groups.Count==2,"Local group add edits real group model");((TabControl)localWindow.FindName("GroupTabs")).SelectedIndex=0;Pump();
+            var searchBox=(TextBox)localWindow.FindName("Search");searchBox.Text="sample";Pump();Check(variableGrid.Items.Count==1,"Local search filters selected group by variable name");searchBox.Text="";Pump();Capture(localWindow,"wpf-workflow-local-variables.png");
+            localWindow.Close();Pump();Check(string.IsNullOrWhiteSpace(errors.ToString()),"Workflow configuration/variables WPF binding errors: "+errors);Check(document.CurrentProcedure.Configuration.Variables.Count==3,"Closing local variables keeps immediate edits without invented cancel rollback");
+            // Operate the subscription button and its actual modal picker, then execute the real image-source plugin.
+            Invoke("OpenWorkflowConfiguration",configuredFlow);Pump();configurationWindow=(WorkflowConfigurationWindow)typeof(MainWindow).GetField("workflowConfigurationWindow",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;configurationWindow.Left=-20000;configurationWindow.Top=-20000;configurationTabs=(TabControl)configurationWindow.FindName("ConfigurationTabs");configurationTabs.SelectedIndex=2;configurationWindow.Refresh();Pump();
+            WindowCall(configurationWindow,"AddInterface","output",VisionFramework.DataKind.Integer,new WorkflowSourceOption(configuredNode.Id,"SNCode",VisionFramework.DataKind.Integer,"图像源1.SN码"));configurationWindow.Refresh();configurationWindow.UpdateLayout();Capture(configurationWindow,"wpf-workflow-before-subscribe.png");Check(document.CurrentProcedure.Configuration.RunParameters.Count==1,"Runtime proxy remains after local variable edits");Exception? subscriptionPickerError=null;
+            window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>{WorkflowSourcePicker? picker=null;try{picker=Application.Current.Windows.OfType<WorkflowSourcePicker>().Single();picker.UpdateLayout();Capture(picker,"wpf-workflow-variable-subscription-picker.png");Children(picker).OfType<CheckBox>().Single(b=>Equals(b.Content,"%sampleCount%")).IsChecked=true;Children(picker).OfType<Button>().Single(b=>Equals(b.Content,"确定")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));}catch(Exception error){subscriptionPickerError=new Exception("Subscription modal: "+string.Join("|",picker is null?new[]{"no picker"}:Children(picker).OfType<CheckBox>().Select(b=>b.Content?.ToString()??"null")),error);picker?.Close();}}));
+            Children(configurationWindow).OfType<Button>().Single(b=>Equals(b.Content,"订阅")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();if(subscriptionPickerError is not null)throw subscriptionPickerError;
+            Check(document.CurrentProcedure.Configuration.Subscriptions.Single().Source.Kind==VisionFramework.WorkflowSourceKind.LocalVariable,"Subscription picker creates real local-variable consumer");
+            ((Button)configurationWindow.FindName("RunOnce")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+            var executedSessions=(Dictionary<string,VisionFramework.ExecutionSessionResult>)typeof(MainWindow).GetField("workflowSessions",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(executedSessions[configuredFlow].Nodes.Single().Outputs["SNCode"].As<long>()==25,"Actual run button reads edited local variable=25 rather than literal InitialSN=35");
+            long firstActualExport=executedSessions[configuredFlow].WorkflowOutputs["out1"].As<long>();Check(firstActualExport==25,"UI configured named output exports subscribed runtime value25");Capture(configurationWindow,"wpf-workflow-variable-consumer.png");configurationWindow.Close();Pump();
+            localWindow=(WorkflowLocalVariablesWindow)Invoke("CreateWorkflowLocalVariablesWindow",configuredFlow)!;localWindow.Left=-20000;localWindow.Top=-20000;localWindow.Show();Pump();variableGrid=(DataGrid)localWindow.FindName("Variables");var referencedRow=variableGrid.Items.Cast<object>().Single(r=>Equals(r.GetType().GetProperty("Name")!.GetValue(r),"sampleCount"));
+            Check(referencedRow.GetType().GetProperty("References")!.GetValue(referencedRow)!.ToString()!.Contains("SN初始值"),"Local variable reference position lists actual consumer");Capture(localWindow,"wpf-workflow-variable-references.png");Exception? targetError=null;
+            window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>{WorkflowVariableTargetsWindow? targets=null;try{targets=Application.Current.Windows.OfType<WorkflowVariableTargetsWindow>().Single();targets.UpdateLayout();var tree=(TreeView)targets.FindName("TargetTree");var leaf=tree.Items.OfType<TreeViewItem>().SelectMany(g=>g.Items.OfType<TreeViewItem>()).Single(i=>i.Tag is WorkflowSourceOption o&&o.Port=="StitchStartHeight");leaf.IsSelected=true;WindowCall(targets,"ChooseTarget",tree,new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Control.MouseDoubleClickEvent});targets.UpdateLayout();Capture(targets,"wpf-workflow-variable-targets.png");((Button)targets.FindName("ConfirmButton")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));}catch(Exception error){targetError=error;targets?.Close();}}));
+            Children(variableGrid).OfType<Button>().Single(b=>ReferenceEquals(b.DataContext,referencedRow)&&b.Content?.ToString()?.Contains("SN初始值")==true).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();if(targetError is not null)throw targetError;
+            Check(document.CurrentProcedure.Configuration.Subscriptions.Count(b=>b.Source.Kind==VisionFramework.WorkflowSourceKind.LocalVariable&&b.Source.Id==document.CurrentProcedure.Configuration.Variables.Single(v=>v.Name=="%sampleCount%").Id)==2,"Local reference click opens original two-pane target picker and commits multiple consumers");
+            referencedRow=variableGrid.Items.Cast<object>().Single(r=>Equals(r.GetType().GetProperty("Name")!.GetValue(r),"sampleCount"));referencedRow.GetType().GetProperty("Value")!.SetValue(referencedRow,"42");WindowCall(localWindow,"Commit",referencedRow);localWindow.Close();Pump();Invoke("RunProcedure",configuredFlow);Pump();
+            Check(executedSessions[configuredFlow].Nodes.Single().Outputs["SNCode"].As<long>()==42,"Editing local variable to42 changes subsequent real plugin output");
+            File.WriteAllText("analysis/full-audit/workflow-variable-operation-results.json",System.Text.Json.JsonSerializer.Serialize(new{LiteralInitialSN=document.CurrentProcedure.Nodes.Single().Parameters["InitialSN"].GetInt32(),FirstLocalValue=25,FirstActualExport=firstActualExport,SecondLocalValue=42,SecondActualExport=executedSessions[configuredFlow].WorkflowOutputs["out1"].As<long>()},new System.Text.Json.JsonSerializerOptions{WriteIndented=true}));document.Undo();Pump();Check(document.CurrentProcedure.Configuration.Variables.Single(v=>v.Name=="%sampleCount%").Value=="25","Undo restores consumer's variable initial value");
+            
+            var sourcePicker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption(configuredNode.Id,"Image",VisionFramework.DataKind.GrayImage,"图像源1.Image"),new WorkflowSourceOption(configuredNode.Id,"Width",VisionFramework.DataKind.Integer,"图像源1.Width")},true){Owner=window,ShowActivated=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};Exception? pickerError=null;
+            sourcePicker.Loaded+=(_,_)=>{try{sourcePicker.UpdateLayout();foreach(var checkbox in Children(sourcePicker).OfType<CheckBox>().Where(c=>Equals(c.Content,"Image")||Equals(c.Content,"Width")))checkbox.IsChecked=true;Capture(sourcePicker,"wpf-workflow-source-picker.png");Children(sourcePicker).OfType<Button>().Single(b=>Equals(b.Content,"确定")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));}catch(Exception error){pickerError=error;sourcePicker.Close();}};
+            bool sourceConfirmed=sourcePicker.ShowDialog()==true;if(pickerError is not null)throw pickerError;Check(sourceConfirmed&&sourcePicker.Selections.Count==2&&sourcePicker.IncludeModuleName,"Source batch picker confirms two actual typed outputs");
+            // Visual subprogram workflow: real toolbox payload, target selection, input pickers and run button.
+            document.Load(Path.GetFullPath("examples/workflow-subprogram-call.vmx.json"));Pump();
+            using(var catalogJson=System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"tool-catalog.json")))){
+             string logicGroup=catalogJson.RootElement.GetProperty("Groups").EnumerateArray().Single(g=>g.GetProperty("Items").EnumerateArray().Any(t=>t.GetProperty("Id").GetString()=="IMVSGroup")).GetProperty("Id").GetString()!;
+             var callToolAnchor=Find<StackPanel>("Rail").Children.OfType<Button>().Single(b=>Equals(b.Tag,logicGroup));Invoke("ShowToolPicker",logicGroup,callToolAnchor);Pump();var callPopup=(Popup)typeof(MainWindow).GetField("toolPopup",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;var toolRoot=(FrameworkElement)callPopup.Child;toolRoot.UpdateLayout();var callTile=Children(toolRoot).OfType<Button>().Single(b=>Equals(b.Tag,"IMVSGroup"));Check(callTile.IsEnabled&&callTile.Opacity==1,"Real source-category toolbox shows enabled subprogram tile");Capture(toolRoot,"wpf-subprogram-toolbox.png");callPopup.IsOpen=false;
+            }
+            var nativeGroupNode=document.CurrentProcedure.Nodes.Single(n=>n.Id=="call");
+            var nativeGroupCard=(Canvas)Invoke("CreateNodeCard",nativeGroupNode,1,true)!;
+            var nativeGroupBody=(Border)nativeGroupCard.Children[0];
+            Check(nativeGroupBody.Width==110&&nativeGroupBody.Height==40&&nativeGroupBody.Background is ImageBrush,"Group uses recovered 110x40 resource template rather than normal node shell");
+            Check(Children(nativeGroupCard).OfType<Button>().Any(b=>Equals(b.ToolTip,"Group 参数设置")),"Group has separate source-template configuration button");
+            var nativeGroupRect=(Rect)Invoke("NodeBounds",nativeGroupNode)!;
+            Check(nativeGroupRect.Height==40,"Group routing and selection use native template height");
+            nativeGroupCard.Measure(new Size(130,60));nativeGroupCard.Arrange(new Rect(0,0,130,60));nativeGroupCard.UpdateLayout();Capture(nativeGroupCard,"wpf-group-native-template.png");
+            string subprogramFlow=document.CurrentProcedureId;var beforeSubprogram=document.CurrentProcedure.Nodes.Select(n=>n.Id).ToHashSet();
+            var callToolData=(DataObject)Invoke("CreateToolDragData",VisionFramework.WorkflowCalls.ModuleId)!;
+            var callDrop=DragArgs(callToolData,DragDropKeyStates.LeftMouseButton,DragDropEffects.Move,new Point(450,250),DragDrop.PreviewDragOverEvent);Invoke("ToolDropOver",Find<Canvas>("GraphLayer"),callDrop);Pump();
+            Check(callDrop.Effects==DragDropEffects.Move,"Subprogram registered toolbox payload produces actual canvas ghost");
+            callDrop.RoutedEvent=DragDrop.PreviewDropEvent;Invoke("ToolDrop",Find<Canvas>("GraphLayer"),callDrop);Pump();var draftCall=document.CurrentProcedure.Nodes.Single(n=>!beforeSubprogram.Contains(n.Id));
+            Check(draftCall.ModuleId==VisionFramework.WorkflowCalls.ModuleId&&draftCall.Call is null,"Toolbox drop creates real unconfigured call node");
+            var callWindow=(SubprogramCallWindow)Invoke("CreateSubprogramCallWindow",draftCall.Id)!;callWindow.WindowStartupLocation=WindowStartupLocation.Manual;callWindow.Left=-20000;callWindow.Top=-20000;callWindow.Show();Pump();((ComboBox)callWindow.FindName("Targets")).SelectedValue="child";callWindow.UpdateLayout();Pump();
+            Check(document.CurrentProcedure.Nodes.Single(n=>n.Id==draftCall.Id).Call is {Inputs.Count:2,Outputs.Count:2},"Target combobox configures actual typed input/output signature");callWindow.Close();document.Undo();document.Undo();Pump();
+            Check(document.CurrentProcedure.Nodes.Count==3,"Undo target selection and toolbox drop restores original graph");
+            callWindow=(SubprogramCallWindow)Invoke("CreateSubprogramCallWindow","call")!;callWindow.WindowStartupLocation=WindowStartupLocation.Manual;callWindow.Left=-20000;callWindow.Top=-20000;callWindow.Show();callWindow.UpdateLayout();Pump();
+            Check(((TabControl)callWindow.FindName("ConfigurationTabs")).Items.Count==5&&!((TabItem)((TabControl)callWindow.FindName("ConfigurationTabs")).Items[4]).IsEnabled,"Subprogram uses recovered five-tab shell and keeps unimplemented loop disabled");
+            Exception? callPickerError=null;
+            void ChooseCallInput(string port,string leaf){window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>{WorkflowSourcePicker? picker=null;try{picker=Application.Current.Windows.OfType<WorkflowSourcePicker>().Single();picker.UpdateLayout();Children(picker).OfType<CheckBox>().Single(c=>Equals(c.Content,leaf)).IsChecked=true;Children(picker).OfType<Button>().Single(b=>Equals(b.Content,"确定")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));}catch(Exception error){callPickerError=error;picker?.Close();}}));callWindow.UpdateLayout();Children(callWindow).OfType<Button>().Single(b=>Equals(b.Tag,port)).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();if(callPickerError is not null)throw callPickerError;}
+            ChooseCallInput("image","Image");Check(!document.CurrentProcedure.Connections.Any(c=>c.ToNode=="call"&&c.ToPort=="image")&&document.CurrentProcedure.Configuration.Subscriptions.Any(b=>b.NodeId=="call"&&b.Target=="image"),"Call input picker atomically replaces image data edge with subscription");
+            ChooseCallInput("threshold","%threshold%");
+            ((Button)callWindow.FindName("RunOnce")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+            Check(executedSessions[subprogramFlow].Status==VisionFramework.SessionStatus.Success&&executedSessions[subprogramFlow].WorkflowOutputs["count"].As<long>()==365,"Actual call-window run button executes parent -> child -> parent downstream result365");
+            Check(executedSessions[subprogramFlow].Calls["call"].WorkflowOutputs["count"].As<long>()==365&&((Image)callWindow.FindName("Preview")).Source is not null,"Call window displays actual nested outputs and returned image");Capture(callWindow,"wpf-subprogram-call-inputs.png");((TabControl)callWindow.FindName("ConfigurationTabs")).SelectedIndex=1;callWindow.UpdateLayout();Capture(callWindow,"wpf-subprogram-call-outputs.png");callWindow.Close();Pump();
+            // Bind a call output to an ordinary downstream node through the actual workflow input selector.
+            document.SetWorkflowConfiguration(subprogramFlow,document.CurrentProcedure.Configuration with{RunParameters=[new("returned-image-proxy","after","Image","输入图像",true)]});Invoke("OpenWorkflowConfiguration",subprogramFlow);Pump();var returnedWindow=(WorkflowConfigurationWindow)typeof(MainWindow).GetField("workflowConfigurationWindow",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;returnedWindow.WindowStartupLocation=WindowStartupLocation.Manual;returnedWindow.Left=-20000;returnedWindow.Top=-20000;((TabControl)returnedWindow.FindName("ConfigurationTabs")).SelectedIndex=2;returnedWindow.Refresh();returnedWindow.UpdateLayout();
+            Exception? returnPickerError=null;window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>{WorkflowSourcePicker? picker=null;try{picker=Application.Current.Windows.OfType<WorkflowSourcePicker>().Single();picker.UpdateLayout();Children(picker).OfType<CheckBox>().Single(c=>Equals(c.Content,"image")).IsChecked=true;Children(picker).OfType<Button>().Single(b=>Equals(b.Content,"确定")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));}catch(Exception e){returnPickerError=e;picker?.Close();}}));Children(returnedWindow).OfType<Button>().Single(b=>Equals(b.Content,"订阅")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();if(returnPickerError is not null)throw returnPickerError;
+            Check(!document.CurrentProcedure.Connections.Any(c=>c.ToNode=="after"&&c.ToPort=="Image")&&document.CurrentProcedure.Configuration.Subscriptions.Any(b=>b.NodeId=="after"&&b.Target=="Image"&&b.Source.Id=="call"),"Actual generic input picker replaces downstream edge with call-output subscription");((Button)returnedWindow.FindName("RunOnce")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(executedSessions[subprogramFlow].WorkflowOutputs["count"].As<long>()==365,"Visually rebound call output drives ordinary downstream node");Capture(returnedWindow,"wpf-subprogram-return-binding.png");returnedWindow.Close();Pump();
+            Capture(Find<Border>("CanvasViewport"),"wpf-subprogram-parent-canvas.png");Invoke("EnterSubprogram","call");Pump();Check(document.CurrentProcedureId=="child"&&executedSessions["child"].Nodes.Count==2,"Canvas enter action selects real child editor with executed child results");Capture(Find<Border>("CanvasViewport"),"wpf-subprogram-child-canvas.png");Invoke("SelectWorkflow",subprogramFlow);Pump();
+            void ChangeParentThreshold(string value){var variablesWindow=(WorkflowLocalVariablesWindow)Invoke("CreateWorkflowLocalVariablesWindow",subprogramFlow)!;variablesWindow.WindowStartupLocation=WindowStartupLocation.Manual;variablesWindow.Left=-20000;variablesWindow.Top=-20000;variablesWindow.Show();variablesWindow.UpdateLayout();Pump();var rows=(DataGrid)variablesWindow.FindName("Variables");var row=rows.Items.Cast<object>().Single(r=>Equals(r.GetType().GetProperty("Name")!.GetValue(r),"threshold"));row.GetType().GetProperty("Value")!.SetValue(row,value);WindowCall(variablesWindow,"Commit",row);variablesWindow.Close();Pump();}
+            ChangeParentThreshold("0");Invoke("RunProcedure",subprogramFlow);Pump();Check(executedSessions[subprogramFlow].WorkflowOutputs["count"].As<long>()==1&&executedSessions[subprogramFlow].Calls["call"].WorkflowOutputs["count"].As<long>()==1,"Parent variable window edit reaches call input and changes full run365 -> 1");
+            callWindow=(SubprogramCallWindow)Invoke("CreateSubprogramCallWindow","call")!;callWindow.WindowStartupLocation=WindowStartupLocation.Manual;callWindow.Left=-20000;callWindow.Top=-20000;callWindow.Show();callWindow.UpdateLayout();ChooseCallInput("image","解除订阅");((Button)callWindow.FindName("RunOnce")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+            Check(!string.IsNullOrWhiteSpace(((TextBlock)callWindow.FindName("Error")).Text)&&((Image)callWindow.FindName("Preview")).Source is null&&!executedSessions.ContainsKey("child"),"Missing call input preflight clears successful child preview and reports error inside node window");Capture(callWindow,"wpf-subprogram-missing-input.png");ChooseCallInput("image","Image");callWindow.Close();Pump();
+            ChangeParentThreshold("300");Invoke("RunProcedure",subprogramFlow);Pump();Check(executedSessions[subprogramFlow].Status==VisionFramework.SessionStatus.Failed&&executedSessions[subprogramFlow].Nodes.Single(n=>n.NodeId=="after").Status==VisionFramework.NodeRunStatus.Skipped&&executedSessions[subprogramFlow].WorkflowOutputs.Count==0,"Actual UI invalid child parameter fails call, skips downstream and clears exports");
+            Check(executedSessions["child"].Status==VisionFramework.SessionStatus.Failed&&executedSessions["child"].WorkflowOutputs.Count==0,"Entering child after failed call cannot display stale successful exports");
+            File.WriteAllText("analysis/full-audit/subprogram-ui-operation-results.json",System.Text.Json.JsonSerializer.Serialize(new{FirstParentCount=365,FirstChildCount=365,EditedParentCount=1,EditedChildCount=1,FailureStatus=executedSessions[subprogramFlow].Status.ToString(),FailureCallCode=executedSessions[subprogramFlow].Nodes.Single(n=>n.NodeId=="call").ErrorCode,FailureOutputCount=executedSessions[subprogramFlow].WorkflowOutputs.Count},new System.Text.Json.JsonSerializerOptions{WriteIndented=true}));Check(string.IsNullOrWhiteSpace(errors.ToString()),"Subprogram WPF binding diagnostics: "+errors);
+            document.NewSolution();Pump();var ownedUiRoot=document.CurrentProcedureId;var ownedUiNode=document.AddNode(VisionFramework.WorkflowCalls.ModuleId,VisionFramework.WorkflowCalls.Version,220,180);Pump();Invoke("EnterSubprogram",ownedUiNode);Pump();var ownedUiBody=document.CurrentProcedureId;
+            Check(document.CurrentProcedure.GroupOwner==new VisionFramework.GroupOwnership(ownedUiRoot,ownedUiNode),"Group enter opens owned editable internal canvas");
+            Check(Find<TabControl>("ProcedureTabs").Items.Count==1&&((TabItem)Find<TabControl>("ProcedureTabs").SelectedItem).Tag.Equals(ownedUiRoot),"Owned Group retains parent workflow tab without adding a top-level tab");
+            Check(Find<TextBlock>("Breadcrumb").Text.Contains(" > Group > "),"Owned Group breadcrumb shows module-set hierarchy");
+            Button GroupTabReturn()=>Children(Find<TabControl>("ProcedureTabs")).OfType<Button>().Single(b=>Equals(b.Tag,"GroupTabBack"));
+            Check(GroupTabReturn().IsEnabled,"Group Tab has native Up return button");
+            Check(Children(Find<TabControl>("ProcedureTabs")).OfType<TextBlock>().Any(t=>t.Text=="Group"),"Group Tab displays current internal module-set name");
+            var nestedReturnNode=document.AddNode(VisionFramework.WorkflowCalls.ModuleId,VisionFramework.WorkflowCalls.Version,360,220);Invoke("EnterSubprogram",nestedReturnNode);Pump();var nestedReturnBody=document.CurrentProcedureId;
+            Check(nestedReturnBody!=ownedUiBody,"Nested Group enters second internal canvas");
+            GroupTabReturn().RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(document.CurrentProcedureId==ownedUiBody,"Actual Tab return Click goes up exactly one Group level");
+            GroupTabReturn().RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(document.CurrentProcedureId==ownedUiRoot&&!Children(Find<TabControl>("ProcedureTabs")).OfType<Button>().Any(b=>Equals(b.Tag,"GroupTabBack")),"Tab return reaches root and removes Up button");
+            Invoke("EnterSubprogram",ownedUiNode);Pump();Check(GroupTabReturn().IsEnabled,"Tab return is restored on re-entry without stale header cache");Capture(window,"wpf-group-tab-return.png");
+            document.AddNode("vision.image-source","1.0.0",180,150);Pump();Capture(Find<Border>("CanvasViewport"),"wpf-group-owned-canvas.png");Capture(window,"wpf-group-owned-window.png");
+            Invoke("GroupBreadcrumbBack",Find<TextBlock>("Breadcrumb"),new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();Check(document.CurrentProcedureId==ownedUiRoot,"Breadcrumb operation returns to parent canvas");
+            var ownedUiConfig=(SubprogramCallWindow)Invoke("CreateSubprogramCallWindow",ownedUiNode)!;ownedUiConfig.WindowStartupLocation=WindowStartupLocation.Manual;ownedUiConfig.Left=-20000;ownedUiConfig.Top=-20000;ownedUiConfig.Show();Pump();Check(((StackPanel)ownedUiConfig.FindName("TargetSelectionPanel")).Visibility==Visibility.Collapsed,"Owned Group configuration has no cross-workflow target selector");ownedUiConfig.Close();
+            document.DeleteNode(ownedUiNode);Pump();Check(document.Document.Procedures.All(p=>p.Id!=ownedUiBody),"UI delete removes owned internal canvas");document.Undo();Pump();Check(document.Document.Procedures.Any(p=>p.Id==ownedUiBody),"UI undo restores Group with its edited internal canvas");
+            document.Load(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));Pump();
+            Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+            var image=new RenderTargetBitmap((int)window.ActualWidth,(int)window.ActualHeight,96,96,PixelFormats.Pbgra32);image.Render(window);
+            var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(image));using(var file=File.Create(output))encoder.Save(file);
+            Invoke("ShowToolPicker","Collection",Find<StackPanel>("Rail").Children[0]);Pump();
+            popup=(Popup)typeof(MainWindow).GetField("toolPopup",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Capture(Find<Grid>("ToolRail"),"wpf-toolbox-active-category.png");var popupRoot=(FrameworkElement)popup.Child;popupRoot.UpdateLayout();
+            var popupImage=new RenderTargetBitmap((int)Math.Ceiling(popupRoot.ActualWidth),(int)Math.Ceiling(popupRoot.ActualHeight),96,96,PixelFormats.Pbgra32);popupImage.Render(popupRoot);
+            var popupEncoder=new PngBitmapEncoder();popupEncoder.Frames.Add(BitmapFrame.Create(popupImage));using(var file=File.Create(Path.Combine(Path.GetDirectoryName(output)!,"wpf-toolbox-collection.png")))popupEncoder.Save(file);
+            popup.IsOpen=false;
+            using var closingCancellation=new CancellationTokenSource();typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,closingCancellation);window.Close();
+            Check(closingCancellation.IsCancellationRequested,"Window close explicitly cancels active workflow");
+            Check(((System.Collections.IDictionary)typeof(MainWindow).GetField("canvasDragData",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!).Count==0,"Window close releases all owned drag payload references");
+            File.WriteAllText(Path.ChangeExtension(output,"json"),System.Text.Json.JsonSerializer.Serialize(new { checks,passed=true,scope="actual WPF MainWindow",originalVmRuntimeCompared=false }));
+            Console.WriteLine($"PASS {checks} actual WPF checks; screenshot: {output}");
+        }
+        finally { window.Close();app.Shutdown(); }
+    }
+}
+
+

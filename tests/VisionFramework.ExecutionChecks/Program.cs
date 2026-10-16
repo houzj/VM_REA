@@ -1,0 +1,53 @@
+﻿using VisionFramework;
+using System.Text.Json;
+int count=0;void Check(bool ok,string name){if(!ok)throw new Exception(name);count++;}
+ModuleDescriptor Desc(string id,DataKind input=DataKind.Number,bool source=false)=>new(id,"1",id,source?[]:[new("in",input)],[new("out",DataKind.Number)],[]);
+var registry=new ModuleRegistry();var source=Desc("source",source:true);var pass=Desc("pass");var fail=Desc("fail");var bad=Desc("bad");var nomatch=Desc("nomatch");var slow=Desc("slow",source:true);
+int disposed=0;registry.Register(source,()=>new TestModule(source,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary<string,PortValue>{{"out",PortValue.Number(2)}})),()=>disposed++));
+registry.Register(pass,()=>new TestModule(pass,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary<string,PortValue>{{"out",PortValue.Number(c.Input<double>("in")+1)}})),()=>disposed++));
+registry.Register(fail,()=>new TestModule(fail,(c,t)=>throw new Exception("broken"),()=>disposed++));
+registry.Register(bad,()=>new TestModule(bad,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary<string,PortValue>{{"out",PortValue.Text("wrong")}})),()=>disposed++));
+registry.Register(nomatch,()=>new TestModule(nomatch,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.NoMatch,new Dictionary<string,PortValue>{{"out",PortValue.Number(0)}})),()=>disposed++));
+registry.Register(slow,()=>new TestModule(slow,async(c,t)=>{await Task.Delay(10000,t);return new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"out",PortValue.Number(1)}});},()=>disposed++));
+NodeDocument Node(string id,string type,int timeout=0)=>new(id,type,"1",id,new(),TimeoutMs:timeout);
+ProcedureDocument P(params NodeDocument[] nodes)=>new("p","p",nodes,[]);
+var chain=new ProcedureDocument("p","p",[Node("a","source"),Node("b","pass"),Node("c","pass")],[new("a","out","b","in"),new("b","out","c","in")]);
+var engine=new GraphExecutor(registry);var result=await engine.RunAsync(chain,".");Check(result.Status==SessionStatus.Success,"chain status");Check(result.Nodes[2].Outputs["out"].As<double>()==4,"chain propagation");Check(disposed==3,"dispose success");
+var fan=chain with{Connections=[new("a","out","b","in"),new("a","out","c","in")]};result=await engine.RunAsync(fan,".");Check(result.Nodes[2].Outputs["out"].As<double>()==3,"fanout");
+Check(GraphValidator.Validate(chain with{Connections=[new("c","out","b","in"),new("b","out","c","in")]},registry).Issues.Any(x=>x.Code=="Cycle"),"cycle");
+Check(!GraphValidator.Validate(P(Node("x","pass")),registry).IsValid,"required input");Check(!GraphValidator.Validate(P(Node("x","source"),Node("x","source")),registry).IsValid,"duplicate node");Check(!GraphValidator.Validate(P(Node("x","missing")),registry).IsValid,"unknown module");
+Check(!GraphValidator.Validate(chain with{Connections=[..chain.Connections,new("a","out","b","in")]},registry).IsValid,"duplicate binding");
+result=await engine.RunAsync(chain with{Nodes=[Node("a","source"),Node("b","fail"),Node("c","pass")]},".");Check(result.Nodes[1].Status==NodeRunStatus.Failed&&result.Nodes[2].Status==NodeRunStatus.Skipped,"failure blocks downstream");Check(result.Nodes[1].Outputs.Count==0&&result.Nodes[2].Outputs.Count==0,"no stale output");
+result=await engine.RunAsync(chain with{Nodes=[Node("a","source"),Node("b","bad"),Node("c","pass")]},".");Check(result.Nodes[1].ErrorCode=="InvalidOutput","output type");
+result=await engine.RunAsync(chain with{Nodes=[Node("a","source"),Node("b","nomatch"),Node("c","pass")]},".");Check(result.Nodes[1].Status==NodeRunStatus.NoMatch&&result.Nodes[2].Status==NodeRunStatus.Success,"no match distinction");
+int before=disposed;result=await engine.RunAsync(P(Node("s","slow",10)),".");Check(result.Status==SessionStatus.TimedOut&&disposed==before+1,"timeout cleanup");
+using(var cancel=new CancellationTokenSource(10)){before=disposed;result=await engine.RunAsync(P(Node("s","slow")),".",cancellationToken:cancel.Token);Check(result.Status==SessionStatus.Cancelled&&disposed==before+1,"cancel cleanup");}
+result=await engine.RunAsync(P(Node("a","source")),".",new ThrowProgress());Check(result.Status==SessionStatus.Success,"observer isolation");
+var paramDesc=new ModuleDescriptor("param","1","param",[],[],[new("v",ParameterKind.Integer,true,Minimum:0,Maximum:10)]);registry.Register(paramDesc,()=>new TestModule(paramDesc,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary<string,PortValue>())),()=>disposed++));
+Check(!GraphValidator.Validate(P(Node("p","param")),registry).IsValid,"missing parameter");
+var pn=Node("p","param") with{Parameters=new(){{"v",JsonSerializer.SerializeToElement(11)}}};Check(!GraphValidator.Validate(P(pn),registry).IsValid,"parameter range");
+pn=pn with{Parameters=new(){{"v",JsonSerializer.SerializeToElement("1")}}};Check(!GraphValidator.Validate(P(pn),registry).IsValid,"parameter type");
+pn=pn with{Parameters=new(){{"v",JsonSerializer.SerializeToElement(1)},{"unknown",JsonSerializer.SerializeToElement(1)}}};Check(!GraphValidator.Validate(P(pn),registry).IsValid,"unknown parameter");
+var textDesc=Desc("text",DataKind.Text);registry.Register(textDesc,()=>new TestModule(textDesc,(c,t)=>throw new Exception(),()=>{}));Check(!GraphValidator.Validate(chain with{Nodes=[Node("a","source"),Node("b","text"),Node("c","pass")]},registry).IsValid,"input type mismatch");
+Check(!GraphValidator.Validate(chain with{Nodes=[Node("a","source") with{Enabled=false},Node("b","pass"),Node("c","pass")]},registry).IsValid,"disabled dependency rejected");
+var emptyDesc=Desc("empty",source:true);registry.Register(emptyDesc,()=>new TestModule(emptyDesc,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary<string,PortValue>())),()=>disposed++));result=await engine.RunAsync(P(Node("a","empty")),".");Check(result.Nodes[0].ErrorCode=="InvalidOutput","required output missing");
+var extraDesc=Desc("extra",source:true);registry.Register(extraDesc,()=>new TestModule(extraDesc,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary<string,PortValue>{{"out",PortValue.Number(1)},{"extra",PortValue.Number(2)}})),()=>disposed++));result=await engine.RunAsync(P(Node("a","extra")),".");Check(result.Nodes[0].ErrorCode=="InvalidOutput","unknown output");
+Check(!GraphValidator.Validate(null!,registry).IsValid,"null document");Check(!GraphValidator.Validate(P(Node("n","source") with{Parameters=null!}),registry).IsValid,"null parameters");
+var invalidDesc=Desc("invalid",source:true);registry.Register(invalidDesc,()=>new TestModule(invalidDesc,(c,t)=>ValueTask.FromResult(new ModuleResult((ModuleStatus)999,new Dictionary<string,PortValue>{{"out",PortValue.Number(1)}})),()=>disposed++));result=await engine.RunAsync(P(Node("a","invalid")),".");Check(result.Nodes[0].ErrorCode=="InvalidResult","invalid status");
+bool completed=false;var stubbornDesc=Desc("stubborn",source:true);registry.Register(stubbornDesc,()=>new TestModule(stubbornDesc,async(c,t)=>{await Task.Delay(40);completed=true;return new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"out",PortValue.Number(1)}});},()=>disposed++));before=disposed;result=await engine.RunAsync(P(Node("s","stubborn",1)),".");Check(completed&&disposed==before+1&&result.Status==SessionStatus.TimedOut,"timeout waits for module cleanup");
+var mutable=chain.Nodes.ToList();var snapshotDoc=chain with{Nodes=mutable};var snapshotProgress=new MutateProgress(()=>{mutable[1].Parameters["bad"]=JsonSerializer.SerializeToElement(1);mutable.Clear();});result=await engine.RunAsync(snapshotDoc,".",snapshotProgress);Check(result.Nodes.Count==3&&result.Status==SessionStatus.Success,"snapshot insulated from mutation");
+var explicitProcedure=new ProcedureDocument("ordered","ordered",[Node("c","pass"),Node("b","pass"),Node("a","source")],[new("a","out","b","in"),new("a","out","c","in")],[new("a","b"),new("b","c")]);
+var explicitValidation=GraphValidator.Validate(explicitProcedure,registry);Check(explicitValidation.IsValid&&explicitValidation.ExecutionOrder.SequenceEqual(new[]{"a","b","c"}),"execution links determine order independent of node and subscription order");
+result=await engine.RunAsync(explicitProcedure,".");Check(result.Nodes.Select(n=>n.NodeId).SequenceEqual(new[]{"a","b","c"}),"result trace follows actual execution order");Check(result.Nodes.Single(n=>n.NodeId=="c").Outputs["out"].As<double>()==3,"nonadjacent ancestor subscription independent of execution predecessor");
+Check(GraphValidator.Validate(explicitProcedure with{ExecutionLinks=[]},registry).Issues.Any(i=>i.Code=="DataExecutionOrder"),"subscription does not silently create execution links");
+Check(GraphValidator.Validate(explicitProcedure with{ExecutionLinks=[new("a","b"),new("b","c"),new("c","a")]},registry).Issues.Any(i=>i.Code=="Cycle"),"execution cycle rejected");
+Check(!GraphValidator.Validate(explicitProcedure with{ExecutionLinks=[new("missing","a")]},registry).IsValid,"missing execution node rejected");
+Check(!GraphValidator.Validate(explicitProcedure with{ExecutionLinks=[new("a","b"),new("a","b"),new("b","c")]},registry).IsValid,"duplicate execution edge rejected");
+var controlOnly=new ProcedureDocument("control","control",[Node("a","source"),Node("b","fail"),Node("c","source")],[new("a","out","b","in")],[new("a","b"),new("b","c")]);result=await engine.RunAsync(controlOnly,".");Check(result.Nodes.Single(n=>n.NodeId=="c").Status==NodeRunStatus.Skipped,"control failure blocks node with no subscribed input");
+var capturedLinks=explicitProcedure.ExecutionLinks!.ToList();result=await engine.RunAsync(explicitProcedure with{ExecutionLinks=capturedLinks},".",new MutateProgress(()=>capturedLinks.Clear()));Check(result.Status==SessionStatus.Success,"execution relation snapshot isolated");
+Console.WriteLine($"{count} execution checks passed.");
+sealed class MutateProgress(Action mutate):IProgress<ExecutionEvent>{bool done;public void Report(ExecutionEvent value){if(!done){done=true;mutate();}}}
+sealed class ThrowProgress:IProgress<ExecutionEvent>{public void Report(ExecutionEvent value)=>throw new Exception("observer");}
+sealed class TestModule(ModuleDescriptor descriptor,Func<ModuleExecutionContext,CancellationToken,ValueTask<ModuleResult>> run,Action dispose):IModule,IAsyncDisposable {public ModuleDescriptor Descriptor=>descriptor;public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context,CancellationToken cancellationToken)=>run(context,cancellationToken);public ValueTask DisposeAsync(){dispose();return ValueTask.CompletedTask;}}
+
+

@@ -1,0 +1,81 @@
+﻿{
+  "FormatVersion": 1,
+  "Id": "execution-subscription-demo",
+  "Name": "执行关系与数据订阅闭环示例",
+  "Procedures": [
+    {
+      "Id": "main",
+      "Name": "图像源 → 阈值 → 连通域",
+      "Nodes": [
+        {
+          "Id": "source",
+          "ModuleId": "vision.image-file",
+          "ModuleVersion": "1.0.0",
+          "Name": "文件图像源",
+          "Parameters": {
+            "Path": "assets/circle-sample.bmp"
+          },
+          "X": 200,
+          "Y": 40,
+          "TimeoutMs": 0,
+          "Enabled": true
+        },
+        {
+          "Id": "threshold",
+          "ModuleId": "vision.threshold",
+          "ModuleVersion": "1.0.0",
+          "Name": "阈值分割",
+          "Parameters": {
+            "Threshold": 128
+          },
+          "X": 200,
+          "Y": 200,
+          "TimeoutMs": 0,
+          "Enabled": true
+        },
+        {
+          "Id": "components",
+          "ModuleId": "vision.components",
+          "ModuleVersion": "1.0.0",
+          "Name": "连通域统计",
+          "Parameters": {},
+          "X": 200,
+          "Y": 360,
+          "TimeoutMs": 0,
+          "Enabled": true
+        }
+      ],
+      "Connections": [
+        {
+          "FromNode": "source",
+          "FromPort": "Image",
+          "ToNode": "threshold",
+          "ToPort": "Image"
+        },
+        {
+          "FromNode": "threshold",
+          "FromPort": "Image",
+          "ToNode": "components",
+          "ToPort": "Image"
+        }
+      ],
+      "ExecutionLinks": [
+        {
+          "FromNode": "source",
+          "ToNode": "threshold"
+        },
+        {
+          "FromNode": "threshold",
+          "ToNode": "components"
+        }
+      ]
+    }
+  ],
+  "Resources": [
+    {
+      "Id": "sample",
+      "Path": "assets/circle-sample.bmp",
+      "Sha256": "690b17333ce8a9f6fe8961c90d7f21fbd6472dbf0f7cc3443fc89da43bb33aba"
+    }
+  ]
+}

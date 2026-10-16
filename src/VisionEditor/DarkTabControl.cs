@@ -1,0 +1,6 @@
+namespace VisionEditor;
+sealed class DarkTabControl:TabControl {
+ public DarkTabControl(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer,true);BackColor=Color.FromArgb(59,62,65);}
+ protected override void WndProc(ref Message m){if(m.Msg==0x14&&m.WParam!=IntPtr.Zero){using var g=Graphics.FromHdc(m.WParam);g.Clear(BackColor);m.Result=(IntPtr)1;return;}base.WndProc(ref m);if(m.Msg==0x317&&m.WParam!=IntPtr.Zero){using var g=Graphics.FromHdc(m.WParam);using var bg=new SolidBrush(BackColor);g.FillRectangle(bg,0,0,Width,SelectedTab?.Top??ItemSize.Height);for(int i=0;i<TabPages.Count;i++)OnDrawItem(new DrawItemEventArgs(g,Font,GetTabRect(i),i,i==SelectedIndex?DrawItemState.Selected:DrawItemState.None));using var border=new Pen(BackColor,4);g.DrawRectangle(border,1,1,Width-3,Height-3);}}
+ protected override void OnPaint(PaintEventArgs e){e.Graphics.Clear(BackColor);for(int i=0;i<TabPages.Count;i++){var bounds=GetTabRect(i);OnDrawItem(new DrawItemEventArgs(e.Graphics,Font,bounds,i,i==SelectedIndex?DrawItemState.Selected:DrawItemState.None));}if(SelectedTab is not null){var r=SelectedTab.Bounds;using var border=new Pen(Color.FromArgb(43,43,43));e.Graphics.DrawRectangle(border,r.Left-1,r.Top-1,r.Width+1,r.Height+1);}}
+}
