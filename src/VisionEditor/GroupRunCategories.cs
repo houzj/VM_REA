@@ -23,5 +23,30 @@ public partial class SubprogramCallWindow{
  void ProxyEditors(DockPanel line,WorkflowRunParameter proxy,ProcedureDocument body){if(!proxy.IsInput&&groupRegistry!.GetDescriptor(body.Nodes.Single(n=>n.Id==proxy.NodeId)).Parameters.Single(p=>p.Name==proxy.Parameter).Editor is not null){var complex=new Button{Content="…",Tag="GroupProxyComplex:"+proxy.Id};complex.Click+=(_,_)=>Safe(()=>{var n=GroupBody().Nodes.Single(n=>n.Id==proxy.NodeId);var d=groupRegistry.GetDescriptor(n);var spec=d.Parameters.Single(p=>p.Name==proxy.Parameter);void Save(IReadOnlyDictionary<string,JsonElement> values,IReadOnlyList<RoiDocument>? rois)=>setGroupComplexValue!(proxy.Id,values,rois);var window=DedicatedParameterEditor?.Invoke(n,spec,Save)??new GroupComplexEditor(n,d,spec,Save){RoiImage=GroupToolImage?.Invoke(proxy.NodeId)};window.Owner=ActiveConfigurationOwner;window.ShowDialog();Refresh();});line.Children.Add(complex);}
   if(HasGroupToolEditor?.Invoke(proxy.NodeId)==true){var dedicated=new Button{Content="工具配置",Tag="GroupProxyTool:"+proxy.Id};dedicated.Click+=(_,_)=>Safe(()=>OpenGroupToolEditor!(proxy.NodeId));line.Children.Add(dedicated);}
  }
- void ChooseRelations(WorkflowRunParameter proxy){var d=groupRegistry!.GetDescriptor(GroupBody().Nodes.Single(n=>n.Id==proxy.NodeId));var kind=proxy.IsInput?d.Inputs.Single(p=>p.Name==proxy.Parameter).Kind:WorkflowSubscriptions.ParameterType(d.Parameters.Single(p=>p.Name==proxy.Parameter).Kind);var cardinality=proxy.IsInput?d.Inputs.Single(p=>p.Name==proxy.Parameter).Cardinality:ValueCardinality.Scalar;var options=GroupBody().Nodes.SelectMany(n=>proxy.IsInput?groupRegistry.GetDescriptor(n).Inputs.Where(p=>p.Kind==kind&&p.Cardinality==cardinality).Select(p=>new WorkflowSourceOption(n.Id,p.Name,kind,n.Name+"."+p.Name){IsInput=true}):groupRegistry.GetDescriptor(n).Parameters.Where(p=>WorkflowSubscriptions.ParameterType(p.Kind)==kind).Select(p=>new WorkflowSourceOption(n.Id,p.Name,kind,n.Name+"."+p.Name))).Where(o=>o.NodeId!=proxy.NodeId||o.Port!=proxy.Parameter).ToArray();var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("clear","",kind,"解除关联")}.Concat(options),true){Owner=ActiveConfigurationOwner};picker.SetInitialSelection(o=>proxy.Relations?.Any(r=>r.NodeId==o.NodeId&&r.Parameter==o.Port&&r.IsInput==o.IsInput)==true);if(picker.ShowDialog()==true)Safe(()=>saveGroupConfiguration!(GroupBody().Configuration with{RunParameters=GroupBody().Configuration.RunParameters.Select(p=>p.Id==proxy.Id?p with{Relations=picker.Selections.Where(o=>o.NodeId!="clear").Select(o=>new WorkflowRunTarget(o.NodeId,o.Port,o.IsInput)).ToArray()}:p).ToArray()}));}
+ void ChooseRelations(WorkflowRunParameter proxy)
+ {
+  var primary=GroupBody().Nodes.Single(n=>n.Id==proxy.NodeId);
+  var descriptor=groupRegistry!.GetDescriptor(primary);
+  var primaryInput=proxy.IsInput?descriptor.Inputs.Single(p=>p.Name==proxy.Parameter):null;
+  var primaryParameter=proxy.IsInput?null:descriptor.Parameters.Single(p=>p.Name==proxy.Parameter);
+  var kind=primaryInput?.Kind??WorkflowSubscriptions.ParameterType(primaryParameter!.Kind);
+  var cardinality=primaryInput?.Cardinality??ValueCardinality.Scalar;
+  // VM's GetParamsOfEqualTypeTree uses the original tool type and parameter name, not just a value kind.
+  var options=GroupBody().Nodes.Where(n=>n.ModuleId==primary.ModuleId&&n.ModuleVersion==primary.ModuleVersion)
+   .SelectMany(n=>proxy.IsInput
+    ?groupRegistry.GetDescriptor(n).Inputs.Where(p=>p.Name==proxy.Parameter&&p.Kind==kind&&p.Cardinality==cardinality)
+      .Select(p=>new WorkflowSourceOption(n.Id,p.Name,kind,n.Name+"."+p.Name){IsInput=true})
+    :groupRegistry.GetDescriptor(n).Parameters.Where(p=>p.Name==proxy.Parameter&&CompatibleRelation(primaryParameter!,p))
+      .Select(p=>new WorkflowSourceOption(n.Id,p.Name,kind,n.Name+"."+p.Name)))
+   .Where(o=>o.NodeId!=proxy.NodeId||o.Port!=proxy.Parameter).ToArray();
+  var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("clear","",kind,"解除关联")}.Concat(options),true){Owner=ActiveConfigurationOwner};
+  picker.SetInitialSelection(o=>proxy.Relations?.Any(r=>r.NodeId==o.NodeId&&r.Parameter==o.Port&&r.IsInput==o.IsInput)==true);
+  if(picker.ShowDialog()==true)Safe(()=>saveGroupConfiguration!(GroupBody().Configuration with{RunParameters=GroupBody().Configuration.RunParameters.Select(p=>p.Id==proxy.Id?p with{Relations=picker.Selections.Where(o=>o.NodeId!="clear").Select(o=>new WorkflowRunTarget(o.NodeId,o.Port,o.IsInput)).ToArray()}:p).ToArray()}));
+ }
+ static bool CompatibleRelation(ParameterDescriptor a,ParameterDescriptor b)
+ {
+  if(a.Kind!=b.Kind||a.Editor?.Kind!=b.Editor?.Kind||!(a.Editor?.Fields??[]).SequenceEqual(b.Editor?.Fields??[]))return false;
+  if(a.Editor?.Roi is {} x&&b.Editor?.Roi is {} y)return x.Maximum==y.Maximum&&x.PolygonPointMaximum==y.PolygonPointMaximum&&x.FullImage==y.FullImage&&x.Exclusions==y.Exclusions&&x.Kinds.SequenceEqual(y.Kinds);
+  return a.Editor?.Roi is null&&b.Editor?.Roi is null;
+ }
 }
