@@ -62,7 +62,7 @@ public partial class MainWindow
  {
   var node=ConfigurationProcedure(bodyFlow).Nodes.Single(n=>n.Id==nodeId);
   if(plugins.Find(node.ModuleId)is not IWpfToolEditorFactory factory)throw new InvalidOperationException("此工具尚未提供专用WPF编辑器，不能用通用窗口替代。");
-  var context=CreateScopedToolEditorContext(bodyFlow,nodeId,()=>parentFlow);Window editor;
+  var context=CreateScopedToolEditorContext(bodyFlow,nodeId,()=>doc.CurrentProcedureId==bodyFlow?bodyFlow:parentFlow);Window editor;
   try{editor=factory.CreateWpfEditor(context);}catch{toolDebugSessions.Remove(context.Session!);_=context.Session!.DisposeAsync();throw;}
   BindToolEditorLifetime(editor,context);editor.Owner=owner;
   try{editor.ShowDialog();}finally{InvalidateToolDebugResult(parentFlow,groupId);}

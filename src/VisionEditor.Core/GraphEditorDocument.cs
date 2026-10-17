@@ -39,6 +39,14 @@ public sealed partial class GraphEditorDocument
         document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();
     }
     public void SelectProcedure(string id) { if (!document.Procedures.Any(p => p.Id == id)) throw new KeyNotFoundException(id); if(CurrentProcedureId == id)return; CurrentProcedureId = id; Changed?.Invoke(); }
+    // Edit a bound configuration target without switching the visible canvas or its undo selection.
+    // Work on an isolated draft so a multi-field callback either commits once or leaves no edit.
+    public void EditProcedure(string id,Action<GraphEditorDocument> change) {
+        _=Procedure(id);ArgumentNullException.ThrowIfNull(change);
+        var draft=new GraphEditorDocument(registry){document=Copy(document),CurrentProcedureId=id,BaseDirectory=BaseDirectory,FilePath=FilePath};
+        long revision=draft.Revision;change(draft);
+        if(draft.Revision!=revision)Edit(_=>draft.document);
+    }
     public string AddProcedure(string name,double? overviewX=null,double? overviewY=null) {
         RequireName(name); string id = Guid.NewGuid().ToString("N");
         if(overviewX.HasValue||overviewY.HasValue){if(!overviewX.HasValue||!overviewY.HasValue)throw new ArgumentException("Both overview coordinates are required.");Position(overviewX.Value,overviewY.Value);}
@@ -64,7 +72,7 @@ public sealed partial class GraphEditorDocument
         // VmModuleBaseDecorator.Name rejects these characters before invoking the SDK.
         if(name.IndexOfAny("?;.[]<>()`".ToCharArray())>=0)throw new ArgumentException("名称不能包含 ? ; . [ ] < > ( ) `。",nameof(name));
         var procedure=Procedure(id); if(procedure.Name==name)return;
-        Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==id?p with {Name=name}:p).ToArray()});
+        Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==id?p with {Name=name}:procedure.GroupOwner is {} owner&&p.Id==owner.ProcedureId?p with{Nodes=p.Nodes.Select(n=>n.Id==owner.NodeId?n with{Name=name}:n).ToArray()}:p).ToArray()});
     }
     public void MoveProcedure(string id,double x,double y) {
         Position(x,y);var procedure=Procedure(id);if(procedure.OverviewX==x&&procedure.OverviewY==y)return;
@@ -94,6 +102,7 @@ public sealed partial class GraphEditorDocument
     ProcedureDocument Procedure(string id)=>document.Procedures.SingleOrDefault(p=>p.Id==id)??throw new KeyNotFoundException(id);
     public string AddNode(string moduleId, string version, double x, double y, Dictionary<string, JsonElement>? parameters = null, string? executionPredecessor = null, ExecutionLinkDocument? insertInto=null) {
         if(!HasCurrentProcedure)throw new InvalidOperationException("请先添加流程。");
+        if(moduleId==WorkflowCalls.ModuleId&&!CanAddOwnedGroup)throw new InvalidOperationException("Group 最多嵌套三层。");
         Position(x,y); var descriptor = registry.GetDescriptor(moduleId, version); string id = Guid.NewGuid().ToString("N");
         var values = descriptor.Parameters.Where(p => p.DefaultValue.HasValue).ToDictionary(p => p.Name, p => p.DefaultValue!.Value.Clone());
         if(parameters is not null)foreach(var p in parameters)values[p.Key] = p.Value.Clone();
@@ -127,11 +136,14 @@ public sealed partial class GraphEditorDocument
     public GraphFragment CopyNodes(IEnumerable<string> nodeIds) {
         var ids=nodeIds.ToHashSet(StringComparer.Ordinal);foreach(var id in ids)_=Node(id);
         var procedure=CurrentProcedure;
-        return new(procedure.Nodes.Where(n=>ids.Contains(n.Id)).ToArray(),procedure.Connections.Where(c=>ids.Contains(c.FromNode)&&ids.Contains(c.ToNode)).ToArray(),ProcedureGraph.ExecutionEdges(procedure).Where(c=>ids.Contains(c.FromNode)&&ids.Contains(c.ToNode)).ToArray());
+        var nodes=procedure.Nodes.Where(n=>ids.Contains(n.Id)).ToArray();
+        return new(nodes,procedure.Connections.Where(c=>ids.Contains(c.FromNode)&&ids.Contains(c.ToNode)).ToArray(),ProcedureGraph.ExecutionEdges(procedure).Where(c=>ids.Contains(c.FromNode)&&ids.Contains(c.ToNode)).ToArray()){OwnedProcedures=CopyOwnedBodies(nodes),SourceSolutionId=document.Id,SourceProcedureId=CurrentProcedureId,SourcePath=ProcedurePath(CurrentProcedureId)};
     }
     public IReadOnlyList<string> PasteNodes(GraphFragment fragment,double x,double y) {
         if(!HasCurrentProcedure)throw new InvalidOperationException("请先添加流程。");Position(x,y);
+        fragment=ResolveClipboardSources(fragment);
         if(fragment.Nodes.Count==0)return [];
+        if(fragment.Nodes.Any(n=>n.ModuleId==WorkflowCalls.ModuleId)&&!CanAddOwnedGroup)throw new InvalidOperationException("Group 最多嵌套三层。");
         foreach(var node in fragment.Nodes)_=registry.GetDescriptor(node);
         var ids=fragment.Nodes.ToDictionary(n=>n.Id,_=>Guid.NewGuid().ToString("N"));
         var names=CurrentProcedure.Nodes.Select(n=>n.Name).ToHashSet(StringComparer.Ordinal);
@@ -139,14 +151,16 @@ public sealed partial class GraphEditorDocument
         double left=fragment.Nodes.Min(n=>n.X),top=fragment.Nodes.Min(n=>n.Y);
         double Coordinate(double value)=>Math.Round(Math.Clamp(value,0,4850)/5)*5;
         var nodes=fragment.Nodes.Select(n=>n with {Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false),Name=UniqueName(n.Name),X=Coordinate(x+n.X-left),Y=Coordinate(y+n.Y-top),Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray();
-        var connections=fragment.Connections.Select(c=>c with {FromNode=ids[c.FromNode],ToNode=ids[c.ToNode]}).ToArray();
+        var connections=fragment.Connections.Select(c=>c with {FromNode=ids.GetValueOrDefault(c.FromNode,c.FromNode),ToNode=ids[c.ToNode]}).ToArray();
         IReadOnlyList<WirePointDocument>? TranslatedPath(ExecutionLinkDocument edge){
-            if(edge.PathPoints is null)return null;var source=fragment.Nodes.Single(n=>n.Id==edge.FromNode);var target=fragment.Nodes.Single(n=>n.Id==edge.ToNode);var copiedSource=nodes.Single(n=>n.Id==ids[source.Id]);var copiedTarget=nodes.Single(n=>n.Id==ids[target.Id]);
+            if(edge.PathPoints is null||!ids.ContainsKey(edge.FromNode))return null;var source=fragment.Nodes.Single(n=>n.Id==edge.FromNode);var target=fragment.Nodes.Single(n=>n.Id==edge.ToNode);var copiedSource=nodes.Single(n=>n.Id==ids[source.Id]);var copiedTarget=nodes.Single(n=>n.Id==ids[target.Id]);
             double dx=copiedSource.X-source.X,dy=copiedSource.Y-source.Y;if(copiedTarget.X-target.X!=dx||copiedTarget.Y-target.Y!=dy)return null;
             var translated=edge.PathPoints.Select(p=>new WirePointDocument(p.X+dx,p.Y+dy)).ToArray();return translated.Any(p=>p.X<0||p.Y<0||p.X>5000||p.Y>5000)?null:translated;
         }
-        var links=fragment.ExecutionLinks.Select(c=>c with {FromNode=ids[c.FromNode],ToNode=ids[c.ToNode],PathPoints=TranslatedPath(c)}).ToArray();
-        ChangeProcedure(p=>p with {Nodes=p.Nodes.Concat(nodes).ToArray(),Connections=p.Connections.Concat(connections).ToArray(),ExecutionLinks=ProcedureGraph.ExecutionEdges(p).Concat(links).ToArray()});
+        var links=fragment.ExecutionLinks.Select(c=>c with {FromNode=ids.GetValueOrDefault(c.FromNode,c.FromNode),ToNode=ids[c.ToNode],PathPoints=TranslatedPath(c)}).ToArray();
+        var subscriptions=fragment.Subscriptions.Select(s=>s with{NodeId=ids[s.NodeId],Source=s.Source.Kind==WorkflowSourceKind.NodeOutput?s.Source with{Id=ids.GetValueOrDefault(s.Source.Id,s.Source.Id)}:s.Source}).ToArray();
+        var cloned=CloneClipboardGroups(fragment,nodes);nodes=cloned.Nodes;
+        Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==CurrentProcedureId?p with {Nodes=p.Nodes.Concat(nodes).ToArray(),Connections=p.Connections.Concat(connections).ToArray(),ExecutionLinks=ProcedureGraph.ExecutionEdges(p).Concat(links).ToArray(),Configuration=p.Configuration with{Subscriptions=p.Configuration.Subscriptions.Concat(subscriptions).ToArray()}}:p).Concat(cloned.Bodies).ToArray()});
         return nodes.Select(n=>n.Id).ToArray();
     }
     public void SetNodesEnabled(IEnumerable<string> nodeIds,bool enabled) {
@@ -219,7 +233,7 @@ public sealed partial class GraphEditorDocument
     NodeDocument Node(string id)=>CurrentProcedure.Nodes.SingleOrDefault(n=>n.Id==id)??throw new KeyNotFoundException(id);
     void ChangeNode(string id,Func<NodeDocument,NodeDocument> action) { _=Node(id); ChangeProcedure(p=>p with {Nodes=p.Nodes.Select(n=>n.Id==id?action(n):n).ToArray()}); }
     void ChangeProcedure(Func<ProcedureDocument,ProcedureDocument> action)=>Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==CurrentProcedureId?action(p):p).ToArray()});
-    void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document))))); SolutionStore.ValidateStructure(next); undo.Push(Capture());redo.Clear();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??"";IsDirty=true;Revision++;Changed?.Invoke(); }
+    void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document)))))); SolutionStore.ValidateStructure(next); undo.Push(Capture());redo.Clear();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??"";IsDirty=true;Revision++;Changed?.Invoke(); }
     Snapshot Capture()=>new(Copy(document),CurrentProcedureId,BaseDirectory);
     void Restore(Stack<Snapshot> source,Stack<Snapshot> destination) { if(source.Count==0)return; var s=source.Peek();var next=Rebase(s.Document,s.BaseDirectory,BaseDirectory);destination.Push(Capture());source.Pop();document=next;CurrentProcedureId=s.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke(); }
     static void Position(double x,double y) { if(!double.IsFinite(x)||!double.IsFinite(y))throw new ArgumentOutOfRangeException(nameof(x)); }

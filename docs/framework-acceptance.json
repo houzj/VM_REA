@@ -1,6 +1,6 @@
 {
   "date": "2026-10-17",
-  "baseline": "8d7e40b",
+  "baseline": "a6f95f1",
   "nativeAcceptance": false,
   "rows": [
     {
@@ -26,13 +26,13 @@
       "result": "本轮宿主事件操作已覆盖；原生差分待验收",
       "sourceEvidence": "DynamicParamsTabControl→BottomCommand→VmModule.Run→ModuleManager.SelfRun；docs/DEBUG-SESSION-CONTRACT.md",
       "operationNumbers": [
-        230,
         231,
         232,
         233,
         234,
         235,
-        236
+        236,
+        237
       ]
     },
     {
@@ -74,19 +74,16 @@
     {
       "id": "F-05",
       "name": "工作流Tab",
-      "implemented": "增删改名复制切换、列表定位、间隔和NG停止、空方案",
+      "implemented": "增删改名复制切换、列表定位、间隔和NG停止、空方案；Group Tab按当前模块集打开配置、移除顶层菜单，运行/停止所属根流程并保留内部视图",
       "status": "部分完成",
-      "nativeGap": "原生流程导出、算法代码导出、流程级超时未实现；全状态还原未验收",
+      "nativeGap": "原生流程/算法代码导出、流程等待超时尚未完成；非活动Tab的全部历史显示状态及VM差分仍未验收",
       "entry": "src/VisionEditor/WorkflowTabs.cs",
       "acceptance": "添加复制删除与撤销；改名重名；运行中禁改；溢出列表",
-      "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+      "result": "本轮新增实际Group Tab配置、单次/连续/停止及旧菜单失效检查；截图与运行值另列",
       "sourceEvidence": "ProcedureConfigControl.TopTabItemStyle/OperateMenu；VmProcedureDecorator命令",
       "operationNumbers": [
         26,
         27,
-        28,
-        29,
-        30,
         31,
         32,
         33,
@@ -133,18 +130,27 @@
         178,
         179,
         180,
-        181
+        181,
+        327,
+        328,
+        329,
+        330,
+        337,
+        338,
+        342,
+        343,
+        346
       ]
     },
     {
       "id": "F-06",
       "name": "工具导航",
-      "implemented": "15分类、折叠展开、悬停弹层、注册工具可用状态、拖放预览及提交",
+      "implemented": "15分类、折叠展开、悬停弹层、注册工具可用状态、拖放预览及提交；去除自定120ms延时，分类交接、锁定和失效拖放清理，Group插入原子创建内部图",
       "status": "部分完成",
-      "nativeGap": "多数工具只有目录无实现；原生延时和边界全面差分未完成",
+      "nativeGap": "多数工具插件未实现；右侧布局、全部动画/原生警告窗、注册热刷新、自定义工具包库尚未完成",
       "entry": "src/VisionEditor/ToolNavigation.cs",
       "acceptance": "点击不创建；拖入才创建；取消无残留；未实现工具禁用",
-      "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+      "result": "按ToolBox触发器对照并操作；三层限制在插入时执行，不擅自禁用Group工具",
       "sourceEvidence": "原ToolBox与导出的tool-catalog；工具注册状态由独立宿主判定",
       "operationNumbers": [
         6,
@@ -175,18 +181,25 @@
         131,
         132,
         145,
-        146
+        146,
+        344,
+        345,
+        351,
+        352,
+        356,
+        357,
+        358
       ]
     },
     {
       "id": "F-07",
       "name": "节点交互",
-      "implemented": "端点悬停、框选多选、临时拖影、提交、吸附对齐、复制粘贴、撤销及输入边界",
+      "implemented": "端点悬停、框选多选、临时拖影、提交、吸附对齐、复制粘贴、撤销及输入边界；复制时重新解析当前源参数，同父级合法上游/订阅保留；源失效跳过；Group40px边界与混合对齐",
       "status": "部分完成",
-      "nativeGap": "组合类型和全部原生捕获/焦点/锁定状态差分未完成",
+      "nativeGap": "全部原生组合类型/输入边界与真实鼠标差分未关闭；跨方案及同名替换等源身份边界未验收",
       "entry": "src/VisionEditor/WorkflowGestures.cs",
       "acceptance": "单/多节点拖动；Esc取消；失焦；跨流程复制与引用重映射",
-      "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+      "result": "真实上游BMP消费者复制输出像素一致；40px拖影、对齐、底部完整边界有事件和目检记录",
       "sourceEvidence": "DiagramItem/DiagramArea输入事件；WorkflowInputBoundaries恢复范围",
       "operationNumbers": [
         69,
@@ -244,7 +257,10 @@
         156,
         157,
         158,
-        159
+        159,
+        353,
+        354,
+        355
       ]
     },
     {
@@ -320,40 +336,56 @@
     {
       "id": "F-10",
       "name": "Group所有权",
-      "implemented": "内部模块集、双击进入、嵌套、复制删除及保存",
+      "implemented": "内部模块集、双击进入、嵌套、复制删除及保存；Group内部图、代理目标独立复制，复制/改名后名称同步；工具箱新增一次创建节点和内部图",
       "status": "部分完成",
-      "nativeGap": "跨方案所有复杂引用和原生实例生命周期未全验收；旧顶层调用为兼容路径",
+      "nativeGap": "原生.gro/全部复杂引用、全名同名替换、跨方案剪贴板及实例生命周期仍未全验收；历史顶层调用保留独立兼容",
       "entry": "src/VisionFramework/OwnedGroups.cs",
       "acceptance": "三层进入；复制修改不串；删除撤销；保存重开",
-      "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+      "result": "多层实际图像Group复制、一次撤销重做、保存重开运行；非法超深插入/粘贴无修改",
       "sourceEvidence": "VmGroupDecorator/VmProcedureDecorator.OpenGroupCommandExecute",
       "operationNumbers": [
-        237,
         238,
         239,
-        242,
-        294,
-        295
+        240,
+        243,
+        295,
+        296,
+        329,
+        331,
+        332,
+        334,
+        335,
+        336,
+        347,
+        348,
+        349,
+        350,
+        359
       ]
     },
     {
       "id": "F-11",
       "name": "Group返回",
-      "implemented": "Tab Up逐层返回、根层隐藏、面包屑返回、再进入",
+      "implemented": "Tab Up逐层返回、根层隐藏、面包屑返回、再进入；运行根流程时保留内部Group画布，当前配置编辑也不改变导航",
       "status": "部分完成",
-      "nativeGap": "真实VM焦点/视口/运行状态全矩阵未对照",
+      "nativeGap": "VM焦点/视口/全部运行状态视觉差分仍未完成",
       "entry": "src/VisionEditor/GroupCanvasNavigation.cs",
       "acceptance": "两层返回到根，再进入；不新增顶层Tab",
-      "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+      "result": "实际返回与再进入，内部Tab单次/连续/停止均保留当前作用域",
       "sourceEvidence": "ProcedureConfigControl.btnUp/UpEnable；VmProcedureDecorator.UpCommandExecute",
       "operationNumbers": [
-        240,
         241,
         242,
         243,
         244,
         245,
-        246
+        246,
+        247,
+        331,
+        332,
+        334,
+        348,
+        349
       ]
     },
     {
@@ -367,12 +399,12 @@
       "result": "本轮宿主事件操作已覆盖；原生差分待验收",
       "sourceEvidence": "ModuleFrame.CGroupNode::DoWork 0x1800a0930；范围解析0x1800a53a0",
       "operationNumbers": [
-        248,
         249,
         250,
         251,
         252,
-        253
+        253,
+        254
       ]
     },
     {
@@ -386,15 +418,15 @@
       "result": "本轮宿主事件操作已覆盖；原生差分待验收",
       "sourceEvidence": "IsBreakLoop 0x1800a55b0；IsBreakCmpValueInLoop 0x1800a6730",
       "operationNumbers": [
-        254,
-        256,
-        264,
+        255,
+        257,
         265,
         266,
         267,
         268,
         269,
-        270
+        270,
+        271
       ]
     },
     {
@@ -408,30 +440,29 @@
       "result": "本轮宿主事件操作已覆盖；原生差分待验收",
       "sourceEvidence": "ProcessGroupOutputV44 0x1800a7830；VmIODecorate报告模式",
       "operationNumbers": [
-        255,
         256,
         257,
         258,
         259,
         260,
         261,
-        263,
-        271,
-        272
+        262,
+        264,
+        272,
+        273
       ]
     },
     {
       "id": "F-15",
       "name": "Group配置器",
-      "implemented": "输入批量增删改名绑定、双栏配置、类别排序、多目标关联同步、专用编辑器入口",
+      "implemented": "输入批量增删改名绑定、双栏配置、类别排序、多目标关联同步、专用编辑器入口；内部Tab打开真实Group五页窗口，父级编辑事务与工具专用编辑器共享正确作用域",
       "status": "部分完成",
-      "nativeGap": "完整原生来源树、全部复杂控件/训练模板及像素差分未完成",
+      "nativeGap": "完整原生来源树、全部复杂/训练控件及像素差分未完成；原生警告窗未完整恢复",
       "entry": "src/VisionEditor/GroupRunConfigurationWindow.cs",
       "acceptance": "实际参数3+5=8；订阅后6；解除后8；32上限；清空取消/确认",
-      "result": "修复双栏根背景和前景色；修复后截图目检可读；类别/关联/清空等事件操作复验，非桌面鼠标全链路",
+      "result": "内部Tab启用循环并绑定父变量3；专用图像源初始序号17实际累积[17,18,19]；撤销重做不跳画布",
       "sourceEvidence": "DynamicRunParamConfigWin.xaml/Panal.xaml；GroupInputParam/GroupRunParam/RunParamConfigDecorate",
       "operationNumbers": [
-        273,
         274,
         275,
         276,
@@ -450,7 +481,7 @@
         289,
         290,
         291,
-        296,
+        292,
         297,
         298,
         299,
@@ -469,12 +500,14 @@
         312,
         313,
         314,
-        320,
+        315,
         321,
         322,
         323,
         324,
-        325
+        325,
+        326,
+        333
       ]
     },
     {
@@ -498,10 +531,10 @@
         174,
         188,
         189,
-        292,
         293,
-        315,
-        316
+        294,
+        316,
+        317
       ]
     },
     {
@@ -517,7 +550,6 @@
       "operationNumbers": [
         184,
         185,
-        191,
         192,
         193,
         194,
@@ -538,12 +570,12 @@
     {
       "id": "F-18",
       "name": "独立方案存储",
-      "implemented": ".vmx.json图/Group/订阅/ROI/显示样式保存重开及引用重映射",
+      "implemented": ".vmx.json图/Group/订阅/ROI/显示样式保存重开及引用重映射；Group内部图、实时复制后引用和名称支持保存重开",
       "status": "部分完成",
-      "nativeGap": "异常写入、版本迁移、缺资源及目录搬移完整矩阵未验收",
+      "nativeGap": "异常写入/资源目录迁移及全版本矩阵仍未关闭；原生.sol仍不兼容",
       "entry": "src/VisionFramework/SolutionStore.cs",
       "acceptance": "保存重开运行值相同；复制内部引用不指回原图",
-      "result": "23项持久化运行检查及已列WPF撤销/保存操作通过；异常写入/目录迁移全矩阵未验收",
+      "result": "52项调用/Group专项含真实复制、实际上游像素与保存运行；既有23项持久化记录保留",
       "sourceEvidence": "独立SolutionStore/GeometryResources协议；不是原生.sol写入器",
       "operationNumbers": [
         53,
@@ -552,9 +584,13 @@
         132,
         173,
         206,
-        290,
         291,
-        325
+        292,
+        326,
+        340,
+        341,
+        352,
+        359
       ]
     },
     {
@@ -577,17 +613,16 @@
       "nativeGap": "分屏/布局未实现；Fixture原生变换与舍入、变换坐标编辑、部分模板未完成",
       "entry": "src/VisionUi",
       "acceptance": "继承20x10处理200像素；Fixture平移50；切回手工160000；样式不改算法像素",
-      "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+      "result": "既有ROI宿主24项记录保留，本轮未重跑；新增Group专用图像源作用域联调，Fixture原生差分仍开放",
       "sourceEvidence": "ImageViewConfig/ROISelecter/VM.PcUI调色器/CPreproMaskTool；ROI-DISPLAY-FIXTURE.md",
       "operationNumbers": [
         63,
         64,
         65,
         186,
-        258,
-        267,
-        272,
-        300,
+        259,
+        268,
+        273,
         301,
         302,
         303,
@@ -595,52 +630,56 @@
         305,
         306,
         307,
-        308
+        308,
+        309
       ]
     },
     {
       "id": "F-21",
       "name": "生命周期",
-      "implemented": "会话关闭等待、取消、定时任务及拖放引用释放，受控退出检查",
+      "implemented": "会话关闭等待、取消、定时任务及拖放引用释放，受控退出检查；工具弹层不再创建延迟关闭定时器；拖放取消解除事件与payload",
       "status": "部分完成",
-      "nativeGap": "长稳、真实相机及全部设备异常路径未验收",
+      "nativeGap": "长稳、真实设备及全部异常路径仍未验收",
       "entry": "tests/Check-ProcessExit.ps1",
       "acceptance": "关闭活动调试窗口/主窗，检查自启动PID退出；不处理其他任务进程",
-      "result": "本轮源码核查；完整操作验收未关闭",
+      "result": "最新受控Core/插件/WPF/主窗关闭记录见证据；已失败和超时的中间轮次没有标成通过",
       "sourceEvidence": "DynamicParamsTabControl关闭路径；实际设备清理与所有回调仍未知",
       "operationNumbers": [
-        233,
-        235,
-        236,
-        292,
-        293,
-        326,
-        327,
-        328,
-        329,
-        330,
         170,
         189,
-        190
+        190,
+        234,
+        236,
+        237,
+        293,
+        294,
+        360,
+        361,
+        362,
+        363,
+        364
       ]
     },
     {
       "id": "F-22",
       "name": "首批真实工具集成",
-      "implemented": "图像源及硬阈值二值化贯通导航/配置/订阅/Group/预览/保存/释放",
+      "implemented": "图像源及硬阈值二值化贯通导航/配置/订阅/Group/预览/保存/释放；内部画布通过Group Tab进入专用图像源编辑器并消费实际修改",
       "status": "部分完成",
-      "nativeGap": "全相机、其余二值化模式及工具库不在已完成范围",
+      "nativeGap": "全相机、其余二值化模式及工具库未完成；本轮没有改插件实现",
       "entry": "docs/ROI-REAL-TOOL.md",
       "acceptance": "真实BMP宽1296、序号17；Group代理ROI改变实际输出像素",
-      "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+      "result": "实际宽1296三轮累积，初始17得到[17,18,19]；粘贴后当前参数42得到独立[42,43,44]",
       "sourceEvidence": "图像源专用WPF编辑器和ImageBinary元数据；硬阈值为独立实现",
       "operationNumbers": [
         201,
         202,
         205,
-        317,
         318,
-        319
+        319,
+        320,
+        333,
+        335,
+        339
       ]
     },
     {
@@ -657,10 +696,10 @@
     }
   ],
   "verificationMethods": {
-    "events": "实际WPF窗口/控件事件及部分内部处理函数调用，含真实数据运行；不等于桌面鼠标输入",
+    "events": "真实WPF窗口、控件事件及部分宿主方法；复制后流程通过实际Tab运行按钮执行。逐条操作记录可展开；不是桌面鼠标全链路",
     "visual": "人工查看重建程序渲染截图，检查文字、布局与预览；不是原VM截图",
     "desktop": "本轮重试截图FrameArrived超时，添加流程点击coordinate input geometry is unavailable；后续观察foreground window did not report a process id。桌面输入未通过",
-    "native": "本轮没有原VM同状态运行对照；既有120组扫描线样例差分范围不能外推"
+    "native": "当前功能依据恢复源码/资源对照；本轮没有真实VM同状态运行差分。ProcedurePaste、ToolBox和Tab绑定链已静态确认；原生等待超时仍开放"
   },
   "fixes": [
     {
@@ -675,61 +714,99 @@
       "source": "DynamicRunParamConfigPanal.xaml:149/237/282",
       "evidence": "wpf-group-native-dual-pane.png",
       "conclusion": "修复后表头、数据源、类型与关联文字可读"
+    },
+    {
+      "issue": "Group Tab配置按钮指向普通流程窗口，运行还会跳回根画布",
+      "change": "按DisplayModuleSet绑定Group专用窗口；运行目标与显示模块集分离",
+      "evidence": "wpf-group-tab-root-run.png",
+      "conclusion": "实际配置、运行、停止、撤销时保持内部画布"
+    },
+    {
+      "issue": "工具箱用自定120ms延迟且旧分类事件可影响替换弹层",
+      "change": "按鼠标状态触发关闭，旧实例事件加身份校验；拖放修订失效取消",
+      "evidence": "wpf-toolbox-group-depth.png",
+      "conclusion": "分类交接、锁定、层级插入边界逐项操作"
+    },
+    {
+      "issue": "Group剪贴板依赖复制时旧参数及内部图状态",
+      "change": "按ProcedurePaste实时查源；同父级保留合法上游与订阅；重映射内部图和代理",
+      "evidence": "wpf-group-live-paste.png",
+      "conclusion": "实际图像与42/43/44独立序号输出，源删除跳过"
+    },
+    {
+      "issue": "Group新增后没有内部图，复制后的节点与画布名称不同步",
+      "change": "工具箱新增节点/内部图/执行关系合并事务；同一Group名称双向同步",
+      "evidence": "wpf-group-tab-scoped-configuration.png",
+      "conclusion": "一次撤销完整移除，改名/复制/保存后保持一致"
+    },
+    {
+      "issue": "Group拖影、对齐和底部限制误用普通节点30px高度",
+      "change": "使用Group40px实际尺寸，按半高20px定位并计算热区/对齐",
+      "evidence": "wpf-group-height-alignment.png",
+      "conclusion": "混合高度对齐和5000画布完整边界操作验证"
+    },
+    {
+      "issue": "实际运行图像已显示，列表计数仍为(0/1)",
+      "change": "按ImageListPanelBase的CurImagePath同步当前项，刷新期间抑制选择事件",
+      "conclusion": "运行后(1/1)，不改方案修订，不触发额外运行；操作339及截图复验"
     }
   ],
   "coverageNote": "操作序号只关联已覆盖子集；一个序号不代表该域全部步骤。F-19原生往返、F-23全库验收明确未执行。",
   "runtimeLogs": [
     "framework-acceptance-arrays.log",
-    "framework-acceptance-persistence.log"
+    "framework-acceptance-persistence.log",
+    "workflow-context-call-closed.log",
+    "workflow-context-calls.json",
+    "workflow-context-native-boundary.json"
   ],
   "lifecycle": [
     {
       "Case": "CoreChecks",
       "Round": 1,
-      "PID": 79228,
+      "PID": 57428,
       "CloseSent": null,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 90000,
       "ExitCode": 0,
-      "ElapsedMs": 1054
+      "ElapsedMs": 913
     },
     {
       "Case": "PluginChecks",
       "Round": 1,
-      "PID": 69428,
+      "PID": 50720,
       "CloseSent": null,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 90000,
       "ExitCode": 0,
-      "ElapsedMs": 2457
+      "ElapsedMs": 2547
     },
     {
       "Case": "WpfChecks",
       "Round": 1,
-      "PID": 62648,
+      "PID": 78972,
       "CloseSent": null,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 90000,
       "ExitCode": 0,
-      "ElapsedMs": 46805
+      "ElapsedMs": 55106
     },
     {
       "Case": "EditorClose",
       "Round": 1,
-      "PID": 54104,
+      "PID": 76360,
       "CloseSent": true,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 90000,
       "ExitCode": 0,
-      "ElapsedMs": 2064
+      "ElapsedMs": 2261
     }
   ],
-  "operationCount": 330,
-  "operationRecordedAt": "2026-10-17T08:59:50.551303+08:00",
+  "operationCount": 364,
+  "operationRecordedAt": "2026-10-17T10:00:37.1475496+08:00",
   "evidenceManifest": [
     {
       "file": "wpf-workflow-parity.png",
-      "sha256": "3d4a0288f877662bfdd43e9d856a75eaffe010b3f36adc606954ee17dd69066a"
+      "sha256": "1830fd05b2e31302950e028a6daf6b39c684e00d06287318dba7747f80780f18"
     },
     {
       "file": "wpf-maximized-work-area.png",
@@ -745,7 +822,7 @@
     },
     {
       "file": "wpf-group-tab-return.png",
-      "sha256": "934cb71e80bf0a51f5d546e9ce0edb455717c9612969e52f8647c9924aead36e"
+      "sha256": "5178ffb95383617c30265430fddda5daf5bd088901b0c65aff1a300fe3ef9896"
     },
     {
       "file": "wpf-group-input-editing.png",
@@ -772,8 +849,40 @@
       "sha256": "3a4bd6c44195ddb47ff77c666d0581f8b3244d78171d87dfda9b7cf3b9160941"
     },
     {
+      "file": "wpf-group-tab-scoped-configuration.png",
+      "sha256": "5202aa1e31204a4f39d38c6446a59b70d86d733438113060afe6ec2fafcfad6c"
+    },
+    {
+      "file": "wpf-group-tab-scoped-result.png",
+      "sha256": "3e263f3bc8a217ca7004dd959053f89b86b295402fc48f03bbcd5ea179d46b40"
+    },
+    {
+      "file": "wpf-group-tab-dedicated-tool.png",
+      "sha256": "4b71384964cae5f7d726b0d73e9098f419534a1cc60c3a5bd4ea5eda1debcaa1"
+    },
+    {
+      "file": "wpf-group-live-paste.png",
+      "sha256": "db596ba43f3b1ecc66cc71e1f34dbf508df1cd19d1ef830a61f80257f762737b"
+    },
+    {
+      "file": "wpf-toolbox-group-depth.png",
+      "sha256": "ed4bf58546e8aca2fca8a1a89d2a07decdb82814dd57719f8e09b14867ddc963"
+    },
+    {
+      "file": "wpf-group-toolbox-ghost.png",
+      "sha256": "31d07ade40a7f3475b77c4f5d876e4aa56bda61e49f20797e82c695fe40078d8"
+    },
+    {
+      "file": "wpf-group-height-alignment.png",
+      "sha256": "ab1056d12cc9851a47d08719ddfd5954c2aa446705bc98b6de2d7ded08cef74d"
+    },
+    {
+      "file": "wpf-group-tab-root-run.png",
+      "sha256": "0da72d34ae57702b3a1099ed31ce713de045208a6a0072138749ef7d0db1ec26"
+    },
+    {
       "file": "wpf-workflow-parity.json",
-      "sha256": "b2db48d82d0dae948c009445dfe98430516e29f7711d95718f57841fdf93715d"
+      "sha256": "25a2ef9c376e883786594812940618e6db16a895f4b68f046cbb612710956b6b"
     },
     {
       "file": "framework-acceptance-real-host.log",
@@ -790,17 +899,78 @@
     {
       "file": "framework-acceptance-persistence.log",
       "sha256": "5c41232a4837010f66b4430d4ff9e6816502b46e7e893cafee6a3c963c990834"
+    },
+    {
+      "file": "workflow-context-call-closed.log",
+      "sha256": "d11fa4a0f10d4c966e802a0ac3c586b0a335bf19f52782a9cefd660e58c709ce"
+    },
+    {
+      "file": "workflow-context-calls.json",
+      "sha256": "880bf9530bf76f6869ff966a97447e20d8e0d2de909e562cad78134090dd37d4"
+    },
+    {
+      "file": "workflow-context-native-boundary.json",
+      "sha256": "9af8e4b9ac5535075bdb1b77fe8bf2188e8f8843aba19ee62e4d9871c9f9b271"
     }
   ],
-  "release": "dist/VisionEditor-WpfFrameworkAcceptance",
-  "releaseLifecycle": {
-    "Case": "EditorClose",
-    "Round": 1,
-    "PID": 71904,
-    "CloseSent": true,
-    "ExitedWithinTimeout": true,
-    "TimeoutMs": 30000,
-    "ExitCode": 0,
-    "ElapsedMs": 5469
+  "release": "dist/VisionEditor-WpfWorkflowContext/VisionEditor.exe",
+  "releaseLifecycle": [
+    {
+      "Case": "EditorClose",
+      "Round": 1,
+      "PID": 24636,
+      "CloseSent": true,
+      "ExitedWithinTimeout": true,
+      "TimeoutMs": 30000,
+      "ExitCode": 0,
+      "ElapsedMs": 5464
+    }
+  ],
+  "lifecycleReport": "workflow-context-image-index-lifecycle/exit-results.json",
+  "releaseLifecycleReport": "workflow-context-release-lifecycle/exit-results.json",
+  "closureReport": "WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md",
+  "extraImages": [
+    [
+      "wpf-group-tab-scoped-configuration.png",
+      "Group Tab实际循环配置"
+    ],
+    [
+      "wpf-group-tab-scoped-result.png",
+      "真实三轮宽度和序号累积"
+    ],
+    [
+      "wpf-group-tab-dedicated-tool.png",
+      "内部画布打开专用图像源编辑器"
+    ],
+    [
+      "wpf-group-live-paste.png",
+      "粘贴后的独立Group实际运行"
+    ],
+    [
+      "wpf-toolbox-group-depth.png",
+      "三层插入边界下工具仍可见可拖"
+    ],
+    [
+      "wpf-group-toolbox-ghost.png",
+      "Group实际40px拖影"
+    ],
+    [
+      "wpf-group-height-alignment.png",
+      "混合30/40px节点实际边界对齐"
+    ],
+    [
+      "wpf-group-tab-root-run.png",
+      "Tab运行所属流程并保留Group画布"
+    ]
+  ],
+  "latestBatch": {
+    "scope": "Tab/工具箱/Group编辑上下文与实时复制闭环",
+    "nativeEquivalent": false,
+    "sourceManifest": "workflow-context-sources.json",
+    "intermediateFailures": [
+      "旧用例仍将工具箱Group当成无内部图的通用调用，已按原始AddNewItem路径修正",
+      "序号17是初始值，真实三轮为17/18/19；改为完整序列检查",
+      "检查程序在UI线程同步等待Group异步执行，改为实际Tab按钮运行及消息泵等待，保留超时轮次未记通过"
+    ]
   }
 }

@@ -21,6 +21,7 @@ public partial class MainWindow
  Rectangle? nodeHotRegion;
  Point? nodeHotPoint;
  string? nodeHotPredecessor;
+ double MovingNodeHeight=>toolDragGhost?.Height??(movingNodes?.Count==1?NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==movingNodes.Keys.Single())):NodeHeight);
  void ClearNodeHotRegion(){if(nodeHotRegion is not null)GraphLayer.Children.Remove(nodeHotRegion);nodeHotRegion=null;nodeHotPoint=null;nodeHotPredecessor=null;}
  void UpdateNodeHotRegion(double x,double y,IEnumerable<string> excluded)
  {
@@ -28,7 +29,7 @@ public partial class MainWindow
   var nearest=doc.CurrentProcedure.Nodes.Where(n=>!ids.Contains(n.Id)&&n.X==x&&n.Y<y).OrderBy(n=>y-n.Y).FirstOrDefault();
   // DiagramItem.GetSpanByDiagramItem: ordinary module spacing is ModuleSpanCount (40) + 30.
   bool visible=false;
-  if(nearest is not null&&nearest.Y+70-NodeHeight<y&&y<nearest.Y+70+NodeHeight){nodeHotPoint=new Point(nearest.X,nearest.Y+70);nodeHotPredecessor=nearest.Id;visible=true;}
+  if(nearest is not null&&nearest.Y+70-NodeVisualHeight(nearest)<y&&y<nearest.Y+70+NodeVisualHeight(nearest)){nodeHotPoint=new Point(nearest.X,nearest.Y+70-MovingNodeHeight/2+NodeVisualHeight(nearest)/2);nodeHotPredecessor=nearest.Id;visible=true;}
   else if(nodeHotPoint is {} retained&&retained.X-20<x&&x<retained.X+20&&retained.Y-NodeHeight<y&&y<retained.Y+NodeHeight)visible=true;
   if(nodeHotRegion is null){nodeHotRegion=new Rectangle {Width=66,Height=22,Fill=Brushes.Orange,IsHitTestVisible=false};Panel.SetZIndex(nodeHotRegion,56);GraphLayer.Children.Add(nodeHotRegion);}
   nodeHotRegion.Visibility=visible?Visibility.Visible:Visibility.Collapsed;
@@ -134,12 +135,12 @@ public partial class MainWindow
  void DrawAlignmentGuides(double x,double y)
  {
   ClearAlignmentGuides();if(movingNodes?.Count!=1&&toolDragGhost is null)return;
-  var others=doc.CurrentProcedure.Nodes.Where(n=>movingNodes is null||!movingNodes.ContainsKey(n.Id)).ToArray();
+  var others=doc.CurrentProcedure.Nodes.Where(n=>movingNodes is null||!movingNodes.ContainsKey(n.Id)).ToArray();double height=MovingNodeHeight;
   foreach(bool vertical in new[]{true,false})foreach(double fraction in new[]{0d,1d,.5})
   {
-   double axis=(vertical?x:y)+(vertical?NodeWidth:NodeHeight)*fraction;
-   var neighbor=others.Where(n=>(vertical?n.X+NodeWidth*fraction:n.Y+NodeHeight*fraction)==axis).OrderBy(n=>Math.Abs(vertical?n.Y-y:n.X-x)).FirstOrDefault();if(neighbor is null)continue;
-   double start=Math.Min(vertical?y: x,vertical?neighbor.Y:neighbor.X)-5/scale,end=Math.Max(vertical?y+NodeHeight:x+NodeWidth,vertical?neighbor.Y+NodeHeight:neighbor.X+NodeWidth)+5/scale;
+   double axis=(vertical?x:y)+(vertical?NodeWidth:height)*fraction;
+   var neighbor=others.Where(n=>(vertical?n.X+NodeWidth*fraction:n.Y+NodeVisualHeight(n)*fraction)==axis).OrderBy(n=>Math.Abs(vertical?n.Y-y:n.X-x)).FirstOrDefault();if(neighbor is null)continue;
+   double start=Math.Min(vertical?y: x,vertical?neighbor.Y:neighbor.X)-5/scale,end=Math.Max(vertical?y+height:x+NodeWidth,vertical?neighbor.Y+NodeVisualHeight(neighbor):neighbor.X+NodeWidth)+5/scale;
    var line=new Line {X1=vertical?axis:start,Y1=vertical?start:axis,X2=vertical?axis:end,Y2=vertical?end:axis,Stroke=Brushes.LightGreen,StrokeThickness=1/scale,StrokeDashArray=new DoubleCollection {5,2.5},StrokeLineJoin=PenLineJoin.Round,IsHitTestVisible=false};Panel.SetZIndex(line,55);alignmentGuides.Add(line);GraphLayer.Children.Add(line);
   }
  }

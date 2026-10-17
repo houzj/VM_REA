@@ -186,7 +186,9 @@ public partial class MainWindow
         if(Math.Abs(delta.X)<=3&&Math.Abs(delta.Y)<=3&&movingGhosts.Count==0)return;
         double left=movingNodes.Values.Min(p=>p.X),top=movingNodes.Values.Min(p=>p.Y);
         double dx=Snap(left+delta.X)-left,dy=Snap(top+delta.Y)-top;
-        dx=Math.Clamp(dx,-left,Math.Max(-left,DiagramPageSize-NodeWidth-movingNodes.Values.Max(p=>p.X)));dy=Math.Clamp(dy,-top,Math.Max(-top,DiagramPageSize-NodeHeight-movingNodes.Values.Max(p=>p.Y)));
+        dx=Math.Clamp(dx,-left,Math.Max(-left,DiagramPageSize-NodeWidth-movingNodes.Values.Max(p=>p.X)));
+        double bottom=movingNodes.Max(entry=>entry.Value.Y+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key)));
+        dy=Math.Clamp(dy,-top,Math.Max(-top,DiagramPageSize-bottom));
         foreach(var entry in movingNodes)
         {
             if(!movingGhosts.TryGetValue(entry.Key,out var ghost))

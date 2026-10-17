@@ -83,7 +83,7 @@ public partial class MainWindow
  void DropToolModule(string id,double x,double y,ExecutionLinkDocument? insertion,string? predecessor)
  {
   if(!EditableCanvas)return;var descriptor=modules.Descriptors.First(d=>d.Id==id);
-  string added=doc.AddNode(id,descriptor.Version,x,y,Defaults(descriptor),insertion is null?predecessor:null,insertion);
+  string added=id==WorkflowCalls.ModuleId?doc.AddOwnedGroup(x,y,Defaults(descriptor),insertion is null?predecessor:null,insertion):doc.AddNode(id,descriptor.Version,x,y,Defaults(descriptor),insertion is null?predecessor:null,insertion);
   selected=added;selectedNodes.Clear();selectedNodes.Add(added);boxSelectionActive=false;selectedWire=null;RenderGraph();RefreshRight();
  }
 }

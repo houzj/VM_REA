@@ -67,7 +67,7 @@ public partial class MainWindow
             var icon=new Image { Source=CatalogIcon(group.Icon), Width=52, Height=50, Stretch=Stretch.Uniform };
             var button=new Button { Width=52, Height=50, Background=Brushes.Transparent, BorderThickness=new Thickness(0), ToolTip=group.Name, Content=icon, Tag=group.Id, Padding=new Thickness(0) };
             button.Style=(Style)FindResource("ToolboxCategoryButton");
-            button.MouseEnter+=(_,_)=> { icon.Source=CatalogIcon(group.HoverIcon??group.Icon);button.Background=new SolidColorBrush(Color.FromRgb(46,47,49));ShowToolPicker(group.Id,button); };
+            button.MouseEnter+=(_,_)=> { icon.Source=CatalogIcon(group.HoverIcon??group.Icon);ShowToolPicker(group.Id,button); };
             button.MouseLeave+=(_,_)=>CloseToolPopupSoon();
             Rail.Children.Add(button);
         }
@@ -105,6 +105,7 @@ public partial class MainWindow
         bool armed=false;
         tile.PreviewMouseLeftButtonDown+=(_,e)=> { armed=true;toolDragStarted=false; };
         tile.PreviewMouseLeftButtonUp+=(_,_)=>armed=false;
+        tile.LostMouseCapture+=(_,_)=>armed=false;
         tile.PreviewMouseMove+=(_,e)=>
         {
             if(!armed)return;
@@ -112,9 +113,12 @@ public partial class MainWindow
             if(!enabled()||e.LeftButton!=MouseButtonState.Pressed||toolDragStarted)return;
             toolDragStarted=true;
             if(toolPopup is not null)toolPopup.IsOpen=false;
-            try { DragDrop.DoDragDrop(tile,CreateToolDragData(id),DragDropEffects.Move); }
+            var data=CreateToolDragData(id);
+            System.Windows.QueryContinueDragEventHandler query=(_,args)=>{if(ReadDragPayload(data,ToolDragFormat) is not ToolDragPayload payload||!ValidToolDrag(payload))args.Action=System.Windows.DragAction.Cancel;};
+            tile.QueryContinueDrag+=query;
+            try { DragDrop.DoDragDrop(tile,data,DragDropEffects.Move); }
             catch(Exception error){if(!windowClosed)StatusText.Text="工具拖动已取消："+error.Message;}
-            finally { ClearToolGhost();ReleaseToolDragData();toolDragStarted=false; }
+            finally { tile.QueryContinueDrag-=query;ClearToolGhost();ReleaseToolDragData();toolDragStarted=false; }
         };
     }
 
@@ -137,10 +141,11 @@ public partial class MainWindow
         var border=new Border { Child=content, Margin=new Thickness(6,8,8,8), Background=new LinearGradientBrush(Color.FromRgb(37,37,37),Color.FromRgb(50,50,50),90), BorderBrush=new SolidColorBrush(Color.FromRgb(23,23,22)), BorderThickness=new Thickness(2), CornerRadius=new CornerRadius(4), Effect=new System.Windows.Media.Effects.DropShadowEffect {BlurRadius=7,Direction=305,ShadowDepth=3,Opacity=.39} };
         var popupRoot=new Grid {Width=235,Background=new SolidColorBrush(Color.FromArgb(2,255,255,255))};popupRoot.Children.Add(border);
         toolPopupAnchor=anchor;
-        toolPopup=new Popup { Child=popupRoot, PlacementTarget=anchor??Rail, Placement=PlacementMode.Right, StaysOpen=true, AllowsTransparency=true, MaxHeight=ToolRail.ActualHeight };
-        popupRoot.MouseEnter+=(_,_)=>toolPopupPointerInside=true;
-        popupRoot.MouseLeave+=(_,_)=> {toolPopupPointerInside=false;CloseToolPopupSoon();};
-        toolPopup.Closed+=(_,_)=>UpdateRailHighlights();
+        var popup=new Popup { Child=popupRoot, PlacementTarget=anchor??Rail, Placement=PlacementMode.Right, StaysOpen=true, AllowsTransparency=true, MaxHeight=ToolRail.ActualHeight };
+        toolPopup=popup;
+        popupRoot.MouseEnter+=(_,_)=>{if(ReferenceEquals(toolPopup,popup))toolPopupPointerInside=true;};
+        popupRoot.MouseLeave+=(_,_)=> {if(!ReferenceEquals(toolPopup,popup))return;toolPopupPointerInside=false;CloseToolPopupSoon();};
+        popup.Closed+=(_,_)=>{if(ReferenceEquals(toolPopup,popup))toolPopupPointerInside=false;UpdateRailHighlights();};
         toolPopup.IsOpen=true;
         UpdateRailHighlights();
     }
@@ -160,14 +165,20 @@ public partial class MainWindow
     void CloseToolPopupSoon()
     {
         var popup=toolPopup;var anchor=toolPopupAnchor;
-        var timer=new System.Windows.Threading.DispatcherTimer {Interval=TimeSpan.FromMilliseconds(120)};
-        timer.Tick+=(_,_)=> {timer.Stop();if(popup!=toolPopup||toolPopupPointerInside||anchor?.IsMouseOver==true)return;if(popup is not null)popup.IsOpen=false;};
-        timer.Start();
+        // ToolBox's IsMouseLeave/IsMouseOver trigger has no timed grace period.
+        // Defer only to let WPF deliver the corresponding Popup MouseEnter event.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input,new Action(()=>{
+            if(popup!=toolPopup||toolPopupPointerInside||anchor?.IsMouseOver==true)return;
+            if(popup is not null)popup.IsOpen=false;
+            UpdateRailHighlights();
+        }));
     }
+
+    bool ValidToolDrag(ToolDragPayload payload)=>ReferenceEquals(payload.Owner,this)&&payload.Solution==doc.SolutionId&&payload.Procedure==doc.CurrentProcedureId&&payload.Revision==doc.Revision&&payload.Overview==workflowOverview&&(payload.Module=="__procedure"?EditableOverview:EditableCanvas);
 
     string? DragModule(DragEventArgs e)
     {
-        if(ReadDragPayload(e.Data,ToolDragFormat) is not ToolDragPayload payload||!ReferenceEquals(payload.Owner,this)||payload.Solution!=doc.SolutionId||payload.Procedure!=doc.CurrentProcedureId||payload.Revision!=doc.Revision||payload.Overview!=workflowOverview)return null;
+        if(ReadDragPayload(e.Data,ToolDragFormat) is not ToolDragPayload payload||!ValidToolDrag(payload))return null;
         if(payload.Module=="__procedure")return EditableOverview?payload.Module:null;
         if(!EditableCanvas)return null;
         return modules.Descriptors.Any(d=>d.Id==payload.Module)?payload.Module:null;
@@ -191,12 +202,12 @@ public partial class MainWindow
                 var descriptor=modules.Descriptors.First(d=>d.Id==id);
                 var preview=CreateNodeCard(new VisionFramework.NodeDocument("tool-preview",id,descriptor.Version,descriptor.DisplayName,Defaults(descriptor),0,0),doc.CurrentProcedure.Nodes.Count,false);
                 var body=(Border)preview.Children[0];preview.Children.Remove(body);
-                toolDragGhost=new Border {Width=110,Height=30,Opacity=.7,IsHitTestVisible=false,Child=body};
+                toolDragGhost=new Border {Width=body.Width,Height=body.Height,Opacity=.7,IsHitTestVisible=false,Child=body};
                 Panel.SetZIndex(toolDragGhost,int.MaxValue);GraphLayer.Children.Add(toolDragGhost);
             }
             var point=e.GetPosition(GraphLayer);
-            Canvas.SetLeft(toolDragGhost,Math.Max(0,Math.Round((point.X-55)/5)*5));
-            Canvas.SetTop(toolDragGhost,Math.Max(0,Math.Round((point.Y-15)/5)*5));
+            Canvas.SetLeft(toolDragGhost,Math.Clamp(Math.Round((point.X-toolDragGhost.Width/2)/5)*5,0,DiagramPageSize-toolDragGhost.Width));
+            Canvas.SetTop(toolDragGhost,Math.Clamp(Math.Round((point.Y-toolDragGhost.Height/2)/5)*5,0,DiagramPageSize-toolDragGhost.Height));
             DrawAlignmentGuides(Canvas.GetLeft(toolDragGhost),Canvas.GetTop(toolDragGhost));
             UpdateNodeHotRegion(Canvas.GetLeft(toolDragGhost),Canvas.GetTop(toolDragGhost),[]);
             UpdateInsertionWire(point,[]);
@@ -214,10 +225,11 @@ public partial class MainWindow
             string name=NextProcedureName();doc.AddProcedure(name,Math.Clamp(px,0,DiagramPageSize-140),Math.Clamp(py,0,DiagramPageSize-120));e.Effects=DragDropEffects.Move;e.Handled=true;return;
         }
         double x=toolDragGhost is null?Math.Max(0,Math.Round((point.X-55)/5)*5):Canvas.GetLeft(toolDragGhost);
-        double y=toolDragGhost is null?Math.Max(0,Math.Round((point.Y-15)/5)*5):Canvas.GetTop(toolDragGhost);
+        double height=id==VisionFramework.WorkflowCalls.ModuleId?40:NodeHeight;
+        double y=toolDragGhost is null?Math.Max(0,Math.Round((point.Y-height/2)/5)*5):Canvas.GetTop(toolDragGhost);
         var target=ActiveNodeHotPoint??new Point(x,y);string? predecessor=AvailableHotPredecessor();
         var insertion=FindInsertionWire(point,[]);
-        ClearToolGhost();Safe(()=>DropToolModule(id,Math.Clamp(target.X,0,DiagramPageSize-NodeWidth),Math.Clamp(target.Y,0,DiagramPageSize-NodeHeight),insertion,predecessor));e.Handled=true;
+        ClearToolGhost();Safe(()=>DropToolModule(id,Math.Clamp(target.X,0,DiagramPageSize-NodeWidth),Math.Clamp(target.Y,0,DiagramPageSize-height),insertion,predecessor));e.Handled=true;
     }
 
     void ClearToolGhost(){ClearAlignmentGuides();ClearNodeHotRegion();ClearInsertionWire();if(toolDragGhost is not null)GraphLayer.Children.Remove(toolDragGhost);toolDragGhost=null;}

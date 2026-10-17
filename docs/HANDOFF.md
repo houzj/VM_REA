@@ -105,3 +105,12 @@ At the user's request, the original checkout now develops framework and integrat
 - tests/Export-FrameworkAcceptance.py从显式清单及实际操作记录生成可筛选HTML与清单，保留证据哈希。报告工具和截图均留在tests/文档，未引入产品截图代码。原生同状态视觉操作差分、多屏DPI、设备长稳、完整.sol/ABI仍开放；23域均不标为全域完成。
 
 - 最终发布：dist/VisionEditor-WpfFrameworkAcceptance；发布程序正常启动关闭exit0（5469ms），启动脚本已切到新版本。ProcessExit新增EditorOnly用于发布产物单独验证，不以重复整套检查替代当前产物关闭。桌面输入阻塞保留，未标成鼠标验收成功。
+
+## 2026-10-17 — 工作流Tab、工具箱与Group上下文闭环
+
+- 逐功能原始依据及SHA256见WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md、workflow-context-sources.json。Group Tab配置打开所属Group；内部画布单次/连续/停止运行根流程且不跳出；专用图像源编辑器、循环父变量和运行输出已接通。
+- 按原始实时源查找修正复制：粘贴读取当前参数，删除/改名源不复活快照，同父级保留有效上游及变量订阅，内部图身份独立；Group创建/撤销原子提交，节点与内部名称同步。工具箱取消自定120ms定时器，修复旧分类离开事件、深度插入边界、40px拖影与混合高度对齐。
+- 目检运行截图发现图像预览与列表计数不一致，按原ImageListPanelBase.CurImagePath链修复，复验(1/1)，无额外运行或方案修改。截图助手仍只在tests。
+- 最新监护记录workflow-context-image-index-lifecycle：Core115、插件18、真实WPF窗口事件364项及主窗关闭全部exit0；Group调用52项通过。实际BMP三轮累积宽[1296,1296,1296]、序号[17,18,19]，复制品独立[42,43,44]。事件/宿主方法驱动加截图目检，不宣称桌面鼠标或真实VM差分验收。既有ROI24项本批未重跑。中间失败和修正保留在批次报告。
+- 最终发布dist/VisionEditor-WpfWorkflowContext，独立启动关闭5464ms、exit0，启动脚本更新。导出器核对最新监护成功及操作数，避免失败后发布旧成功记录。
+- 原生等待超时仅确认Get/SetProcedureWaitTime及SDK说明；REA能读取二进制，但当前分析器连接未配置。没有猜成流程取消计时器。LoopStep/复合数据/设备回调/.sol往返/全模板/原生视觉差分仍开放，23领域不标完整。未改插件工作树或其他任务进程。

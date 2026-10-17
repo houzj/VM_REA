@@ -99,7 +99,7 @@ public partial class MainWindow
             if (active)
             {
                 if(displayed.GroupOwner is not null){var back=WorkflowIcon("tab_ic_back","返回上一级",ReturnFromGroup,!parameterEditorOpen&&activeRun is null);back.Tag="GroupTabBack";back.Margin=new Thickness(3,0,4,0);back.HoverSource=Asset("tab_ic_back_disable.png");back.DisabledSource=Asset("tab_ic_back_hover.png");row.Children.Add(back);row.Children.Add(new Border{Width=1,Height=30,Background=new SolidColorBrush(Color.FromRgb(48,50,52))});}
-                row.Children.Add(WorkflowIcon("ic_tab_group_configuration", "流程配置", ()=>OpenWorkflowConfiguration(doc.CurrentProcedureId), !isLocked&&activeRun is null));
+                row.Children.Add(WorkflowIcon("ic_tab_group_configuration", "流程配置", OpenDisplayedConfiguration, !isLocked&&activeRun is null&&!parameterEditorOpen));
                 row.Children.Add(WorkflowIcon("ic_local-variable", "局部变量", ()=>OpenWorkflowLocalVariables(doc.CurrentProcedureId), !isLocked&&activeRun is null&&!parameterEditorOpen));
                 row.Children.Add(new Border { Width = 1, Height = 30, Background = new SolidColorBrush(Color.FromRgb(48, 50, 52)) });
             }
@@ -117,16 +117,16 @@ public partial class MainWindow
             tab.Header=row;tab.ToolTip=displayed.Name;
             heading.MouseLeftButtonDown+=(_,e)=>{if(e.OriginalSource is TextBox)return; if(active&&doc.CurrentProcedure.GroupOwner is null)SelectWorkflow(procedure.Id);};
             // OperateMenu is assigned to TopTabItemStyle when IsProcedure=True.
-            tab.ContextMenu=!isLocked&&activeRun is null?ProcedureMenu(procedure.Id):null;
+            tab.ContextMenu=displayed.GroupOwner is null&&!isLocked&&activeRun is null&&!parameterEditorOpen?ProcedureMenu(procedure.Id):null;
         }
         refreshingWorkflowTabs=false;
         SetWorkflowIcon(AddProcedureButton,"ic_hu_add");SetWorkflowIcon(PinnedAddProcedureButton,"ic_hu_add");SetWorkflowIcon(ProcedureListButton,"ic_tab_downarrow");SetWorkflowIcon(WorkflowViewButton,workflowOverview?"ic_全局":"ic_单个");
-        AddProcedureButton.IsEnabled = !isLocked && activeRun is null;
+        AddProcedureButton.IsEnabled = !isLocked && activeRun is null && !parameterEditorOpen;
         PinnedAddProcedureButton.IsEnabled = AddProcedureButton.IsEnabled;
         AddProcedureButton.Visibility = isLocked ? Visibility.Collapsed : Visibility.Visible;
-        Rail.IsEnabled = !isLocked && activeRun is null && (workflowOverview||doc.HasCurrentProcedure);
+        Rail.IsEnabled = !isLocked && activeRun is null && !parameterEditorOpen && (workflowOverview||doc.HasCurrentProcedure);
         if(!EditableCanvas&&toolPopup is not null)toolPopup.IsOpen=false;
-        EmptyAddWorkflowButton.IsEnabled=!isLocked&&activeRun is null;
+        EmptyAddWorkflowButton.IsEnabled=!isLocked&&activeRun is null&&!parameterEditorOpen;
         ToggleToolboxButton.IsEnabled = !isLocked;
         undoToolButton!.IsEnabled = !isLocked && activeRun is null && doc.CanUndo;
         redoToolButton!.IsEnabled = !isLocked && activeRun is null && doc.CanRedo;
@@ -217,7 +217,7 @@ public partial class MainWindow
         void Item(string name, Action? action, string? gap = null)
         {
             var item = new MenuItem { Header = name, IsEnabled = action is not null, ToolTip = gap };
-            if (action is not null) item.Click += (_, _) => {if(!CanEditProcedure(id))return;Safe(action);};
+            if (action is not null) item.Click += (_, _) => {if(!CanOperateProcedureMenu(id))return;Safe(action);};
             menu.Items.Add(item);
         }
         Item("导出流程", null, "VM 流程格式导出尚未接入");
@@ -230,9 +230,9 @@ public partial class MainWindow
         var toggle=new System.Windows.Controls.Primitives.ToggleButton {IsChecked=policy.StopOnNg,Margin=new Thickness(5,0,0,0),Focusable=false};
         toggle.Template=(ControlTemplate)FindResource("WorkflowNgSwitch");
         ng.Icon=toggle;
-        void SetStopOnNg(bool value){if(!CanEditProcedure(id)){toggle.IsChecked=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id)?.StopOnNg??false;return;}var p=doc.Document.Procedures.First(p=>p.Id==id);doc.SetProcedureRunPolicy(id,p.ContinuousRunIntervalMs,value);}
+        void SetStopOnNg(bool value){if(!CanOperateProcedureMenu(id)){toggle.IsChecked=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id)?.StopOnNg??false;return;}var p=doc.Document.Procedures.First(p=>p.Id==id);doc.SetProcedureRunPolicy(id,p.ContinuousRunIntervalMs,value);}
         toggle.Checked+=(_,_)=>SetStopOnNg(true);toggle.Unchecked+=(_,_)=>SetStopOnNg(false);
-        ng.Click+=(_,e)=>{if(!ReferenceEquals(e.OriginalSource,ng))return;if(CanEditProcedure(id))toggle.IsChecked=toggle.IsChecked!=true;};
+        ng.Click+=(_,e)=>{if(!ReferenceEquals(e.OriginalSource,ng))return;if(CanOperateProcedureMenu(id))toggle.IsChecked=toggle.IsChecked!=true;};
         menu.Items.Add(ng);
         Item("重命名", () => RenameProcedure(id));
         Item("流程超时设置", null, "流程级超时尚未接入");
@@ -240,6 +240,7 @@ public partial class MainWindow
     }
 
     bool CanEditProcedure(string id)=>!windowClosed&&!parameterEditorOpen&&!isLocked&&activeRun is null&&doc.Document.Procedures.Any(p=>p.Id==id);
+    bool CanOperateProcedureMenu(string id)=>CanEditProcedure(id)&&(workflowOverview||doc.CurrentProcedure.GroupOwner is null||doc.RootProcedureId(doc.CurrentProcedureId)!=id);
 
     void SetProcedureInterval(string id)
     {

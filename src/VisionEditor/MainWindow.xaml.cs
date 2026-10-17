@@ -78,7 +78,34 @@ public partial class MainWindow : Window
  void ResetPreviewZoom(object sender,RoutedEventArgs e)=>SetPreviewScale(1);
  void SetPreviewScale(double value){previewScale=value;Preview.LayoutTransform=new ScaleTransform(previewScale,previewScale);}
  BitmapSource LoadBmp(string path){string full=System.IO.Path.IsPathRooted(path)?path:System.IO.Path.GetFullPath(path,doc.BaseDirectory);using var stream=File.OpenRead(full);var image=VisionIO.BmpReader.Read(stream);return ToBitmap(image);}
-   void RefreshImageSourcePanel(NodeDocument? node){bool isSource=node is not null&&plugins.Find(node.ModuleId)is IToolImageListProvider;bool show=isSource&&DisplayTabs.SelectedIndex==0;ImageSourceHeaderRow.Height=new GridLength(show?38:0);ImageSourceItemsRow.Height=new GridLength(show?104:0);ImageList.IsEnabled=isSource;ImageRunMode.IsEnabled=isSource;AddImageButton.IsEnabled=isSource;AddFolderButton.IsEnabled=isSource;RemoveImageButton.IsEnabled=isSource;AutoSwitch.IsEnabled=isSource;refreshingImageList=true;try{ImageList.Items.Clear();IReadOnlyList<ToolImageEntry> entries=isSource?((IToolImageListProvider)plugins.Find(node!.ModuleId)!).GetImages(node!):Array.Empty<ToolImageEntry>();int current=entries.ToList().FindIndex(x=>x.Selected);ImageCountText.Text=$" ({(current<0?0:current+1)}/{entries.Count})";AutoSwitch.IsChecked=node is not null&&node.Parameters.TryGetValue("AutoPlay",out var auto)&&auto.ValueKind==JsonValueKind.True;ImageRunMode.SelectedIndex=node is not null&&node.Parameters.TryGetValue("ExecuteType",out var mode)&&mode.ValueKind==JsonValueKind.Number&&mode.GetInt32()==2?1:0;var selectedPaths=node is null?new HashSet<string>(StringComparer.OrdinalIgnoreCase):new HashSet<string>(ReadStringList(node,"SelectedPaths"),StringComparer.OrdinalIgnoreCase);foreach(var entry in entries){BitmapSource? thumbnail=null;try{thumbnail=LoadThumbnail(entry.Path);}catch{}ImageList.Items.Add(new ImageListEntry(entry.Path,System.IO.Path.GetFileName(entry.Path),thumbnail,entry.Selected,selectedPaths.Contains(entry.Path)));if(entry.Selected)ImageList.SelectedIndex=ImageList.Items.Count-1;}}finally{refreshingImageList=false;}}
+   void RefreshImageSourcePanel(NodeDocument? node)
+   {
+    bool isSource=node is not null&&plugins.Find(node.ModuleId)is IToolImageListProvider;
+    bool show=isSource&&DisplayTabs.SelectedIndex==0;
+    ImageSourceHeaderRow.Height=new GridLength(show?38:0);ImageSourceItemsRow.Height=new GridLength(show?104:0);
+    ImageList.IsEnabled=isSource;ImageRunMode.IsEnabled=isSource;AddImageButton.IsEnabled=isSource;AddFolderButton.IsEnabled=isSource;RemoveImageButton.IsEnabled=isSource;AutoSwitch.IsEnabled=isSource;
+    refreshingImageList=true;
+    try {
+     ImageList.Items.Clear();
+     IReadOnlyList<ToolImageEntry> entries=isSource?((IToolImageListProvider)plugins.Find(node!.ModuleId)!).GetImages(node!):Array.Empty<ToolImageEntry>();
+     int current=entries.ToList().FindIndex(x=>x.Selected);
+     // ImageListPanelBase.GetModuleSel/DoRefreshLocalImage reads CurImagePath.Value,
+     // and suppresses selection-triggered execution while reflecting that runtime result.
+     if(node is not null&&results.TryGetValue(node.Id,out var record)&&record.Status==NodeRunStatus.Success&&record.Outputs.TryGetValue("CurImagePath",out var value)&&value.Kind==DataKind.Text&&value.Value is string path&&!string.IsNullOrWhiteSpace(path)) {
+      bool SamePath(string candidate){if(string.Equals(candidate,path,StringComparison.OrdinalIgnoreCase))return true;try{return string.Equals(System.IO.Path.GetFullPath(candidate,doc.BaseDirectory),System.IO.Path.GetFullPath(path,doc.BaseDirectory),StringComparison.OrdinalIgnoreCase);}catch(ArgumentException){return false;}catch(NotSupportedException){return false;}}
+      int executed=entries.ToList().FindIndex(e=>SamePath(e.Path));if(executed>=0)current=executed;
+     }
+     ImageCountText.Text=$" ({(current<0?0:current+1)}/{entries.Count})";
+     AutoSwitch.IsChecked=node is not null&&node.Parameters.TryGetValue("AutoPlay",out var auto)&&auto.ValueKind==JsonValueKind.True;
+     ImageRunMode.SelectedIndex=node is not null&&node.Parameters.TryGetValue("ExecuteType",out var mode)&&mode.ValueKind==JsonValueKind.Number&&mode.GetInt32()==2?1:0;
+     var selectedPaths=node is null?new HashSet<string>(StringComparer.OrdinalIgnoreCase):new HashSet<string>(ReadStringList(node,"SelectedPaths"),StringComparer.OrdinalIgnoreCase);
+     for(int i=0;i<entries.Count;i++){
+      var entry=entries[i];BitmapSource? thumbnail=null;try{thumbnail=LoadThumbnail(entry.Path);}catch{}
+      ImageList.Items.Add(new ImageListEntry(entry.Path,System.IO.Path.GetFileName(entry.Path),thumbnail,i==current,selectedPaths.Contains(entry.Path)));
+      if(i==current)ImageList.SelectedIndex=i;
+     }
+    }finally{refreshingImageList=false;}
+   }
   NodeDocument? SelectedImageSource(){if(!IsLoaded||doc is null)return null;string? id=activeImageSourceId??(ImageSelector.SelectedItem as ComboBoxItem)?.Tag as string;return id is null?doc.CurrentProcedure.Nodes.FirstOrDefault(n=>plugins.Find(n.ModuleId)is IToolImageListProvider):doc.CurrentProcedure.Nodes.FirstOrDefault(n=>n.Id==id&&plugins.Find(n.ModuleId)is IToolImageListProvider);}
   void ImageSelectorChanged(object sender,SelectionChangedEventArgs e){if(!IsLoaded||refreshingImageSelector)return;activeImageSourceId=(ImageSelector.SelectedItem as ComboBoxItem)?.Tag as string;RefreshSelectedImageSourcePreview();RefreshImageSourcePanel(SelectedImageSource());}
   void RefreshSelectedImageSourcePreview(){Preview.Source=null;EmptyImage.Text="";var source=SelectedImageSource();if(source is not null){if(results.TryGetValue(source.Id,out var record)){var output=record.Outputs.Values.FirstOrDefault(v=>v.Kind==DataKind.GrayImage)?.As<GrayImage>();if(output is not null)Preview.Source=ToBitmap(output);}if(Preview.Source is null&&source.Parameters.TryGetValue("CurrentImagePath",out var current)&&current.ValueKind==JsonValueKind.String){try{var path=current.GetString();if(!string.IsNullOrWhiteSpace(path))Preview.Source=LoadBmp(path);}catch{}}}if(Preview.Source is null)EmptyImage.Text="暂无图像";}

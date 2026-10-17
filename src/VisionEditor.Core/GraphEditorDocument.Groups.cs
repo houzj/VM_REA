@@ -2,6 +2,52 @@ using VisionFramework;
 namespace VisionEditor.Core;
 public sealed partial class GraphEditorDocument
 {
+ public string AddOwnedGroup(double x,double y,Dictionary<string,System.Text.Json.JsonElement>? parameters=null,string? executionPredecessor=null,ExecutionLinkDocument? insertInto=null)
+ {
+  string result="";
+  EditProcedure(CurrentProcedureId,d=>{result=d.AddNode(WorkflowCalls.ModuleId,WorkflowCalls.Version,x,y,parameters,executionPredecessor,insertInto);d.EnterOwnedGroup(result);});
+  return result;
+ }
+ string ProcedurePath(string id){var p=Procedure(id);var names=new List<string>();while(p.GroupOwner is {} owner){var parent=Procedure(owner.ProcedureId);names.Insert(0,parent.Nodes.Single(n=>n.Id==owner.NodeId).Name);p=parent;}names.Insert(0,p.Name);return string.Join(".",names);}
+ static SolutionDocument SynchronizeGroupNames(SolutionDocument d){var parents=d.Procedures.ToDictionary(p=>p.Id);return d with{Procedures=d.Procedures.Select(p=>p.GroupOwner is {} owner?p with{Name=parents[owner.ProcedureId].Nodes.Single(n=>n.Id==owner.NodeId).Name}:p).ToArray()};}
+ GraphFragment ResolveClipboardSources(GraphFragment fragment)
+ {
+  if(fragment.SourceSolutionId is null)return fragment; // Explicit independent fragments used by import/test callers.
+  if(fragment.SourceSolutionId!=document.Id)throw new InvalidOperationException("剪贴板来源方案已改变。");
+  var source=document.Procedures.SingleOrDefault(p=>p.Id==fragment.SourceProcedureId);
+  if(source is null||ProcedurePath(source.Id)!=fragment.SourcePath)return new([],[],[]);
+  var snapshot=Copy(document).Procedures.Single(p=>p.Id==source.Id);
+  var nodes=fragment.Nodes.Select(old=>snapshot.Nodes.SingleOrDefault(n=>n.Id==old.Id&&n.Name==old.Name)).OfType<NodeDocument>().ToArray();
+  var ids=nodes.Select(n=>n.Id).ToHashSet();bool sameParent=source.Id==CurrentProcedureId;
+  return new(nodes,snapshot.Connections.Where(c=>ids.Contains(c.ToNode)&&(ids.Contains(c.FromNode)||sameParent)).ToArray(),
+   ProcedureGraph.ExecutionEdges(snapshot).Where(c=>ids.Contains(c.ToNode)&&(ids.Contains(c.FromNode)||sameParent)).ToArray()){
+   OwnedProcedures=CopyOwnedBodies(nodes),
+   Subscriptions=snapshot.Configuration.Subscriptions.Where(s=>ids.Contains(s.NodeId)&&(sameParent||s.Source.Kind==WorkflowSourceKind.NodeOutput&&ids.Contains(s.Source.Id))).ToArray()};
+ }
+ public bool CanAddOwnedGroup {
+  get{int depth=0;var p=CurrentProcedure;while(p.GroupOwner is {} owner){depth++;p=Procedure(owner.ProcedureId);}return depth<3;}
+ }
+ IReadOnlyList<ProcedureDocument> CopyOwnedBodies(IEnumerable<NodeDocument> nodes)
+ {
+  var all=Document.Procedures.ToDictionary(p=>p.Id);var seen=new HashSet<string>();var result=new List<ProcedureDocument>();
+  void Include(NodeDocument node){if(node.Call is not {} call||!all.TryGetValue(call.ProcedureId,out var body)||body.GroupOwner is null||!seen.Add(body.Id))return;result.Add(body);foreach(var child in body.Nodes)Include(child);}
+  foreach(var node in nodes)Include(node);return result.AsReadOnly();
+ }
+ (NodeDocument[] Nodes,IReadOnlyList<ProcedureDocument> Bodies) CloneClipboardGroups(GraphFragment fragment,NodeDocument[] nodes)
+ {
+  var source=fragment.OwnedProcedures.ToDictionary(p=>p.Id);var result=new List<ProcedureDocument>();var active=new HashSet<string>();
+  NodeDocument CloneNode(NodeDocument node,string parent){
+   if(node.Call is not {} call||!source.TryGetValue(call.ProcedureId,out var body))return node;
+   if(body.GroupOwner is null||!active.Add(body.Id))throw new InvalidDataException("Invalid Group clipboard ownership.");
+   var ids=body.Nodes.ToDictionary(n=>n.Id,_=>Guid.NewGuid().ToString("N"));string id=Guid.NewGuid().ToString("N");
+   var children=body.Nodes.Select(n=>CloneNode(n with{Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false)},id)).ToArray();
+   var copy=body with{Id=id,GroupOwner=new(parent,node.Id),Configuration=body.Configuration.RemapNodes(ids),Nodes=children,
+    Connections=body.Connections.Select(c=>c with{FromNode=ids[c.FromNode],ToNode=ids[c.ToNode]}).ToArray(),
+    ExecutionLinks=body.ExecutionLinks?.Select(e=>e with{FromNode=ids[e.FromNode],ToNode=ids[e.ToNode]}).ToArray()};
+   active.Remove(body.Id);result.Add(copy);return node with{Call=WorkflowCalls.From(copy),GroupBreak=node.GroupBreak?.Remap(ids,true)};
+  }
+  return(nodes.Select(n=>CloneNode(n,CurrentProcedureId)).ToArray(),result);
+ }
  // VM: VmProcedureDecorator.OpenGroupCommandExecute sets DisplayModuleSet;
  // IMVSGroup is an owned VmModuleSet, not a top-level IVmProcedure.
  public string EnterOwnedGroup(string nodeId)

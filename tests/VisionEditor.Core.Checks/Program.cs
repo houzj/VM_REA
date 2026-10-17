@@ -65,7 +65,7 @@ Check(fragment.Connections.Count==1&&fragment.ExecutionLinks.Count==1,"fragment 
 var pasted=clipboardDoc.PasteNodes(fragment,210,320);Check(clipboardDoc.Revision==copyRevision+1&&pasted.Count==2,"group paste is one atomic undo transaction");
 Check(pasted.All(id=>id!=ca&&id!=cb)&&pasted.Distinct().Count()==2,"paste generates fresh node identities");
 var pastedA=clipboardDoc.CurrentProcedure.Nodes.Single(n=>n.Id==pasted[0]);var pastedB=clipboardDoc.CurrentProcedure.Nodes.Single(n=>n.Id==pasted[1]);Check(pastedA.X==210&&pastedA.Y==320&&pastedB.X==330&&pastedB.Y==380,"group paste preserves relative positions");
-Check(pastedA.Parameters["Value"].GetString()=="snapshot"&&clipboardDoc.CurrentProcedure.Nodes.Single(n=>n.Id==ca).Parameters["Value"].GetString()=="changed","copy parameters are isolated snapshot");
+Check(pastedA.Parameters["Value"].GetString()=="changed"&&clipboardDoc.CurrentProcedure.Nodes.Single(n=>n.Id==ca).Parameters["Value"].GetString()=="changed","paste copies current source parameters per native CopyModuleParam path");
 Check(clipboardDoc.CurrentProcedure.ExecutionLinks!.Any(e=>e.FromNode==pasted[0]&&e.ToNode==pasted[1]&&e.SourceIndex==2&&e.TargetIndex==0),"copy remaps internal execution ports");
 Check(clipboardDoc.CurrentProcedure.Connections.Any(c=>c.FromNode==pasted[0]&&c.ToNode==pasted[1]),"copy remaps internal data references");
 Check(pasted.Select(id=>clipboardDoc.CurrentProcedure.Nodes.Single(n=>n.Id==id).Name).Distinct().Count()==2&&clipboardDoc.CurrentProcedure.Nodes.Where(n=>pasted.Contains(n.Id)).All(n=>!fragment.Nodes.Any(old=>old.Name==n.Name)),"copy gives fresh unique display names");

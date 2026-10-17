@@ -32,3 +32,7 @@ Original evidence remains in the original checkout's analysis directory. It is e
 ## Group configuration/ROI update
 
 Source-guided two-pane runtime configuration and graphical ROI infrastructure now run in main; scoped image-source full editor and actual Group execution are integrated. See GROUP-NATIVE-EDITORS.md and FCR-007. A real hard-threshold binary tool is now integrated as an ROI consumer (FCR-008/009). This does not complete native complex UI, all algorithm modes, Fixture native transformation or full ROI behavior parity. No plugin worktree changes were made.
+
+## Workflow context closure
+
+2026-10-17: see WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md for source-confirmed Tab/configuration dispatch, live-source clipboard, toolbox popup/depth and actual Group geometry. Latest acceptance contains364 WPF event operations and actual image runtime evidence; native desktop differential parity remains open.
