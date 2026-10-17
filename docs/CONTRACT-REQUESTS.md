@@ -95,3 +95,10 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 
 ## FCR-012：框架复合叶端口（2026-10-17）
 调用方：Group/订阅选择器及执行器。框架统一提供 CompoundOutputFields.Describe/Project/Expand；节点 GetDescriptor 暴露可选叶端口，执行器发布相同完整路径，插件不需要重复投影。根输出保留。Components和Region不新建根数组ABI；已有数值叶数组可参与Group累积。字段和限制见 COMPOUND-LEAF-MAPPING.md；缺少的原生指标不伪造。插件线如需扩充字段，先提出数据和原生XML依据，不在另一工作树并发修改契约。
+
+## FCR-013：跨流程节点实例身份（2026-10-17，双线协调）
+
+- 调用方：框架调试缓存、Group独立运行、插件执行状态与图像列表。当前独立方案格式仅要求节点ID在所属流程内唯一；两个流程可以含相同NodeId。原生VM是否允许相同内部ID尚无运行取证，不能把这一托管约束称为原生规则。
+- 框架线用`WorkflowNodeIdentity(SolutionId, ProcedureId, NodeId)`隔离调试结果、失效传播和Group预备缓存。`ModuleId`表示工具类型，不充当节点实例ID。
+- 插件线应将方案生命周期、流程和节点身份传给实际执行状态及事件。来自节点的运行/刷新事件必须带流程身份；旧NodeId-only事件仅保留给无流程上下文的兼容调用，不用于多流程生产派发。
+- 验收：在同一方案的两个流程放入相同NodeId、不同图像列表和运行状态，分别调试、清除和保存；一方的结果、参数编辑及事件不得改变另一方。方案关闭后旧事件和状态不得进入新方案。框架线和插件线各自检查，集成后再做端到端验收。

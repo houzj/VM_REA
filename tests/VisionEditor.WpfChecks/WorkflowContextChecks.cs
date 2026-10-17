@@ -25,7 +25,22 @@ static class WorkflowContextChecks
   T Find<T>(string name)=>(T)host.FindName(name);
   void Pump(){host.UpdateLayout();host.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);}
   void Capture(FrameworkElement control,string name){control.UpdateLayout();var image=new RenderTargetBitmap((int)Math.Ceiling(control.ActualWidth),(int)Math.Ceiling(control.ActualHeight),96,96,PixelFormats.Pbgra32);image.Render(control);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(image));using var file=File.Create("analysis/full-audit/"+name);png.Save(file);}
-  var doc=Field<GraphEditorDocument>("doc");doc.NewSolution();var root=doc.CurrentProcedureId;var retainedMenu=(System.Windows.Controls.ContextMenu)Invoke("ProcedureMenu",root)!;
+  var doc=Field<GraphEditorDocument>("doc");
+  var duplicateNode=new NodeDocument("shared-node","vision.image-source","1.0.0","图像源",new(){["ImagePaths"]=JsonSerializer.SerializeToElement("[]")});
+  var duplicatePath=Path.GetFullPath("analysis/full-audit/wpf-duplicate-node-identity.vmx.json");
+  SolutionStore.Save(duplicatePath,new(SolutionStore.CurrentVersion,"shared-solution","重复节点身份",[
+   new ProcedureDocument("flow-a","流程 A",[duplicateNode],[]),
+   new ProcedureDocument("flow-b","流程 B",[duplicateNode with{Name="另一图像源"}],[])
+  ],[]));
+  doc.Load(duplicatePath);Pump();
+  var first=new NodeRunRecord("shared-node",NodeRunStatus.Success,new Dictionary<string,PortValue>{{"Width",PortValue.Integer(11)}},0);
+  var second=new NodeRunRecord("shared-node",NodeRunStatus.Success,new Dictionary<string,PortValue>{{"Width",PortValue.Integer(22)}},0);
+  Invoke("StoreToolDebugResult","flow-a",first);Invoke("StoreToolDebugResult","flow-b",second);
+  IReadOnlyList<NodeRunRecord> Inputs(string flow)=>(IReadOnlyList<NodeRunRecord>)Invoke("ToolDebugInputs",flow)!;
+  check(Inputs("flow-a").Single().Outputs["Width"].As<long>()==11&&Inputs("flow-b").Single().Outputs["Width"].As<long>()==22,"两个流程允许同名节点 ID，调试结果按方案和流程隔离");
+  Invoke("InvalidateToolDebugResult","flow-a","shared-node");
+  check(Inputs("flow-a").Count==0&&Inputs("flow-b").Single().Outputs["Width"].As<long>()==22,"一个流程的节点失效不会清除另一流程的同 ID 结果");
+  doc.NewSolution();var root=doc.CurrentProcedureId;var retainedMenu=(System.Windows.Controls.ContextMenu)Invoke("ProcedureMenu",root)!;
   doc.SetWorkflowConfiguration(root,new(){Groups=[new("g","分组0")],Variables=[new("limit","g","循环终值","int","3")]});
   var group=doc.AddNode(WorkflowCalls.ModuleId,WorkflowCalls.Version,200,200);var body=doc.EnterOwnedGroup(group);
   var source=doc.AddNode("vision.image-source","1.0.0",150,150,new(){["ImagePaths"]=JsonSerializer.SerializeToElement(JsonSerializer.Serialize(new[]{Path.GetFullPath("analysis/images/circle-find-sample.bmp")}))});

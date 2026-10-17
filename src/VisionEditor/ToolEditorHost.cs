@@ -7,22 +7,22 @@ namespace VisionEditor;
 public partial class MainWindow
 {
  readonly HashSet<IToolDebugSession> toolDebugSessions=new();
- readonly Dictionary<string,Dictionary<string,NodeRunRecord>> toolDebugRecords=new();
- readonly Dictionary<string,HashSet<string>> toolDebugInvalid=new();
+ readonly Dictionary<WorkflowNodeIdentity,NodeRunRecord> toolDebugRecords=new();
+ readonly HashSet<WorkflowNodeIdentity> toolDebugInvalid=new();
  string? debugSolution;bool toolClosePending,toolCloseReady;
  void EnsureToolDebugSolution(){if(debugSolution==doc.SolutionId)return;debugSolution=doc.SolutionId;toolDebugRecords.Clear();toolDebugInvalid.Clear();workflowSessions.Clear();results.Clear();}
- IReadOnlyList<NodeRunRecord> ToolDebugInputs(string flow){EnsureToolDebugSolution();var merged=new Dictionary<string,NodeRunRecord>();if(workflowSessions.TryGetValue(flow,out var previous))foreach(var record in previous.Nodes)if(!toolDebugInvalid.GetValueOrDefault(flow)?.Contains(record.NodeId)??true)merged[record.NodeId]=record;if(toolDebugRecords.TryGetValue(flow,out var current))foreach(var pair in current)merged[pair.Key]=pair.Value;return merged.Values.ToArray();}
- void RestoreToolDebugResults(string flow){EnsureToolDebugSolution();if(toolDebugInvalid.TryGetValue(flow,out var invalid))foreach(var id in invalid)results.Remove(id);if(toolDebugRecords.TryGetValue(flow,out var records))foreach(var pair in records)results[pair.Key]=pair.Value;}
- void ClearToolDebugResults(string flow){toolDebugRecords.Remove(flow);toolDebugInvalid.Remove(flow);}
+ WorkflowNodeIdentity DebugIdentity(string flow,string nodeId)=>WorkflowNodeIdentity.Create(doc.SolutionId,flow,nodeId);
+ IReadOnlyList<NodeRunRecord> ToolDebugInputs(string flow){EnsureToolDebugSolution();var merged=new Dictionary<string,NodeRunRecord>();if(workflowSessions.TryGetValue(flow,out var previous))foreach(var record in previous.Nodes)if(!toolDebugInvalid.Contains(DebugIdentity(flow,record.NodeId)))merged[record.NodeId]=record;foreach(var pair in toolDebugRecords.Where(p=>p.Key.SolutionId==doc.SolutionId&&p.Key.ProcedureId==flow))merged[pair.Key.NodeId]=pair.Value;return merged.Values.ToArray();}
+ void RestoreToolDebugResults(string flow){EnsureToolDebugSolution();foreach(var key in toolDebugInvalid.Where(k=>k.SolutionId==doc.SolutionId&&k.ProcedureId==flow))results.Remove(key.NodeId);foreach(var pair in toolDebugRecords.Where(p=>p.Key.SolutionId==doc.SolutionId&&p.Key.ProcedureId==flow))results[pair.Key.NodeId]=pair.Value;}
+ void ClearToolDebugResults(string flow){foreach(var key in toolDebugRecords.Keys.Where(k=>k.SolutionId==doc.SolutionId&&k.ProcedureId==flow).ToArray())toolDebugRecords.Remove(key);toolDebugInvalid.RemoveWhere(k=>k.SolutionId==doc.SolutionId&&k.ProcedureId==flow);}
  void InvalidateToolDebugResult(string flow,string nodeId)
  {
   EnsureToolDebugSolution();var procedure=ConfigurationProcedure(flow);var affected=new HashSet<string>{nodeId};
   var edges=ProcedureGraph.ExecutionEdges(procedure).Select(e=>(From:e.FromNode,To:e.ToNode)).Concat(procedure.Connections.Select(c=>(From:c.FromNode,To:c.ToNode))).Concat(procedure.Configuration.Subscriptions.Select(b=>(From:WorkflowSubscriptions.Producer(procedure,b.Source),To:b.NodeId)).Where(e=>e.From is not null).Select(e=>(From:e.From!,To:e.To))).ToArray();
   bool changed;do{changed=false;foreach(var edge in edges)if(affected.Contains(edge.From))changed|=affected.Add(edge.To);}while(changed);
-  if(!toolDebugInvalid.TryGetValue(flow,out var invalid))toolDebugInvalid[flow]=invalid=new();invalid.UnionWith(affected);
-  if(!toolDebugRecords.TryGetValue(flow,out var records))toolDebugRecords[flow]=records=new();foreach(var id in affected)records.Remove(id);if(doc.CurrentProcedureId==flow){RestoreWorkflowResults();RefreshRight();}
+  foreach(var id in affected){var key=DebugIdentity(flow,id);toolDebugInvalid.Add(key);toolDebugRecords.Remove(key);}if(doc.CurrentProcedureId==flow){RestoreWorkflowResults();RefreshRight();}
  }
- void StoreToolDebugResult(string flow,NodeRunRecord record){InvalidateToolDebugResult(flow,record.NodeId);toolDebugRecords[flow][record.NodeId]=record;
+ void StoreToolDebugResult(string flow,NodeRunRecord record){InvalidateToolDebugResult(flow,record.NodeId);toolDebugRecords[DebugIdentity(flow,record.NodeId)]=record;
   if(doc.CurrentProcedureId==flow){RestoreWorkflowResults();RefreshRight();StatusText.Text="模块调试："+record.Status+(record.Message is null?"":" · "+record.Message);}
  }
  ToolEditorContext CreateToolEditorContext(string id)
