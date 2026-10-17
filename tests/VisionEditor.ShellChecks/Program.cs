@@ -16,6 +16,10 @@ static class Program
 [STAThread]
 static void Main()
 {
+Directory.CreateDirectory("analysis/full-audit");
+var lockPreferencePath=Path.GetFullPath("analysis/full-audit/shell-lock-preferences.json");
+if(File.Exists(lockPreferencePath))File.Delete(lockPreferencePath);
+typeof(MainWindow).Assembly.GetType("VisionEditor.ShellLockPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,lockPreferencePath);
 var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
 var window=new MainWindow{ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
@@ -62,6 +66,34 @@ try
  var statusImage=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);
  statusImage.Render(window);var statusPng=new PngBitmapEncoder();statusPng.Frames.Add(BitmapFrame.Create(statusImage));
  Directory.CreateDirectory("analysis/full-audit");using(var file=File.Create("analysis/full-audit/shell-zoom-reset.png"))statusPng.Save(file);
+ var lockButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"锁定工作区"));
+ bool firstPrompt=false;
+ window.Dispatcher.BeginInvoke(new Action(()=>
+ {
+  var dialog=window.OwnedWindows.OfType<ShellLockPrompt>().Single();firstPrompt=dialog.Owner==window;
+  dialog.UpdateLayout();var promptContent=(FrameworkElement)dialog.Content;
+  var promptImage=new RenderTargetBitmap((int)Math.Ceiling(promptContent.ActualWidth),(int)Math.Ceiling(promptContent.ActualHeight),96,96,PixelFormats.Pbgra32);
+  promptImage.Render(promptContent);var promptPng=new PngBitmapEncoder();promptPng.Frames.Add(BitmapFrame.Create(promptImage));
+  using(var output=File.Create("analysis/full-audit/shell-lock-confirmation.png"))promptPng.Save(output);
+  ((Button)dialog.FindName("CancelLock")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+ }),DispatcherPriority.Background);
+ lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
+ Check(firstPrompt&&lockButton.ToolTip?.ToString()=="锁定工作区","First toolbar lock shows native-style confirmation and No keeps work area editable");
+ bool secondPrompt=false;
+ window.Dispatcher.BeginInvoke(new Action(()=>
+ {
+  var dialog=window.OwnedWindows.OfType<ShellLockPrompt>().Single();secondPrompt=true;
+  ((CheckBox)dialog.FindName("SkipPrompt")).IsChecked=true;
+  ((Button)dialog.FindName("ConfirmLock")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+ }),DispatcherPriority.Background);
+ lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
+ Check(secondPrompt&&lockButton.ToolTip?.ToString()=="解锁工作区"&&!Find<Button>("AddProcedureButton").IsEnabled,"Yes locks actual editor commands and updates toolbar state");
+ Check(File.ReadAllText(lockPreferencePath).Contains("\"IsNotifyLock\":true"),"Do-not-show preference is persisted separately from the solution");
+ lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
+ Check(lockButton.ToolTip?.ToString()=="锁定工作区"&&Find<Button>("AddProcedureButton").IsEnabled,"Unlock is immediate and restores actual editor commands");
+ lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
+ Check(lockButton.ToolTip?.ToString()=="解锁工作区"&&window.OwnedWindows.OfType<ShellLockPrompt>().Count()==0,"Saved do-not-show preference bypasses the next confirmation");
+ lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
  var run=(Task)typeof(MainWindow).GetMethod("Run",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,null)!;
  var deadline=DateTime.UtcNow.AddSeconds(15);
  while(!run.IsCompleted&&DateTime.UtcNow<deadline){Pump();Thread.Sleep(5);}
