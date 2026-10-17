@@ -14,6 +14,8 @@
 
 因此不能从已反编译的托管代码声称可以完整读写原生方案。要关闭 F-19，需要同版本真实样例、原生保存/加载实现的静态与运行取证、未知字段保留策略、密码与资源矩阵、往返差分。未获得这些证据之前不得把独立 JSON 改名为 `.sol` 或 `.solx`。
 
+当前工作区发现的 `analysis/rejected-input-check.sol` 仅 228 字节，是包含 `SolutionFile/VmServer.xml` 的 ZIP；XML 正文为外部实体拒绝测试（`file:///does-not-exist`）。它不能作为原厂保存方案的有效样本，也不能据此推断 `.sol` 容器格式。
+
 ## 当前独立格式
 
 `src/VisionFramework/SolutionStore.cs` 使用版本化 `.vmx.json`，校验后写同目录临时文件再替换；`src/VisionEditor.Core/GraphEditorDocument.cs:37-44,251-254` 在另存时重定位通用资源和内置文件图像节点的相对路径，仅成功写入后更新编辑器基目录与文件路径。这些是本项目的独立实现，不是原生实现证据。

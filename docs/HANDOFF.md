@@ -193,3 +193,12 @@ At the user's request, the original checkout now develops framework and integrat
 
 四线改动顺序合入后，主工作区完整 WPF 操作回归 456 项通过。MF-02 分支曾在第 207 项时间阈值偶发失败，同一构建复跑通过；该项时间敏感性不据此宣称已消除。插件项目 `tool-plugins` 独立在制，本批未合流或编辑其工作树。
 
+## 2026-10-17 四份清单再一轮闭合
+
+- MF-01：按原 `TitleMenueItemData.AreaLocking/AreaUnLocking` 与 `LockDlg` 接通工作区锁定确认，“否”保留编辑，“是”锁定，“不再显示”写独立用户偏好，解锁直接恢复。主工作区 Shell 专项 22 项通过，见 `MF01-WORKAREA-LOCK-PROMPT.md`。原厂提示文案/皮肤及配置确切位置仍未核实。
+- MF-02：按原 `Connection` 焦点与 `RequestBringIntoView` 路径，让连线自身获得焦点、选中显示中点且视口不自动跳动；失焦清中点，Delete/Undo/保存重开经过实际 WPF 验证。主工作区画布专项 28 项通过，见 `MF02-WIRE-FOCUS-VIEWPORT.md`。
+- MF-04：按原 `VariableManager.ModifyType` 的普通类型分支，在 Group 局部变量改型时解除旧订阅。改型后实际运行报缺失输入、重新绑定后运行成功、保存重开结果保持且父流程变量隔离；主工作区专项 9 项通过。复合类型 IO 重建仍开放，见 `GROUP-LOCAL-VARIABLE-TYPE.md`。
+- MF-05：损坏独立方案加载失败不替换当前编辑内容、选中流程、未保存状态或 Undo 历史，流程管理检查 28 项通过。另确认 `analysis/rejected-input-check.sol` 是外部实体拒绝样本，不是原厂有效 `.sol` 样本；见 `SOLUTION-PERSISTENCE-BOUNDARY.md`。
+
+四线顺序合入后，主工作区完整 WPF 操作回归 456 项通过。真实 VM 桌面鼠标/DPI、原生复合类型重建与 `.sol/.solx` 往返仍未关闭；插件工作树未在本批合流。
+
