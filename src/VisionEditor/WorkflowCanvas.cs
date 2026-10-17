@@ -86,7 +86,7 @@ public partial class MainWindow
         var procedure=doc.CurrentProcedure;
         selectedNodes.RemoveWhere(id=>procedure.Nodes.All(n=>n.Id!=id));
         if(selected is not null&&procedure.Nodes.Any(n=>n.Id==selected))selectedNodes.Add(selected);
-        GraphLayer.Children.Clear();nodeCards.Clear();executionPorts.Clear();wireViews.Clear();wireHandles.Clear();groupSelectionFrame=null;
+        GraphLayer.Children.Clear();nodeCards.Clear();executionPorts.Clear();wireViews.Clear();wireArrows.Clear();wireHitPaths.Clear();wireHandles.Clear();groupSelectionFrame=null;
         worldWidth=DiagramPageSize;
         worldHeight=DiagramPageSize;
         GraphLayer.Width=worldWidth;GraphLayer.Height=worldHeight;
@@ -98,15 +98,16 @@ public partial class MainWindow
             var points=wire.PathPoints is {Count:>1}?wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray():VmOrthogonalRouter.Route(Port(sourceBox,wire.SourceIndex),Port(targetBox,wire.TargetIndex),boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight).Points;
             if(points.Count<2) { StatusText.Text="有连线无法在当前画布范围内完成布线";continue; }
             string key=wire.FromNode+">"+wire.ToNode;
-            var path=new System.Windows.Shapes.Path {Data=LineGeometry(wire.PathPoints is {Count:>1}?VmOrthogonalRouter.Passivate(points):points),Stroke=WireStroke(wire),StrokeThickness=2,IsHitTestVisible=false};
+            var displayedPoints=wire.PathPoints is {Count:>1}?VmOrthogonalRouter.Passivate(points):points;
+            var path=new System.Windows.Shapes.Path {Data=LineGeometry(displayedPoints),Stroke=WireStroke(wire),StrokeThickness=2,IsHitTestVisible=false};
             wireViews[key]=(wire,path,wire.PathPoints is {Count:>1}?points:CleanWirePoints(points));
             GraphLayer.Children.Add(path);
-            var arrow=new Polygon {Points=OriginalWireArrow(points),IsHitTestVisible=false};arrow.SetBinding(System.Windows.Shapes.Shape.FillProperty,new System.Windows.Data.Binding("Stroke"){Source=path});GraphLayer.Children.Add(arrow);
+            var arrow=new Polygon {Points=OriginalWireArrow(displayedPoints),IsHitTestVisible=false};arrow.SetBinding(System.Windows.Shapes.Shape.FillProperty,new System.Windows.Data.Binding("Stroke"){Source=path});wireArrows[key]=arrow;GraphLayer.Children.Add(arrow);
             var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=12};
             hit.MouseEnter+=(_,_)=>path.StrokeThickness=3;hit.MouseLeave+=(_,_)=>path.StrokeThickness=selectedWire==key?3:2;
             hit.MouseLeftButtonDown+=(_,e)=> {selectedWire=key;selected=null;selectedNodes.Clear();GraphLayer.Focus();RenderGraph();e.Handled=true;};
             var menu=new ContextMenu();var delete=new MenuItem {Header="删除连线",IsEnabled=!isLocked&&activeRun is null};delete.Click+=(_,_)=>Safe(()=> {doc.DisconnectExecution(wire);selectedWire=null;});menu.Items.Add(delete);hit.ContextMenu=menu;
-            GraphLayer.Children.Add(hit);
+            wireHitPaths[key]=hit;GraphLayer.Children.Add(hit);
         }
         for(int i=0;i<procedure.Nodes.Count;i++)
         {

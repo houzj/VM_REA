@@ -14,6 +14,8 @@ namespace VisionEditor;
 public partial class MainWindow
 {
  readonly Dictionary<string,(ExecutionLinkDocument Link,System.Windows.Shapes.Path View,IReadOnlyList<RoutePoint> Points)> wireViews=new();
+ readonly Dictionary<string,System.Windows.Shapes.Polygon> wireArrows=new();
+ readonly Dictionary<string,System.Windows.Shapes.Path> wireHitPaths=new();
  readonly List<Rectangle> wireHandles=new();
  RecoveredConnectionDrag? wireDrag;
  ExecutionLinkDocument? draggedWire,insertWire;
@@ -58,7 +60,13 @@ public partial class MainWindow
  {
   if(wireDrag is null||draggedWire is null)return;
   Safe(()=>wireDrag.Move(point));
-  var entry=wireViews[draggedWire.FromNode+">"+draggedWire.ToNode];entry.View.Data=LineGeometry(VmOrthogonalRouter.Passivate(wireDrag.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray()));DrawWireHandles();
+  var key=draggedWire.FromNode+">"+draggedWire.ToNode;
+  var entry=wireViews[key];var displayed=VmOrthogonalRouter.Passivate(wireDrag.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray());
+  entry.View.Data=LineGeometry(displayed);
+  // Native Connection.SetPath redraws its polyline and arrow from the same PathPoints change.
+  wireArrows[key].Points=OriginalWireArrow(displayed);
+  wireHitPaths[key].Data=entry.View.Data;
+  DrawWireHandles();
  }
  void FinishWireDrag(bool commit)
  {

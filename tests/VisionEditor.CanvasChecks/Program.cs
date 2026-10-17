@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using VisionEditor.Core.VmRouting;
 using System.Windows.Threading;
 using VisionEditor;
 using VisionEditor.Core;
@@ -78,6 +79,35 @@ internal static class Program
             string file=Path.Combine(Path.GetTempPath(),"vision-canvas-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(file);var positions=vertical.ToDictionary(n=>n.Id,n=>(n.X,n.Y));doc.Load(file);Check(doc.CurrentProcedure.Nodes.Where(n=>positions.ContainsKey(n.Id)).All(n=>positions[n.Id]==(n.X,n.Y)),"distributed positions survive save and reload");}
             finally {if(File.Exists(file))File.Delete(file);}
+
+            doc.NewSolution();
+            string source=doc.AddNode("vision.image-source","1.0.0",200,100);
+            string target=doc.AddNode("vision.image-source","1.0.0",450,280);
+            doc.ConnectExecution(source,target,3,1);
+            var link=doc.CurrentProcedure.ExecutionLinks!.Single();
+            doc.SetExecutionPath(link,[new(255,130),new(255,205),new(505,205),new(505,280)]);Pump();
+            string key=source+">"+target;
+            var canvas=(Canvas)window.FindName("GraphLayer");
+            var arrows=(Dictionary<string,System.Windows.Shapes.Polygon>)typeof(MainWindow).GetField("wireArrows",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var hitPaths=(Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            string before=hitPaths[key].Data.ToString();
+            revision=doc.Revision;
+            Invoke("BeginWireDrag",link,1);
+            Invoke("PreviewWireDrag",new Point(350,235));Pump();
+            var visible=canvas.Children.OfType<System.Windows.Shapes.Path>().Single(p=>!p.IsHitTestVisible&&p.StrokeThickness==2);
+            Check(ReferenceEquals(hitPaths[key].Data,visible.Data)&&hitPaths[key].Data.ToString()!=before,"midpoint preview updates visible route and its interactive hit geometry together");
+            var drag=typeof(MainWindow).GetField("wireDrag",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var dragPoints=(IReadOnlyList<Point>)drag.GetType().GetProperty("PathPoints")!.GetValue(drag)!;
+            var displayed=VmOrthogonalRouter.Passivate(dragPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray());
+            var expected=(PointCollection)typeof(MainWindow).GetMethod("OriginalWireArrow",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,[displayed])!;
+            Check(arrows[key].Points.SequenceEqual(expected),"midpoint preview redraws arrow from displayed route as native SetPath does");
+            Check(doc.Revision==revision,"preview leaves saved route and undo history untouched");
+            Capture("canvas-wire-midpoint-preview.png");
+            Invoke("FinishWireDrag",false);Pump();
+            Check(doc.Revision==revision&&hitPaths[key].Data.ToString()==before,"cancel restores path, arrow and hit geometry from saved route");
+            Invoke("BeginWireDrag",link,1);Invoke("PreviewWireDrag",new Point(350,235));Invoke("FinishWireDrag",true);Pump();
+            Check(doc.Revision==revision+1&&doc.CurrentProcedure.ExecutionLinks!.Single().PathPoints![1].Y==235,"commit records moved midpoint in one undo transaction");
+            doc.Undo();Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Single().PathPoints![1].Y==205,"undo restores saved midpoint");
         }
         finally {window.Close();application.Shutdown();}
     }
