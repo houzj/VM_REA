@@ -337,11 +337,20 @@ public partial class MainWindow
     }
     void MiniMapDown(object sender,MouseButtonEventArgs e)
     {
-        Point point=e.GetPosition(MiniMapCanvas);var rect=new Rect(Canvas.GetLeft(MiniMapViewport),Canvas.GetTop(MiniMapViewport),MiniMapViewport.Width,MiniMapViewport.Height);eyeDragging=true;
-        if(!rect.Contains(point))NavigateMiniMap(new Point(point.X-rect.Width/2,point.Y-rect.Height/2));
-        eyePointerStart=point;eyeRegionStart=new Point(Canvas.GetLeft(MiniMapViewport),Canvas.GetTop(MiniMapViewport));e.Handled=true;
+        BeginMiniMapDrag(e.GetPosition(MiniMapCanvas));e.Handled=true;
     }
-    void MiniMapMove(object sender,MouseEventArgs e){if(!eyeDragging||e.LeftButton!=MouseButtonState.Pressed)return;var point=e.GetPosition(MiniMapCanvas);if(point==eyePointerStart)return;if(!MiniMapCanvas.IsMouseCaptured)MiniMapCanvas.CaptureMouse();NavigateMiniMap(eyeRegionStart+(point-eyePointerStart));e.Handled=true;}
+    void BeginMiniMapDrag(Point point)
+    {
+        var rect=new Rect(Canvas.GetLeft(MiniMapViewport),Canvas.GetTop(MiniMapViewport),MiniMapViewport.Width,MiniMapViewport.Height);
+        eyeDragging=true;
+        // ZoomArea.GridEagleEye_MouseDown records the requested rect.Location, even
+        // when ScrollViewer clamps the viewport at the canvas boundary.
+        var requested=rect.Contains(point)?rect.Location:new Point(point.X-rect.Width/2,point.Y-rect.Height/2);
+        if(!rect.Contains(point))NavigateMiniMap(requested);
+        eyePointerStart=point;eyeRegionStart=requested;
+    }
+    void MiniMapMove(object sender,MouseEventArgs e){if(!eyeDragging||e.LeftButton!=MouseButtonState.Pressed)return;var point=e.GetPosition(MiniMapCanvas);if(point==eyePointerStart)return;if(!MiniMapCanvas.IsMouseCaptured)MiniMapCanvas.CaptureMouse();MoveMiniMapDrag(point);e.Handled=true;}
+    void MoveMiniMapDrag(Point point){if(eyeDragging)NavigateMiniMap(eyeRegionStart+(point-eyePointerStart));}
     void MiniMapUp(object sender,MouseButtonEventArgs e){eyeDragging=false;MiniMapCanvas.ReleaseMouseCapture();UpdateMiniMap();e.Handled=true;}
     void MiniMapWheel(object sender,MouseWheelEventArgs e)
     {
