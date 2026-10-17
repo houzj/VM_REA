@@ -109,3 +109,12 @@ The following supersedes earlier unavailable/pending implementation descriptions
 - IB-004：原厂底部 `SelfExcuteModule` 仅调用当前模块 `Run`。WPF配置宿主改为从当前结果及订阅读取输入、执行当前运行器、更新结果与预览，避免每次缓存追加都重跑前序采集工具。状态仍归属当前 `ModuleExecutionScope`，撤销配置不清除缓存，节点移除/会话结束清理。调度与共享选择器是独立宿主实现，原厂全部弹层及线程时序仍不宣称相同。
 
 依据、运行序列、来源身份与边界详见 `docs/plugins/IMAGE-BUFFER.md`。用户授权插件线实施这些必要调整，并在闭合节点使用中文说明提交、推送当前分支；不修改或合并另一 worktree。
+
+# 光源 LT-001～004（2026-10-17，当前插件 worktree 内实施）
+
+- LT-001：原厂算法读写8路，旧XML仅声明6路亮度输入/输出。独立光源模块声明9输入、42输出，补足第7/8路及可选状态/沿/持续时间字段；真实原厂SDK设置第7/8路及结果读取已对照，不伪造未发布输出。46项配置区分32算法参数与UI/原生补充字段。
+- LT-002：复用 `IAcquisitionLightModuleTransport`，载荷为原生748字节 `LightDeviceParamSetTrigger`，保留+24触发时长和+28首通道、8通道44字节布局。传输提供器把下发失败作为IOException报告；模块记录诊断、输出NG并保持原生可为0的错误码。订阅越界先发送后验证，不能由编码器提前钳位或拦截。未匹配触发不发送。
+- LT-003：追加 `WorkflowSourceKind.TextConstant`，Id存储JSON字符串，Port必须为空；类型验证、执行、标签及VMX保存/读取已接通。`ToolEditorContext.InputText/SetInputText`提供直接输入和清空，沿用文档编辑事务与撤销。整数、已有枚举值及旧文档不变；新字符串常量文档需新版宿主。
+- LT-004：`ILightResourceConfiguration`及`ToolEditorContext.ConfigureLights`提供全局资源管理入口，UI从已注册传输服务读取目录，按原厂旧全局资源类型映射形成选择字符串，换有效设备复位通道配置并保留手动亮度。宿主有管理服务时启用按钮；全局LightControl/CommManager的目录、设备连接和驱动由各自清单项承接，不在工具中虚构物理协议。模块自执行及连续调度复用已有作用域、取消和生命周期；资源管理共享弹层未宣称完整等价。
+
+原厂算法通过自有SDK进程和明确标注的测试传输边界对照，不做设备测试；源码/资源/运行证据与未知边界见 `docs/plugins/LIGHT.md`。用户授权本线闭合后使用中文说明提交并推送当前分支，不操作另一worktree。

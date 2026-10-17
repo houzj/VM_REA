@@ -17,6 +17,7 @@ internal sealed class WorkflowRunContext
  PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException("Current-run source unavailable: "+node+"."+port);
  public PortValue Resolve(WorkflowValueReference source)=>source.Kind switch
  {
+  WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),
   WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),
   WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),
   WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException("Current-run variable unavailable: "+source.Id),

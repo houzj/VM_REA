@@ -7,7 +7,7 @@
 |P0|Collection|ImageSourceModule|图像源|23/5/11|Boolean, BooleanTips, ButtonSelecter, ButtonSelecter_ImageList, Enumeration, EnumerationCameraForImage, Integer, OpenFolderDialog|实机取帧/参数/计数/恢复、JPEG边界、RGB、SDK、过滤、目录监听与内嵌已有原厂对照；767插件/242 WPF/460其他回归通过；待用户协助原厂桌面弹层/远程环境，明确覆盖限制，不标记完整等价|
 |P1|Collection|ImageAcquisitionModule|多图采集|7/0/6|Enumeration, EnumerationCameraForAcq, ImageConfig, Integer, OpenFileForAcquisition|代码范围已实现：源码/资源、双模式SDK UI与用户相机桌面图、循环/恢复/内嵌重载、逐图配置、748字节光源边界及8路宿主预览；设备测试依用户要求排除；全场景原生等价不作断言|
 |P1|Collection|ImageBufferModule|缓存图像|0/3/17|ButtonSelecter|代码范围已实现：原生FIFO/边界/混存/格式/恢复、55组逐像素序列及无输入对照、原厂完整SDK参数区、整数常量与15路宿主预览；不做设备测试，不宣称原厂全部共享弹层/线程时序等价|
-|P1|Collection|LightModule|光源|32/7/26|Boolean, ButtonSelecter, Enumeration, EnumerationLightForLight, Integer, RadioSelecter|声明已清点；语义与运行待逆向|
+|P1|Collection|LightModule|光源|32/7/26|Boolean, ButtonSelecter, Enumeration, EnumerationLightForLight, Integer, RadioSelecter|代码范围已实现：源码/资源、246组受控原厂运行、24张SDK界面、8通道748字节命令与暂存/失败语义；设备测试排除，全局管理服务及原生等价边界见LIGHT.md|
 |P1|Collection|SaveImage|输出图像|44/8/8|AddList_SaveImage, Boolean, Boolean_SaveImage, ButtonSelecter, ColorConfigEx, Enumeration, Float, Integer, IPString, OpenFolderDialogEx, PasswordString, String, StringImgName_Selecter|声明已清点；语义与运行待逆向|
 |P2|Calculation|CalculatorModule|变量计算|0/0/4|ButtonSelecter_CalculatorPro, Command|声明已清点；语义与运行待逆向|
 |P2|Calculation|CoordinateTransform|坐标转换|1/4/3|Boolean, ButtonSelecter, RadioSelecter, RadioSelecter3|声明已清点；语义与运行待逆向|

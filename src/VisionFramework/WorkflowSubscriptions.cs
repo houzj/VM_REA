@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace VisionFramework;
 
 // Typed identities deliberately separate a subscription from a literal parameter.
-public enum WorkflowSourceKind { LocalVariable, WorkflowInput, NodeOutput, IntegerConstant }
+public enum WorkflowSourceKind { LocalVariable, WorkflowInput, NodeOutput, IntegerConstant, TextConstant }
 public sealed record WorkflowValueReference(WorkflowSourceKind Kind,string Id,string? Port=null);
 public sealed record WorkflowSubscription(string NodeId,string Target,bool IsParameter,WorkflowValueReference Source);
 public static class WorkflowSubscriptions
@@ -12,12 +12,14 @@ public static class WorkflowSubscriptions
  public static DataKind ParameterType(ParameterKind kind)=>kind switch{ParameterKind.Integer=>DataKind.Integer,ParameterKind.Number=>DataKind.Number,ParameterKind.Boolean=>DataKind.Boolean,_=>DataKind.Text};
  public static DataKind SourceType(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch
  {
+  WorkflowSourceKind.TextConstant=>ReadTextConstant(source.Id) is not null?DataKind.Text:throw new InvalidDataException("Invalid text constant."),
   WorkflowSourceKind.IntegerConstant=>int.TryParse(source.Id,NumberStyles.Integer,CultureInfo.InvariantCulture,out _)?DataKind.Integer:throw new InvalidDataException("Invalid integer constant."),
   WorkflowSourceKind.LocalVariable=>VariableKind(p.Configuration.Variables.SingleOrDefault(v=>v.Id==source.Id)?.Type??throw new InvalidDataException("Missing local variable.")),
   WorkflowSourceKind.WorkflowInput=>p.Configuration.Inputs.SingleOrDefault(v=>v.Id==source.Id)?.Kind??throw new InvalidDataException("Missing workflow input."),
   WorkflowSourceKind.NodeOutput=>OutputType(p,registry,source.Id,source.Port),
   _=>throw new InvalidDataException("Unknown subscription source.")
  };
+ public static string ReadTextConstant(string json){try{return JsonSerializer.Deserialize<string>(json)??throw new InvalidDataException("Null text constant.");}catch(JsonException ex){throw new InvalidDataException("Invalid text constant.",ex);}}
  static DataKind OutputType(ProcedureDocument p,ModuleRegistry registry,string id,string? port){var n=p.Nodes.SingleOrDefault(n=>n.Id==id)??throw new InvalidDataException("Missing source node.");return registry.GetDescriptor(n).Outputs.SingleOrDefault(o=>o.Name==port)?.Kind??throw new InvalidDataException("Missing source output.");}
  public static string? Producer(ProcedureDocument p,WorkflowValueReference source)=>source.Kind switch
  {

@@ -11,8 +11,11 @@ public sealed record ToolEditorContext(NodeDocument Node,string BaseDirectory,Ac
  public Func<string,bool,string?>? SubscriptionLabel {get;init;}
  public Func<string,int?>? InputInteger {get;init;}
  public Action<string,int?>? SetInputInteger {get;init;}
+ public Func<string,string?>? InputText {get;init;}
+ public Action<string,string?>? SetInputText {get;init;}
  public Func<IReadOnlyList<CameraInfo>>? Cameras {get;init;}
  public Action? ConfigureCameras {get;init;}
+ public Action? ConfigureLights {get;init;}
 }
 public interface IVisionToolPlugin {ToolManifest Manifest{get;}ModuleDescriptor Descriptor{get;}IModule CreateRuntime();Form CreateEditor(ToolEditorContext context);void Reset(string nodeId);}
 public sealed class ToolPluginRegistry {
