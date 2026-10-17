@@ -94,3 +94,14 @@ At the user's request, the original checkout now develops framework and integrat
 - 原生缺口仍明确开放：Fixture底层仿射及舍入/边界未恢复，当前为独立最近邻逆映射；InputBlindPolygonString编码未恢复，使用托管InputBlindRegion；Fixture变换坐标直接编辑、全部原生来源树和复合滑块模式尚未完成。结果预览只读，正缩放是独立约束。通过上述验证不等于原VM同状态像素级验收。
 - 最终发布：dist/VisionEditor-WpfRoiDisplayFixture，启动入口已更新。最新115核心、18插件、330 WPF及发布窗口关闭检查均退出0，耗时0.587/1.851/41.407/2.329秒；报告roi-native-display-fixture-lifecycle/exit-results.json。仅管理自身启动的进程，无原SDK产品依赖。
 - 提交前显示边界复核：透明度/线宽越界文字已修复为限制到有效范围；最终真实宿主24项操作检查通过（roi-display-fixture-final-host.log）。完整专项212项及其原SDK样例结果保留，未以单独边界检查替代完整运行证据。
+
+## 2026-10-17 — 框架验收清单重整与实际界面复验
+
+- main框架线；依据当前实现重整23个框架域，记录已完成子集、未完成、原生差异、源码入口及操作证据。结构化源：framework-acceptance.json；便携HTML：framework-acceptance.html；精选截图与操作记录：acceptance-evidence。原始反编译和完整audit仍排除Git。
+- 实际截图发现并修复：Group运行参数双栏内容根容器透明、前景未明确导致黑底/文字不可读；按DynamicRunParamConfigPanal.xaml:149/237/282明确#f2f3f5背景和#4c4c4c前景。主窗口状态提示增加右边距，避免紧贴流程耗时。修复后逐张检查对应截图，不把目检当作原生差分。
+- 验收日志升级为330条逐项WPF窗口事件/内部处理操作记录，带结果与时间。真实ROI宿主24项操作重新执行，包括订阅、弹层、实际200像素继承、Fixture平移、模式切换撤销及关闭。28数组契约和23持久化检查通过。Core115、插件18、WPF330和主窗关闭在监护运行中全部exit0，记录见便携HTML。
+- 一次未加监护的检查停滞在配置阶段，结束本轮确切PID后增加逐项日志，以90秒监护重跑完整通过；没有把中断运行记为通过。桌面Computer Use重试截图超时、点击缺少geometry、后续观察缺前台PID，桌面鼠标拖放仍未验收。未修改安全设置或其他任务进程。
+- 进一步确认尚未接入：全局变量、相机/通信管理、全局触发、脚本、综合配置、流程超时、原生导出与.gvar导入导出；运行模式只是静态文字，菜单仍含简化独立命令。没有按图标可见判定完成。
+- tests/Export-FrameworkAcceptance.py从显式清单及实际操作记录生成可筛选HTML与清单，保留证据哈希。报告工具和截图均留在tests/文档，未引入产品截图代码。原生同状态视觉操作差分、多屏DPI、设备长稳、完整.sol/ABI仍开放；23域均不标为全域完成。
+
+- 最终发布：dist/VisionEditor-WpfFrameworkAcceptance；发布程序正常启动关闭exit0（5469ms），启动脚本已切到新版本。ProcessExit新增EditorOnly用于发布产物单独验证，不以重复整套检查替代当前产物关闭。桌面输入阻塞保留，未标成鼠标验收成功。

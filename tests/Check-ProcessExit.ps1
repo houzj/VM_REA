@@ -1,4 +1,4 @@
-param([int]$TimeoutMs=60000,[int]$Repeat=2,[string]$EditorPath='dist/VisionEditor-WpfCanvas/VisionEditor.exe',[string]$ReportName='process-lifecycle',[string]$CoreChecksPath='tests/VisionEditor.Core.Checks/bin/Debug/net10.0/VisionEditor.Core.Checks.exe')
+param([int]$TimeoutMs=60000,[int]$Repeat=2,[string]$EditorPath='dist/VisionEditor-WpfCanvas/VisionEditor.exe',[string]$ReportName='process-lifecycle',[string]$CoreChecksPath='tests/VisionEditor.Core.Checks/bin/Debug/net10.0/VisionEditor.Core.Checks.exe',[switch]$EditorOnly)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
@@ -11,6 +11,7 @@ $cases=@(
  @{Name='EditorClose';Path=$EditorPath;Gui=$true}
 )
 $rows=@()
+if($EditorOnly){$cases=@($cases|Where-Object {$_.Gui})}
 foreach($case in $cases) {
  for($round=1;$round -le $Repeat;$round++) {
   $watch=[Diagnostics.Stopwatch]::StartNew()

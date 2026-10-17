@@ -30,7 +30,8 @@ static class Program
         // app.Run installs this context in production. These off-screen checks pump explicitly.
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
         int checks=0;
-        void Check(bool condition,string message) { checks++; if(!condition)throw new Exception(message); }
+        var operations=new List<object>();
+        void Check(bool condition,string message) { checks++; operations.Add(new {number=checks,passed=condition,operation=message}); Console.WriteLine($"{(condition ? "PASS" : "FAIL")} {checks}: {message}"); if(!condition)throw new Exception(message); }
         void Pump() { window.UpdateLayout(); window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle); }
         void Capture(FrameworkElement element,string name){element.UpdateLayout();var bitmap=new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth),(int)Math.Ceiling(element.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(element);var output=new PngBitmapEncoder();output.Frames.Add(BitmapFrame.Create(bitmap));using var file=File.Create(Path.Combine("analysis/full-audit",name));output.Save(file);}
         void WaitGroupRun(Window target){var button=(Button)target.FindName("RunOnce");var watch=Stopwatch.StartNew();while(!button.IsEnabled&&watch.ElapsedMilliseconds<10000){Pump();Thread.Sleep(1);}if(!button.IsEnabled)throw new Exception("Group window operation did not finish");Pump();}
@@ -522,7 +523,7 @@ static class Program
             using var closingCancellation=new CancellationTokenSource();typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,closingCancellation);window.Close();WaitDebugTask(rootCloseCleanup.Task);Check(window.IsVisible,"Main window defers shutdown until tool runtime cleanup");rootCloseRelease.TrySetResult();WaitDebugTask(rootDebugTask);Pump();Check(!window.IsVisible&&rootDebugDisposed==1&&rootContext.Session!.State==VisionFramework.ToolDebugState.Disposed,"Main window drains and disposes active debug session before shutdown");
             Check(!shutdownGroupWindow.IsVisible,"Main shutdown closes tracked Group configuration window");Check(closingCancellation.IsCancellationRequested,"Window close explicitly cancels active workflow");
             Check(((System.Collections.IDictionary)typeof(MainWindow).GetField("canvasDragData",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!).Count==0,"Window close releases all owned drag payload references");
-            File.WriteAllText(Path.ChangeExtension(output,"json"),System.Text.Json.JsonSerializer.Serialize(new { checks,passed=true,scope="actual WPF MainWindow",originalVmRuntimeCompared=false }));
+            File.WriteAllText(Path.ChangeExtension(output,"json"),System.Text.Json.JsonSerializer.Serialize(new { checks,passed=true,scope="actual WPF MainWindow",method="WPF control events and direct host handlers; not desktop input",recordedAt=DateTimeOffset.Now,originalVmRuntimeCompared=false,operations }));
             Console.WriteLine($"PASS {checks} actual WPF checks; screenshot: {output}");
         }
         finally { window.Close();app.Shutdown(); }
