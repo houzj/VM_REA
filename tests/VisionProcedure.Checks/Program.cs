@@ -60,5 +60,13 @@ try {
     Check(File.ReadAllBytes(newPath).SequenceEqual(priorBytes),"Failed write keeps previous saved bytes");
     migrated.Save(newPath);
     Check(!migrated.IsDirty&&SolutionStore.Load(newPath).Procedures.Single().Name=="p changed","Retry after write failure saves edited procedure");
+    migrated.RenameProcedure("p","unsaved after load failure");
+    long revisionBeforeBadLoad=migrated.Revision;string currentBeforeBadLoad=migrated.CurrentProcedureId;
+    string badLoadPath=Path.Combine(newDir,"corrupt.vmx.json");File.WriteAllText(badLoadPath,"{ invalid json");
+    try{migrated.Load(badLoadPath);throw new Exception("Expected invalid solution load failure");}
+    catch(JsonException){}
+    Check(migrated.FilePath==newPath&&migrated.BaseDirectory==newDir&&migrated.Revision==revisionBeforeBadLoad&&migrated.CurrentProcedureId==currentBeforeBadLoad&&migrated.IsDirty&&migrated.CurrentProcedure.Name=="unsaved after load failure","Failed load preserves current editor document and unsaved state");
+    migrated.Undo();
+    Check(migrated.CurrentProcedure.Name=="p changed","Failed load preserves existing undo history");
 }finally{if(Directory.Exists(migrationRoot))Directory.Delete(migrationRoot,true);}
 Console.WriteLine($"PASS {checks} procedure management checks");
