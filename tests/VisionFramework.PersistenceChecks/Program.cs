@@ -7,6 +7,17 @@ var procedure=new ProcedureDocument("p","流程",new[]{node},Array.Empty<Connect
 var original=new SolutionDocument(1,"demo","多流程方案",new[]{procedure,procedure with{Id="p2",Name="第二流程"}},new[]{new ResourceDocument("image","assets/image.bmp",new string('a',64))});
 string path=Path.Combine(directory,"solution.vmx.json");SolutionStore.Save(path,original);var loaded=SolutionStore.OpenWorkspace(path);
 Check(loaded.Document.Procedures.Count==2,"multiple procedures survive roundtrip");Check(loaded.Document.Procedures[0].Nodes[0].Parameters["Path"].GetString()=="assets/image.bmp","relative module path retained");Check(loaded.BaseDirectory==directory,"workspace base directory is document directory");Check(loaded.Document.Procedures[0].Nodes[0].TimeoutMs==1500&&loaded.Document.Procedures[0].Nodes[0].X==17.5,"timeout and layout retained");Check(loaded.Document.Resources[0].Sha256==new string('a',64),"resource identity retained");
+byte[] savedBeforeLock=File.ReadAllBytes(path);
+using(var lockStream=new FileStream(path,FileMode.Open,FileAccess.ReadWrite,FileShare.None)){
+    try{SolutionStore.Save(path,original with{Name="Blocked overwrite"});throw new Exception("Accepted overwrite of locked solution");}
+    catch(IOException){}
+    catch(UnauthorizedAccessException){}
+    Check(!Directory.EnumerateFiles(directory,"."+Path.GetFileName(path)+".*.tmp").Any(),"failed overwrite cleans temporary solution");
+}
+Check(File.ReadAllBytes(path).SequenceEqual(savedBeforeLock),"locked target keeps original solution bytes");
+SolutionStore.Save(path,original with{Name="Recovered save"});
+Check(SolutionStore.Load(path).Name=="Recovered save","save succeeds after target lock is released");
+SolutionStore.Save(path,original);
 void Reject(SolutionDocument bad,string name){string before=File.ReadAllText(path);try{SolutionStore.Save(path,bad);throw new Exception("Accepted "+name);}catch(InvalidDataException){}Check(File.ReadAllText(path)==before,name+" rejected before replacing saved solution");}
 Reject(original with{FormatVersion=2},"future schema");Reject(original with{Procedures=new[]{procedure,procedure}},"duplicate procedures");Reject(original with{Procedures=new[]{procedure with{Nodes=new[]{node,node}}}},"duplicate nodes");Reject(original with{Procedures=new[]{procedure with{Connections=new[]{new ConnectionDocument("source","Image","missing","Image")}}}},"dangling connection");Reject(original with{Resources=new[]{new ResourceDocument("i","x","bad")}},"bad resource hash");Reject(original with{Procedures=new[]{procedure with{Nodes=new[]{node with{X=double.NaN}}}}},"nonfinite node position");Reject(original with{Procedures=new[]{procedure with{Nodes=new[]{node with{TimeoutMs=-1}}}}},"negative timeout");
 byte[] embeddedBytes=[2,4,6,8];string embeddedDigest=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(embeddedBytes));
