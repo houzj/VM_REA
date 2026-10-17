@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -521,6 +521,13 @@ static class Program
             WorkflowContextChecks.Run(window,Check);
             GroupLoopUiChecks.Run(window,Check);
             GroupIndexCompoundUiChecks.Run(window,Check);
+            MiniMapWheelParityChecks.Run(window,Check);
+            NativeCompoundSelectorChecks.Run(window,Check);
+            GroupMappedOutputUiChecks.Run(window,Check);
+            var leafPicker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("blob","Components.CentroidPoint.CentroidX",VisionFramework.DataKind.Number,"blob.Components.CentroidPoint.CentroidX"){Cardinality=VisionFramework.ValueCardinality.Array},new WorkflowSourceOption("blob","Components.Area",VisionFramework.DataKind.Number,"blob.Components.Area"){Cardinality=VisionFramework.ValueCardinality.Array}}){Owner=window,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
+            Exception? leafPickerError=null;window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>{try{leafPicker.UpdateLayout();var items=Children(leafPicker).OfType<TreeViewItem>().ToArray();Check(items.Any(i=>Equals(i.Header,"Components"))&&items.Any(i=>Equals(i.Header,"CentroidPoint")),"Actual compound source picker expands nested component and centroid branches");leafPicker.SetInitialSelection(o=>o.Port=="Components.CentroidPoint.CentroidX");Capture(leafPicker,"wpf-compound-leaf-tree.png");Children(leafPicker).OfType<Button>().Single(b=>Equals(b.Content,"确定")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));}catch(Exception ex){leafPickerError=ex;leafPicker.Close();}}));leafPicker.ShowDialog();if(leafPickerError is not null)throw leafPickerError;
+            Check(leafPicker.Selection?.Port=="Components.CentroidPoint.CentroidX"&&leafPicker.Selection.Cardinality==VisionFramework.ValueCardinality.Array,"Actual compound picker confirms full leaf path and array shape without selecting sibling");
+
             var rootCloseEntered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);var rootCloseCleanup=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);var rootCloseRelease=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);int rootDebugDisposed=0;
             var shutdownGroupFlow=document.CurrentProcedureId;var shutdownGroupNode=document.AddNode(VisionFramework.WorkflowCalls.ModuleId,VisionFramework.WorkflowCalls.Version,800,400);document.EnterOwnedGroup(shutdownGroupNode);document.SelectProcedure(shutdownGroupFlow);Pump();var shutdownGroupWindow=(SubprogramCallWindow)Invoke("CreateSubprogramCallWindow",shutdownGroupNode)!;shutdownGroupWindow.WindowStartupLocation=WindowStartupLocation.Manual;shutdownGroupWindow.Left=-20000;shutdownGroupWindow.Top=-20000;shutdownGroupWindow.Show();Pump();
             var rootCloseDescriptor=new VisionFramework.ModuleDescriptor("test.main-debug-close","1","main-debug-close",[],[],[]);frameworkRegistry.Register(rootCloseDescriptor,()=>new WpfDebugCloseModule(rootCloseDescriptor,rootCloseEntered,rootCloseCleanup,rootCloseRelease,()=>rootDebugDisposed++));var rootCloseNode=document.AddNode(rootCloseDescriptor.Id,"1",600,600);var rootContext=(VisionPluginContracts.ToolEditorContext)Invoke("CreateToolEditorContext",rootCloseNode)!;var rootDebugTask=rootContext.Run(new());WaitDebugTask(rootCloseEntered.Task);

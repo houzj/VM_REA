@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using VisionFramework;
 using VisionEditor.Core;
 var checks=new List<string>();
@@ -50,5 +50,28 @@ foreach(var sample in new[]{PortValue.NumberArray([1.5,2.5]),PortValue.TextArray
  var id="test.shape."+checks.Count;var descriptor=new ModuleDescriptor(id,"1",id,[],[Vector("v",sample.Kind)],[]);registry.Register(descriptor,()=>new FunctionModule(descriptor,_=>new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"v",sample}})));
  var run=await new GraphExecutor(registry).RunAsync(new(id,id,[Node("v",id)],[],[]),".");Check(run.Status==SessionStatus.Success&&ReferenceEquals(run.Nodes[0].Outputs["v"],sample),"validated runtime output "+sample.Kind+" "+checks.Count);
 }
+var blobs=PortValue.Components([new(6,2,3,4,4,3,3.5),new(4,9,8,10,9,9.5,8.5)]);
+var leaves=CompoundOutputFields.Project(blobs);
+Check(leaves["BlobNum"].As<long>()==2&&leaves["TotalArea"].As<double>()==10,"Blob count and total area map actual component values");
+Check(leaves["BlobRect.BlobRectWidth"].As<IReadOnlyList<double>>().SequenceEqual(new double[]{3,2}),"inclusive independent component bounds project to native-named Rect widths");
+Check(!leaves.ContainsKey("Perimeter")&&!leaves.ContainsKey("MinBoudingRect.Angle"),"unavailable native metrics are not fabricated");
+var annulus=CompoundOutputFields.Project(PortValue.Region([new("ring",RoiKind.Annulus,12,13,Radius:8,InnerRadius:4){Shape=new(StartAngle:20,SweepAngle:110)}]));
+Check(annulus.Count==0,"partial annulus definition is not projected while actual Annulus mask uses whole ring");
+Check(CompoundOutputFields.Project(PortValue.Region([new("whole-ring",RoiKind.Annulus,12,13,Radius:8,InnerRadius:4)]))["ROIAnnulus.DetectAnnulusAngleExtend"].As<IReadOnlyList<double>>().Single()==360,"canonical whole annulus projects verified full-ring sweep");
+var boxes=CompoundOutputFields.Project(PortValue.Region([new("box",RoiKind.Rectangle,12,13,6,7,AngleDegrees:15)]));
+Check(boxes["ROI.DetectAngle"].As<IReadOnlyList<double>>().Single()==15,"pixel rectangle projects ROIBOX angle");
+Check(CompoundOutputFields.Project(PortValue.Region([new("circle",RoiKind.Circle,12,13,Radius:4)])).Count==0,"unsupported Region shape does not become a fake rectangle");
+Check(CompoundOutputFields.Project(PortValue.Region([new("fixture",RoiKind.Rectangle,12,13,6,7,CoordinateSpace:RoiCoordinateSpace.Fixture)])).Count==0,"Fixture ROI does not silently become pixel coordinates");
+var blobDescriptor=new ModuleDescriptor("test.blobs","1","blobs",[],[new("Components",DataKind.Components)],[]);
+registry.Register(blobDescriptor,()=>new FunctionModule(blobDescriptor,_=>new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"Components",blobs}})));
+var blobGraph=new ProcedureDocument("leaf","leaf",[Node("blob",blobDescriptor.Id),Node("sum",sink.Id)],[],[new("blob","sum")]){Configuration=new(){Subscriptions=[new("sum","values",false,new(WorkflowSourceKind.NodeOutput,"blob","Components.Area"))]}};
+// Number array consumer proves projected leaf data participates in execution.
+var areaSink=new ModuleDescriptor("test.areas","1","areas",[Vector("values",DataKind.Number)],[new("sum",DataKind.Number)],[]);
+registry.Register(areaSink,()=>new FunctionModule(areaSink,c=>new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"sum",PortValue.Number(c.Input<IReadOnlyList<double>>("values").Sum())}})));
+blobGraph=blobGraph with{Nodes=[blobGraph.Nodes[0],Node("sum",areaSink.Id)]};
+var leafRun=await new GraphExecutor(registry).RunAsync(blobGraph,".");
+Check(leafRun.Status==SessionStatus.Success&&leafRun.Nodes[1].Outputs["sum"].As<double>()==10,"compound leaf subscription executes downstream sum");
+var invalidBlob=blobDescriptor with{Id="test.invalid-blobs"};registry.Register(invalidBlob,()=>new FunctionModule(invalidBlob,_=>new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"Components",PortValue.Components([new(1,0,0,0,0,double.NaN,0)])}})));
+var invalidLeafRun=await new GraphExecutor(registry).RunAsync(new("bad-leaf","bad-leaf",[Node("bad",invalidBlob.Id)],[],[]),".");Check(invalidLeafRun.Nodes.Single().ErrorCode=="InvalidOutput"&&invalidLeafRun.Nodes.Single().Outputs.Count==0,"Invalid compound projection is isolated as node InvalidOutput without leaking partial leaves");
 File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{passed=true,count=checks.Count,checks,scope="independent runtime contracts, not native loop parity"},new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine($"PASS {checks.Count} array contract checks; owned Group array sum=12; runtime, subscriptions and roundtrip.");
 sealed class FunctionModule(ModuleDescriptor descriptor,Func<ModuleExecutionContext,ModuleResult> run):IModule{public ModuleDescriptor Descriptor=>descriptor;public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context,CancellationToken token){token.ThrowIfCancellationRequested();return ValueTask.FromResult(run(context));}}

@@ -131,3 +131,7 @@ At the user's request, the original checkout now develops framework and integrat
 - 实际窗口使用真实图像源SN[0,1]，变量索引1在LoopIndex2前中断，并实际返回2圆。来源选择、数字解除/撤销、保存重开和累积关闭后标量运行通过。389项通过后目检发现结果裁切/空白常量框，修复后392项WPF事件通过（57328ms）；最终截图两圆可读、叠加2个圆记录。监护Core115/插件18/主窗关闭exit0。新构建Core和发布程序另附记录。
 - 初次Polarity输入错误、构建命名冲突及过时“圆数组必须拒绝”断言均修正，未计为最终成功。原始完整audit仍忽略，精选证据保持字节哈希。截图助手只在tests，未修改插件工作树及其他任务进程。
 - 全原生复合字段树、未建模类型、缓存时序和实际VM差分仍开放。新发布目录VisionEditor-WpfGroupIndexCompound，最终启动关闭6477ms、exit0，证据由验收表关联。
+
+## 2026-10-17 复合叶字段与并行逆向闭合子集
+
+主线整合并行审查结果：Components部分Blob字段及像素矩形/整环Region叶投影；Group派生叶改名删除传播；Region/Components根来源链按钮订阅Popup；小地图Shift/Ctrl路由。实际BMP threshold128产生784个连通域，两轮面积1568项、总和1710536；保存重开及父输出验证。41数组、93调用、412实际WPF事件通过，退出监控均exit0。源码依据、界面和未闭合项见 compound-leaf-acceptance.html 及四份并行审计报告。未改插件工作树；不代表全类型/原生ABI或完整控件模板等价。用户新增要求：必要闭合节点构建并启动给用户手动验收；发布启动检查通过后保留人工验收实例。

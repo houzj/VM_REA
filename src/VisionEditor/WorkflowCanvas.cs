@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -344,8 +344,10 @@ public partial class MainWindow
     void MiniMapUp(object sender,MouseButtonEventArgs e){eyeDragging=false;MiniMapCanvas.ReleaseMouseCapture();UpdateMiniMap();e.Handled=true;}
     void MiniMapWheel(object sender,MouseWheelEventArgs e)
     {
-        if((Keyboard.Modifiers&ModifierKeys.Control)!=0){var point=e.GetPosition(MiniMapCanvas);var world=new Point(point.X/187*DiagramPageSize,point.Y/150*DiagramPageSize);SetCanvasZoom(scale+(e.Delta>0?.1:-.1),new Point(world.X*scale+panX,world.Y*scale+panY));}
-        e.Handled=true;
+        // ZoomArea.GridEagleEye_PreviewMouseWheel uses the same Shift policy as the main canvas,
+        // before its Ctrl zoom branch (both branches run for Ctrl+Shift).
+        if((Keyboard.Modifiers&ModifierKeys.Shift)!=0){if(e.Delta<0)CanvasScrollViewer.LineRight();else if(e.Delta>0)CanvasScrollViewer.LineLeft();e.Handled=true;}
+        if((Keyboard.Modifiers&ModifierKeys.Control)!=0){var point=e.GetPosition(MiniMapCanvas);var world=new Point(point.X/187*DiagramPageSize,point.Y/150*DiagramPageSize);SetCanvasZoom(scale+(e.Delta>0?.1:e.Delta<0?-.1:0),new Point(world.X*scale+panX,world.Y*scale+panY));}
     }
     void MiniMapToggleClick(object sender,RoutedEventArgs e){eyeExpanded=!eyeExpanded;MiniMapPanel.Visibility=eyeExpanded?Visibility.Visible:Visibility.Collapsed;SetEyeIcon(false);}
     void SetEyeIcon(bool hover)=>((Image)MiniMapToggle.Content).Source=Asset((eyeExpanded?"ic_retract_":"ic_expand_")+(hover?"click.png":"normal.png"));

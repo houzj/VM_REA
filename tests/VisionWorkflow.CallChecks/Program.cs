@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using VisionCore;
 using VisionFramework;
 using VisionModules;
@@ -38,5 +38,6 @@ int disposed=0;var slowDescriptor=new ModuleDescriptor("test.slow","1","slow",[]
 await GroupClipboardChecks.Run(registry,Check);
 await GroupLoopBoundaryChecks.Run(registry,Check);
 await GroupIndexCompoundChecks.Run(registry,Check);
+await CompoundLeafRuntimeChecks.Run(registry,Check);
 File.WriteAllText("analysis/full-audit/subprogram-runtime/results.json",JsonSerializer.Serialize(observations,new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine($"PASS {observations.Count} canvas subprogram checks; real counts365 -> 1; nested calls, failure, cancellation and timeout.");
 sealed class Slow(ModuleDescriptor descriptor,Action disposed):IModule,IAsyncDisposable{public ModuleDescriptor Descriptor=>descriptor;public async ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context,CancellationToken token){await Task.Delay(10000,token);return new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"value",PortValue.Integer(1)}});}public ValueTask DisposeAsync(){disposed();return ValueTask.CompletedTask;}}

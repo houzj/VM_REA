@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using VisionCore;
 namespace VisionFramework;
 public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle, Region, Fixture, Point }
@@ -71,7 +71,7 @@ public sealed class ModuleRegistry {
         var frozen=descriptor with {Inputs=Array.AsReadOnly(descriptor.Inputs.ToArray()),Outputs=Array.AsReadOnly(descriptor.Outputs.ToArray()),Parameters=Array.AsReadOnly(descriptor.Parameters.Select(p=>p with {DefaultValue=p.DefaultValue?.Clone(),Editor=p.Editor is {} e?e with{Fields=e.Fields?.ToArray(),Choices=e.Choices?.Select(c=>c with{Value=c.Value.Clone()}).ToArray(),Roi=e.Roi is {} roi?roi with{Kinds=Array.AsReadOnly(roi.Kinds.ToArray())}:null}:null}).ToArray())};
         if(!modules.TryAdd((frozen.Id,frozen.Version),(frozen,factory)))throw new InvalidOperationException("Duplicate module registration.");
     }
-    public ModuleDescriptor GetDescriptor(NodeDocument node){var descriptor=GetDescriptor(node.ModuleId,node.ModuleVersion);return node.ModuleId==WorkflowCalls.ModuleId?WorkflowCalls.Describe(node):descriptor;}
+    public ModuleDescriptor GetDescriptor(NodeDocument node){var descriptor=GetDescriptor(node.ModuleId,node.ModuleVersion);return CompoundOutputFields.Describe(node.ModuleId==WorkflowCalls.ModuleId?WorkflowCalls.Describe(node):descriptor);}
     public ModuleDescriptor GetDescriptor(string id,string version)=>modules.TryGetValue((id,version),out var item)?item.Descriptor:throw new KeyNotFoundException($"Unknown module: {id}@{version}");
     public IModule Create(string id,string version){var item=modules.TryGetValue((id,version),out var m)?m:throw new KeyNotFoundException($"Unknown module: {id}@{version}");var result=item.Factory()??throw new InvalidOperationException("Module factory returned null.");if(result.Descriptor.Id!=id||result.Descriptor.Version!=version)throw new InvalidOperationException("Module factory identity mismatch.");return result;}
 }

@@ -1,4 +1,4 @@
-using TreeView=System.Windows.Controls.TreeView;
+﻿using TreeView=System.Windows.Controls.TreeView;
 using HorizontalAlignment=System.Windows.HorizontalAlignment;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,12 +27,13 @@ public sealed class WorkflowSourcePicker:Window
   var tree=new TreeView {Margin=new Thickness(18,0,18,10),BorderBrush=System.Windows.Media.Brushes.LightGray,BorderThickness=new Thickness(1)};var checks=new List<(CheckBox Box,WorkflowSourceOption Option)>();setInitial=selected=>{foreach(var item in checks)item.Box.IsChecked=selected(item.Option);};
   foreach(var group in options.GroupBy(item=>item.NodeId))
   {
-   string label=group.First().Label.Contains('.')?group.First().Label[..group.First().Label.LastIndexOf('.')]:group.First().Label;
+   var first=group.First();string suffix="."+first.Port;string label=first.Port.Length>0&&first.Label.EndsWith(suffix,StringComparison.Ordinal)?first.Label[..^suffix.Length]:first.Label;
    var groupBox=new CheckBox {Content=label,IsThreeState=true};var groupChecks=new List<CheckBox>();bool changing=false;
    var parent=new TreeViewItem {Header=multiple?(object)groupBox:label,IsExpanded=true};
    groupBox.Click+=(_,_)=>{changing=true;foreach(var child in groupChecks)child.IsChecked=groupBox.IsChecked==true;changing=false;groupBox.IsChecked=groupChecks.All(c=>c.IsChecked==true);};
    void UpdateGroup(){if(changing||!multiple)return;changing=true;int selected=groupChecks.Count(c=>c.IsChecked==true);groupBox.IsChecked=selected==0?false:selected==groupChecks.Count?true:null;changing=false;}
-   foreach(var option in group){var box=new CheckBox {Content=option.Port.Length==0?option.Label:option.Label.Contains('.')?option.Label[(option.Label.LastIndexOf('.')+1)..]:option.Port,Margin=new Thickness(0,3,0,3)};if(!multiple)box.Checked+=(_,_)=>{foreach(var entry in checks)if(entry.Box!=box)entry.Box.IsChecked=false;};groupChecks.Add(box);box.Checked+=(_,_)=>UpdateGroup();box.Unchecked+=(_,_)=>UpdateGroup();checks.Add((box,option));parent.Items.Add(new TreeViewItem {Header=box});}tree.Items.Add(parent);
+   var branches=new Dictionary<string,TreeViewItem>();
+   foreach(var option in group){var box=new CheckBox {Content=option.Port.Length==0?option.Label:option.Label.Contains('.')?option.Label[(option.Label.LastIndexOf('.')+1)..]:option.Port,Margin=new Thickness(0,3,0,3)};if(!multiple)box.Checked+=(_,_)=>{foreach(var entry in checks)if(entry.Box!=box)entry.Box.IsChecked=false;};groupChecks.Add(box);box.Checked+=(_,_)=>UpdateGroup();box.Unchecked+=(_,_)=>UpdateGroup();checks.Add((box,option));var container=parent;var segments=option.Port.Split('.');string path="";foreach(var segment in segments.Take(segments.Length-1)){path+=segment+".";if(!branches.TryGetValue(path,out var branch)){branch=new TreeViewItem{Header=segment,IsExpanded=true};branches[path]=branch;container.Items.Add(branch);}container=branch;}container.Items.Add(new TreeViewItem {Header=box});}tree.Items.Add(parent);
   }
   ok.Click+=(_,_)=>{var selected=checks.Where(item=>item.Box.IsChecked==true).Select(item=>item.Option).ToArray();if(selected.Length>0){Selections=selected;IncludeModuleName=include.IsChecked==true;DialogResult=true;}};
   root.Children.Add(tree);Content=new Border {Child=root,BorderThickness=new Thickness(1),BorderBrush=System.Windows.Media.Brushes.Black};

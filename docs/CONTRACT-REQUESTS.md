@@ -92,3 +92,6 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - GroupOperand新增可选IndexSource，来源只允许父级前置标量整数；常量Index兼容。运行准备错误不持久化。身份重映射、依赖、清理和Group接口传播一起处理。
 - PortTypes增加Circle/Point/Fixture数组，PortValue新增对应快照工厂、元素枚举和嵌套拼接；原有数值数组/标量行为保持。消费者应按Cardinality验证，不把数组当标量读取；没有修改插件工作树。
 - 这是独立托管协议；原生组合IO按叶字段mode0追加的依据和pointset替换限制见GROUP-INDEX-COMPOUND.md。全复合类型/ABI/叶字段树未完成，不能据此宣称插件线已采用或全部原生等价。
+
+## FCR-012：框架复合叶端口（2026-10-17）
+调用方：Group/订阅选择器及执行器。框架统一提供 CompoundOutputFields.Describe/Project/Expand；节点 GetDescriptor 暴露可选叶端口，执行器发布相同完整路径，插件不需要重复投影。根输出保留。Components和Region不新建根数组ABI；已有数值叶数组可参与Group累积。字段和限制见 COMPOUND-LEAF-MAPPING.md；缺少的原生指标不伪造。插件线如需扩充字段，先提出数据和原生XML依据，不在另一工作树并发修改契约。
