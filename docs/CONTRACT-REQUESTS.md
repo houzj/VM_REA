@@ -80,3 +80,9 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 继承区和Fixture接入main中的真实ImageBinary，不改插件工作树。原InputBlindPolygonString编码和Fixture原生舍入未恢复，详见ROI-DISPLAY-FIXTURE.md；本记录不表示插件线已采用这些接口。
 
 - FCR-009补充：可选ApplyConfigurationChange(values,rois,clearInputs)将参数、ROI和失效订阅合并为一次原子编辑/撤销。关联选择器补充同类型局部变量输入；原ClearInput回调保留兼容。
+
+## FCR-010 — Group引擎步长（框架线，兼容新增）
+
+- GroupLoop增加init属性Step，保留原四个位置构造参数；workflow.subprogram描述符增加可选LoopStep整数，默认1兼容原方案。原生SetParam非零验证和DoWork步长使用已确认，默认值跨版本未确认。
+- 参数和保存格式使用现有Parameters字典，不修改插件实现及专用窗口。原Group XML没有LoopStep控件，禁止据此新增仿原生步长UI。零值拒绝；int32溢出/10000轮限制为独立保护。
+- 依据及复验见GROUP-LOOP-BOUNDARIES.md。此项不要求插件工作树同步改动，也不宣称原生ABI或全部负步长行为等价。

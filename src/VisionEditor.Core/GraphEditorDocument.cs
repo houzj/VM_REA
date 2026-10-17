@@ -189,6 +189,7 @@ public sealed partial class GraphEditorDocument
     public void SetParameter(string id,string name,JsonElement value) {
         var node=Node(id); if(!registry.GetDescriptor(node).Parameters.Any(p=>p.Name==name))throw new ArgumentException("Unknown parameter: "+name);
         if(value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)throw new ArgumentException("A parameter value is required.");
+        if(node.ModuleId==WorkflowCalls.ModuleId&&name=="LoopStep"&&(value.ValueKind!=JsonValueKind.Number||!value.TryGetInt32(out var step)||step==0))throw new ArgumentException("Group LoopStep必须为非零整数。");
         var cloned=value.Clone(); ChangeNode(id,n=> { var parameters=n.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone()); parameters[name]=cloned; return n with {Parameters=parameters}; });
     }
     public void SetParameters(string nodeId,Dictionary<string,JsonElement> values) {

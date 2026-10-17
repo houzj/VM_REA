@@ -114,3 +114,11 @@ At the user's request, the original checkout now develops framework and integrat
 - 最新监护记录workflow-context-image-index-lifecycle：Core115、插件18、真实WPF窗口事件364项及主窗关闭全部exit0；Group调用52项通过。实际BMP三轮累积宽[1296,1296,1296]、序号[17,18,19]，复制品独立[42,43,44]。事件/宿主方法驱动加截图目检，不宣称桌面鼠标或真实VM差分验收。既有ROI24项本批未重跑。中间失败和修正保留在批次报告。
 - 最终发布dist/VisionEditor-WpfWorkflowContext，独立启动关闭5464ms、exit0，启动脚本更新。导出器核对最新监护成功及操作数，避免失败后发布旧成功记录。
 - 原生等待超时仅确认Get/SetProcedureWaitTime及SDK说明；REA能读取二进制，但当前分析器连接未配置。没有猜成流程取消计时器。LoopStep/复合数据/设备回调/.sol往返/全模板/原生视觉差分仍开放，23领域不标完整。未改插件工作树或其他任务进程。
+
+## 2026-10-17 — Group循环、中断与结果状态闭环
+
+- 依据ModuleFrame group-run.c/group-set-param-native.c和安装版IMVSGroupAlgorithmTab.xml，恢复LoopStep非零写入和索引推进，保留index<end条件与末轮等待，不臆造原XML不存在的步长控件。明确缺省1、long推进、int32溢出和10000轮上限的独立边界。单参数和整组零值拒绝均在提交前完成。见GROUP-LOOP-BOUNDARIES.md及源文件SHA256清单。
+- 实际BMP阈值/连通域按20/70/120/170四轮执行，与四次独立单轮输出一致；>=120中断保留前两轮和阈值70图像。保存重开、复制、空/相等/禁用范围、负步长中断和溢出保护已验证，调用专项67项。空循环无必需图像时宿主明确失败，不复用旧图像；原生零轮图像行为未差分。
+- 实际Group窗口使用真实图像源，配置终值来源、中断选择器/运算符/常量，step2执行0/2/4，>=4只完成两轮；长间隔停止后可禁用循环重跑。首轮377项通过后截图发现旧中断红字残留，修复RefreshResults默认清空并添加断言。最终378项窗口事件通过（59989ms）、Core115/插件18/主窗关闭exit0。一次并发发布时90秒超时轮次保留为失败，未把旧成功记录冒充最终。
+- 最终截图目检确认width[1296]、SN[22]且底部旧红字已清除。所有截图助手位于tests；没有改插件工作树或终止其他任务进程。真实VM差分、动态数组索引、复合累积、原生回调和全模板仍开放。
+- 新发布目录VisionEditor-WpfGroupLoop；最终发布启动关闭2426ms、exit0，记录由验收表关联。证据目录禁用Git换行转换，保持导出哈希对应提交字节。

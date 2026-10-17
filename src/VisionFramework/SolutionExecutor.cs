@@ -24,8 +24,9 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
                 if(body.GroupOwner is null)return await Execute(body.Id,values,childToken,depth+1);
                 return await Task.Run(async()=>{
                 var loop=GroupLoop.Read(node);ExecutionSessionResult? last=null;int completed=0;bool broke=false;int? breakIndex=null;var diagnostics=new List<string>();var accumulator=new GroupOutputAccumulator(body);
-                for(long index=loop.Start;index<loop.End;index++){
+                for(long index=loop.Start;index<loop.End;index+=loop.Increment){
                     childToken.ThrowIfCancellationRequested();
+                    if(index<int.MinValue||index>int.MaxValue)throw new InvalidOperationException("Independent Group index overflow guard.");
                     // Independent resource guard; this is not a recovered VM iteration limit.
                     if(completed>=10000)throw new InvalidOperationException("Independent Group iteration limit is 10000.");
                     if(GroupBreak.Evaluate(node,body,last,(int)index,diagnostics,values,(name,element)=>accumulator.ReadSelfElement(name,element,last))){broke=true;breakIndex=(int)index;break;}
