@@ -49,6 +49,19 @@ try
  Check(window.WindowState==WindowState.Maximized&&onBlank.Handled,"Blank header double-click maximizes");
  headerHandler.Invoke(window,[header,onBlank]);Pump();
  Check(window.WindowState==WindowState.Normal,"Blank header double-click restores");
+ var zoomSlider=Find<Slider>("ZoomSlider");var zoomLabel=Find<TextBlock>("ZoomValue");
+ var resetZoom=Find<Button>("ResetCanvasZoomButton");var graphSurface=Find<Grid>("GraphSurface");
+ var zoomDoc=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ long revision=zoomDoc.Revision;
+ zoomSlider.Value=1.5;Pump();
+ Check(Math.Abs(((ScaleTransform)graphSurface.LayoutTransform).ScaleX-1.5)<.001&&zoomLabel.Text=="150%","Status slider changes the actual workflow canvas to 150%");
+ resetZoom.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,resetZoom));Pump();
+ Check(Math.Abs(zoomSlider.Value-1)<.001&&Math.Abs(((ScaleTransform)graphSurface.LayoutTransform).ScaleX-1)<.001&&zoomLabel.Text=="100%","Status zoom command restores the actual canvas and displayed percent to 100%");
+ Check(zoomDoc.Revision==revision,"Viewport zoom reset does not modify workflow content or undo revision");
+ window.UpdateLayout();
+ var statusImage=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);
+ statusImage.Render(window);var statusPng=new PngBitmapEncoder();statusPng.Frames.Add(BitmapFrame.Create(statusImage));
+ Directory.CreateDirectory("analysis/full-audit");using(var file=File.Create("analysis/full-audit/shell-zoom-reset.png"))statusPng.Save(file);
  var run=(Task)typeof(MainWindow).GetMethod("Run",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,null)!;
  var deadline=DateTime.UtcNow.AddSeconds(15);
  while(!run.IsCompleted&&DateTime.UtcNow<deadline){Pump();Thread.Sleep(5);}

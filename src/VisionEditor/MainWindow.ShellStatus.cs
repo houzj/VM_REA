@@ -8,6 +8,10 @@ public partial class MainWindow
 {
  ShellTimeDialog? shellTimeDialog;
 
+ // VMControls.WPF.Base.StatusBar.ZoomCallBackClick selects the 1.0 zoom tick.
+ // The existing WPF slider owns the viewport transform, so reuse that path.
+ void ResetCanvasZoomClick(object sender,RoutedEventArgs e)=>ZoomSlider.Value=1;
+
  void ShowTimeClick(object sender,RoutedEventArgs e)
  {
   shellTimeDialog?.Close();
