@@ -14,7 +14,7 @@ public partial class MainWindow
 
  void ShowTimeClick(object sender,RoutedEventArgs e)
  {
-  shellTimeDialog?.Close();
+  CloseTimeDialog();
   if(!doc.HasCurrentProcedure||doc.CurrentProcedure.Nodes.Count==0)return;
   var procedure=doc.CurrentProcedure;
   workflowSessions.TryGetValue(procedure.Id,out var session);
@@ -26,13 +26,22 @@ public partial class MainWindow
    // native SDK's separate tool and algorithm timings.
    return new ShellTimeDialog.TimeRow(node.Name,(run?.ElapsedMilliseconds??0).ToString("N2"),"—");
   }).ToArray();
-  shellTimeDialog=new ShellTimeDialog(records.Values.Sum(r=>r.ElapsedMilliseconds),rows){Owner=this};
+  var dialog=new ShellTimeDialog(records.Values.Sum(r=>r.ElapsedMilliseconds),rows){Owner=this};
+  shellTimeDialog=dialog;
   ProcedureTabs.SelectionChanged+=CloseTimeOnProcedureChange;
-  shellTimeDialog.Closed+=(_,_)=>{ProcedureTabs.SelectionChanged-=CloseTimeOnProcedureChange;shellTimeDialog=null;};
-  shellTimeDialog.Show();
+  dialog.Closed+=(_,_)=>{if(ReferenceEquals(shellTimeDialog,dialog)){shellTimeDialog=null;ProcedureTabs.SelectionChanged-=CloseTimeOnProcedureChange;}};
+  dialog.Show();
+ }
+ void CloseTimeDialog()
+ {
+  var dialog=shellTimeDialog;
+  if(dialog is null)return;
+  shellTimeDialog=null;
+  ProcedureTabs.SelectionChanged-=CloseTimeOnProcedureChange;
+  dialog.Close();
  }
  void CloseTimeOnProcedureChange(object sender,SelectionChangedEventArgs e)
  {
-  if(ReferenceEquals(e.OriginalSource,ProcedureTabs))shellTimeDialog?.Close();
+  if(ReferenceEquals(e.OriginalSource,ProcedureTabs))CloseTimeDialog();
  }
 }
