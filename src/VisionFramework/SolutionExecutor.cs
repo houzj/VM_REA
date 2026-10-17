@@ -18,6 +18,10 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
         async Task<ExecutionSessionResult> Execute(string id,IReadOnlyDictionary<string,PortValue>? arguments,CancellationToken token,int depth,int? groupLoopIndex=null){
             if(depth>32)throw new InvalidDataException("Independent subprogram depth limit is 32.");
             var procedure=document.Procedures.SingleOrDefault(p=>p.Id==id)??throw new InvalidDataException("Unknown procedure: "+id);
+            using var wait=new CancellationTokenSource();
+            if(procedure.WaitTimeMs>0)wait.CancelAfter(procedure.WaitTimeMs);
+            using var linked=CancellationTokenSource.CreateLinkedTokenSource(token,wait.Token);
+            var runToken=linked.Token;
             async Task<ExecutionSessionResult> Call(NodeDocument node,IReadOnlyDictionary<string,PortValue> values,CancellationToken childToken){
                 var body=document.Procedures.Single(p=>p.Id==node.Call!.ProcedureId);
                 // Legacy cross-flow calls retain one-shot behavior. Native Group loops own their body.
@@ -38,7 +42,17 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
                 return (last??new ExecutionSessionResult(SessionStatus.Success,[])) with{CompletedGroupIterations=completed,GroupBroke=broke,GroupBreakIndex=breakIndex,GroupDiagnostics=diagnostics.AsReadOnly(),WorkflowOutputs=accumulator.Finish(last),WorkflowDisplays=accumulator.FinishDisplays()};
                 },childToken);
             }
-            return (await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,token,arguments,Call,groupLoopIndex)) with{GroupLoopIndex=groupLoopIndex};
+            try
+            {
+                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex);
+                if(wait.IsCancellationRequested&&!token.IsCancellationRequested&&session.Status==SessionStatus.Cancelled)
+                    session=session with{Status=SessionStatus.TimedOut,Nodes=session.Nodes.Select(n=>n.Status==NodeRunStatus.Cancelled?n with{Status=NodeRunStatus.TimedOut,ErrorCode="ProcedureWaitTimeout",Message="Procedure wait time elapsed"}:n).ToArray()};
+                return session with{GroupLoopIndex=groupLoopIndex};
+            }
+            catch(OperationCanceledException) when(wait.IsCancellationRequested&&!token.IsCancellationRequested)
+            {
+                return new ExecutionSessionResult(SessionStatus.TimedOut,[]){GroupLoopIndex=groupLoopIndex};
+            }
         }
         return await Execute(procedureId,inputs,cancellationToken,0);
     }

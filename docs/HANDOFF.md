@@ -143,3 +143,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-17 两线节点框架边界重整
 
 用户要求两项目并行逆向，并明确插件开发所需的节点公共配置框架也在插件工作树内推进。main新增 PLUGIN-FRAMEWORK-BOUNDARY.md 和 PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.md：当前main承担集成管理与任务登记，插件线负责公共配置模型/模板/宿主/配置执行及具体工具，main负责画布/Group/流程/工具发现与最终集成。只读查看插件工作树1d66877及其未提交在制文件，未修改该工作树，也未将其实现计入main完成项。MainWindow、Contracts、GraphExecutor、GraphValidator、WorkflowSubscriptions及配置宿主入口列为共享文件交界；按单一提交所有者和交付提交逐项合流，保留原生证据、托管验证和原厂差分的独立状态。此批仅更新任务清单与边界，无产品代码改动或测试通过声明。
+
+## 2026-10-17 主框架继续：流程等待超时
+
+按`TimeOutSet.xaml/.cs`和`VmProcedureDecorator.SetTimeOutCommandExe`恢复流程菜单入口、370×200配置窗口、0—100000毫秒读写与独立方案持久化。托管执行使用独立的协作取消/清理实现，原生SDK后端的超时语义仍未知，不能称为原生调度等价。证据、已验证范围及缺口见PROCEDURE-WAIT-TIME.md。此批只修改main所有的流程/文档/执行器文件，不改插件工作树。

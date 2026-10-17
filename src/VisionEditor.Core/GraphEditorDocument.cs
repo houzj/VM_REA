@@ -58,6 +58,11 @@ public sealed partial class GraphEditorDocument
         var p=Procedure(id);if(p.ContinuousRunIntervalMs==intervalMs&&p.StopOnNg==stopOnNg)return;
         Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==id?p with{ContinuousRunIntervalMs=intervalMs,StopOnNg=stopOnNg}:p).ToArray()});
     }
+    public void SetProcedureWaitTime(string id,int waitTimeMs) {
+        if(waitTimeMs is <0 or >100000)throw new ArgumentOutOfRangeException(nameof(waitTimeMs));
+        var p=Procedure(id);if(p.WaitTimeMs==waitTimeMs)return;
+        Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==id?p with{WaitTimeMs=waitTimeMs}:p).ToArray()});
+    }
     public void SetWorkflowConfiguration(string id,WorkflowConfiguration configuration) {
         var p=Procedure(id);configuration=configuration with{Subscriptions=configuration.Subscriptions.Where(b=>b.Source.Kind!=WorkflowSourceKind.WorkflowInput||configuration.Inputs.Any(i=>i.Id==b.Source.Id)).ToArray()};if(p.GroupOwner is not null)configuration=GroupDisplayLinks.Synchronize(p.Configuration,configuration);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();
         if(JsonSerializer.Serialize(p.Configuration)==JsonSerializer.Serialize(snapshot))return;

@@ -235,7 +235,7 @@ public partial class MainWindow
         ng.Click+=(_,e)=>{if(!ReferenceEquals(e.OriginalSource,ng))return;if(CanOperateProcedureMenu(id))toggle.IsChecked=toggle.IsChecked!=true;};
         menu.Items.Add(ng);
         Item("重命名", () => RenameProcedure(id));
-        Item("流程超时设置", null, "流程级超时尚未接入");
+        Item("流程超时设置", () => SetProcedureWaitTime(id));
         return menu;
     }
 
@@ -250,6 +250,16 @@ public partial class MainWindow
         ResetEditingGesture();parameterEditorOpen=true;
         bool applied;try{applied=dialog.ShowDialog()==true;}finally{parameterEditorOpen=false;}
         if(applied&&CanEditProcedure(id))doc.SetProcedureRunPolicy(id,dialog.IntervalMs,p.StopOnNg);
+    }
+
+    void SetProcedureWaitTime(string id)
+    {
+        if(!CanEditProcedure(id))return;
+        var p=doc.Document.Procedures.First(p=>p.Id==id);
+        var dialog=new WorkflowWaitTimeWindow(p.WaitTimeMs){Owner=this};
+        ResetEditingGesture();parameterEditorOpen=true;
+        bool applied;try{applied=dialog.ShowDialog()==true;}finally{parameterEditorOpen=false;}
+        if(applied&&CanEditProcedure(id))doc.SetProcedureWaitTime(id,dialog.WaitTimeMs);
     }
 
     // VmModuleBaseDecorator.DeleteItemCommandExecute(bool isShowWarn).

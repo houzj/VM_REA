@@ -41,6 +41,13 @@ static class WorkflowContextChecks
   Invoke("InvalidateToolDebugResult","flow-a","shared-node");
   check(Inputs("flow-a").Count==0&&Inputs("flow-b").Single().Outputs["Width"].As<long>()==22,"一个流程的节点失效不会清除另一流程的同 ID 结果");
   doc.NewSolution();var root=doc.CurrentProcedureId;var retainedMenu=(System.Windows.Controls.ContextMenu)Invoke("ProcedureMenu",root)!;
+  Exception? waitEditorError=null;
+  host.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>{WorkflowWaitTimeWindow? editor=null;try{editor=Application.Current.Windows.OfType<WorkflowWaitTimeWindow>().Single();var value=(VisionPlugins.ImageSource.WpfNumericControl)editor.FindName("WaitTime");value.Text="35";Capture(editor,"wpf-procedure-wait-time.png");Children(editor).OfType<Button>().Single(b=>Equals(b.Content,"确定")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));}catch(Exception e){waitEditorError=e;editor?.Close();}}));
+  retainedMenu.Items.OfType<System.Windows.Controls.MenuItem>().Single(m=>Equals(m.Header,"流程超时设置")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent));Pump();if(waitEditorError is not null)throw waitEditorError;
+  check(doc.CurrentProcedure.WaitTimeMs==35,"真实流程菜单打开等待超时窗口并提交毫秒值");
+  var waitPath=Path.GetFullPath("analysis/full-audit/wpf-procedure-wait-time.vmx.json");doc.Save(waitPath);doc.Load(waitPath);Pump();
+  check(doc.CurrentProcedure.WaitTimeMs==35,"流程等待超时保存重开后仍参与方案配置");
+  doc.SetProcedureWaitTime(root,0);
   doc.SetWorkflowConfiguration(root,new(){Groups=[new("g","分组0")],Variables=[new("limit","g","循环终值","int","3")]});
   var group=doc.AddNode(WorkflowCalls.ModuleId,WorkflowCalls.Version,200,200);var body=doc.EnterOwnedGroup(group);
   var source=doc.AddNode("vision.image-source","1.0.0",150,150,new(){["ImagePaths"]=JsonSerializer.SerializeToElement(JsonSerializer.Serialize(new[]{Path.GetFullPath("analysis/images/circle-find-sample.bmp")}))});
