@@ -22,6 +22,7 @@ public partial class MainWindow
     readonly Dictionary<string, Border> procedureHeaders = new();
     readonly Dictionary<string,string> workflowHeaderStates=new();
     bool refreshingWorkflowTabs,workflowOverview;
+    string? focusedProcedureId;
     System.Windows.Controls.Primitives.Popup? workflowListPopup;
 
     WorkflowImageButton WorkflowIcon(string stem,string tip,Action? action,bool enabled=true)
@@ -40,7 +41,15 @@ public partial class MainWindow
     void WorkflowSelectionChanged(object sender,SelectionChangedEventArgs e)
     {
         if(refreshingWorkflowTabs||!ReferenceEquals(e.Source,ProcedureTabs))return;
-        if(ProcedureTabs.SelectedItem is TabItem {Tag:string id})SelectWorkflow(id);
+        if(ProcedureTabs.SelectedItem is TabItem {Tag:string id} tab)
+        {
+            // ProcedureConfigControl.m_ProcessTabControl_SelectionChanged focuses
+            // the selected item first; the ScrollViewer then applies its edge allowance.
+            tab.Focus();
+            Keyboard.ClearFocus();
+            focusedProcedureId=id;
+            SelectWorkflow(id);
+        }
     }
     void SelectWorkflow(string id)
     {
@@ -136,18 +145,35 @@ public partial class MainWindow
         RenderGraph();
         RefreshRight();
         Dispatcher.BeginInvoke(new Action(UpdateProcedureOverflow));
-        Dispatcher.BeginInvoke(new Action(EnsureSelectedProcedureVisible));
+        if(ProcedureTabs.SelectedItem is TabItem {Tag:string selectedId} selectedTab&&focusedProcedureId!=selectedId)
+        {
+            focusedProcedureId=selectedId;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if(!ReferenceEquals(ProcedureTabs.SelectedItem,selectedTab)||!selectedTab.IsVisible)return;
+                // Unlike the original template's ScrollViewer, our outer
+                // ScrollViewer does not reveal an off-screen item on Focus alone.
+                selectedTab.BringIntoView();
+                selectedTab.Focus();
+                Keyboard.ClearFocus();
+                if(ProcedureTabs.Items.IndexOf(selectedTab)==0)
+                    ProcedureTabScroll.ScrollToHorizontalOffset(0);
+                EnsureSelectedProcedureVisible();
+            }));
+        }
     }
 
     // ProcedureConfigControl.m_ProcessTabControl_SelectionChanged / Sv_ScrollChanged:
-    // keep the selected tab visible with a 30-unit edge allowance.
+    // adjust only a selected tab already inside the viewport and within 30
+    // units of an edge. Focus handles a tab that starts entirely off-screen.
     void EnsureSelectedProcedureVisible()
     {
         if(ProcedureTabs.SelectedItem is not TabItem tab||!tab.IsVisible||ProcedureTabScroll.ViewportWidth<=0)return;
         var position=tab.TransformToAncestor(ProcedureTabScroll).Transform(new System.Windows.Point());
+        if(position.X<0||position.X>ProcedureTabScroll.ViewportWidth)return;
         double offset=ProcedureTabScroll.HorizontalOffset;
-        if(position.X<30)offset+=position.X-30;
-        else if(position.X+tab.ActualWidth>ProcedureTabScroll.ViewportWidth-30)offset+=position.X+tab.ActualWidth-ProcedureTabScroll.ViewportWidth+30;
+        if(Math.Abs(position.X)<30)offset-=30;
+        if(Math.Abs(position.X+tab.ActualWidth-ProcedureTabScroll.ViewportWidth)<30)offset+=30;
         ProcedureTabScroll.ScrollToHorizontalOffset(Math.Max(0,offset));
     }
 

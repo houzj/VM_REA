@@ -53,7 +53,12 @@ public static class GroupBreak {
   if(left.Kind!=kind||right.Kind!=kind||left.Cardinality!=ValueCardinality.Scalar||right.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException("Break comparison type mismatch.");int order;bool equal;
   if(kind==DataKind.Text){var a=Encoding.UTF8.GetBytes(left.As<string>());var b=Encoding.UTF8.GetBytes(right.As<string>());order=a.AsSpan().SequenceCompareTo(b);equal=order==0;}
   else if(kind==DataKind.Number){float a=(float)left.As<double>(),b=(float)right.As<double>();if(!float.IsFinite(a)||!float.IsFinite(b))throw new InvalidDataException("Break float operand exceeds native range.");order=a.CompareTo(b);equal=MathF.Abs(a-b)<1.1920929E-07f;}
-  else{if(left.As<long>() is <int.MinValue or >int.MaxValue||right.As<long>() is <int.MinValue or >int.MaxValue)throw new InvalidDataException("Break integer operand exceeds native int32 range.");var a=(int)left.As<long>();var b=(int)right.As<long>();order=a.CompareTo(b);equal=a==b;}
+  else{if(left.As<long>() is <int.MinValue or >int.MaxValue||right.As<long>() is <int.MinValue or >int.MaxValue)throw new InvalidDataException("Break integer operand exceeds native int32 range.");
+   // CGroupNode::IsBreakLoop stores CmpSrcInt/CmpDstInt as float32. Equality
+   // compares those float values; ordering converts each rounded value to int.
+   // This intentionally loses integer precision above 2^24, as the native code does.
+   var a=(float)(int)left.As<long>();var b=(float)(int)right.As<long>();
+   order=((int)a).CompareTo((int)b);equal=a==b;}
   return operation switch{1=>order>0,2=>order<0,3=>equal,4=>kind==DataKind.Number?(float)left.As<double>()!=(float)right.As<double>():!equal,5=>order>=0,6=>order<=0,_=>throw new InvalidDataException("Unknown Group comparison operator.")};
  }
 }

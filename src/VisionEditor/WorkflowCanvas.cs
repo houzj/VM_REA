@@ -338,9 +338,9 @@ public partial class MainWindow
     {
         Point point=e.GetPosition(MiniMapCanvas);var rect=new Rect(Canvas.GetLeft(MiniMapViewport),Canvas.GetTop(MiniMapViewport),MiniMapViewport.Width,MiniMapViewport.Height);eyeDragging=true;
         if(!rect.Contains(point))NavigateMiniMap(new Point(point.X-rect.Width/2,point.Y-rect.Height/2));
-        eyePointerStart=point;eyeRegionStart=new Point(Canvas.GetLeft(MiniMapViewport),Canvas.GetTop(MiniMapViewport));MiniMapCanvas.CaptureMouse();e.Handled=true;
+        eyePointerStart=point;eyeRegionStart=new Point(Canvas.GetLeft(MiniMapViewport),Canvas.GetTop(MiniMapViewport));e.Handled=true;
     }
-    void MiniMapMove(object sender,MouseEventArgs e){if(!eyeDragging||e.LeftButton!=MouseButtonState.Pressed)return;NavigateMiniMap(eyeRegionStart+(e.GetPosition(MiniMapCanvas)-eyePointerStart));e.Handled=true;}
+    void MiniMapMove(object sender,MouseEventArgs e){if(!eyeDragging||e.LeftButton!=MouseButtonState.Pressed)return;var point=e.GetPosition(MiniMapCanvas);if(point==eyePointerStart)return;if(!MiniMapCanvas.IsMouseCaptured)MiniMapCanvas.CaptureMouse();NavigateMiniMap(eyeRegionStart+(point-eyePointerStart));e.Handled=true;}
     void MiniMapUp(object sender,MouseButtonEventArgs e){eyeDragging=false;MiniMapCanvas.ReleaseMouseCapture();UpdateMiniMap();e.Handled=true;}
     void MiniMapWheel(object sender,MouseWheelEventArgs e)
     {

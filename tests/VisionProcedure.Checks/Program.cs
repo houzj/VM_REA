@@ -32,4 +32,23 @@ string other=editor.AddProcedure("Other"); editor.SelectProcedure(main); editor.
 long revision=editor.Revision; Reject(()=>editor.RenameProcedure(main," ")); Reject(()=>editor.DuplicateProcedure("missing")); Reject(()=>editor.DeleteProcedure("missing")); Check(editor.Revision==revision,"Rejected edits are atomic");
 var path=Path.Combine(Path.GetTempPath(),"procedure-check-"+Guid.NewGuid().ToString("N")+".json");
 try{editor.DuplicateProcedure(main);editor.Save(path);var loaded=new GraphEditorDocument(registry);loaded.Load(path);Check(loaded.Document.Procedures.Count==2 && loaded.Document.Procedures[1].Connections.Count==1,"Persistence");}finally{File.Delete(path);}
+// Independent .vmx.json save-as must keep resource identity while changing the base directory.
+string migrationRoot=Path.Combine(Path.GetTempPath(),"procedure-resource-"+Guid.NewGuid().ToString("N"));
+try {
+    string oldDir=Path.Combine(migrationRoot,"old"),newDir=Path.Combine(migrationRoot,"new"),assetDir=Path.Combine(oldDir,"assets");
+    Directory.CreateDirectory(assetDir);Directory.CreateDirectory(newDir);
+    byte[] payload=[1,3,5,7,9];File.WriteAllBytes(Path.Combine(assetDir,"sample.bin"),payload);
+    string oldPath=Path.Combine(oldDir,"original.vmx.json"),newPath=Path.Combine(newDir,"copy.vmx.json");
+    var solution=new SolutionDocument(SolutionStore.CurrentVersion,"resource-case","resource-case",[new ProcedureDocument("p","p",[],[])],[new ResourceDocument("sample","assets/sample.bin")]);
+    SolutionStore.Save(oldPath,solution);
+    var migrated=new GraphEditorDocument(registry);migrated.Load(oldPath);migrated.Save(newPath);
+    var reopened=SolutionStore.OpenWorkspace(newPath);
+    using(var stream=new ResourceCatalog(reopened.BaseDirectory,reopened.Document.Resources).OpenVerified("sample"))
+        Check(File.Exists(newPath)&&stream.ReadByte()==1,"Save-as rebases relative resource without losing bytes");
+    Check(SolutionStore.Load(oldPath).Resources.Single().Path=="assets/sample.bin"&&migrated.Document.Resources.Single().Path==Path.GetRelativePath(newDir,Path.Combine(assetDir,"sample.bin")),"Save-as preserves original solution and updates editor resource base");
+    var priorFile=migrated.FilePath;var priorBase=migrated.BaseDirectory;var priorRevision=migrated.Revision;
+    migrated.PrepareSave=(_,_)=>throw new InvalidDataException("prepare failure");
+    try{migrated.Save(Path.Combine(newDir,"failed.vmx.json"));throw new Exception("Expected prepare failure");}catch(InvalidDataException){}
+    Check(migrated.FilePath==priorFile&&migrated.BaseDirectory==priorBase&&migrated.Revision==priorRevision&&!File.Exists(Path.Combine(newDir,"failed.vmx.json")),"Failed preparation leaves editor and output unchanged");
+}finally{if(Directory.Exists(migrationRoot))Directory.Delete(migrationRoot,true);}
 Console.WriteLine($"PASS {checks} procedure management checks");

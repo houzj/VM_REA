@@ -164,3 +164,12 @@ At the user's request, the original checkout now develops framework and integrat
 
 按`TimeOutSet.xaml/.cs`和`VmProcedureDecorator.SetTimeOutCommandExe`恢复流程菜单入口、370×200配置窗口、0—100000毫秒读写与独立方案持久化。托管执行使用独立的协作取消/清理实现，原生SDK后端的超时语义仍未知，不能称为原生调度等价。证据、已验证范围及缺口见PROCEDURE-WAIT-TIME.md。此批只修改main所有的流程/文档/执行器文件，不改插件工作树。
 
+## 2026-10-17 主框架四线并行：Tab、小地图、Group比较与方案边界
+
+- 共同起点 `0f3a1d45fa34f7343ad81d705fe962f5a5bc53c7`。按文件所有权并行取证与编辑，构建/实际 WPF 操作串行验证；未修改插件工作树。四线没有把通过检查等同于 VM 全域等价。
+- 工作流 Tab：依据原 `ProcedureConfigControl` 选中与滚动事件，恢复选中聚焦、近边界固定30单位补滚。程序化离屏 Tab 的 `BringIntoView` 与首 Tab 归零是本宿主适配，详见 `WORKFLOW-TAB-SCROLL-EVIDENCE.md`。
+- 小地图：依据原 `ZoomArea.GridEagleEye_MouseDown/MouseMove`，按下仅记录起点，首次实际移动才捕获鼠标。独立 WPF 宿主检查通过；真实硬件拖动、DPI 与原 VM 同状态差分未完成，见 `MINIMAP-POINTER-CAPTURE-EVIDENCE.md`。
+- Group 中断：依据原 `CGroupNode::IsBreakLoop`，整数操作数先转 float32；高位相邻整数可能比较相等。直接与实际 Group 运行检查 57 项通过。LoopStep 的 int32 环绕仍与本项目有界 long 推进不同，见 `GROUP-BREAK-INTEGER-FLOAT32.md`。
+- 方案存储：反编译确认原生保存/加载在托管层转交 SDK；不能由托管源码推出 `.sol/.solx` 格式。本项目 `.vmx.json` 的相对资源另存、重开和准备失败回滚新增实际检查；23 项流程管理检查通过，见 `SOLUTION-PERSISTENCE-BOUNDARY.md`。
+- 完整 WPF 操作链 456 项、框架执行 68 项通过；解决方案含新小地图与 Group 专项项目并以0警告0错误构建。截图 `analysis/full-audit/wpf-workflow-parity.png` 已目检，界面仍存在与原生 VM 的开放差异。完整桌面鼠标、原生方案往返、极值/多屏差分未验收。
+
