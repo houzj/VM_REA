@@ -148,6 +148,16 @@ static class Program
             var npointRun=npointServices.Run(npointNode.Parameters);while(!npointRun.IsCompleted)Pump();Check(npointRun.Result.Status==VisionFramework.NodeRunStatus.Success&&npointRun.Result.Outputs["CalibCurIndex"].As<long>()==2,"N-point self-run consumes array constants");
             Check(!Find<ComboBox>("ImageSelector").Items.Cast<ComboBoxItem>().Any(item=>(string?)item.Tag==npointNode.Id),"N-point does not masquerade as an image source");
             document.Undo();Pump();Check(npointServices.InputNumbers!("ImagePointY") is null,"N-point array edit participates in undo");document.Undo();Pump();document.Undo();Pump();
+            var translationData=(DataObject)Invoke("CreateToolDragData","vision.translation-calibration")!;
+            var translationDrag=(DragEventArgs)Activator.CreateInstance(typeof(DragEventArgs),BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[translationData,DragDropKeyStates.LeftMouseButton,DragDropEffects.Move,Find<Canvas>("GraphLayer"),new Point(175,115)],null)!;
+            translationDrag.RoutedEvent=DragDrop.DropEvent;Invoke("ToolDrop",Find<Canvas>("GraphLayer"),translationDrag);Pump();
+            var translationNode=document.CurrentProcedure.Nodes.Last();Check(translationNode.ModuleId=="vision.translation-calibration"&&translationNode.Parameters["CalibType"].GetInt32()==0&&translationNode.Parameters["RotPointTotalNum"].GetInt32()==0,"Translation drop uses original native type and rotation defaults");
+            var translationServices=(VisionPluginContracts.ToolEditorContext)Invoke("ConnectToolEditorServices",new VisionPluginContracts.ToolEditorContext(translationNode,document.BaseDirectory,_=>{},_=>throw new NotSupportedException()),translationNode.Id)!;
+            translationServices.SetInputNumbers!("ImagePointX",new[]{0d,10});translationServices.SetInputNumbers!("ImagePointY",new[]{0d,0});Pump();
+            Check(translationServices.InputNumbers!("ImagePointX")!.SequenceEqual(new[]{0d,10}),"Translation numeric-array subscriptions reach the plugin");
+            var translationRun=translationServices.Run(translationNode.Parameters);while(!translationRun.IsCompleted)Pump();Check(translationRun.Result.Status==VisionFramework.NodeRunStatus.Success&&translationRun.Result.Outputs["CalibCurIndex"].As<long>()==2,"Translation host self-run retains partial point state");
+            Check(translationRun.Result.Outputs["WorldPointX"].As<IReadOnlyList<double>>().All(v=>v==0),"Translation missing physical coordinates preserve zero instead of generating N-point grid");
+            document.Undo();Pump();Check(translationServices.InputNumbers!("ImagePointY") is null,"Translation input edit participates in undo");document.Undo();Pump();document.Undo();Pump();
             var tabs=Find<TabControl>("ProcedureTabs");
             Check(tabs.Items.Count==document.Document.Procedures.Count,"Tab count matches actual document");
             var originalTab=tabs.Items[0];Invoke("RefreshAll");Pump();Check(ReferenceEquals(originalTab,tabs.Items[0]),"Unchanged refresh preserves actual TabItem identity");

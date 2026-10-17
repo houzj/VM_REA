@@ -125,3 +125,5 @@ The following supersedes earlier unavailable/pending implementation descriptions
 - CAL-002：原厂N点官方SDK导出CalibInfo/CalibOutputParam/CalibMatrix确认3×3 image→world矩阵。新增末尾DataKind.Calibration与只读CalibrationData，保存矩阵方向和生产来源。生命周期是当次执行结果；配置持久化仍走插件文件/参数，不宣称SOL二进制兼容。后续标定加载/转换复用此类型，完整原厂动态参数结构另行审计。
 - CAL-003：标定编辑器需要浮点输入常量（含数组）及参数订阅、点表编辑/清空/文件命令。由本worktree补充宿主能力，保留现有整数/文本常量行为；数值常量/数组常量订阅已实现，并沿用文档事务及撤销；点表命令留在专属插件。N点命令时机见n-point-state-evidence.json与n-point-file-evidence.json，N图像仍按独立证据收尾。
 - CAL-001补充：原厂GetFloat与BatchGetFloat共用输入名，单个float是长度1的点坐标序列。Number可单向提升为NumberArray，GraphExecutor、当前模块自执行及流程接口在边界实际构造只读单元素数组；不允许数组隐式降为标量，整数也不自动当float。这样原有定位/变量的float能用于N点逐点采集。
+
+- CAL-004（平移旋转标定，已接通）：TranslationPlugin复用NumberArray/Text/Calibration及现有会话、订阅、撤销、保存和自执行接口，无新增共享类型。原厂示教端口为TeachFlag，完成结果为IsRightCoorA；不能复用N点的TeachFlagInput/CalibErrStatus输出名。专属文件内部原点有写入副作用，由插件状态维护，不进入通用矩阵契约。

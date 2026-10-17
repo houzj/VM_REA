@@ -30,7 +30,7 @@
 |P1|Calibration|IMVSMapCalibModu|映射标定|6/9/17|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, ImageViewConfig, Integer, OpenFileDialog, OpenFileForCalibDialog, RadioSelecter, RadioSelecterEx2, ROISelecter, SaveFileDialog, String|声明已清点；语义与运行待逆向|
 |P1|Calibration|ReadCalibFileModu|标定加载|2/10/12|Boolean, ButtonSelecter, OpenFileDialog4ReadFile, ReadFileConfigData|声明已清点；语义与运行待逆向|
 |P1|Calibration|RotateCalibModu|旋转标定|1/5/7|Boolean, ButtonSelecter, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
-|P1|Calibration|TranslationCalibModu|平移旋转标定|8/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|已按用户授权新增并行逆向线：先核对与N点的差异、源码/资源及原厂受控运行，再独立实现与验证；未闭合|
+|P1|Calibration|TranslationCalibModu|平移旋转标定|8/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|代码范围已实现：48原厂场景/26文件尝试24XML/12原厂UI规则和点表，专属7447检查、实际WPF267检查；独立组合补偿/示教/文件副作用，数值/桌面边界见TRANSLATION-CALIBRATION.md|
 |P1|Calibration|CoordinateModule|坐标系|2/4/6|ButtonSelecter, RadioSelecterEx2, RadioSelecterEx3, ROISelecter|声明已清点；语义与运行待逆向|
 |P2|ColorProcessing|IMVSColorExtractModu|颜色抽取|4/4/7|Boolean, ColorExtractList, FloatBettween, GroupLinkItem, ImageViewConfig, ROISelecter|声明已清点；语义与运行待逆向|
 |P2|ColorProcessing|IMVSColorImageGenerationModu|彩图生成|1/3/3|Enumeration, EnumerationG|声明已清点；语义与运行待逆向|
