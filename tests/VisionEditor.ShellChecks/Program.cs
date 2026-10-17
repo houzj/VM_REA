@@ -5,8 +5,11 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using VisionEditor;
+using VisionEditor.Core;
+using VisionFramework;
 
 static class Program
 {
@@ -46,6 +49,28 @@ try
  Check(window.WindowState==WindowState.Maximized&&onBlank.Handled,"Blank header double-click maximizes");
  headerHandler.Invoke(window,[header,onBlank]);Pump();
  Check(window.WindowState==WindowState.Normal,"Blank header double-click restores");
+ var run=(Task)typeof(MainWindow).GetMethod("Run",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,null)!;
+ var deadline=DateTime.UtcNow.AddSeconds(15);
+ while(!run.IsCompleted&&DateTime.UtcNow<deadline){Pump();Thread.Sleep(5);}
+ Check(run.IsCompletedSuccessfully,"Actual workflow run completes before opening timing view");
+ var document=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ var sessions=(Dictionary<string,ExecutionSessionResult>)typeof(MainWindow).GetField("workflowSessions",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ Check(sessions.TryGetValue(document.CurrentProcedureId,out var session)&&session.Nodes.Count>0,"Timing view has real workflow execution records");
+ var showTime=Find<Button>("ShowTimeButton");showTime.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,showTime));Pump();
+ var detail=window.OwnedWindows.OfType<ShellTimeDialog>().Single();
+ detail.UpdateLayout();var dialogContent=(FrameworkElement)detail.Content;
+ var bitmap=new RenderTargetBitmap((int)Math.Ceiling(dialogContent.ActualWidth),(int)Math.Ceiling(dialogContent.ActualHeight),96,96,PixelFormats.Pbgra32);
+ bitmap.Render(dialogContent);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));
+ using(var file=File.Create("analysis/full-audit/shell-time-dialog.png"))png.Save(file);
+ var timingRows=(ListView)detail.FindName("TimingList");
+ Check(timingRows.Items.Count==document.CurrentProcedure.Nodes.Count,"Timing detail shows the active procedure's actual nodes");
+ var actual=session!.Nodes.ToDictionary(n=>n.NodeId);var first=document.CurrentProcedure.Nodes.First(n=>actual.ContainsKey(n.Id));
+ var row=timingRows.Items.Cast<ShellTimeDialog.TimeRow>().First(r=>r.Name==first.Name);
+ Check(row.ModuleTime==actual[first.Id].ElapsedMilliseconds.ToString("N2")&&row.AlgorithmTime=="—","Timing row uses measured module duration and marks unavailable algorithm duration");
+ showTime.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,showTime));Pump();
+ Check(window.OwnedWindows.OfType<ShellTimeDialog>().Count()==1,"Repeated timing command replaces the prior detail window");
+ document.AddProcedure("耗时检查流程");Pump();
+ Check(!window.OwnedWindows.OfType<ShellTimeDialog>().Any(),"Changing the active procedure closes stale timing details");
  Console.WriteLine("Shell command and input checks passed.");
 }
 finally{window.Close();app.Shutdown();}
