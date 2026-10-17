@@ -49,7 +49,7 @@ public partial class WorkflowLocalVariablesWindow:Window
   var c=read().Configuration;var original=c.Variables.FirstOrDefault(v=>v.Id==row.Id);if(original is null)return;string type=row.Type;string value=original.SourceNode is not null&&type==original.Type?original.Value:row.Value;
   if(type!=original.Type){if(type=="string")value="";else if(type=="byte")value="00";else{try{value=WorkflowConfiguration.NormalizeValue(type,value);}catch{value=type=="float"?"0.0":type=="byte"?"00":"0";}}}
   var updated=original with{Name="%"+row.Name.Trim('%')+"%",Type=type,Value=WorkflowConfiguration.NormalizeValue(type,value),Remark=row.Remark,SourceNode=type==original.Type?original.SourceNode:null,SourcePort=type==original.Type?original.SourcePort:null};
-  save(c with{Variables=c.Variables.Select(v=>v.Id==row.Id?updated:v).ToArray()});
+  save(c with{Variables=c.Variables.Select(v=>v.Id==row.Id?updated:v).ToArray(),Subscriptions=type==original.Type?c.Subscriptions:c.Subscriptions.Where(b=>b.Source.Kind!=WorkflowSourceKind.LocalVariable||b.Source.Id!=row.Id).ToArray()});
  }
  void TypeChanged(object sender,SelectionChangedEventArgs e){if(refreshing||sender is not ComboBox {DataContext:Row row}||read().Configuration.Variables.FirstOrDefault(v=>v.Id==row.Id)?.Type==row.Type)return;Safe(()=>{Commit(row);RefreshRows();});}
  void Refresh()
