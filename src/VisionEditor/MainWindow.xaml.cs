@@ -65,7 +65,16 @@ public partial class MainWindow : Window
  ImageSource? ToolAsset(string id){if(id==WorkflowCalls.ModuleId)return Asset("catalog/IMVSGroupImageEnable.png");var name=plugins.Find(id)?.Manifest.Icon??("tool-"+id.Replace("vision.","")+".png");try{return Asset(name);}catch{return null;}}
  void AddModule(string id){int n=doc.CurrentProcedure.Nodes.Count;double x=Math.Max(32,(CanvasViewport.ActualWidth/2-60)/scale)+(n%3)*28;double y=Math.Max(32,(CanvasViewport.ActualHeight/2-30)/scale)+(n%3)*28;AddModuleAt(id,x,y);}
  void AddModuleAt(string id,double x,double y,string? predecessor=null){if(!EditableCanvas){StatusText.Text="当前工作流不可编辑";return;}var d=modules.Descriptors.First(v=>v.Id==id);var node=doc.AddNode(id,d.Version,Math.Max(0,x),Math.Max(0,y),Defaults(d),predecessor);selected=node;StatusText.Text="已添加 "+d.DisplayName;}
- void HeaderMouseDown(object sender,MouseButtonEventArgs e){if(e.ChangedButton==MouseButton.Left){if(e.ClickCount==2)MaximizeWindow(sender,e);else DragMove();}}
+ void HeaderMouseDown(object sender,MouseButtonEventArgs e)
+ {
+  if(e.ChangedButton!=MouseButton.Left||e.OriginalSource is not DependencyObject source)return;
+  // The source window attaches this gesture to its header/titlebar. The WPF shell's
+  // header also contains menus and toolbar commands, which must keep their own input.
+  for(DependencyObject? current=source;current is not null&&current!=ShellHeader;current=VisualTreeHelper.GetParent(current))
+   if(current is Button or MenuItem or System.Windows.Controls.TextBox or System.Windows.Controls.ComboBox or System.Windows.Controls.Primitives.ToggleButton || current==MenuHost || current==ToolBar)return;
+  if(e.ClickCount==2){MaximizeWindow(sender,e);e.Handled=true;}
+  else if(WindowState==WindowState.Normal&&e.LeftButton==MouseButtonState.Pressed){DragMove();e.Handled=true;}
+ }
  void MinimizeWindow(object sender,RoutedEventArgs e)=>WindowState=WindowState.Minimized;
  void MaximizeWindow(object sender,RoutedEventArgs e)=>WindowState=WindowState==WindowState.Maximized?WindowState.Normal:WindowState.Maximized;
  void CloseWindow(object sender,RoutedEventArgs e)=>Close();
