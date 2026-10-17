@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Input;
 using VisionEditor.Core.VmRouting;
 using System.Windows.Threading;
 using VisionEditor;
@@ -108,6 +109,34 @@ internal static class Program
             Invoke("BeginWireDrag",link,1);Invoke("PreviewWireDrag",new Point(350,235));Invoke("FinishWireDrag",true);Pump();
             Check(doc.Revision==revision+1&&doc.CurrentProcedure.ExecutionLinks!.Single().PathPoints![1].Y==235,"commit records moved midpoint in one undo transaction");
             doc.Undo();Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Single().PathPoints![1].Y==205,"undo restores saved midpoint");
+            revision=doc.Revision;
+
+            var mini=(Canvas)window.FindName("MiniMapCanvas");
+            var region=(System.Windows.Shapes.Rectangle)window.FindName("MiniMapViewport");
+            var scroll=(ScrollViewer)window.FindName("CanvasScrollViewer");
+            mini.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            Check((bool)typeof(MainWindow).GetField("eyeDragging",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!,"actual mini-map mouse-down routed event starts dragging");
+            mini.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonUpEvent});Pump();
+            Check(!(bool)typeof(MainWindow).GetField("eyeDragging",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!,"actual mini-map mouse-up routed event ends dragging");
+            scroll.ScrollToHorizontalOffset(0);scroll.ScrollToVerticalOffset(0);Pump();
+            var edge=new Point(186,149);
+            double regionWidth=region.Width,regionHeight=region.Height;
+            Invoke("BeginMiniMapDrag",edge);Pump();
+            double requestedX=edge.X-regionWidth/2,requestedY=edge.Y-regionHeight/2;
+            var recorded=(Point)typeof(MainWindow).GetField("eyeRegionStart",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(Math.Abs(recorded.X-requestedX)<.001&&Math.Abs(recorded.Y-requestedY)<.001,$"edge click remembers original requested view location before scroll clamping: {recorded} expected {requestedX},{requestedY}");
+            double clampedX=Canvas.GetLeft(region),clampedY=Canvas.GetTop(region);
+            Check(clampedX<requestedX&&clampedY<requestedY,"scroll viewer clamps the clicked viewport at bottom-right extent");
+            Invoke("MoveMiniMapDrag",new Point(edge.X-5,edge.Y-5));Pump();
+            Check(Math.Abs(Canvas.GetLeft(region)-clampedX)<.001&&Math.Abs(Canvas.GetTop(region)-clampedY)<.001,"short reverse drag preserves native requested-position hysteresis at edge");
+            Invoke("MoveMiniMapDrag",new Point(edge.X-35,edge.Y-35));Pump();
+            Check(Canvas.GetLeft(region)<clampedX&&Canvas.GetTop(region)<clampedY,"long reverse drag moves the viewport after leaving clamped edge");
+            Capture("canvas-minimap-edge-drag.png");
+            mini.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonUpEvent});Pump();
+            Check(doc.Revision==revision,"mini-map navigation does not edit workflow model or undo history");
+            string mapFile=Path.Combine(Path.GetTempPath(),"vision-canvas-map-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try {doc.Save(mapFile);doc.Load(mapFile);Check(doc.CurrentProcedure.Nodes.Count==2&&doc.CurrentProcedure.ExecutionLinks!.Count==1,"mini-map navigation leaves workflow data intact through save and reopen");}
+            finally {if(File.Exists(mapFile))File.Delete(mapFile);}
         }
         finally {window.Close();application.Shutdown();}
     }
