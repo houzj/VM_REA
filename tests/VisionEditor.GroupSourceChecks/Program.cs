@@ -9,6 +9,7 @@ using VisionFramework;
 
 internal static class Program
 {
+internal const string LongPort = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN";
 [STAThread]
 private static void Main()
 {
@@ -18,7 +19,8 @@ void Check(bool condition, string label) { if (!condition) throw new Exception(l
 var registry = new ModuleRegistry();
 WorkflowCalls.Register(registry);
 var producer = new ModuleDescriptor("test.group.source", "1", "源", [],
-    [new("scalar", DataKind.Integer), new("array", DataKind.Integer) { Cardinality = ValueCardinality.Array }],
+    [new("scalar", DataKind.Integer), new("array", DataKind.Integer) { Cardinality = ValueCardinality.Array },
+     new("out", DataKind.Integer), new(LongPort, DataKind.Integer)],
     [new("gain", ParameterKind.Integer, true, JsonSerializer.SerializeToElement(11), 0, 100),
      new("other", ParameterKind.Integer, true, JsonSerializer.SerializeToElement(2), 0, 100)]);
 var consumer = new ModuleDescriptor("test.group.consumer", "1", "消费", [new("value", DataKind.Integer)], [new("value", DataKind.Integer)],
@@ -39,7 +41,7 @@ var body = new ProcedureDocument("body", "Group", [new("source", producer.Id, "1
     }
 };
 var group = new NodeDocument("group", WorkflowCalls.ModuleId, WorkflowCalls.Version, "Group", new()) { Call = WorkflowCalls.From(body) };
-var parent = new ProcedureDocument("parent", "流程", [new("parent-source", producer.Id, "1", "parent-source", new()), group], [], [])
+var parent = new ProcedureDocument("parent", "流程", [new("parent-source", producer.Id, "1", "parent-source", new()), group], [], [new("parent-source", "group")])
 {
     Configuration = new()
     {
@@ -49,6 +51,14 @@ var parent = new ProcedureDocument("parent", "流程", [new("parent-source", pro
     }
 };
 var solution = new SolutionDocument(SolutionStore.CurrentVersion, "group-source", "Group来源", [parent, body], []);
+void SaveGroupInputs(IReadOnlyList<WorkflowInterfaceItem> items, IReadOnlyDictionary<string, WorkflowValueReference?> bindings)
+{
+    var editPath = Path.GetFullPath("artifacts/group-input-edit.vmx.json"); Directory.CreateDirectory(Path.GetDirectoryName(editPath)!);
+    SolutionStore.Save(editPath, solution);
+    var edit = new VisionEditor.Core.GraphEditorDocument(registry); edit.Load(editPath);
+    edit.ConfigureOwnedGroupInputs("group", items, bindings);
+    solution = edit.Document;
+}
 ProcedureDocument Parent() => solution.Procedures.Single(p => p.Id == "parent");
 ProcedureDocument Body() => solution.Procedures.Single(p => p.Id == "body");
 NodeDocument Group() => Parent().Nodes.Single(n => n.Id == "group");
@@ -66,7 +76,7 @@ var window = new SubprogramCallWindow(Parent, Group, () => solution.Procedures, 
     async () => last = await new GroupDebugExecutor(registry).RunAsync(new(solution, Environment.CurrentDirectory), "parent", "group"),
     () => { }, () => last, saveGroupConfiguration: c => ReplaceBody(Body() with { Configuration = c }),
     groupSources: SourceOptions, groupRegistry: registry,
-    setGroupProxySource: (id, source) =>
+    saveGroupInputs: SaveGroupInputs, setGroupProxySource: (id, source) =>
     {
         var current = Body();
         var proxy = current.Configuration.RunParameters.Single(p => p.Id == id);
@@ -171,6 +181,36 @@ Check(synchronized.Status == SessionStatus.Success && synchronized.Calls["group"
 editor.Save(path); editor.Load(path);
 Check(editor.Document.Procedures.Single(p => p.Id == "body").Configuration.RunParameters.Single(p => p.Id == "gain-proxy")
     .Relations?.Single() == new WorkflowRunTarget("source2", "gain"), "Parameter relation survives save and reopen");
+solution = editor.Document; tabs.SelectedIndex = 0; Pump();
+Exception? multiInputError = null;
+_ = window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+{
+    WorkflowSourcePicker? picker = null;
+    try
+    {
+        picker = Application.Current.Windows.OfType<WorkflowSourcePicker>().Single(); picker.UpdateLayout();
+        Children(picker).OfType<CheckBox>().Single(c => Equals(c.Content, "包含模块名")).IsChecked = false;
+        Children(picker).OfType<CheckBox>().Single(c => Equals(c.Content, "out")).IsChecked = true;
+        Children(picker).OfType<CheckBox>().Single(c => Equals(c.Content, LongPort)).IsChecked = true;
+        Children(picker).OfType<Button>().Single(b => Equals(b.Content, "确定"))
+            .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+    }
+    catch (Exception ex) { multiInputError = ex; picker?.Close(); }
+}));
+Children(window).OfType<Button>().Single(b => Equals(b.Tag, "GroupInputAdd"))
+    .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); Pump();
+if (multiInputError is not null) throw multiInputError;
+Check(Body().Configuration.Inputs.Any(i => i.Name == "out0"), "Native multi-select name avoids existing Group output using first numeric suffix");
+Check(Body().Configuration.Inputs.Any(i => i.Name == LongPort[..32]), "Native multi-select name truncates source to 32 characters");
+Check(Parent().Configuration.Subscriptions.Count(s => s.NodeId == "group" && s.Source.Kind == WorkflowSourceKind.NodeOutput) == 2,
+    "Multi-select commits two parent-to-Group input bindings with stable identities");
+var parentRun = new SolutionExecutor(registry).RunAsync(new(solution, Environment.CurrentDirectory), "parent").GetAwaiter().GetResult();
+Check(parentRun.Status == SessionStatus.Success && parentRun.Calls["group"].WorkflowOutputs["out"].As<long>() == 5,
+    "Full parent workflow runs selected source inputs and related Group parameters");
+SolutionStore.Save(path, solution); solution = SolutionStore.Load(path);
+parentRun = new SolutionExecutor(registry).RunAsync(new(solution, Environment.CurrentDirectory), "parent").GetAwaiter().GetResult();
+Check(parentRun.Status == SessionStatus.Success && parentRun.Calls["group"].WorkflowOutputs["out"].As<long>() == 5,
+    "Multi-selected Group input bindings survive save and reopen with identical runtime result");
 window.Close(); app.Shutdown(); Console.WriteLine($"PASS {checks} Group source WPF and runtime checks");
 }
 
@@ -188,7 +228,9 @@ sealed class SourceModule(ModuleDescriptor descriptor) : IModule
     public ModuleDescriptor Descriptor => descriptor;
     public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context, CancellationToken token) => ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,
         new Dictionary<string, PortValue> { ["scalar"] = PortValue.Integer(context.Integer("gain")),
-            ["array"] = PortValue.IntegerArray([context.Integer("gain"), 22]) }));
+            ["array"] = PortValue.IntegerArray([context.Integer("gain"), 22]),
+            ["out"] = PortValue.Integer(context.Integer("gain")),
+            [Program.LongPort] = PortValue.Integer(context.Integer("gain")) }));
 }
 sealed class ConsumerModule(ModuleDescriptor descriptor) : IModule
 {
