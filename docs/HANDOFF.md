@@ -139,3 +139,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-17 Group索引正文弹层与复合类型证据
 
 先按原生 `ButtonSelecter`/XAML核对索引状态机，再在Group数组中断操作数接入方括号光标触发、180×180整数树和双击叶提交，复用已有结构化 `IndexSource` 及实际循环执行。真实图像源两轮SN、两圆结果、索引解除/撤销/重开及窗口关闭以416项WPF操作复验；42项数组契约和21项Polygon独立容器检查通过。弹层图片已目检；原生独立订阅窗、统一来源文本、原VM同状态差分仍待完成。Polygon仅为保留`Num/Points`对象边界的托管模型，没有端口/工具集成。Fixture十叶和零尺度差异只完成源审计，未在本批虚构映射。详细范围见FRAMEWORK-INDEX-POLYGON-AUDIT.md、NATIVE-ARRAY-INDEX-EDITOR-AUDIT.md、FIXTURE-NATIVE-FIELD-AUDIT.md。未修改插件工作树或其他任务进程。
+
+## 2026-10-17 两线节点框架边界重整
+
+用户要求两项目并行逆向，并明确插件开发所需的节点公共配置框架也在插件工作树内推进。main新增 PLUGIN-FRAMEWORK-BOUNDARY.md 和 PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.md：当前main承担集成管理与任务登记，插件线负责公共配置模型/模板/宿主/配置执行及具体工具，main负责画布/Group/流程/工具发现与最终集成。只读查看插件工作树1d66877及其未提交在制文件，未修改该工作树，也未将其实现计入main完成项。MainWindow、Contracts、GraphExecutor、GraphValidator、WorkflowSubscriptions及配置宿主入口列为共享文件交界；按单一提交所有者和交付提交逐项合流，保留原生证据、托管验证和原厂差分的独立状态。此批仅更新任务清单与边界，无产品代码改动或测试通过声明。

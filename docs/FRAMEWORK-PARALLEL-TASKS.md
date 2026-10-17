@@ -2,6 +2,8 @@
 
 当前为建议分工，尚未启动新对话或分配其他工作树。插件线继续遵守 PARALLEL-WORK.md。
 
+**2026-10-17 边界更新：**此处原建议仅适用于 main 内部框架任务，不能作为插件线节点公共配置框架的排除规则。用户已授权插件线在自己的 worktree 修改必要共享文件；双方仍并行逆向。最新跨线主责、在制文件锁、交付与合流闸门见 [PLUGIN-FRAMEWORK-BOUNDARY.md](PLUGIN-FRAMEWORK-BOUNDARY.md) 和 [PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.md](PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.md)。主线不在插件线配置宿主/模板的同一文件上同时开发第二套实现。
+
 | 任务线 | 可独立实施 | 依赖与禁止交叉修改 |
 | --- | --- | --- |
 | 数据与 Group 运行（当前 main） | Region/Components、复合叶字段、Group输入输出、累积与运行 | 独占共享契约和执行器；统一集成其他线请求 |
