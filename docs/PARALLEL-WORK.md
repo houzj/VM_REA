@@ -3,13 +3,13 @@
 ## Workspaces
 - Framework/integration: original checkout, branch main.
 - Tool plugins: worktrees/tool-plugins, branch tool-plugins.
-- main: active framework development and integration. The user explicitly chose main for the original checkout. The old framework branch is historical; do not continue development there. Integration is performed by the framework conversation after reviewing plugin commits.
+- main: tool-independent framework development. The user explicitly chose main for the original checkout. The old framework branch is historical; do not continue development there. The user controls when independent work is integrated; main performs final integration only on that instruction.
 
 Use two long-lived Codex conversations, each opened in its own directory. Conversations do not automatically synchronize; source commits and these documents are the handoff record. Creating these branches does not create or message a conversation.
 
 ## Ownership
-Framework: shell, workflow tabs/canvas/navigation, Group ownership/loops/accumulation, scheduling, persistence, variables/subscriptions, shared contracts, plugin discovery and lifecycle.
-Plugins: catalog and dependency inventory, per-tool source audit, algorithm reimplementation, parameter/configuration views, dedicated tool tests. Begin with image source as the integration sample.
+Framework/main: shell, workflow tabs/canvas/navigation, Group ownership/loops/accumulation, solution/procedure scheduling and persistence, variables/subscriptions at the workflow boundary, tool-independent data contracts. It provides stable integration seams and consumes plugin capabilities, without developing a second plugin configuration system.
+Plugins/tool-plugins: catalog and dependency inventory, per-tool source audit and algorithms **plus the plugin-facing framework**: common configuration model, template catalog, ordinary/dedicated editor host, parameter and ROI interaction, tool execution/debug sessions, display adapters, tool-specific persistence, and dedicated tests. Each tool task must name the common plugin-framework capability it requires and verify the tool through that capability in the real host.
 
 The current plugin architecture is not yet a stable complete native-equivalent interface. Inventory existing contracts before extending them. Shared interfaces must cover identity/version/category/assets, typed scalar/array I/O, parameters, execution/errors/cancel/timeout, configuration lifecycle, preview/ROI services and serialization.
 
@@ -18,9 +18,11 @@ The current plugin architecture is not yet a stable complete native-equivalent i
 2. List confirmed, reconstructed and unknown behaviors separately.
 3. Implement real data execution as well as UI; keep capture code in tests.
 4. Commit one reviewable feature and record verification/results/limitations in docs/HANDOFF.md.
-5. Framework line integrates selected commits, resolves shared contracts, tests end-to-end and publishes.
+5. After the user chooses a handoff, main reviews selected committed changes, resolves shared contracts, tests end-to-end and publishes. Neither project treats the other's dirty working tree as an integration artifact.
 
-Do not simultaneously update shared files from both branches. Put interface needs in CONTRACT-REQUESTS.md with caller, payload, lifecycle and evidence. Do not merge/push integration changes from the plugin line without the agreed handoff.
+Do not simultaneously update the same shared file from both branches. Put interface needs in CONTRACT-REQUESTS.md with caller, payload, lifecycle and evidence. The single feature owner may edit shared file paths in its own worktree; the other project only records the request until the handoff. Do not merge/push integration changes from the plugin line without the user's chosen handoff.
+
+The authoritative role, file ownership and baseline state are in [PLUGIN-FRAMEWORK-BOUNDARY.md](PLUGIN-FRAMEWORK-BOUNDARY.md) and [TWO-PROJECT-BASELINE.md](TWO-PROJECT-BASELINE.md). Historical sections below record implementation history, not a standing order to direct the other project.
 
 ## Current known gaps
 
