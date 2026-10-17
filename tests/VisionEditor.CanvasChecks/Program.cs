@@ -137,6 +137,32 @@ internal static class Program
             string mapFile=Path.Combine(Path.GetTempPath(),"vision-canvas-map-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(mapFile);doc.Load(mapFile);Check(doc.CurrentProcedure.Nodes.Count==2&&doc.CurrentProcedure.ExecutionLinks!.Count==1,"mini-map navigation leaves workflow data intact through save and reopen");}
             finally {if(File.Exists(mapFile))File.Delete(mapFile);}
+
+            doc.NewSolution();
+            string focusSource=doc.AddNode("vision.image-source","1.0.0",1000,1000);
+            string focusTarget=doc.AddNode("vision.image-source","1.0.0",1350,1250);
+            doc.ConnectExecution(focusSource,focusTarget,3,1);Pump();
+            scroll.ScrollToHorizontalOffset(900);scroll.ScrollToVerticalOffset(900);Pump();
+            double focusX=scroll.HorizontalOffset,focusY=scroll.VerticalOffset;
+            Check(focusX>0&&focusY>0,"wire focus scenario starts with nonzero canvas scroll offsets");
+            string focusKey=focusSource+">"+focusTarget;
+            var focusHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[focusKey];
+            focusHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            var handles=(List<System.Windows.Shapes.Rectangle>)typeof(MainWindow).GetField("wireHandles",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(focusHit.IsKeyboardFocused&&handles.Count>0,"actual wire mouse-down focuses the connection and exposes midpoint handles");
+            Check(Math.Abs(scroll.HorizontalOffset-focusX)<.001&&Math.Abs(scroll.VerticalOffset-focusY)<.001,"focusing the connection does not auto-scroll the viewport");
+            Capture("canvas-wire-focus-no-scroll.png");
+            ((TabControl)window.FindName("ProcedureTabs")).Focus();Pump();
+            Check(handles.Count==0,"connection lost focus removes midpoint handles");
+            focusHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            revision=doc.Revision;
+            var delete=new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(window)!,0,Key.Delete){RoutedEvent=Keyboard.PreviewKeyDownEvent};
+            window.RaiseEvent(delete);Pump();
+            Check(delete.Handled&&doc.CurrentProcedure.ExecutionLinks!.Count==0&&doc.Revision==revision+1,"focused wire Delete removes only its link in one undo transaction");
+            doc.Undo();Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Count==1,"undo restores selected execution connection");
+            string focusFile=Path.Combine(Path.GetTempPath(),"vision-canvas-focus-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try {doc.Save(focusFile);doc.Load(focusFile);Check(doc.CurrentProcedure.ExecutionLinks!.Single().FromNode==focusSource&&doc.CurrentProcedure.ExecutionLinks!.Single().ToNode==focusTarget,"restored execution link survives save and reload");}
+            finally {if(File.Exists(focusFile))File.Delete(focusFile);}
         }
         finally {window.Close();application.Shutdown();}
     }
