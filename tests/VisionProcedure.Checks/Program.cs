@@ -50,5 +50,15 @@ try {
     migrated.PrepareSave=(_,_)=>throw new InvalidDataException("prepare failure");
     try{migrated.Save(Path.Combine(newDir,"failed.vmx.json"));throw new Exception("Expected prepare failure");}catch(InvalidDataException){}
     Check(migrated.FilePath==priorFile&&migrated.BaseDirectory==priorBase&&migrated.Revision==priorRevision&&!File.Exists(Path.Combine(newDir,"failed.vmx.json")),"Failed preparation leaves editor and output unchanged");
+    migrated.PrepareSave=null;migrated.RenameProcedure("p","p changed");
+    byte[] priorBytes=File.ReadAllBytes(newPath);priorRevision=migrated.Revision;
+    using(var locked=new FileStream(newPath,FileMode.Open,FileAccess.ReadWrite,FileShare.None)){
+        try{migrated.Save(newPath);throw new Exception("Expected locked-target save failure");}
+        catch(IOException){}catch(UnauthorizedAccessException){}
+        Check(migrated.FilePath==priorFile&&migrated.BaseDirectory==priorBase&&migrated.Revision==priorRevision&&migrated.IsDirty,"Failed write keeps editor identity and dirty state");
+    }
+    Check(File.ReadAllBytes(newPath).SequenceEqual(priorBytes),"Failed write keeps previous saved bytes");
+    migrated.Save(newPath);
+    Check(!migrated.IsDirty&&SolutionStore.Load(newPath).Procedures.Single().Name=="p changed","Retry after write failure saves edited procedure");
 }finally{if(Directory.Exists(migrationRoot))Directory.Delete(migrationRoot,true);}
 Console.WriteLine($"PASS {checks} procedure management checks");
