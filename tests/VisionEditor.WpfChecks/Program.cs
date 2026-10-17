@@ -154,6 +154,11 @@ static class Program
             var npointDrag=(DragEventArgs)Activator.CreateInstance(typeof(DragEventArgs),BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[npointData,DragDropKeyStates.LeftMouseButton,DragDropEffects.Move,Find<Canvas>("GraphLayer"),new Point(175,115)],null)!;
             npointDrag.RoutedEvent=DragDrop.DropEvent;Invoke("ToolDrop",Find<Canvas>("GraphLayer"),npointDrag);Pump();
             var npointNode=document.CurrentProcedure.Nodes.Last();Check(npointNode.ModuleId=="vision.n-point-calibration"&&npointNode.Parameters["RotPointTotalNum"].GetInt32()==3&&!npointNode.Parameters["UseRelativeCoordinates"].GetBoolean(),"N-point drop uses confirmed native defaults");
+            Invoke("OpenToolConfiguration",npointNode.Id);Pump();
+            var npointConfiguration=Application.Current.Windows.OfType<VisionPluginContracts.ToolConfigurationModelWindow>().Single(w=>w.Owner==window);
+            Check(npointConfiguration.Width==420&&npointConfiguration.Height==500,"actual N-point node opens source geometry through public model host");
+            Check(Children(npointConfiguration).OfType<TabControl>().Any(t=>t.Items.Count==3),"actual N-point configuration uses original three-tab model");
+            Invoke("CloseToolConfiguration");Pump();
             var npointServices=(VisionPluginContracts.ToolEditorContext)Invoke("ConnectToolEditorServices",new VisionPluginContracts.ToolEditorContext(npointNode,document.BaseDirectory,_=>{},_=>throw new NotSupportedException()),npointNode.Id)!;
             npointServices.SetInputNumbers!("ImagePointX",new[]{0d,10});npointServices.SetInputNumbers!("ImagePointY",new[]{0d,0});Pump();
             Check(npointServices.InputNumbers!("ImagePointX")!.SequenceEqual(new[]{0d,10})&&npointServices.SubscriptionLabel!("ImagePointX",false)=="[0,10]","N-point array constants persist and are labeled");

@@ -27,7 +27,7 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
    foreach(var node in p.Nodes.Where(n=>ancestors.Contains(n.Id)&&n.Enabled)) {
     var descriptor=registry.GetDescriptor(node);var leaves=new List<ConfigurationSubscriptionTreeNode>();
     foreach(var port in descriptor.Outputs) {
-     var native=NativeType(port.Kind);if(native==null||!CanFlow(port.Kind,destination)||!PermittedNative(query.Destination,native))continue;
+     var native=NativeType(port.Kind);if(native==null||!CanFlow(port,destination)||!PermittedNative(query.Destination,native))continue;
      if(query.NativeTypes.Count>0&&!query.NativeTypes.Contains(native,StringComparer.Ordinal))continue;
      var reference=new ConfigurationOutputReference(p.Id,node.Id,port.Name,native);
      leaves.Add(new(Id("port",p.Id,node.Id,port.Name),port.Name,binding:new(reference,ConfigurationSubscriptionIndex.All),
@@ -80,7 +80,7 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
   }else {
    var ports=d.Inputs.Where(x=>x.Name==destination.Name).ToArray();if(ports.Length!=1)throw Unsupported("Destination input is not uniquely declared: "+destination.Name);
    result=new(ports[0].Kind,ports[0],null);
-   if(destination.Domain==ConfigurationSubscriptionDomain.Combination&&!DataKinds.IsImage(result.Kind)&&result.Kind!=DataKind.Circle)throw Unsupported("This framework type does not represent the requested native combination exactly.");
+   if(destination.Domain==ConfigurationSubscriptionDomain.Combination&&!DataKinds.IsImage(result.Kind)&&result.Kind!=DataKind.Circle&&result.Kind!=DataKind.Point)throw Unsupported("This framework type does not represent the requested native combination exactly.");
   }
   var native=NativeType(result.Kind);if(native==null)throw Unsupported("No confirmed native type mapping for destination "+result.Kind);
   if(!PermittedNative(destination,native))throw Unsupported("Declared framework destination cannot represent native filter "+destination.NativeType);
@@ -88,8 +88,9 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
  }
  static string? NativeType(DataKind kind)=>kind switch {
   DataKind.Integer=>"int",DataKind.Number or DataKind.NumberArray=>"float",DataKind.Text=>"string",
-  DataKind.GrayImage or DataKind.RgbImage or DataKind.Image=>"IMAGE",DataKind.Circle=>"CIRCLE",_=>null};
+  DataKind.GrayImage or DataKind.RgbImage or DataKind.Image=>"IMAGE",DataKind.Circle=>"CIRCLE",DataKind.Point=>"POINT",_=>null};
  static bool PermittedNative(ConfigurationSubscriptionDestination destination,string native)=>string.IsNullOrEmpty(destination.NativeType)||destination.NativeType.Split(';').Contains(native,StringComparer.Ordinal);
+ static bool CanFlow(PortDescriptor source,TargetSpec target)=>source.Cardinality==(target.Port?.Cardinality??ValueCardinality.Scalar)&&CanFlow(source.Kind,target);
  static bool CanFlow(DataKind source,TargetSpec target)=>target.Port is {} port?DataKinds.CanFlow(source,port):DataKinds.CanFlow(source,target.Kind);
  HashSet<string> Ancestors(ProcedureDocument p) {
   if(p.ExecutionLinks==null)throw Unsupported("Explicit ExecutionLinks are required; node order and data connections cannot substitute for native predecessors.");
@@ -118,7 +119,7 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
     var node=p.Nodes.SingleOrDefault(n=>n.Id==output.NodeId)??throw new InvalidDataException("Missing source node.");if(!node.Enabled)throw new InvalidDataException("Disabled source cannot supply an execution value.");
     var ports=registry.GetDescriptor(node).Outputs.Where(x=>x.Name==output.PortId).ToArray();if(ports.Length!=1)throw new InvalidDataException("Source output is missing or ambiguous.");
     var native=NativeType(ports[0].Kind);if(native==null||native!=output.NativeType)throw Unsupported("Output native type is not represented by the declared framework port.");
-    if(!PermittedNative(destination,native)||!CanFlow(ports[0].Kind,target))throw new InvalidDataException("Source and destination types do not match.");
+    if(!PermittedNative(destination,native)||!CanFlow(ports[0],target))throw new InvalidDataException("Source and destination types do not match.");
     return new(WorkflowSourceKind.NodeOutput,node.Id,ports[0].Name);
    case ConfigurationConstantReference constant:
     if(destination.Domain==ConfigurationSubscriptionDomain.Combination)throw Unsupported("Scalar constants cannot represent a native combination.");

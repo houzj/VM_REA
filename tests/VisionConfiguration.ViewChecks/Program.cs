@@ -47,6 +47,24 @@ internal static class Program {
    var outDir=Path.GetFullPath("analysis/full-audit/configuration-shell");Directory.CreateDirectory(outDir);var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap(420,500,96,96,System.Windows.Media.PixelFormats.Pbgra32);actualView.Measure(new Size(420,500));actualView.Arrange(new Rect(0,0,420,500));actualView.UpdateLayout();bitmap.Render(actualView);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));using var stream=File.Create(Path.Combine(outDir,"panal-source-derived-unsupported.png"));encoder.Save(stream);
   }
   var invalid=new ToolConfigurationControlRegistry();invalid.Register("UnknownLeaf",_=>new Window());try{using var view=new ToolConfigurationView(s,invalid);throw new Exception("Window allowed");}catch(InvalidOperationException){checks++;}
+  var orderedDefinition=ToolConfigurationDefinition.Parse("<AlgorithmTabRoot><Tabs><Tab Name='Order'><Items><Integer Name='First'/><Integer Name='Second'/><Integer Name='Add'/></Items></Tab></Tabs></AlgorithmTabRoot>");
+  var orderedState=new ToolConfigurationState(orderedDefinition);var orderedRegistry=new ToolConfigurationControlRegistry();orderedRegistry.Register("Integer",c=>new Button{Content=c.Node.Name,Tag=c.Element});
+  using(var orderedView=new ToolConfigurationView(orderedState,orderedRegistry)){
+   var panel=(StackPanel)((ScrollViewer)((TabItem)orderedView.Tabs.Items[0]).Content).Content;var original=panel.Children.OfType<Button>().ToArray();var first=orderedState.Find("First")!.Element;var add=orderedState.Find("Add")!.Element;
+   orderedState.MoveBefore(first,add);
+   Check(panel.Children.OfType<Button>().Select(b=>b.Content).SequenceEqual(new[]{"Second","First","Add"}),"runtime sibling order is reflected by common view");
+   Check(ReferenceEquals(panel.Children[1],original[0]),"runtime move preserves editor instance and its callbacks");
+   Check(first.Parent!.Children.Select(e=>e.Name).SequenceEqual(new[]{"First","Second","Add"}),"runtime move preserves immutable source order");
+   Check(orderedState.GetChildren(first.Parent).Select(e=>e.Name).SequenceEqual(new[]{"Second","First","Add"}),"runtime collection exposes source-derived move order");
+  }
+  var composite=ToolConfigurationDefinition.Parse("<AlgorithmTabRoot><Tabs><Tab Name='A'><Items><PointPair Name='Pair'><ObjectPoint><CurValue>old</CurValue></ObjectPoint></PointPair><Integer Name='Other'/></Items></Tab></Tabs></AlgorithmTabRoot>");
+  var compositeState=new ToolConfigurationState(composite);var compositeRegistry=new ToolConfigurationControlRegistry();Button? member=null;ToolConfigurationControlContext? parentContext=null;
+  compositeRegistry.Register("PointPair",context=>{parentContext=context;var child=context.CreateChild(context.Element.Children.Single());member=new Button();child.OnRefresh(()=>member.Content=child.Node.Value);return member;});
+  using(var compositeView=new ToolConfigurationView(compositeState,compositeRegistry)){
+   Check(Equals(member!.Content,"old"),"composite child receives initial parent refresh");compositeState.SetProgrammatic(compositeState.GetNode(compositeState.Find("Pair")!.Element.Children.Single())!,"CurValue","new");
+   Check(Equals(member.Content,"new"),"composite child refresh follows source identity");
+   try{parentContext!.CreateChild(compositeState.Find("Other")!.Element);throw new Exception("Foreign composite child accepted");}catch(ArgumentException){checks++;}
+  }
   Console.WriteLine($"VisionConfiguration.ViewChecks: {checks} checks passed");
  }
 }

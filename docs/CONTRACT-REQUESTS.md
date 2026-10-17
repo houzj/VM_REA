@@ -109,3 +109,17 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 原生依据：`VmProcedureDecorator.SetTimeOutCommandExe`打开`TimeOutSet`，XAML定义0—100000毫秒，确认调用`ProcessManager.SetProcedureWaitTime`。SDK后端超时语义尚未恢复；当前协作取消是独立托管行为。
 - 双线协调：插件线正在自己的工作树修改`Contracts.cs`；两线提交后由main审查合并，不在插件工作树复制本字段或直接覆盖其在制改动。回归同时验证旧方案、新字段往返、慢模块释放及插件线的流程身份状态。
 
+
+
+### N点公共配置架构迁移：本线在制接口（0f3a1d4之后）
+
+- NPointPlugin改为IToolConfigurationProvider，生产入口使用原厂NPointAlgorithmTab/Group和公共ModelWindow；旧NPointWindow仅保留历史兼容代码，不再是工厂入口。
+- 类型化对象桥接承接Show Text五条ColorConfig/FloatConfig/StringConfig路径，使用DisplaySettings持久化，不写算法CurValue；默认/更多颜色面板复用VisionUi原厂资源。
+- 新保存/确认服务分别承接SaveFileDialog和Reset确认；ConfigurationFileRequest附加CheckFileExists/CheckPathExists，默认行为不变，标定路径明确允许不存在文件。SaveFileDialog的Command显示别名有单独操作路由。
+- ToolConfigurationState增加CategoryHiddenOperation、EditButton_Calib整数继承及RefreshParameter权威读回（同步失败回滚基线）；输入选择扩展POINT组合类型，但标量/数组基数严格校验。
+- 显示位置订阅采用Domain.Display和DisplayInputBindings typed DTO，单独枚举祖先/self数值输出，绑定不生成算法自环；ToolDisplays从所属流程真实结果缓存投影坐标，缺失回落0并诊断。原厂动态IsResultShow IO ABI未声称相同。
+- ResetConfigurationParameters由宿主接入GraphEditorDocument.ResetProcedureNodeParameters，将参数默认值与参数订阅清理合并为一次可撤销事务。此为插件框架所需局部Core能力，本线独占新partial文件；不修改主项目目录。
+- 用户纠正后四线为N点/N图像/标定板/相机映射四个独立工具，各线提出必要框架需求，主控单一协调共享文件。
+- PointPair 复合字段按原厂 CLR 声明登记独立子状态（保留无 Name、原始 XML 与元素身份），GetNode(element) 取值；ControlContext.CreateChild(element) 继承 Owner 和刷新生命周期。禁止以同名局部标签做全局查找。新增状态测试覆盖两组 POINT destination 和数值隔离。
+- PointPair 原厂 AddButton 仅移动内存 Collection/Items；公共 State.GetChildren/MoveBefore 维护运行时同父元素顺序，View保留控件实例重排，不写入自创持久化参数。EnumerationG 使用原厂 GetFrontParamItemsOperation/IMAGE + SetCombinationSourceOperation/InputImage 查询与 typed 下拉绑定。标定路径模板与三态资源已提升到公共 Contracts，NPoint包装仅转发。
+- 相机映射后续缺口（未在本次验收节点实现）：原厂组合 POINT 与逐 X/Y 输入的别名/分量绑定，需要共享服务显式描述关联、组合来源投影、单轴覆盖及一次事务切换。当前独立 POINT 端口类型/基数校验不能代替该语义；运行时逐轴覆盖仅是独立兼容行为，原厂字段/切换证据由相机映射清单补齐后实施。

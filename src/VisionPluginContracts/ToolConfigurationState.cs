@@ -31,7 +31,7 @@ public sealed record ConfigurationDiagnostic(string Code, string Operation, stri
 /// <summary>Mutable instance state; definition elements remain immutable. Changed fires synchronously on the caller thread.</summary>
 public sealed class ConfigurationNodeState {
  // Explicit source-confirmed CLR inheritance, not a name-prefix guess. Integer64 is deliberately excluded.
- static readonly HashSet<string> Integer32Types=new(StringComparer.Ordinal){"Integer","IntegerBx","IntegerConfirm","Integer_CircleFind","Integer_CirclePairInsp","Integer_CaliperHeight","Integer_CaliperHeight2","Integer_IdeaWidth"};
+ static readonly HashSet<string> Integer32Types=new(StringComparer.Ordinal){"Integer","EditButton_Calib","IntegerBx","IntegerConfirm","Integer_CircleFind","Integer_CirclePairInsp","Integer_CaliperHeight","Integer_CaliperHeight2","Integer_IdeaWidth"};
  static readonly HashSet<string> Enum32Types=new(StringComparer.Ordinal){"Enumeration","EnumerationAllCom","EnumerationBx","EnumerationBxDynamic","EnumerationCom","EnumerationDataCenter","EnumerationGain","EnumerationTrigger","EnumerationVar","Enumeration_ModuleSelector"};
  static readonly HashSet<string> Radio32Types=new(StringComparer.Ordinal){"RadioSelecter","RadioSelecter3","RadioSelecterEx2","RadioSelecterEx3"};
  readonly ToolConfigurationState owner;
@@ -87,7 +87,12 @@ public sealed class ConfigurationNodeState {
 
 /// <summary>Evidence-scoped XML rules engine. It never invokes arbitrary CLR methods from XML.</summary>
 public sealed class ToolConfigurationState {
+ // PointPair declares these fields as ButtonSelecter instances in Apps.XmlParser.ParamTab.PointPair.
+ // XML field tags are local member names, not globally named configuration controls.
+ static readonly HashSet<string> PointPairSelectors=new(StringComparer.Ordinal){"ObjectPoint","TargetPoint","ObjectPointX","TargetPointX","ObjectPointY","TargetPointY","ObjectPointAngle","TargetPointAngle"};
+ static bool IsPointPairSelector(ConfigurationElement element)=>element.Parent?.Tag=="PointPair"&&PointPairSelectors.Contains(element.Tag);
  readonly Dictionary<ConfigurationElement,ConfigurationNodeState> byElement=[];
+ readonly Dictionary<ConfigurationElement,IReadOnlyList<ConfigurationElement>> childOrders=[];
  readonly Dictionary<ConfigurationElement,bool> working=[];
  readonly Dictionary<string,IToolConfigurationRule> rules=new(StringComparer.Ordinal);
  readonly Dictionary<string,Func<ConfigurationNodeState,string?>> displayTypeResolvers=new(StringComparer.Ordinal);
@@ -110,7 +115,7 @@ public sealed class ToolConfigurationState {
   foreach(var node in Nodes)committedValues[node]=node.Value;
  }
  void Walk(ConfigurationElement e) {
-  if(e.Tag is "Category" or "CategoryNoHead" or "Tab" || e.Parent?.Tag is "Items" or "BottomExcuteButtons" or "BottomExcuteButtonsLeft" or "ExternParamsList")
+  if(e.Tag is "Category" or "CategoryNoHead" or "Tab" || e.Parent?.Tag is "Items" or "BottomExcuteButtons" or "BottomExcuteButtonsLeft" or "ExternParamsList" || IsPointPairSelector(e))
    byElement[e]=new(this,e);
   foreach(var c in e.Children)Walk(c);
  }
@@ -119,7 +124,7 @@ public sealed class ToolConfigurationState {
  }
  internal ConfigurationTemplateResolution ResolveTemplate(ConfigurationNodeState node) {
   var evaluated=displayTypeResolvers.TryGetValue(node.Element.Tag,out var resolver)?resolver(node):null;
-  var result=ConfigurationTemplateCatalog.Resolve(node.Element.Tag,evaluated);
+  var result=ConfigurationTemplateCatalog.Resolve(IsPointPairSelector(node.Element)?"ButtonSelecter":node.Element.Tag,evaluated);
   if(!result.IsRecognized&&node.Element.Tag is not "Tab" and not "Category")Diagnose("UnsupportedTemplate",node.Element.Tag,node,result.Support+": "+result.Rule);
   return result;
  }
@@ -129,6 +134,14 @@ public sealed class ToolConfigurationState {
  }
  public ConfigurationNodeState? Find(string name)=>Nodes.FirstOrDefault(x=>x.Name==name);
  public ConfigurationNodeState? GetNode(ConfigurationElement element)=>byElement.GetValueOrDefault(element);
+ public IReadOnlyList<ConfigurationElement> GetChildren(ConfigurationElement parent)=>childOrders.GetValueOrDefault(parent)??parent.Children;
+ /// <summary>Runtime collection ordering only; immutable source XML and persisted algorithm parameters are untouched.</summary>
+ public void MoveBefore(ConfigurationElement element,ConfigurationElement before) {
+  if(ReferenceEquals(element,before))return;
+  var parent=element.Parent;
+  if(parent is null||!ReferenceEquals(parent,before.Parent)||!byElement.ContainsKey(element)||!byElement.ContainsKey(before))throw new ArgumentException("Move requires registered sibling controls.");
+  var ordered=GetChildren(parent).ToList();ordered.Remove(element);ordered.Insert(ordered.IndexOf(before),element);childOrders[parent]=ordered.AsReadOnly();Changed?.Invoke();
+ }
  internal ConfigurationNodeState? NearestParent(ConfigurationElement? e) {for(;e!=null;e=e.Parent)if(byElement.TryGetValue(e,out var n))return n;return null;}
  static string? Field(ConfigurationElement e,string key)=>e.Children.FirstOrDefault(x=>x.Tag==key)?.Text??e.Attributes.GetValueOrDefault(key);
  static IEnumerable<ConfigurationElement> Section(ConfigurationElement e,string section)=>e.Children.FirstOrDefault(x=>x.Tag==section)?.Children??[];
@@ -145,7 +158,7 @@ public sealed class ToolConfigurationState {
      var readUser=Dispatch(new(ConfigurationOperationKind.ReadUserValue,"GetUserData",n,null,[key],ConfigurationChangeKind.Initialization));
      if(readUser.Handled)Change(n,"CurValue",readUser.Value??n.Get("DefaultValue")??n.Value,ConfigurationChangeKind.Initialization);
     }
-    if(n.IsInteger32||n.Element.Tag is "Float" or "Boolean" or "String") {
+    if(n.IsInteger32||n.Element.Tag is "Float" or "Boolean" or "String" or "OpenFileForCalibDialog") {
      var mode=Dispatch(new(ConfigurationOperationKind.ReadUserValue,"GetSubscriptionMode",n,null,["@"+(n.Name??"")+(n.Get("ComTailName")??"")],ConfigurationChangeKind.Initialization));
      if(mode.Handled&&bool.TryParse(mode.Value,out var subscribed))n.Assign("IsSub",subscribed.ToString());
     }
@@ -157,6 +170,13 @@ public sealed class ToolConfigurationState {
  }
  public void SetProgrammatic(string name,string property,string value)=>SetProgrammatic(Find(name)??throw new KeyNotFoundException(name),property,value);
  public void SetProgrammatic(ConfigurationNodeState node,string property,string value)=>Change(node,property,value,ConfigurationChangeKind.Programmatic);
+ /// <summary>Explicit authoritative readback, corresponding to GetParamUnit. Unlike an arbitrary
+ /// programmatic presentation change, this updates the rollback baseline after a successful read.</summary>
+ public bool RefreshParameter(ConfigurationNodeState node) {
+  var result=Dispatch(new(ConfigurationOperationKind.ReadParameter,"ReadParameter",node,null,[],ConfigurationChangeKind.Programmatic));
+  if(!result.Handled||result.Error is not null||result.Value is null)return false;
+  Change(node,"CurValue",result.Value,ConfigurationChangeKind.Programmatic);committedValues[node]=node.Value;return true;
+ }
  public void CommitUser(string name,string value,bool forceWrite=false)=>CommitUser(Find(name)??throw new KeyNotFoundException(name),value,forceWrite);
  public void CommitUser(ConfigurationNodeState node,string value,bool forceWrite=false) {
   if(!node.Enabled){Diagnose("DisabledCommit","CommitUser",node,"Parameter is disabled.");return;}
@@ -190,6 +210,7 @@ public sealed class ToolConfigurationState {
  public void Invoke(ConfigurationNodeState node) {
   if(!node.Enabled){Diagnose("DisabledCommand",node.Element.Tag,node,"Command is disabled.");return;}
   if(node.Element.Tag=="Button_ResetAlgoParams") {Dispatch(new(ConfigurationOperationKind.ResetParameters,"Button_ResetAlgoParams",node,null,[],ConfigurationChangeKind.Command));return;}
+  if(node.Element.Tag=="SaveFileDialog"){Dispatch(new(ConfigurationOperationKind.SaveFile,"SaveFileDialog",node,null,[],ConfigurationChangeKind.Command));Changed?.Invoke();return;}
   var setter=node.Element.Children.FirstOrDefault(x=>x.Tag=="CommandSetter");
   if(setter==null){Diagnose("UnsupportedOperation",node.Element.Tag,node,"No supported command setter.");return;}
   Operate(node,setter,ConfigurationChangeKind.Command);Changed?.Invoke();
@@ -296,8 +317,10 @@ public sealed class ToolConfigurationState {
    case "":break;
    case "VisibleOperation":
    case "HiddenOperation":
+   case "CategoryHiddenOperation":
+    if(operation=="CategoryHiddenOperation"&&target?.IsCategory!=true){Diagnose("MissingTarget",operation,source,"Category target not found.");break;}
     if(target==null){Diagnose("MissingTarget",operation,source,"Visible target not found.");break;}
-    originalVisibility.TryAdd(setter,operation=="HiddenOperation");working[setter]=true;Change(target,"CustomVisible",(operation=="VisibleOperation").ToString(),kind);break;
+    originalVisibility.TryAdd(setter,operation!="VisibleOperation");working[setter]=true;Change(target,"CustomVisible",(operation=="VisibleOperation").ToString(),kind);break;
    case "DoInitOperaion":
     if(target!=null)foreach(var s in Section(target.Element,"Initers"))Operate(target,s,kind);break;
    default:
@@ -316,9 +339,9 @@ public sealed class ToolConfigurationState {
   if(Field(setter,"PropertyName") is {} property&&target!=null)Change(target,property,Field(setter,"Value")??"",kind);
  }
  static ConfigurationOperationKind Kind(string name,string[] args)=>name switch {
-  "GetSelectedCombinationOperation" or "GetSelectedFilterOperation"=>ConfigurationOperationKind.ReadInputBinding,
-  "SetCombinationSourceOperation" or "SetFilterSourceOperation"=>ConfigurationOperationKind.WriteInputBinding,
-  "GetFrontParamItemsOperation" or "GetFrontCombinationTreeOperation" or "GetFrontFilterTreeOperation"=>ConfigurationOperationKind.EnumerateInputs,
+  "GetSelectedDisplayFilterOperation" or "GetSelectedCombinationOperation" or "GetSelectedFilterOperation"=>ConfigurationOperationKind.ReadInputBinding,
+  "SetResultIOToModuleOperation" or "SetCombinationSourceOperation" or "SetFilterSourceOperation"=>ConfigurationOperationKind.WriteInputBinding,
+  "GetFrontAndSelfFilterTreeOperation" or "GetFrontParamItemsOperation" or "GetFrontCombinationTreeOperation" or "GetFrontFilterTreeOperation"=>ConfigurationOperationKind.EnumerateInputs,
   "GetModuleParamBindOperation"=>ConfigurationOperationKind.ReadParameterBinding,
   "SetModuleParamBindOperation"=>ConfigurationOperationKind.WriteParameterBinding,
   "ExcuteMethodOperation"=>args.FirstOrDefault() switch {

@@ -13,10 +13,10 @@ static class Program {
    bool framework=args.Contains("--framework");
    string id=framework?"vision.read-calib-file":args.FirstOrDefault()??"vision.n-point-calibration";
    var app=new Application{ShutdownMode=ShutdownMode.OnMainWindowClose};
-   var window=new MainWindow{Title="插件线验收 · 流程隔离版 — "+id};
+   var window=new MainWindow{Title="插件线验收 · 公共配置模型 — "+id};
    var original=(UIElement)window.Content;window.Content=null;
    var host=new DockPanel();
-   var banner=new TextBlock{Text="插件线验收  |  "+(framework?"公共配置框架：图像源 + 标定加载 · 流程隔离版":id)+"  |  tool-plugins 工作树",
+   var banner=new TextBlock{Text="插件线验收  |  "+(framework?"公共配置框架：图像源 + 标定加载 · 公共配置模型":id)+"  |  tool-plugins 工作树",
     Background=new SolidColorBrush(Color.FromRgb(255,121,0)),Foreground=Brushes.Black,
     FontSize=15,Padding=new Thickness(10,5,10,5)};
    DockPanel.SetDock(banner,Dock.Top);host.Children.Add(banner);host.Children.Add(original);window.Content=host;

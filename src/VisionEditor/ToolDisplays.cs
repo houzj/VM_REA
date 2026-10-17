@@ -21,6 +21,7 @@ public partial class MainWindow {
  void RefreshToolDisplay(NodeDocument? node){
   var provider=node is null?null:plugins.Find(node.ModuleId) as IToolDisplayProvider;
   ToolDisplayFrame? frame=provider is not null&&node is not null&&results.ContainsKey(node.Id)?provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId)):null;
+  if(frame is not null&&node is not null)frame=ToolConfigurationDisplaySubscriptions.ApplyPositions(frame,node,doc.CurrentProcedureId,(source,port)=>results.GetValueOrDefault(source)?.Outputs.GetValueOrDefault(port));
   toolRecordTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
   toolListTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
   if(provider is null&&DisplayTabs.SelectedIndex>1)DisplayTabs.SelectedIndex=0;

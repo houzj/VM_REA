@@ -5,7 +5,7 @@ using System.Windows;
 namespace VisionPluginContracts;
 
 public enum ConfigurationFileStatus { Selected, Cancelled, Unsupported, Failed }
-public sealed record ConfigurationFileRequest(string ModuleKey,string CurrentPath,string Filter,string Title,bool Multiselect=false,bool Remote=false);
+public sealed record ConfigurationFileRequest(string ModuleKey,string CurrentPath,string Filter,string Title,bool Multiselect=false,bool Remote=false,bool CheckFileExists=true,bool CheckPathExists=true);
 public sealed record ConfigurationFileSelection(ConfigurationFileStatus Status,IReadOnlyList<string> Paths,string? Diagnostic=null);
 public sealed record ConfigurationFileHistoryResult(bool Success,string? Directory=null,string? Diagnostic=null);
 public interface IToolConfigurationFileService {
@@ -39,8 +39,8 @@ public sealed class WpfConfigurationFileService:IToolConfigurationFileService {
    var initial=stored.Directory??"";
    if(File.Exists(request.CurrentPath))initial=Path.GetDirectoryName(Path.GetFullPath(request.CurrentPath))??initial;
    if(!Directory.Exists(initial))initial="";
-   var result=picker(owner,new(initial,request.Filter,request.Title,request.Multiselect));
-   if(result.Status==ConfigurationFileStatus.Selected&&(result.Paths.Count==0||!request.Multiselect&&result.Paths.Count!=1||result.Paths.Any(p=>!File.Exists(p))))return new(ConfigurationFileStatus.Failed,[],"Picker did not return existing files.");
+   var result=picker(owner,new(initial,request.Filter,request.Title,request.Multiselect,request.CheckFileExists,request.CheckPathExists));
+   if(result.Status==ConfigurationFileStatus.Selected&&(result.Paths.Count==0||!request.Multiselect&&result.Paths.Count!=1||result.Paths.Any(p=>request.CheckFileExists&&!File.Exists(p)||request.CheckPathExists&&!Directory.Exists(Path.GetDirectoryName(Path.GetFullPath(p))))))return new(ConfigurationFileStatus.Failed,[],"Picker did not return existing files.");
    return result;
   }catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException){return new(ConfigurationFileStatus.Failed,[],error.Message);}
  }

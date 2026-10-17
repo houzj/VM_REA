@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace VisionPluginContracts;
 
-public enum ConfigurationSubscriptionDomain { InputIo, Combination, Parameter }
+public enum ConfigurationSubscriptionDomain { InputIo, Combination, Parameter, Display }
 public enum ConfigurationSubscriptionStatus { Available, Unsupported, Failed }
 public enum ConfigurationSubscriptionIndexKind { All, Literal, Reference }
 /// <summary>Identity is never recovered by parsing the localized caption or displayed subscription text.</summary>
@@ -92,17 +92,18 @@ public static class ConfigurationSubscriptionValidation {
   string? F(ConfigurationElement e,string key)=>e.Children.FirstOrDefault(c=>c.Tag==key)?.Text??e.Attributes.GetValueOrDefault(key);
   var drop=element.Children.FirstOrDefault(x=>x.Tag=="DropOpenSetter");
   if(domain==ConfigurationSubscriptionDomain.Parameter) {
-   string type=F(element,"ComType")??element.Tag switch {"Integer"=>"int","Float"=>"float","Boolean"=>"int","String"=>"string",_=>""};
+   string type=F(element,"ComType")??element.Tag switch {"Integer"=>"int","Float"=>"float","Boolean"=>"int","String" or "OpenFileForCalibDialog"=>"string",_=>""};
    return new(new(ConfigurationSubscriptionDomain.Parameter,(element.Name??"")+(F(element,"ComTailName")??""),type),Array.AsReadOnly(type.Split(';',StringSplitOptions.RemoveEmptyEntries)));
   }
   if(drop==null)return null;
-  var op=F(drop,"OperationName");if(op is not "GetFrontFilterTreeOperation" and not "GetFrontCombinationTreeOperation")return null;
-  var selectedDomain=op=="GetFrontCombinationTreeOperation"?ConfigurationSubscriptionDomain.Combination:ConfigurationSubscriptionDomain.InputIo;
+  var op=F(drop,"OperationName");if(op is not "GetFrontFilterTreeOperation" and not "GetFrontCombinationTreeOperation" and not "GetFrontAndSelfFilterTreeOperation" and not "GetFrontParamItemsOperation")return null;
+  var selectedDomain=op=="GetFrontAndSelfFilterTreeOperation"?ConfigurationSubscriptionDomain.Display:op=="GetFrontCombinationTreeOperation"?ConfigurationSubscriptionDomain.Combination:ConfigurationSubscriptionDomain.InputIo;
   var types=(F(drop,"OperationParams")??"").Split(';',StringSplitOptions.RemoveEmptyEntries);
   var sets=element.Children.Where(x=>x.Tag=="Triggers").SelectMany(x=>x.Children).SelectMany(x=>x.Children.Where(c=>c.Tag=="Setters")).SelectMany(x=>x.Children);
-  var setter=sets.FirstOrDefault(x=>F(x,"OperationName") is "SetFilterSourceOperation" or "SetCombinationSourceOperation");
+  var setter=sets.FirstOrDefault(x=>F(x,"OperationName") is "SetResultIOToModuleOperation" or "SetFilterSourceOperation" or "SetCombinationSourceOperation");
   var destination=setter==null?null:F(setter,"OperationParams")?.Split(';').FirstOrDefault();
   if(string.IsNullOrEmpty(destination))return null;
-  return new(new(selectedDomain,destination,string.Join(';',types)),Array.AsReadOnly(types));
+  if(op=="GetFrontParamItemsOperation"&&F(setter!,"OperationName")=="SetCombinationSourceOperation")selectedDomain=ConfigurationSubscriptionDomain.Combination;
+  return new(new(selectedDomain,destination,string.Join(';',types)),Array.AsReadOnly(types),IncludeSelf:selectedDomain==ConfigurationSubscriptionDomain.Display);
  }
 }

@@ -164,3 +164,12 @@ At the user's request, the original checkout now develops framework and integrat
 
 按`TimeOutSet.xaml/.cs`和`VmProcedureDecorator.SetTimeOutCommandExe`恢复流程菜单入口、370×200配置窗口、0—100000毫秒读写与独立方案持久化。托管执行使用独立的协作取消/清理实现，原生SDK后端的超时语义仍未知，不能称为原生调度等价。证据、已验证范围及缺口见PROCEDURE-WAIT-TIME.md。此批只修改main所有的流程/文档/执行器文件，不改插件工作树。
 
+
+## 四工具独立并行：配置架构阶段（2026-10-17 用户验收通过）
+
+- 用户纠正后四线为 N 点标定、N 图像标定、标定板标定、相机映射，各自按独立工具清单恢复源码、资源、运行和实现。公共能力由根线单一协调；坐标系最后，不做设备测试。
+- N 点生产配置已切换原厂 XML/Group 的公共模型宿主；点表、显示对象、文件/复位服务接入。公共路径叶、PointPair 无名成员/运行时重排、EnumerationG typed IMAGE 下拉随本轮复用，不往各工具复制第二套配置架构。
+- 28 程序回归全部退出0，日志 analysis/configuration-regression/npoint-four-tools/summary.json；其中 NPoint.ConfigurationChecks 是编译快照51项。之后补显示绑定保留的最新独立回归53项通过（analysis/build/npoint-final-reset）。实际主窗口458项、Core122项、控件25项、视图181项、状态1692项、订阅43项通过。全解决方案构建0错误，4条现存nullable警告保留；原生数值已有差异仍保留报告，不宣称完整等价。
+- 已经用户授权的真实桌面 CMD 路径启动 Start-NPoint-Acceptance.cmd；本次产物 analysis/manual-acceptance/b2c54e73712744d88ebcd82d0470aa94，启动日志 MANUAL_ACCEPTANCE_READY vision.n-point-calibration。用户已明确回复“通过本轮配置架构验收”。本节点按该范围中文提交推送，并通知主框架按需同步；通知不代表主框架已采用新基线。
+- 整个工具未闭合：N 点原厂显示路径/旋转轴点完整交互及桌面同状态对照仍开放；其余三线的数值差异、ROI/显示复杂叶及生产注册由各线继续推进。原始证据和其他工作树均未修改，original-config.xml 本地暂存继续保留。
+- 暂存提交内容已导出到 analysis/commit-review/npoint-accepted 验证，不依赖 N 图像/标定板/相机映射的在制实现。N 点项目独立构建0警告0错误；三份嵌入原厂XML与工作区字节SHA256一致。导出副本全解决方案构建仍受既有 VmRouting.Checks 对仓库外 analysis/decompiled/ConnectorOrientation.cs 的相对路径依赖影响（源工作树全构建已通过），此项不冒充可独立完整构建成功。
