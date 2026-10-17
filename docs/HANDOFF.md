@@ -1,5 +1,13 @@
 # Integration handoff
 
+## 2026-10-17 职责与清单重新调整：插件相关公共框架在本项目开发
+
+用户明确将插件/节点必需框架列为本项目正式工作，新增 `docs/PLUGIN-FRAMEWORK-CHECKLIST.md` PF-001～014，并调整插件总清单与 PARALLEL-WORK.md。公共定义/状态/模板/宿主、订阅/执行/文件通知/ROI 桥接与算法插件同步逆向，先公共链路再闭合标定工具。N点/N图像最高优先级、坐标系最后、无设备测试、验收后中文提交推送保持不变。
+
+本轮代码在制，未提交/推送/合并；已向原 checkout 的主框架会话发同步消息，说明共享文件与接口负责范围，请其确认插件发现注册、复合 I/O、数组索引和 ROI 的已有实现，避免覆盖和重复实现。消息已发送不等于对方已确认或代码已同步。公共合同当前状态与迁移见 CONTRACT-REQUESTS.md；旧 N点/平移旋转历史算法提交保留，配置 UI 闭合状态重新打开。
+
+当前普通配置模型提供器以 ReadCalibFile 为真实宿主样本；N点复杂模板演示为测试覆盖工具，不是完整N点验收。公共链路专项回归与实际WPF回归继续执行，完成可验收节点后启动明确标记程序供用户人工验收，不以测试数量宣布全部节点等价。
+
 ## 2026-10-16 / tool-plugins: JPEG source correlation and independent backend
 
 - Supersedes the previous JPEG-unavailable implementation. Original MVDMediaProcess identity/version plus focused decompilation establish libjpeg-turbo 2.1.3, default RGB decoding flags/pitch and warning acceptance. Correlated source hashes and 27 original SDK fixture observations are tracked in docs/plugins/image-source-jpeg-evidence.json. The original conversion wrapper is traced further, but its kernel remains unrecovered.
@@ -123,3 +131,32 @@ Not complete native parity: full desktop modes, camera/subscription/folder UI ne
 - 原厂源码和13文件、48个受控Process/raw场景、26次导出与24份成功XML、12组原厂UI模式解析和原厂点表均已索引。完成/未完成输出差异、缺物理坐标保留、旋转数量与界面类型分离、示教失败副作用、文件首次/重复缺图像回退原点均按证据复现。
 - 专属回归7,447项通过，实际WPF宿主267项通过；全解决方案0警告0错误。主线补齐宿主注册、目录映射和解决方案，点表导入保留原厂有效前缀写入。详情和哈希见translation-calibration-verification.json，接口说明CAL-004。
 - 不做设备测试，不宣称完整原厂Platform/桌面与全部数值等价。完整原厂参数面板BAML失败、公共弹层、SOL二进制和数值内核既有边界均保留；不修改另一worktree。按用户授权中文提交并推送本分支；空位转入标定加载，坐标系仍最后。
+
+
+# 公共配置基础链路 + 双真实工具样本：人工验收候选（2026-10-17）
+
+- 按管理线核实后的人类恢复调度继续；保留原有全部在制文件，仅当前 tool-plugins 工作树开发，没有修改或合并 main。
+- 公共模型/状态/生产模板、紧凑非模态宿主、类型化订阅、回调执行、文件/目录/通知，以及图像源与标定加载的真实生产模型已接线；五项源码审查修复详见 `plugins/CONFIGURATION-REVIEW.md`。N 点仍有复杂模板缺口，不在本节点宣称闭合。
+- 管理线决定复合身份。本线根 Scope 每次方案打开独立；借用流程视图统一 State、SDK 提交、目录事件、图像列表、显示结果、保存和删除清理。GraphExecutor 和配置宿主真正传播 ProcedureId；新事件带 ScopeId/ProcedureId/NodeId；旧无流程调用仅留独立兼容命名空间。主线 WorkflowNodeIdentity/缓存/Group 后端仍按 CONTRACT-REQUESTS 逐项合流。
+- 最终完整回归：`analysis/configuration-regression/procedure-identity-final-v5`，解决方案零警告零错误，22 程序全部通过；实际 WPF 298、流程执行68、图像源773、图像源配置57、标定加载配置44、标定加载810。额外光源11,836通过。新增真实 Graph 双流程同ID状态、SDK 11/22 像素、目录列表、保存/删除和生命周期检查。测试失败的前轮日志保留，不计作通过。
+- 报告 `plugins/configuration-verification.json` 索引最终日志、二进制依赖和源码哈希；8 工厂元数据已重新导出到 `plugins/tool-implementation-manifest.json`，未创建第二套发现器。实际验收启动器为 `tests/Launch-ConfigurationAcceptance.ps1`，操作说明为 `plugins/CONFIGURATION-MANUAL-ACCEPTANCE.md`。
+- 当前仅到人工验收候选，尚未提交/推送。用户确认后按中文节点提交；主线再逐文件合流。不做设备测试，也不把本轮 WPF/原厂受控托管探针当完整原厂桌面像素等价。PF-006/010/011、带渲染宿主、SDK宽500嵌入布局等保留显式缺口。
+
+
+# 用户管控双独立项目：职责与基线文档更新（2026-10-17）
+
+- 本轮仅修改 AGENTS、PARALLEL-WORK、PLUGIN-FRAMEWORK-CHECKLIST、plugins/CHECKLIST、CALIBRATION-DEPENDENCIES、FRAMEWORK-RECONSTRUCTION、CONTRACT-REQUESTS 及交接文档；新增 PLUGIN-DEVELOPMENT-BOUNDARY 与 DEVELOPMENT-BASELINE。未改产品/算法/验收启动程序，未提交/推送/合并/重置。
+- 插件项目独占工具及其必需节点框架；主项目独占通用主界面、工作流/画布/Group、方案/流程生命周期与最终集成。每项启用的工具任务同时指定原厂证据、公共框架能力、主框架接口/交叉文件单一提交所有者、实际产品验收。当前任务配套表已登记，未启动声明不冒充已配齐任务。
+- 本线 HEAD 1d668772df8788e88fb79f7b94847ca43a22de29；main 参考351c778b1403acfd3e6a03da5b0b43850208dc87；共同祖先bf52c1305b6558e1ecbcc8f48f8e21f438c1ea97；各独有14/22提交。远程ls-remote因本机schannel凭据错误失败，仅核对本地origin引用，不声称远端已同步。
+- 安全同步：现在只交接职责/合同/状态；用户验收当前在制候选后形成中文提交，主线逐文件审查/集成/回归，再记录双方统一开发基线。当前尚未统一代码基线，也不跨目录更改另一项目。用户自行控制两个对话后续任务。
+
+
+# 用户授权当前在制节点提交与跨项目同步（2026-10-17）
+
+用户最新明确“先不修复这个，先提交并推送远程，并同步主框架，后面各自开发”。本次是保存在制成果与同步节点，覆盖此前等待人工验收后才提交的顺序要求；不能据此把人工验收改为通过。
+
+- N 点插件仍走旧 IWpfToolEditorFactory → NPointWindow，尚未迁入 IToolConfigurationProvider；手写页签、420×650和1ms循环等与新公共模型有结构性差异。用户要求暂不修复；配置UI保持未闭合，复杂模板缺口继续保留。N图像等在制实现也不冒充闭合工具。
+- 保存现有公共配置基础链路、图像源/标定加载候选、状态隔离、证据和测试，以及其余未完成标定代码供后续独立开发。此前最终22程序与WPF298通过仍仅为已记录范围，不表示人工或原厂桌面等价。
+- Start-Plugin-Acceptance.cmd 改为可重建的启动入口，调用tests中的启动器，不引用只存在于本机的随机分析目录。
+- 根目录 original-config.xml 为本地临时文件，继续保留但不纳入产品提交；其余工作已在analysis/worktree-snapshots/pre-sync-*保留二进制补丁及未跟踪快照。
+- 通过提交号向主框架交接；双方保留在制文件，交叉文件逐项审查，不强制reset/clean或整文件覆盖。统一基线需主框架完成集成后双方确认，未完成前不能声称已经合流。

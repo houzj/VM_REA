@@ -1,5 +1,7 @@
 # Shared contract requests
 
+2026-10-17 最新职责：插件/节点所需框架层是本项目正式实施范围，详见 `PLUGIN-FRAMEWORK-CHECKLIST.md` PF-001～014。本文件同时承担公共契约、实施状态、迁移与主框架同步记录，不能再将全部条目解释为“由框架线代为实现”。本线仅修改当前 worktree；主框架合流状态另行记录，未经确认不标为已同步代码。
+
 User-assigned ownership: the plugin line implements ImageSource-required shared changes in its own worktree. The other worktree is not modified. Earlier pending sections below are historical requests; this status and the latest implementation notes take precedence.
 
 | Contract | Current implementation | Remaining boundary |
@@ -127,3 +129,78 @@ The following supersedes earlier unavailable/pending implementation descriptions
 - CAL-001补充：原厂GetFloat与BatchGetFloat共用输入名，单个float是长度1的点坐标序列。Number可单向提升为NumberArray，GraphExecutor、当前模块自执行及流程接口在边界实际构造只读单元素数组；不允许数组隐式降为标量，整数也不自动当float。这样原有定位/变量的float能用于N点逐点采集。
 
 - CAL-004（平移旋转标定，已接通）：TranslationPlugin复用NumberArray/Text/Calibration及现有会话、订阅、撤销、保存和自执行接口，无新增共享类型。原厂示教端口为TeachFlag，完成结果为IsRightCoorA；不能复用N点的TeachFlagInput/CalibErrStatus输出名。专属文件内部原点有写入副作用，由插件状态维护，不进入通用矩阵契约。
+
+- CAL-005（标定加载，推进中）：原厂ReadCalibFile允许任意int/float/string/FloatList/姿态名称，固定输出表不够。新增IToolNodeDescriptorProvider.DescribeNode与ModuleRegistry可选node描述器，从已持久化OutputSchema及DynamicOutData描述动态输入/输出，校验并冻结端口，保持注册身份与参数不变；不在描述器读取磁盘或自动放行任意运行输出。窗口成功加载时确认schema并作为文档事务保存，旧订阅按现有图校验处理。RefreshSignal重载后文件schema变化需显式失败并提示重新确认，避免运行中静默改图；原厂动态UI协议及来源见read-calib-file专项证据。
+
+- CAL-005 补充（原厂显示附加 I/O）：ReadCalibFile AnalyzeExtraIO RVA 0x9410 与 ProcessExtraIO RVA 0xc100 确认动态浮点显示项先读取同名 float 输入，仅 getter 返回码非零才回退 int 并转换 float。新增 PortDescriptor.AcceptInteger，默认 false，只有 Number/NumberArray 输入可显式启用；图连线校验、订阅校验、流程运行和配置自运行使用同一端口规则。整数转原厂 float 精度，数组包装单元素；普通 Number/NumberArray、参数和流程边界不自动放宽。节点描述器无文件读取，运行输出仍逐项验证，schema 变更不得静默修复旧连线。共享执行检查 57 项通过，包含实际整数来源连线和常量订阅消费、普通端口拒绝、冻结和存储重载。
+
+
+## CFG-001～004：配置框架优先重建（2026-10-17）
+
+用户确认偏差来自节点配置架构/公共契约/模板，优先于继续插件闭合。详见 FRAMEWORK-RECONSTRUCTION.md 与 configuration-host-lifecycle-evidence.json。
+
+- CFG-001：保留 ModuleDescriptor 作为执行合同，新增并列的源驱动配置模型与插件操作适配边界；原厂 Tabs/Categorys/GroupLinkItem/DisplayType/状态/底部左右命令须保真，不按 DataKind 猜控件。当前 IWpfToolEditorFactory 仅为迁移适配，不能作为最终可任意自建窗口的合同。
+- CFG-002：公共模板目录按 NameValueItem 展示键和原厂 DataTemplate 选择，明确支持范围；未知类型不能回退文本框后计为复现。特殊插件内容扩展在内容层，顶层窗口与布局由宿主拥有。
+- CFG-003：普通参数窗与带渲染配置宿主分离。原厂 VmModuleDecorator 229～268 行确认普通窗口 Show()、主窗口 Owner、同 ParamsConfig 重用/切换关闭。已实现 ToolConfigurationWindowHost 并接入 WPF 普通节点入口；11项独立生命周期检查通过。旧插件外观尚未迁移，不能宣称完整对齐。
+- CFG-004：统一命令/订阅/ROI桥接与运行状态。原厂参数修改自动执行受全局开关、CanTriggerRun 继承和 busy 状态门控；连续执行有300 ms与回调门控；NeedPopTip并非通用前置确认。迁移之前保留这些缺口，不把手工底部执行按钮当模板规范。
+
+## 配置框架实施与主框架同步（2026-10-17，在制）
+
+- 配置合同：`IToolConfigurationProvider.CreateConfiguration(context)` 返回 `ToolConfigurationSession(State, Controls, Language, Localize, release)`。插件不创建顶层窗；普通宿主消费 `ToolConfigurationModelWindow`。原 `IWpfToolEditorFactory` 仅兼容迁移，N点等旧窗口尚未自动变为新模型。
+- 订阅：`IToolConfigurationSubscriptionService` 按 Domain/稳定身份/typed reference/index/结果状态交互。`WorkflowConfigurationSubscriptionService` 已桥接当前根流程显式 ExecutionLinks 祖先的声明输出及有限标量常量、读取/写入后核对；宿主走文档事务和撤销。无祖先链接不按节点顺序猜；全局/局部/父输入/原厂private与字段层级/数组索引运行映射保留缺口，与主框架已有复合I/O统一后再扩展。
+- 执行：`ConfigurationExecutionHostStatus` 分 solution/procedure busy、ready、loading、RunEnabled。公共调度消费完成回调 Task；主窗口将自执行结果按 procedure 存储和取用，阻止与全流程并发。方案更换关闭配置并清空结果。当前 Graph ready 是独立映射。
+- 文件/通知：`IToolConfigurationFileService.Select/Remember` 与 `IToolConfigurationNotificationService.Notify` 由宿主提供；模块目录历史按共享用户 JSON 存储，原厂 INI 的明确替代。Read 保留选文件→写参/通知/预执行→存目录顺序，同路径重新选择显式 forceWrite；消息框为共享独立 WPF 外观，远程上传协议 Unsupported。
+- 合流风险：主框架已有更丰富 DataKind、复合字段/数组索引、Region/Polygon/Fixture 与加载发现工作。必须按公共签名和逐文件增量合流，保持既有枚举/持久化意义，不整体覆盖 Contracts、执行器或宿主文件。当前本线工作树尚未提交，不提供虚构 cherry-pick 标识。
+- 已向主框架会话“了解当前热门的 REA 逆向”（`01a137c0-328e-7f82-a3e9-80919f331501`，原 checkout）发出职责与文件级同步请求；等待其确认在制范围。已发消息不表示代码已合并。后续同步须记录提交与人工验收状态。
+
+### 与 main `325b48c` 的兼容核对（未合并）
+
+主线已提交职责/共享文件锁并确认本线主责配置框架。只读核对其已提交代码后确认以下不能整文件覆盖的差异：
+
+| 范围 | 本线 | main 325b48c | 合流要求 |
+|---|---|---|---|
+| DataKind/PortValue | RGB/通用图像、NumberArray、Calibration | Region/Fixture/Point + ValueCardinality 数组与复合叶 | 两线7～10枚举位置不同；SolutionStore主要按字符串写出，但对象/其他序列化不能按数字互换。不能将NumberArray直接当main既有数组形状；需主线指定统一表示和旧格式迁移 |
+| PortDescriptor/ModuleRegistry | AcceptInteger显式回退、DescribeNode动态输入输出 | Cardinality、参数Editor、复合/Group合同 | 保留main所有新字段，在其冻结/校验上增量接动态描述器与显式回退；禁止用本线Contracts覆盖main |
+| ToolEditorContext | Scope、相机/光源、typed配置订阅、文件/通知、运行状态 | IToolDebugSession、PreviewInput/Image、DisplayStyles、ApplyConfiguration(Change)、InputLabel/Clear/Edit | 新增并列Session配置模型接口，不删除main调试/ROI接口；清楚区分公共配置调度与调试执行后端 |
+| 配置运行后端 | ToolExecutionScope.RunConfiguredTool、按流程结果缓存 | NodeDebugExecutor/ToolDebugSession、ToolEditorHost中invalid依赖传播、Group调用输入/LoopIndex | 本线缓存测试只验证所属流程，不替代main已有Group自运行；主线统一后端时由配置Session调用其运行服务，避免并行两份结果缓存/取消所有权 |
+| 窗口 | 公共ModelWindow、非模态唯一普通配置窗 | 工具/Group专属Window兼容、异步Closing等待调试清理 | 合并生命周期时保留关闭等待/异常/取消；带渲染/ROI宿主不能强塞普通紧凑窗 |
+
+原始核对来自 `git show 325b48c:src/VisionPluginContracts/Contracts.cs`、`src/VisionEditor/ToolEditorHost.cs`、`src/VisionFramework/Contracts.cs`、本线同路径在制代码。这里只记录真实差异与合流要求，不声称已实现main兼容，也不直接修改或合并main工作树。
+
+### 本轮新增公共边界与限制
+
+- `ToolEditorContext.Resources` 为返回当前方案 `ResourceCatalog` 的可选委托，支持配置专属控件从真正内嵌资源读取缩略图；宿主验证方案身份。图像源通过此接口覆盖删除本地原图后的 UI/执行资源重载，不用 File.Exists 假设可用。
+- `IToolConfigurationFolderService` 与 `IToolConfigurationPresentationService` 已接入；后者只接收稳定节点身份及 `ImageSourceMode(Local=1/Camera=2/Sdk=3)`，不允许任意 XML 方法反射。`IToolImageListProvider.IsImageListVisible` 默认true保留已有提供器，图像源仅mode1显示宿主本地图像列表。原厂依据为 ModuleResultView.xaml.cs 1179～1190 及 ModuleDisplayDecorator.cs 352。
+- 文档拒绝写入是独立事务边界：参数适配器必须核对真实接受值，不把 no-op action 或缺失值当成功；插件先提交宿主再更新私有参数快照。Read 自定义文件操作在宿主拒绝时恢复先前运行数据/路径/schema。此保证不冒充原厂 SDK 成功后自动 GetParamUnit。
+- 配置自执行复用隔离单节点 GraphExecutor，保留Scope/资源并在后台运行，统一输出、状态、输入、参数与timeout检查；不重跑生产者。主线合流仍应复用其 NodeDebugExecutor/ToolDebugSession 及Group上下文，不长期保留两份调试后端。
+- **待管理线统一身份决策：**当前 `ModuleExecutionScope.State/RemoveNode/RetainNodes` 的key仅 `(ModuleId, NodeId)`，Run/Refresh事件也只有NodeId；SolutionStore只在各流程内校验NodeId唯一。因此导入的跨流程同名NodeId可能共享运行对象，不能仅凭按流程结果缓存修复就宣称全部生命周期隔离。后续需统一为包含ProcedureId的状态/事件身份，或规定并迁移全方案唯一NodeId；SDK SubmitImage、GetImages、目录监听、资源保存和节点清理必须一起迁移，不能只加一个未被调用的新重载。当前手动样例及编辑器新建GUID节点不覆盖该异常输入；未冒充已修复。
+
+
+### 2026-10-17 管理线决策后的运行身份迁移（待最终回归与人工验收）
+
+管理线明确保留跨流程同名 NodeId，采用复合身份，而非全方案唯一 ID 拒绝校验。主线拥有 `WorkflowNodeIdentity(SolutionId,ProcedureId,NodeId)` 与调试缓存；本线将 `ModuleExecutionScope` 运行对象迁移为同一方案生命周期内 `(ProcedureId,ModuleId,NodeId)`，不修改主线工作树。
+
+- `scope.ForProcedure(procedureId)` 返回借用视图；共享方案根 Scope 的服务、取消、租约和唯一 ScopeId，视图 Dispose 不关闭方案。方案替换仍严格销毁根 Scope 并重建，不能把旧视图用于新方案。
+- GraphExecutor 在验证流程后真正将绑定视图传入 ModuleExecutionContext；配置 ToolEditorContext、图像列表 GetImages、源节点重置/删除和 Registry.PrepareSave 均传所属流程视图。SDK 调用者必须使用 `SubmitImage(scope.ForProcedure(procedureId),nodeId,image)`；目录监听捕获同一视图，因此异步事件保留所属流程。
+- 新 `ModuleNodeRequest(ScopeId,ProcedureId,NodeId)` 通过根 Scope 的 `ProcedureRunRequested/ProcedureRefreshRequested` 发出；WPF 宿主核对根 Scope，并按精确 ProcedureId/NodeId 定位，不再查找第一个同名节点。主线合流时将 ScopeId 当前打开生命周期映射到其 SolutionId 复合身份。
+- 兼容：旧 State/RemoveNode/RetainNodes 签名保留，在绑定视图上只操作该流程；根对象的旧调用留在空流程命名空间，仅供旧单模块独立调用。旧 node-only 事件仅转发空命名空间请求，不丢弃生产事件的 ProcedureId 来迁就旧观察者。多流程 SDK/宿主不得继续传根对象；没有隐式搜索流程或迁移旧状态。
+- 整方案清理使用 `RetainProcedureNodes((Procedure,Module,Node)[])`。保留流程 B 的同 ID 节点不会误保留流程 A 的状态。
+- 验证样例：一根生命周期里 A/B 均含 same 节点；分别递增状态、分别 SDK 提交 11/22 像素、分别目录列表和资源保存、只删除 A、保留 B、检查事件所属流程；关闭方案后旧视图写入必须失败，新方案同名身份不得复用。
+
+这些是独立运行时的身份隔离保证，不声称原厂私有运行对象布局等价。合流仍需主线调试缓存、Group 上下文与异步关闭共同回归。
+
+补充：结果显示 `IToolDisplayProvider.LastDisplay` 也必须使用当前流程视图；实际 WPF 旋转标定记录面板检查曾识别根 Scope 遗漏，本线已改为 `ForProcedure(CurrentProcedureId)`，归入最终回归。
+
+
+### 2026-10-17 主框架流程等待超时预告（未合流）
+
+管理线通知：main 将依据原始 TimeOutSet/SetProcedureWaitTime 证据，在 `Contracts.cs` 的 `ProcedureDocument` 增加独立 `WaitTimeMs` 字段，并接流程 UI、运行和持久化。该字段目前不引入插件线验收候选，不修改或合并另一工作树。
+
+双方形成提交后统一审查 `Contracts.cs`：保留本线动态描述器/显式数值回退等在制变更，核对 WaitTimeMs 默认值、旧方案兼容、序列化和流程运行入口；不得用整文件覆盖方式合流。流程等待超时与节点 TimeoutMs 分别保持清晰含义。主线明确其托管运行时限是独立实现，原生后端语义未验证；该边界随合流保留。本线仍等待当前配置候选的用户人工验收，不因此自动提交或推进新功能。
+
+
+### 2026-10-17 用户重新确认双项目边界
+
+本项目独占工具及其需要的公共配置/模板/调试/参数/订阅/ROI/显示与插件运行框架；主项目独占工具无关的通用主界面、工作流/画布/Group、方案/流程生命周期与最终集成。用户自行管控两项目。登记合同不转移插件框架实施责任；本线实现适配，主线提供权威流程/生命周期接口。
+
+交叉文件逐项指定一位提交所有者，详见 PLUGIN-DEVELOPMENT-BOUNDARY.md。本轮已有 Contracts/GraphExecutor/MainWindow/WorkflowExecution 等分歧先冻结和审查；未提交候选继续人工验收，禁止整文件覆盖。对齐基线须经过候选提交、主线审查集成和实际产品回归；当前只同步职责文档，不执行合并/重置。Git 核对见 DEVELOPMENT-BASELINE.md。

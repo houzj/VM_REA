@@ -2,6 +2,8 @@
 
 2026-10-17。本专项仅补齐其余标定工具的静态源码、资源和依赖清点，不实现产品、不执行设备或原厂桌面运行。N点、N图像分别由其他工作项推进；坐标系仅登记文件和导入依赖，按用户要求最后开发。
 
+最新任务设计按 [插件职责与配套表](../PLUGIN-DEVELOPMENT-BOUNDARY.md) 执行：工具、公共节点框架和主项目接口必须同时安排。本文件的静态取证范围不替代配置/调试/ROI/显示任务；N点/N图像仍最高优先级，坐标系最后。
+
 ## 证据与复查
 
 原厂安装目录：`D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration`。机器可读清单 [calibration-dependencies.json](calibration-dependencies.json) 记录 8 项、98 个原厂文件的绝对路径、长度、SHA-256，以及 153 个 AlgorithmTab 直接控件。声明保留嵌套组合数据，避免把姿态/点数组当成单标量。计数是 XML 直接 Items 子节点数，不能当成原厂实际运行端口数。

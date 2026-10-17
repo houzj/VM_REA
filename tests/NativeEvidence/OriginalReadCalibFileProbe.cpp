@@ -1,0 +1,65 @@
+// Source-confirmed owned ReadCalibFile ctor instance, synthetic ModuleFrame host; no algorithm involved.
+// Only ModuleFrame input/output/runtime imports are redirected to an explicit synthetic host.
+// No algorithm/license/code patch, platform identity, disk DLL change, or physical device.
+#include <windows.h>
+#include <vector>
+#include <string>
+#include <map>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+#include <fstream>
+#include <iterator>
+
+
+static std::map<std::string,std::vector<float>> inputs;
+static std::map<std::string,std::string> strings;
+static int instanceSerial=0;
+static unsigned absent=0xe000031c;
+static std::string failOutput;
+static std::vector<std::string> calls,writes;
+static std::string quote(const std::string& value);
+static std::string num(float x){char s[64];if(!std::isfinite(x))return "null";sprintf_s(s,"%.9g",x);return s;}
+static std::string array(const float* p,int n){std::string s="[";for(int i=0;i<n;i++){if(i)s+=",";s+=num(p[i]);}return s+"]";}
+static void getter(const char* op,const char* name,unsigned code,int count){calls.push_back("{\"op\":"+quote(op)+",\"name\":"+quote(name)+",\"code\":"+std::to_string(code)+",\"count\":"+std::to_string(count)+"}");}
+static int getFloat(void*,const char* name,int index,float* value,int* count){auto it=inputs.find(name);if(std::string(name)=="DisplayFallback"||it==inputs.end()){*count=0;getter("GetFloat",name,absent,0);return absent;}*count=(int)it->second.size();if(index>=0&&index<*count)*value=it->second[index];getter("GetFloat",name,0,*count);return 0;}
+static int batchGetFloat(void*,const char* name,int capacity,float* value,int* count){auto it=inputs.find(name);if(it==inputs.end()){*count=0;getter("BatchGetFloat",name,absent,0);return absent;}*count=(int)it->second.size();memcpy(value,it->second.data(),min(capacity,*count)*sizeof(float));getter("BatchGetFloat",name,0,*count);return 0;}
+static int getString(void*,const char* name,int index,char* value,int capacity,int* bytes,int* count){auto it=strings.find(name);if(it==strings.end()){*bytes=*count=0;getter("GetString",name,absent,0);return absent;}*bytes=(int)it->second.size();*count=1;if(capacity<=*bytes){getter("GetString",name,0xe0000012,*count);return 0xe0000012;}memcpy(value,it->second.c_str(),*bytes+1);getter("GetString",name,0,1);return 0;}
+static int write(const char* name,const char* kind,const float* values,int count,int index=0){int code=failOutput==name?(int)0xe0000001:0;writes.push_back("{\"name\":\""+std::string(name)+"\",\"type\":\""+kind+"\",\"values\":"+array(values,count)+",\"returned\":"+std::to_string((unsigned)code)+",\"index\":"+std::to_string(index)+"}");return code;}
+static int setFloat(void*,const char* name,int index,float value,int){return write(name,"float",&value,1,index);}
+static int setInt(void*,const char* name,int index,int value){unsigned code=failOutput==name?0xe0000001:0;writes.push_back("{\"name\":"+quote(name)+",\"type\":\"int\",\"values\":["+std::to_string(value)+"],\"returned\":"+std::to_string(code)+",\"index\":"+std::to_string(index)+"}");return code;}
+static int batchSetFloat(void*,const char* name,float* values,int count,int){return write(name,"float",values,count);}
+static int batchSetInt(void*,const char* name,int* values,int count,int){std::vector<float> v(count);for(int i=0;i<count;i++)v[i]=(float)values[i];return write(name,"int",v.data(),count);}
+static int getInt(void*,const char* name,int index,int* value,int* count){auto it=inputs.find(name);if(it==inputs.end()){*count=0;getter("GetInt",name,absent,0);return absent;}*count=(int)it->second.size();if(index>=0&&index<*count)*value=(int)it->second[index];getter("GetInt",name,0,*count);return 0;}
+static int setString(void*,const char* name,int index,const char* value){writes.push_back("{\"name\":"+quote(name)+",\"type\":\"string\",\"text\":"+quote(value)+",\"index\":"+std::to_string(index)+"}");return 0;}
+static int getRuntime(void*,void* data){memset(data,0,0x2b0);return 0;}
+static int setRuntime(void*,void*){return 0;}
+struct Import {void** slot;void* original;std::string name;};
+static std::vector<Import> patched;
+static void put(void** slot,void* value){DWORD old; if(!VirtualProtect(slot,sizeof(void*),PAGE_READWRITE,&old))throw 11;*slot=value;DWORD ignored;VirtualProtect(slot,sizeof(void*),old,&ignored);}
+static void install(HMODULE module){auto base=(unsigned char*)module;auto dos=(IMAGE_DOS_HEADER*)base;auto nt=(IMAGE_NT_HEADERS64*)(base+dos->e_lfanew);auto imports=(IMAGE_IMPORT_DESCRIPTOR*)(base+nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+ std::map<std::string,void*> replacements={{"VM_M_GetInt",(void*)getInt},{"VM_M_SetString",(void*)setString},{"VM_M_GetFloat",(void*)getFloat},{"VM_M_BatchGetFloat",(void*)batchGetFloat},{"VM_M_GetString",(void*)getString},{"VM_M_SetFloat",(void*)setFloat},{"VM_M_SetInt",(void*)setInt},{"VM_M_BatchSetFloat",(void*)batchSetFloat},{"VM_M_BatchSetInt",(void*)batchSetInt},{"VM_M_GetModuleRuntimeInfo",(void*)getRuntime},{"VM_M_SetModuleRuntimeInfo",(void*)setRuntime}};
+ for(;imports->Name;imports++){const char* library=(const char*)(base+imports->Name);if(_stricmp(library,"ModuleFrame.dll"))continue;auto names=(IMAGE_THUNK_DATA64*)(base+imports->OriginalFirstThunk);auto slots=(IMAGE_THUNK_DATA64*)(base+imports->FirstThunk);for(;names->u1.AddressOfData;names++,slots++){if(IMAGE_SNAP_BY_ORDINAL64(names->u1.Ordinal))continue;auto named=(IMAGE_IMPORT_BY_NAME*)(base+names->u1.AddressOfData);std::string name((char*)named->Name);auto found=replacements.find(name);if(found==replacements.end())continue;void** slot=(void**)&slots->u1.Function;void* expected=(void*)GetProcAddress(GetModuleHandleA("ModuleFrame.dll"),name.c_str());if(*slot!=expected||!expected)throw 12;patched.push_back({slot,*slot,name});put(slot,found->second);}}
+ if(patched.size()<6)throw 13;
+ printf("{\"phase\":\"synthetic-host-installed\",\"importCount\":%zu,\"moduleCodeUnchanged\":true,\"platformRuntime\":false}\n",patched.size());fflush(stdout);
+}
+static void restore(){for(auto& p:patched)put(p.slot,p.original);patched.clear();}
+static std::string quote(const std::string& value){std::string s="\"";for(unsigned char c:value){if(c=='"'||c=='\\'){s+='\\';s+=c;}else if(c=='\n')s+="\\n";else if(c=='\r')s+="\\r";else if(c>=32)s+=c;else{char code[8];sprintf_s(code,"\\u%04x",(unsigned)c);s+=code;}}return s+"\"";}
+struct Instance {
+ std::vector<unsigned char> bytes=std::vector<unsigned char>(0x180);unsigned char* module;
+ Instance(HMODULE m):module((unsigned char*)m){((void*(*)(void*))(module+0x8e30))(bytes.data());printf("{\"phase\":\"instance-start\",\"serial\":%d}\n",++instanceSerial);}
+ ~Instance(){auto table=*(void***)bytes.data();((void(*)(void*,unsigned))table[0])(bytes.data(),0);printf("{\"phase\":\"instance-end\"}\n");}
+ void get(const char* key){char text[131072]={};int actual=0;unsigned c=((int(*)(void*,const char*,char*,int,int*))(module+0xa2d0))(bytes.data(),key,text,sizeof(text),&actual);printf("{\"phase\":\"get\",\"key\":%s,\"code\":%u,\"actual\":%d,\"value\":%s}\n",quote(key).c_str(),c,actual,quote(text).c_str());fflush(stdout);}
+ void set(const char* key,const char* value,int size=-1){if(size<0)size=(int)strlen(value);((void(*)(void*,const char*,const char*,int))(module+0xd120))(bytes.data(),key,value,size);printf("{\"phase\":\"set\",\"key\":%s,\"value\":%s,\"bytes\":%d,\"returnIgnored\":true}\n",quote(key).c_str(),quote(value).c_str(),size);fflush(stdout);}
+ void load(const char* path,const char* label){std::ifstream file(path,std::ios::binary);std::string xml((std::istreambuf_iterator<char>(file)),std::istreambuf_iterator<char>());unsigned c=((int(*)(void*,const char*,char))(module+0xab50))(bytes.data(),path,1);printf("{\"phase\":\"load\",\"label\":%s,\"code\":%u,\"path\":%s,\"xml\":%s}\n",quote(label).c_str(),c,quote(path).c_str(),quote(xml).c_str());fflush(stdout);get("FilePath");get("GetCalibInputParam");}
+ void cache(const char* path){std::ifstream file(path,std::ios::binary);std::string xml((std::istreambuf_iterator<char>(file)),std::istreambuf_iterator<char>());std::vector<unsigned char> data(0x58800);*(int*)(data.data()+0x58490)=1;memcpy(data.data()+0x58498,"FileData",9);*(void**)(data.data()+0x585a0)=(void*)xml.data();*(int*)(data.data()+0x585a8)=(int)xml.size();unsigned c=((int(*)(void*,void*))(module+0xbef0))(bytes.data(),data.data());printf("{\"phase\":\"load-cache\",\"fixture\":\"rich.xml\",\"code\":%u,\"bytes\":%zu}\n",c,xml.size());fflush(stdout);get("GetCalibInputParam");}
+ void run(const char* label){calls.clear();writes.clear();unsigned c=((int(*)(void*,void*,void*))(module+0xc520))(bytes.data(),(void*)1,(void*)2);printf("{\"phase\":\"run\",\"label\":%s,\"code\":%u,\"inputs\":{",quote(label).c_str(),c);bool first=true;for(auto& i:inputs){if(!first)printf(",");first=false;printf("%s:%s",quote(i.first).c_str(),array(i.second.data(),(int)i.second.size()).c_str());}printf("},\"strings\":{");first=true;for(auto& text:strings){if(!first)printf(",");first=false;printf("%s:%s",quote(text.first).c_str(),quote(text.second).c_str());}printf("},\"getters\":[");first=true;for(auto& i:calls){if(!first)printf(",");first=false;printf("%s",i.c_str());}printf("],\"writes\":[");first=true;for(auto& i:writes){if(!first)printf(",");first=false;printf("%s",i.c_str());}printf("]}\n");fflush(stdout);}
+};
+int main(int argc,char** argv){if(argc<3)return 2;try{std::string folder=argv[1];folder=folder.substr(0,folder.find_last_of("\\/"));std::string installRoot=folder.substr(0,folder.find("Applications"));std::string proxy=installRoot+"Applications/ModuleProxy/x64/";LoadLibraryExA((proxy+"ModuleFrame.dll").c_str(),nullptr,LOAD_WITH_ALTERED_SEARCH_PATH);LoadLibraryExA((proxy+"HSlog.dll").c_str(),nullptr,LOAD_WITH_ALTERED_SEARCH_PATH);HMODULE module=LoadLibraryExA(argv[1],nullptr,LOAD_WITH_ALTERED_SEARCH_PATH);if(!module){printf("{\"loadError\":%u}\n",GetLastError());return 3;}install(module);
+ {Instance m(module);m.get("FilePath");m.get("SaveCalibDataEnable");m.get("GetCalibInputParam");m.run("default-no-file");m.load((std::string(argv[2])+"/absent.xml").c_str(),"absent-file");m.run("after-absent");}
+ for(const char* name:{"rich","minimum","empty-sections","wrong-root","malformed","custom-types","pose-four","pose-short","sentinel-r"}){Instance m(module);std::string path=std::string(argv[2])+"/"+name+".xml";m.load(path.c_str(),name);m.run(name);if(std::string(name)=="rich"){inputs={{"SnapImagePointX1",{31}},{"SnapImagePointY1",{32}},{"SnapImageR1",{33}},{"SnapWorldPointX1",{41}},{"SnapWorldPointY1",{42}},{"SnapWorldR1",{43}},{"TeachWorldPointX1",{51}},{"TeachWorldPointY1",{52}},{"TeachWorldR1",{53}}};m.run("all-pose-overrides");inputs.clear();m.run("overrides-not-persistent");m.load((std::string(argv[2])+"/absent.xml").c_str(),"rich-then-absent");m.run("rich-retained-after-absent");m.load((std::string(argv[2])+"/malformed.xml").c_str(),"rich-then-malformed");m.run("rich-retained-after-malformed");inputs={{"SnapImagePointX1",{}},{"SnapWorldR1",{60,61}}};m.run("empty-and-array-pose-input");inputs.clear();m.set("SaveCalibDataEnable","False");m.get("SaveCalibDataEnable");m.set("SaveCalibDataEnable","True");m.get("SaveCalibDataEnable");m.set("FilePath","",0);m.run("cleared-file");}}
+ {Instance m(module);std::string target=std::string(argv[2])+"/refresh.xml";CopyFileA((std::string(argv[2])+"/rich.xml").c_str(),target.c_str(),FALSE);m.load(target.c_str(),"refresh-initial-rich");m.run("refresh-initial-rich");CopyFileA((std::string(argv[2])+"/minimum.xml").c_str(),target.c_str(),FALSE);printf("{\"phase\":\"replace-file\",\"target\":\"refresh.xml\",\"source\":\"minimum.xml\"}\n");m.run("changed-file-no-refresh");inputs={{"RefreshSignal",{1}}};m.run("refresh-nonzero-reloads");DeleteFileA(target.c_str());printf("{\"phase\":\"delete-file\",\"target\":\"refresh.xml\"}\n");m.run("refresh-missing-retains");inputs.clear();}
+ {Instance m(module);m.cache((std::string(argv[2])+"/rich.xml").c_str());m.run("scheme-file-data-cache");}
+ {Instance m(module);const char* extra="<ParamRoot><Categorys><Category Name=\"Output\"><Items><Filter Name=\"DisplayInt\" ValueType=\"int\" IsArray=\"true\" Others=\"IsResultShow=true\"/><Filter Name=\"DisplayFloat\" ValueType=\"float\" IsArray=\"true\" Others=\"IsResultShow=True\"/><Filter Name=\"DisplayFallback\" ValueType=\"float\" IsArray=\"true\" Others=\"IsResultShow=true\"/><Filter Name=\"DisplayText\" ValueType=\"string\" Others=\"IsResultShow=true\"/><Filter Name=\"Hidden\" ValueType=\"float\" Others=\"IsResultShow=false\"/></Items></Category></Categorys></ParamRoot>";m.set("DynamicOutData",extra);inputs={{"DisplayInt",{101,102}},{"DisplayFloat",{1.25f,2.5f}},{"Hidden",{9}},{"DisplayFallback",{7,8}}};strings={{"DisplayText","example"}};m.run("extra-result-display");strings["DisplayText"]=std::string(600,'A');m.run("extra-result-long-string");inputs.clear();strings.clear();m.run("extra-result-unbound");}
+ restore();printf("{\"phase\":\"finished\",\"restored\":true}\n");return 0;}catch(int c){restore();return c;}}
+

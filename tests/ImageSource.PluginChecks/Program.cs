@@ -199,6 +199,21 @@ static class Program {
   // WPF checks must run on their own STA after async runtime checks resume on a worker.
   Exception? uiError=null;var uiThread=new Thread(()=>{try{CheckUi(plugin,document.CurrentProcedure.Nodes.Single(),output);}catch(Exception ex){uiError=ex;}});uiThread.SetApartmentState(ApartmentState.STA);uiThread.Start();uiThread.Join();if(uiError is not null)throw uiError;
   File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{checks,passed=true,originalRuntimeEquivalence=false,nativeBasis="original SDK state, sample/lossless codec/stitch pixel hashes, folder helper and three-mode visibility comparisons; JPEG, desktop capture and service parity remain open"},new JsonSerializerOptions{WriteIndented=true}));
+  using(var lifetime=new ModuleExecutionScope()){
+   var sdkParameters=Defaults();Set(sdkParameters,"ImageSourceType",3);var sameNode=new NodeDocument("same-source",plugin.Manifest.Id,plugin.Manifest.Version,"SDK",sdkParameters);var firstFlow=new ProcedureDocument("sdk-firstFlow","firstFlow",[sameNode],[]);var secondFlow=firstFlow with{Id="sdk-secondFlow"};
+   plugin.SubmitImage(lifetime.ForProcedure(firstFlow.Id),sameNode.Id,new VisionCore.GrayImage(1,1,new byte[]{11}));plugin.SubmitImage(lifetime.ForProcedure(secondFlow.Id),sameNode.Id,new VisionCore.GrayImage(1,1,new byte[]{22}));
+   var graph=new GraphExecutor(registry);var frameA=await graph.RunAsync(firstFlow,scratch,scope:lifetime);var frameB=await graph.RunAsync(secondFlow,scratch,scope:lifetime);
+   Check(frameA.Nodes.Single().Outputs["Image"].As<VisionCore.IImageData>().Pixels[0]==11&&frameB.Nodes.Single().Outputs["Image"].As<VisionCore.IImageData>().Pixels[0]==22,"SDK submissions use exact procedure despite identical node ID");
+   Check((await graph.RunAsync(firstFlow,scratch,scope:lifetime)).Nodes.Single().NativeErrorCode!=0,"SDK consumption is scoped and cannot borrow another procedure frame");
+   var folderA=Path.Combine(scratch,"scope-firstFlow");var folderB=Path.Combine(scratch,"scope-secondFlow");Directory.CreateDirectory(folderA);Directory.CreateDirectory(folderB);WriteRows(Path.Combine(folderA,"firstFlow.bmp"),[11]);WriteRows(Path.Combine(folderB,"secondFlow.bmp"),[22]);
+   NodeDocument FolderNode(string folder){var v=Defaults();Set(v,"IsSubscribeFolderMode",true);Set(v,"SubscribeFolderPath",folder);Set(v,"SolSaveImageData",true);Set(v,"AutoPlay",false);return sameNode with{Parameters=v};}
+   firstFlow=firstFlow with{Nodes=[FolderNode(folderA)]};secondFlow=secondFlow with{Nodes=[FolderNode(folderB)]};
+   Check((await graph.RunAsync(firstFlow,scratch,scope:lifetime)).Status==SessionStatus.Success&&(await graph.RunAsync(secondFlow,scratch,scope:lifetime)).Status==SessionStatus.Success,"Same-ID folder sources execute independently");
+   Check(plugin.GetImages(firstFlow.Nodes.Single(),lifetime.ForProcedure(firstFlow.Id)).Single().Path.EndsWith("firstFlow.bmp")&&plugin.GetImages(secondFlow.Nodes.Single(),lifetime.ForProcedure(secondFlow.Id)).Single().Path.EndsWith("secondFlow.bmp"),"Image list reads owning procedure catalog");
+   var toolRegistry=new ToolPluginRegistry();toolRegistry.Register(plugin,new ModuleRegistry());var saved=toolRegistry.PrepareSave(new SolutionDocument(1,"scope-save","save",[firstFlow,secondFlow],[]),scratch,lifetime);
+   Check(saved.Procedures[0].Nodes.Single().Parameters["ImagePaths"].GetString()!.Contains("firstFlow.bmp")&&saved.Procedures[1].Nodes.Single().Parameters["ImagePaths"].GetString()!.Contains("secondFlow.bmp"),"Registry save forwards procedure identity to real source persistence");
+   var runEvents=new List<ModuleNodeRequest>();lifetime.ProcedureRunRequested+=runEvents.Add;lifetime.ForProcedure(secondFlow.Id).RequestRun(sameNode.Id);Check(runEvents.Single().ProcedureId==secondFlow.Id,"SDK/list run request carries owning flow");
+  }
   Console.WriteLine($"PASS {checks} image-source checks; original runtime equivalence remains unverified");
  }
  static void CheckUi(ImageSourcePlugin plugin,NodeDocument node,string output){

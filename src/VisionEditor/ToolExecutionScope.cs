@@ -6,43 +6,78 @@ namespace VisionEditor;
 
 public partial class MainWindow {
  ModuleExecutionScope executionScope=new();
+ int activeConfigurationRuns;
+ readonly Dictionary<string,int> configurationRunsByProcedure=new();
+ readonly Dictionary<string,Dictionary<string,NodeRunRecord>> configurationResults=new(StringComparer.Ordinal);
  void AttachExecutionScope(){
   RefreshCameraProvider(false);
   var owner=executionScope;
-  executionScope.RefreshRequested+=node=>Dispatcher.BeginInvoke(()=>{if(!windowClosed&&ReferenceEquals(executionScope,owner))RefreshRight();});
-  executionScope.RunRequested+=node=>Dispatcher.BeginInvoke(()=>{if(windowClosed||activeRun is not null||!ReferenceEquals(executionScope,owner))return;var procedure=doc.Document.Procedures.FirstOrDefault(p=>p.Nodes.Any(n=>n.Id==node));if(procedure is not null)_=RunProcedure(procedure.Id);});
+  executionScope.ProcedureRefreshRequested+=request=>Dispatcher.BeginInvoke(()=>{if(!windowClosed&&ReferenceEquals(executionScope,owner)&&request.ScopeId==owner.Id&&request.ProcedureId==doc.CurrentProcedureId)RefreshRight();});
+  executionScope.ProcedureRunRequested+=request=>Dispatcher.BeginInvoke(()=>{if(windowClosed||activeRun is not null||!ReferenceEquals(executionScope,owner)||request.ScopeId!=owner.Id)return;var procedure=doc.Document.Procedures.FirstOrDefault(p=>p.Id==request.ProcedureId&&p.Nodes.Any(n=>n.Id==request.NodeId));if(procedure is not null)_=RunProcedure(procedure.Id);});
  }
- void ReplaceExecutionScope(){activeRun?.Cancel();executionScope.Dispose();executionScope=new();AttachExecutionScope();}
- void RetainExecutionNodes()=>executionScope.RetainNodes(doc.Document.Procedures.SelectMany(p=>p.Nodes).Select(n=>(n.ModuleId,n.Id)));
+ void ReplaceExecutionScope(){CloseToolConfiguration();activeRun?.Cancel();configurationResults.Clear();workflowSessions.Clear();results.Clear();executionScope.Dispose();executionScope=new();AttachExecutionScope();}
+ void RetainExecutionNodes()=>executionScope.RetainProcedureNodes(doc.Document.Procedures.SelectMany(p=>p.Nodes.Select(n=>(p.Id,n.ModuleId,n.Id))));
  ToolEditorContext ConnectToolEditorServices(ToolEditorContext context,string node){
   string procedure=doc.CurrentProcedureId,solution=doc.SolutionId;
+  bool Alive()=>context.ConfigurationActive?.Invoke()??true;
   ProcedureDocument Flow()=>doc.Document.Procedures.Single(p=>p.Id==procedure);
   string Label(string target,bool parameter){var binding=Flow().Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node&&b.Target==target&&b.IsParameter==parameter);if(binding is null)return "";var source=binding.Source;return source.Kind switch{WorkflowSourceKind.IntegerConstant or WorkflowSourceKind.NumberConstant or WorkflowSourceKind.NumberArrayConstant=>source.Id,WorkflowSourceKind.TextConstant=>WorkflowSubscriptions.ReadTextConstant(source.Id),WorkflowSourceKind.LocalVariable=>"局部变量."+Flow().Configuration.Variables.First(v=>v.Id==source.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+Flow().Configuration.Inputs.First(v=>v.Id==source.Id).Name,_=>Flow().Nodes.First(n=>n.Id==source.Id).Name+"."+source.Port};}
-  return context with{Scope=executionScope,Run=values=>RunConfiguredTool(procedure,node,values),Cameras=()=>executionScope.Service<IImageAcquisitionService>()?.Cameras??[],ConfigureCameras=()=>RefreshCameraProvider(true),SubscriptionLabel=Label,
+  ConfigurationExecutionHostStatus ConfigurationStatus(){
+   bool loading=!Alive()||windowClosed||doc.SolutionId!=solution;
+   var flow=loading?null:doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedure);
+   var target=flow?.Nodes.FirstOrDefault(n=>n.Id==node);
+   bool ready=target is not null&&!GraphValidator.Validate(flow!,modules).Issues.Any(i=>i.NodeId is null||i.NodeId==node);
+   return new(activeRun is not null||activeConfigurationRuns>0,activeRun is not null&&runningProcedureId==procedure||configurationRunsByProcedure.GetValueOrDefault(procedure)>0,ready,loading,!isLocked&&target?.Enabled==true);
+  }
+  var configurationSubscriptions=new WorkflowConfigurationSubscriptionService(Flow,modules,node,(destination,reference)=>{
+   if(!Alive()||windowClosed||isLocked||activeRun is not null||activeConfigurationRuns>0||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");
+   if(destination.Domain==ConfigurationSubscriptionDomain.Parameter){
+    var config=Flow().Configuration;var bindings=config.Subscriptions.Where(b=>b.NodeId!=node||b.Target!=destination.Name||!b.IsParameter);
+    doc.SetWorkflowConfiguration(procedure,config with{Subscriptions=(reference is null?bindings:bindings.Append(new(node,destination.Name,true,reference))).ToArray()});
+   }else doc.SetProcedureInputSubscription(procedure,node,destination.Name,reference);
+  });
+  var presentation=new ConfigurationPresentationBridge(request=>{
+   if(!Alive()||windowClosed||doc.SolutionId!=solution)return new(ConfigurationPresentationStatus.Failed,"Configuration solution is no longer active.");
+   if(request.NodeId!=node||request.Kind!=ConfigurationPresentationKind.ImageSourceMode||!Enum.IsDefined(request.SourceMode))return new(ConfigurationPresentationStatus.Unsupported,"Unsupported presentation request or owner identity.");
+   var source=Flow().Nodes.FirstOrDefault(n=>n.Id==node);
+   if(source is null||plugins.Find(source.ModuleId)is not IToolImageListProvider)return new(ConfigurationPresentationStatus.Unsupported,"Module does not expose an image list.");
+   if(doc.CurrentProcedureId==procedure)RefreshImageSourcePanel(SelectedImageSource());
+   return new(ConfigurationPresentationStatus.Supported);
+  });
+  return context with{ConfigurationFolders=new WpfConfigurationFolderService(),ConfigurationPresentation=presentation,ConfigurationSubscriptions=configurationSubscriptions,ConfigurationFiles=new WpfConfigurationFileService(),ConfigurationNotifications=new WpfConfigurationNotificationService(),ConfigurationExecutionStatus=ConfigurationStatus,Resources=()=>{if(!Alive()||windowClosed||doc.SolutionId!=solution)throw new InvalidOperationException("配置资源所属方案已失效。");return new ResourceCatalog(doc.BaseDirectory,doc.Document.Resources);},Scope=executionScope.ForProcedure(procedure),Run=values=>{if(!Alive())throw new InvalidOperationException("配置会话已关闭。");return RunConfiguredTool(procedure,node,values);},Cameras=()=>executionScope.Service<IImageAcquisitionService>()?.Cameras??[],ConfigureCameras=()=>RefreshCameraProvider(true),SubscriptionLabel=Label,
    ConfigureLights=executionScope.Service<ILightResourceConfiguration>() is {} lightConfiguration?lightConfiguration.Configure:null,
    InputNumber=target=>Flow().Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node&&b.Target==target&&!b.IsParameter)?.Source is {Kind:WorkflowSourceKind.NumberConstant} source?WorkflowSubscriptions.ReadNumberConstant(source.Id):null,
-   SetInputNumber=(target,value)=>{if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");if(value.HasValue&&!double.IsFinite(value.Value))throw new ArgumentOutOfRangeException(nameof(value));doc.SetProcedureInputSubscription(procedure,node,target,value.HasValue?new(WorkflowSourceKind.NumberConstant,System.Text.Json.JsonSerializer.Serialize(value.Value)):null);},
+   SetInputNumber=(target,value)=>{if(!Alive()||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");if(value.HasValue&&!double.IsFinite(value.Value))throw new ArgumentOutOfRangeException(nameof(value));doc.SetProcedureInputSubscription(procedure,node,target,value.HasValue?new(WorkflowSourceKind.NumberConstant,System.Text.Json.JsonSerializer.Serialize(value.Value)):null);},
    InputNumbers=target=>Flow().Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node&&b.Target==target&&!b.IsParameter)?.Source is {} source?source.Kind==WorkflowSourceKind.NumberArrayConstant?WorkflowSubscriptions.ReadNumberArrayConstant(source.Id):source.Kind==WorkflowSourceKind.NumberConstant?new[]{WorkflowSubscriptions.ReadNumberConstant(source.Id)}:null:null,
-   SetInputNumbers=(target,value)=>{if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");if(value is not null)_=PortValue.Numbers(value);doc.SetProcedureInputSubscription(procedure,node,target,value is not null?new(WorkflowSourceKind.NumberArrayConstant,System.Text.Json.JsonSerializer.Serialize(value)):null);},
+   SetInputNumbers=(target,value)=>{if(!Alive()||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");if(value is not null)_=PortValue.Numbers(value);doc.SetProcedureInputSubscription(procedure,node,target,value is not null?new(WorkflowSourceKind.NumberArrayConstant,System.Text.Json.JsonSerializer.Serialize(value)):null);},
    InputText=target=>Flow().Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node&&b.Target==target&&!b.IsParameter)?.Source is {Kind:WorkflowSourceKind.TextConstant} source?WorkflowSubscriptions.ReadTextConstant(source.Id):null,
-   SetInputText=(target,value)=>{if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");doc.SetProcedureInputSubscription(procedure,node,target,value is null?null:new(WorkflowSourceKind.TextConstant,System.Text.Json.JsonSerializer.Serialize(value)));},
+   SetInputText=(target,value)=>{if(!Alive()||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");doc.SetProcedureInputSubscription(procedure,node,target,value is null?null:new(WorkflowSourceKind.TextConstant,System.Text.Json.JsonSerializer.Serialize(value)));},
    InputInteger=target=>Flow().Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node&&b.Target==target&&!b.IsParameter)?.Source is {Kind:WorkflowSourceKind.IntegerConstant} source?int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture):null,
-   SetInputInteger=(target,value)=>{if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");doc.SetProcedureInputSubscription(procedure,node,target,value.HasValue?new(WorkflowSourceKind.IntegerConstant,value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)):null);},
+   SetInputInteger=(target,value)=>{if(!Alive()||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");doc.SetProcedureInputSubscription(procedure,node,target,value.HasValue?new(WorkflowSourceKind.IntegerConstant,value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)):null);},
    PickSubscription=(owner,target,parameter,kind)=>{
-   if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");
+   if(!Alive()||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");
+   var targetPort=parameter?null:modules.GetDescriptor(Flow().Nodes.Single(n=>n.Id==node)).Inputs.Single(p=>p.Name==target);
+   bool Accept(DataKind source)=>targetPort is null?DataKinds.CanFlow(source,kind):DataKinds.CanFlow(source,targetPort);
    var options=new List<WorkflowSourceOption>{new("none","",kind,"不订阅")};
-   options.AddRange(Flow().Configuration.Variables.Where(v=>DataKinds.CanFlow(WorkflowSubscriptions.VariableKind(v.Type),kind)).Select(v=>new WorkflowSourceOption("variable:"+v.Id,v.Name,kind,"局部变量."+v.Name){Reference=new(WorkflowSourceKind.LocalVariable,v.Id)}));
-   options.AddRange(Flow().Configuration.Inputs.Where(v=>DataKinds.CanFlow(v.Kind,kind)).Select(v=>new WorkflowSourceOption("input:"+v.Id,v.Name,v.Kind,"流程输入."+v.Name){Reference=new(WorkflowSourceKind.WorkflowInput,v.Id)}));
-   options.AddRange(WorkflowSources(procedure,kind).Where(s=>s.NodeId!=node).Select(s=>s with{Reference=new(WorkflowSourceKind.NodeOutput,s.NodeId,s.Port)}));
+   options.AddRange(Flow().Configuration.Variables.Where(v=>Accept(WorkflowSubscriptions.VariableKind(v.Type))).Select(v=>new WorkflowSourceOption("variable:"+v.Id,v.Name,kind,"局部变量."+v.Name){Reference=new(WorkflowSourceKind.LocalVariable,v.Id)}));
+   options.AddRange(Flow().Configuration.Inputs.Where(v=>Accept(v.Kind)).Select(v=>new WorkflowSourceOption("input:"+v.Id,v.Name,v.Kind,"流程输入."+v.Name){Reference=new(WorkflowSourceKind.WorkflowInput,v.Id)}));
+   options.AddRange(WorkflowSources(procedure,null).Where(s=>s.NodeId!=node&&Accept(s.Kind)).Select(s=>s with{Reference=new(WorkflowSourceKind.NodeOutput,s.NodeId,s.Port)}));
    var picker=new WorkflowSourcePicker(options){Owner=owner};if(picker.ShowDialog()!=true)return Label(target,parameter);var source=picker.Selection?.Reference;
    if(parameter){var config=Flow().Configuration;var bindings=config.Subscriptions.Where(b=>b.NodeId!=node||b.Target!=target||!b.IsParameter);doc.SetWorkflowConfiguration(procedure,config with{Subscriptions=(source is null?bindings:bindings.Append(new(node,target,true,source))).ToArray()});}
    else doc.SetProcedureInputSubscription(procedure,node,target,source);
    return Label(target,parameter);
   }};
  }
+ sealed class ConfigurationPresentationBridge(Func<ConfigurationPresentationRequest,ConfigurationPresentationResult> apply):IToolConfigurationPresentationService {
+  public ConfigurationPresentationResult Apply(ConfigurationPresentationRequest request)=>apply(request);
+ }
  async Task<NodeRunRecord> RunConfiguredTool(string procedureId,string nodeId,Dictionary<string,System.Text.Json.JsonElement> values){
   var procedure=doc.Document.Procedures.Single(p=>p.Id==procedureId);var node=procedure.Nodes.Single(n=>n.Id==nodeId);var descriptor=modules.GetDescriptor(node);var inputs=new Dictionary<string,PortValue>();var parameters=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());
-  PortValue Output(string id,string port)=>results.TryGetValue(id,out var record)&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&record.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException("订阅图像或数据尚无运行结果。");
+  PortValue Output(string id,string port){
+   NodeRunRecord? record=configurationResults.GetValueOrDefault(procedureId)?.GetValueOrDefault(id)
+    ??(workflowSessions.TryGetValue(procedureId,out var session)?session.Nodes.FirstOrDefault(n=>n.NodeId==id):null);
+   return record is not null&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&record.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException("订阅图像或数据尚无运行结果。");
+  }
   PortValue Resolve(WorkflowValueReference source)=>source.Kind switch{
    WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),
    WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),
@@ -53,17 +88,33 @@ public partial class MainWindow {
    WorkflowSourceKind.WorkflowInput=>procedure.Configuration.Inputs.Single(i=>i.Id==source.Id) is {NodeId:{} producer,Port:{} port}?Output(producer,port):throw new InvalidDataException("流程输入尚无运行结果。"),
    _=>throw new InvalidDataException("无效订阅来源。")};
   var clock=System.Diagnostics.Stopwatch.StartNew();NodeRunRecord record;
+  activeConfigurationRuns++;configurationRunsByProcedure[procedureId]=configurationRunsByProcedure.GetValueOrDefault(procedureId)+1;
+  var ownerScope=executionScope;var ownerSolution=doc.SolutionId;
   try{
-   using var lease=executionScope.Enter();foreach(var connection in procedure.Connections.Where(c=>c.ToNode==nodeId))inputs[connection.ToPort]=Output(connection.FromNode,connection.FromPort);
-   foreach(var binding in procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId)){var value=Resolve(binding.Source);if(binding.IsParameter)parameters[binding.Target]=WorkflowSubscriptions.Parameter(descriptor.Parameters.Single(p=>p.Name==binding.Target),value);else inputs[binding.Target]=value;}
+   using var lease=ownerScope.Enter();foreach(var connection in procedure.Connections.Where(c=>c.ToNode==nodeId))if(!inputs.TryAdd(connection.ToPort,Output(connection.FromNode,connection.FromPort)))throw new InvalidDataException("配置输入存在重复绑定。");
+   var boundParameters=new HashSet<string>(StringComparer.Ordinal);
+   foreach(var binding in procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId)){var value=Resolve(binding.Source);if(binding.IsParameter){if(!boundParameters.Add(binding.Target))throw new InvalidDataException("配置参数存在重复绑定。");parameters[binding.Target]=WorkflowSubscriptions.Parameter(descriptor.Parameters.Single(p=>p.Name==binding.Target),value);}else if(!inputs.TryAdd(binding.Target,value))throw new InvalidDataException("配置输入存在重复绑定。");}
    foreach(var spec in descriptor.Parameters)if(!parameters.ContainsKey(spec.Name)&&spec.DefaultValue is {} def)parameters[spec.Name]=def.Clone();
-   foreach(var port in descriptor.Inputs)if(inputs.TryGetValue(port.Name,out var supplied))inputs[port.Name]=DataKinds.Coerce(supplied,port.Kind);
-   var runtime=modules.Create(node.ModuleId,node.ModuleVersion);ModuleResult result;
-   try{result=await runtime.ExecuteAsync(new(nodeId,doc.BaseDirectory,inputs,parameters,node.Rois){Scope=executionScope,ProcedureId=procedureId,Control=new ModuleRunControl{Mode=ExecutionMode.SelfRun},Resources=new ResourceCatalog(doc.BaseDirectory,doc.Document.Resources)},executionScope.Stopping);}
-   finally{if(runtime is IAsyncDisposable asyncDisposable)await asyncDisposable.DisposeAsync();else if(runtime is IDisposable disposable)disposable.Dispose();}
-   record=new(nodeId,result.Status==ModuleStatus.Success?NodeRunStatus.Success:result.Status==ModuleStatus.NoMatch?NodeRunStatus.NoMatch:NodeRunStatus.Failed,result.Outputs,clock.Elapsed.TotalMilliseconds,result.ErrorCode,result.Message){NativeErrorCode=result.NativeErrorCode};
+   foreach(var port in descriptor.Inputs)if(inputs.TryGetValue(port.Name,out var supplied))inputs[port.Name]=DataKinds.Coerce(supplied,port);
+   // Reuse the graph runtime's parameter/input/output/status/timeout checks for
+   // an isolated node. Configuration dispatch must not bypass those contracts.
+   var inputSpecs=inputs.Select(p=>new WorkflowInterfaceItem(p.Key,p.Key,p.Value.Kind)).ToArray();
+   var isolated=new ProcedureDocument(procedureId,procedure.Name,[node with{Parameters=parameters}],[],[]){Configuration=new(){Inputs=inputSpecs,Subscriptions=inputSpecs.Select(p=>new WorkflowSubscription(nodeId,p.Name,false,new(WorkflowSourceKind.WorkflowInput,p.Id))).ToArray()}};
+   var baseDirectory=doc.BaseDirectory;var resources=new ResourceCatalog(baseDirectory,doc.Document.Resources);
+   var run=await Task.Run(()=>new GraphExecutor(modules).RunAsync(isolated,baseDirectory,cancellationToken:ownerScope.Stopping,inputs:inputs,scope:ownerScope,control:new ModuleRunControl{Mode=ExecutionMode.SelfRun},resources:resources));
+   record=run.Nodes.Single();
   }catch(Exception ex){record=new(nodeId,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),clock.Elapsed.TotalMilliseconds,"SelfRunFailed",ex.Message);}
-  results[nodeId]=record;RefreshRight();return record;
+  finally{activeConfigurationRuns--;configurationRunsByProcedure[procedureId]--;}
+  if(!windowClosed&&doc.SolutionId==ownerSolution&&ReferenceEquals(executionScope,ownerScope)&&doc.Document.Procedures.Any(p=>p.Id==procedureId&&p.Nodes.Any(n=>n.Id==nodeId&&n.ModuleId==node.ModuleId&&n.ModuleVersion==node.ModuleVersion))){
+   if(!configurationResults.TryGetValue(procedureId,out var cached))configurationResults[procedureId]=cached=new(StringComparer.Ordinal);
+   cached[nodeId]=record;
+   if(doc.CurrentProcedureId==procedureId){
+    results[nodeId]=record;RefreshRight();RenderGraph();
+    StatusText.Text="模块执行："+node.Name+" · "+record.Status+(record.Message is null?"":" · "+record.Message);
+    StatusIcon.Source=Asset(record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped?"bottombar_run.png":"bottombar_abnormal.png");
+   }
+  }
+  return record;
  }
  void RefreshCameraProvider(bool report){
   if(activeRun is not null)return;

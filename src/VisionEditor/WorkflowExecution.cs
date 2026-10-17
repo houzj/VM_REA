@@ -9,6 +9,7 @@ public partial class MainWindow
  void ClearInvalidWorkflowResults(){if(doc.HasCurrentProcedure)ClearWorkflowCallResults(doc.CurrentProcedureId);results.Clear();RefreshRight();if(configurationProcedureId==doc.CurrentProcedureId)workflowConfigurationWindow?.RefreshResults();}
  bool CanStartWorkflow()
  {
+  if(activeConfigurationRuns>0){StatusText.Text="模块配置正在执行，请等待完成。";return false;}
   if(!doc.HasCurrentProcedure||doc.CurrentProcedure.Nodes.Count==0){ClearInvalidWorkflowResults();StatusText.Text="请先添加流程和模块";return false;}
   var validation=doc.Validate();if(!validation.IsValid){ClearInvalidWorkflowResults();StatusText.Text="流程有连接或参数错误："+string.Join("；",validation.Issues.Select(i=>i.Message));return false;}return true;
  }
@@ -40,11 +41,12 @@ public partial class MainWindow
   catch(Exception e){if(!windowClosed)StatusText.Text="运行失败："+e.Message;}
   return false;
  }
- void ClearWorkflowCallResults(string procedure){var seen=new HashSet<string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}
+ void ClearWorkflowCallResults(string procedure){var seen=new HashSet<string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);configurationResults.Remove(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}
  void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}
  void RestoreWorkflowResults()
  {
   results.Clear();if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;
+  if(configurationResults.TryGetValue(doc.CurrentProcedureId,out var cached))foreach(var pair in cached)results[pair.Key]=pair.Value;
  }
  async Task RunProcedure(string id){SelectWorkflow(id);await StartRun();}
  void StartContinuous()
@@ -67,8 +69,9 @@ public partial class MainWindow
  }
  protected override void OnClosed(EventArgs e)
  {
-  executionScope.Dispose();
-  windowClosed=true;ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
+  windowClosed=true;
+  CloseToolConfiguration();
+  executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
  }
 }
 

@@ -1,0 +1,25 @@
+using System.IO;
+using System.Text.Json;
+using VisionFramework;
+using VisionPlugins.Calibration;
+public static class RuntimeChecks
+{
+ public static async Task<int> Run(string root){int checks=0;void Check(bool ok,string message){checks++;if(!ok)throw new Exception(message);}
+  string scratch=Path.Combine(root,"analysis/full-audit/rotate-calibration/checks");Directory.CreateDirectory(scratch);string file=Path.Combine(scratch,"runtime.iwcal");
+  File.WriteAllBytes(file,new float[]{2,0,10,0,2,-5,0,0,1}.SelectMany(BitConverter.GetBytes).ToArray());
+  var plugin=new RotateCalibrationPlugin();var values=plugin.Descriptor.Parameters.ToDictionary(p=>p.Name,p=>p.DefaultValue!.Value.Clone());values["FilePath"]=JsonSerializer.SerializeToElement(file);using var scope=new ModuleExecutionScope();
+  var displayImage=new VisionCore.GrayImage(64,48,new byte[64*48]);
+  async Task<ModuleResult> Run(RotateCalibrationPlugin p,IReadOnlyDictionary<string,JsonElement> parameters,ModuleExecutionScope s,int index){double angle=index*17*Math.PI/180;var inputs=new Dictionary<string,PortValue>{{"ImagePointX",PortValue.Number((float)(30+20*Math.Cos(angle)))},{"ImagePointY",PortValue.Numbers([(float)(40+20*Math.Sin(angle)),999])},{"WorldRotateAngle",PortValue.Number(17)},{"RotNum",PortValue.Integer(3)},{"InputImage",PortValue.Image(displayImage)},{VisionPluginContracts.ToolDisplayService.PositionXInput,PortValue.Integer(11)}};return await p.CreateRuntime().ExecuteAsync(new ModuleExecutionContext("rotate",scratch,inputs,parameters){Scope=s},CancellationToken.None);}
+  var first=await Run(plugin,values,scope,0);Check(first.NativeErrorCode==0&&first.Outputs["remainCount"].As<long>()==2,"Typed integer and scalar inputs accepted");
+  var node=new NodeDocument("rotate",RotateCalibrationPlugin.Id,"1.0.0","旋转标定",values);var saved=plugin.PrepareSave(node,scratch,new ResourceCatalog(scratch,[]),scope);
+  Check(saved.Node.Parameters["CachedMatrixLoaded"].GetBoolean(),"Validity persisted");Check(Convert.FromBase64String(saved.Node.Parameters["CachedMatrix"].GetString()!).Length==36,"Nine-float native cache persisted");
+  File.Delete(file);using var restoredScope=new ModuleExecutionScope();var restoredPlugin=new RotateCalibrationPlugin();var restored=await Run(restoredPlugin,saved.Node.Parameters,restoredScope,0);Check(restored.NativeErrorCode==0&&restored.Outputs["remainCount"].As<long>()==2,"Saved matrix runs without original file; sampling counter restarts");
+  await Run(restoredPlugin,saved.Node.Parameters,restoredScope,1);var result=await Run(restoredPlugin,saved.Node.Parameters,restoredScope,2);Check(result.Outputs["remainCount"].As<long>()==0,"Three-step completes");Check(Math.Abs(result.Outputs["RotCenterImageX"].As<double>()-30)<1e-4,"Native image center");Check(Math.Abs(result.Outputs["RotCenterWorldX"].As<double>()-60)<1e-4,"Native world center excludes translation");
+  var display=restoredPlugin.LastDisplay(saved.Node,scratch,restoredScope);Check(display is not null&&ReferenceEquals(display.Image,displayImage)&&display.PositionX==11,"Runtime captures input image and display subscriptions");Check(display?.ResultList.Count==7&&display.RecordText.Contains("剩余标定次数:0"),"Runtime captures four display object data");
+  var displayValues=saved.Node.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone());displayValues[VisionPluginContracts.ToolDisplayService.SettingsParameter]=VisionPluginContracts.ToolDisplayService.Serialize(VisionPluginContracts.ToolDisplayService.Defaults(restoredPlugin.DisplayDefinition) with{Content="当前中心 {RotCenterImageX}"});var edited=restoredPlugin.LastDisplay(saved.Node with{Parameters=displayValues},scratch,restoredScope);Check(edited?.Text=="当前中心 30","Current display settings update without re-executing calibration");
+  using var separateScope=new ModuleExecutionScope();var separate=await Run(restoredPlugin,saved.Node.Parameters,separateScope,0);Check(separate.Outputs["remainCount"].As<long>()==2,"Independent session lifecycle");
+  foreach(bool nan in new[]{false,true}){File.WriteAllBytes(file,(nan?new float[]{float.NaN,0,0,0,1,0,0,0,1}:new float[9]).SelectMany(BitConverter.GetBytes).ToArray());using var invalidScope=new ModuleExecutionScope();var invalidPlugin=new RotateCalibrationPlugin();await Run(invalidPlugin,values,invalidScope,0);await Run(invalidPlugin,values,invalidScope,1);var invalid=await Run(invalidPlugin,values,invalidScope,2);Check(invalid.Status==ModuleStatus.Failed&&invalid.ErrorCode=="NativeNonFiniteResult"&&invalid.NativeErrorCode==0,"Explicit controlled nonfinite native result boundary");Check(invalid.Message?.Contains("NaN")==true,"Diagnostic keeps NaN field names");Check(!invalid.Outputs.ContainsKey("RotError"),"NaN is absent, never replaced with zero");Check(invalid.Outputs.Values.Where(p=>p.Kind==DataKind.Number).All(p=>double.IsFinite(p.As<double>())),"Only representable outputs published");}
+  return checks;
+ }
+}
+

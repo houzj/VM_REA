@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "scope": "Stable five-finding shared-configuration review/fix node. Product review was read-only until individual fix authorization; parameter adapter fix owned by primary. No VisionEditor migration changes by this review.",
+  "findings": [
+    {
+      "id": "CFG-R01",
+      "severity": "P1",
+      "status": "fixed",
+      "title": "Hiding a subscribed row changed edit/subscribe mode",
+      "reproduction": "IsSub=true and a bound numeric row → CustomVisible=false → true. Before fix local IsSub became false although @ComName remained true.",
+      "source": [
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/ValueBase.cs",
+          "sha256": "e60db3cf3e18751803693cce6efe037183e46d629578064f9c65989eca2472f7",
+          "line": 165,
+          "endLine": 199,
+          "excerpt": "\tpublic override bool CustomVisibleA\n\t{\n\t\tget\n\t\t{\n\t\t\treturn CustomVisible;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (CustomVisible == value)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tCustomVisible = value;\n\t\t\tbool flag = true;\n\t\t\tif (parentNode is Category category)\n\t\t\t{\n\t\t\t\tflag = category.IsDeleteSubscribeA;\n\t\t\t\tif (flag)\n\t\t\t\t{\n\t\t\t\t\tflag = IsDeleteSubscribeA;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif ((!CustomVisible & flag) && _SubData != null && !string.IsNullOrEmpty(_SubData.CurValueA))\n\t\t\t{\n\t\t\t\t_SubData.CurValueA = null;\n\t\t\t\tIsGetFromModule = true;\n\t\t\t\tGetParamUnit();\n\t\t\t\tIsGetFromModule = false;\n\t\t\t}\n\t\t\tOnPropertyChanged(\"CustomVisibleA\");\n\t\t}\n\t}\n\n\tpublic ICommand ValueChangedCommand\n\t{"
+        }
+      ],
+      "fix": [
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 231,
+          "endLine": 244,
+          "excerpt": "   if(property==\"CustomVisible\" && !n.CustomVisible && n.IsDeleteSubscribe && !string.IsNullOrEmpty(n.Get(\"Subscription\"))) {\n    var cleared=Dispatch(new(ConfigurationOperationKind.ClearParameterBinding,\"ClearParameterBinding\",n,null,[],kind){SubscriptionBinding=n.SubscriptionBinding});\n    if(cleared.Handled&&cleared.Error==null) {\n     n.Assign(\"Subscription\",\"\");n.SubscriptionBinding=null;\n     var read=Dispatch(new(ConfigurationOperationKind.ReadParameter,\"ReadParameter\",n,null,[],kind));\n     if(read.Handled&&read.Error==null&&read.Value!=null){Change(n,\"CurValue\",read.Value,kind);committedValues[n]=n.Value;}\n    }else Diagnose(\"SubscriptionClearFailed\",\"ClearParameterBinding\",n,\"Binding identity was retained because the host did not confirm removal.\");\n   }\n   Trigger(n,property,kind);\n  } finally {Finish();}\n }\n void ExpandSubscriptionFlags(ConfigurationNodeState source,bool expanded,ConfigurationChangeKind kind) {\n  var visited=new HashSet<ConfigurationNodeState>();var pending=new Stack<ConfigurationNodeState>();pending.Push(source);\n  while(pending.TryPop(out var item)) {"
+        }
+      ],
+      "checks": [
+        "controlled host binding actually cleared",
+        "numeric value read back as 12.5",
+        "local IsSub and @user mode remain true with no user-store writes",
+        "showing again retains empty subscription editor",
+        "native readback updates committed baseline"
+      ]
+    },
+    {
+      "id": "CFG-R02",
+      "severity": "P1",
+      "status": "fixed-by-primary",
+      "title": "No-op parameter apply was reported as committed and could execute with old backend value",
+      "reproduction": "Backend X=1, apply callback does nothing, CommitUser X=2. Before fix model=2/backend=1 and execution could be requested.",
+      "source": [
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/NameValueItem.cs",
+          "sha256": "90b4742e79243f46c46fd6b38187ee7f5be49d4c6677f994133215a3796fed46",
+          "line": 904,
+          "endLine": 978,
+          "excerpt": "\tinternal int SetParamUnit(NameValueItem parent)\n\t{\n\t\tif (string.IsNullOrEmpty(AccessMode) || !AccessMode.ToLower().Contains(\"w\"))\n\t\t{\n\t\t\tOnSetValueCompleted(success: false);\n\t\t\treturn -2;\n\t\t}\n\t\tstring value = Value;\n\t\ttry\n\t\t{\n\t\t\tCheck(parent, value);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tstring lang = AppLocalizationService.GetLang(\"Lang_ParamSetTip\");\n\t\t\tHikMessageBox.Show(lang + ex.Message, MessageIcons.Error);\n\t\t\tValue = OldValue;\n\t\t\tOnSetValueCompleted(success: false);\n\t\t\treturn -2;\n\t\t}\n\t\treturn SetParamUnitByZmq(parent, value);\n\t}\n\n\tpublic int SetParamUnitByZmq(NameValueItem parent, string value)\n\t{\n\t\tif (userStringData == null)\n\t\t{\n\t\t\tuserStringData = (GetTopBaseNode() as AlgorithmTabRoot).UserStringData;\n\t\t}\n\t\tMyItemState = ItemState.Normal;\n\t\ttry\n\t\t{\n\t\t\tCurrentUIHelper.Instance.Dispatcher.Invoke(() =>\n\t\t\t{\n\t\t\t\tstring text = ConvertEscape((parent == null) ? userStringData[ComName] : parent.InnerGetStringParamValue(ComName));\n\t\t\t\tstring text2 = ConvertEscape(value);\n\t\t\t\tif (FullDisplayName.Contains(\"密码\") || FullDisplayName.ToLower().Contains(\"password\"))\n\t\t\t\t{\n\t\t\t\t\ttext = \"*****\";\n\t\t\t\t\ttext2 = \"*****\";\n\t\t\t\t}\n\t\t\t\tlogManager?.LogCreate(\"信息\", FullDisplayName + \" \" + AppLocalizationService.GetLang(\"参数修改\") + text + AppLocalizationService.GetLang(\"新值\") + text2, ifLang: false);\n\t\t\t\tInvokeOnParamValueChanged(text, text2);\n\t\t\t});\n\t\t\tSetParamUnitDirect(parent, value);\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\tif (ex.errorCode == -1610612734)\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"errCode:\") + \" \" + ex.errorCode.ToString(\"X\") + Environment.NewLine + AppLocalizationService.GetLang(\"errInfo:\") + \" \" + AppLocalizationService.GetLang(\"Lang_FdPCreateErrtoParam\"), MessageIcons.Error);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"errCode:\") + \" \" + ex.errorCode.ToString(\"X\") + Environment.NewLine + AppLocalizationService.GetLang(\"errInfo:\") + \" \" + AppLocalizationService.GetLang(ErrorCodeInfo.GetErrorInfo(ex.errorCode)), MessageIcons.Error);\n\t\t\t}\n\t\t\tMyItemState = ItemState.SetParamErro;\n\t\t\tOnSetValueCompleted(success: false);\n\t\t\treturn -1;\n\t\t}\n\t\tcatch\n\t\t{\n\t\t\tMyItemState = ItemState.SetParamErro;\n\t\t\tOnSetValueCompleted(success: false);\n\t\t\treturn -1;\n\t\t}\n\t\tOldValue = value;\n\t\tOnSetValueCompleted(success: true);\n\t\treturn 0;\n\t}\n\n\tpublic virtual int SetParamUnit()\n\t{\n\t\treturn SetParamUnit(null);\n\t}"
+        },
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/NameValueItem.cs",
+          "sha256": "90b4742e79243f46c46fd6b38187ee7f5be49d4c6677f994133215a3796fed46",
+          "line": 980,
+          "endLine": 997,
+          "excerpt": "\tpublic void SetParamUnitDirect(NameValueItem parent, string value)\n\t{\n\t\tif (userStringData == null)\n\t\t{\n\t\t\tuserStringData = (GetTopBaseNode() as AlgorithmTabRoot).UserStringData;\n\t\t}\n\t\tif (parent == null)\n\t\t{\n\t\t\tuserStringData[ComName] = value;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tparent.InnerSetStringParamValue(ComName, value);\n\t\t}\n\t}\n\n\tpublic void SetParamUnitDirect(string value)\n\t{"
+        }
+      ],
+      "fix": [
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationOperations.cs",
+          "sha256": "f4f1fe687fa84e31971963e8ccc6ad91745655a1a60233a08e1a160cae231d86",
+          "line": 40,
+          "endLine": 51,
+          "excerpt": "   var after=read();\n   if(!after.TryGetValue(name,out var applied)||!GraphValidator.ValidParameter(spec,applied))return new(true,Error:\"Parameter readback is missing or invalid: \"+name);\n   bool persisted=spec.Kind switch{\n    ParameterKind.Text=>applied.GetString()==parsed.GetString(),\n    ParameterKind.Boolean=>applied.GetBoolean()==parsed.GetBoolean(),\n    ParameterKind.Integer=>applied.GetInt32()==parsed.GetInt32(),\n    _=>applied.GetDouble()==parsed.GetDouble()};\n   return persisted?new(true,Text(applied)):new(true,Error:\"Host apply did not persist the requested parameter: \"+name);\n  }catch(Exception error)when(error is ArgumentException or InvalidOperationException or System.IO.IOException or UnauthorizedAccessException or OverflowException){return new(true,Error:error.Message);}\n }\n static string Text(JsonElement value)=>value.ValueKind==JsonValueKind.String?value.GetString()??\"\":value.ToString();\n static bool TryValue(ParameterKind kind,string value,out JsonElement result){"
+        },
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 183,
+          "endLine": 188,
+          "excerpt": "   // A typed adapter may return an accepted value. Keep the model and its\n   // committed baseline consistent with that explicit host result.\n   if(result.Value is not null&&result.Value!=node.Value)Change(node,\"CurValue\",result.Value,ConfigurationChangeKind.Programmatic);\n   committedValues[node]=node.Value;\n   if(writable&&node.CanTriggerRun)pendingRun=node;\n  } finally {Finish();}"
+        }
+      ],
+      "boundary": "Original successful native write does not itself force a GetParamUnit readback. Host Action persistence verification is an independent adapter transaction guarantee, not a claim that original native setter always rereads.",
+      "checks": [
+        "no-op apply rejected",
+        "missing/invalid readback rejected",
+        "accepted result consumed by state",
+        "backend failure keeps last accepted view value"
+      ]
+    },
+    {
+      "id": "CFG-R03",
+      "severity": "P2",
+      "status": "fixed",
+      "title": "Panal tabs were treated as ordinary grouped parameter lists and offered subscriptions",
+      "reproduction": "TabType=1 with two Category.Items leaves. Before fix both ordinary rows rendered with scroll/group headers and SubscribeVisible=true. Actual shipped ColorSegment panel uses this branch.",
+      "source": [
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/NameValueItem.cs",
+          "sha256": "90b4742e79243f46c46fd6b38187ee7f5be49d4c6677f994133215a3796fed46",
+          "line": 360,
+          "endLine": 390,
+          "excerpt": "\tprivate bool CanSubscribe\n\t{\n\t\tget\n\t\t{\n\t\t\tif (parentNode is Category category)\n\t\t\t{\n\t\t\t\tif (category.GetParentNode() is Tab { TabTypeA: TabTypeEnum.Panal })\n\t\t\t\t{\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t\treturn category.SubscribeVisibleA;\n\t\t\t}\n\t\t\treturn true;\n\t\t}\n\t}\n\n\tpublic bool SubscribeVisibleA\n\t{\n\t\tget\n\t\t{\n\t\t\treturn CanSubscribe && SubscribeVisible;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (SubscribeVisible != value)\n\t\t\t{\n\t\t\t\tSubscribeVisible = value;\n\t\t\t\tOnPropertyChanged(\"SubscribeVisibleA\");\n\t\t\t}\n\t\t}\n\t}"
+        },
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/Tab.cs",
+          "sha256": "b5bcb77c35aae9303c3870bcefc7e491ba5664d8f71468d952a8f7b6174af022",
+          "line": 158,
+          "endLine": 202,
+          "excerpt": "\tpublic void InitCollection()\n\t{\n\t\tCollection.Clear();\n\t\tif (Categorys == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\thashtable.Clear();\n\t\tforeach (Category category in Categorys)\n\t\t{\n\t\t\tif (category.Items == null)\n\t\t\t{\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tforeach (object item in category.Items)\n\t\t\t{\n\t\t\t\tCollection.Add(item);\n\t\t\t\tif (!(item is NameValueItem) || (item as NameValueItem).Name == null || hashtable.Contains((item as NameValueItem).Name))\n\t\t\t\t{\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\t\t\t\thashtable.Add((item as NameValueItem).Name, item);\n\t\t\t\tif (!(item is ISubChild) || (item as ISubChild).SubChildren == null)\n\t\t\t\t{\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\t\t\t\tforeach (object subChild in (item as ISubChild).SubChildren)\n\t\t\t\t{\n\t\t\t\t\tif (subChild is NameValueItem && !hashtable.Contains((subChild as NameValueItem).Name))\n\t\t\t\t\t{\n\t\t\t\t\t\thashtable.Add((subChild as NameValueItem).Name, subChild);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic BaseNode FindBaseNodeByName(string Name)\n\t{\n\t\tif (hashtable.Contains(Name))\n\t\t{\n\t\t\treturn hashtable[Name] as BaseNode;\n\t\t}\n\t\tforeach (IDynamicChild item in hashtable.Values.OfType<IDynamicChild>())\n\t\t{"
+        },
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/ui/Apps.XmlUI/ParamsTabUserControl.xaml",
+          "sha256": "521817a08e66898ba9acbcce6753716713149c878270c524e1e3ce9550f3c8c7",
+          "line": 19,
+          "endLine": 23,
+          "excerpt": "      <DataTemplate x:Key=\"gridPanal\">\n        <Grid Loaded=\"Grid_Loaded\">\n          <local:ParamUserControl Margin=\"0\" DataContext=\"{Binding Collection[0]}\" />\n        </Grid>\n      </DataTemplate>"
+        },
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/ui/Apps.XmlUI/ParamsTabUserControl.xaml",
+          "sha256": "521817a08e66898ba9acbcce6753716713149c878270c524e1e3ce9550f3c8c7",
+          "line": 58,
+          "endLine": 61,
+          "excerpt": "                <DataTrigger Value=\"{x:Static appData:TabTypeEnum.Panal}\" Binding=\"{Binding TabTypeA}\">\n                  <Setter TargetName=\"con\" Value=\"{StaticResource gridPanal}\" Property=\"ContentPresenter.ContentTemplate\" />\n                </DataTrigger>\n                <DataTrigger Value=\"false\" Binding=\"{Binding IsVisible}\">"
+        }
+      ],
+      "fix": [
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 64,
+          "endLine": 81,
+          "excerpt": " public bool IsPanel {\n  get {\n   if(Element.Tag!=\"Tab\")return false;var raw=Get(\"TabType\")??\"0\";\n   return int.TryParse(raw,NumberStyles.Integer,CultureInfo.InvariantCulture,out var decimalType)&&decimalType==1||raw.StartsWith(\"0x\",StringComparison.OrdinalIgnoreCase)&&int.TryParse(raw[2..],NumberStyles.HexNumber,CultureInfo.InvariantCulture,out var number)&&number==1;\n  }\n }\n public ConfigurationNodeState? Parent=>owner.NearestParent(Element.Parent);\n public ConfigurationTemplateResolution Template=>owner.ResolveTemplate(this);\n public string DisplayType=>Template.EffectiveDisplayType??\"\";\n public string CaptionKey=>Get(\"DisplayName\") ?? Name ?? \"\";\n public string Value=>Get(\"CurValue\")??\"\";\n public bool CustomVisible=>Bool(\"CustomVisible\",true);\n public bool Visible=>CustomVisible && (Element.Tag!=\"Tab\"||Bool(\"IsVisible\",true)) && (!IsCategory||owner.Nodes.Any(x=>ReferenceEquals(x.Parent,this)&&x.CustomVisible)) && (Parent?.Visible??true);\n public bool Enabled=>Bool(\"Enable\",true) && (Parent?.Enabled??true);\n public bool CanSubscribe=>Parent?.IsCategory!=true || Parent.Parent?.IsPanel!=true&&Parent.Bool(\"SubscribeVisible\",true);\n public bool SubscribeVisible=>Bool(\"SubscribeVisible\",true)&&CanSubscribe;\n public bool IsDeleteSubscribe=>Bool(\"IsDeleteSubscribe\",true) && (Parent?.IsDeleteSubscribe??true);\n public bool CanTriggerRun=>IsCategory?Bool(\"CanTriggerRun\",false):(Parent?.CanTriggerRun??false);"
+        },
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationView.cs",
+          "sha256": "cc9cb90413328602f474d8de56faeb992d53263bcaacce10b4253f69f224ed34",
+          "line": 81,
+          "endLine": 95,
+          "excerpt": "            if(node.IsPanel) {\n                // Original Tab.InitCollection flattens Category.Items; gridPanal binds Collection[0], not a category.\n                var first=element.Children.FirstOrDefault(x=>x.Tag==\"Categorys\")?.Children\n                    .Where(x=>state.GetNode(x)?.IsCategory==true)\n                    .SelectMany(x=>x.Children.FirstOrDefault(c=>c.Tag==\"Items\")?.Children??Array.Empty<ConfigurationElement>()).FirstOrDefault();\n                var panel=new Grid();\n                if(first!=null){var control=Create(first);control.Margin=new Thickness(0);panelContents.Add(control);panel.Children.Add(control);}\n                tab.Content=panel;\n            } else {\n                var contents=new StackPanel();BuildChildren(element,contents);\n                tab.Content=new ScrollViewer{VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,Content=contents};\n            }\n            Tabs.Items.Add(tab);bindings.Add((node,tab,null));\n        }\n        foreach(var e in state.Definition.ExternParams)externs.Children.Add(Create(e));"
+        }
+      ],
+      "checks": [
+        "flattened first leaf, not first Category/CategoryNoHead",
+        "empty category skipped",
+        "only first factory instantiated",
+        "direct Grid/zero margin rather than scroll/group list",
+        "no ordinary outer Enable/CustomVisible wrapper",
+        "all panel row subscriptions disabled",
+        "unsupported complex first leaf explicit without rendering extra fields",
+        "Tab.IsVisible respected"
+      ],
+      "screenshot": "docs/plugins/configuration-panal-source-derived.png",
+      "screenshotAuthority": "Independent source-derived isolated actual ColorSegment tab; unimplemented ColorSegmentList is explicitly shown. Not an original desktop capture."
+    },
+    {
+      "id": "CFG-R04",
+      "severity": "P1",
+      "status": "fixed",
+      "title": "Failed clear could erase UI identity while host binding remained",
+      "reproduction": "A bound numeric row is hidden while ClearParameterBinding returns Error or throws IOException. Before fix local binding was cleared and parameter read even though host still bound.",
+      "source": [
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/ButtonSelecter.cs",
+          "sha256": "a04c04dc557328269a06d67c194f6c3a64b68659acc1f76e4de778f5da858931",
+          "line": 90,
+          "endLine": 124,
+          "excerpt": "\tpublic virtual string CurValueA\n\t{\n\t\tget\n\t\t{\n\t\t\treturn CurValue;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (!(CurValue != value))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tOldCurValue = CurValue;\n\t\t\tCurValue = value;\n\t\t\tif (OldCurValue != null && CurValue != null)\n\t\t\t{\n\t\t\t\tNameValueItem.logManager?.LogCreate(\"信息\", FullDisplayName + \" \" + AppLocalizationService.GetLang(\"参数修改\") + OldCurValue + AppLocalizationService.GetLang(\"新值\") + CurValue, ifLang: false);\n\t\t\t\tInvokeOnParamValueChanged(OldCurValue, CurValue);\n\t\t\t}\n\t\t\ttry\n\t\t\t{\n\t\t\t\tOnPropertyChanged(\"CurValueA\");\n\t\t\t}\n\t\t\tcatch (Exception)\n\t\t\t{\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tSetPropertyValueByName(\"CurValueA\", OldCurValue);\n\t\t\t\t}\n\t\t\t\tcatch\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}"
+        },
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/Setter.cs",
+          "sha256": "f48adc3b464e037ed813bf76bb1966f54423118b341b54f93482face16678d32",
+          "line": 97,
+          "endLine": 126,
+          "excerpt": "\tpublic void Operate(object[] Params, bool needThrowException = false)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (Operation != null)\n\t\t\t{\n\t\t\t\tOperation.Operate(Params ?? new object[0], (OperationParams == null) ? new string[0] : OperationParams.Split(';'));\n\t\t\t}\n\t\t\tif (PropertyName != null && TargetObj != null)\n\t\t\t{\n\t\t\t\tTargetObj.SetPropertyValueByName(PropertyName + \"A\", Value);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tif (needThrowException)\n\t\t\t{\n\t\t\t\tthrow new Exception(ex.Message);\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void GetTargetObj()\n\t{\n\t\tif (string.IsNullOrEmpty(TargetName))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tfor (BaseNode baseNode = GetParentNode() as BaseNode; baseNode != null; baseNode = baseNode.GetParentNode() as BaseNode)\n\t\t{"
+        },
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/NameValueItem.cs",
+          "sha256": "90b4742e79243f46c46fd6b38187ee7f5be49d4c6677f994133215a3796fed46",
+          "line": 538,
+          "endLine": 575,
+          "excerpt": "\tpublic virtual void OnPropertyChanged(string proName)\n\t{\n\t\tif (PropertyChanged != null)\n\t\t{\n\t\t\tPropertyChanged(this, new PropertyChangedEventArgs(proName));\n\t\t}\n\t\tif (!string.IsNullOrEmpty(TriggerCondition) && TriggerCondition.Equals(proName))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tTriggerBusiness(proName);\n\t\t\tif (\"CustomVisibleA\" == proName && parentNode is Apps.XmlParser.Category category && category.VisibleChanged())\n\t\t\t{\n\t\t\t\tGetParentNode<Tab>()?.VisibleChanged();\n\t\t\t}\n\t\t\tif (\"CurValueA\" == proName && OnCurValueChanged != null)\n\t\t\t{\n\t\t\t\tOnCurValueChanged(this, null);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tif (proName == \"CurValueA\" && this is ButtonSelecter)\n\t\t\t{\n\t\t\t\tthrow new Exception(ex.Message);\n\t\t\t}\n\t\t}\n\t}\n\n\tprotected internal void SetTriggerDisable(string Condition)\n\t{\n\t\tTriggerCondition = Condition;\n\t}\n\n\tprotected internal void SetTriggerEnable()\n\t{"
+        }
+      ],
+      "fix": [
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 232,
+          "endLine": 241,
+          "excerpt": "    var cleared=Dispatch(new(ConfigurationOperationKind.ClearParameterBinding,\"ClearParameterBinding\",n,null,[],kind){SubscriptionBinding=n.SubscriptionBinding});\n    if(cleared.Handled&&cleared.Error==null) {\n     n.Assign(\"Subscription\",\"\");n.SubscriptionBinding=null;\n     var read=Dispatch(new(ConfigurationOperationKind.ReadParameter,\"ReadParameter\",n,null,[],kind));\n     if(read.Handled&&read.Error==null&&read.Value!=null){Change(n,\"CurValue\",read.Value,kind);committedValues[n]=n.Value;}\n    }else Diagnose(\"SubscriptionClearFailed\",\"ClearParameterBinding\",n,\"Binding identity was retained because the host did not confirm removal.\");\n   }\n   Trigger(n,property,kind);\n  } finally {Finish();}\n }"
+        },
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 335,
+          "endLine": 347,
+          "excerpt": "  ConfigurationOperationResult result;\n  try {result=dispatcher?.Dispatch(r)??new(false);}\n  catch(Exception error) {\n   var message=error.GetType().Name+\": \"+error.Message;\n   Diagnose(\"OperationError\",r.OriginalName,r.Source,message);\n   return new(false,Error:message);\n  }\n  if(!result.Handled)Diagnose(\"UnsupportedOperation\",r.OriginalName,r.Source,\"Typed operation has no registered implementation.\");\n  if(result.Error!=null)Diagnose(\"OperationError\",r.OriginalName,r.Source,result.Error);\n  return result;\n }\n void Diagnose(string code,string operation,ConfigurationNodeState node,string message) {\n  var d=new ConfigurationDiagnostic(code,operation,node.Name,message);if(!diagnostics.Contains(d))diagnostics.Add(d);"
+        }
+      ],
+      "checks": [
+        "Error and thrown exception cases",
+        "hide request preserved",
+        "host and typed UI binding stay aligned",
+        "no fake unbound scalar read",
+        "mode user domain not changed",
+        "reshow retains prior binding/value",
+        "synchronous dispatcher failures become OperationError and Handled=false rather than WPF event exceptions"
+      ]
+    },
+    {
+      "id": "CFG-R05",
+      "severity": "P1",
+      "status": "fixed",
+      "title": "Signed Int32 hexadecimal metadata was interpreted as unsigned or left unusable by numeric controls",
+      "reproduction": "Original Caliper PositionNegX0 has Cur/Default=0xffffff9c, Min=0xfffe7960, Max=0x186a0, Inc=0x1. Before fix Cur=4294967196 and raw hex range/step failed production double parsing.",
+      "source": [
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/Integer.cs",
+          "sha256": "530ade2d749eb089211786a20909fa24771ee25e38c6b66b1ca4275412cec278",
+          "line": 11,
+          "endLine": 25,
+          "excerpt": "\tpublic int MinValue;\n\n\tpublic int MaxValue;\n\n\tpublic int IncValue = 1;\n\n\tpublic int CurValue;\n\n\tpublic int DefaultValue;\n\n\tpublic string Unit;\n\n\tpublic int CurValueA\n\t{\n\t\tget"
+        },
+        {
+          "path": "D:/MyWork/REA逆向测试/analysis/decompiled/Apps.XmlParser/Hik.Xml.BaseNode.decompiled.cs",
+          "sha256": "2994d6ac9669ef78305e3bc4cab998a4f42e15a0b2b95ebb669c870dc2ab8968",
+          "line": 713,
+          "endLine": 733,
+          "excerpt": "\t\tcase TypeCode.Int32:\n\t\tcase TypeCode.UInt32:\n\t\tcase TypeCode.Int64:\n\t\tcase TypeCode.UInt64:\n\t\tcase TypeCode.Single:\n\t\tcase TypeCode.Double:\n\t\tcase TypeCode.DateTime:\n\t\t\tif (!object.Equals(obj, value))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tif (!CompareObjectValue(obj, value, isCloneExclude))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tbreak;\n\t\t}\n\t\treturn true;\n\t}"
+        },
+        {
+          "path": "analysis/full-audit/n-image-calibration/configuration-model/StringUtil.cs",
+          "sha256": "ab4ba1f213bf389c194a252adca63371ceb04b7d12ee3d0f2be3181cac2a823a",
+          "line": 120,
+          "endLine": 138,
+          "excerpt": "\tpublic static int ParseInt(string value)\n\t{\n\t\tif (string.IsNullOrEmpty(value))\n\t\t{\n\t\t\treturn 0;\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tif (value.ToLower().StartsWith(\"0x\"))\n\t\t\t{\n\t\t\t\treturn int.Parse(value.Substring(2), NumberStyles.HexNumber);\n\t\t\t}\n\t\t\treturn int.Parse(value);\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t\treturn 0;\n\t\t}\n\t}"
+        }
+      ],
+      "fix": [
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 33,
+          "endLine": 37,
+          "excerpt": " // Explicit source-confirmed CLR inheritance, not a name-prefix guess. Integer64 is deliberately excluded.\n static readonly HashSet<string> Integer32Types=new(StringComparer.Ordinal){\"Integer\",\"IntegerBx\",\"IntegerConfirm\",\"Integer_CircleFind\",\"Integer_CirclePairInsp\",\"Integer_CaliperHeight\",\"Integer_CaliperHeight2\",\"Integer_IdeaWidth\"};\n static readonly HashSet<string> Enum32Types=new(StringComparer.Ordinal){\"Enumeration\",\"EnumerationAllCom\",\"EnumerationBx\",\"EnumerationBxDynamic\",\"EnumerationCom\",\"EnumerationDataCenter\",\"EnumerationGain\",\"EnumerationTrigger\",\"EnumerationVar\",\"Enumeration_ModuleSelector\"};\n static readonly HashSet<string> Radio32Types=new(StringComparer.Ordinal){\"RadioSelecter\",\"RadioSelecter3\",\"RadioSelecterEx2\",\"RadioSelecterEx3\"};\n readonly ToolConfigurationState owner;"
+        },
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 46,
+          "endLine": 48,
+          "excerpt": "  if(IsInteger32)foreach(var field in new[]{\"CurValue\",\"DefaultValue\",\"MinValue\",\"MaxValue\",\"IncValue\"})values[field]=ParseInt32(values.GetValueOrDefault(field,field==\"IncValue\"?\"1\":\"0\"));\n  else if(Enum32Types.Contains(element.Tag)||Radio32Types.Contains(element.Tag))foreach(var field in new[]{\"CurValue\",\"DefaultValue\"})values[field]=ParseInt32(values.GetValueOrDefault(field,\"0\"));\n }"
+        },
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationState.cs",
+          "sha256": "eec18b6386ff260fbbdfd9cec85b69486e05a63c9204d92fc2ce4e2e9d8fa2a3",
+          "line": 50,
+          "endLine": 61,
+          "excerpt": " // Original Hik.Util.StringUtil.ParseInt: signed Int32 HexNumber; malformed/overflow returns 0.\n static string ParseInt32(string value) {\n  var hex=value.StartsWith(\"0x\",StringComparison.OrdinalIgnoreCase);\n  return (int.TryParse(hex?value[2..]:value,hex?NumberStyles.HexNumber:NumberStyles.Integer,CultureInfo.InvariantCulture,out var number)?number:0).ToString(CultureInfo.InvariantCulture);\n }\n public bool IsInteger32=>Integer32Types.Contains(Element.Tag);\n internal string NormalizeTypedProperty(string property,string value)=>\n  IsInteger32&&property is \"CurValue\" or \"DefaultValue\" or \"MinValue\" or \"MaxValue\" or \"IncValue\" ||\n  (Enum32Types.Contains(Element.Tag)||Radio32Types.Contains(Element.Tag))&&property is \"CurValue\" or \"DefaultValue\"?ParseInt32(value):value;\n public ConfigurationSubscriptionBinding? SubscriptionBinding {get;internal set;}\n public IReadOnlyList<ConfigurationChoice> Choices {get;internal set;}=Array.Empty<ConfigurationChoice>();\n public ConfigurationElement Element {get;}"
+        }
+      ],
+      "originalManagedRuntime": "tests/VisionConfiguration.IntegerMetadataChecks/Fixtures/original-integer-metadata.json",
+      "checks": [
+        "five CLR fields confirmed System.Int32 by original assembly reflection",
+        "12 original ParseInt cases include signed boundaries and overflow→0",
+        "five metadata fields compared with original results",
+        "8 source-confirmed Integer family classes",
+        "Float/String/Integer64 excluded",
+        "actual original Caliper XML/hash retained",
+        "production ConfigurationNumericSpinner reads -100/-100000/100000/1",
+        "production increment writes -99 rather than clamping to zero"
+      ],
+      "screenshot": "docs/plugins/configuration-integer-source-derived.png",
+      "screenshotAuthority": "Independent source-derived isolated original Caliper field at initial -100; not original desktop capture."
+    }
+  ],
+  "verification": [
+    {
+      "project": "tests/VisionConfiguration.StateChecks",
+      "checksPassed": 1687,
+      "exitCode": 0
+    },
+    {
+      "project": "tests/VisionConfiguration.ViewChecks",
+      "checksPassed": 174,
+      "exitCode": 0
+    },
+    {
+      "project": "tests/VisionConfiguration.IntegerMetadataChecks",
+      "checksPassed": 92,
+      "exitCode": 0
+    },
+    {
+      "project": "tests/VisionConfiguration.OperationChecks",
+      "checksPassed": 16,
+      "exitCode": 0
+    }
+  ],
+  "additionalReview": {
+    "ComTailName": "Verified source NameValueItem.ComName = Name + ComTailName. Current ParameterAdapter and user-domain keys preserve suffix; existing OperationChecks cover item0. No additional reproducible issue found.",
+    "defaultAccessMode": "Source field defaults null; state now defaults absent transport access to empty, not RW. No additional shipped ordinary RW numeric fields missing MinValue/MaxValue found in the static installed XML scan.",
+    "closeExecution": "Original ParamsConfigControlBase.Window_Closed stops self-execute and disposes/finishes model. Current ModelWindow disposes its session and migrated providers release their execution scheduler. No new source-confirmed close scheduling failure found in reviewed ordinary path; advanced native callbacks remain provider capability boundaries."
+  },
+  "notClosedByThisNode": [
+    "Full original desktop pixel/interaction parity; original BAML host rendering remains unavailable in earlier probe.",
+    "Complex panel factories such as ColorSegmentList remain explicitly unsupported; only common panel host behavior is implemented.",
+    "Global/local/workflow input/native private or CanSubscribe metadata/parent container/index services outside the bridge supported subset.",
+    "Original ISubChild composite expansion and legacy UTF8 read truncation branches remain previously documented limitations; no new implementation was added in this bounded review."
+  ],
+  "authority": "Original decompiled managed source + original managed ParseInt/reflection runtime + independent regressions. Passing checks do not establish complete native parity."
+}

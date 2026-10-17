@@ -7,9 +7,13 @@ public static class DataKinds {
  // A generic image port admits either owned format. Concrete consumers retain runtime checks.
  public static bool CanFlow(DataKind source,DataKind target)=>source==target||source==DataKind.Number&&target==DataKind.NumberArray||source==DataKind.Image&&IsImage(target)||target==DataKind.Image&&IsImage(source);
  public static PortValue Coerce(PortValue value,DataKind target)=>value.Kind==DataKind.Number&&target==DataKind.NumberArray?PortValue.Numbers([value.As<double>()]):CanFlow(value.Kind,target)?value:throw new InvalidDataException("Value type mismatch.");
+ // Native display float readers explicitly fall back to integer input. Opt in per input;
+ // ordinary numeric ports and workflow parameters keep their existing strict types.
+ public static bool CanFlow(DataKind source,PortDescriptor target)=>CanFlow(source,target.Kind)||target.AcceptInteger&&source==DataKind.Integer&&target.Kind is DataKind.Number or DataKind.NumberArray;
+ public static PortValue Coerce(PortValue value,PortDescriptor target)=>target.AcceptInteger&&value.Kind==DataKind.Integer?target.Kind switch{DataKind.Number=>PortValue.Number((float)value.As<long>()),DataKind.NumberArray=>PortValue.Numbers([(float)value.As<long>()]),_=>throw new InvalidDataException("Invalid integer promotion target.")}:Coerce(value,target.Kind);
 }
 public enum ParameterKind { Number, Integer, Boolean, Text }
-public sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true);
+public sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true,bool AcceptInteger=false);
 public sealed record ParameterDescriptor(string Name,ParameterKind Kind,bool Required,JsonElement? DefaultValue=null,double? Minimum=null,double? Maximum=null);
 public sealed record ModuleDescriptor(string Id,string Version,string DisplayName,IReadOnlyList<PortDescriptor> Inputs,IReadOnlyList<PortDescriptor> Outputs,IReadOnlyList<ParameterDescriptor> Parameters);
 public sealed record ResourceDocument(string Id,string Path,string? Sha256=null){[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public string? EmbeddedBase64{get;init;}}
@@ -67,17 +71,20 @@ public sealed class ModuleExecutionContext {
 }
 public interface IModule {ModuleDescriptor Descriptor {get;} ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context,CancellationToken cancellationToken);}
 public sealed class ModuleRegistry {
-    readonly Dictionary<(string Id,string Version),(ModuleDescriptor Descriptor,Func<IModule> Factory)> modules=new();
+    readonly Dictionary<(string Id,string Version),(ModuleDescriptor Descriptor,Func<IModule> Factory,Func<NodeDocument,ModuleDescriptor>? DescribeNode)> modules=new();
     public IReadOnlyList<ModuleDescriptor> Descriptors=>modules.Values.Select(x=>x.Descriptor).OrderBy(x=>x.Id,StringComparer.Ordinal).ThenBy(x=>x.Version,StringComparer.Ordinal).ToArray();
-    public void Register(ModuleDescriptor descriptor,Func<IModule> factory){
-        ArgumentNullException.ThrowIfNull(descriptor);ArgumentNullException.ThrowIfNull(factory);
+    public void Register(ModuleDescriptor descriptor,Func<IModule> factory,Func<NodeDocument,ModuleDescriptor>? describeNode=null){
+        ArgumentNullException.ThrowIfNull(factory);var frozen=Freeze(descriptor);if(!modules.TryAdd((frozen.Id,frozen.Version),(frozen,factory,describeNode)))throw new InvalidOperationException("Duplicate module registration.");
+    }
+    static ModuleDescriptor Freeze(ModuleDescriptor descriptor){
+        ArgumentNullException.ThrowIfNull(descriptor);
         if(string.IsNullOrWhiteSpace(descriptor.Id)||string.IsNullOrWhiteSpace(descriptor.Version)||string.IsNullOrWhiteSpace(descriptor.DisplayName)||descriptor.Inputs is null||descriptor.Outputs is null||descriptor.Parameters is null)throw new ArgumentException("Invalid module descriptor.");
-        bool BadPorts(IReadOnlyList<PortDescriptor> ports)=>ports.Any(p=>p is null||string.IsNullOrWhiteSpace(p.Name)||!Enum.IsDefined(p.Kind))||ports.Select(p=>p.Name).Distinct(StringComparer.Ordinal).Count()!=ports.Count;
+        bool BadPorts(IReadOnlyList<PortDescriptor> ports)=>ports.Any(p=>p is null||string.IsNullOrWhiteSpace(p.Name)||!Enum.IsDefined(p.Kind)||p.AcceptInteger&&p.Kind is not (DataKind.Number or DataKind.NumberArray))||ports.Select(p=>p.Name).Distinct(StringComparer.Ordinal).Count()!=ports.Count;
         if(BadPorts(descriptor.Inputs)||BadPorts(descriptor.Outputs)||descriptor.Parameters.Any(p=>p is null||string.IsNullOrWhiteSpace(p.Name)||!Enum.IsDefined(p.Kind)||p.Minimum is double min&&!double.IsFinite(min)||p.Maximum is double max&&!double.IsFinite(max)||p.Minimum>p.Maximum)||descriptor.Parameters.Select(p=>p.Name).Distinct(StringComparer.Ordinal).Count()!=descriptor.Parameters.Count)throw new ArgumentException("Invalid module ports or parameters.");
         var frozen=descriptor with {Inputs=Array.AsReadOnly(descriptor.Inputs.ToArray()),Outputs=Array.AsReadOnly(descriptor.Outputs.ToArray()),Parameters=Array.AsReadOnly(descriptor.Parameters.Select(p=>p with {DefaultValue=p.DefaultValue?.Clone()}).ToArray())};
-        if(!modules.TryAdd((frozen.Id,frozen.Version),(frozen,factory)))throw new InvalidOperationException("Duplicate module registration.");
+        return frozen;
     }
-    public ModuleDescriptor GetDescriptor(NodeDocument node){var descriptor=GetDescriptor(node.ModuleId,node.ModuleVersion);return node.ModuleId==WorkflowCalls.ModuleId?WorkflowCalls.Describe(node):descriptor;}
+    public ModuleDescriptor GetDescriptor(NodeDocument node){var descriptor=GetDescriptor(node.ModuleId,node.ModuleVersion);if(node.ModuleId==WorkflowCalls.ModuleId)return WorkflowCalls.Describe(node);var resolver=modules[(node.ModuleId,node.ModuleVersion)].DescribeNode;if(resolver is null)return descriptor;try{var resolved=resolver(node);if(resolved is null||resolved.Id!=descriptor.Id||resolved.Version!=descriptor.Version)throw new InvalidDataException("Dynamic descriptor identity differs from registered module.");return Freeze(descriptor with{Inputs=resolved.Inputs,Outputs=resolved.Outputs});}catch(ArgumentException ex){throw new InvalidDataException("Invalid node port schema.",ex);}}
     public ModuleDescriptor GetDescriptor(string id,string version)=>modules.TryGetValue((id,version),out var item)?item.Descriptor:throw new KeyNotFoundException($"Unknown module: {id}@{version}");
     public IModule Create(string id,string version){var item=modules.TryGetValue((id,version),out var m)?m:throw new KeyNotFoundException($"Unknown module: {id}@{version}");var result=item.Factory()??throw new InvalidOperationException("Module factory returned null.");if(result.Descriptor.Id!=id||result.Descriptor.Version!=version)throw new InvalidOperationException("Module factory identity mismatch.");return result;}
 }

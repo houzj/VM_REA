@@ -1,6 +1,7 @@
 ﻿param(
     [string]$EvidenceRoot = 'D:/MyWork/REA逆向测试/analysis/full-audit',
-    [string]$OutputDirectory = (Join-Path $PSScriptRoot '../docs/plugins')
+    [string]$OutputDirectory = (Join-Path $PSScriptRoot '../docs/plugins'),
+    [switch]$ResetChecklist
 )
 $ErrorActionPreference = 'Stop'
 $source = Join-Path $EvidenceRoot 'plugin-coverage.json'
@@ -66,5 +67,12 @@ foreach ($record in ($records | Sort-Object priority,category,plugin)) {
     $lines += "|$($record.priority.Split('-')[0])|$($record.category)|$($record.plugin)|$($record.displayName)|$counts|$types|$state|"
 }
 $lines += @('', '## 每项验收顺序', '', '1. 确认二进制身份、注册信息、版本、资源和依赖，追踪托管到原生的调用入口。', '2. 记录参数默认值、范围、显隐、输入输出类型、数组、订阅和持久化语义。', '3. 跟踪真实执行路径、状态机、错误、取消及资源释放；未知项保持未知。', '4. 实现插件算法和专用配置界面；公共服务需求写入 ../CONTRACT-REQUESTS.md。', '5. 用原始程序与重建程序的同输入结果、模式界面和生命周期验证，记录差异。', '6. 专用测试通过后更新 HANDOFF.md；测试通过不能单独证明原生等价。')
-$lines | Set-Content -LiteralPath (Join-Path $OutputDirectory 'CHECKLIST.md') -Encoding utf8
+$checklistPath=Join-Path $OutputDirectory 'CHECKLIST.md'
+# CHECKLIST also carries reviewed priorities, framework work and acceptance state.
+# Re-exporting source declarations must not erase that human-maintained progress.
+if($ResetChecklist -or -not (Test-Path -LiteralPath $checklistPath)) {
+    $lines | Set-Content -LiteralPath $checklistPath -Encoding utf8
+} else {
+    Write-Output 'Preserved reviewed CHECKLIST.md; only inventory.json was regenerated. Use -ResetChecklist for an explicit declaration-only reset.'
+}
 Write-Output "Validated $($records.Count) plugins; $native native DLLs; $managed managed DLLs."

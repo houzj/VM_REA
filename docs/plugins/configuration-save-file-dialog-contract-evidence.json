@@ -1,0 +1,163 @@
+{
+  "status": "Source-confirmed shared model requirement; Command renderer exists, SaveFileDialog execution route not implemented",
+  "source": {
+    "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\Apps.XmlParser.CapabilityAudit\\Apps.XmlParser.ParamTab\\SaveFileDialog.cs",
+    "sha256": "bd70974ca4f946998c4da911bfe1503fdd3a67cd7c821c84e53fa8263bdb642c"
+  },
+  "claims": [
+    {
+      "lines": [
+        43
+      ],
+      "text": "public override bool NeedInit => false;",
+      "meaning": "No generic parameter initialization for this model"
+    },
+    {
+      "lines": [
+        45
+      ],
+      "text": "public override string DisplayType => \"Command\";",
+      "meaning": "Template alias does not mean CommandSetter execution semantics"
+    },
+    {
+      "lines": [
+        73
+      ],
+      "text": "DoSaveFile();",
+      "meaning": "Own ClickCommand invokes DoSaveFile, not base CommandSetter"
+    },
+    {
+      "lines": [
+        83
+      ],
+      "text": "((IUserStringData)GetModuleTagInfo())[Name] = filePath;",
+      "meaning": "Successful selection writes module-tag user string keyed by model Name; plugin-specific save action is below this bridge"
+    },
+    {
+      "lines": [
+        90
+      ],
+      "text": "tab.FindBaseNodeByName(\"CalibPathName\")",
+      "meaning": "Refresh peer CalibPathName GetParamUnit after native user-string write"
+    },
+    {
+      "lines": [
+        155
+      ],
+      "text": "saveFileDialog.Filter = FileOption.FilterName;",
+      "meaning": "Save picker takes declared filter exactly"
+    },
+    {
+      "lines": [
+        156
+      ],
+      "text": "saveFileDialog.FilterIndex = 1;",
+      "meaning": "Local picker filterindex1"
+    },
+    {
+      "lines": [
+        157
+      ],
+      "text": "saveFileDialog.RestoreDirectory = true;",
+      "meaning": "Local picker restore directory enabled"
+    },
+    {
+      "lines": [
+        159
+      ],
+      "text": "INIGetDefaultOpenPath(vmModule?.ModuleDir)",
+      "meaning": "Initial local directory uses per-module stored default open path"
+    },
+    {
+      "lines": [
+        108,
+        164
+      ],
+      "text": "saveFileDialog.ShowDialog() != true",
+      "meaning": "Cancellation returns before write, history or success notification"
+    },
+    {
+      "lines": [
+        113,
+        169
+      ],
+      "text": "array.Count() != 2",
+      "meaning": "Require exactly two pipe-separated filter components"
+    },
+    {
+      "lines": [
+        174
+      ],
+      "text": "saveFileDialog.FileName.EndsWith(array[0])",
+      "meaning": "Local chosen path must end with filter first component; invalid path reports save failure/path-too-long"
+    },
+    {
+      "lines": [
+        181
+      ],
+      "text": "SaveFile(saveFileDialog.FileName);",
+      "meaning": "Write module user-string before remembering path or showing success"
+    },
+    {
+      "lines": [
+        182
+      ],
+      "text": "INISetDefaultOpenPath(Path.GetDirectoryName(saveFileDialog.FileName)",
+      "meaning": "Only successful write remembers chosen local directory"
+    },
+    {
+      "lines": [
+        130,
+        185
+      ],
+      "text": "catch (VmException ex)",
+      "meaning": "Native failure notification includes errorcode resolver; managed exceptions report exception message"
+    },
+    {
+      "lines": [
+        103
+      ],
+      "text": "DirectoryBrowser.SaveFileDialog",
+      "meaning": "Separate remote picker branch uses remote path history; no claim implemented here"
+    },
+    {
+      "lines": [
+        222
+      ],
+      "text": "public override int GetParamUnit()",
+      "meaning": "Model GetParamUnit/SetParamUnit return0 and do not read/write execution CurValue"
+    },
+    {
+      "lines": [
+        234,
+        241
+      ],
+      "text": "SaveTypeA == \"CalibPath\"",
+      "meaning": "PathInit/PathSave currently empty conditional bodies; SaveType cannot be used to invent an action"
+    }
+  ],
+  "npointInstance": {
+    "name": "SaveCalibPath",
+    "saveType": "CalibPath",
+    "filter": ".xml|*.xml",
+    "customVisible": "False",
+    "accessMode": "RW"
+  },
+  "requiredSharedContract": {
+    "picker": [
+      "SaveFile request, current per-module directory, exact source filter, FilterIndex1, RestoreDirectory true",
+      "Selected/Cancelled/Failed result and chosen path; no file write merely from opening picker"
+    ],
+    "modelDispatch": [
+      "Explicit SaveFileDialog kind, not arbitrary XML CLR reflection",
+      "Host routes selected path to plugin module-user-string action keyed by source model Name",
+      "After successful action refresh source CalibPathName; remember directory and show success; report native/managed errors with source message distinction"
+    ],
+    "missingInCurrentFramework": [
+      "IToolConfigurationFileService.Select currently has open-existing-file semantics (WpfConfigurationFileService uses OpenFileDialog); ConfigurationFileRequest has no save-operation discriminator or SaveFile picker contract",
+      "State.Invoke currently requires CommandSetter and diagnoses unsupported for SaveFileDialog",
+      "No shared named module-user-string save action + peer refresh/history transaction contract"
+    ]
+  },
+  "independentBoundary": "This report neither opens a picker nor writes a calibration file. Renderer availability is reported separately from model behavior. Remote mode remains source-confirmed/unimplemented."
+}
