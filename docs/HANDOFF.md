@@ -177,3 +177,10 @@ At the user's request, the original checkout now develops framework and integrat
 
 四条主框架工作线现按不同 MF 清单条目和独立工作树推进，边界见 `FRAMEWORK-FOUR-LANE-OWNERSHIP.md`。MF-05 在独立 `.vmx.json` 保存和加载结构校验中检查嵌入 Base64 字节与声明 SHA256；损坏编码或摘要在进入执行器之前拒绝，失败保存不替换原文件。实际二进制资源的保存/离线读取、错误拒绝共 27 项持久化检查通过，真实图像源 773 项检查通过；原生 `.sol/.solx` 容器与密码格式仍未逆向闭合，见 `SOLUTION-PERSISTENCE-BOUNDARY.md`。此批不修改插件专属持久化或其它 MF 工作树。
 
+## 2026-10-17 四份独立清单首轮集成验收
+
+- MF-01 主界面：标题栏空白区手势不再吞掉菜单、工具栏输入；状态栏流程耗时点击打开实际运行记录明细，算法独立耗时没有契约时显示“—”。详见 `MF01-SHELL-HEADER-GESTURES.md`、`MF01-STATUS-TIMING.md`；主工作区专项 14 项通过。
+- MF-02 工作流画布：普通节点与 Group 混合多选按实际高度对齐、分布；连线中点拖动时可见路径、箭头和命中区域同步。详见 `MF02-MIXED-HEIGHT-ALIGNMENT.md`、`MF02-WIRE-DRAG-GEOMETRY.md`；主工作区专项 13 项通过。
+- MF-04 Group：输入和运行代理来源弹层过滤数组基数；参数关联按原始代码中的工具身份与参数名筛选，实际两个模块同步后运行、保存重开。详见 `GROUP-SOURCE-CARDINALITY.md`、`GROUP-RELATION-IDENTITY.md`；主工作区专项 15 项通过。
+- MF-05 方案存储：本轮独立格式嵌入资源完整性修复见上一节。四线分别属于不同清单，主线顺序合入；合入后的完整 WPF 操作回归 456 项通过，已推送 `main` 到 `79cdef3`。以上专项验收不关闭原生桌面鼠标/DPI、复杂避障、嵌套 Group 代理或 `.sol/.solx` 往返差分。
+
