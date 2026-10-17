@@ -1,6 +1,6 @@
 # 框架并行任务边界（2026-10-17）
 
-本页仅保留主框架内部可并行任务的历史建议。两个实际项目的职责以 [双项目任务清单](TWO-PROJECT-WORKLISTS.md) 和 [开发基线](TWO-PROJECT-BASELINE.md) 为准；用户直接协调两个项目。
+本页仅保留主框架内部可并行任务的历史建议。当前实际四线所有权、工作树及交接见 [主框架四条独立清单线](FRAMEWORK-FOUR-LANE-OWNERSHIP.md)。两个项目的职责以 [双项目任务清单](TWO-PROJECT-WORKLISTS.md) 和 [开发基线](TWO-PROJECT-BASELINE.md) 为准；用户直接协调两个项目。
 
 **2026-10-17 边界更新：**此处原建议仅适用于 main 内部框架任务，不能作为插件线节点公共配置框架的排除规则。用户已授权插件线在自己的 worktree 修改必要共享文件；双方仍并行逆向。最新跨线主责、在制文件锁、交付与合流闸门见 [PLUGIN-FRAMEWORK-BOUNDARY.md](PLUGIN-FRAMEWORK-BOUNDARY.md) 和 [PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.md](PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.md)。主线不在插件线配置宿主/模板的同一文件上同时开发第二套实现。
 

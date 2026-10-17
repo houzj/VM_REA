@@ -173,3 +173,7 @@ At the user's request, the original checkout now develops framework and integrat
 - 方案存储：反编译确认原生保存/加载在托管层转交 SDK；不能由托管源码推出 `.sol/.solx` 格式。本项目 `.vmx.json` 的相对资源另存、重开和准备失败回滚新增实际检查；23 项流程管理检查通过，见 `SOLUTION-PERSISTENCE-BOUNDARY.md`。
 - 完整 WPF 操作链 456 项、框架执行 68 项通过；解决方案含新小地图与 Group 专项项目并以0警告0错误构建。截图 `analysis/full-audit/wpf-workflow-parity.png` 已目检，界面仍存在与原生 VM 的开放差异。完整桌面鼠标、原生方案往返、极值/多屏差分未验收。
 
+## 2026-10-17 独立清单 MF-05：嵌入资源完整性
+
+四条主框架工作线现按不同 MF 清单条目和独立工作树推进，边界见 `FRAMEWORK-FOUR-LANE-OWNERSHIP.md`。MF-05 在独立 `.vmx.json` 保存和加载结构校验中检查嵌入 Base64 字节与声明 SHA256；损坏编码或摘要在进入执行器之前拒绝，失败保存不替换原文件。实际二进制资源的保存/离线读取、错误拒绝共 27 项持久化检查通过，真实图像源 773 项检查通过；原生 `.sol/.solx` 容器与密码格式仍未逆向闭合，见 `SOLUTION-PERSISTENCE-BOUNDARY.md`。此批不修改插件专属持久化或其它 MF 工作树。
+

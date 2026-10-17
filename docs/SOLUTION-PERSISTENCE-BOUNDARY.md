@@ -18,4 +18,8 @@
 
 `src/VisionFramework/SolutionStore.cs` 使用版本化 `.vmx.json`，校验后写同目录临时文件再替换；`src/VisionEditor.Core/GraphEditorDocument.cs:37-44,251-254` 在另存时重定位通用资源和内置文件图像节点的相对路径，仅成功写入后更新编辑器基目录与文件路径。这些是本项目的独立实现，不是原生实现证据。
 
-`tests/VisionProcedure.Checks/Program.cs` 新增实际保存、另存、重开、按新目录读取同一资源，以及准备阶段失败时编辑器状态和目标文件不变的检查。测试不覆盖掉电、跨卷重命名、全部插件私有路径、嵌入资源和原生文件兼容。插件私有持久化归插件线，不在主线重复实现。
+`tests/VisionProcedure.Checks/Program.cs` 新增实际保存、另存、重开、按新目录读取同一资源，以及准备阶段失败时编辑器状态和目标文件不变的检查。测试不覆盖掉电、跨卷重命名、全部插件私有路径和原生文件兼容。插件私有持久化归插件线，不在主线重复实现。
+
+## MF-05 独立嵌入资源校验增量
+
+`SolutionStore.ValidateStructure` 现在在保存前和加载后检查 `EmbeddedBase64` 编码，并在有 SHA256 声明时校验解码字节与摘要。损坏数据在进入执行器前失败；已有方案不能因失败保存而被替换。这是 `.vmx.json` 的独立格式一致性保护，不是从原生 `.sol/.solx` 推断出的规则。`tests/VisionFramework.PersistenceChecks` 以实际二进制资源验证保存、离线重开、摘要不符与非法 Base64 拒绝，27 项通过；真实图像源含嵌入保存的 773 项插件检查亦通过。超大资源、掉电和原生容器格式仍未闭合。
