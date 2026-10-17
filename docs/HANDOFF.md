@@ -184,3 +184,12 @@ At the user's request, the original checkout now develops framework and integrat
 - MF-04 Group：输入和运行代理来源弹层过滤数组基数；参数关联按原始代码中的工具身份与参数名筛选，实际两个模块同步后运行、保存重开。详见 `GROUP-SOURCE-CARDINALITY.md`、`GROUP-RELATION-IDENTITY.md`；主工作区专项 15 项通过。
 - MF-05 方案存储：本轮独立格式嵌入资源完整性修复见上一节。四线分别属于不同清单，主线顺序合入；合入后的完整 WPF 操作回归 456 项通过，已推送 `main` 到 `79cdef3`。以上专项验收不关闭原生桌面鼠标/DPI、复杂避障、嵌套 Group 代理或 `.sol/.solx` 往返差分。
 
+## 2026-10-17 四份清单后续独立闭合
+
+- MF-01：原 `StatusBar.ZoomCallBackClick` 的百分比按钮复位接入实际画布缩放路径，150% 点击回 100% 且文档修订不变。合入时发现耗时窗口流程切换关闭重入，主线修为先摘监听与引用再关窗；Shell 专项 17 项通过。见 `MF01-STATUS-ZOOM-RESET.md`、`MF01-STATUS-TIMING.md`。
+- MF-02：按原 `ZoomArea` 的未裁剪请求位置记录小地图边界点击，修复靠右下边缘反向拖动时机；真实 WPF 鼠标事件、边界、保存重开专项 20 项通过。原生极端缩放/DPI 仍待差分。见 `MF02-MINIMAP-EDGE-DRAG.md`。
+- MF-04：按原 `GroupParam` 的 32 字符截取与输入输出合并查重规则生成多选输入名；真实窗口、父流程两订阅及运行、保存重开专项 20 项通过。复合叶 IO/SDK 调用仍未闭合。见 `GROUP-INPUT-MULTISELECT.md`。
+- MF-05：独立 `.vmx.json` 被占用时原文件保留、临时文件清理及解除占用后的重试；编辑器路径/基目录/修订/未保存状态在失败时不误提交。持久化 30 项、流程管理 26 项通过。见 `SOLUTION-PERSISTENCE-BOUNDARY.md`。
+
+四线改动顺序合入后，主工作区完整 WPF 操作回归 456 项通过。MF-02 分支曾在第 207 项时间阈值偶发失败，同一构建复跑通过；该项时间敏感性不据此宣称已消除。插件项目 `tool-plugins` 独立在制，本批未合流或编辑其工作树。
+
