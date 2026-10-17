@@ -89,7 +89,7 @@ if data.get('closureReport'):
     page += '<p><a href="' + E(data['closureReport'], quote=True) + '">本批次逐功能源码对照及未关闭范围</a></p>'
 for name in data.get('runtimeLogs', []):
     page += '<p><a href="acceptance-evidence/' + E(name, quote=True) + '">' + E(name) + '</a></p>'
-page += '<p>实际数据/存储复核：<a href="acceptance-evidence/framework-acceptance-arrays.log">28项数组契约记录</a>，<a href="acceptance-evidence/framework-acceptance-persistence.log">23项持久化记录</a>。</p>'
+page += '<p>实际数据/存储复核：<a href="acceptance-evidence/' + E(data.get("arrayReport", "framework-acceptance-arrays.log"), quote=True) + '">' + str(data.get("arrayCheckCount", 28)) + '项数组契约记录</a>，<a href="acceptance-evidence/framework-acceptance-persistence.log">既有23项持久化记录（本批未重跑）</a>。</p>'
 page += '<h2>仍未验收</h2><p>完整桌面鼠标拖放、真实VM同状态视觉和操作差分、多屏DPI、真实设备及长稳、原生.sol往返、完整类型和调度ABI未通过本轮验收。后续逐项满足原方法/资源、界面事件、数据结果、保存重开和释放证据后再关闭。</p><script>const rs=[...document.querySelectorAll("#domains tbody tr")];function filter(){const s=document.querySelector("#search").value.toLowerCase();let n=0;rs.forEach(r=>{r.hidden=!r.textContent.toLowerCase().includes(s);if(!r.hidden)n++});document.querySelector("#count").textContent=n+" / "+rs.length}document.querySelector("#search").addEventListener("input",filter);filter()</script></body></html>'
 (docs / 'framework-acceptance.html').write_text(page, encoding='utf-8')
 (audit / 'framework-acceptance.html').write_text(page.replace('acceptance-evidence/', '../../docs/acceptance-evidence/').replace('href="' + data.get('closureReport', '') + '"', 'href="../../docs/' + data.get('closureReport', '') + '"'), encoding='utf-8')

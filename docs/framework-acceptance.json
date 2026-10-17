@@ -1,17 +1,17 @@
 {
   "date": "2026-10-17",
-  "baseline": "58d9ca7",
+  "baseline": "dd9727b",
   "nativeAcceptance": false,
   "rows": [
     {
       "id": "F-01",
       "name": "公共数据契约",
-      "implemented": "标量、基础数组及 Region/Fixture/Point 类型，验证、快照、输入输出传递",
+      "implemented": "标量、数值/字符串数组，以及圆/点/Fixture强类型数组；元素枚举、验证、只读快照、跨Group输入输出和嵌套展开",
       "status": "部分完成",
-      "nativeGap": "完整原生类型、精度与ABI、复合数组未完成",
+      "nativeGap": "完整原生类型、精度与ABI、Region/Components等复合字段树及混合叶报告模式未完成",
       "entry": "src/VisionFramework/Contracts.cs",
       "acceptance": "类型错配拒绝；数组通过Group到下游；保存重读",
-      "result": "28项基础数组契约运行检查通过，下游求和12及保存重开；完整原生类型/ABI未验收",
+      "result": "本批31项数组契约通过，圆/点/Fixture数组通过实际执行器；88项调用专项包含真实找圆及两层复合传递",
       "sourceEvidence": "VM.Core.DynamicOutput.GetOutputInt/Float/String；docs/FRAMEWORK-CONTRACTS.md",
       "operationNumbers": []
     },
@@ -405,14 +405,11 @@
         252,
         253,
         254,
-        360,
         361,
         362,
-        363,
         364,
         365,
         366,
-        367,
         368,
         369,
         370,
@@ -424,13 +421,13 @@
     {
       "id": "F-13",
       "name": "Group中断",
-      "implemented": "int/float/string六比较，固定索引，内外部/私有/自身输出，执行前判断",
+      "implemented": "int/float/string六比较，常量索引及父级前置标量整数动态索引；依赖调度、当前运行数据准备、越界诊断、复制重映射和失效引用清理",
       "status": "部分完成",
-      "nativeGap": "动态索引及全部原生异常码、边界运行差分未完成",
+      "nativeGap": "通用插件端口方括号索引编辑、原生缓存时序及全部状态码差分未完成；当前界面为独立索引字段，并非原生内嵌树模板",
       "entry": "docs/GROUP-BREAK-ACCUMULATION.md",
       "acceptance": "LoopIndex达到2中断，实际只执行0/1两轮；缺值不读旧结果",
-      "result": "实际来源选择、运算符和常量设置索引>=4，在step2时完成0/2后于4前中断；成功重跑清除旧中断提示；动态数组索引仍开放",
-      "sourceEvidence": "IsBreakLoop 0x1800a55b0；IsBreakCmpValueInLoop 0x1800a6730",
+      "result": "实际图像源SN[0,1]按变量索引1在LoopIndex2前中断；数值编辑解除订阅、撤销恢复、保存重开通过；缺值/越界不读旧数据",
+      "sourceEvidence": "ButtonSelecter.IndexClickCommandExecute、GetBindIndex、GetFrontFilterTreeOperation及VmIO.RelateIndex；GROUP-INDEX-COMPOUND.md",
       "operationNumbers": [
         255,
         257,
@@ -441,29 +438,40 @@
         269,
         270,
         271,
-        360,
         361,
-        363,
         364,
-        367,
         368,
         369,
         370,
         371,
         372,
-        373
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387
       ]
     },
     {
       "id": "F-14",
       "name": "Group累积和显示",
-      "implemented": "基础标量/数组按顺序展平、每次清空、图像替换、关联显示",
+      "implemented": "数值/字符串累积；圆/点/Fixture记录数组跨轮追加、嵌套展开和签名传播；图像保持最终标量；复合结果换行与逐元素显示",
       "status": "部分完成",
-      "nativeGap": "全部复合输出、完整显示类型和回调发布未完成",
+      "nativeGap": "全原生组合字段树、混合叶模式、Region/Components与pointset映射、其他原生复合类型及ABI未完成",
       "entry": "docs/GROUP-BREAK-ACCUMULATION.md",
       "acceptance": "两轮输出[0,1]；重跑仍两项；关闭累积取末轮",
-      "result": "实际图像step50四轮结果等于四次独立阈值执行；中断仅保留两轮，空循环不复用旧图像；复合数据未关闭",
-      "sourceEvidence": "ProcessGroupOutputV44 0x1800a7830；VmIODecorate报告模式",
+      "result": "真实BMP找圆经内3外2轮得到6圆，半径逐项一致；点/Fixture由测试字段投影跨两层调用；关闭内层累积后实际改为2圆；窗口切换累积返回最终标量",
+      "sourceEvidence": "VmIODecorate.ParamValueChanged遍历GetAllLeafIO下发mode；ProcessGroupOutputV44对image/pointset无条件清除；GROUP-INDEX-COMPOUND.md",
       "operationNumbers": [
         256,
         257,
@@ -475,17 +483,28 @@
         264,
         272,
         273,
-        360,
         361,
-        363,
         364,
-        367,
         368,
         369,
         370,
         371,
         372,
-        373
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387
       ]
     },
     {
@@ -496,7 +515,7 @@
       "nativeGap": "完整原生来源树、全部复杂/训练控件及像素差分未完成；原生警告窗未完整恢复",
       "entry": "src/VisionEditor/GroupRunConfigurationWindow.cs",
       "acceptance": "实际参数3+5=8；订阅后6；解除后8；32上限；清空取消/确认",
-      "result": "内部Tab启用循环并绑定父变量3；专用图像源初始序号17实际累积[17,18,19]；撤销重做不跳画布",
+      "result": "实际窗口索引来源选择、数字解除/撤销恢复、复合开关和保存运行已接通；原生ButtonSelecter完整模板仍有差异",
       "sourceEvidence": "DynamicRunParamConfigWin.xaml/Panal.xaml；GroupInputParam/GroupRunParam/RunParamConfigDecorate",
       "operationNumbers": [
         274,
@@ -544,17 +563,28 @@
         325,
         326,
         333,
-        360,
         361,
-        363,
         364,
-        367,
         368,
         369,
         370,
         371,
         372,
-        373
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387
       ]
     },
     {
@@ -622,7 +652,7 @@
       "nativeGap": "异常写入/资源目录迁移及全版本矩阵仍未关闭；原生.sol仍不兼容",
       "entry": "src/VisionFramework/SolutionStore.cs",
       "acceptance": "保存重开运行值相同；复制内部引用不指回原图",
-      "result": "67项调用/Group专项含步长、中断、真实复制、上游像素、保存运行与零值原子拒绝；既有23项持久化记录保留",
+      "result": "88项调用/Group专项含动态索引、类型拒绝、复制删除、越界、保存重开与真实复合输出；既有23项持久化记录保留",
       "sourceEvidence": "独立SolutionStore/GeometryResources协议；不是原生.sol写入器",
       "operationNumbers": [
         53,
@@ -637,7 +667,21 @@
         340,
         341,
         352,
-        359
+        359,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387
       ]
     },
     {
@@ -700,22 +744,19 @@
         237,
         293,
         294,
-        360,
         361,
-        363,
         364,
-        367,
         368,
         369,
         370,
         371,
         372,
         373,
-        374,
-        375,
-        376,
-        377,
-        378
+        388,
+        389,
+        390,
+        391,
+        392
       ]
     },
     {
@@ -726,7 +767,7 @@
       "nativeGap": "全相机、其余二值化模式及工具库未完成；本轮没有改插件实现",
       "entry": "docs/ROI-REAL-TOOL.md",
       "acceptance": "真实BMP宽1296、序号17；Group代理ROI改变实际输出像素",
-      "result": "实际宽1296三轮累积，初始17得到[17,18,19]；粘贴后当前参数42得到独立[42,43,44]",
+      "result": "本批真实图像源和径向找圆在Group内联调；6个实际圆跨两层累积。点/Fixture的投影模块用于类型传递验证，不冒充原生算法插件",
       "sourceEvidence": "图像源专用WPF编辑器和ImageBinary元数据；硬阈值为独立实现",
       "operationNumbers": [
         201,
@@ -737,7 +778,21 @@
         320,
         333,
         335,
-        339
+        339,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387
       ]
     },
     {
@@ -757,7 +812,7 @@
     "events": "真实WPF窗口、控件事件及部分宿主方法；复制后流程通过实际Tab运行按钮执行。逐条操作记录可展开；不是桌面鼠标全链路",
     "visual": "人工查看重建程序渲染截图，检查文字、布局与预览；不是原VM截图",
     "desktop": "既有Computer Use截图超时/点击缺几何信息记录保留；本批使用真实WPF窗口事件、部分宿主方法与截图目检，未重新完成桌面鼠标输入验收",
-    "native": "对照恢复的托管源码、XML和ModuleFrame原生伪代码。LoopStep非零写入及索引推进、末轮间隔等待已静态确认；没有真实VM同状态差分，不将分析器伪代码称为厂商原始C++"
+    "native": "静态核对RelateIndex、前置整数索引树、组合输出遍历叶字段和原生V44分支。三种复合数组为独立强类型传输；原生叶字段/ABI/缓存时序及真实VM差分未完成"
   },
   "fixes": [
     {
@@ -822,6 +877,21 @@
       "issue": "成功重跑结果已更新，底部仍显示旧中断红字",
       "change": "Group结果刷新在无当前错误/中断/诊断时明确清空汇总文字",
       "conclusion": "最终窗口378项通过，截图确认单轮SN22且底部无旧提示"
+    },
+    {
+      "issue": "Group数组比较仅支持固定索引，复制及调度没有独立索引身份",
+      "change": "新增IndexSource、标量整数类型与前置依赖验证、当前数据准备及引用重映射/清理",
+      "conclusion": "实际SN数组、界面选择/解除/撤销/重开和缺值诊断通过；不推广为全端口索引恢复"
+    },
+    {
+      "issue": "复合输出不能跨轮累积，嵌套类型无法传递",
+      "change": "按数值叶追加语义恢复当前圆/点/Fixture记录数组及签名传播；图像仍替换，未映射类型继续拒绝",
+      "conclusion": "真实找圆内3外2轮6项，关闭内累积后2项；点/Fixture使用明确的测试投影验证传输"
+    },
+    {
+      "issue": "复合数组第二项在结果表被裁切，来源绑定后出现空白常量框",
+      "change": "结果文本换行且提供完整提示；只在未订阅时显示常量编辑器",
+      "conclusion": "修复后目检两项完整可读，392项窗口操作含实际行高、完整提示和两圆绘制"
     }
   ],
   "coverageNote": "操作序号只关联已覆盖子集；一个序号不代表该域全部步骤。F-19原生往返、F-23全库验收明确未执行。",
@@ -833,56 +903,60 @@
     "workflow-context-native-boundary.json",
     "group-loop-boundary-final.log",
     "group-loop-boundary-results.json",
-    "group-loop-core-final.log"
+    "group-loop-core-final.log",
+    "group-index-compound-final-runtime.log",
+    "group-index-compound-results.json",
+    "group-index-compound-final-arrays.log",
+    "group-index-compound-core.log"
   ],
   "lifecycle": [
     {
       "Case": "CoreChecks",
       "Round": 1,
-      "PID": 69100,
+      "PID": 21676,
       "CloseSent": null,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 150000,
       "ExitCode": 0,
-      "ElapsedMs": 1171
+      "ElapsedMs": 1149
     },
     {
       "Case": "PluginChecks",
       "Round": 1,
-      "PID": 62408,
+      "PID": 78912,
       "CloseSent": null,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 150000,
       "ExitCode": 0,
-      "ElapsedMs": 3199
+      "ElapsedMs": 2879
     },
     {
       "Case": "WpfChecks",
       "Round": 1,
-      "PID": 71332,
+      "PID": 67560,
       "CloseSent": null,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 150000,
       "ExitCode": 0,
-      "ElapsedMs": 59989
+      "ElapsedMs": 57328
     },
     {
       "Case": "EditorClose",
       "Round": 1,
-      "PID": 71172,
+      "PID": 37748,
       "CloseSent": true,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 150000,
       "ExitCode": 0,
-      "ElapsedMs": 2284
+      "ElapsedMs": 3415
     }
   ],
-  "operationCount": 378,
-  "operationRecordedAt": "2026-10-17T10:26:23.9324037+08:00",
+  "operationCount": 392,
+  "operationRecordedAt": "2026-10-17T10:45:37.3817984+08:00",
   "evidenceManifest": [
     {
       "file": "wpf-workflow-parity.png",
-      "sha256": "0807917972666ac585ddebe99ed41ff45dc41e2cf655e38b79baec0bb7abae91"
+      "sha256": "9917a33d0200ee0060dfe41009c1e1df0e8ddaadfa932c40877cf654387cd9b5"
     },
     {
       "file": "wpf-maximized-work-area.png",
@@ -898,11 +972,11 @@
     },
     {
       "file": "wpf-group-tab-return.png",
-      "sha256": "fb0ab4a1151302ff17d39def56e3c2c7a17deb0dab57d5d7a840e940c4114117"
+      "sha256": "c34dc50c28fde88a4401f380d2e1141b9aa4583b4abebdbd3b2560fd355c06c9"
     },
     {
       "file": "wpf-group-input-editing.png",
-      "sha256": "92002e4a2b4f174320e41a2a9f17148b42b55c9c297e9e3096edf1ec36e1054d"
+      "sha256": "f171e0adc7a6843440e103742cfbabba110bcb00c0b36cd8d217470dda145bec"
     },
     {
       "file": "wpf-workflow-local-variables.png",
@@ -930,7 +1004,7 @@
     },
     {
       "file": "wpf-group-tab-scoped-result.png",
-      "sha256": "3e263f3bc8a217ca7004dd959053f89b86b295402fc48f03bbcd5ea179d46b40"
+      "sha256": "be080e893634aede1597b560983e4de30d298830b2cbe618171e75d26ee25a49"
     },
     {
       "file": "wpf-group-tab-dedicated-tool.png",
@@ -938,7 +1012,7 @@
     },
     {
       "file": "wpf-group-live-paste.png",
-      "sha256": "907f9c368d8db6a0b100ff9e5009912d682bc11fa0434665a31940060dbc5474"
+      "sha256": "b81cecd469c829baca4506693b3723b80b19ceef4303f5c743daa3775a94d130"
     },
     {
       "file": "wpf-toolbox-group-depth.png",
@@ -950,23 +1024,31 @@
     },
     {
       "file": "wpf-group-height-alignment.png",
-      "sha256": "b04e8118e3909f447c00b6e277de5245daeafc9a7183fd9e3eabccbd846a09bd"
+      "sha256": "dc64a6d1ebed167994db96ea5ad883da62067b1a2756aba31940276254d3dac3"
     },
     {
       "file": "wpf-group-tab-root-run.png",
-      "sha256": "960fa5c1ab947c162051404227bcd88cc7254dda51be95abd3d407a65ac102ba"
+      "sha256": "3a9eb9218933fafa2b63e63c572ed1acd8c6cc6dc646090aa829e97e52ce4f48"
     },
     {
       "file": "wpf-group-stepped-break.png",
-      "sha256": "cd08bdbc261f954ef39cfe1877a7943b428adabfdd6307760cea1d7efa2fa8eb"
+      "sha256": "a902414b1dbdb1643c32df65091d9951c487452b45de87ed2ebb41edd08eb9a7"
     },
     {
       "file": "wpf-group-loop-disabled.png",
-      "sha256": "6af7a0781ae3fe0386ecbd9ba24423e538b3c2b524819fb441447dcadd16a9a8"
+      "sha256": "d9202797c002c53ad692b7a9125c4bb81c8efb98aa43be26c87fcd5ab0f433a9"
+    },
+    {
+      "file": "wpf-group-dynamic-index-compound.png",
+      "sha256": "1a99f92490f5be3b011aa8c5dc8461726017b08261cffd65967e3574a64bca19"
+    },
+    {
+      "file": "wpf-group-compound-final-scalar.png",
+      "sha256": "5e68613f4b6ef882f8d1ae70cdc8f487c2b3339962ee1b2ab37562ce68e2b8c3"
     },
     {
       "file": "wpf-workflow-parity.json",
-      "sha256": "e9e0e27d69876fb2ac77ae0474b9a3f6cc38e53c9c8cf73069bc802a8c2be755"
+      "sha256": "c914c04ffb27f38804e19452ceb51a322b6d63a0b8b2148dcd93ce126f9e2e6a"
     },
     {
       "file": "framework-acceptance-real-host.log",
@@ -1007,24 +1089,40 @@
     {
       "file": "group-loop-core-final.log",
       "sha256": "ad18d85cc86955d68ccee84dd95896fcfad1d37b818e2362ce7c757df00a5632"
+    },
+    {
+      "file": "group-index-compound-final-runtime.log",
+      "sha256": "4e66ddbc3e497d037d696365d3aec3794cff12f88a8582e64f221423598569a3"
+    },
+    {
+      "file": "group-index-compound-results.json",
+      "sha256": "0d87d404579197c65ee4152d788254e10c4d82508f9a9f54c598d97748342fa5"
+    },
+    {
+      "file": "group-index-compound-final-arrays.log",
+      "sha256": "74f92c32346b45d502c4741f7dbc25ef4a039002d14aa9a8234359ae9c94ac71"
+    },
+    {
+      "file": "group-index-compound-core.log",
+      "sha256": "ad18d85cc86955d68ccee84dd95896fcfad1d37b818e2362ce7c757df00a5632"
     }
   ],
-  "release": "dist/VisionEditor-WpfGroupLoop/VisionEditor.exe",
+  "release": "dist/VisionEditor-WpfGroupIndexCompound/VisionEditor.exe",
   "releaseLifecycle": [
     {
       "Case": "EditorClose",
       "Round": 1,
-      "PID": 23756,
+      "PID": 77848,
       "CloseSent": true,
       "ExitedWithinTimeout": true,
       "TimeoutMs": 30000,
       "ExitCode": 0,
-      "ElapsedMs": 2426
+      "ElapsedMs": 6477
     }
   ],
-  "lifecycleReport": "group-loop-closed-lifecycle/exit-results.json",
-  "releaseLifecycleReport": "group-loop-final-release-lifecycle/exit-results.json",
-  "closureReport": "GROUP-LOOP-BOUNDARIES.md",
+  "lifecycleReport": "group-index-compound-closed-lifecycle/exit-results.json",
+  "releaseLifecycleReport": "group-index-compound-release-lifecycle/exit-results.json",
+  "closureReport": "GROUP-INDEX-COMPOUND.md",
   "extraImages": [
     [
       "wpf-group-tab-scoped-configuration.png",
@@ -1065,16 +1163,27 @@
     [
       "wpf-group-loop-disabled.png",
       "停止后成功重跑，清除旧中断提示"
+    ],
+    [
+      "wpf-group-dynamic-index-compound.png",
+      "动态索引、实际图像与两个复合圆结果（修复后）"
+    ],
+    [
+      "wpf-group-compound-final-scalar.png",
+      "关闭复合累积后实际返回最终标量圆"
     ]
   ],
   "latestBatch": {
-    "scope": "Group循环步长、中断、停止重启及实际图像累积闭环",
+    "scope": "Group中断操作数动态索引及当前圆/点/Fixture复合累积闭环",
+    "sourceManifest": "group-index-compound-sources.json",
     "nativeEquivalent": false,
-    "sourceManifest": "group-loop-boundary-sources.json",
     "intermediateFailures": [
-      "空区间没有必需图像输出，改为验证宿主明确报告缺失而非误判成功",
-      "377项窗口事件通过后的目检发现成功重跑仍残留旧中断红字，修复后新增断言并重跑",
-      "修复后的并发发布期间窗口检查于326项后超过90秒监护；该轮不计通过，串行重跑378项在59989ms完成"
+      "首轮构建发现索引选项局部变量命名冲突，修正后重构建",
+      "真实找圆检查最初使用不支持的Polarity文本，改用已声明Both",
+      "旧数组检查仍拒绝圆数组，按新证据改为接纳圆/点/Fixture且继续拒绝未映射Region和image数组",
+      "389项窗口检查通过后截图发现数组结果裁切和空白常量框，修复并新增布局/叠加断言；最终392项通过"
     ]
-  }
+  },
+  "arrayReport": "group-index-compound-final-arrays.log",
+  "arrayCheckCount": 31
 }

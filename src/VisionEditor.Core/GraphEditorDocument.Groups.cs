@@ -92,7 +92,7 @@ public sealed partial class GraphEditorDocument
   do{removed=list.RemoveAll(p=>p.GroupOwner is {} owner&&!list.Any(parent=>parent.Id==owner.ProcedureId&&parent.Nodes.Any(n=>n.Id==owner.NodeId&&n.Call?.ProcedureId==p.Id)))>0;}while(removed);
     var byId=list.ToDictionary(p=>p.Id);list=list.Select(parent=>parent with{Nodes=parent.Nodes.Select(node=>{
    if(node.GroupBreak is null||node.Call is null||!byId.TryGetValue(node.Call.ProcedureId,out var body)||body.GroupOwner is null)return node;
-   GroupOperand? Clean(GroupOperand? operand){if(operand?.Source is not {} source)return operand;try{var scope=operand.Inside?body:parent;_=WorkflowSubscriptions.SourceType(scope,registry,source);if(operand.Index!=0&&WorkflowSubscriptions.SourceCardinality(scope,registry,source)==ValueCardinality.Scalar)return null;return operand;}catch(InvalidDataException){return null;}catch(KeyNotFoundException){return operand;}}
+   GroupOperand? Clean(GroupOperand? operand){if(operand?.Source is not {} source)return operand;try{var scope=operand.Inside?body:parent;_=WorkflowSubscriptions.SourceType(scope,registry,source);if(operand.IndexSource is {} index&&(WorkflowSubscriptions.SourceType(parent,registry,index)!=DataKind.Integer||WorkflowSubscriptions.SourceCardinality(parent,registry,index)!=ValueCardinality.Scalar))return null;if((operand.Index!=0||operand.IndexSource is not null)&&WorkflowSubscriptions.SourceCardinality(scope,registry,source)==ValueCardinality.Scalar)return null;return operand;}catch(InvalidDataException){return null;}catch(KeyNotFoundException){return operand;}}
    return node with{GroupBreak=new(Clean(node.GroupBreak.Left),Clean(node.GroupBreak.Right))};
   }).ToArray()}).ToList();
   return d with{Procedures=list.ToArray()};

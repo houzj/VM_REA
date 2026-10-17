@@ -21,7 +21,7 @@ public partial class SubprogramCallWindow {
  VisionCore.GrayImage? currentGroupImage;
  void RenderGroupDisplays(ExecutionSessionResult? session,VisionCore.GrayImage? image){
   currentGroupImage=image;DisplayOverlay.Children.Clear();if(image is null||session?.Status!=SessionStatus.Success)return;double width=DisplayOverlay.ActualWidth,height=DisplayOverlay.ActualHeight;if(width<=0||height<=0)return;double scale=Math.Min(width/image.Width,height/image.Height),x=(width-image.Width*scale)/2,y=(height-image.Height*scale)/2;
-  foreach(var value in session.WorkflowDisplays.Values.SelectMany(v=>v)){
+  foreach(var value in session.WorkflowDisplays.Values.SelectMany(v=>v).SelectMany(v=>v.Elements())){
    if(value.Value is VisionCore.CircleFit circle){var shape=new Ellipse{Width=circle.Radius*2*scale,Height=circle.Radius*2*scale,Stroke=Brushes.Lime,StrokeThickness=1.5};Canvas.SetLeft(shape,x+(circle.CenterX-circle.Radius)*scale);Canvas.SetTop(shape,y+(circle.CenterY-circle.Radius)*scale);DisplayOverlay.Children.Add(shape);}
    else if(value.Value is IReadOnlyList<VisionCore.Component> components)foreach(var component in components){var shape=new Rectangle{Width=(component.MaxX-component.MinX+1)*scale,Height=(component.MaxY-component.MinY+1)*scale,Stroke=Brushes.Lime,StrokeThickness=1.5};Canvas.SetLeft(shape,x+component.MinX*scale);Canvas.SetTop(shape,y+component.MinY*scale);DisplayOverlay.Children.Add(shape);}
   }

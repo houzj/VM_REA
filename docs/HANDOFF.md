@@ -122,3 +122,12 @@ At the user's request, the original checkout now develops framework and integrat
 - 实际Group窗口使用真实图像源，配置终值来源、中断选择器/运算符/常量，step2执行0/2/4，>=4只完成两轮；长间隔停止后可禁用循环重跑。首轮377项通过后截图发现旧中断红字残留，修复RefreshResults默认清空并添加断言。最终378项窗口事件通过（59989ms）、Core115/插件18/主窗关闭exit0。一次并发发布时90秒超时轮次保留为失败，未把旧成功记录冒充最终。
 - 最终截图目检确认width[1296]、SN[22]且底部旧红字已清除。所有截图助手位于tests；没有改插件工作树或终止其他任务进程。真实VM差分、动态数组索引、复合累积、原生回调和全模板仍开放。
 - 新发布目录VisionEditor-WpfGroupLoop；最终发布启动关闭2426ms、exit0，记录由验收表关联。证据目录禁用Git换行转换，保持导出哈希对应提交字节。
+
+## 2026-10-17 — Group动态索引与当前复合类型闭环
+
+- 依据ButtonSelecter/GetBindIndex/GetFrontFilterTreeOperation/VmIO.RelateIndex，新增中断操作数的父级前置标量整数IndexSource，常量Index继续兼容。类型/顺序验证、当前运行准备、越界诊断、复制身份重映射、索引生产者单独删除清理、撤销与保存重开一并实现。不是全插件端口索引恢复；完整原生内嵌方括号/树模板仍有差异。
+- 依据VmIODecorate遍历GetAllLeafIO的报告模式及V44数值分支，补当前Circle/Point/Fixture强类型数组和嵌套累积/接口传播。图片继续替换。Region/Components与pointset映射及混合叶报告模式未完成，没有擅自追加所有类型。见GROUP-INDEX-COMPOUND.md和源文件SHA256。
+- 实际BMP径向找圆内3外2轮输出6圆，半径叶数组逐项一致；关闭内累积后实际变2圆。点/Fixture经测试字段投影从真实圆构造并跨两层调用，不冒充原生算法工具。数据专项88项、数组31项通过。
+- 实际窗口使用真实图像源SN[0,1]，变量索引1在LoopIndex2前中断，并实际返回2圆。来源选择、数字解除/撤销、保存重开和累积关闭后标量运行通过。389项通过后目检发现结果裁切/空白常量框，修复后392项WPF事件通过（57328ms）；最终截图两圆可读、叠加2个圆记录。监护Core115/插件18/主窗关闭exit0。新构建Core和发布程序另附记录。
+- 初次Polarity输入错误、构建命名冲突及过时“圆数组必须拒绝”断言均修正，未计为最终成功。原始完整audit仍忽略，精选证据保持字节哈希。截图助手只在tests，未修改插件工作树及其他任务进程。
+- 全原生复合字段树、未建模类型、缓存时序和实际VM差分仍开放。新发布目录VisionEditor-WpfGroupIndexCompound，最终启动关闭6477ms、exit0，证据由验收表关联。

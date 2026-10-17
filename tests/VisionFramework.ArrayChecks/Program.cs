@@ -39,14 +39,14 @@ var document=new SolutionDocument(SolutionStore.CurrentVersion,"array-contract",
 var grouped=await new SolutionExecutor(registry).RunAsync(new(document,Environment.CurrentDirectory),"root");Check(grouped.Status==SessionStatus.Success&&grouped.Nodes.Single(n=>n.NodeId=="s").Outputs["sum"].As<long>()==12,"owned Group receives and returns array into downstream runtime");
 Check(grouped.Calls["group"].WorkflowOutputs["items"].Cardinality==ValueCardinality.Array,"Group output preserves cardinality");
 Reject(()=>new WorkflowConfiguration{Inputs=[new("bad","bad",DataKind.GrayImage){Cardinality=ValueCardinality.Array}]}.Validate(new("bad","bad",[],[],[])),"unsupported image array rejected explicitly");
-Reject(()=>registry.Register(new("bad-array","1","bad",[],[Vector("v",DataKind.Circle)],[]),()=>throw new Exception()),"unsupported geometric array descriptor rejected");
+Reject(()=>registry.Register(new("bad-array","1","bad",[],[Vector("v",DataKind.Region)],[]),()=>throw new Exception()),"unmapped Region array descriptor rejected");
 Reject(()=>new WorkflowConfiguration{Groups=[new("g","g")],Variables=[new("v","g","v","int","0","","p","values")]}.Validate(pipeline,registry),"array output cannot bind to scalar local variable");
 var output=Path.GetFullPath("analysis/full-audit/array-contract-runtime");Directory.CreateDirectory(output);var path=Path.Combine(output,"roundtrip.vmx.json");SolutionStore.Save(path,document);var loaded=SolutionStore.Load(path);
 Check(loaded.Procedures.Single(p=>p.Id=="body").Configuration.Outputs.Single().Cardinality==ValueCardinality.Array,"array interface survives save and reopen");
 var reopened=await new SolutionExecutor(registry).RunAsync(new(loaded,Environment.CurrentDirectory),"root");Check(reopened.Nodes.Single(n=>n.NodeId=="s").Outputs["sum"].As<long>()==12,"reopened owned Group executes array pipeline");
 Check(WorkflowCalls.Describe(group).Inputs.Single().Cardinality==ValueCardinality.Array,"dynamic Group descriptor preserves array input shape");
 var badShape=document with{Procedures=[root,body with{Configuration=body.Configuration with{Inputs=[body.Configuration.Inputs[0] with{Cardinality=ValueCardinality.Scalar}]}}]};Reject(()=>WorkflowCalls.Validate(badShape,"root"),"stale Group cardinality signature rejected");
-foreach(var sample in new[]{PortValue.NumberArray([1.5,2.5]),PortValue.TextArray(["one","二"]),PortValue.IntegerArray([])}){
+foreach(var sample in new[]{PortValue.NumberArray([1.5,2.5]),PortValue.TextArray(["one","二"]),PortValue.IntegerArray([]),PortValue.CircleArray([new(1,2,3,0)]),PortValue.PointArray([new(1,2)]),PortValue.FixtureArray([new(new(),new())])}){
  var id="test.shape."+checks.Count;var descriptor=new ModuleDescriptor(id,"1",id,[],[Vector("v",sample.Kind)],[]);registry.Register(descriptor,()=>new FunctionModule(descriptor,_=>new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"v",sample}})));
  var run=await new GraphExecutor(registry).RunAsync(new(id,id,[Node("v",id)],[],[]),".");Check(run.Status==SessionStatus.Success&&ReferenceEquals(run.Nodes[0].Outputs["v"],sample),"validated runtime output "+sample.Kind+" "+checks.Count);
 }
