@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using VisionFramework;
 using VisionEditor.Core;
+using VisionFrameworkArrayChecks;
 var checks=new List<string>();
 void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
 void Reject(Action action,string name){bool rejected=false;try{action();}catch(Exception e)when(e is ArgumentException or InvalidDataException or InvalidOperationException){rejected=true;}Check(rejected,name);}
@@ -73,5 +74,6 @@ var leafRun=await new GraphExecutor(registry).RunAsync(blobGraph,".");
 Check(leafRun.Status==SessionStatus.Success&&leafRun.Nodes[1].Outputs["sum"].As<double>()==10,"compound leaf subscription executes downstream sum");
 var invalidBlob=blobDescriptor with{Id="test.invalid-blobs"};registry.Register(invalidBlob,()=>new FunctionModule(invalidBlob,_=>new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"Components",PortValue.Components([new(1,0,0,0,0,double.NaN,0)])}})));
 var invalidLeafRun=await new GraphExecutor(registry).RunAsync(new("bad-leaf","bad-leaf",[Node("bad",invalidBlob.Id)],[],[]),".");Check(invalidLeafRun.Nodes.Single().ErrorCode=="InvalidOutput"&&invalidLeafRun.Nodes.Single().Outputs.Count==0,"Invalid compound projection is isolated as node InvalidOutput without leaking partial leaves");
-File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{passed=true,count=checks.Count,checks,scope="independent runtime contracts, not native loop parity"},new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine($"PASS {checks.Count} array contract checks; owned Group array sum=12; runtime, subscriptions and roundtrip.");
+var polygonChecks=PolygonRuntimeChecks.Run();Check(polygonChecks>=20,"native-shaped Polygon object and round transport contract checks");
+File.WriteAllText(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{passed=true,count=checks.Count,polygonChecks,checks,scope="independent runtime contracts, not native loop parity"},new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine($"PASS {checks.Count} array contract checks plus {polygonChecks} Polygon transport checks; owned Group array sum=12; runtime, subscriptions and roundtrip.");
 sealed class FunctionModule(ModuleDescriptor descriptor,Func<ModuleExecutionContext,ModuleResult> run):IModule{public ModuleDescriptor Descriptor=>descriptor;public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context,CancellationToken token){token.ThrowIfCancellationRequested();return ValueTask.FromResult(run(context));}}

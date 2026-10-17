@@ -36,9 +36,13 @@ public partial class SubprogramCallWindow {
   if(selected?.Array==true){
    var row=new DockPanel();var choose=new Button{Tag=key+"IndexSource",Content="…",Width=26,ToolTip="订阅整数索引"};DockPanel.SetDock(choose,Dock.Right);row.Children.Add(choose);
    var indexOptions=sources(DataKind.Integer).Where(o=>o.Cardinality==ValueCardinality.Scalar).ToArray();
-   var index=new TextBox{Tag=key+"Index",Text=operand?.IndexSource is {} reference?indexOptions.FirstOrDefault(o=>o.Reference==reference)?.Label??"------":(operand?.Index??0).ToString(CultureInfo.InvariantCulture),ToolTip="数组索引：非负整数或前置整数订阅"};
-   index.LostKeyboardFocus+=(_,_)=>{if(index.Text==((operand?.IndexSource is {} current?indexOptions.FirstOrDefault(o=>o.Reference==current)?.Label??"------":(operand?.Index??0).ToString(CultureInfo.InvariantCulture))))return;Safe(()=>{if(!int.TryParse(index.Text,out int v)||v<0)throw new ArgumentException("索引必须为非负整数。");SetOperand(left,operand! with{Index=v,IndexSource=null});});};
-   choose.Click+=(_,_)=>{var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("","",DataKind.Integer,"解除索引订阅")}.Concat(indexOptions)){Owner=this};picker.SetInitialSelection(o=>o.Reference==operand?.IndexSource);if(picker.ShowDialog()==true&&picker.Selection is {} chosen)Safe(()=>SetOperand(left,operand! with{IndexSource=chosen.Reference,Index=0}));};row.Children.Add(index);panel.Children.Add(row);
+   var initial=operand?.IndexSource is {} reference?indexOptions.FirstOrDefault(o=>o.Reference==reference)?.Label??"------":(operand?.Index??0).ToString(CultureInfo.InvariantCulture);
+   var editor=new NativeGroupIndexEditor("["+initial+"]",()=>new[]{new WorkflowSourceOption("","",DataKind.Integer,"清空索引订阅")}.Concat(indexOptions),chosen=>Safe(()=>SetOperand(left,operand! with{IndexSource=chosen.Reference,Index=0})));var index=editor.Text;
+   index.Tag=key+"Index";index.ToolTip="数组索引：光标进入方括号可选前置整数来源";
+   index.LostKeyboardFocus+=(_,_)=>{var edited=index.Text.Trim();if(edited=="["+initial+"]")return;
+    if(edited.StartsWith('[')&&edited.EndsWith(']'))edited=edited[1..^1];
+    Safe(()=>{if(!int.TryParse(edited,out int v)||v<0)throw new ArgumentException("索引必须为非负整数。");SetOperand(left,operand! with{Index=v,IndexSource=null});});};
+   choose.Click+=(_,_)=>{var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("","",DataKind.Integer,"解除索引订阅")}.Concat(indexOptions)){Owner=this};picker.SetInitialSelection(o=>o.Reference==operand?.IndexSource);if(picker.ShowDialog()==true&&picker.Selection is {} chosen)Safe(()=>SetOperand(left,operand! with{IndexSource=chosen.Reference,Index=0}));};row.Children.Add(editor);panel.Children.Add(row);
   }
   return Labeled(left?"基准比较值":"目标比较值",panel);
  }

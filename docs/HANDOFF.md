@@ -135,3 +135,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-17 复合叶字段与并行逆向闭合子集
 
 主线整合并行审查结果：Components部分Blob字段及像素矩形/整环Region叶投影；Group派生叶改名删除传播；Region/Components根来源链按钮订阅Popup；小地图Shift/Ctrl路由。实际BMP threshold128产生784个连通域，两轮面积1568项、总和1710536；保存重开及父输出验证。41数组、93调用、412实际WPF事件通过，退出监控均exit0。源码依据、界面和未闭合项见 compound-leaf-acceptance.html 及四份并行审计报告。未改插件工作树；不代表全类型/原生ABI或完整控件模板等价。用户新增要求：必要闭合节点构建并启动给用户手动验收；发布启动检查通过后保留人工验收实例。
+
+## 2026-10-17 Group索引正文弹层与复合类型证据
+
+先按原生 `ButtonSelecter`/XAML核对索引状态机，再在Group数组中断操作数接入方括号光标触发、180×180整数树和双击叶提交，复用已有结构化 `IndexSource` 及实际循环执行。真实图像源两轮SN、两圆结果、索引解除/撤销/重开及窗口关闭以416项WPF操作复验；42项数组契约和21项Polygon独立容器检查通过。弹层图片已目检；原生独立订阅窗、统一来源文本、原VM同状态差分仍待完成。Polygon仅为保留`Num/Points`对象边界的托管模型，没有端口/工具集成。Fixture十叶和零尺度差异只完成源审计，未在本批虚构映射。详细范围见FRAMEWORK-INDEX-POLYGON-AUDIT.md、NATIVE-ARRAY-INDEX-EDITOR-AUDIT.md、FIXTURE-NATIVE-FIELD-AUDIT.md。未修改插件工作树或其他任务进程。
