@@ -1,6 +1,8 @@
 # 逐插件逆向任务表
 
-机器可读完整声明、二进制身份、依赖声明和证据索引见 [inventory.json](inventory.json)。P0 图像源先完成；P1 其余采集插件；P2 暂未开始，不表示已确定最终实施顺序。涉及流程和全局资源的插件先与框架线明确归属。
+机器可读完整声明、二进制身份、依赖声明和证据索引见 [inventory.json](inventory.json)。P0 图像源先完成；2026-10-17按用户要求将标定类10个工具提升至P1，优先于尚未开始的输出图像；P2 暂未开始，不表示已确定最终实施顺序。涉及流程和全局资源的插件先与框架线明确归属。
+
+当前后续开发优先标定类。用户指定 **N点标定（IMVSNPointCalibModu）、N图像标定（IMVSNImageCalibModu）为最高优先级**，按此顺序逐个推进；**坐标系（CoordinateModule）放在标定类最后**。其余标定工具顺序随实际依赖确认，不把表格顺序当作已确认源码依赖。先核查源码、资源和原厂受控运行，再实现与验证；仍逐个工具闭合，不做设备测试，必要共享调整由插件线在本worktree完成。
 
 | 优先级 | 类别 | 插件 | 名称 | 参数/输入/输出 | UI类型 | 逆向状态 |
 |---|---|---|---|---|---|---|
@@ -20,16 +22,16 @@
 |P2|Calculation|SinglePointGrabModu|单点抓取|4/9/10|Boolean, ButtonSelecter, Command, Enumeration, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
 |P2|Calculation|SinglePointMapAlignModu|单点映射对位|2/10/8|ButtonSelecter, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
 |P2|Calculation|SinglePointRectifyModu|单点纠偏|4/9/10|Boolean, ButtonSelecter, Command, Enumeration, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
-|P2|Calibration|CoordinateModule|坐标系|2/4/6|ButtonSelecter, RadioSelecterEx2, RadioSelecterEx3, ROISelecter|声明已清点；语义与运行待逆向|
-|P2|Calibration|IMVSCalibBoardCalibModu|标定板标定|16/1/16|Boolean, Enumeration, EnumerationG, Expand, Float, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, ROISelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
-|P2|Calibration|IMVSCameraMapModu|相机映射|7/16/10|AddButton_PointPair, Boolean, Enumeration, Integer, OpenFileForCalibDialog, PointPair, RadioSelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
-|P2|Calibration|IMVSImageCalibModu|畸变标定|15/2/10|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, Float, FloatConfig, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, RadioSelecter, ROISelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
-|P2|Calibration|IMVSMapCalibModu|映射标定|6/9/17|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, ImageViewConfig, Integer, OpenFileDialog, OpenFileForCalibDialog, RadioSelecter, RadioSelecterEx2, ROISelecter, SaveFileDialog, String|声明已清点；语义与运行待逆向|
-|P2|Calibration|IMVSNImageCalibModu|N图像标定|3/5/33|Boolean, ButtonSelecter, Command, Enumeration, EnumerationG, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
-|P2|Calibration|IMVSNPointCalibModu|N点标定|6/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Expand, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog, String|声明已清点；语义与运行待逆向|
-|P2|Calibration|ReadCalibFileModu|标定加载|2/10/12|Boolean, ButtonSelecter, OpenFileDialog4ReadFile, ReadFileConfigData|声明已清点；语义与运行待逆向|
-|P2|Calibration|RotateCalibModu|旋转标定|1/5/7|Boolean, ButtonSelecter, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
-|P2|Calibration|TranslationCalibModu|平移旋转标定|8/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
+|P1|Calibration|IMVSNPointCalibModu|N点标定|6/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Expand, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog, String|代码范围已实现：原厂源码/资源、103条导出方法/23状态场景/33次文件调用与27XML、10组UI规则和点表取证；独立求解/状态/UI/共享接口，22程序32088检查；数值等优/病态与单组Huber差异、桌面/WinForms截图边界见N-POINT-CALIBRATION.md，不宣称全部原生等价|
+|P1|Calibration|IMVSNImageCalibModu|N图像标定|3/5/33|Boolean, ButtonSelecter, Command, Enumeration, EnumerationG, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|并行推进中：源码/资源、SDK与模块方法运行、168组跨9图像角点、序列/专属UI/文件597项阶段检查；HIK编码板独立检测/解译和完整工具尚未闭合|
+|P1|Calibration|IMVSCalibBoardCalibModu|标定板标定|16/1/16|Boolean, Enumeration, EnumerationG, Expand, Float, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, ROISelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
+|P1|Calibration|IMVSCameraMapModu|相机映射|7/16/10|AddButton_PointPair, Boolean, Enumeration, Integer, OpenFileForCalibDialog, PointPair, RadioSelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
+|P1|Calibration|IMVSImageCalibModu|畸变标定|15/2/10|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, Float, FloatConfig, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, RadioSelecter, ROISelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
+|P1|Calibration|IMVSMapCalibModu|映射标定|6/9/17|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, ImageViewConfig, Integer, OpenFileDialog, OpenFileForCalibDialog, RadioSelecter, RadioSelecterEx2, ROISelecter, SaveFileDialog, String|声明已清点；语义与运行待逆向|
+|P1|Calibration|ReadCalibFileModu|标定加载|2/10/12|Boolean, ButtonSelecter, OpenFileDialog4ReadFile, ReadFileConfigData|声明已清点；语义与运行待逆向|
+|P1|Calibration|RotateCalibModu|旋转标定|1/5/7|Boolean, ButtonSelecter, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
+|P1|Calibration|TranslationCalibModu|平移旋转标定|8/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|已按用户授权新增并行逆向线：先核对与N点的差异、源码/资源及原厂受控运行，再独立实现与验证；未闭合|
+|P1|Calibration|CoordinateModule|坐标系|2/4/6|ButtonSelecter, RadioSelecterEx2, RadioSelecterEx3, ROISelecter|声明已清点；语义与运行待逆向|
 |P2|ColorProcessing|IMVSColorExtractModu|颜色抽取|4/4/7|Boolean, ColorExtractList, FloatBettween, GroupLinkItem, ImageViewConfig, ROISelecter|声明已清点；语义与运行待逆向|
 |P2|ColorProcessing|IMVSColorImageGenerationModu|彩图生成|1/3/3|Enumeration, EnumerationG|声明已清点；语义与运行待逆向|
 |P2|ColorProcessing|IMVSColorMeasureModu|颜色测量|37/4/20|Boolean, Enumeration, FloatBettween, GroupLinkItem, ImageViewConfig, IntegerBettween, ROISelecter|声明已清点；语义与运行待逆向|

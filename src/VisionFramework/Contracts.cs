@@ -1,11 +1,12 @@
 using System.Text.Json;
 using VisionCore;
 namespace VisionFramework;
-public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle, RgbImage, Image }
+public enum DataKind { GrayImage, Number, Integer, Boolean, Text, Components, Circle, RgbImage, Image, NumberArray, Calibration }
 public static class DataKinds {
  public static bool IsImage(DataKind kind)=>kind is DataKind.GrayImage or DataKind.RgbImage or DataKind.Image;
  // A generic image port admits either owned format. Concrete consumers retain runtime checks.
- public static bool CanFlow(DataKind source,DataKind target)=>source==target||source==DataKind.Image&&IsImage(target)||target==DataKind.Image&&IsImage(source);
+ public static bool CanFlow(DataKind source,DataKind target)=>source==target||source==DataKind.Number&&target==DataKind.NumberArray||source==DataKind.Image&&IsImage(target)||target==DataKind.Image&&IsImage(source);
+ public static PortValue Coerce(PortValue value,DataKind target)=>value.Kind==DataKind.Number&&target==DataKind.NumberArray?PortValue.Numbers([value.As<double>()]):CanFlow(value.Kind,target)?value:throw new InvalidDataException("Value type mismatch.");
 }
 public enum ParameterKind { Number, Integer, Boolean, Text }
 public sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true);
@@ -30,6 +31,8 @@ public sealed class PortValue {
     public static PortValue Image(GrayImage v)=>new(DataKind.GrayImage,v??throw new ArgumentNullException(nameof(v)));
     public static PortValue Image(IImageData v)=>v switch{GrayImage gray=>Image(gray),RgbImage rgb=>new(DataKind.RgbImage,rgb),RawImage raw=>new(DataKind.Image,raw),_=>throw new ArgumentException("Unsupported owned image format.",nameof(v))};
     public static PortValue Number(double v)=>double.IsFinite(v)?new(DataKind.Number,v):throw new ArgumentOutOfRangeException(nameof(v));
+    public static PortValue Numbers(IEnumerable<double> values){var copy=values.ToArray();if(copy.Any(v=>!double.IsFinite(v)))throw new ArgumentException("Non-finite numeric array.",nameof(values));return new(DataKind.NumberArray,Array.AsReadOnly(copy));}
+    public static PortValue Calibration(CalibrationData value)=>new(DataKind.Calibration,value??throw new ArgumentNullException(nameof(value)));
     public static PortValue Integer(long v)=>new(DataKind.Integer,v);
     public static PortValue Boolean(bool v)=>new(DataKind.Boolean,v);
     public static PortValue Text(string v)=>new(DataKind.Text,v??throw new ArgumentNullException(nameof(v)));

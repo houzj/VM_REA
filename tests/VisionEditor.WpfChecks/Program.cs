@@ -138,6 +138,16 @@ static class Program
             Check(lightRun.GetAwaiter().GetResult().Status==VisionFramework.NodeRunStatus.NoMatch&&lightRun.Result.NativeErrorCode==0,"Unbound light self-run reports native NG without an error code");
             document.Undo();Pump();Check(lightServices.InputText!("InputString") is null,"Light text constant participates in undo");
             document.Undo();Pump();
+            var npointData=(DataObject)Invoke("CreateToolDragData","vision.n-point-calibration")!;
+            var npointDrag=(DragEventArgs)Activator.CreateInstance(typeof(DragEventArgs),BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic,null,[npointData,DragDropKeyStates.LeftMouseButton,DragDropEffects.Move,Find<Canvas>("GraphLayer"),new Point(175,115)],null)!;
+            npointDrag.RoutedEvent=DragDrop.DropEvent;Invoke("ToolDrop",Find<Canvas>("GraphLayer"),npointDrag);Pump();
+            var npointNode=document.CurrentProcedure.Nodes.Last();Check(npointNode.ModuleId=="vision.n-point-calibration"&&npointNode.Parameters["RotPointTotalNum"].GetInt32()==3&&!npointNode.Parameters["UseRelativeCoordinates"].GetBoolean(),"N-point drop uses confirmed native defaults");
+            var npointServices=(VisionPluginContracts.ToolEditorContext)Invoke("ConnectToolEditorServices",new VisionPluginContracts.ToolEditorContext(npointNode,document.BaseDirectory,_=>{},_=>throw new NotSupportedException()),npointNode.Id)!;
+            npointServices.SetInputNumbers!("ImagePointX",new[]{0d,10});npointServices.SetInputNumbers!("ImagePointY",new[]{0d,0});Pump();
+            Check(npointServices.InputNumbers!("ImagePointX")!.SequenceEqual(new[]{0d,10})&&npointServices.SubscriptionLabel!("ImagePointX",false)=="[0,10]","N-point array constants persist and are labeled");
+            var npointRun=npointServices.Run(npointNode.Parameters);while(!npointRun.IsCompleted)Pump();Check(npointRun.Result.Status==VisionFramework.NodeRunStatus.Success&&npointRun.Result.Outputs["CalibCurIndex"].As<long>()==2,"N-point self-run consumes array constants");
+            Check(!Find<ComboBox>("ImageSelector").Items.Cast<ComboBoxItem>().Any(item=>(string?)item.Tag==npointNode.Id),"N-point does not masquerade as an image source");
+            document.Undo();Pump();Check(npointServices.InputNumbers!("ImagePointY") is null,"N-point array edit participates in undo");document.Undo();Pump();document.Undo();Pump();
             var tabs=Find<TabControl>("ProcedureTabs");
             Check(tabs.Items.Count==document.Document.Procedures.Count,"Tab count matches actual document");
             var originalTab=tabs.Items[0];Invoke("RefreshAll");Pump();Check(ReferenceEquals(originalTab,tabs.Items[0]),"Unchanged refresh preserves actual TabItem identity");

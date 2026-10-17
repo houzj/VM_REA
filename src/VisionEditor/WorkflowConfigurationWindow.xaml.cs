@@ -20,7 +20,7 @@ public partial class WorkflowConfigurationWindow:Window
  {
   this.bindInput=bindInput;this.read=read;this.save=save;this.sources=sources;this.registry=registry;this.setParameter=setParameter;this.execute=execute;this.result=result;InitializeComponent();Heading.Text=read().Name;Loaded+=(_,_)=>Refresh();
  }
- static string TypeName(DataKind kind)=>kind switch{DataKind.GrayImage or DataKind.RgbImage or DataKind.Image=>"图像",DataKind.Integer=>"int",DataKind.Number=>"float",DataKind.Text=>"string",DataKind.Boolean=>"bool",DataKind.Circle=>"圆",_=>"连通域"};
+ static string TypeName(DataKind kind)=>kind switch{DataKind.GrayImage or DataKind.RgbImage or DataKind.Image=>"图像",DataKind.Integer=>"int",DataKind.Number=>"float",DataKind.Text=>"string",DataKind.Boolean=>"bool",DataKind.Circle=>"圆",DataKind.NumberArray=>"浮点数组",DataKind.Calibration=>"标定数据",_=>"连通域"};
  public void Refresh()
  {
   if(!IsInitialized)return;var c=read().Configuration;
@@ -75,7 +75,7 @@ public partial class WorkflowConfigurationWindow:Window
   }
   return new ScrollViewer {Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
  }
- string SourceLabel(WorkflowValueReference reference)=>reference.Kind switch{WorkflowSourceKind.TextConstant=>WorkflowSubscriptions.ReadTextConstant(reference.Id),WorkflowSourceKind.IntegerConstant=>reference.Id,WorkflowSourceKind.LocalVariable=>"局部变量."+read().Configuration.Variables.First(v=>v.Id==reference.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+read().Configuration.Inputs.First(v=>v.Id==reference.Id).Name,_=>sources(null).FirstOrDefault(s=>s.NodeId==reference.Id&&s.Port==reference.Port)?.Label??"来源已失效"};
+ string SourceLabel(WorkflowValueReference reference)=>reference.Kind switch{WorkflowSourceKind.TextConstant=>WorkflowSubscriptions.ReadTextConstant(reference.Id),WorkflowSourceKind.IntegerConstant or WorkflowSourceKind.NumberConstant or WorkflowSourceKind.NumberArrayConstant=>reference.Id,WorkflowSourceKind.LocalVariable=>"局部变量."+read().Configuration.Variables.First(v=>v.Id==reference.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+read().Configuration.Inputs.First(v=>v.Id==reference.Id).Name,_=>sources(null).FirstOrDefault(s=>s.NodeId==reference.Id&&s.Port==reference.Port)?.Label??"来源已失效"};
  IEnumerable<WorkflowSourceOption> SubscriptionSources(DataKind kind)
  {
   var p=read();

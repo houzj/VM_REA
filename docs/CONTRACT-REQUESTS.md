@@ -118,3 +118,10 @@ The following supersedes earlier unavailable/pending implementation descriptions
 - LT-004：`ILightResourceConfiguration`及`ToolEditorContext.ConfigureLights`提供全局资源管理入口，UI从已注册传输服务读取目录，按原厂旧全局资源类型映射形成选择字符串，换有效设备复位通道配置并保留手动亮度。宿主有管理服务时启用按钮；全局LightControl/CommManager的目录、设备连接和驱动由各自清单项承接，不在工具中虚构物理协议。模块自执行及连续调度复用已有作用域、取消和生命周期；资源管理共享弹层未宣称完整等价。
 
 原厂算法通过自有SDK进程和明确标注的测试传输边界对照，不做设备测试；源码/资源/运行证据与未知边界见 `docs/plugins/LIGHT.md`。用户授权本线闭合后使用中文说明提交并推送当前分支，不操作另一worktree。
+
+## 2026-10-17 标定类优先：N点/N图像共享接口（推进中）
+
+- CAL-001：原厂N点ProcessOutput RVA0x3d230实际发布OutImagePointX/Y、WorldPointX/Y浮点数组；N图像同样发布图像坐标数组。新增末尾DataKind.NumberArray与PortValue.Numbers，防御复制、拒绝非有限值，保持既有枚举序号。数组端口与标量严格区分，不通过字符串伪装数值数组；宿主显示、订阅、流程传递、数值常量与数组常量、自执行、VMX保存重载已接通；真实GraphExecutor及WPF宿主回归已覆盖。
+- CAL-002：原厂N点官方SDK导出CalibInfo/CalibOutputParam/CalibMatrix确认3×3 image→world矩阵。新增末尾DataKind.Calibration与只读CalibrationData，保存矩阵方向和生产来源。生命周期是当次执行结果；配置持久化仍走插件文件/参数，不宣称SOL二进制兼容。后续标定加载/转换复用此类型，完整原厂动态参数结构另行审计。
+- CAL-003：标定编辑器需要浮点输入常量（含数组）及参数订阅、点表编辑/清空/文件命令。由本worktree补充宿主能力，保留现有整数/文本常量行为；数值常量/数组常量订阅已实现，并沿用文档事务及撤销；点表命令留在专属插件。N点命令时机见n-point-state-evidence.json与n-point-file-evidence.json，N图像仍按独立证据收尾。
+- CAL-001补充：原厂GetFloat与BatchGetFloat共用输入名，单个float是长度1的点坐标序列。Number可单向提升为NumberArray，GraphExecutor、当前模块自执行及流程接口在边界实际构造只读单元素数组；不允许数组隐式降为标量，整数也不自动当float。这样原有定位/变量的float能用于N点逐点采集。

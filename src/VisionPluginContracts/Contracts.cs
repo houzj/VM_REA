@@ -11,6 +11,10 @@ public sealed record ToolEditorContext(NodeDocument Node,string BaseDirectory,Ac
  public Func<string,bool,string?>? SubscriptionLabel {get;init;}
  public Func<string,int?>? InputInteger {get;init;}
  public Action<string,int?>? SetInputInteger {get;init;}
+ public Func<string,double?>? InputNumber {get;init;}
+ public Action<string,double?>? SetInputNumber {get;init;}
+ public Func<string,IReadOnlyList<double>?>? InputNumbers {get;init;}
+ public Action<string,IReadOnlyList<double>?>? SetInputNumbers {get;init;}
  public Func<string,string?>? InputText {get;init;}
  public Action<string,string?>? SetInputText {get;init;}
  public Func<IReadOnlyList<CameraInfo>>? Cameras {get;init;}
