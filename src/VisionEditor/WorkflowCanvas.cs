@@ -103,9 +103,11 @@ public partial class MainWindow
             wireViews[key]=(wire,path,wire.PathPoints is {Count:>1}?points:CleanWirePoints(points));
             GraphLayer.Children.Add(path);
             var arrow=new Polygon {Points=OriginalWireArrow(displayedPoints),IsHitTestVisible=false};arrow.SetBinding(System.Windows.Shapes.Shape.FillProperty,new System.Windows.Data.Binding("Stroke"){Source=path});wireArrows[key]=arrow;GraphLayer.Children.Add(arrow);
-            var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=12};
+            var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=12,Focusable=true};
+            // Connection.RequestBringIntoView suppresses focus-driven scroll jumps.
+            hit.RequestBringIntoView+=(_,e)=>e.Handled=true;
             hit.MouseEnter+=(_,_)=>path.StrokeThickness=3;hit.MouseLeave+=(_,_)=>path.StrokeThickness=selectedWire==key?3:2;
-            hit.MouseLeftButtonDown+=(_,e)=> {selectedWire=key;selected=null;selectedNodes.Clear();GraphLayer.Focus();RenderGraph();e.Handled=true;};
+            hit.MouseLeftButtonDown+=(_,e)=> {selectedWire=key;selected=null;selectedNodes.Clear();boxSelectionActive=false;hit.Focus();RefreshNodeSelection();RefreshRight();e.Handled=true;};
             var menu=new ContextMenu();var delete=new MenuItem {Header="删除连线",IsEnabled=!isLocked&&activeRun is null};delete.Click+=(_,_)=>Safe(()=> {doc.DisconnectExecution(wire);selectedWire=null;});menu.Items.Add(delete);hit.ContextMenu=menu;
             wireHitPaths[key]=hit;GraphLayer.Children.Add(hit);
         }
