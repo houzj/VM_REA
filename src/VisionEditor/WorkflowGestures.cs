@@ -103,15 +103,17 @@ public partial class MainWindow
   if(!EditableCanvas||selectedNodes.Count==0)return;var area=SelectedBounds();
   var positions=doc.CurrentProcedure.Nodes.Where(n=>selectedNodes.Contains(n.Id)).ToDictionary(n=>n.Id,n=>direction switch {
    "left"=>(area.Left+10,n.Y),"right"=>(area.Right-NodeWidth-10,n.Y),"centerX"=>(area.Left+Snap((area.Width-NodeWidth)/2),n.Y),
-   "top"=>(n.X,area.Top+10),"bottom"=>(n.X,area.Bottom-NodeHeight-10),"centerY"=>(n.X,area.Top+Snap((area.Height-NodeHeight)/2)),_=>(n.X,n.Y)});
+   "top"=>(n.X,area.Top+10),"bottom"=>(n.X,area.Bottom-NodeVisualHeight(n)-10),"centerY"=>(n.X,Snap(area.Top+area.Height/2-NodeVisualHeight(n)/2)),_=>(n.X,n.Y)});
   doc.MoveNodes(positions);
  }
  void DistributeSelection(bool horizontal)
  {
   if(!EditableCanvas||selectedNodes.Count<2)return;var area=SelectedBounds();var nodes=doc.CurrentProcedure.Nodes.Where(n=>selectedNodes.Contains(n.Id)).OrderBy(n=>horizontal?n.X:n.Y).ToArray();
-  double required=nodes.Length*((horizontal?NodeWidth:NodeHeight)+5)+15,extent=Math.Max(horizontal?area.Width:area.Height,required),gap=Math.Max(0,(extent-required)/(nodes.Length-1));
+  // Native DiagramItem alignment and ItemsPage selection bounds use each item's ActualHeight.
+  // A Group is taller than an ordinary tool, so vertical spacing cannot use a fixed module height.
+  double required=nodes.Sum(n=>(horizontal?NodeWidth:NodeVisualHeight(n))+5)+15,extent=Math.Max(horizontal?area.Width:area.Height,required),gap=Math.Max(0,(extent-required)/(nodes.Length-1));
   double cursor=Math.Max(Snap((horizontal?area.Left:area.Top)+10),10);
-  var positions=new Dictionary<string,(double X,double Y)>();foreach(var n in nodes){positions[n.Id]=horizontal?(cursor,Math.Max(Snap(area.Top+area.Height/2-NodeHeight/2),5)):(Math.Max(Snap(area.Left+area.Width/2-NodeWidth/2),5),cursor);cursor+=Snap((horizontal?NodeWidth:NodeHeight)+5+gap);}doc.MoveNodes(positions);
+  var positions=new Dictionary<string,(double X,double Y)>();foreach(var n in nodes){positions[n.Id]=horizontal?(cursor,Math.Max(Snap(area.Top+area.Height/2-NodeVisualHeight(n)/2),5)):(Math.Max(Snap(area.Left+area.Width/2-NodeWidth/2),5),cursor);cursor+=Snap((horizontal?NodeWidth:NodeVisualHeight(n))+5+gap);}doc.MoveNodes(positions);
  }
  bool IsCanvasBackground(DependencyObject? hit)
  {
