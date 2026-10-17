@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -17,11 +18,16 @@ void Check(bool condition, string label) { if (!condition) throw new Exception(l
 var registry = new ModuleRegistry();
 WorkflowCalls.Register(registry);
 var producer = new ModuleDescriptor("test.group.source", "1", "源", [],
-    [new("scalar", DataKind.Integer), new("array", DataKind.Integer) { Cardinality = ValueCardinality.Array }], []);
-var consumer = new ModuleDescriptor("test.group.consumer", "1", "消费", [new("value", DataKind.Integer)], [new("value", DataKind.Integer)], []);
+    [new("scalar", DataKind.Integer), new("array", DataKind.Integer) { Cardinality = ValueCardinality.Array }],
+    [new("gain", ParameterKind.Integer, true, JsonSerializer.SerializeToElement(11), 0, 100),
+     new("other", ParameterKind.Integer, true, JsonSerializer.SerializeToElement(2), 0, 100)]);
+var consumer = new ModuleDescriptor("test.group.consumer", "1", "消费", [new("value", DataKind.Integer)], [new("value", DataKind.Integer)],
+    [new("gain", ParameterKind.Integer, true, JsonSerializer.SerializeToElement(99), 0, 100)]);
 registry.Register(producer, () => new SourceModule(producer));
 registry.Register(consumer, () => new ConsumerModule(consumer));
-var body = new ProcedureDocument("body", "Group", [new("source", producer.Id, "1", "source", new()), new("consumer", consumer.Id, "1", "consumer", new())], [], [new("source", "consumer")])
+var body = new ProcedureDocument("body", "Group", [new("source", producer.Id, "1", "source", new()),
+    new("source2", producer.Id, "1", "source2", new() { ["gain"] = JsonSerializer.SerializeToElement(3) }),
+    new("consumer", consumer.Id, "1", "consumer", new())], [], [new("source", "consumer")])
 {
     GroupOwner = new("parent", "group"),
     Configuration = new()
@@ -29,7 +35,7 @@ var body = new ProcedureDocument("body", "Group", [new("source", producer.Id, "1
         Inputs = [new("input", "in0", DataKind.Integer)],
         Outputs = [new("output", "out", DataKind.Integer, "consumer", "value")],
         Subscriptions = [new("consumer", "value", false, new(WorkflowSourceKind.WorkflowInput, "input"))],
-        RunParameters = [new("proxy", "consumer", "value", "输入值", true)]
+        RunParameters = [new("proxy", "consumer", "value", "输入值", true), new("gain-proxy", "source", "gain", "增益")]
     }
 };
 var group = new NodeDocument("group", WorkflowCalls.ModuleId, WorkflowCalls.Version, "Group", new()) { Call = WorkflowCalls.From(body) };
@@ -104,7 +110,7 @@ _ = window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() 
         Check(labels.Contains("scalar"), "Group scalar picker shows compatible scalar output");
         Check(labels.Contains("in0"), "Group scalar picker shows compatible Group input");
         Check(!labels.Contains("array"), "Group scalar picker excludes integer array output");
-        Children(picker).OfType<CheckBox>().Single(c => Equals(c.Content, "scalar")).IsChecked = true;
+        Children(picker).OfType<CheckBox>().First(c => Equals(c.Content, "scalar")).IsChecked = true;
         Children(picker).OfType<Button>().Single(b => Equals(b.Content, "确定")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
     }
     catch (Exception ex) { pickerError = ex; picker?.Close(); }
@@ -131,6 +137,40 @@ try
 }
 catch (InvalidDataException) { rejected = true; }
 Check(rejected, "Runtime validator still rejects manually inserted array-to-scalar binding");
+var configurationWindow = window.CreateRunConfigurationWindow(); configurationWindow.Show(); Pump();
+Exception? relationPickerError = null;
+_ = window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+{
+    WorkflowSourcePicker? picker = null;
+    try
+    {
+        picker = Application.Current.Windows.OfType<WorkflowSourcePicker>().Single(); picker.UpdateLayout();
+        var labels = Children(picker).OfType<CheckBox>().Select(c => c.Content?.ToString()).ToArray();
+        Check(labels.Count(l => l == "gain") == 1, "Relation picker includes matching tool type and parameter exactly once");
+        Check(!labels.Contains("other"), "Relation picker excludes different parameter of same integer kind");
+        Children(picker).OfType<CheckBox>().Single(c => Equals(c.Content, "gain")).IsChecked = true;
+        Children(picker).OfType<Button>().Single(b => Equals(b.Content, "确定"))
+            .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+    }
+    catch (Exception ex) { relationPickerError = ex; picker?.Close(); }
+}));
+Children(configurationWindow).OfType<Button>().Single(b => Equals(b.Tag, "GroupProxyRelations:gain-proxy"))
+    .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); Pump();
+if (relationPickerError is not null) throw relationPickerError;
+configurationWindow.Close(); Pump();
+Check(Body().Configuration.RunParameters.Single(p => p.Id == "gain-proxy").Relations?.Single() == new WorkflowRunTarget("source2", "gain"),
+    "Relation picker commits matching secondary tool parameter");
+SolutionStore.Save(path, solution);
+var editor = new VisionEditor.Core.GraphEditorDocument(registry); editor.Load(path);
+editor.SetGroupRunParameterValue("body", "gain-proxy", JsonSerializer.SerializeToElement(5));
+Check(editor.Document.Procedures.Single(p => p.Id == "body").Nodes.Where(n => n.ModuleId == producer.Id)
+    .All(n => n.Parameters["gain"].GetInt32() == 5), "Group parameter edit synchronizes both related real nodes");
+var synchronized = new GroupDebugExecutor(registry).RunAsync(new(editor.Document, editor.BaseDirectory), "parent", "group").GetAwaiter().GetResult();
+Check(synchronized.Status == SessionStatus.Success && synchronized.Calls["group"].WorkflowOutputs["out"].As<long>() == 5,
+    "Related parameter value participates in actual Group node execution");
+editor.Save(path); editor.Load(path);
+Check(editor.Document.Procedures.Single(p => p.Id == "body").Configuration.RunParameters.Single(p => p.Id == "gain-proxy")
+    .Relations?.Single() == new WorkflowRunTarget("source2", "gain"), "Parameter relation survives save and reopen");
 window.Close(); app.Shutdown(); Console.WriteLine($"PASS {checks} Group source WPF and runtime checks");
 }
 
@@ -147,7 +187,8 @@ sealed class SourceModule(ModuleDescriptor descriptor) : IModule
 {
     public ModuleDescriptor Descriptor => descriptor;
     public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context, CancellationToken token) => ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,
-        new Dictionary<string, PortValue> { ["scalar"] = PortValue.Integer(11), ["array"] = PortValue.IntegerArray([11, 22]) }));
+        new Dictionary<string, PortValue> { ["scalar"] = PortValue.Integer(context.Integer("gain")),
+            ["array"] = PortValue.IntegerArray([context.Integer("gain"), 22]) }));
 }
 sealed class ConsumerModule(ModuleDescriptor descriptor) : IModule
 {
