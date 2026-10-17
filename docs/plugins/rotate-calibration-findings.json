@@ -1,0 +1,77 @@
+{
+  "tool": "RotateCalibModu",
+  "status": "plugin-specific implementation and source/runtime verification delivered; shared display integration outstanding",
+  "sourceConfirmed": [
+    "Module owns its own double precision rotation solver, not NPointSolver.",
+    "CalibRot uses first three samples only for its fixed 4x2 least-squares fit; all samples contribute error, divided by full count.",
+    "Angles are float-subtracted, converted with original constant pi=3.1415926; inversion determinant threshold is double(float(1e-7)).",
+    "World transform uses top-left 2x2 only; ignores translation and projective terms. World center transformed back by 2x2 inverse.",
+    "Module samples one first array element per run. WorldRotateAngle is step angle multiplied by sample index. RotNum3..16.",
+    "Both signs are fitted. RevOutputFlag false picks smaller world error; true picks larger; both choose negative-angle candidate on exact tie.",
+    "Intermediate success outputs zero centers/errors, complete output clears sampling vectors; remaining/count follow native replay.",
+    "Refresh nonzero reloads file without clearing samples. Missing input resets sampling, writes ModuStatus0 and returns original getter code; other failure paths can publish no status.",
+    "XML reads any FloatList under CalibOutputParam regardless of ParamName; short lists leave trailing matrix entries unchanged, failed numeric conversion reuses last parsed float; empty list sets Loaded=true.",
+    "File suffix last two bytes checked case-sensitively; binary exactly36 bytes float9 little endian.",
+    "Original SaveModuleData stores matrix36bytes and ReadMatrix validity1byte, not sample counter."
+  ],
+  "controlledEvidence": {
+    "originalNumericalCases": 120,
+    "numericalFieldChecks": 720,
+    "originalProcessCases": 34,
+    "originalFileCases": 8,
+    "totalIndependentChecks": 1214,
+    "unexpectedFailures": 0,
+    "numericalTolerance": "1e-9 * max(1,abs(native)); module float outputs 1e-6 * max(1,abs(native))",
+    "originalUiStates": [
+      "default point mode",
+      "coordinate mode",
+      "reverse false/true"
+    ],
+    "originalDisplayShapeFields": "Status0 #ff0000, Status1 #66ff00, opacity1,font10,position0/0, original methods with synthetic feature getter"
+  },
+  "independentImplementation": [
+    "RotateCalibrationFile.cs",
+    "RotateCalibrationPlugin.cs",
+    "RotateCalibrationSession.cs",
+    "RotateCalibrationSolver.cs",
+    "RotateCalibrationWindow.cs"
+  ],
+  "compatibilityBoundaries": [
+    {
+      "kind": "memory safety",
+      "details": "Original oversized FloatList may overwrite adjacent object members. Independent loader bounds writes to9; no memory corruption reproduction."
+    },
+    {
+      "kind": "nonfinite native output",
+      "details": "Native zero matrix returns code0 and RotError NaN. Independent solver keeps NaN, runtime returns Failed/NativeNonFiniteResult with NativeErrorCode0 and diagnostic field names; finite fields retained, nonfinite outputs absent, never replaced with0."
+    },
+    {
+      "kind": "original UI pixels",
+      "details": "Original ParamsConfigControlBase WPF wrapper fails BAML schema NotImplementedException. Original parser visibility and original display shape methods ran. Independent WPF UI render/interaction passed; pixel parity not claimed."
+    },
+    {
+      "kind": "shared host display pending",
+      "details": "docs/plugins/rotate-calibration-display-contract.json defines TextDisplayGroup and ShowText/InputImage/DataRecord/ResultList. Parent owns shared interface and rendering integration; this remains an overall-tool closure dependency."
+    }
+  ],
+  "verificationCommands": [
+    "pwsh -File tests/NativeEvidence/Invoke-OriginalRotateCalibrationProbe.ps1",
+    "pwsh -File tests/NativeEvidence/Invoke-OriginalRotateCalibrationStateProbe.ps1",
+    "pwsh -File tests/NativeEvidence/Invoke-OriginalRotateCalibrationUiProbe.ps1",
+    "python tests/Export-RotateCalibrationEvidence.py",
+    "pwsh -File tests/Invoke-RotateCalibrationChecks.ps1 -VerifyFailureExit",
+    "pwsh -File tests/Invoke-RotateCalibrationChecks.ps1"
+  ],
+  "testFailurePolicy": {
+    "cause1": "WPF result TextBlock retained old logical parent on UI rebuild; fixed detachment before tabs replacement.",
+    "cause2": "PortValue.Integer stores Int64, checked incorrectly as Int32; fixed typed conversion.",
+    "processPolicy": "Main catch prints full stack stderr and exit1. STA exception propagated to main. Test-only SetErrorMode disables owned-process WER modal dialogs; own helper starts hidden and verifies exit.",
+    "controlledFailureVerified": true,
+    "controlledFailureExitCode": 1,
+    "successExitCode": 0,
+    "residualOwnedCheckProcess": false
+  },
+  "sourceManifest": "rotate-calibration-evidence.json",
+  "displayContract": "rotate-calibration-display-contract.json"
+}
+

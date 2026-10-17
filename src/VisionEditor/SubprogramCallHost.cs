@@ -19,7 +19,7 @@ public partial class MainWindow
    foreach(var v in OwnerFlow().Configuration.Inputs.Where(v=>v.Kind==kind))yield return new("input:"+v.Id,v.Name,kind,"流程输入."+v.Name){Reference=new(WorkflowSourceKind.WorkflowInput,v.Id),Cardinality=v.Cardinality};
   }
   ProcedureDocument Body()=>ConfigurationProcedure(Node().Call!.ProcedureId);
-  IEnumerable<WorkflowSourceOption> BodySources(DataKind? kind)=>Body().Nodes.SelectMany(n=>modules.GetDescriptor(n).Outputs.Where(p=>!kind.HasValue||p.Kind==kind).Select(p=>new WorkflowSourceOption(n.Id,p.Name,p.Kind,n.Name+"."+p.Name){Cardinality=p.Cardinality}));
+  IEnumerable<WorkflowSourceOption> BodySources(DataKind? kind)=>Body().Nodes.SelectMany(n=>modules.GetDescriptor(n).Outputs.Where(p=>!kind.HasValue||DataKinds.CanFlow(p.Kind,kind.Value)).Select(p=>new WorkflowSourceOption(n.Id,p.Name,p.Kind,n.Name+"."+p.Name){Cardinality=p.Cardinality}));
   IEnumerable<GroupComparisonOption> CompareSources(DataKind kind){
    foreach(var option in Sources(kind)){var reference=option.Reference!;yield return new("父级."+option.Label,new(false,reference),WorkflowSubscriptions.SourceCardinality(OwnerFlow(),modules,reference)==ValueCardinality.Array);}
    foreach(var output in Node().Call!.Outputs.Where(p=>p.Kind==kind))yield return new("Group."+output.Name,new(false,new(WorkflowSourceKind.NodeOutput,id,output.Name),Self:true),output.Cardinality==ValueCardinality.Array);

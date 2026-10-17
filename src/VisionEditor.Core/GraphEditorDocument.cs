@@ -22,19 +22,22 @@ public sealed partial class GraphEditorDocument
     public bool CanUndo => undo.Count != 0;
     public bool CanRedo => redo.Count != 0;
     public event Action? Changed;
+    public event Action? SolutionReplaced;
+    public Func<SolutionDocument,string,SolutionDocument>? PrepareSave {get;set;}
     public void NewSolution(bool createProcedure=true) {
         document = new(SolutionStore.CurrentVersion, Guid.NewGuid().ToString("N"), "New solution", createProcedure?[new("main", "Main", [], [], [])]:[], []);
         CurrentProcedureId = createProcedure?"main":""; BaseDirectory = Path.GetFullPath(Environment.CurrentDirectory); FilePath = null;
-        undo.Clear(); redo.Clear(); IsDirty = true; Revision++; Changed?.Invoke();
+        undo.Clear(); redo.Clear(); IsDirty = true; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Load(string path) {
         string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);
         document = Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()}); CurrentProcedureId = loaded.Procedures.FirstOrDefault()?.Id??"";
-        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; undo.Clear(); redo.Clear(); IsDirty = false; Revision++; Changed?.Invoke();
+        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; undo.Clear(); redo.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Save(string path) {
         string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;
-        var rebased = Rebase(document, BaseDirectory, directory);
+        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;
+        var rebased = Rebase(prepared, BaseDirectory, directory);
         SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.
         document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();
     }
@@ -223,7 +226,7 @@ public sealed partial class GraphEditorDocument
         var output=registry.GetDescriptor(a).Outputs.SingleOrDefault(p=>p.Name==fromPort);
         var input=registry.GetDescriptor(b).Inputs.SingleOrDefault(p=>p.Name==toPort);
         if(output is null||input is null)throw new InvalidOperationException("Invalid port direction or name.");
-        if(output.Kind!=input.Kind||output.Cardinality!=input.Cardinality)throw new InvalidOperationException("Port type mismatch.");
+        if(!DataKinds.CanFlow(output.Kind,input)||output.Cardinality!=input.Cardinality)throw new InvalidOperationException("Port type mismatch.");
         if(p.Connections.Any(c=>c.ToNode==toNode&&c.ToPort==toPort))throw new InvalidOperationException("Input already connected.");
         var pending=new Stack<string>(); var visited=new HashSet<string>(); pending.Push(toNode);
         while(pending.TryPop(out var id)) { if(id==fromNode)throw new InvalidOperationException("Connection creates a cycle."); if(!visited.Add(id))continue; foreach(var c in p.Connections.Where(c=>c.FromNode==id))pending.Push(c.ToNode);if(addExecutionLink)foreach(var link in ProcedureGraph.ExecutionEdges(p).Where(e=>e.FromNode==id))pending.Push(link.ToNode); }

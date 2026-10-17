@@ -1,0 +1,41 @@
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using VisionFramework;
+using VisionPluginContracts;
+using TextBox=System.Windows.Controls.TextBox;
+using Button=System.Windows.Controls.Button;
+using CheckBox=System.Windows.Controls.CheckBox;
+using DataGrid=System.Windows.Controls.DataGrid;
+using TabControl=System.Windows.Controls.TabControl;
+using Orientation=System.Windows.Controls.Orientation;
+using HorizontalAlignment=System.Windows.HorizontalAlignment;
+using Color=System.Windows.Media.Color;
+using Brushes=System.Windows.Media.Brushes;
+
+namespace VisionPlugins.Calibration;
+
+public sealed class ReadCalibFileWindow:Window {
+ readonly ToolEditorContext context;readonly ReadCalibFilePlugin plugin;readonly Dictionary<string,JsonElement> values;readonly StackPanel parameters=new();readonly TextBlock status=new(){TextWrapping=TextWrapping.Wrap,Foreground=Brushes.DarkRed};readonly TextBox path;bool running,continuous,closed;
+ public ReadCalibFileWindow(ToolEditorContext context,ReadCalibFilePlugin plugin){this.context=context;this.plugin=plugin;values=context.Node.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone());Title="标定加载";Width=620;Height=760;MinWidth=520;MinHeight=500;Background=new SolidColorBrush(Color.FromRgb(243,244,246));
+  Width=420;Height=650;MinWidth=420;MinHeight=500;WindowStyle=WindowStyle.None;FontFamily=new("Microsoft YaHei UI");FontSize=14;WindowStartupLocation=WindowStartupLocation.CenterOwner;
+  foreach(string file in new[]{"Theme.xaml","ListViewComboBoxStyle.xaml","RecScrollBarStyle.xaml","LightControls.xaml"})Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("pack://application:,,,/VisionPlugins.ImageSource;component/Resources/"+file)});
+  var root=new DockPanel();Content=new Border{BorderBrush=Brushes.OrangeRed,BorderThickness=new Thickness(0,context.Mode==ToolEditorMode.Desktop?1:0,0,0),Child=root};var footer=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(4)};DockPanel.SetDock(footer,Dock.Bottom);root.Children.Add(footer);
+  Button Action(string text,Action action){var b=new Button{Content=text,MinWidth=70,Margin=new Thickness(4),Padding=new Thickness(8,3,8,3)};b.Click+=(_,_)=>{try{action();}catch(Exception error){status.Text=error.Message;}};return b;}
+  var title=new DockPanel{Background=new SolidColorBrush(Color.FromRgb(36,36,36)),Height=context.Mode==ToolEditorMode.Desktop?34:0};var close=Action("×",()=>Close());close.Width=44;close.MinWidth=44;DockPanel.SetDock(close,Dock.Right);title.Children.Add(close);title.Children.Add(new TextBlock{Text=(context.DisplayIndex is int index?index+" ":"")+context.Node.Name,Foreground=Brushes.White,FontWeight=FontWeights.Bold,Margin=new Thickness(10,0,0,0),VerticalAlignment=VerticalAlignment.Center});title.MouseLeftButtonDown+=(_,_)=>DragMove();DockPanel.SetDock(title,Dock.Top);root.Children.Add(title);
+  async Task Execute(){if(running||closed)return;running=true;try{context.Apply(values);var result=await context.Run(values);status.Text=result.Message??result.Status.ToString();}catch(Exception error){status.Text=error.Message;continuous=false;}finally{running=false;}}
+  var loop=Action("连续执行",()=>{});loop.Name="ContinuousReadCalibFile";loop.Click+=async(_,_)=>{if(continuous){continuous=false;return;}if(running)return;continuous=true;loop.Content="停止";do{await Execute();if(continuous&&!closed)await Task.Delay(1);}while(continuous&&!closed);loop.Content="连续执行";};footer.Children.Add(loop);var once=Action("执行",async()=>await Execute());once.Name="ExecuteReadCalibFile";footer.Children.Add(once);footer.Children.Add(Action("确定",()=>{context.Apply(values);Close();}));Closed+=(_,_)=>{closed=true;continuous=false;};
+  var body=new StackPanel{Margin=new Thickness(24,12,24,20)};var tabs=new TabControl();tabs.Items.Add(new TabItem{Header="基本参数",Content=new ScrollViewer{Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto}});root.Children.Add(tabs);tabs.SelectedIndex=0;
+  void Heading(string text){body.Children.Add(new TextBlock{Text=text,FontWeight=FontWeights.Bold,FontSize=16,Margin=new Thickness(0,16,0,10)});}
+  void Row(string name,UIElement control){var row=new Grid{Margin=new Thickness(0,4,0,4)};row.ColumnDefinitions.Add(new(){Width=new GridLength(150)});row.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});row.Children.Add(new TextBlock{Text=name,Foreground=new SolidColorBrush(Color.FromRgb(98,103,108)),VerticalAlignment=VerticalAlignment.Center});Grid.SetColumn(control,1);row.Children.Add(control);body.Children.Add(row);}
+  Heading("标定文件");var files=new DockPanel();var choose=Action("…",()=>{var dialog=new Microsoft.Win32.OpenFileDialog{Filter="XML 文件|*.xml",CheckFileExists=true};if(dialog.ShowDialog(this)==true){path!.Text=dialog.FileName;LoadFile();}});DockPanel.SetDock(choose,Dock.Right);files.Children.Add(choose);path=new TextBox{Text=values["FilePath"].GetString()??"",VerticalContentAlignment=VerticalAlignment.Center,MinHeight=28};path.LostKeyboardFocus+=(_,_)=>{if(path.Text!=(values["FilePath"].GetString()??""))LoadFile();};files.Children.Add(path);Row("标定文件路径",files);
+  Button Binding(string input,DataKind kind){var button=new Button{HorizontalContentAlignment=HorizontalAlignment.Left,MinHeight=28};void Label(){button.Content=context.SubscriptionLabel?.Invoke(input,false)??"请选择";}Label();button.Click+=(_,_)=>{context.PickSubscription?.Invoke(this,input,false,kind);Label();};return button;}
+  Row("刷新信号",Binding("RefreshSignal",DataKind.Integer));var save=new System.Windows.Controls.Primitives.ToggleButton{Name="SaveCalibDataEnable",IsChecked=values["SaveCalibDataEnable"].GetBoolean(),Style=(Style)FindResource("LightSwitch"),VerticalAlignment=VerticalAlignment.Center};save.Click+=(_,_)=>{values["SaveCalibDataEnable"]=JsonSerializer.SerializeToElement(save.IsChecked==true);context.Apply(values);};Row("方案存矩阵",save);
+  foreach(var group in new[]{("拍照图像坐标","SnapImage"),("拍照物理坐标","SnapWorld"),("示教物理坐标","TeachWorld")}){Heading(group.Item1);foreach(var axis in new[]{("X","PointX1"),("Y","PointY1"),("R","R1")})Row(axis.Item1,Binding(group.Item2+axis.Item2,DataKind.Number));}
+  Heading("输入参数");body.Children.Add(parameters);body.Children.Add(status);var snapshot=plugin.Snapshot(context);ShowData(snapshot.Data);if(snapshot.Error!=0)status.Text=$"加载返回 0x{snapshot.Error:x8}";
+ }
+ void LoadFile(){try{var result=plugin.Load(context,path.Text);if(result.ReplaceData&&result.Data is {} data)ShowData(data);status.Text=result.ErrorCode==0?"":$"加载返回 0x{result.ErrorCode:x8}";if(result.ErrorCode!=0)return;values["FilePath"]=JsonSerializer.SerializeToElement(path.Text);values["CachedFileData"]=JsonSerializer.SerializeToElement("");values["OutputSchema"]=JsonSerializer.SerializeToElement(ReadCalibFilePlugin.Schema(result.Data!));context.Apply(values);}catch(Exception error){status.Text=error.Message;}}
+ static readonly IReadOnlyDictionary<string,string> OriginalLabels=new Dictionary<string,string>{{"TransNum","平移次数"},{"RotNum","旋转次数"},{"PixelPrecision","像素精度"},{"CalibType","标定类型"},{"ImagePointLst","图像点"},{"SnapImage","图像基准坐标"},{"CalibMatrix","标定矩阵"},{"CalibErrStatus","评估标定误差状态"},{"TransError","平移像素平均误差"},{"RotError","旋转像素平均误差"},{"TransWorldError","平移估计真实误差"},{"RotWorldError","旋转真实平均误差"},{"PixelPrecisionX","单像素精度X"},{"PixelPrecisionY","单像素精度Y"},{"CreateCalibTime","文件创建时间"},{"WorldPointLst","物理点"}};
+ void ShowData(ReadCalibFileData data){parameters.Children.Clear();foreach(var item in data.Inputs){parameters.Children.Add(new TextBlock{Text=OriginalLabels.GetValueOrDefault(item.Name,item.Name)+(item.Points is null?": "+(item.Text??string.Join(", ",item.Values)):""),TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,4,0,4)});if(item.Points is {} points){var table=new StackPanel{Margin=new Thickness(4,6,0,6)};foreach(var point in points){var row=new System.Windows.Controls.Primitives.UniformGrid{Columns=3};foreach(float coordinate in point)row.Children.Add(new TextBox{Text=coordinate.ToString(System.Globalization.CultureInfo.InvariantCulture),IsReadOnly=true,Height=30,HorizontalContentAlignment=HorizontalAlignment.Center,VerticalContentAlignment=VerticalAlignment.Center});table.Children.Add(row);}parameters.Children.Add(table);}}}
+}

@@ -8,7 +8,7 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
         return RunAsync(workspace,procedureId,cancellationToken:cancellationToken,inputs:inputs);
     }
     // Initial policy: all declared resources must be available and match their optional hash.
-    public async Task<ExecutionSessionResult> RunAsync(SolutionWorkspace workspace,string procedureId,IProgress<ExecutionEvent>? progress=null,CancellationToken cancellationToken=default,IReadOnlyDictionary<string,PortValue>? inputs=null){
+    public async Task<ExecutionSessionResult> RunAsync(SolutionWorkspace workspace,string procedureId,IProgress<ExecutionEvent>? progress=null,CancellationToken cancellationToken=default,IReadOnlyDictionary<string,PortValue>? inputs=null,ModuleExecutionScope? scope=null,ModuleRunControl? control=null){
         SolutionStore.ValidateStructure(workspace.Document);
         var document=workspace.Document with{Resources=workspace.Document.Resources.ToArray(),Procedures=workspace.Document.Procedures.Select(p=>p with{Configuration=(p.GroupOwner is not null?GroupDisplayLinks.Synchronize(p.Configuration,p.Configuration):p.Configuration).Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(v=>v.Key,v=>v.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray()}).ToArray()};
         WorkflowCalls.Validate(document,procedureId);
@@ -44,7 +44,7 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
             }
             try
             {
-                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex);
+                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex,scope,control,new ResourceCatalog(workspace.BaseDirectory,workspace.Document.Resources));
                 if(wait.IsCancellationRequested&&!token.IsCancellationRequested&&session.Status==SessionStatus.Cancelled)
                     session=session with{Status=SessionStatus.TimedOut,Nodes=session.Nodes.Select(n=>n.Status==NodeRunStatus.Cancelled?n with{Status=NodeRunStatus.TimedOut,ErrorCode="ProcedureWaitTimeout",Message="Procedure wait time elapsed"}:n).ToArray()};
                 return session with{GroupLoopIndex=groupLoopIndex};
@@ -53,6 +53,7 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
             {
                 return new ExecutionSessionResult(SessionStatus.TimedOut,[]){GroupLoopIndex=groupLoopIndex};
             }
+
         }
         return await Execute(procedureId,inputs,cancellationToken,0);
     }

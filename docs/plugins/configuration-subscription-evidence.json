@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "scope": "Shared subscription tree contract and source-based selector reconstruction; not a complete original host/runtime parity claim.",
+  "claims": {
+    "front": "Native SDK connection IDs populate PreModules; recursively walk graph predecessors with deduplication, append non-solution parent. Tree holder ordering is by DisplayNameA, independent of node storage/display order.",
+    "parent": "Parent candidate contributes Inputs rather than Outputs, and Group LoopIndex may additionally appear for int.",
+    "leafFilter": "Requested exact native type; CanSubscribeA; Visible; timestamp exclusions; exclude private except parent. Preserve BuildFilterTreePath hierarchy.",
+    "referenceIdentity": "Original trees carry VmIO/Holder target objects. The original UI formats paths for transport; independent code retains typed Procedure/Node/Port/variable/channel identity separately from localized caption and presentation. No caption parsing is used to discover a new identity.",
+    "domains": "Input IO association mutates RelateIO and RelateIndex. Parameter subscription uses ParamSubManager with separate paramName/type, source kind and index kind. These are distinct contracts.",
+    "indexes": "All, literal and reference index have distinct typed representation. Constant input validation follows original int/float/double/string; original float/double rejects NaN but permits Infinity, which a strict host may explicitly reject.",
+    "uiState": "RadioSelecter no-r reads IUserData Param.+ComName; no-w setter writes it. Numeric subscribe/edit mode separately uses @+ComName and clears parameter binding when returning to edit.",
+    "ui": "ButtonSelecter_sub is editable/deletable text plus 32px link popup with 180x180 hierarchical SubTreeView; leaves invoke typed source-object selection. Text focus inside brackets offers integer-index tree. Independent controls retain hierarchy/typed identity and source image assets; full pixel parity has not been verified."
+  },
+  "evidence": [
+    {
+      "id": "front-connections",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/VmModule.cs",
+      "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+      "line": 2120,
+      "endLine": 2168,
+      "excerpt": "\tprotected virtual void LoadNextAndPreModules()\n\t{\n\t\tList<VmModule> list = (Parent as VmModuleSet).Modules.Where((VmModule x) => !x.nextAndPreModules_IsLoaded).ToList();\n\t\tlist.Add(this);\n\t\tImvsSdkDefine.IMVS_MODULE_ID_LIST stModuleId = new ImvsSdkDefine.IMVS_MODULE_ID_LIST\n\t\t{\n\t\t\tnNum = list.Count(),\n\t\t\tanModuleId = new uint[2064]\n\t\t};\n\t\tint num = 0;\n\t\tforeach (VmModule item in list)\n\t\t{\n\t\t\tstModuleId.anModuleId[num] = item.ID;\n\t\t\tnum++;\n\t\t\titem.nextAndPreModules_IsLoaded = true;\n\t\t}\n\t\tImvsSdkDefine.IMVS_MODULE_CONNECT_INFO_LIST multiModuleConnect = ServerSDKManager.serverSDKManager.mModuleManager.GetMultiModuleConnect(stModuleId);\n\t\tImvsSdkDefine.IMVS_MODULE_CONNECT_INFO_LIST iMVS_MODULE_CONNECT_INFO_LIST = multiModuleConnect;\n\t\tif (1 == 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tImvsSdkDefine.IMVS_MODULE_CONNECT_INFO[] pstModuleConnectInfo = iMVS_MODULE_CONNECT_INFO_LIST.pstModuleConnectInfo;\n\t\tfor (int num2 = 0; num2 < iMVS_MODULE_CONNECT_INFO_LIST.nNum; num2++)\n\t\t{\n\t\t\tImvsSdkDefine.IMVS_MODULE_CONNECT_INFO connectionInfo = pstModuleConnectInfo[num2];\n\t\t\tVmModule vmModule = list[num2];\n\t\t\tint j;\n\t\t\tfor (j = 0; j < connectionInfo.nNextModuNum; j++)\n\t\t\t{\n\t\t\t\tVmModule vmModule2 = (Parent as VmModuleSet).Modules.FirstOrDefault((VmModule p) => p.ID == connectionInfo.anNextModuleId[j]);\n\t\t\t\tif (!vmModule._NextModules.Contains(vmModule2))\n\t\t\t\t{\n\t\t\t\t\tvmModule._NextModules.Add(vmModule2);\n\t\t\t\t}\n\t\t\t\tif (!vmModule2._PreModules.Contains(vmModule))\n\t\t\t\t{\n\t\t\t\t\tvmModule2._PreModules.Add(vmModule);\n\t\t\t\t}\n\t\t\t}\n\t\t\tvmModule._NextModules.CollectionChanged += vmModule.NextModules_CollectionChanged;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 自动连接\n\t/// </summary>\n\tprivate void RefreshNextRelation(IVmModule source)\n\t{"
+    },
+    {
+      "id": "front-traversal",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/VmModule.cs",
+      "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+      "line": 3961,
+      "endLine": 4008,
+      "excerpt": "\tpublic void DeGetFrontOutputItems(IList allInputDiagramItem)\n\t{\n\t\tIList preModules = GetPreModules();\n\t\tforeach (VmModule item in preModules)\n\t\t{\n\t\t\tif (!allInputDiagramItem.Contains(item))\n\t\t\t{\n\t\t\t\tallInputDiagramItem.Add(item);\n\t\t\t\titem.DeGetFrontOutputItems(allInputDiagramItem);\n\t\t\t}\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 获取前置模块\n\t/// </summary>\n\tpublic void GetFrontOutputItems(IList allInputDiagramItem)\n\t{\n\t\tDeGetFrontOutputItems(allInputDiagramItem);\n\t\tif (Parent != null && !(Parent is VmSolution))\n\t\t{\n\t\t\tallInputDiagramItem.Add(Parent);\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 获取前置模块\n\t/// </summary>\n\t/// <param name=\"predicate\"></param>\n\t/// <returns></returns>\n\tpublic List<VmModule> GetFrontParamItems()\n\t{\n\t\tList<VmModule> list = new List<VmModule>();\n\t\tGetFrontOutputItems(list);\n\t\treturn list;\n\t}\n\n\t/// <summary>\n\t/// 获取本模块后续的连线\n\t/// </summary>\n\t/// <returns></returns>\n\tpublic IList GetNextModules()\n\t{\n\t\treturn NextModules;\n\t}\n\n\t/// <summary>\n\t/// 获取后置模块"
+    },
+    {
+      "id": "front-filter-tree",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/VmModuleExtern.cs",
+      "sha256": "4d4b726df4eac492c955502cb90118e793679ee74718b900e62625cfe2de2c9c",
+      "line": 190,
+      "endLine": 286,
+      "excerpt": "\tpublic static IList GetFrontFilterTree(this VmModule vmModule, Func<VmModule, bool> predicate, string CategoryName, string[] ValueType, bool IsIncludeSelf = false, bool IsIncludeInside = false, bool IsNeedNull = true, bool IsGlobalVar = true, string SearchFilter = \"\", bool isNeedTS = true, object customObj = null)\n\t{\n\t\tList<VmModule> moduleInfos = vmModule.GetFrontParamItems().Where(predicate).ToList();\n\t\tList<Holder> list = new List<Holder>();\n\t\tif (isNeedTS && ValueType.Contains(\"string\"))\n\t\t{\n\t\t\tHolder holder = new Holder\n\t\t\t{\n\t\t\t\tDisplayNameA = \"外部通讯\"\n\t\t\t};\n\t\t\tholder.EnumEntrysA.Add(VmSolution.ExternIO);\n\t\t\tlist.Add(holder);\n\t\t}\n\t\tif (IsIncludeInside && vmModule is IVmModuleSet vmModuleSet)\n\t\t{\n\t\t\tvmModuleSet.Children.OfType<VmModule>().ToList().ForEach((VmModule p) =>\n\t\t\t{\n\t\t\t\tmoduleInfos.Add(p);\n\t\t\t});\n\t\t}\n\t\tif (IsIncludeSelf)\n\t\t{\n\t\t\tmoduleInfos.Add(vmModule);\n\t\t}\n\t\tforeach (VmModule item2 in moduleInfos)\n\t\t{\n\t\t\titem2.AddOutputTreeNode(vmModule, list, ValueType, SearchFilter);\n\t\t}\n\t\tList<Holder> list2 = list.OrderBy((Holder P) => P.DisplayNameA).ToList();\n\t\tif (IsGlobalVar)\n\t\t{\n\t\t\tVmModule globalVarModule = GetGlobalVarModule();\n\t\t\tbool flag = globalVarModule != null && globalVarModule.Outputs.FirstOrDefault((VmIO x) => ValueType.Contains(x.TypeName)) != null;\n\t\t\tIVmModule localVarModule = vmModule.GetLocalVarModule(CategoryName == \"Output\");\n\t\t\tbool flag2 = localVarModule != null && (localVarModule as VmModule).Outputs.FirstOrDefault((VmIO x) => ValueType.Contains(x.TypeName)) != null;\n\t\t\tobject obj = null;\n\t\t\tobj = ((customObj == null) ? new List<object>\n\t\t\t{\n\t\t\t\tValueType,\n\t\t\t\tCategoryName == \"Output\"\n\t\t\t} : new List<object> { ValueType, customObj });\n\t\t\tif (flag | flag2)\n\t\t\t{\n\t\t\t\tHolder item = new Holder\n\t\t\t\t{\n\t\t\t\t\tDisplayNameA = \"Lang_VariableManager\",\n\t\t\t\t\tHolderTarget = obj\n\t\t\t\t};\n\t\t\t\tlist2.Add(item);\n\t\t\t}\n\t\t}\n\t\tif (IsNeedNull)\n\t\t{\n\t\t\tlist2.Insert(0, new Holder\n\t\t\t{\n\t\t\t\tDisplayNameA = Holder.NullName,\n\t\t\t\tHolderTarget = \"null\"\n\t\t\t});\n\t\t}\n\t\tif (IsIncludeSelf)\n\t\t{\n\t\t\tforeach (Holder item3 in list2)\n\t\t\t{\n\t\t\t\tif (item3.HolderTarget is VmModule vmModule2 && vmModule2.Name.Equals(vmModule.Name))\n\t\t\t\t{\n\t\t\t\t\tVmIO vmIO = item3.EnumEntrysA.OfType<VmIO>().FirstOrDefault((VmIO p) => p.Name.Equals(\"ModuRunTime\"));\n\t\t\t\t\tif (vmIO != null)\n\t\t\t\t\t{\n\t\t\t\t\t\titem3.EnumEntrysA.Remove(vmIO);\n\t\t\t\t\t\tbreak;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn list2;\n\t}\n\n\tpublic static IList GetChildren(this IVmIO vmIO)\n\t{\n\t\treturn (vmIO as VmIO).Childs;\n\t}\n\n\tpublic static IList<object> GetDisplayList(this IVmModule module)\n\t{\n\t\tstring text = null;\n\t\tstring moduleTypeName = module.ModuleTypeName;\n\t\tDirectoryInfo directoryInfo = new DirectoryInfo(Path.GetFullPath(\"./Module(sp)\") + \"\\\\x64\");\n\t\tDirectoryInfo[] directories = directoryInfo.GetDirectories();\n\t\tforeach (DirectoryInfo directoryInfo2 in directories)\n\t\t{\n\t\t\tif ((from p in directoryInfo2.GetDirectories()\n\t\t\t\tselect p.Name).Contains(moduleTypeName))\n\t\t\t{\n\t\t\t\ttext = directoryInfo2.FullName;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}"
+    },
+    {
+      "id": "typed-leaf-filter",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/VmModuleExtern.cs",
+      "sha256": "4d4b726df4eac492c955502cb90118e793679ee74718b900e62625cfe2de2c9c",
+      "line": 1113,
+      "endLine": 1162,
+      "excerpt": "\tpublic static Holder GetOutputTreeNode(this VmModule vmModule, VmModule targetModule, string[] ValueType, string SearchFilter = \"\")\n\t{\n\t\tif (vmModule.Outputs.Count > 0)\n\t\t{\n\t\t\tbool flag = targetModule.Parent == vmModule;\n\t\t\tVmIOCollection vmIOCollection = (flag ? vmModule.Inputs : vmModule.Outputs);\n\t\t\tList<VmIO> list = (from p in vmIOCollection.GetAllLeafIO()\n\t\t\t\twhere ValueType.Contains(p.TypeName) && p.CanSubscribeA && p.Visible && !VmModule.fTimeStamp.Contains(p.Name)\n\t\t\t\tselect p).ToList();\n\t\t\tif (!flag)\n\t\t\t{\n\t\t\t\tlist = list.Where((VmIO p) => !p.IsPrivate).ToList();\n\t\t\t}\n\t\t\tif (targetModule.Parent == vmModule && vmModule is IMVSGroup iMVSGroup)\n\t\t\t{\n\t\t\t\tVmIO leafIO = iMVSGroup.Outputs.GetLeafIO(\"LoopIndex\");\n\t\t\t\tif (ValueType.Contains(\"int\"))\n\t\t\t\t{\n\t\t\t\t\tlist.Add(leafIO);\n\t\t\t\t}\n\t\t\t}\n\t\t\tList<Holder> forShownList = new List<Holder>();\n\t\t\tif (list != null && list.Count > 0)\n\t\t\t{\n\t\t\t\tHolder holder = new Holder\n\t\t\t\t{\n\t\t\t\t\tDisplayNameA = AppLocalizationService.UnDoTranslate(vmModule.ID + \" \" + vmModule.Name),\n\t\t\t\t\tHolderTarget = vmModule\n\t\t\t\t};\n\t\t\t\tStack stack = new Stack();\n\t\t\t\tforeach (VmIO item in list)\n\t\t\t\t{\n\t\t\t\t\tHolder holder2 = holder;\n\t\t\t\t\titem.BuildFilterTreePath(forShownList, stack);\n\t\t\t\t\twhile (stack.Count > 0)\n\t\t\t\t\t{\n\t\t\t\t\t\tHolder holder3 = stack.Pop() as Holder;\n\t\t\t\t\t\tif (!holder2.EnumEntrysA.Contains(holder3))\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tholder3.ParentTree = holder2;\n\t\t\t\t\t\t\tholder2.EnumEntrysA.Add(holder3);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tholder2 = holder3;\n\t\t\t\t\t}\n\t\t\t\t\tholder2.EnumEntrysA.Add(item);\n\t\t\t\t}\n\t\t\t\treturn holder;\n\t\t\t}\n\t\t}\n\t\treturn null;"
+    },
+    {
+      "id": "combination-tree",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/VmModuleExtern.cs",
+      "sha256": "4d4b726df4eac492c955502cb90118e793679ee74718b900e62625cfe2de2c9c",
+      "line": 738,
+      "endLine": 785,
+      "excerpt": "\tpublic static IList GetFrontCombinationTree(this VmModule vmModule, Func<VmModule, bool> predicate, string CategoryName, string CategoryStyle, bool isIncludeInside = false, bool isNeedNull = true, bool IsGlobalVar = true)\n\t{\n\t\tList<VmModule> list = vmModule.GetFrontParamItems().Where(predicate).ToList();\n\t\tList<Holder> list2 = new List<Holder>();\n\t\tforeach (VmModule item2 in list)\n\t\t{\n\t\t\titem2.AddCombinationNode(vmModule, list2, CategoryStyle);\n\t\t}\n\t\tList<Holder> list3 = list2.OrderBy((Holder P) => P.DisplayNameA).ToList();\n\t\tif (IsGlobalVar)\n\t\t{\n\t\t\tVmModule globalVarModule = GetGlobalVarModule();\n\t\t\tbool flag = globalVarModule != null && globalVarModule.Outputs.FirstOrDefault((VmIO x) => CategoryStyle == x.TypeName) != null;\n\t\t\tbool flag2 = false;\n\t\t\tif (!(vmModule is IVmProcedure))\n\t\t\t{\n\t\t\t\tIVmModule localVarModule = vmModule.GetLocalVarModule(CategoryName == \"Output\");\n\t\t\t\tflag2 = localVarModule != null && (localVarModule as VmModule).Outputs.FirstOrDefault((VmIO x) => CategoryStyle == x.TypeName) != null;\n\t\t\t}\n\t\t\tif (flag | flag2)\n\t\t\t{\n\t\t\t\tHolder holder = new Holder();\n\t\t\t\tholder.DisplayNameA = \"Lang_VariableManager\";\n\t\t\t\tholder.HolderTarget = new List<object>\n\t\t\t\t{\n\t\t\t\t\tnew string[1] { CategoryStyle },\n\t\t\t\t\tCategoryName == \"Output\"\n\t\t\t\t};\n\t\t\t\tHolder item = holder;\n\t\t\t\tlist3.Add(item);\n\t\t\t}\n\t\t}\n\t\tif (isNeedNull)\n\t\t{\n\t\t\tlist3.Insert(0, new Holder\n\t\t\t{\n\t\t\t\tDisplayNameA = Holder.NullName,\n\t\t\t\tHolderTarget = \"null\"\n\t\t\t});\n\t\t}\n\t\treturn list3;\n\t}\n\n\tpublic static IList GetInternalCombinationTree(this VmModule vmModule, Func<VmModule, bool> predicate, string CategoryName, string CategoryStyle, bool isIncludeInside = false, bool isNeedNull = true)\n\t{\n\t\tList<VmModule> list = (vmModule as IVmModuleSet).Children.OfType<VmModule>().Where(predicate).ToList();\n\t\tList<Holder> list2 = new List<Holder>();\n\t\tforeach (VmModule item in list)"
+    },
+    {
+      "id": "query-flags",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/GetFrontFilterTreeOperation.cs",
+      "sha256": "859b7c4ec74f7843623bc4923e797c898052e8e2a315b061fb4251c74a0446e7",
+      "line": 23,
+      "endLine": 68,
+      "excerpt": "\tpublic void Operate(object[] Params, string[] ExtraParams)\n\t{\n\t\tNameValueItem parentNode = Executor.GetParentNode<NameValueItem>();\n\t\tif (parentNode == null || string.IsNullOrEmpty(TargetName))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tobject topBaseNode = parentNode.GetTopBaseNode();\n\t\tIOwner owner = null;\n\t\tif (topBaseNode is AlgorithmTabRoot)\n\t\t{\n\t\t\towner = parentNode.GetTopBaseNode() as AlgorithmTabRoot;\n\t\t}\n\t\telse if (topBaseNode is DynamicIOContainer<DynamicIO> { DataSource: var dataSource })\n\t\t{\n\t\t\tbool isNeedNull = true;\n\t\t\tIList frontFilterTree = dataSource.GetFrontFilterTree((VmModule p) => true, \"Output\", ExtraParams, IsIncludeSelf: false, IsIncludeInside: false, isNeedNull);\n\t\t\ttry\n\t\t\t{\n\t\t\t\tparentNode.SetPropertyValueByNameNotrigger(TargetName + \"A\", frontFilterTree);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tthrow new Exception(ex.Message);\n\t\t\t}\n\t\t}\n\t\tif (owner != null && owner.Owner != null)\n\t\t{\n\t\t\tVmModule vmModule = owner.Owner as VmModule;\n\t\t\tbool isNeedNull2 = true;\n\t\t\tIList frontFilterTree2 = vmModule.GetFrontFilterTree((VmModule p) => true, \"Output\", ExtraParams, IsIncludeSelf: false, IsIncludeInside: false, isNeedNull2);\n\t\t\ttry\n\t\t\t{\n\t\t\t\tparentNode.SetPropertyValueByNameNotrigger(TargetName + \"A\", frontFilterTree2);\n\t\t\t}\n\t\t\tcatch (Exception ex2)\n\t\t\t{\n\t\t\t\tthrow new Exception(ex2.Message);\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic void ReOperate()\n\t{\n\t}"
+    },
+    {
+      "id": "io-binding",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/SetFilterSourceOperation.cs",
+      "sha256": "197ec3eb19974776db4dc9ab293cababed6319ef2a5a1c0da6a8a9bfd5eb0401",
+      "line": 83,
+      "endLine": 128,
+      "excerpt": "\t\t\tVmIO outputFilter = null;\n\t\t\tstring BindingIndex = null;\n\t\t\tbool isBindGlobalVar = false;\n\t\t\tif (!GetOutputInfo(vmModule, filterString, ref outputFilter, ref BindingIndex, ref isBindGlobalVar))\n\t\t\t{\n\t\t\t\tif (buttonSelecter != null)\n\t\t\t\t{\n\t\t\t\t\tbuttonSelecter.CurValueA = buttonSelecter.OldCurValue;\n\t\t\t\t}\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (outputFilter != null)\n\t\t\t{\n\t\t\t\tif (outputFilter != VmSolution.ExternIO && outputFilter.Root == null)\n\t\t\t\t{\n\t\t\t\t\toutputFilter.Root = vmModule;\n\t\t\t\t}\n\t\t\t\tif (string.IsNullOrEmpty(outputFilter.TypeName))\n\t\t\t\t{\n\t\t\t\t\toutputFilter.TypeName = iO.TypeName;\n\t\t\t\t}\n\t\t\t\tif (outputFilter is VmConstantIO vmConstantIO && !CheckValue(vmConstantIO.Name, iO.TypeName))\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"订阅失败\"), MessageIcons.Warning);\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t}\n\t\t\tiO.RelateIO = outputFilter;\n\t\t\tiO.RelateIndex = GetBindIndex(vmModule, BindingIndex);\n\t\t\tstring[] array = text.Split('_');\n\t\t\tif (array.Length == 2)\n\t\t\t{\n\t\t\t\tstring objName = array[1].Substring(0, array[1].Length - 1);\n\t\t\t\t((VmSolution.Instance[((IVmFullPath)vmModule).FullPath + \".[Display]\"] is ParamRoot paramRoot) ? (from a in paramRoot.GetDisplayList().OfType<Object>()\n\t\t\t\t\twhere objName == AppLocalizationService.GetLang(a.NameA)\n\t\t\t\t\tselect a).FirstOrDefault() : null)?.OnValueChanged(new PropertyEventArgs\n\t\t\t\t{\n\t\t\t\t\tPropertyName = nameValueItem.NameA\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.objLog.Error(ex.Message + ex.StackTrace);\n\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\n\t\t}"
+    },
+    {
+      "id": "constant-types",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/SetFilterSourceOperation.cs",
+      "sha256": "197ec3eb19974776db4dc9ab293cababed6319ef2a5a1c0da6a8a9bfd5eb0401",
+      "line": 131,
+      "endLine": 192,
+      "excerpt": "\tpublic static bool CheckValue(string val, string paramType)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (string.IsNullOrEmpty(paramType))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tstring[] array = paramType.Split(';');\n\t\t\tstring[] array2 = array;\n\t\t\tfor (int i = 0; i < array2.Length; i++)\n\t\t\t{\n\t\t\t\tswitch (array2[i])\n\t\t\t\t{\n\t\t\t\tcase \"string\":\n\t\t\t\t\treturn true;\n\t\t\t\tcase \"int\":\n\t\t\t\t{\n\t\t\t\t\tint result2 = 0;\n\t\t\t\t\tif (int.TryParse(val, out result2))\n\t\t\t\t\t{\n\t\t\t\t\t\treturn true;\n\t\t\t\t\t}\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t\tcase \"float\":\n\t\t\t\t{\n\t\t\t\t\tfloat result3 = 0f;\n\t\t\t\t\tif (float.TryParse(val, out result3) && !float.IsNaN(result3))\n\t\t\t\t\t{\n\t\t\t\t\t\treturn true;\n\t\t\t\t\t}\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t\tcase \"double\":\n\t\t\t\t{\n\t\t\t\t\tdouble result = 0.0;\n\t\t\t\t\tif (double.TryParse(val, out result) && !double.IsNaN(result))\n\t\t\t\t\t{\n\t\t\t\t\t\treturn true;\n\t\t\t\t\t}\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic static VmIO GetBindIndex(VmModule node, string bindingIndex)\n\t{\n\t\tVmIO vmIO = null;\n\t\tif (!string.IsNullOrEmpty(bindingIndex))\n\t\t{\n\t\t\tif (bindingIndex.Contains('.'))\n\t\t\t{\n\t\t\t\tvmIO = node.GetIoByPathFromAround(bindingIndex);\n\t\t\t}\n\t\t\telse if (MathHelper.IsNumber(bindingIndex))"
+    },
+    {
+      "id": "typed-index",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/SetFilterSourceOperation.cs",
+      "sha256": "197ec3eb19974776db4dc9ab293cababed6319ef2a5a1c0da6a8a9bfd5eb0401",
+      "line": 183,
+      "endLine": 209,
+      "excerpt": "\tpublic static VmIO GetBindIndex(VmModule node, string bindingIndex)\n\t{\n\t\tVmIO vmIO = null;\n\t\tif (!string.IsNullOrEmpty(bindingIndex))\n\t\t{\n\t\t\tif (bindingIndex.Contains('.'))\n\t\t\t{\n\t\t\t\tvmIO = node.GetIoByPathFromAround(bindingIndex);\n\t\t\t}\n\t\t\telse if (MathHelper.IsNumber(bindingIndex))\n\t\t\t{\n\t\t\t\tvmIO = new VmConstantIO\n\t\t\t\t{\n\t\t\t\t\tName = bindingIndex\n\t\t\t\t};\n\t\t\t}\n\t\t\tif (vmIO == null)\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"订阅失败\"), MessageIcons.Warning);\n\t\t\t}\n\t\t}\n\t\treturn vmIO;\n\t}\n\n\tpublic static bool GetOutputInfo(VmModule node, string filterString, ref VmIO outputFilter, ref string BindingIndex, ref bool isBindGlobalVar)\n\t{\n\t\tif (!string.IsNullOrEmpty(filterString))"
+    },
+    {
+      "id": "read-actual-binding",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/GetSelectedFilterOperation.cs",
+      "sha256": "1cf28c8b2adcf10e2a6cebdd8afdfd2295aacb7e3faf750f61a7325fec8cf1cd",
+      "line": 62,
+      "endLine": 89,
+      "excerpt": "\tpublic static void GetOutputSelectedFilter(VmIO thisFilter, NameValueItem parentItem, string TargetName)\n\t{\n\t\tif (thisFilter == null || parentItem == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tstring value = null;\n\t\tVmIO relateIO = thisFilter.RelateIO;\n\t\tif (relateIO != null)\n\t\t{\n\t\t\tvalue = ((!(relateIO is VmConstantIO)) ? thisFilter.SubscriptionInfo : relateIO.Name);\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tparentItem.SetPropertyValueByNameNotrigger(TargetName + \"A\", value);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tthrow new Exception(ex.Message);\n\t\t}\n\t}\n\n\tpublic void ReOperate()\n\t{\n\t}\n\n\tpublic void GetOriginalValue()\n\t{"
+    },
+    {
+      "id": "parameter-subscription",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/SetModuleParamBindOperation.cs",
+      "sha256": "d77bb91862138a680729e5dd18e14f7a5564e7d52f4a65ae394e9cc74460e9e4",
+      "line": 30,
+      "endLine": 141,
+      "excerpt": "\tpublic void Operate(object[] Params, string[] ExtraParams)\n\t{\n\t\tif (ExtraParams == null || !(Params[0] is ButtonSelecter buttonSelecter))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tstring operationParamsA = buttonSelecter.DropOpenSetterA.OperationParamsA;\n\t\tstring text = Params[1] as string;\n\t\tif (!(((buttonSelecter.GetTopBaseNode() is IOwner owner) ? owner.Owner : null) is VmModule vmModule) || ExtraParams.Length == 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tstring paramName = ExtraParams[0];\n\t\tbool flag = true;\n\t\tbool flag2 = true;\n\t\tif (string.IsNullOrEmpty(text))\n\t\t{\n\t\t\tflag2 = false;\n\t\t\tflag = vmModule.ParamSubManager.DelModuleParamBinding(paramName, operationParamsA);\n\t\t\tvmModule.SetLinkWithVarNull(buttonSelecter.OldCurValue, (int)vmModule.ID, paramName, operationParamsA);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tif (text.Length > 64)\n\t\t\t{\n\t\t\t\tstring[] strArrMsg = new string[3]\n\t\t\t\t{\n\t\t\t\t\tAppLocalizationService.GetLang(\"Lang_ContentTooLarge\"),\n\t\t\t\t\tAppLocalizationService.GetLang(\"长度上限\"),\n\t\t\t\t\t64.ToString()\n\t\t\t\t};\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_Err\"), strArrMsg, MessageIcons.Error);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif ((MathHelper.IsNumber(text) || MathHelper.IsConst(text)) && text != \"TRIGGER_STRING\" && text != \"TRIGGER_STRING[]\")\n\t\t\t{\n\t\t\t\tflag = vmModule.ParamSubManager.SetModuleParamBinding(paramName, operationParamsA, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_VAR_TYPE.SUBSCRIBE_VAR_CONSTANT, text);\n\t\t\t}\n\t\t\telse if (text.Equals(VmSolution.ExternIO.Name + \"[]\") || text == VmSolution.ExternIO.Name)\n\t\t\t{\n\t\t\t\tflag = vmModule.ParamSubManager.SetModuleParamBinding(paramName, operationParamsA, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_VAR_TYPE.SUBSCRIBE_VAR_GLOBAL, \"\", 0u, VmSolution.ExternIO.Name);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tstring text2 = \"\";\n\t\t\t\tint num = text.IndexOf('[', 0);\n\t\t\t\tif (num > 0)\n\t\t\t\t{\n\t\t\t\t\ttext2 = text.Substring(num);\n\t\t\t\t\ttext2 = text2.Replace(\"[\", \"\").Replace(\"]\", \"\");\n\t\t\t\t\ttext = text.Remove(text.IndexOf('[', 0));\n\t\t\t\t}\n\t\t\t\tVmIO vmIO = vmModule.GetIoByPathFromAround(text);\n\t\t\t\tif (vmIO == null)\n\t\t\t\t{\n\t\t\t\t\tvmIO = VmSolution.Instance[text] as VmIO;\n\t\t\t\t}\n\t\t\t\tif (vmIO == null)\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_Err\"), AppLocalizationService.GetLang(\"Lang_Subscribe_Nodata\"), MessageIcons.Error, isTranslate: true);\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tif (text2.Contains('.'))\n\t\t\t\t{\n\t\t\t\t\tVmIO ioByPathFromAround = vmModule.GetIoByPathFromAround(text2);\n\t\t\t\t\tif (ioByPathFromAround == null)\n\t\t\t\t\t{\n\t\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_Err\"), AppLocalizationService.GetLang(\"Lang_Subscribe_Nodata\"), MessageIcons.Error, isTranslate: true);\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t\tflag = vmModule.ParamSubManager.SetModuleParamBinding(paramName, operationParamsA, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_VAR_TYPE.SUBSCRIBE_VAR_VARIABLE, \"\", vmIO.Root.ID, vmIO.Name, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_INDEX_TYPE.SUBSCRIBE_INDEX_VARIABLE, \"\", ioByPathFromAround.Root.ID, ioByPathFromAround.Name);\n\t\t\t\t}\n\t\t\t\telse if (MathHelper.IsNumber(text2))\n\t\t\t\t{\n\t\t\t\t\tflag = vmModule.ParamSubManager.SetModuleParamBinding(paramName, operationParamsA, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_VAR_TYPE.SUBSCRIBE_VAR_VARIABLE, \"\", vmIO.Root.ID, vmIO.Name, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_INDEX_TYPE.SUBSCRIBE_INDEX_CONSTANT, text2);\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tvmModule.SetLinkWithVarNull(buttonSelecter.OldCurValue, (int)vmModule.ID, paramName, operationParamsA);\n\t\t\t\t\tflag = vmModule.ParamSubManager.SetModuleParamBinding(paramName, operationParamsA, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_VAR_TYPE.SUBSCRIBE_VAR_VARIABLE, \"\", vmIO.Root.ID, vmIO.Name, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_INDEX_TYPE.SUBSCRIBE_INDEX_ALL, \"All\");\n\t\t\t\t\tvmModule.SetLinkWithVar(paramName, operationParamsA, vmIO);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tif (!flag & flag2)\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"订阅失败\"), MessageIcons.Warning);\n\t\t\tbuttonSelecter.SetPropertyValueByNameNotrigger(\"CurValueA\", null);\n\t\t}\n\t}\n\n\tprivate bool CheckValue(string val, string paramType)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (string.IsNullOrEmpty(paramType))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tstring[] array = paramType.Split(';');\n\t\t\tstring[] array2 = array;\n\t\t\tfor (int i = 0; i < array2.Length; i++)\n\t\t\t{\n\t\t\t\tswitch (array2[i])\n\t\t\t\t{\n\t\t\t\tcase \"string\":\n\t\t\t\t\treturn true;\n\t\t\t\tcase \"int\":\n\t\t\t\t{\n\t\t\t\t\tint result2 = 0;\n\t\t\t\t\tif (int.TryParse(val, out result2))\n\t\t\t\t\t{"
+    },
+    {
+      "id": "parameter-read",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/GetModuleParamBindOperation.cs",
+      "sha256": "0aedb64eba87edf287ac42f017cfc0295f0be54b14f2de17ce781499da1d1a6e",
+      "line": 21,
+      "endLine": 45,
+      "excerpt": "\tpublic void Operate(object[] Params, string[] ExtraParams)\n\t{\n\t\tif (Params[0] is NameValueItem nameValueItem)\n\t\t{\n\t\t\tstring paramName = \"\";\n\t\t\tif (ExtraParams.Length != 0)\n\t\t\t{\n\t\t\t\tparamName = ExtraParams[0];\n\t\t\t}\n\t\t\tif (nameValueItem != null && ((nameValueItem.GetTopBaseNode() is IOwner owner) ? owner.Owner : null) is VmModule vmModule)\n\t\t\t{\n\t\t\t\tstring moduleParamBinding = vmModule.ParamSubManager.GetModuleParamBinding(paramName);\n\t\t\t\tnameValueItem.SetPropertyValueByNameNotrigger(TargetName + \"A\", moduleParamBinding);\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic void ReOperate()\n\t{\n\t}\n\n\tpublic void GetOriginalValue()\n\t{\n\t}\n}"
+    },
+    {
+      "id": "parameter-mode",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/ValueBase.cs",
+      "sha256": "e60db3cf3e18751803693cce6efe037183e46d629578064f9c65989eca2472f7",
+      "line": 27,
+      "endLine": 84,
+      "excerpt": "\tpublic bool IsSubA\n\t{\n\t\tget\n\t\t{\n\t\t\tInitIsSub();\n\t\t\treturn IsSub;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (IsSub == value)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tIsSub = value;\n\t\t\tif (IsSub)\n\t\t\t{\n\t\t\t\tNameValueItem.logManager?.LogCreate(\"信息\", AppLocalizationService.GetLang(\"Lang_SwitchSubscribe\") ?? \"\");\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tNameValueItem.logManager?.LogCreate(\"信息\", AppLocalizationService.GetLang(\"Lang_SwitchEdit\") ?? \"\");\n\t\t\t}\n\t\t\ttry\n\t\t\t{\n\t\t\t\tVmModule vmModule = GetVmModule();\n\t\t\t\tif (vmModule != null)\n\t\t\t\t{\n\t\t\t\t\tif (IsSub)\n\t\t\t\t\t{\n\t\t\t\t\t\t(SubData.InitersA[0] as Setter).Operate(new object[1] { SubData });\n\t\t\t\t\t}\n\t\t\t\t\telse if (_SubData != null && !string.IsNullOrEmpty(_SubData.CurValueA))\n\t\t\t\t\t{\n\t\t\t\t\t\t_SubData.CurValueA = null;\n\t\t\t\t\t\tIsGetFromModule = true;\n\t\t\t\t\t\tGetParamUnit();\n\t\t\t\t\t\tIsGetFromModule = false;\n\t\t\t\t\t}\n\t\t\t\t\tvmModule.UserData[\"@\" + ComName] = StringUtil.UTF8GetBytesPadZero(IsSub.ToString());\n\t\t\t\t}\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex.Message);\n\t\t\t}\n\t\t\tOnPropertyChanged(\"IsSubA\");\n\t\t}\n\t}\n\n\tpublic ICommand TypeChangeCommand\n\t{\n\t\tget\n\t\t{\n\t\t\t//IL_001b: Unknown result type (might be due to invalid IL or missing references)\n\t\t\t//IL_0025: Expected Obj, but got Unknown\n\t\t\tif (_TypeChangeCommand == null)\n\t\t\t{\n\t\t\t\t_TypeChangeCommand = new DelegateCommand((Action)TypeChangeExecute);"
+    },
+    {
+      "id": "parameter-subdata",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/ValueBase.cs",
+      "sha256": "e60db3cf3e18751803693cce6efe037183e46d629578064f9c65989eca2472f7",
+      "line": 92,
+      "endLine": 164,
+      "excerpt": "\tpublic ButtonSelecter SubData\n\t{\n\t\tget\n\t\t{\n\t\t\tif (_SubData == null)\n\t\t\t{\n\t\t\t\t_SubData = new ButtonSelecter();\n\t\t\t\t_SubData.ReadOnlyA = true;\n\t\t\t\t_SubData.DropOpenSetter = new Setter\n\t\t\t\t{\n\t\t\t\t\tTargetName = \"EnumEntrys\",\n\t\t\t\t\tOperationName = \"GetFrontFilterTreeOperation\",\n\t\t\t\t\tOperationParams = ComType\n\t\t\t\t};\n\t\t\t\t_SubData.DropOpenSetter.SetParentNode(_SubData);\n\t\t\t\t_SubData.Triggers = new ObservableCollection<object>();\n\t\t\t\tTrigger trigger = new Trigger\n\t\t\t\t{\n\t\t\t\t\tProperty = \"CurValue\"\n\t\t\t\t};\n\t\t\t\tSetter setter = new Setter\n\t\t\t\t{\n\t\t\t\t\tOperationName = \"SetModuleParamBindOperation\",\n\t\t\t\t\tOperationParams = ComName\n\t\t\t\t};\n\t\t\t\tsetter.CreatOperateInstance();\n\t\t\t\ttrigger.Setters = new ObservableCollection<object>();\n\t\t\t\ttrigger.Setters.Add(setter);\n\t\t\t\tsetter.SetParentNode(trigger);\n\t\t\t\t_SubData.Triggers.Add(trigger);\n\t\t\t\ttrigger.SetParentNode(_SubData);\n\t\t\t\t_SubData.Initers = new ObservableCollection<object>();\n\t\t\t\tSetter setter2 = new Setter\n\t\t\t\t{\n\t\t\t\t\tTargetName = \"CurValue\",\n\t\t\t\t\tOperationName = \"GetModuleParamBindOperation\",\n\t\t\t\t\tOperationParams = ComName\n\t\t\t\t};\n\t\t\t\tsetter2.CreatOperateInstance();\n\t\t\t\t_SubData.Initers.Add(setter2);\n\t\t\t\t_SubData.SetParentNode(this);\n\t\t\t\tVmModule vmModule = GetVmModule();\n\t\t\t\tif (vmModule != null)\n\t\t\t\t{\n\t\t\t\t\tstring moduleParamBinding = vmModule.ParamSubManager.GetModuleParamBinding(ComName);\n\t\t\t\t\t_SubData.SetPropertyValueByNameNotrigger(\"CurValueA\", moduleParamBinding);\n\t\t\t\t}\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tstring text = _SubData.CurValueA;\n\t\t\t\tif (IsSubscribeStr(text))\n\t\t\t\t{\n\t\t\t\t\tint num = text.IndexOf('[', 0);\n\t\t\t\t\tif (num > 0)\n\t\t\t\t\t{\n\t\t\t\t\t\ttext = text.Remove(num);\n\t\t\t\t\t}\n\t\t\t\t\tVmModule vmModule2 = GetVmModule();\n\t\t\t\t\tif (vmModule2 != null)\n\t\t\t\t\t{\n\t\t\t\t\t\tVmIO ioByPathFromAround = vmModule2.GetIoByPathFromAround(text);\n\t\t\t\t\t\tif (ioByPathFromAround == null)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t_SubData.CurValueA = null;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn _SubData;\n\t\t}\n\t}\n"
+    },
+    {
+      "id": "ui-state-store",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/NameValueItem.cs",
+      "sha256": "90b4742e79243f46c46fd6b38187ee7f5be49d4c6677f994133215a3796fed46",
+      "line": 1141,
+      "endLine": 1178,
+      "excerpt": "\tinternal void SetUserData(string value)\n\t{\n\t\tif ((AccessMode != null && AccessMode.ToLower().Contains('w')) || !((GetTopBaseNode() as IOwner)?.Owner is IUserData userData) || string.IsNullOrEmpty(ComName))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tbool flag = true;\n\t\tbyte[] array = userData[\"Param.\" + ComName];\n\t\tif (array != null)\n\t\t{\n\t\t\tstring text = Hik.Util.StringUtil.UTF8GetString(array);\n\t\t\tif (text == value)\n\t\t\t{\n\t\t\t\tflag = false;\n\t\t\t}\n\t\t}\n\t\tif (flag)\n\t\t{\n\t\t\tuserData[\"Param.\" + ComName] = Hik.Util.StringUtil.UTF8GetBytesPadZero(value);\n\t\t}\n\t}\n\n\tinternal void GetUserData()\n\t{\n\t\tif ((AccessMode == null || !AccessMode.ToLower().Contains('r')) && (GetTopBaseNode() as IOwner)?.Owner is IUserData userData && !string.IsNullOrEmpty(ComName))\n\t\t{\n\t\t\tbyte[] array = userData[\"Param.\" + ComName];\n\t\t\tif (array != null)\n\t\t\t{\n\t\t\t\tValue = Hik.Util.StringUtil.UTF8GetString(array);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tSetDefaultValue();\n\t\t\t}\n\t\t}\n\t}\n"
+    },
+    {
+      "id": "ui-state-radio-only",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/Tab.cs",
+      "sha256": "b5bcb77c35aae9303c3870bcefc7e491ba5664d8f71468d952a8f7b6174af022",
+      "line": 312,
+      "endLine": 318,
+      "excerpt": "\t\t\t\tif (nameValueItem is RadioSelecter)\n\t\t\t\t{\n\t\t\t\t\tnameValueItem.GetUserData();\n\t\t\t\t}\n\t\t\t\tnameValueItem.IsGetFromModule = isGetFromModule;\n\t\t\t}\n\t\t}"
+    },
+    {
+      "id": "tree-leaf-event",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/ui/Apps.XmlUI.ParamTab/SubTreeView.xaml.cs",
+      "sha256": "125d85828d6abfc811ce41106b790065393814d79eb339b0c7b2d32254e8c3ab",
+      "line": 107,
+      "endLine": 118,
+      "excerpt": "\tprivate void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)\n\t{\n\t\tif (sender is TreeViewItem treeViewItem && treeViewItem.Items.Count == 0 && OnTreeNodeDoubleClick != null)\n\t\t{\n\t\t\tObjectEventArgs e2 = new ObjectEventArgs();\n\t\t\te2.Param = (sender as FrameworkElement).DataContext;\n\t\t\tObjectEventArgs e3 = e2;\n\t\t\tOnTreeNodeDoubleClick(sender, e3);\n\t\t}\n\t}\n\n\tprivate VmIO GetVmIOByCurValueA(Holder hoder, string currentModulePathName)"
+    },
+    {
+      "id": "link-tree-template",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/ui/styles/paramusercontroldatatemplate.xaml",
+      "sha256": "96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63",
+      "line": 255,
+      "endLine": 344,
+      "excerpt": "  <DataTemplate x:Key=\"ButtonSelecter_sub\">\n    <Grid>\n      <Grid.ColumnDefinitions>\n        <ColumnDefinition Width=\"*\" />\n        <ColumnDefinition Width=\"32\" />\n      </Grid.ColumnDefinitions>\n      <Border Grid.ColumnSpan=\"2\" CornerRadius=\"2\">\n        <FrameworkElement.Style>\n          <Style TargetType=\"{x:Type Border}\">\n            <Setter Property=\"BorderThickness\" Value=\"0\" />\n            <Setter Property=\"BorderBrush\" Value=\"#00FFFFFF\" />\n            <Style.Triggers>\n              <DataTrigger Value=\"True\" Binding=\"{Binding IsSelectedSubscribeParam}\">\n                <Setter Property=\"BorderThickness\" Value=\"3\" />\n                <Setter Property=\"BorderBrush\" Value=\"{DynamicResource Col_Theme_Mouse}\" />\n              </DataTrigger>\n            </Style.Triggers>\n          </Style>\n        </FrameworkElement.Style>\n      </Border>\n      <PControl:PopupButton Name=\"et\" Grid.Column=\"0\" HorizontalOffsetVal=\"0\" Style=\"{x:Null}\" IsPopupOpen=\"{Binding IsTextDropDownOpen, Mode=TwoWay}\">\n        <PControl:PopupButton.ButtonStyle>\n          <Style TargetType=\"{x:Type ToggleButton}\">\n            <Setter Property=\"Template\">\n              <Setter.Value>\n                <ControlTemplate TargetType=\"{x:Type ToggleButton}\">\n                  <localParamTab:DeleteTextBox Background=\"#00FFFFFF\" FontSize=\"14\" Foreground=\"{Binding ReadOnlyA, Converter={StaticResource FgConverter}}\" IsReadOnly=\"{Binding ReadOnlyA}\" Text=\"{Binding CurValueA, Mode=TwoWay}\">\n                    <i:Interaction.Triggers>\n                      <i:EventTrigger EventName=\"OnTBFoucsChanged\">\n                        <PCommon:ParamsEventCommand Command=\"{Binding FocusedCommand}\" />\n                      </i:EventTrigger>\n                    </i:Interaction.Triggers>\n                  </localParamTab:DeleteTextBox>\n                </ControlTemplate>\n              </Setter.Value>\n            </Setter>\n          </Style>\n        </PControl:PopupButton.ButtonStyle>\n        <PControl:PopupButton.SubContent>\n          <DataTemplate>\n            <Border Margin=\"0,4,0,0\" BorderBrush=\"{DynamicResource TextBox.Static.Border}\" BorderThickness=\"1\" CornerRadius=\"4\" Padding=\"0,6,0,6\" Background=\"{DynamicResource ComboBoxBorderS}\" Visibility=\"{Binding IsTextPopupVisible, Converter={StaticResource bool2VisibilityConverter}}\">\n              <localParamTab:SubTreeView Width=\"180\" Height=\"180\">\n                <i:Interaction.Triggers>\n                  <i:EventTrigger EventName=\"OnTreeNodeDoubleClick\">\n                    <PCommon:ParamsEventCommand Command=\"{Binding IndexClickCommand}\" />\n                  </i:EventTrigger>\n                </i:Interaction.Triggers>\n              </localParamTab:SubTreeView>\n            </Border>\n          </DataTemplate>\n        </PControl:PopupButton.SubContent>\n      </PControl:PopupButton>\n      <PControl:PopupButton Name=\"rt\" Grid.Column=\"1\" HorizontalOffsetVal=\"-150\" Style=\"{StaticResource LinkPopButton}\" IsPopupOpen=\"{Binding IsDropDownOpen, Mode=TwoWay}\">\n        <PControl:PopupButton.SubContent>\n          <DataTemplate>\n            <Grid Background=\"#00FFFFFF\" Margin=\"0,4,0,0\">\n              <Grid.ColumnDefinitions>\n                <ColumnDefinition Width=\"*\" />\n                <ColumnDefinition Width=\"27\" />\n              </Grid.ColumnDefinitions>\n              <Border BorderBrush=\"{DynamicResource TextBox.Static.Border}\" BorderThickness=\"1\" CornerRadius=\"4\" Padding=\"0,6,0,6\" Background=\"{DynamicResource ComboBoxBorderS}\">\n                <localParamTab:SubTreeView Width=\"180\" Height=\"180\">\n                  <i:Interaction.Triggers>\n                    <i:EventTrigger EventName=\"OnTreeNodeDoubleClick\">\n                      <PCommon:ParamsEventCommand Command=\"{Binding ClickCommand}\" />\n                    </i:EventTrigger>\n                  </i:Interaction.Triggers>\n                </localParamTab:SubTreeView>\n              </Border>\n              <Button Grid.Column=\"1\" HorizontalAlignment=\"Right\" VerticalAlignment=\"Top\" ToolTip=\"{DynamicResource Lang_OpenSubscriptionWindow}\" Style=\"{StaticResource PopWindowButtonStyle}\" Command=\"{Binding PopSubscribeWindowCommand}\" Visibility=\"{Binding SubscribeInPopWindowEnableA, Converter={StaticResource bool2VisibilityConverter}}\" />\n            </Grid>\n          </DataTemplate>\n        </PControl:PopupButton.SubContent>\n        <i:Interaction.Triggers>\n          <i:EventTrigger EventName=\"DropDownOpened\">\n            <i:InvokeCommandAction Command=\"{Binding DropDownCommand}\" />\n          </i:EventTrigger>\n        </i:Interaction.Triggers>\n      </PControl:PopupButton>\n      <Border BorderThickness=\"1\" CornerRadius=\"4\" BorderBrush=\"{DynamicResource TextBox.Static.Border}\" Grid.Column=\"0\" Grid.ColumnSpan=\"2\" />\n    </Grid>\n  </DataTemplate>\n  <DataTemplate x:Key=\"ButtonSelecter_Simple_tag_sub\">\n    <Grid Background=\"{DynamicResource ListViewComboBoxBackground}\">\n      <Grid.ColumnDefinitions>\n        <ColumnDefinition Width=\"*\" />\n        <ColumnDefinition Width=\"32\" />\n      </Grid.ColumnDefinitions>\n      <TextBox Grid.Column=\"0\" Background=\"#00FFFFFF\" FontSize=\"14\" Width=\"150\" Style=\"{StaticResource NormalInput}\" Foreground=\"{Binding ReadOnlyA, Converter={StaticResource FgConverter}}\" Text=\"{Binding CurValueA, Mode=TwoWay}\" Tag=\"{Binding Path=Tag, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ContentControl}}\" ToolTip=\"{Binding Path=Text, RelativeSource={RelativeSource Self}}\" />\n      <PControl:PopupButton Name=\"rt\" Grid.Column=\"1\" HorizontalOffsetVal=\"-150\" Style=\"{StaticResource LinkPopButton}\" IsPopupOpen=\"{Binding IsDropDownOpen, Mode=TwoWay}\">"
+    },
+    {
+      "id": "clear-calibration-points",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/BottomCommand.cs",
+      "sha256": "444810ecb1f15627ce14083d53facc6640947d8af41a91e613af557dc012088e",
+      "line": 405,
+      "endLine": 426,
+      "excerpt": "\tpublic void ClearCalibPoint()\n\t{\n\t\tif (!(GetTopBaseNode() is AlgorithmTabRoot { Owner: VmModule owner }))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\ttry\n\t\t{\n\t\t\towner.Params[\"Clear\"] = \"0\";\n\t\t\tif (NeedPopTip)\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(\"Lang_InfoTips\", \"Lang_ClearCalibPointSuc\", MessageButtons.Normal, MessageIcons.Ok, isTranslate: true);\n\t\t\t}\n\t\t}\n\t\tcatch\n\t\t{\n\t\t\tif (NeedPopTip)\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(\"Lang_Err\", \"Lang_ClearCalibPointErr\", MessageButtons.Normal, MessageIcons.Error, isTranslate: true);\n\t\t\t}\n\t\t}\n\t}"
+    },
+    {
+      "id": "integer-quantization",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/Integer.cs",
+      "sha256": "530ade2d749eb089211786a20909fa24771ee25e38c6b66b1ca4275412cec278",
+      "line": 23,
+      "endLine": 58,
+      "excerpt": "\tpublic int CurValueA\n\t{\n\t\tget\n\t\t{\n\t\t\tif (string.IsNullOrEmpty(OldValue))\n\t\t\t{\n\t\t\t\tOldValue = CurValue.ToString();\n\t\t\t}\n\t\t\treturn CurValue;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (CurValue != value)\n\t\t\t{\n\t\t\t\tif (value > MaxValue || value < MinValue)\n\t\t\t\t{\n\t\t\t\t\tCurValue = value;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tint num = (value - MinValue) / IncValue;\n\t\t\t\t\tCurValue = num * IncValue + MinValue;\n\t\t\t\t}\n\t\t\t\tif (isInniter)\n\t\t\t\t{\n\t\t\t\t\tNotifyChanges();\n\t\t\t\t}\n\t\t\t\tisInitValue = true;\n\t\t\t\tOnPropertyChanged(\"CurValueA\");\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic int DefaultValueA\n\t{\n\t\tget"
+    },
+    {
+      "id": "enum-int-value",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/EnumEntry.cs",
+      "sha256": "f4638f5dae524cad7a36bfcf8f35aebe4ad1664503976cd3fdbf191cc045b7cf",
+      "line": 19,
+      "endLine": 30,
+      "excerpt": "\tpublic int Value;\n\n\tpublic string StrValue;\n\n\tpublic bool IsVisible = true;\n\n\tpublic ObservableCollection<object> EnumEntrys;\n\n\t[XmlMark(true)]\n\tpublic string Name;\n\n\t[XmlMark(true)]"
+    },
+    {
+      "id": "expand-model-only",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/Expand.cs",
+      "sha256": "a41089099ca81d017de1d38fff32e29e7ebccb59e5e504ecc89956b5f6bfb108",
+      "line": 10,
+      "endLine": 82,
+      "excerpt": "\tpublic bool CurValueA\n\t{\n\t\tget\n\t\t{\n\t\t\treturn CurValue;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tList<NameValueItem> list = new List<NameValueItem>();\n\t\t\tGetSubscribeItem(this, list);\n\t\t\tforeach (NameValueItem item in list)\n\t\t\t{\n\t\t\t\titem.IsDeleteSubscribeA = value;\n\t\t\t}\n\t\t\tCurValue = value;\n\t\t\tOnPropertyChanged(\"CurValueA\");\n\t\t}\n\t}\n\n\tpublic override string Value\n\t{\n\t\tget\n\t\t{\n\t\t\treturn CurValueA.ToString();\n\t\t}\n\t\tset\n\t\t{\n\t\t\tCurValueA = bool.Parse(value);\n\t\t}\n\t}\n\n\tprivate void GetSubscribeItem(NameValueItem item, List<NameValueItem> paramList)\n\t{\n\t\tif (item == null || paramList == null || item.TriggersA == null || item.TriggersA.Count == 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tforeach (object item3 in item.TriggersA)\n\t\t{\n\t\t\tif (!(item3 is ITrigger trigger))\n\t\t\t{\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tList<object> setters = trigger.GetSetters();\n\t\t\tif (setters == null || setters.Count <= 0)\n\t\t\t{\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tforeach (object item4 in setters)\n\t\t\t{\n\t\t\t\tif (!(item4 is Setter { TargetObj: not null } setter))\n\t\t\t\t{\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\t\t\t\tif (setter.TargetObj is ISubInfo)\n\t\t\t\t{\n\t\t\t\t\tparamList.Add(setter.TargetObj);\n\t\t\t\t}\n\t\t\t\telse if (setter.TargetObj is ISubChild subChild)\n\t\t\t\t{\n\t\t\t\t\tforeach (object item5 in subChild.SubChildren.ToList())\n\t\t\t\t\t{\n\t\t\t\t\t\tif (item5 is NameValueItem item2)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tparamList.Add(item2);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tGetSubscribeItem(setter.TargetObj, paramList);\n\t\t\t}\n\t\t}\n\t}\n}"
+    },
+    {
+      "id": "string-utf8-limit",
+      "authority": "decompiled-original-source",
+      "path": "analysis/full-audit/n-image-calibration/configuration-model/parser/Apps.XmlParser.ParamTab/String.cs",
+      "sha256": "cc8a0c9f576bf4e6374b4e7101894941e338c23cab1a82576afbd62f899e3e8f",
+      "line": 199,
+      "endLine": 243,
+      "excerpt": "\tpublic string CurValueA\n\t{\n\t\tget\n\t\t{\n\t\t\treturn CurValue;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (MaxLen > 0 && value.ByteCount() > MaxLen && !IsSubA)\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(\"Lang_ParamErr\", \"Lang_ContentLong\", MessageIcons.Warning, isTranslate: true);\n\t\t\t}\n\t\t\telse if (CurValue != value)\n\t\t\t{\n\t\t\t\tCurValue = value;\n\t\t\t\tOnPropertyChanged(\"CurValueA\");\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic string DefaultValueA\n\t{\n\t\tget\n\t\t{\n\t\t\treturn DefaultValue;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tDefaultValue = value;\n\t\t}\n\t}\n\n\tpublic int LengthA\n\t{\n\t\tget\n\t\t{\n\t\t\treturn Length;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tLength = value;\n\t\t}\n\t}\n\n\tpublic override string Value"
+    }
+  ],
+  "assets": [
+    {
+      "original": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\Apps.XmlUI\\resources\\ic_btn_link_normal.png",
+      "tracked": "src\\VisionPluginContracts\\Resources\\subscription_link_normal.png",
+      "sha256": "b935c40e52318a192d458b0e5d3d4dd10af68c5c4038544261dd75651dc92e65"
+    },
+    {
+      "original": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\Apps.XmlUI\\resources\\ic_btn_link_click.png",
+      "tracked": "src\\VisionPluginContracts\\Resources\\subscription_link_click.png",
+      "sha256": "238e9af6fc16de0596b1b55afe288a939beba3525351d06c94c753584de76581"
+    },
+    {
+      "original": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\Apps.XmlUI\\resources\\ic_btn_link_disable.png",
+      "tracked": "src\\VisionPluginContracts\\Resources\\subscription_link_disable.png",
+      "sha256": "43fb3e105968b6ae40975e9c82535429856812d01bd2aa3577fefed66f321241"
+    }
+  ],
+  "implementation": [
+    "src/VisionPluginContracts/ToolConfigurationSubscription.cs",
+    "src/VisionPluginContracts/ToolConfigurationSubscriptionControls.cs",
+    "src/VisionPluginContracts/ToolConfigurationState.cs"
+  ],
+  "verification": {
+    "project": "tests/VisionConfiguration.SubscriptionChecks",
+    "authority": "independent-contract-and-WPF-control-checks",
+    "cases": [
+      "original NImage query targets/native filters",
+      "nested tree group/leaf structure",
+      "same captions with distinct output identities",
+      "typed literal/reference index",
+      "typed constant and NaN rejection",
+      "failure/unavailable service cannot fabricate selected binding",
+      "parameter subscription preserves numeric value",
+      "O-only user value read/write separation",
+      "known continuous/stop/clear-calibration method dispatch"
+    ],
+    "checksPassed": 38,
+    "exitCode": 0
+  },
+  "boundaries": [
+    "Real service capabilities depend on host bridge. Global variables, external channels, parameter subscriptions or arbitrary indices absent from current framework must report Unsupported, never flatten or synthesize references.",
+    "Source-confirmed topology/type rules are not demonstrated against an original native VM solution in this report. WPF controls are independently constructed; complete original popup/window rendering and interaction parity remains unverified.",
+    "Original advanced pop-subscribe window and variable-manager dialog are not supplied by this selector. Unsupported services are diagnosed."
+  ],
+  "workflowBridge": {
+    "implementation": "src/VisionPluginContracts/WorkflowConfigurationSubscriptionService.cs",
+    "testProject": "tests/VisionConfiguration.WorkflowSubscriptionChecks",
+    "checksPassed": 58,
+    "exitCode": 0,
+    "authority": "independent-host-neutral-workflow-contract-checks",
+    "execution": "Explicit ExecutionLinks transitive predecessors only; null links are Unsupported, never node order or inferred data connections.",
+    "persistence": "Callback apply is followed by authoritative getProcedure readback; noop/ambiguous writes fail.",
+    "scope": "Root procedure captured at construction; registered compatible output ports and scalar constants only. Native metadata/global/container/index gaps are explicit UnsupportedCapabilities."
+  }
+}

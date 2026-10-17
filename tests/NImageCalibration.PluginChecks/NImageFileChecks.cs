@@ -1,0 +1,14 @@
+using System.IO;
+using System.Text.Json;
+using System.Xml.Linq;
+using VisionPlugins.Calibration;
+public static class NImageFileChecks
+{
+ public static int Run(){int count=0;void Check(bool c,string name){count++;if(!c)throw new Exception(name);}void Reject(Action a){count++;try{a();}catch(Exception e)when(e is InvalidDataException or System.Xml.XmlException){return;}throw new Exception("Invalid file accepted");}
+  using var evidence=JsonDocument.Parse(File.ReadAllText(Path.GetFullPath("docs/plugins/n-image-calibration-evidence.json")));XElement Element(JsonElement e){var x=new XElement(e.GetProperty("kind").GetString()!);foreach(var a in e.GetProperty("attributes").EnumerateObject())x.SetAttributeValue(a.Name,a.Value.GetString());string? t=e.GetProperty("text").GetString();if(!string.IsNullOrEmpty(t))x.Add(new XText(t));foreach(var c in e.GetProperty("children").EnumerateArray())x.Add(Element(c));return x;}
+  var native=new XDocument(Element(evidence.RootElement.GetProperty("nativeModuleExport").GetProperty("xml")));var data=NImageFile.Read(native);Check(data.TranslationCount==9&&data.RotationCount==0,"actual original module counts");Check(data.Matrix.Count==9&&data.ImagePoints.Count==9&&data.WorldPoints.Count==9,"module arrays and matrix");Check(data.ErrorStatus==0x1010304e,"warning status preserved independent from success");Check(data.RotationError==-999&&data.RotationImageCenter.R==-999,"original no-rotation sentinels");
+  var rebuilt=NImageFile.Document(data);var a=native.Descendants().ToArray();var b=rebuilt.Descendants().ToArray();Check(a.Length==b.Length,"same original module XML element count");for(int i=0;i<a.Length;i++){Check(a[i].Name==b[i].Name&&a[i].Attributes().Select(x=>x.ToString()).Order().SequenceEqual(b[i].Attributes().Select(x=>x.ToString()).Order()),"module XML element identity");if(!a[i].HasElements){if(double.TryParse(a[i].Value,System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.InvariantCulture,out double x)&&double.TryParse(b[i].Value,System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.InvariantCulture,out double y))Check(Math.Abs(x-y)<=1e-6*Math.Max(1,Math.Abs(x)),"native XML numeric payload");else Check(a[i].Value==b[i].Value,"native XML text payload");}}
+  Reject(()=>NImageFile.Document(data with{Matrix=new double[8]}));Reject(()=>NImageFile.Document(data with{ImagePoints=Array.Empty<NImagePose>()}));Reject(()=>NImageFile.Document(data with{TranslationError=double.NaN}));Reject(()=>NImageFile.Read(new StringReader("<!DOCTYPE CalibInfo [<!ENTITY x SYSTEM 'file:///invalid'>]><CalibInfo>&x;</CalibInfo>")));Reject(()=>NImageFile.Read(new XDocument(new XElement("CalibInfo"))));
+  return count;
+ }
+}

@@ -21,6 +21,7 @@ public partial class WorkflowConfigurationWindow:Window
   this.bindInput=bindInput;this.read=read;this.save=save;this.sources=sources;this.registry=registry;this.setParameter=setParameter;this.execute=execute;this.result=result;InitializeComponent();Heading.Text=read().Name;Loaded+=(_,_)=>Refresh();
  }
  static string TypeName(DataKind kind)=>kind switch{DataKind.GrayImage=>"图像",DataKind.Integer=>"int",DataKind.Number=>"float",DataKind.Text=>"string",DataKind.Boolean=>"bool",DataKind.Point=>"点",DataKind.Region=>"区域",DataKind.Fixture=>"位置修正",DataKind.Circle=>"圆",_=>"连通域"};
+
  public void Refresh()
  {
   if(!IsInitialized)return;var c=read().Configuration;
@@ -45,6 +46,7 @@ public partial class WorkflowConfigurationWindow:Window
    var delete=new Button {Content="×",Padding=new Thickness(0),Margin=new Thickness(3,0,0,0)};Grid.SetColumn(delete,3);delete.Click+=(_,_)=>Safe(()=>{SaveItems(section,Items(section).Where(p=>p.Id!=item.Id));Refresh();});row.Children.Add(delete);panel.Children.Add(row);
   }
   var addRow=new StackPanel {Orientation=Orientation.Horizontal,Margin=new Thickness(0,6,0,0)};var types=new ComboBox {Width=68};types.Items.Add(new ComboBoxItem {Content="多选",Tag="multi"});foreach(var kind in section=="display"?new[]{DataKind.GrayImage}:new[]{DataKind.Integer,DataKind.Number,DataKind.Text,DataKind.GrayImage,DataKind.Region,DataKind.Fixture,DataKind.Point})types.Items.Add(new ComboBoxItem {Content=TypeName(kind),Tag=kind});foreach(var label in section=="display"?new[]{"点","线","圆","矩形","椭圆"}:new[]{"byte","pointset","像素图像","矩形ROI","点","线","坐标系","圆环ROI","轮廓点","矩形","分类信息","多边形ROI","姿态","椭圆"})types.Items.Add(new ComboBoxItem {Content=label,IsEnabled=false,ToolTip="独立复合数据类型尚未接入"});types.SelectedIndex=0;
+
   var add=new Button {Content="＋",Width=32,Height=32,Margin=new Thickness(8,0,0,0)};add.Click+=(_,_)=>Safe(()=>{if(types.SelectedItem is not ComboBoxItem option)return;if(option.Tag is DataKind kind)AddInterface(section,kind,null);else{var picker=new WorkflowSourcePicker(sources(null),true){Owner=this};if(picker.ShowDialog()==true){var before=Items(section).ToList();foreach(var selection in picker.Selections){string stem=picker.IncludeModuleName?selection.Label.Replace(".","_"):selection.Port;stem=stem.Length>28?stem[..28]:stem;string name=stem;int n=0;while(before.Any(p=>p.Name==name))name=stem+n++;before.Add(new(Guid.NewGuid().ToString("N"),name,selection.Kind,selection.NodeId,selection.Port));}SaveItems(section,before);}}Refresh();});addRow.Children.Add(types);addRow.Children.Add(add);panel.Children.Add(addRow);return new ScrollViewer {Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
  }
  static Grid RowGrid(){var row=new Grid();foreach(double width in new[]{70d,68d,double.NaN,42d})row.ColumnDefinitions.Add(new ColumnDefinition {Width=double.IsNaN(width)?new GridLength(1,GridUnitType.Star):new GridLength(width)});return row;}
@@ -76,6 +78,7 @@ public partial class WorkflowConfigurationWindow:Window
   return new ScrollViewer {Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
  }
  string SourceLabel(WorkflowValueReference reference)=>reference.Kind switch{WorkflowSourceKind.GroupLoopIndex=>"Group.LoopIndex",WorkflowSourceKind.LocalVariable=>"局部变量."+read().Configuration.Variables.First(v=>v.Id==reference.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+read().Configuration.Inputs.First(v=>v.Id==reference.Id).Name,_=>sources(null).FirstOrDefault(s=>s.NodeId==reference.Id&&s.Port==reference.Port)?.Label??"来源已失效"};
+
  IEnumerable<WorkflowSourceOption> SubscriptionSources(DataKind kind)
  {
   var p=read();
@@ -99,7 +102,7 @@ public partial class WorkflowConfigurationWindow:Window
  }
  public void RefreshResults()
  {
-  var c=read().Configuration;var entries=c.Outputs.Concat(c.Displays).ToArray();Results.ItemsSource=entries.Select(p=>new {名称=p.Name,类型=TypeName(p.Kind),值=p.NodeId is null?"":result(p.NodeId,p.Port!)?.Value is VisionCore.GrayImage image?$"{image.Width}×{image.Height}":result(p.NodeId,p.Port!)?.Value.ToString()??""}).ToArray();var gray=entries.Select(p=>p.NodeId is null?null:result(p.NodeId,p.Port!)?.Value).OfType<VisionCore.GrayImage>().FirstOrDefault();Preview.Source=gray is null?null:System.Windows.Media.Imaging.BitmapSource.Create(gray.Width,gray.Height,96,96,System.Windows.Media.PixelFormats.Gray8,null,gray.Pixels.ToArray(),gray.Width);
+  var c=read().Configuration;var entries=c.Outputs.Concat(c.Displays).ToArray();Results.ItemsSource=entries.Select(p=>new {名称=p.Name,类型=TypeName(p.Kind),值=p.NodeId is null?"":result(p.NodeId,p.Port!)?.Value is VisionCore.IImageData image?$"{image.Width}×{image.Height}":result(p.NodeId,p.Port!)?.Value.ToString()??""}).ToArray();var gray=entries.Select(p=>p.NodeId is null?null:result(p.NodeId,p.Port!)?.Value).OfType<VisionCore.IImageData>().FirstOrDefault();Preview.Source=gray is null?null:System.Windows.Media.Imaging.BitmapSource.Create(gray.Width,gray.Height,96,96,gray.Format==VisionCore.ImagePixelFormat.Rgb24?System.Windows.Media.PixelFormats.Rgb24:System.Windows.Media.PixelFormats.Gray8,null,gray.Pixels.ToArray(),gray.Stride);
  }
  async void RunClick(object s,RoutedEventArgs e){RunOnce.IsEnabled=false;try{await execute();RefreshResults();}catch(Exception error){Error.Text=error.Message;}finally{RunOnce.IsEnabled=true;}}
  void RepeatClick(object s,RoutedEventArgs e)=>RepeatRequested?.Invoke();

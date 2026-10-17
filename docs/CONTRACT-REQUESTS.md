@@ -108,3 +108,4 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 调用方：工作流菜单、独立方案存储、`SolutionExecutor`。`ProcedureDocument.WaitTimeMs`为0—100000毫秒整数，旧方案缺字段时按0读取。该字段不修改插件节点描述、模块参数或图像源状态。
 - 原生依据：`VmProcedureDecorator.SetTimeOutCommandExe`打开`TimeOutSet`，XAML定义0—100000毫秒，确认调用`ProcessManager.SetProcedureWaitTime`。SDK后端超时语义尚未恢复；当前协作取消是独立托管行为。
 - 双线协调：插件线正在自己的工作树修改`Contracts.cs`；两线提交后由main审查合并，不在插件工作树复制本字段或直接覆盖其在制改动。回归同时验证旧方案、新字段往返、慢模块释放及插件线的流程身份状态。
+

@@ -11,6 +11,7 @@ internal sealed class WorkflowRunContext
  {
   this.procedure=procedure;this.records=records;this.groupLoopIndex=groupLoopIndex;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);
   foreach(var pair in arguments){var spec=procedure.Configuration.Inputs.SingleOrDefault(i=>i.Name==pair.Key)??throw new InvalidDataException("Unknown workflow input: "+pair.Key);if(pair.Value is null||pair.Value.Kind!=spec.Kind||pair.Value.Cardinality!=spec.Cardinality)throw new InvalidDataException("Workflow input type mismatch: "+pair.Key);}
+
   foreach(var b in procedure.Configuration.Subscriptions.Where(b=>b.Source.Kind==WorkflowSourceKind.WorkflowInput)){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==b.Source.Id);if(!arguments.ContainsKey(spec.Name)&&spec.NodeId is null)throw new InvalidDataException("Missing workflow input: "+spec.Name);}
   foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);
  }
@@ -18,6 +19,11 @@ internal sealed class WorkflowRunContext
  public PortValue Resolve(WorkflowValueReference source)=>source.Kind switch
  {
   WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException("Group LoopIndex requires an owned invocation context."),
+  WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),
+  WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),
+  WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),
+  WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),
+
   WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),
   WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException("Current-run variable unavailable: "+source.Id),
   WorkflowSourceKind.WorkflowInput=>Input(source.Id),
@@ -28,8 +34,9 @@ internal sealed class WorkflowRunContext
  public ExecutionSessionResult Complete(ExecutionSessionResult session)
  {
   var output=new Dictionary<string,PortValue>(StringComparer.Ordinal);var errors=new List<string>();
-  foreach(var spec in procedure.Configuration.Outputs){try{if(spec.NodeId is null)throw new InvalidDataException("Unbound workflow output: "+spec.Name);output.Add(spec.Name,Node(spec.NodeId,spec.Port!));}catch(InvalidDataException e){errors.Add(spec.Name+": "+e.Message);}}
+  foreach(var spec in procedure.Configuration.Outputs){try{if(spec.NodeId is null)throw new InvalidDataException("Unbound workflow output: "+spec.Name);var value=Node(spec.NodeId,spec.Port!);if(value.Kind!=spec.Kind&&!(spec.Kind==DataKind.Image&&DataKinds.IsImage(value.Kind)))throw new InvalidDataException("type mismatch");output.Add(spec.Name,value);}catch(InvalidDataException e){errors.Add(spec.Name+": "+e.Message);}}
   var displays=new Dictionary<string,IReadOnlyList<PortValue>>(StringComparer.Ordinal);var displayErrors=new List<string>();foreach(var spec in procedure.Configuration.Displays){try{if(spec.NodeId is null)throw new InvalidDataException("Unbound display: "+spec.Name);displays.Add(spec.Name,Array.AsReadOnly(new[]{Node(spec.NodeId,spec.Port!)}));}catch(InvalidDataException e){displayErrors.Add(e.Message);}}
   return session with{WorkflowDisplays=new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays),DisplayErrors=displayErrors.AsReadOnly(),Status=errors.Count>0&&session.Status==SessionStatus.Success?SessionStatus.Failed:session.Status,WorkflowInputs=new ReadOnlyDictionary<string,PortValue>(new Dictionary<string,PortValue>(arguments,StringComparer.Ordinal)),WorkflowOutputs=new ReadOnlyDictionary<string,PortValue>(output),LocalVariables=new ReadOnlyDictionary<string,PortValue>(variables.ToDictionary(v=>procedure.Configuration.Variables.Single(i=>i.Id==v.Key).Name,v=>v.Value,StringComparer.Ordinal)),OutputErrors=errors.AsReadOnly()};
+
  }
 }

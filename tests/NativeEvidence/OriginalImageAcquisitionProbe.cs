@@ -1,0 +1,57 @@
+// Dedicated original SDK host. Loads the sample read-only and never saves it.
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Web.Script.Serialization;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+public static class OriginalImageAcquisitionProbe {
+ [DllImport("kernel32.dll",CharSet=CharSet.Unicode)] static extern bool SetDllDirectory(string path);
+ static string root; static List<object> rows=new List<object>();
+ static object Get(object o,string n){return o.GetType().GetProperty(n).GetValue(o,null);}
+ static object Call(object o,string n,params object[] a){return o.GetType().GetMethods().Where(m=>m.Name==n&&m.GetParameters().Length==a.Length).OrderBy(m=>m.DeclaringType==o.GetType()?0:1).First().Invoke(o,a);}
+ static void Set(object o,string n,object v){var p=o.GetType().GetProperty(n);p.SetValue(o,p.PropertyType.IsEnum?Enum.ToObject(p.PropertyType,v):Convert.ChangeType(v,p.PropertyType),null);}
+ static void Text(object module,string key,string value){var p=Get(module,"Params");p.GetType().GetProperty("Item").SetValue(p,value,new object[]{key});}
+ static void Config(object module,int count,double[][] settings=null){byte[] data=new byte[856];Buffer.BlockCopy(BitConverter.GetBytes(count),0,data,0,4);for(int i=0;i<count;i++){int o=8+i*104;Action<int,byte[]> put=(offset,bytes)=>Buffer.BlockCopy(bytes,0,data,o+offset,bytes.Length);put(0,BitConverter.GetBytes(i+1));put(8,BitConverter.GetBytes(settings==null?20.0:settings[i][0]));put(16,BitConverter.GetBytes(settings==null?0.0:settings[i][1]));put(24,BitConverter.GetBytes(500));put(28,BitConverter.GetBytes(1));put(40,BitConverter.GetBytes(i*45.123456));put(48,BitConverter.GetBytes(i*10.123456));foreach(int k in new[]{56,60,64})put(k,BitConverter.GetBytes(-1));}var user=Get(module,"Params");var contract=user.GetType().GetInterfaces().First(t=>t.Name=="IUserBytesData");contract.GetProperty("Item").SetValue(user,data,new object[]{"ImageConfigList"});}
+ static void Attempt(string phase,Action run){try{run();}catch(Exception e){while(e.InnerException!=null)e=e.InnerException;var p=e.GetType().GetProperty("errorCode");rows.Add(new{phase,error=e.GetType().FullName,message=e.Message,code=p==null?null:Convert.ToString(p.GetValue(e,null))});}}
+ static void Run(object module,string phase,string output){Attempt(phase,delegate{
+  Call(module,"Run");var r=Get(module,"ModuResult");var images=new List<object>();
+  for(int i=0;i<8;i++){var image=Get(r,"OutImage"+i);int len=Convert.ToInt32(Get(image,"DataLen"));byte[] bytes=new byte[len];if(len>0)Marshal.Copy((IntPtr)Get(image,"ImageDataPtr"),bytes,0,len);File.WriteAllBytes(Path.Combine(output,phase+"-"+i+".pixels"),bytes);images.Add(new{slot=i,width=Get(image,"Width"),height=Get(image,"Height"),format=Get(image,"Pixelformat"),length=len,distribution=Get(r,"OutImage"+i+"Distribution"),irradiation=Get(r,"OutImage"+i+"Irradiation"),sha256=BitConverter.ToString(SHA256.Create().ComputeHash(bytes)).Replace("-","").ToLowerInvariant()});}
+  rows.Add(new{phase,code=Get(r,"ErrorCode"),count=Get(r,"ImageCount"),frame=Get(r,"FrameNum"),lostFrames=Get(r,"LostFrameCount"),lostPackets=Get(r,"LostPacketCount"),failures=Get(r,"GetCameraFailCount"),images});
+ });}
+ static void Fixture(string path,int value){using(var b=new BinaryWriter(File.Create(path))){int width=8,height=8,stride=8;b.Write((ushort)0x4d42);b.Write(1078+stride*height);b.Write(0);b.Write(1078);b.Write(40);b.Write(width);b.Write(height);b.Write((ushort)1);b.Write((ushort)8);b.Write(0);b.Write(stride*height);b.Write(0);b.Write(0);b.Write(256);b.Write(0);for(int i=0;i<256;i++){b.Write((byte)i);b.Write((byte)i);b.Write((byte)i);b.Write((byte)0);}for(int i=0;i<64;i++)b.Write((byte)value);}}
+ static void Ui(object module,object parameters,string output){
+  if(Application.Current==null)new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+  Assembly.LoadFrom(Path.Combine(root,"Module(sp)/x64/Collection/ImageAcquisitionModule/ImageAcquisitionModuleControl.dll"));
+  var model=Get(module,"Params");string source=Path.Combine(root,"Module(sp)/x64/Collection/ImageAcquisitionModule/ImageAcquisitionModuleAlgorithmTab.xml"),copy=Path.Combine(output,Path.GetFileName(source));File.Copy(source,copy,true);File.SetAttributes(copy,FileAttributes.Normal);model.GetType().GetProperty("XmlPath").SetValue(model,copy,null);model.GetType().GetProperty("Data").SetValue(model,null,null);
+  var t=Assembly.LoadFrom(Path.Combine(root,"myLibs/VMControls.WPF.dll")).GetType("VMControls.WPF.ParamsConfigControlBase",true);var control=(FrameworkElement)Activator.CreateInstance(t);var window=new Window{Width=420,Height=1500,Left=-30000,Top=-30000,ShowActivated=false,ShowInTaskbar=false,Content=control};window.Show();t.GetProperty("ParamsConfig").SetValue(control,model,null);
+  try{foreach(int mode in new[]{1,2}){Set(parameters,"ImageSourceType",mode);Call(control,"UpdateAllItem");window.Dispatcher.Invoke(delegate{},System.Windows.Threading.DispatcherPriority.ApplicationIdle);window.UpdateLayout();var bitmap=new RenderTargetBitmap(420,1500,96,96,PixelFormats.Pbgra32);bitmap.Render(window);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using(var file=File.Create(Path.Combine(output,"original-sdk-mode-"+mode+".png")))encoder.Save(file);var items=((System.Collections.IEnumerable)Call(control.DataContext,"GetAllItems")).Cast<object>().Select(item=>new{type=item.GetType().FullName,properties=item.GetType().GetProperties().Where(p=>p.GetIndexParameters().Length==0&&new[]{"Name","CustomVisible","IsVisible","Value"}.Contains(p.Name)).ToDictionary(p=>p.Name,p=>Convert.ToString(p.GetValue(item,null)))}).ToArray();rows.Add(new{phase="sdk-ui",mode,items,limitation="Original embedded control in owned SDK host; not installed desktop window"});}}
+  finally{window.Close();if(control is IDisposable)((IDisposable)control).Dispose();}
+ }
+ [STAThread] public static int Main(string[] args){root=args[0];string output=args[2];Directory.CreateDirectory(output);object solution=null;
+  AppDomain.CurrentDomain.AssemblyResolve+=(s,a)=>{string file=new AssemblyName(a.Name).Name+".dll";foreach(string dir in new[]{"myLibs","PublicFile/x64","Module(sp)/x64/Collection/ImageAcquisitionModule",".CommonControl"}){string p=Path.Combine(root,dir,file);if(File.Exists(p))return Assembly.LoadFrom(p);}return null;};
+  try{SetDllDirectory(Path.Combine(root,"PublicFile/x64"));var core=Assembly.LoadFrom(Path.Combine(root,"myLibs/VM.Core.dll"));var st=core.GetType("VM.Core.VmSolution",true);Attempt("load",()=>st.GetMethod("Load",new[]{typeof(string),typeof(string),typeof(bool)}).Invoke(null,new object[]{args[1],"",false}));solution=st.GetProperty("Instance").GetValue(null,null);
+   var proc=Activator.CreateInstance(core.GetType("VM.Core.VmProcedure",true),new[]{solution});var mt=Assembly.LoadFrom(Path.Combine(root,"Module(sp)/x64/Collection/ImageAcquisitionModule/ImageAcquisitionModuleCs.dll")).GetType("ImageAcquisitionModuleCs.ImageAcquisitionModuleTool",true);var module=Activator.CreateInstance(mt,new[]{proc});var p=Get(module,"ModuParams");rows.Add(new{phase="defaults",mode=Get(p,"ImageSourceType"),interval=Get(p,"Interval"),count=Get(p,"ImageCount"),directory=Get(p,"ImageDir")});
+   Run(module,"camera-unbound",output);Set(p,"ImageSourceType",1);Run(module,"local-empty",output);
+   string dir=Path.Combine(output,"fixtures");Directory.CreateDirectory(dir);for(int i=0;i<9;i++)Fixture(Path.Combine(dir,i+".bmp"),10+i*20);
+   Attempt("add-folder",()=>Call(p,"SetImageDirPath",dir));for(int i=0;i<3;i++)Run(module,"local-"+i,output);
+   foreach(int count in new[]{3,8,2,9,4}){int captured=count;Attempt("set-count-"+count,()=>Set(p,"ImageCount",captured));Run(module,"count-"+count,output);}
+   Attempt("config-three",()=>Config(module,3));Run(module,"local-with-config",output);
+   Text(module,"ClearImage","");Run(module,"cleared",output);
+   Attempt("add-one",()=>Text(module,"AddImage",Path.Combine(dir,"0.bmp")));Run(module,"one-file",output);
+   Attempt("add-duplicate",()=>Text(module,"AddImage",Path.Combine(dir,"0.bmp")));Run(module,"duplicate",output);
+   Text(module,"ClearImage","");Text(module,"AddImage",Path.Combine(dir,"0.bmp"));Text(module,"AddImage",Path.Combine(dir,"1.bmp"));File.Delete(Path.Combine(dir,"1.bmp"));Run(module,"missing-second",output);Run(module,"missing-second-repeat",output);Fixture(Path.Combine(dir,"1.bmp"),30);Run(module,"missing-recovered",output);
+   if(args.Length>3&&args[3]=="camera")Attempt("camera-test",delegate{var ct=Assembly.LoadFrom(Path.Combine(root,"Module(sp)/x64/Global/GlobalCameraModule/GlobalCameraModuleCs.dll")).GetType("GlobalCameraModuleCs.GlobalCameraModuleTool",true);var camera=Activator.CreateInstance(ct,new[]{solution});try{var cp=Get(camera,"ModuParams");var list=Call(cp,"GetCameraInfoList");int count=Convert.ToInt32(list.GetType().GetField("nNum").GetValue(list));rows.Add(new{phase="camera-enumeration",devices=count});if(count==0)return;var info=((Array)list.GetType().GetField("astCameraInfo").GetValue(list)).GetValue(0);string serial=Convert.ToString(info.GetType().GetField("strCameraSN").GetValue(info));Call(cp,"SetChosenCameraSN",serial);double exposure=Convert.ToDouble(Get(cp,"ExposureTime")),gain=Convert.ToDouble(Get(cp,"Gain"));try{Text(module,"CameraID",Convert.ToString(Get(camera,"ID")));Set(p,"ImageSourceType",2);Set(p,"Interval",0);Run(module,"camera-three-config",output);Config(module,1);Run(module,"camera-one-config",output);Config(module,2,new[]{new[]{1000.1234,1.2345},new[]{5000.5678,3.4567}});Run(module,"camera-parameter-config",output);rows.Add(new{phase="camera-parameter-readback",exposure=Get(cp,"ExposureTime"),gain=Get(cp,"Gain")});Config(module,0);Run(module,"camera-no-config",output);}finally{Set(cp,"ExposureTime",exposure);Set(cp,"Gain",gain);rows.Add(new{phase="camera-restored",serial,exposure=Get(cp,"ExposureTime"),gain=Get(cp,"Gain")});}}finally{Call(camera,"Dispose");}});
+   Config(module,3);Attempt("sdk-ui",()=>Ui(module,p,output));
+   Attempt("persistence",delegate{Set(p,"ImageSourceType",1);Set(p,"ImageCount",4);Text(module,"SolSaveImageData","True");string full=Convert.ToString(Get(proc,"Name"))+"."+Convert.ToString(Get(module,"Name"));string saved=Path.Combine(output,"owned-acquisition.sol");st.GetMethod("SaveAs",new[]{typeof(string),typeof(string)}).Invoke(null,new object[]{saved,null});rows.Add(new{phase="saved",full,sha256=BitConverter.ToString(SHA256.Create().ComputeHash(File.ReadAllBytes(saved))).Replace("-","").ToLowerInvariant()});File.Delete(Path.Combine(dir,"0.bmp"));File.Delete(Path.Combine(dir,"1.bmp"));Attempt("reload",()=>st.GetMethod("Load",new[]{typeof(string),typeof(string),typeof(bool)}).Invoke(null,new object[]{saved,"",false}));solution=st.GetProperty("Instance").GetValue(null,null);var restored=st.GetProperty("Item").GetValue(solution,new object[]{full});Run(restored,"embedded-reloaded",output);});
+   rows.Add(new{phase="finished",parityEstablished=false});
+  }catch(Exception e){while(e.InnerException!=null)e=e.InnerException;rows.Add(new{phase="fatal",error=e.GetType().FullName,message=e.Message,stack=e.StackTrace});}
+  finally{if(solution!=null)Attempt("dispose",()=>Call(solution,"Dispose"));File.WriteAllText(Path.Combine(output,"probe.json"),new JavaScriptSerializer().Serialize(rows));}
+  Environment.Exit(0);return 0;
+ }
+}

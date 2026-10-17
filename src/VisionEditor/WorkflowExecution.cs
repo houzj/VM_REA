@@ -13,6 +13,7 @@ public partial class MainWindow
   var procedure=doc.HasCurrentProcedure?ConfigurationProcedure(procedureId??doc.RootProcedureId(doc.CurrentProcedureId)):null;
   if(procedure is null||procedure.Nodes.Count==0){ClearInvalidWorkflowResults();StatusText.Text="请先添加流程和模块";return false;}
   var validation=GraphValidator.Validate(procedure,modules);if(!validation.IsValid){ClearInvalidWorkflowResults();StatusText.Text="流程有连接或参数错误："+string.Join("；",validation.Issues.Select(i=>i.Message));return false;}return true;
+
  }
  async Task Run()=>await StartRun();
  Task StartRun()=>StartRunCore(false);
@@ -28,7 +29,8 @@ public partial class MainWindow
   try
   {
    ClearWorkflowCallResults(procedureId);if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){results.Clear();RefreshRight();}if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
-   var session=await new SolutionExecutor(modules).RunAsync(new SolutionWorkspace(doc.Document,doc.BaseDirectory),procedureId,cancellationToken:token);
+   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};var session=await new SolutionExecutor(modules).RunAsync(new SolutionWorkspace(doc.Document,doc.BaseDirectory),procedureId,cancellationToken:token,scope:executionScope,control:control);if(control.StopRequested)continuousRun=false;
+
    StoreWorkflowCallResults(procedureId,session);var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);RecordWorkflowRun(procedureId,elapsed);
    if(windowClosed)return false;
    var name=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId)?.Name??procedureId;
@@ -47,6 +49,7 @@ public partial class MainWindow
  void RestoreWorkflowResults()
  {
   results.Clear();if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;RestoreToolDebugResults(doc.CurrentProcedureId);
+
  }
  async Task RunProcedure(string id){if(!doc.HasCurrentProcedure||doc.RootProcedureId(doc.CurrentProcedureId)!=id)SelectWorkflow(id);await StartRunCore(false,id);}
  async Task RunLegacyGroupProcedure(string id){SelectWorkflow(id);await StartRunCore(true);}
@@ -59,7 +62,7 @@ public partial class MainWindow
  void StartProcedureLoop(string id){if(activeRun is not null){activeRun.Cancel();return;}if(!doc.HasCurrentProcedure||doc.RootProcedureId(doc.CurrentProcedureId)!=id)SelectWorkflow(id);StartContinuous();}
  async Task ContinuousRun(string procedureId,CancellationTokenSource owner)
  {
-  try{while(!owner.IsCancellationRequested){bool ok=await RunCore(procedureId,owner.Token);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){if(!windowClosed)StatusText.Text="流程 NG，已停止连续运行";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}
+  try{while(!owner.IsCancellationRequested&&continuousRun){bool ok=await RunCore(procedureId,owner.Token);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){if(!windowClosed)StatusText.Text="流程 NG，已停止连续运行";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}
   catch(OperationCanceledException){if(!windowClosed)StatusText.Text="连续运行已停止";}
   catch(Exception error){if(!windowClosed)StatusText.Text="连续运行失败："+error.Message;}
   finally{FinishWorkflowRun(owner);}
@@ -70,7 +73,9 @@ public partial class MainWindow
  }
  protected override void OnClosed(EventArgs e)
  {
-  windowClosed=true;ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
+  windowClosed=true;
+  CloseToolConfiguration();
+  executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
  }
 }
 

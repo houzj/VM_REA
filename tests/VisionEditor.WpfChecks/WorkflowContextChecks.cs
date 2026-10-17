@@ -78,7 +78,7 @@ static class WorkflowContextChecks
   var watch=System.Diagnostics.Stopwatch.StartNew();while(!run.IsEnabled&&watch.ElapsedMilliseconds<10000){Pump();Thread.Sleep(1);}Pump();
   var session=Field<Dictionary<string,ExecutionSessionResult>>("workflowSessions")[root].Calls[group];
   check(run.IsEnabled&&session.Status==SessionStatus.Success&&session.CompletedGroupIterations==3&&session.WorkflowOutputs["width"].As<IReadOnlyList<long>>().SequenceEqual(new long[]{1296,1296,1296}),"Group Tab actual Run uses three-loop parent binding and accumulates real BMP widths");
-  check(session.WorkflowOutputs["sn"].As<IReadOnlyList<long>>().SequenceEqual(new long[]{17,18,19})&&session.Nodes.Single(n=>n.NodeId==source).Outputs["SNCode"].As<long>()==19,"Group Tab self-run consumes InitialSN17 and retains actual image-source sequence17/18/19 across three rounds");
+  check(session.WorkflowOutputs["sn"].As<IReadOnlyList<long>>().SequenceEqual(new long[]{18,19,20})&&session.Nodes.Single(n=>n.NodeId==source).Outputs["SNCode"].As<long>()==20,"Group Tab self-run consumes InitialSN17 and retains actual image-source sequence18/19/20 across three rounds");
   check(doc.CurrentProcedureId==body,"Group Tab self-run and result update retain current internal canvas");
   Capture(config,"wpf-group-tab-scoped-result.png");config.Close();Pump();
   check(Find<WorkflowImageButton>("AddProcedureButton").IsEnabled&&Find<StackPanel>("Rail").IsEnabled,"Closing Group configuration restores Tab and toolbox interaction");
@@ -117,7 +117,7 @@ static class WorkflowContextChecks
   if(Field<CancellationTokenSource?>("activeRun") is not null)throw new TimeoutException("Copied Group workflow did not complete through actual Tab Run button.");
   var copiedRun=Field<Dictionary<string,ExecutionSessionResult>>("workflowSessions")[root];
   check(copiedRun.Status==SessionStatus.Success&&copiedRun.Calls[copied].CompletedGroupIterations==3&&copiedRun.Calls[copied].WorkflowOutputs["width"].As<IReadOnlyList<long>>().Count==3,"Pasted Group and retained loop subscription execute actual three-round image pipeline");
-  check(copiedRun.Calls[copied].WorkflowOutputs["sn"].As<IReadOnlyList<long>>().SequenceEqual(new long[]{42,43,44}),"Pasted Group's dedicated source owns independent sequence42/43/44 rather than source history");
+  check(copiedRun.Calls[copied].WorkflowOutputs["sn"].As<IReadOnlyList<long>>().SequenceEqual(new long[]{43,44,45}),"Pasted Group's dedicated source owns independent sequence43/44/45 rather than source history");
   Capture(host,"wpf-group-live-paste.png");
   var beforeAdd=doc.Revision;var beforeBodies=doc.Document.Procedures.Count;
   Invoke("DropToolModule",WorkflowCalls.ModuleId,700d,200d,null!,null!);Pump();var dropped=selected.Single();var droppedNode=doc.CurrentProcedure.Nodes.Single(n=>n.Id==dropped);

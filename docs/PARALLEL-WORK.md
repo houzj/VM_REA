@@ -1,19 +1,23 @@
-# Two-line reconstruction workflow
+# 双项目逆向开发与交接
 
 ## Workspaces
 - Framework/integration: original checkout, branch main.
 - Tool plugins: worktrees/tool-plugins, branch tool-plugins.
 - main: tool-independent framework development. The user explicitly chose main for the original checkout. The old framework branch is historical; do not continue development there. The user controls when independent work is integrated; main performs final integration only on that instruction.
 
-Use two long-lived Codex conversations, each opened in its own directory. Conversations do not automatically synchronize; source commits and these documents are the handoff record. Creating these branches does not create or message a conversation.
+
+用户自行管控两个独立项目。插件项目负责工具及其所需公共节点框架，主项目负责与具体工具无关的主框架。下面历史记录用于追溯，不覆盖本节；旧的“插件只能提框架请求”“管理线自动调度”不再作为当前职责规则。
 
 ## Ownership
 Framework/main: shell, workflow tabs/canvas/navigation, Group ownership/loops/accumulation, solution/procedure scheduling and persistence, variables/subscriptions at the workflow boundary, tool-independent data contracts. It provides stable integration seams and consumes plugin capabilities, without developing a second plugin configuration system.
 Plugins/tool-plugins: catalog and dependency inventory, per-tool source audit and algorithms **plus the plugin-facing framework**: common configuration model, template catalog, ordinary/dedicated editor host, parameter and ROI interaction, tool execution/debug sessions, display adapters, tool-specific persistence, and dedicated tests. Each tool task must name the common plugin-framework capability it requires and verify the tool through that capability in the real host.
 
-The current plugin architecture is not yet a stable complete native-equivalent interface. Inventory existing contracts before extending them. Shared interfaces must cover identity/version/category/assets, typed scalar/array I/O, parameters, execution/errors/cancel/timeout, configuration lifecycle, preview/ROI services and serialization.
+
+细分所有权与任务结构见 [PLUGIN-DEVELOPMENT-BOUNDARY.md](PLUGIN-DEVELOPMENT-BOUNDARY.md)。不能按程序集目录整体划归一线；同一个交叉文件只指定一位提交所有者。当前已分歧文件先审查存量候选，不得整文件覆盖或在未协调时追加另一套实现。
 
 ## Integration
+两项目在各自闭合功能并中文提交、推送后，由提交方告知另一方完整 SHA、共享接口或文件变化、验证结果和未闭合差异。接收方自行判断同步时机，先保护本地在制工作，完成同步后回报实际采用的基线 SHA；通知本身不代表已经同步。用户负责协调两项目，不设置自动调度。
+
 1. Record original evidence paths and exact types/methods/resources.
 2. List confirmed, reconstructed and unknown behaviors separately.
 3. Implement real data execution as well as UI; keep capture code in tests.
@@ -27,6 +31,7 @@ The authoritative role, file ownership and baseline state are in [PLUGIN-FRAMEWO
 ## Current known gaps
 
 Current framework status is maintained in docs/FRAMEWORK-REVERSE-CHECKLIST.md and docs/framework-acceptance.html (2026-10-17). Owned Group navigation, range loops, primitive break/accumulation, input editing, categories/multi-target synchronization, dedicated two-pane configuration, graphical ROI and real image-source/binary-tool integration have implemented subsets. They are not full VM parity. Open scope includes native signed-step/overflow differential behavior, general plugin index editors/native compound field trees, per-round native lifetime, upstream preparation/callback/device semantics, complete original control templates and actual VM differential acceptance. Cross-top-level calls remain compatibility behavior. Full .sol/API/ABI and all plugin coverage remain open. The detailed table separates independent implementation, original evidence and unverified native behavior.
+
 
 ## Local evidence and reports
 Original evidence remains in the original checkout's analysis directory. It is excluded from remote history. Build-required UI assets and sample image are tracked. Store new reports/build outputs inside the active worktree, not the other conversation's directory. Reports that require original binary evidence are not portable solely from Git.
@@ -44,3 +49,4 @@ Group loop update: GROUP-LOOP-BOUNDARIES.md records source-guided LoopStep and a
 Group index/compound update: GROUP-INDEX-COMPOUND.md records parent scalar integer indexes for break operands, and Circle/Point/Fixture array transport/accumulation. Region/Components mapping, native field trees and full template parity remain open. Latest392 window events and88 runtime checks include real radial-circle results.
 
 2026-10-17 compound leaf batch: see COMPOUND-LEAF-MAPPING.md and compound-leaf-acceptance.html. Source-confirmed field names are projected through independent managed contracts; root rename/removal propagates leaf identities. Source-guided subscription-side Popup and minimap Shift routing are integrated. Polygon/mixed ROI, full double-Popup index behavior and native ABI remain open. User explicitly authorized parallel agents for this batch; file ownership was isolated and builds/UI regression remained serial on main. See FRAMEWORK-PARALLEL-TASKS.md for future split.
+

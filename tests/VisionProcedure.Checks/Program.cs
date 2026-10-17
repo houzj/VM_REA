@@ -6,7 +6,9 @@ var registry=new ModuleRegistry(); BuiltinModules.RegisterAll(registry);
 var editor=new GraphEditorDocument(registry); int checks=0;
 void Check(bool condition,string message){if(!condition)throw new Exception(message);checks++;}
 void Reject(Action action){try{action();}catch(Exception e) when(e is ArgumentException or InvalidOperationException or KeyNotFoundException){checks++;return;}throw new Exception("Expected rejection");}
-string main=editor.CurrentProcedureId; Reject(()=>editor.DeleteProcedure(main));
+// The editor supports the source-confirmed empty-workflow state, also covered
+// by actual WPF checks. Last-procedure deletion is undoable, not rejected.
+string main=editor.CurrentProcedureId;editor.DeleteProcedure(main);Check(!editor.HasCurrentProcedure&&editor.Document.Procedures.Count==0,"Deleting last procedure enters empty state");editor.Undo();Check(editor.CurrentProcedureId==main,"Undo restores last procedure selection");
 string source=editor.AddNode("vision.image-file","1.0.0",40,50,new(){["Path"]=JsonSerializer.SerializeToElement("assets/source.bmp")});
 string threshold=editor.AddNode("vision.threshold","1.0.0",300,150);
 editor.Connect(source,"Image",threshold,"Image");

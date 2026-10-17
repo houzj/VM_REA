@@ -1,5 +1,21 @@
 # Integration handoff
 
+## 2026-10-17 职责与清单重新调整：插件相关公共框架在本项目开发
+
+用户明确将插件/节点必需框架列为本项目正式工作，新增 `docs/PLUGIN-FRAMEWORK-CHECKLIST.md` PF-001～014，并调整插件总清单与 PARALLEL-WORK.md。公共定义/状态/模板/宿主、订阅/执行/文件通知/ROI 桥接与算法插件同步逆向，先公共链路再闭合标定工具。N点/N图像最高优先级、坐标系最后、无设备测试、验收后中文提交推送保持不变。
+
+本轮代码在制，未提交/推送/合并；已向原 checkout 的主框架会话发同步消息，说明共享文件与接口负责范围，请其确认插件发现注册、复合 I/O、数组索引和 ROI 的已有实现，避免覆盖和重复实现。消息已发送不等于对方已确认或代码已同步。公共合同当前状态与迁移见 CONTRACT-REQUESTS.md；旧 N点/平移旋转历史算法提交保留，配置 UI 闭合状态重新打开。
+
+当前普通配置模型提供器以 ReadCalibFile 为真实宿主样本；N点复杂模板演示为测试覆盖工具，不是完整N点验收。公共链路专项回归与实际WPF回归继续执行，完成可验收节点后启动明确标记程序供用户人工验收，不以测试数量宣布全部节点等价。
+
+## 2026-10-16 / tool-plugins: JPEG source correlation and independent backend
+
+- Supersedes the previous JPEG-unavailable implementation. Original MVDMediaProcess identity/version plus focused decompilation establish libjpeg-turbo 2.1.3, default RGB decoding flags/pitch and warning acceptance. Correlated source hashes and 27 original SDK fixture observations are tracked in docs/plugins/image-source-jpeg-evidence.json. The original conversion wrapper is traced further, but its kernel remains unrecovered.
+- Independently compiled official upstream source supplies the plugin-local Windows x64 turbojpeg.dll, with source archive hash, rebuild script and redistributed licenses. No vendor binary or new NuGet package is used. Preserve runtimes/win-x64/native and ThirdParty/libjpeg-turbo during integration/deployment. Static CRT, scalar SIMD-off build; performance and other architectures are not equivalent.
+- Pixel verification: all 26 valid RGB fixtures and all 13 successful native MONO8 fixtures match byte-for-byte. Includes progressive/subsampling/quality/grayscale/restart/EXIF/no-EOI cases; invalid header rejected. Historical WIC 24/323 mono pixel discrepancy is eliminated. Thirteen small-color fixtures still diverge in error behavior: native RGB succeeds but MONO conversion fails; reconstruction emits gray. Preserve this explicit gap rather than inventing a minimum geometry rule.
+- Validation: 362 checks passed, build zero warnings/errors, including 12 concurrent JPEG reads and existing lossless/stitch/UI/state checks. Original outputs and independent mismatch report distinguish matched pixels from native failure boundaries. This is not complete ImageSource parity.
+- No framework/shared contract sources or other worktree modified. CONTRACT-REQUESTS.md clarifies plugin-native content deployment and retained RGB/provider/lifecycle service gaps. Next independent work: recover small-color conversion failure/kernel, broaden CMYK/ICC/malformed coverage, folder sort semantics and original popup/desktop evidence.
+
 Initial baseline: existing independent reconstruction, including owned Group navigation and Tab return fix. Not complete VM parity.
 
 For each handoff record: branch/commit, source evidence, changed tool or framework behavior, real UI/run verification, remaining gaps, and shared contract requirements.
@@ -147,3 +163,4 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-17 主框架继续：流程等待超时
 
 按`TimeOutSet.xaml/.cs`和`VmProcedureDecorator.SetTimeOutCommandExe`恢复流程菜单入口、370×200配置窗口、0—100000毫秒读写与独立方案持久化。托管执行使用独立的协作取消/清理实现，原生SDK后端的超时语义仍未知，不能称为原生调度等价。证据、已验证范围及缺口见PROCEDURE-WAIT-TIME.md。此批只修改main所有的流程/文档/执行器文件，不改插件工作树。
+

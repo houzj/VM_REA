@@ -1,0 +1,9 @@
+using System.IO;
+using System.Text.Json;
+using VisionPlugins.Calibration;
+public static class NImageParserChecks
+{
+ public static int Run(){int count=0;void Check(bool value,string text){count++;if(!value)throw new Exception(text);}using var document=JsonDocument.Parse(File.ReadAllText("docs/plugins/n-image-calibration-ui-evidence.json"));foreach(var row in document.RootElement.GetProperty("records").EnumerateArray()){if(!row.TryGetProperty("items",out var array))continue;var fields=array.EnumerateArray().Select(e=>e.GetProperty("values")).Where(e=>e.TryGetProperty("NameA",out _)).ToDictionary(e=>e.GetProperty("NameA").GetString()!,e=>e);string Value(string key)=>fields[key].GetProperty("CurValueA").GetString()??"";bool Visible(string key)=>bool.Parse(fields[key].GetProperty("CustomVisibleA").GetString()!);bool fix=bool.Parse(Value("HomoFixEnable"));int mode=int.Parse(Value("InputMode")),motionMode=int.Parse(Value("CalibPointInput")),rotations=int.Parse(Value("RotPointTotalNum"));Check(Visible("InputMode")==fix,"actual parser fixture mode visibility");foreach(string key in new[]{"Image Point","Physical Point"})Check(Visible(key)==NImageUiRules.ShowFixturePointSelectors(fix,mode),"actual parser fixture point visibility");foreach(string key in new[]{"PicPointX","PicPointY","PhysicalPointX","PhysicalPointY"})Check(Visible(key)==NImageUiRules.ShowFixtureCoordinateSelectors(fix,mode),"actual parser fixture scalar visibility");Check(Visible("BaseAngle")==NImageUiRules.ShowRotationCoordinates(rotations),"actual parser base angle visibility");Check(Visible("MoveAngle")==NImageUiRules.ShowRotationCoordinates(rotations),"actual parser angle step visibility");Check(Visible("PhyPoint")== (motionMode==0),"actual parser motion point visibility");Check(Visible("MovePhysicalPointX")== (motionMode==1),"actual parser motion scalar visibility");}
+  return count;
+ }
+}
