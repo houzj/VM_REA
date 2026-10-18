@@ -30,7 +30,7 @@ try
 {
  window.Show();Pump();
  var header=Find<Grid>("ShellHeader");var toolbar=Find<StackPanel>("ToolBar");
- var menu=Find<StackPanel>("MenuHost");
+ var menu=Find<Menu>("MenuHost");
  Check(window.WindowState==WindowState.Normal,"Window starts normal");
  var maximize=header.Children.OfType<Grid>().SelectMany(g=>g.Children.OfType<Grid>()).SelectMany(g=>g.Children.OfType<StackPanel>()).SelectMany(g=>g.Children.OfType<Button>()).First(b=>Equals(b.Content,"□"));
  maximize.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,maximize));Pump();
@@ -41,7 +41,7 @@ try
  maximize.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,maximize));Pump();
  Check(window.WindowState==WindowState.Normal,"Titlebar maximize button restores normal state");
  var headerHandler=typeof(MainWindow).GetMethod("HeaderMouseDown",BindingFlags.NonPublic|BindingFlags.Instance)!;
- var onMenu=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent,Source=menu.Children[0]};
+ var onMenu=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent,Source=menu.Items[0]};
  headerHandler.Invoke(window,[header,onMenu]);
  Check(window.WindowState==WindowState.Normal&&!onMenu.Handled,"Menu input is not consumed as titlebar gesture");
  var onTool=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent,Source=toolbar.Children.OfType<Button>().First()};

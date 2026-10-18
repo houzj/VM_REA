@@ -18,9 +18,9 @@ internal static class Program
         {
             main.Show();
             main.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
-            var menu = (StackPanel)main.FindName("MenuHost")!;
-            var help = menu.Children.OfType<Button>().Single(b => Equals(b.Content, "帮助"));
-            var about = help.ContextMenu.Items.OfType<MenuItem>().Single(i => Equals(i.Header, "关于"));
+            var menu = (Menu)main.FindName("MenuHost")!;
+            var help = menu.Items.OfType<MenuItem>().Single(b => Equals(b.Header, "帮助"));
+            var about = help.Items.OfType<MenuItem>().Single(i => Equals(i.Header, "关于"));
             var examined = false;
             main.Dispatcher.BeginInvoke(new Action(() =>
             {
