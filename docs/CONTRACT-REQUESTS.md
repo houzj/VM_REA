@@ -109,3 +109,12 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 原生依据：`VmProcedureDecorator.SetTimeOutCommandExe`打开`TimeOutSet`，XAML定义0—100000毫秒，确认调用`ProcessManager.SetProcedureWaitTime`。SDK后端超时语义尚未恢复；当前协作取消是独立托管行为。
 - 双线协调：插件线正在自己的工作树修改`Contracts.cs`；两线提交后由main审查合并，不在插件工作树复制本字段或直接覆盖其在制改动。回归同时验证旧方案、新字段往返、慢模块释放及插件线的流程身份状态。
 
+## FCR-015：主窗口全局配置入口与插件模块能力（MF-01 审计）
+
+- 生产方：插件项目的全局变量、通信管理、全局触发模块及其配置会话；消费方：主框架 Shell 工具栏/菜单。框架不复制这三套模块的配置模型或窗口。
+- 原始证据：`TitleMenueItemData.GlobalVariable` 动态装载 `GlobalVariableModuleCs.dll`，取 `VmModuleExtern.GetGlobalVarModule()`，将模块作为 `GlobalVariableDialog.DecorateSource` 并 `ShowDialog`；`CommSet` 装载 `CommManagerModuleCs.dll`、模块 ID 11000，创建/重用 `GlobalCommunication` 会话并读取数据；`LoadGlobalTrigger` 装载 `GlobalTriggerModuleCs.dll`、模块 ID 14200，以 `GlobalTriggerConfig` 绑定 `GloablTriggleConfigUI`。三者先检查 SDK/用户权限和模块配置可用性，不能按静态空窗恢复。
+- 所需能力：插件侧声明可用全局配置模块种类、当前方案内的实例/权限状态、可创建配置会话的工厂，以及会话的关闭/失效通知。Shell 仅调用工厂并维护窗口所有权；配置数据和执行时生命周期由插件模块负责。
+- 建议负载：`SolutionId`、全局模块种类、模块实例身份、权限/配置可用状态、配置会话工厂与失效 token。宿主在方案更换时释放旧会话；插件仍需在自己的工作树定稿具体接口。
+- 兼容性：能力缺席时入口保持不可用，不伪造变量表、通信端口或触发器状态。原生 SDK 用户权限、模块动态装载与方案持久化的精确语义待插件线证据和实机验证。
+- 双线验收：用真实插件模块打开相应 WPF 配置窗，保存值后运行图并重开方案确认持久化；切换方案/关闭窗口不保留旧模块会话；权限不足时命令不能改数据。Shell 与插件线集成后再宣布入口闭合。
+

@@ -21,12 +21,12 @@ try
     var editorFlag = typeof(MainWindow).GetField("parameterEditorOpen", BindingFlags.NonPublic | BindingFlags.Instance)!;
     var status = (TextBlock)window.FindName("StatusText")!;
     var toolbar = (StackPanel)window.FindName("ToolBar")!;
-    var menu = (StackPanel)window.FindName("MenuHost")!;
+    var menu = (Menu)window.FindName("MenuHost")!;
     var undo = toolbar.Children.OfType<Button>().Single(b => Equals(b.ToolTip, "撤销"));
     var redo = toolbar.Children.OfType<Button>().Single(b => Equals(b.ToolTip, "重做"));
-    var tools = menu.Children.OfType<Button>().Single(b => Equals(b.Content, "工具"));
-    var undoMenu = tools.ContextMenu.Items.OfType<MenuItem>().Single(i => Equals(i.Header, "撤销"));
-    var redoMenu = tools.ContextMenu.Items.OfType<MenuItem>().Single(i => Equals(i.Header, "重做"));
+    var tools = menu.Items.OfType<MenuItem>().Single(b => Equals(b.Header, "工具"));
+    var undoMenu = tools.Items.OfType<MenuItem>().Single(i => Equals(i.Header, "撤销"));
+    var redoMenu = tools.Items.OfType<MenuItem>().Single(i => Equals(i.Header, "重做"));
     var node = document.CurrentProcedure.Nodes.First();
     var originalName = node.Name;
     document.SetNodeName(node.Id, originalName + "_MF01");

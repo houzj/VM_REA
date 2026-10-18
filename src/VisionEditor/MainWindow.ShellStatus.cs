@@ -8,6 +8,22 @@ public partial class MainWindow
 {
  ShellTimeDialog? shellTimeDialog;
 
+ // The native StatusBar maps NOItem to the configuration icon and waiting text.
+ // The SDK's IsReady state is not exposed here, so validation is only a fallback.
+ void RefreshShellConfigurationStatus()
+ {
+  if(doc is null)return;
+  if(!doc.HasCurrentProcedure||doc.CurrentProcedure.Nodes.Count==0)
+  {
+   StatusIcon.Source=Asset("bottombar_config.png");
+   StatusText.Text="等待添加组件";
+   return;
+  }
+  bool ready=GraphValidator.Validate(doc.CurrentProcedure,modules).IsValid;
+  StatusIcon.Source=Asset(ready?"bottombar_run.png":"bottombar_abnormal.png");
+  if(StatusText.Text=="等待添加组件")StatusText.Text=ready?"组件配置完成":"模块配置待完成";
+ }
+
  // VMControls.WPF.Base.StatusBar.ZoomCallBackClick selects the 1.0 zoom tick.
  // The existing WPF slider owns the viewport transform, so reuse that path.
  void ResetCanvasZoomClick(object sender,RoutedEventArgs e)=>ZoomSlider.Value=1;
