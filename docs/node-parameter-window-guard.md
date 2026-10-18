@@ -15,3 +15,5 @@
 ## 边界
 
 测试使用真实 WPF 窗口和 routed event 注入；物理桌面鼠标和原生 VM 的逐像素差分尚未验证。原生右键是否同时修改节点选择状态未由上述源码确定，因此本次只处理菜单是否存在，不改变现有右键选中逻辑。双击打开行为保持既有实现，未声称完全一致。
+
+共享 `VisionEditor.WpfChecks` 在本次提交后完整运行三次，均通过第 1–151 项，并稳定失败于第 152 项 `Selected wire exposes recovered six-unit segment midpoint handles`。后两次完整日志分别为 `analysis/full-audit/node-param-wpfchecks-rerun1.log`、`node-param-wpfchecks-rerun2.log`。该失败可复现，不能定性为一次性焦点竞态；本次改动没有触及连接线产品代码，且参数窗口专项检查独立通过。中点柄问题保留为单独待定位项，不用无关产品改动掩盖。
