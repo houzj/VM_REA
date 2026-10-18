@@ -52,3 +52,8 @@
 WPF 验证实际创建窗口、点击开关/选择器/按钮、等待调用结果，并检查实际图像和叠加图形；不是仅断言配置字段。`wpf-group-break-condition.png`、`wpf-group-accumulated-output.png`、`wpf-group-array-break.png` 来自 tests 的 RenderTargetBitmap 离屏渲染，已人工读取检查。图像为已有真实BMP样本；两个绿色圆由测试模块生成以核对显示累积，不是 VM 算法结果或 VM 截图。截图代码没有加入产品程序集。
 
 这些验证建立独立实现的闭环，不建立真实 VM 运行差分通过或全部 Group 功能等价。
+# MF-04 整数中断精度复验（2026-10-18）
+
+原始 `analysis/full-audit/group-native-audit/break-assembly.txt` 的 `0x1800a5cee..0x1800a5d1e` 在六个比较分支均以 `CMP R14D, R15D` 后接 `SETcc`，确认整数操作数按 int32 直接比较。反编译浮点伪代码不能作为该分支依据。独立实现曾先转为 float32，导致 `16777216` 与 `16777217` 被错误视为相等；现已改为 int32 比较，超出 int32 范围仍显式报错。
+
+专项验收：`VisionFramework.GroupBreakChecks` 57 项通过；`VisionEditor.GroupIntPrecisionChecks` 6 项通过。后者打开真实 WPF Group 窗口，在“循环设置”把比较运算从 `<` 改为 `=`；首轮前中断随之变为执行 2 轮，累积输出 `[0,1]`，撤销、重做、保存重开后行为一致。该测试操作的是 WPF 控件事件及真实 `SolutionExecutor`，尚未在原生 VM 上完成同状态动态差分，也未覆盖所有整数边界值与原生 `.sol` 文件往返。

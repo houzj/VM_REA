@@ -117,4 +117,21 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 建议负载：`SolutionId`、全局模块种类、模块实例身份、权限/配置可用状态、配置会话工厂与失效 token。宿主在方案更换时释放旧会话；插件仍需在自己的工作树定稿具体接口。
 - 兼容性：能力缺席时入口保持不可用，不伪造变量表、通信端口或触发器状态。原生 SDK 用户权限、模块动态装载与方案持久化的精确语义待插件线证据和实机验证。
 - 双线验收：用真实插件模块打开相应 WPF 配置窗，保存值后运行图并重开方案确认持久化；切换方案/关闭窗口不保留旧模块会话；权限不足时命令不能改数据。Shell 与插件线集成后再宣布入口闭合。
+## FCR-017：原生 Group PointF 三分量输出合同（请求，未实现）
+
+- 生产者：插件线的 PointF 输出工具及工具描述符；框架线的 Group 输出配置器和累积器消费该声明。当前 `DataKind.Point` / `VisionCore.Point2` 仅含 X、Y，不能暗中把原生 R 丢弃或填零。
+- 消费者：Group 输出页的 PointF 三子行、公共输出端口、跨流程订阅、累积数组、调试结果和持久化层。需要明确第三分量是角度还是其他量及其单位、下游端口身份。
+- Payload：拟定独立强类型 PointF(X,Y,R) 或显式三叶字段协议，包含完整类型/基数、字段名、数值范围及端口映射。具体 API 和 JSON 形状须两线审查后决定；不得未经同意替换现有 `Point2`。
+- Lifecycle：工具产生完整三分量快照 → Group 配置选择点输出及三个子字段 → 每轮读取/累积 → 调试显示、跨流程消费 → 保存重开/复制重映射/清理。失效或缺字段时应显式报错，不默默退化为二分量。
+- 兼容：旧 `Point2` 方案仍按 X/Y 独立类型读取，新增合同应为可选/版本化，不让插件线在制合同产生二次实现；原生 `.sol`/ABI 往返另行取证。
+- 验收证据：`analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:1078–1177` 的 `PointFParam` 三子行和独立“增加点输出”；`analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/PointF.cs` 的 `SubChildren` 将其命名为 `.X/.Y/.R`，R 初始范围 -360..360。需选真实 PointF 工具逐项 WPF 操作，验证三叶数据下游、累积、撤销、保存重开，并与原生 VM 同状态对照；当前只完成独立 Point2 入口及两分量数据运行，不能作为本合同验收。
+
+## FCR-018：Group 运行参数选择后的工具装饰器（请求，未实现）
+
+- 生产者：插件项目的工具配置框架及各工具 `IGroupRunParam` 对应的专属/通用装饰器工厂；框架 Group 类别树产生当前选中参数及其节点身份。
+- 消费者：Group 双栏配置窗口右侧的参数配置区；运行参数映射、同步与执行仍由现有框架数据链负责。
+- Payload：至少包含所属流程/Group/节点实例身份、参数名、对应描述符、只读当前参数和订阅快照、可空专属装饰器能力，以及原子 Apply/Cancel 回调。具体接口需双线审查，不能把原生 `IDecorate` 假定为现有 WPF 接口。
+- Lifecycle：选中运行参数 → 框架定位第一个关联节点 → 插件工厂提供 `GetSupportDisplayForGroupData` 等价视图或通用视图 → 右侧更新 → 编辑经既有配置事务提交 → 取消/切换/关闭释放订阅和会话。选中类别时恢复 Group 本体装饰器；方案重开时不保存窗口焦点状态。
+- 兼容：工厂应可选；未接入的工具继续使用现有运行参数代理编辑，不复制插件配置模板到主线。旧方案的参数和订阅格式不因窗口接线改变。
+- 验收证据：原始 `GroupRunParam.cs:325–357` 的 `SelectedCommandExecute` 调用 `GetFirstParamRelationModule`、`GetSupportDisplayForGroupData`/`CommonParamDecorate`、`OnUpdateDecorateEvent`；`DynamicRunParamConfigControl.xaml:26–44` 的类别树和 `SelectedItemChanged`。待插件侧真实工具接入后，需逐项操作选中类别/普通参数/专属复杂参数、编辑后运行数据、撤销重做、保存重开与窗口关闭释放。当前主线只有显式“工具配置”按钮，不宣称右侧动态装饰器等价。
 
