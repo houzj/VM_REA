@@ -25,10 +25,16 @@ internal static class Program
             main.Dispatcher.BeginInvoke(new Action(() =>
             {
                 var dialog = main.OwnedWindows.OfType<ShellAboutWindow>().Single();
-                var version = (TextBlock)dialog.FindName("VersionText")!;
+                var versions = (ListBox)dialog.FindName("VersionInfoList")!;
                 var actual = typeof(MainWindow).Assembly.GetName().Version?.ToString() ?? "未知";
-                if (dialog.Owner != main || !dialog.IsVisible || dialog.Width != 400 || dialog.Height != 440 || version.Text != actual)
+                var rows=versions.Items.Cast<ShellAboutWindow.VersionRow>().ToArray();
+                if (dialog.Owner != main || !dialog.IsVisible || dialog.Width != 400 || dialog.Height != 440
+                    || rows.Length!=3 || rows[0]!=new ShellAboutWindow.VersionRow("版本信息",actual)
+                    || rows[1].Value!=typeof(VisionFramework.ModuleRegistry).Assembly.GetName().Version?.ToString()
+                    || rows[2].Value!=typeof(VisionEditor.Core.GraphEditorDocument).Assembly.GetName().Version?.ToString())
                     throw new Exception("关于窗口未展示真实程序集版本或窗口属性不符");
+                var scroll=FindDescendant<ScrollViewer>(dialog);
+                if(scroll is null||!scroll.IsVisible||versions.ActualWidth<=0)throw new Exception("关于窗口缺少原始可滚动版本行布局");
                 dialog.UpdateLayout();
                 var image = new RenderTargetBitmap((int)dialog.ActualWidth, (int)dialog.ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 image.Render(dialog);
@@ -44,5 +50,17 @@ internal static class Program
             Console.WriteLine("PASS: 帮助菜单打开关于窗口并显示当前程序真实版本，关闭后返回主窗口");
         }
         finally { main.Close(); app.Shutdown(); }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject parent) where T:DependencyObject
+    {
+        for(var i=0;i<VisualTreeHelper.GetChildrenCount(parent);i++)
+        {
+            var child=VisualTreeHelper.GetChild(parent,i);
+            if(child is T match)return match;
+            var nested=FindDescendant<T>(child);
+            if(nested is not null)return nested;
+        }
+        return null;
     }
 }
