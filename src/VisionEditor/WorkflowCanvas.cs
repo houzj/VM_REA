@@ -153,7 +153,7 @@ public partial class MainWindow
             card.MouseLeave+=(_,_)=>Dispatcher.BeginInvoke(new Action(()=> {if(pendingConnection is null&&!card.IsMouseOver&&!ports.Any(p=>p.IsMouseOver))foreach(var port in ports)port.Visibility=Visibility.Collapsed;}));
             var menu=new ContextMenu();var open=new MenuItem {Header="参数设置"};open.Click+=(_,_)=>OpenNode(node.Id);menu.Items.Add(open);if(node.ModuleId==WorkflowCalls.ModuleId){var enter=new MenuItem {Header="进入 Group",IsEnabled=node.Call is not null};enter.Click+=(_,_)=>EnterSubprogram(node.Id);menu.Items.Add(enter);}
             var copy=new MenuItem {Header="复制",InputGestureText="Ctrl+C",IsEnabled=EditableCanvas};copy.Click+=(_,_)=>CopySelection();menu.Items.Add(copy);
-            var remove=new MenuItem {Header="删除",IsEnabled=!isLocked&&activeRun is null};remove.Click+=(_,_)=> {selectedNodes.Add(node.Id);DeleteSelection();};menu.Items.Add(remove);card.ContextMenu=menu;
+            var remove=new MenuItem {Header="删除",IsEnabled=!isLocked&&activeRun is null};remove.Click+=(_,_)=> {selectedNodes.Add(node.Id);DeleteSelection();};menu.Items.Add(remove);card.ContextMenu=parameterEditorOpen?null:menu;
             card.MouseRightButtonDown+=(_,_)=> {if(!selectedNodes.Contains(node.Id)){selectedNodes.Clear();boxSelectionActive=false;}selectedNodes.Add(node.Id);selected=node.Id;RefreshNodeSelection();RefreshRight();};
         }
         DrawSelectionGroup();DrawWireHandles();ApplyCanvasTransform();
@@ -196,6 +196,9 @@ public partial class MainWindow
     void NodeDown(object sender,MouseButtonEventArgs e)
     {
         if(sender is not Canvas {Tag:string id})return;
+        // DiagramItem.OnPreviewMouseLeftButtonDown consumes a single click
+        // while the owning DiagramArea has IsOpenParams=true.
+        if(parameterEditorOpen&&e.ClickCount<2){e.Handled=true;return;}
         GraphLayer.Focus();selectedWire=null;
         if(e.ClickCount==2){if(doc.CurrentProcedure.Nodes.Single(n=>n.Id==id).ModuleId==WorkflowCalls.ModuleId)EnterSubprogram(id);else OpenNode(id);e.Handled=true;return;}
         if(!selectedNodes.Contains(id)){selectedNodes.Clear();selectedNodes.Add(id);boxSelectionActive=false;}
