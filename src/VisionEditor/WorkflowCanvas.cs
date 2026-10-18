@@ -348,7 +348,8 @@ public partial class MainWindow
         {
             // ZoomArea.OnChangeZoom changes DiagramZoomIndex only for a nonzero delta.
             MoveCanvasZoomByWheel(e.Delta,e.GetPosition(CanvasViewport));
-            e.Handled=true;
+            // ZoomArea.OnPreviewMouseWheel does not consume Ctrl zoom; only
+            // OnHoriScroll's Shift branch marks the routed event handled.
         }
     }
     void MoveCanvasZoomByWheel(int delta,Point anchor)
