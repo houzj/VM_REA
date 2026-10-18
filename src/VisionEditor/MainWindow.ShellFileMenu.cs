@@ -12,6 +12,8 @@ public partial class MainWindow
         fileMenu.Resources[typeof(MenuItem)] = FindResource("ShellFileMenuItem");
         fileMenu.Resources[typeof(Separator)] = FindResource("ShellFileMenuSeparator");
         InitializeRecentSolutionsMenu(fileMenu);
+        foreach (var item in fileMenu.Items.OfType<MenuItem>())
+            item.Style = (System.Windows.Style)FindResource("ShellFileMenuItem");
         fileMenu.Items.Add(new Separator());
         AddFileCommand(fileMenu, "打开示例", Demo);
         fileMenu.Items.Add(new Separator());
@@ -24,7 +26,7 @@ public partial class MainWindow
 
     void AddFileCommand(MenuItem parent, string title, Action action)
     {
-        var item = new MenuItem { Header = title };
+        var item = new MenuItem { Header = title, Style = (System.Windows.Style)FindResource("ShellFileMenuItem") };
         item.Click += (_, _) => Safe(action);
         parent.Items.Add(item);
     }

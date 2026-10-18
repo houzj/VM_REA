@@ -163,9 +163,28 @@ try
  document.Save(recentSecond);
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
  var fileRoot=(MenuItem)menu.Items[0];var recentMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"最近打开"));
- recentMenu.IsSubmenuOpen=true;Pump();
+ fileRoot.IsSubmenuOpen=true;Pump();recentMenu.IsSubmenuOpen=true;Pump();
+ var recentMenuCaptured=false;
+ if(recentMenu.Template.FindName("PART_Popup",recentMenu) is Popup recentPopup&&recentPopup.Child is FrameworkElement recentContent&&recentContent.ActualWidth>0&&recentContent.ActualHeight>0)
+ {
+  var recentBitmap=new RenderTargetBitmap((int)Math.Ceiling(recentContent.ActualWidth),(int)Math.Ceiling(recentContent.ActualHeight),96,96,PixelFormats.Pbgra32);
+  recentBitmap.Render(recentContent);var recentPng=new PngBitmapEncoder();recentPng.Frames.Add(BitmapFrame.Create(recentBitmap));
+  using var recentFile=File.Create("analysis/full-audit/shell-recent-menu.png");recentPng.Save(recentFile);
+  recentMenuCaptured=true;
+ }
+ Check(recentMenuCaptured,"Recent submenu renders a reviewable test-only bitmap");
  Check(recentMenu.Items.Count==2&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentSecond)&&Equals(((MenuItem)recentMenu.Items[1]).Tag,recentFirst),"Save menu persists and orders recent solution paths");
  var earlier=(MenuItem)recentMenu.Items[1];
+ Check(Equals(earlier.Header,Path.GetFileNameWithoutExtension(recentFirst))&&Equals(earlier.ToolTip,recentFirst),"Recent menu uses the source filename-without-extension while retaining the full path tooltip");
+ var recentRunField=typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
+ var recentContinuousField=typeof(MainWindow).GetField("continuousRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
+ using(var recentRound=new CancellationTokenSource())
+ {
+  recentRunField.SetValue(window,recentRound);recentContinuousField.SetValue(window,true);
+  earlier.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,earlier));Pump();
+  Check(!(bool)recentContinuousField.GetValue(window)!&&!recentRound.IsCancellationRequested&&document.FilePath==recentSecond,"Recent command stops continuous mode without cancelling an active single round or replacing its document");
+  recentRunField.SetValue(window,null);
+ }
  earlier.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,earlier));Pump();
  Check(document.FilePath==recentFirst&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentFirst),"Recent menu reopens an actual saved solution and moves it to the top");
  using(var recentData=JsonDocument.Parse(File.ReadAllText(recentPath)))

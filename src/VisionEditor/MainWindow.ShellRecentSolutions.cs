@@ -64,7 +64,8 @@ public partial class MainWindow
         recentSolutionsMenu.Items.Clear();
         foreach (var entry in RecentSolutionStore.Read())
         {
-            var item = new MenuItem { Header = System.IO.Path.GetFileName(entry.Path), ToolTip = entry.Path, Tag = entry.Path };
+            var item = new MenuItem { Header = System.IO.Path.GetFileNameWithoutExtension(entry.Path), ToolTip = entry.Path, Tag = entry.Path,
+                Style = (System.Windows.Style)FindResource("ShellFileMenuItem") };
             item.Click += (_, _) => Safe(() => OpenRecentSolution(entry.Path));
             recentSolutionsMenu.Items.Add(item);
         }
@@ -73,7 +74,8 @@ public partial class MainWindow
 
     void OpenRecentSolution(string path)
     {
-        if (activeRun is not null) activeRun.Cancel();
+        continuousRun = false;
+        if (activeRun is not null) { StatusText.Text = "请等待当前流程运行结束"; return; }
         if (!ConfirmPendingChanges()) return;
         if (!File.Exists(path))
         {
