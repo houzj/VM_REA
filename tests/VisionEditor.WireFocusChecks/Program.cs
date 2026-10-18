@@ -36,11 +36,11 @@ internal static class Program
    var hits=(Dictionary<string,Path>)Field("wireHitPaths")!;
    var handles=(List<Rectangle>)Field("wireHandles")!;
    var hit=hits[first+">"+second];
-   hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+   hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
    Check(hit.IsKeyboardFocused&&handles.Count>0,"实际连线点击取得焦点并显示中点柄");
    var other=(Button)window.FindName("AddProcedureButton")!;other.Focus();Pump();
    Check(other.IsKeyboardFocused&&handles.Count==0,"转焦工具栏立即清除连线中点柄");
-   hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();Check(hit.IsKeyboardFocused&&handles.Count>0,"再次点击连线重新生成中点柄");
+   hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();Check(hit.IsKeyboardFocused&&handles.Count>0,"再次点击连线重新生成中点柄");
    var output=System.IO.Path.Combine("analysis","full-audit","wire-midpoint-focus.png");System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(output)!);
    var bmp=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);bmp.Render(window);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bmp));using(var stream=System.IO.File.Create(output))png.Save(stream);
    var handle=handles[handles.Count/2];var graph=(Canvas)window.FindName("GraphLayer")!;var viewport=(FrameworkElement)window.FindName("CanvasViewport")!;
@@ -56,6 +56,24 @@ internal static class Program
    var file=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"wire-focus-"+Guid.NewGuid().ToString("N")+".vmx.json");
    try{doc.Save(file);doc.Load(file);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.SequenceEqual(savedPoints),"保存重开保留中点调整后的路径");}
    finally{if(System.IO.File.Exists(file))System.IO.File.Delete(file);}
+   var restored=hits[first+">"+second];
+   var rightPoint=new Point((savedPoints[0].X+savedPoints[1].X)/2,(savedPoints[0].Y+savedPoints[1].Y)/2);
+   var rightScreen=graph.PointToScreen(rightPoint);SetCursorPos((int)rightScreen.X,(int)rightScreen.Y);
+   var rightClient=graph.TranslatePoint(rightPoint,window);var rightPacked=(IntPtr)((int)rightClient.X|((int)rightClient.Y<<16));var hwnd=new WindowInteropHelper(window).Handle;
+   PostMessage(hwnd,0x0200,IntPtr.Zero,rightPacked);Mouse.Synchronize();Pump();
+   restored.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Right){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
+   Check(restored.IsKeyboardFocused&&handles.Count>0&&Equals(Field("selectedWire"),first+">"+second),"真实右键按下选中连线并显示中点柄");
+   var contextMenu=restored.ContextMenu!;
+   Check(contextMenu.Items.Count==1&&Equals(((MenuItem)contextMenu.Items[0]).Header,"删除"),"原生样式对应的 WPF 连线删除菜单已绑定");
+   // The routed right-down reaches the WPF control; synthetic right-up does not ask
+   // the OS ContextMenuService to open its separate popup HWND in this host.
+   contextMenu.IsOpen=true;Pump();Check(contextMenu.IsOpen,"WPF 连线菜单可打开且与右键选中状态共存");
+   var menuImage=new RenderTargetBitmap(Math.Max(1,(int)Math.Ceiling(contextMenu.ActualWidth)),Math.Max(1,(int)Math.Ceiling(contextMenu.ActualHeight)),96,96,PixelFormats.Pbgra32);menuImage.Render(contextMenu);var menuPng=new PngBitmapEncoder();menuPng.Frames.Add(BitmapFrame.Create(menuImage));using(var stream=System.IO.File.Create(System.IO.Path.Combine("analysis","full-audit","wire-right-click-menu.png")))menuPng.Save(stream);
+   var remove=(MenuItem)contextMenu.Items[0];remove.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Count==0,"连线菜单删除实际执行连线事务");
+   doc.Undo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Count==1,"菜单删除连线后一次撤销恢复");
+   var final=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"wire-right-menu-"+Guid.NewGuid().ToString("N")+".vmx.json");
+   try{doc.Save(final);doc.Load(final);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Count==1,"菜单删除撤销后保存重开恢复连线");}
+   finally{if(System.IO.File.Exists(final))System.IO.File.Delete(final);}
   }
   finally{SetCursorPos(previousCursor.X,previousCursor.Y);window.Close();app.Shutdown();}
  }
