@@ -363,7 +363,11 @@ static class Program
             Invoke("BeginConnection",n1.Id,3);Invoke("UpdateConnectionPreview",new Point(900,800));gestureRevision=document.Revision;Invoke("FinishConnection",new Point(900,800));Pump();Check(document.Revision==gestureRevision,"Release in blank area cancels without a link");
             var wireUnderTest=document.CurrentProcedure.ExecutionLinks!.Single(e=>e.FromNode==n1.Id&&e.ToNode==n2);
             document.SetExecutionPath(wireUnderTest,[new(235,130),new(235,205),new(505,205),new(505,280)]);Pump();
-            typeof(MainWindow).GetField("selectedWire",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,n1.Id+">"+n2);Invoke("RenderGraph");Pump();
+            Invoke("RenderGraph");Pump();
+            // Native Connection.OnPreviewMouseDown calls Focus before it creates MidPoints.
+            // Setting selectedWire by reflection alone bypasses that required focus event.
+            var wireHitPaths=(Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            wireHitPaths[n1.Id+">"+n2].RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.PreviewMouseDownEvent});Pump();
             var wireHandles=(List<System.Windows.Shapes.Rectangle>)typeof(MainWindow).GetField("wireHandles",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
             Check(wireHandles.Count==3&&wireHandles.All(h=>h.Width==6&&h.Height==6),"Selected wire exposes recovered six-unit segment midpoint handles");Check(!(bool)Invoke("IsCanvasBackground",wireHandles[1])!,"Wire midpoint does not trigger parent box selection");
             var selectedWireColor=Color.FromRgb(231,105,0);Check(canvas.Children.OfType<System.Windows.Shapes.Path>().Any(p=>p.Stroke is SolidColorBrush brush&&brush.Color==selectedWireColor),"Selected connection uses original theme selected color");

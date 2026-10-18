@@ -17,3 +17,5 @@
 测试使用真实 WPF 窗口和 routed event 注入；物理桌面鼠标和原生 VM 的逐像素差分尚未验证。原生右键是否同时修改节点选择状态未由上述源码确定，因此本次只处理菜单是否存在，不改变现有右键选中逻辑。双击打开行为保持既有实现，未声称完全一致。
 
 共享 `VisionEditor.WpfChecks` 在本次提交后完整运行三次，均通过第 1–151 项，并稳定失败于第 152 项 `Selected wire exposes recovered six-unit segment midpoint handles`。后两次完整日志分别为 `analysis/full-audit/node-param-wpfchecks-rerun1.log`、`node-param-wpfchecks-rerun2.log`。该失败可复现，不能定性为一次性焦点竞态；本次改动没有触及连接线产品代码，且参数窗口专项检查独立通过。中点柄问题保留为单独待定位项，不用无关产品改动掩盖。
+
+后续定位确认第 152 项是测试夹具构造不成立：它仅反射写入 `selectedWire`，随即重绘，未让可聚焦连线收到点击。原始 `VMControls.WPF.Base/Connection.xaml.cs` 的 `OnPreviewMouseDown` 先 `Focus()` 再 `OnIsSelectedChanged()`，且后者仅在 `IsFocused` 时建立 `MidPoints`。产品同样要求命中路径具有键盘焦点。夹具现改为向实际连线命中 Path 发送 `PreviewMouseDown`，走产品的选中/聚焦事件；未改产品连线代码。完整共享回归已通过 456 项，日志为 `analysis/full-audit/wpfchecks-wire-focus-fixture.log`。上述三次失败是稳定的夹具缺口，不是产品中点柄回归。
