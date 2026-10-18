@@ -138,6 +138,7 @@ try
  while(!run.IsCompleted&&DateTime.UtcNow<deadline){Pump();Thread.Sleep(5);}
  Check(run.IsCompletedSuccessfully,"Actual workflow run completes before opening timing view");
  var document=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ var statusModuleId=document.CurrentProcedure.Nodes[0].ModuleId;
  var sessions=(Dictionary<string,ExecutionSessionResult>)typeof(MainWindow).GetField("workflowSessions",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
  Check(sessions.TryGetValue(document.CurrentProcedureId,out var session)&&session.Nodes.Count>0,"Timing view has real workflow execution records");
  var showTime=Find<Button>("ShowTimeButton");showTime.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,showTime));Pump();
@@ -268,6 +269,20 @@ try
   using var menuFile=File.Create("analysis/full-audit/shell-file-menu.png");menuPng.Save(menuFile);
   Check(menuBitmap.PixelWidth>0&&menuBitmap.PixelHeight>0,"File submenu renders a reviewable test-only bitmap");
  }
+ var newMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"新建方案"));
+ newMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,newMenu));Pump();
+ Check(!document.HasCurrentProcedure&&Find<Image>("StatusIcon").Source.ToString()!.EndsWith("bottombar_config.png",StringComparison.OrdinalIgnoreCase)&&Find<TextBlock>("StatusText").Text=="等待添加组件",
+  "File New displays the source NOItem icon and waiting text on an empty canvas");
+ var emptyStatus=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);
+ emptyStatus.Render(window);var emptyPng=new PngBitmapEncoder();emptyPng.Frames.Add(BitmapFrame.Create(emptyStatus));
+ using(var file=File.Create("analysis/full-audit/shell-status-no-item.png"))emptyPng.Save(file);
+ Find<Button>("EmptyAddWorkflowButton").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+ typeof(MainWindow).GetMethod("AddModuleAt",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,[statusModuleId,120.0,100.0,null]);Pump();
+ Check(document.CurrentProcedure.Nodes.Count==1&&!Find<Image>("StatusIcon").Source.ToString()!.EndsWith("bottombar_config.png",StringComparison.OrdinalIgnoreCase)&&Find<TextBlock>("StatusText").Text!="等待添加组件",
+  "Adding a node leaves NOItem and updates the actual status row");
+ var populatedStatus=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);
+ populatedStatus.Render(window);var populatedPng=new PngBitmapEncoder();populatedPng.Frames.Add(BitmapFrame.Create(populatedStatus));
+ using(var file=File.Create("analysis/full-audit/shell-status-with-node.png"))populatedPng.Save(file);
  var closed=false;window.Closed+=(_,_)=>closed=true;
  exitMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,exitMenu));Pump();
  Check(closed&&!window.IsVisible,"File Exit invokes the same real WPF window close path as the titlebar");
