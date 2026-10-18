@@ -71,7 +71,7 @@ public partial class MainWindow : Window
   // The source window attaches this gesture to its header/titlebar. The WPF shell's
   // header also contains menus and toolbar commands, which must keep their own input.
   for(DependencyObject? current=source;current is not null&&current!=ShellHeader;current=VisualTreeHelper.GetParent(current))
-   if(current is Button or MenuItem or System.Windows.Controls.TextBox or System.Windows.Controls.ComboBox or System.Windows.Controls.Primitives.ToggleButton || current==MenuHost || current==ToolBar)return;
+   if(current is Button or MenuItem or System.Windows.Controls.TextBox or System.Windows.Controls.ComboBox or System.Windows.Controls.Primitives.ToggleButton || current==MenuHost || current==ToolBar || current==ToolBarScroll)return;
   if(e.ClickCount==2){MaximizeWindow(sender,e);e.Handled=true;}
   else if(WindowState==WindowState.Normal&&e.LeftButton==MouseButtonState.Pressed){DragMove();e.Handled=true;}
  }

@@ -29,7 +29,7 @@ T Find<T>(string name) where T:FrameworkElement=>window.FindName(name) as T??thr
 try
 {
  window.Show();Pump();
- var header=Find<Grid>("ShellHeader");var toolbar=Find<StackPanel>("ToolBar");
+ var header=Find<Grid>("ShellHeader");var toolbar=Find<StackPanel>("ToolBar");var toolbarScroll=Find<ScrollViewer>("ToolBarScroll");
  var menu=Find<Menu>("MenuHost");
  Check(window.WindowState==WindowState.Normal,"Window starts normal");
  var maximize=Find<Button>("MaximizeButton");
@@ -56,6 +56,18 @@ try
  Check(window.WindowState==WindowState.Maximized&&onBlank.Handled,"Blank header double-click maximizes");
  headerHandler.Invoke(window,[header,onBlank]);Pump();
  Check(window.WindowState==WindowState.Normal,"Blank header double-click restores");
+ window.Width=800;Pump();
+ Check(toolbarScroll.ScrollableWidth>0,"Narrow shell exposes overflowing toolbar commands through horizontal scrolling");
+ var wheelDown=new MouseWheelEventArgs(Mouse.PrimaryDevice,Environment.TickCount,-120){RoutedEvent=UIElement.PreviewMouseWheelEvent,Source=toolbarScroll};
+ toolbarScroll.RaiseEvent(wheelDown);Pump();
+ Check(wheelDown.Handled&&Math.Abs(toolbarScroll.HorizontalOffset-60)<1,"Wheel down scrolls toolbar right by half the wheel delta");
+ var wheelUp=new MouseWheelEventArgs(Mouse.PrimaryDevice,Environment.TickCount,120){RoutedEvent=UIElement.PreviewMouseWheelEvent,Source=toolbarScroll};
+ toolbarScroll.RaiseEvent(wheelUp);Pump();
+ Check(wheelUp.Handled&&toolbarScroll.HorizontalOffset==0,"Wheel up restores hidden toolbar commands");
+ var onToolbarScroll=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent,Source=toolbarScroll};
+ headerHandler.Invoke(window,[header,onToolbarScroll]);
+ Check(!onToolbarScroll.Handled&&window.WindowState==WindowState.Normal,"Toolbar scroll area is not treated as a titlebar drag gesture");
+ window.Width=1366;Pump();
  var zoomSlider=Find<Slider>("ZoomSlider");var zoomLabel=Find<TextBlock>("ZoomValue");
  var resetZoom=Find<Button>("ResetCanvasZoomButton");var graphSurface=Find<Grid>("GraphSurface");
  var zoomDoc=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
