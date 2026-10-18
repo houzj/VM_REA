@@ -69,7 +69,8 @@ public sealed partial class GraphEditorDocument
     public void SetWorkflowConfiguration(string id,WorkflowConfiguration configuration) {
         var p=Procedure(id);configuration=configuration with{Subscriptions=configuration.Subscriptions.Where(b=>b.Source.Kind!=WorkflowSourceKind.WorkflowInput||configuration.Inputs.Any(i=>i.Id==b.Source.Id)).ToArray()};if(p.GroupOwner is not null)configuration=GroupDisplayLinks.Synchronize(p.Configuration,configuration);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();
         if(JsonSerializer.Serialize(p.Configuration)==JsonSerializer.Serialize(snapshot))return;
-        Edit(d=>PropagateGroupInterface(d,p with{Configuration=snapshot}));
+        var invalidVariables=p.Configuration.Variables.Where(v=>!snapshot.Variables.Any(next=>next.Id==v.Id&&next.Type==v.Type)).Select(v=>v.Id).ToHashSet(StringComparer.Ordinal);
+        Edit(d=>PropagateGroupInterface(d,p with{Configuration=snapshot},invalidVariables));
     }
     public void SetProcedureNodeParameters(string procedureId,string nodeId,Dictionary<string,JsonElement> values) {
         var p=Procedure(procedureId);var node=p.Nodes.FirstOrDefault(n=>n.Id==nodeId)??throw new KeyNotFoundException(nodeId);var parameters=CheckedParameters(node,values);
