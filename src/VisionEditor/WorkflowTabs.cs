@@ -214,7 +214,7 @@ public partial class MainWindow
             foreach(var node in procedure.Nodes)
             {
                 var leaf=new TreeViewItem {Header=node.Name,Tag=node.Id,Style=(Style)FindResource("WorkflowTreeItem")};
-                leaf.PreviewMouseLeftButtonDown+=(_,e)=> {workflowListPopup!.IsOpen=false;workflowOverview=false;SelectWorkflow(procedure.Id);selected=node.Id;selectedNodes.Clear();selectedNodes.Add(node.Id);RefreshAll();CanvasScrollViewer.ScrollToHorizontalOffset(Math.Max(0,node.X*scale-CanvasViewport.ActualWidth/2));CanvasScrollViewer.ScrollToVerticalOffset(Math.Max(0,node.Y*scale-CanvasViewport.ActualHeight/2));e.Handled=true;};
+                leaf.PreviewMouseLeftButtonDown+=(_,e)=> {workflowListPopup!.IsOpen=false;workflowOverview=false;SelectWorkflow(procedure.Id);selected=node.Id;selectedNodes.Clear();selectedNodes.Add(node.Id);RefreshAll();NavigateToWorkflowNode(node);e.Handled=true;};
                 // Bubble selection to the leaf, rather than swallowing it in the parent preview event.
                 item.Items.Add(leaf);
             }
@@ -223,6 +223,17 @@ public partial class MainWindow
         var background=new LinearGradientBrush(Color.FromRgb(37,37,37),Color.FromRgb(50,50,50),90);
         var border=new Border {Child=tree,CornerRadius=new CornerRadius(5),BorderThickness=new Thickness(1),BorderBrush=new SolidColorBrush(Color.FromRgb(22,22,23)),Background=background,Effect=new System.Windows.Media.Effects.DropShadowEffect {BlurRadius=7,Direction=305,Opacity=.45,ShadowDepth=3}};
         workflowListPopup=new System.Windows.Controls.Primitives.Popup {Child=border,PlacementTarget=ProcedureListButton,Placement=System.Windows.Controls.Primitives.PlacementMode.Bottom,AllowsTransparency=true,StaysOpen=false,IsOpen=true};
+    }
+
+    void NavigateToWorkflowNode(NodeDocument node)
+    {
+        // VmProcedureDecorator.SearchModuleCommandExecute supplies the module Position;
+        // ZoomArea.OnSearchModuleInfoChanged uses the unscaled viewport dimensions
+        // before multiplying the complete target offset by Scale.
+        double x=Math.Max(0,node.X-CanvasViewport.ActualWidth*.5+50)*scale;
+        double y=Math.Max(0,node.Y-CanvasViewport.ActualHeight*.5+15)*scale;
+        CanvasScrollViewer.ScrollToHorizontalOffset(x);
+        CanvasScrollViewer.ScrollToVerticalOffset(y);
     }
 
     static bool IsTreeExpander(DependencyObject child)
