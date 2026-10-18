@@ -32,7 +32,7 @@ public partial class MainWindow
     readonly Dictionary<string,(double Scale,double X,double Y)> canvasViews=new();
     string? canvasProcedure,selectedWire;
     bool syncingViewport,eyeExpanded=true,eyeDragging,panning,boxSelecting;
-    Point pointerStart,panStart,eyePointerStart,eyeRegionStart,nodePointerStart;
+    Point pointerStart,eyePointerStart,eyeRegionStart,nodePointerStart;
     const double DiagramPageSize=5000; // DiagramPage.DiagramPageWidth and constructor.
     double worldWidth=DiagramPageSize,worldHeight=DiagramPageSize;
     Rectangle? selectionBox;
@@ -224,7 +224,7 @@ public partial class MainWindow
         bool background=IsCanvasBackground(e.OriginalSource as DependencyObject);
         if((Keyboard.Modifiers&ModifierKeys.Control)!=0&&background)
         {
-            panning=true;pointerStart=e.GetPosition(CanvasViewport);panStart=new Point(panX,panY);CanvasViewport.CaptureMouse();e.Handled=true;return;
+            panning=true;pointerStart=e.GetPosition(CanvasViewport);CanvasViewport.CaptureMouse();e.Handled=true;return;
         }
         if(!background||workflowOverview)return;
         GraphLayer.Focus();selected=null;selectedWire=null;selectedNodes.Clear();boxSelectionActive=false;DrawSelectionGroup();DrawWireHandles();RefreshRight();
@@ -235,7 +235,11 @@ public partial class MainWindow
     void CanvasPointerMove(object sender,MouseEventArgs e)
     {
         if(wireDrag is not null){PreviewWireDrag(e.GetPosition(GraphLayer));return;}
-        if(panning){if((Keyboard.Modifiers&ModifierKeys.Control)==0)return;var delta=e.GetPosition(CanvasViewport)-pointerStart;panX=panStart.X+delta.X;panY=panStart.Y+delta.Y;ApplyCanvasTransform();return;}
+        if(panning)
+        {
+            if((Keyboard.Modifiers&ModifierKeys.Control)==0)return;
+            MoveCanvasPan(e.GetPosition(CanvasViewport));return;
+        }
         if(movingNodes is not null){if(nodeOleArmed)StartNodeOleDrag(e);else PreviewNodeMove(e.GetPosition(GraphLayer));return;}
         if(boxSelecting&&selectionBox is not null)
         {
@@ -245,6 +249,13 @@ public partial class MainWindow
         {
             UpdateConnectionPreview(e.GetPosition(GraphLayer));
         }
+    }
+    void MoveCanvasPan(Point position)
+    {
+        var delta=position-pointerStart;
+        pointerStart=position; // ZoomArea.ScrollViewer_MouseMove advances lastDragPoint on every move.
+        panX+=delta.X;panY+=delta.Y;
+        ApplyCanvasTransform();
     }
     void CanvasPointerUp(object sender,MouseButtonEventArgs e)
     {
@@ -291,7 +302,16 @@ public partial class MainWindow
         // ZoomArea.OnPreviewMouseWheel calls OnHoriScroll, then OnChangeZoom.
         // Unmodified wheel is left to WPF ScrollViewer's native wheel policy.
         if((Keyboard.Modifiers&ModifierKeys.Shift)!=0){if(e.Delta<0)CanvasScrollViewer.LineRight();else if(e.Delta>0)CanvasScrollViewer.LineLeft();e.Handled=true;}
-        if((Keyboard.Modifiers&ModifierKeys.Control)!=0){SetCanvasZoom(scale+(e.Delta>0?.1:-.1),e.GetPosition(CanvasViewport));e.Handled=true;}
+        if((Keyboard.Modifiers&ModifierKeys.Control)!=0)
+        {
+            // ZoomArea.OnChangeZoom changes DiagramZoomIndex only for a nonzero delta.
+            MoveCanvasZoomByWheel(e.Delta,e.GetPosition(CanvasViewport));
+            e.Handled=true;
+        }
+    }
+    void MoveCanvasZoomByWheel(int delta,Point anchor)
+    {
+        if(delta!=0)SetCanvasZoom(scale+(delta>0?.1:-.1),anchor);
     }
     void SetCanvasZoom(double value,Point anchor)
     {

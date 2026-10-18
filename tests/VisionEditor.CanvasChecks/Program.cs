@@ -163,6 +163,32 @@ internal static class Program
             string focusFile=Path.Combine(Path.GetTempPath(),"vision-canvas-focus-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(focusFile);doc.Load(focusFile);Check(doc.CurrentProcedure.ExecutionLinks!.Single().FromNode==focusSource&&doc.CurrentProcedure.ExecutionLinks!.Single().ToNode==focusTarget,"restored execution link survives save and reload");}
             finally {if(File.Exists(focusFile))File.Delete(focusFile);}
+
+            // ZoomArea.ScrollViewer_MouseMove updates lastDragPoint for each move, even
+            // when ViewArea has been clamped at the canvas edge.
+            doc.NewSolution();Pump();
+            scroll.ScrollToHorizontalOffset(100);scroll.ScrollToVerticalOffset(100);Pump();
+            Check(Math.Abs(scroll.HorizontalOffset-100)<1,"pan check begins one hundred pixels from the canvas edge");
+            typeof(MainWindow).GetField("pointerStart",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,new Point(100,100));
+            typeof(MainWindow).GetField("panning",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,true);
+            revision=doc.Revision;
+            Invoke("MoveCanvasPan",new Point(250,100));Pump();
+            Check(Math.Abs(scroll.HorizontalOffset)<.001,"Ctrl drag clamps at the left canvas boundary");
+            Invoke("MoveCanvasPan",new Point(230,100));Pump();
+            Check(Math.Abs(scroll.HorizontalOffset-20)<1,"reverse drag immediately moves twenty pixels from clamped edge using last pointer position");
+            typeof(MainWindow).GetField("panning",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(window,false);
+            Capture("canvas-pan-edge-reversal.png");
+            double beforeZoom=(double)typeof(MainWindow).GetField("scale",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Invoke("MoveCanvasZoomByWheel",0,new Point(180,140));Pump();
+            Check((double)typeof(MainWindow).GetField("scale",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)! == beforeZoom,"zero-delta Ctrl wheel preserves native zoom tick");
+            Invoke("MoveCanvasZoomByWheel",120,new Point(180,140));Pump();
+            Check(Math.Abs((double)typeof(MainWindow).GetField("scale",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!-beforeZoom-.1)<.001,"positive Ctrl wheel advances exactly one native zoom tick");
+            Invoke("MoveCanvasZoomByWheel",-120,new Point(180,140));Pump();
+            Check(Math.Abs((double)typeof(MainWindow).GetField("scale",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!-beforeZoom)<.001,"reverse Ctrl wheel restores the original tick");
+            Check(doc.Revision==revision,"canvas pan and zoom do not edit workflow data or undo history");
+            string viewportFile=Path.Combine(Path.GetTempPath(),"vision-canvas-pan-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try {doc.Save(viewportFile);doc.Load(viewportFile);Check(doc.CurrentProcedure.Nodes.Count==0,"pan and zoom leave solution data valid after save and reopen");}
+            finally {if(File.Exists(viewportFile))File.Delete(viewportFile);}
         }
         finally {window.Close();application.Shutdown();}
     }
