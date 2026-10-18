@@ -1,7 +1,7 @@
 ﻿using VisionFramework;
 namespace VisionEditor.Core;
 public sealed partial class GraphEditorDocument {
- SolutionDocument PropagateGroupInterface(SolutionDocument document,ProcedureDocument changed){
+ SolutionDocument PropagateGroupInterface(SolutionDocument document,ProcedureDocument changed,ISet<string>? invalidVariables=null){
   var procedures=document.Procedures.ToDictionary(p=>p.Id,StringComparer.Ordinal);
   void Apply(ProcedureDocument body){var before=procedures[body.Id];procedures[body.Id]=body;if(body.GroupOwner is not {} owner)return;var parent=procedures[owner.ProcedureId];var signature=WorkflowCalls.From(body);var oldSignature=WorkflowCalls.From(before);var inputMapping=oldSignature.Inputs.ToDictionary(p=>p.Name,p=>signature.Inputs.SingleOrDefault(n=>n.Id==p.Id),StringComparer.Ordinal);var oldPorts=oldSignature.Outputs;var mapping=oldPorts.ToDictionary(p=>p.Name,p=>signature.Outputs.SingleOrDefault(n=>n.Id==p.Id),StringComparer.Ordinal);
    // Derived leaves retain their root interface identity during rename/removal.
@@ -16,7 +16,7 @@ public sealed partial class GraphEditorDocument {
    if(parent.GroupOwner is {} outer){var grand=procedures[outer.ProcedureId];procedures[grand.Id]=grand with{Nodes=grand.Nodes.Select(n=>n.Id==outer.NodeId?n with{GroupBreak=Bindings(n.GroupBreak,true)}:n).ToArray()};}
    Apply(parent with{Nodes=nodes,Connections=edges.Where(e=>e.ToNode!=owner.NodeId||!inputMapping.TryGetValue(e.ToPort,out var input)||input is not null).Select(e=>e.ToNode==owner.NodeId&&inputMapping.TryGetValue(e.ToPort,out var input)&&input is not null?e with{ToPort=input.Name}:e).ToArray(),Configuration=configuration});
   }
-  Apply(changed);var result=document with{Procedures=document.Procedures.Select(p=>procedures[p.Id]).ToArray()};
+  Apply(changed);var result=document with{Procedures=document.Procedures.Select(p=>procedures[p.Id]).ToArray()};if(invalidVariables is {Count:>0})result=ClearInvalidGroupBreakVariables(result,changed.Id,invalidVariables);
   foreach(var next in result.Procedures){var old=document.Procedures.Single(p=>p.Id==next.Id);var oldIssues=GraphValidator.Validate(old,registry).Issues.Select(i=>(i.Code,i.NodeId,i.Message)).ToHashSet();var problem=GraphValidator.Validate(next,registry).Issues.FirstOrDefault(i=>i.Code is "PortType" or "WorkflowConfiguration" or "GroupBreakType" or "GroupBreakSource"&&!oldIssues.Contains((i.Code,i.NodeId,i.Message)));if(problem is not null)throw new InvalidOperationException("接口变更与现有订阅不兼容，请先调整下游绑定："+problem.Message);}
   return result;
  }
