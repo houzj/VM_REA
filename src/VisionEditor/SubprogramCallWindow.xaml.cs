@@ -77,7 +77,7 @@ public partial class SubprogramCallWindow:Window
  void UpdateClick(object sender,RoutedEventArgs e){if(Targets.SelectedValue is string id)Safe(()=>configure(id));}
  void TabChanged(object sender,SelectionChangedEventArgs e){if(IsLoaded&&ReferenceEquals(e.Source,ConfigurationTabs))Refresh();}
  bool repeatRequested;
- async Task ExecuteGroupRuns(){do{await run();Refresh();if(result()?.Status!=SessionStatus.Success)break;if(repeatRequested)await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}while(repeatRequested);}
+ async Task ExecuteGroupRuns(){do{var pending=run();RefreshResults();await pending;Refresh();if(result()?.Status!=SessionStatus.Success)break;if(repeatRequested)await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}while(repeatRequested);}
  async void StartGroupRun(bool repeat){if(running)return;running=true;repeatRequested=repeat;Targets.IsEnabled=ConfigurationTabs.IsEnabled=RunOnce.IsEnabled=Repeat.IsEnabled=false;Stop.IsEnabled=true;try{Error.Text="";runningTask=ExecuteGroupRuns();await runningTask;}catch(Exception error){RefreshResults();Error.Text=error is OperationCanceledException?"运行已停止":error.Message;}finally{repeatRequested=false;running=false;Targets.IsEnabled=ConfigurationTabs.IsEnabled=RunOnce.IsEnabled=Repeat.IsEnabled=true;Stop.IsEnabled=false;}}
  void RunClick(object sender,RoutedEventArgs e)=>StartGroupRun(false);
  void RepeatClick(object sender,RoutedEventArgs e)=>StartGroupRun(true);

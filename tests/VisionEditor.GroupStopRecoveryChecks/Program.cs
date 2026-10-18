@@ -19,12 +19,13 @@ internal static class Program
   var group=new NodeDocument("group",WorkflowCalls.ModuleId,WorkflowCalls.Version,"Group",new(){["EnableLoop"]=JsonSerializer.SerializeToElement(false)}){Call=WorkflowCalls.From(body)};
   var parent=new ProcedureDocument("main","流程",[group],[],[]);var solution=new SolutionDocument(SolutionStore.CurrentVersion,"stop","stop",[parent,body],[]);
   ExecutionSessionResult? result=null;CancellationTokenSource? cancellation=null;var stops=0;
-  async Task Run(){using var token=new CancellationTokenSource();cancellation=token;result=await new GroupDebugExecutor(registry).RunAsync(new(solution,Environment.CurrentDirectory),"main","group",cancellationToken:token.Token);cancellation=null;}
+  async Task Run(){result=null;using var token=new CancellationTokenSource();cancellation=token;result=await new GroupDebugExecutor(registry).RunAsync(new(solution,Environment.CurrentDirectory),"main","group",cancellationToken:token.Token);cancellation=null;}
   void Stop(){stops++;cancellation?.Cancel();}
   var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
   var window=new SubprogramCallWindow(()=>parent,()=>group,()=>solution.Procedures,_=>{},(_,_)=>{},_=>[],Run,Stop,()=>result){ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};window.Show();Pump();
   Button Button(string name)=> (Button)typeof(SubprogramCallWindow).GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
   TextBlock Error()=> (TextBlock)typeof(SubprogramCallWindow).GetField("Error",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+  DataGrid Results()=> (DataGrid)typeof(SubprogramCallWindow).GetField("Results",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
   void Click(Button button)=>button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
   void Until(Func<bool> condition){for(var i=0;i<300&&!condition();i++){Pump();Thread.Sleep(10);}if(!condition())throw new Exception("WPF run did not reach expected state");}
   state.HoldNext();Click(Button("Repeat"));Until(()=>state.Entered==1);Check(window.IsExecuting,"Continuous Group run enters actual module");
@@ -33,7 +34,7 @@ internal static class Program
   Click(Button("RunOnce"));Until(()=>!window.IsExecuting);Check(state.Entered==2&&result?.Status==SessionStatus.Success&&result.Calls["group"].WorkflowOutputs["out"].As<long>()==2,"Single run remains available after continuous Stop with actual output");
   state.FailNext=true;Click(Button("RunOnce"));Until(()=>!window.IsExecuting);Check(state.Entered==3&&result?.Status==SessionStatus.Failed&&Error().Text.Contains("Failed"),"Failed Group run exits busy state and shows error");
   Click(Button("RunOnce"));Until(()=>!window.IsExecuting);Check(state.Entered==4&&result?.Status==SessionStatus.Success&&result.Calls["group"].WorkflowOutputs["out"].As<long>()==4&&Error().Text.Length==0,"Group run recovers from failure and refreshes successful output");
-  state.HoldNext();Click(Button("RunOnce"));Until(()=>state.Entered==5);Click(Button("Stop"));Check(stops==0&&window.IsExecuting,"Stop during one-shot does not cancel the current run");state.Release();Until(()=>!window.IsExecuting);Check(result?.Status==SessionStatus.Success,"One-shot result is retained after Stop click");
+  state.HoldNext();Click(Button("RunOnce"));Until(()=>state.Entered==5);Check(Results().ItemsSource is null,"Group result table clears stale output while next SelfRun is pending");Click(Button("Stop"));Check(stops==0&&window.IsExecuting,"Stop during one-shot does not cancel the current run");state.Release();Until(()=>!window.IsExecuting);Check(result?.Status==SessionStatus.Success&&Results().ItemsSource is not null,"One-shot result is displayed after Stop click and completion");
   state.HoldNext();Click(Button("RunOnce"));Until(()=>state.Entered==6);window.Close();Until(()=>!window.IsVisible);Check(stops==1,"Closing a running Group window still cancels and cleans up the active task");
   app.Shutdown();Console.WriteLine($"PASS {count} Group stop/recovery checks");
  }
