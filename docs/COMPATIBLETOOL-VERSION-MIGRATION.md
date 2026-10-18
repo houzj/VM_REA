@@ -30,6 +30,18 @@
 
 安装目录还带有 SDK 样例源码，但它没有暴露 `.sol` 容器实现。本轮尝试使用 REA 打开已定位的 x64 SDK 二进制时，深度分析不可用：Ghidra 未配置，IDA 未注册连接，Hopper 不支持当前 Windows 主机。故目前比“只知托管包装”多确认了 V4.x 公开 C 接口的调用约定与保存数据结构，但仍没有获得 native 函数体；不能把接口声明写成原生序列化算法结论。
 
+### 安装版 V4.4 `.sol` 样本容器观察（静态）
+
+对安装包附带的 SDK 样本做只读头部与目录解析，没有调用 VM/SDK。三份方案样本均以 ZIP local-file signature `50 4B 03 04` 开头：
+
+| 样本 | SHA-256 | 观察 |
+|---|---|---|
+| `Development/V4.x/Samples/VC/PlatformSDKSampleVC/CircleFind/CircleFind.sol` | `B91A7736F467757E15A55AF7836E22364AE153478E17C69AAEB69E0C30674D0B` | .NET ZIP 目录读取成功；含 `SolutionFile/VmServer.xml`、`MoudleFrame`、`UiParamData/*` 和 `ModuleAttachments/*.bmp` |
+| `Development/V4.x/Samples/VC/PlatformSDKSampleVC/GetResultControl/GetResultSample.sol` | `8B30CA25747F0F7254E44D0B209A1EE5C9F0348628BA1579FC8D3647815767D2` | 文件头同为 `50 4B 03 04` |
+| `Development/V4.x/Samples/C#/ApplicationDemo/OCRDemoCs/OCRDemoEnglish.sol` | `E4B4BD7576EF2DA6D55558ACD1DB0D557FFB86C9F590D8830A94375D47DAD462` | 文件头同为 `50 4B 03 04` |
+
+`CircleFind.sol` 的 `SolutionFile/VmServer.xml` 可读 XML，包含版本 `V4.4.0`、方案名、模块及流程列表、连线/订阅关系；`UiParamData` 条目解压后是 VM 二进制记录（以 `fU3"` 等字节起始），不应作为普通 XML 解析。目录内单独存放 `MoudleFrame` 与图像附件，说明方案包不只是单一 XML 文件。该样本证明的是“这些未加密 SDK 样本能按 ZIP 目录读取”，不是所有 `.sol` 版本/密码模式都用相同封装，更没有证明 SDK 保存时的压缩参数、加密、校验、写入顺序、未知条目保留策略或旧版本迁移往返。
+
 ## 迁移调用链
 
 1. `ProjectManager` 调用 `IMVS_GetSolutionVersion`，对返回的 `strTargetSolutionInfo` 作字符串版本比较。低于本机 `Lang_version` 时，显示升级遮罩，并在原方案同目录选择 `原名_目标版本.sol`；文件已存在时依次尝试带序号的新名字，不覆盖旧迁移输出。
