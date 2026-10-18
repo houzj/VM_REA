@@ -78,7 +78,14 @@ public partial class MainWindow
  {
   if(!EditableCanvas||graphClipboard is not {Nodes.Count:>0} snapshot||graphClipboardSolution!=doc.Document.Id)return;
   var first=new Point(snapshot.Nodes.Min(n=>n.X),snapshot.Nodes.Min(n=>n.Y));
-  var target=position??new Point(Math.Min(first.X+100,4850),Math.Min(first.Y+100,4850));
+  // Native PasteItemsCommandExecute treats (0,0) as the keyboard-paste sentinel,
+  // even when it came from the canvas context menu at the origin.
+  var keyboardPoint=position is null||position.Value.X==0&&position.Value.Y==0;
+  var target=keyboardPoint?new Point(Math.Min(first.X+100,4850),Math.Min(first.Y+100,4850)):position!.Value;
+  // PasteItemsCommandExecute caps the (0,0) keyboard sentinel, while a real
+  // context-menu point used for the first pasted item has no upper cap.
+  static double NativePasteCoordinate(double value){double rounded=Math.Round(value/5)*5;return rounded<0?5:rounded;}
+  target=new Point(NativePasteCoordinate(target.X),NativePasteCoordinate(target.Y));
   SelectPasted(doc.PasteNodes(snapshot,target.X,target.Y));
  }
  void SelectPasted(IReadOnlyList<string> ids)
@@ -103,7 +110,7 @@ public partial class MainWindow
   if(!EditableCanvas||selectedNodes.Count==0)return;var area=SelectedBounds();
   var positions=doc.CurrentProcedure.Nodes.Where(n=>selectedNodes.Contains(n.Id)).ToDictionary(n=>n.Id,n=>direction switch {
    "left"=>(area.Left+10,n.Y),"right"=>(area.Right-NodeWidth-10,n.Y),"centerX"=>(area.Left+Snap((area.Width-NodeWidth)/2),n.Y),
-   "top"=>(n.X,area.Top+10),"bottom"=>(n.X,area.Bottom-NodeVisualHeight(n)-10),"centerY"=>(n.X,Snap(area.Top+area.Height/2-NodeVisualHeight(n)/2)),_=>(n.X,n.Y)});
+   "top"=>(n.X,area.Top+10),"bottom"=>(n.X,area.Bottom-NodeVisualHeight(n)-10),"centerY"=>(n.X,area.Top+Snap((area.Height-NodeVisualHeight(n))/2)),_=>(n.X,n.Y)});
   doc.MoveNodes(positions);
  }
  void DistributeSelection(bool horizontal)
@@ -159,7 +166,7 @@ public partial class MainWindow
  void BeginConnection(string nodeId,int port)
  {
   if(!EditableCanvas||port is <0 or >3||!doc.CurrentProcedure.Nodes.Any(n=>n.Id==nodeId))return;
-  canvasGestureRevision=doc.Revision;selectedWire=null;pendingConnection=(nodeId,port);connectionTarget=null;GraphLayer.Focus();DrawWireHandles();CanvasViewport.CaptureMouse();
+  canvasGestureRevision=doc.Revision;selectedWire=null;pendingConnection=(nodeId,port);connectionTarget=null;GraphLayer.Focus();DrawWireHandles();
  }
  void SetPortHit(Border port,bool highlighted)
  {
@@ -176,15 +183,26 @@ public partial class MainWindow
   connectionTarget=FindConnectionTarget(point);
   foreach(var pair in executionPorts){bool target=connectionTarget is {} hit&&pair.Key.Node==hit.Node;pair.Value.Visibility=pair.Key.Node==source.Node||target?Visibility.Visible:Visibility.Collapsed;SetPortHit(pair.Value,connectionTarget==pair.Key);}
   var node=doc.CurrentProcedure.Nodes.Single(n=>n.Id==source.Node);
-  IReadOnlyList<RoutePoint> route;
-  if(connectionTarget is {} destination){var target=doc.CurrentProcedure.Nodes.Single(n=>n.Id==destination.Node);var boxes=doc.CurrentProcedure.Nodes.Select(n=>new {n.Id,Box=new RouteRect(n.X,n.Y,NodeWidth,NodeVisualHeight(n))}).ToArray();route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Route(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),Port(new(target.X,target.Y,NodeWidth,NodeVisualHeight(target)),destination.Port),boxes.Where(n=>n.Id!=node.Id&&n.Id!=target.Id).Select(n=>n.Box),Math.Max(200,boxes.Max(n=>n.Box.Right)+100),Math.Max(200,boxes.Max(n=>n.Box.Bottom)+100)).Points;}
-  else route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Preview(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),new(point.X,point.Y));
+  // Connector.AttachedDiagramItem_PreviewMouseMove always draws
+  // GetConnectionLine(source, current pointer). Target hit testing only
+  // highlights its nearest connector; the routed connection is made on up.
+  IReadOnlyList<RoutePoint> route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Preview(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),new(point.X,point.Y));
   if(connectionPreview is not null)GraphLayer.Children.Remove(connectionPreview);
   connectionPreview=new System.Windows.Shapes.Path {Data=LineGeometry(route),Stroke=new SolidColorBrush(Color.FromRgb(255,167,15)),StrokeThickness=2,StrokeDashArray=new DoubleCollection {5,2.5},StrokeLineJoin=PenLineJoin.Round,IsHitTestVisible=false};Panel.SetZIndex(connectionPreview,60);GraphLayer.Children.Add(connectionPreview);
  }
  void FinishConnection(Point point)
  {
-  var source=pendingConnection;var target=FindConnectionTarget(point);pendingConnection=null;connectionTarget=null;
+  // Connector.ToolItemGrid_PreviewMouseUp consumes oldItem recorded by
+  // AttachedDiagramItem_PreviewMouseMove; mouse-up cannot discover a new item.
+  // Only the nearest connector index is computed from the release position.
+  var source=pendingConnection;var previewTarget=connectionTarget;
+  (string Node,int Port)? target=null;
+  if(previewTarget is {} previous&&doc.CurrentProcedure.Nodes.FirstOrDefault(n=>n.Id==previous.Node) is {} node)
+  {
+   int index=Enumerable.Range(0,4).OrderBy(i=>{var p=Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),i).Anchor;return Math.Pow(p.X-point.X,2)+Math.Pow(p.Y-point.Y,2);}).First();
+   target=(node.Id,index);
+  }
+  pendingConnection=null;connectionTarget=null;
   CanvasViewport.ReleaseMouseCapture();
   if(source is {} from&&target is {} to&&EditableCanvas)Safe(()=>doc.ConnectExecution(from.Node,to.Node,from.Port,to.Port));
   RenderGraph();

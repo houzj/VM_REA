@@ -30,7 +30,16 @@ public partial class MainWindow
   scale=view.Item1;panX=view.Item2;panY=view.Item3;canvasProcedure=doc.CurrentProcedureId;
   selected=null;selectedNodes.Clear();RefreshAll();
  }
- void OpenWorkflowFromOverview(string id){workflowOverview=false;SelectWorkflow(id);canvasProcedure=null;RefreshAll();}
+ void OpenWorkflowFromOverview(string id)
+ {
+  // The solution DiagramArea and each procedure DiagramArea are separate native views.
+  // Capture the overview viewport before SelectWorkflow triggers its first graph render.
+  canvasViews["__solution"]=(scale,panX,panY);
+  workflowOverview=false;
+  canvasProcedure=null;
+  SelectWorkflow(id);
+  RefreshAll();
+ }
  void RenderWorkflowOverview()
  {
   GraphLayer.Children.Clear();nodeCards.Clear();GraphLayer.Width=GraphLayer.Height=5000;Breadcrumb.Text="";

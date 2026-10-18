@@ -158,8 +158,10 @@ public sealed partial class GraphEditorDocument
         var names=CurrentProcedure.Nodes.Select(n=>n.Name).ToHashSet(StringComparer.Ordinal);
         string UniqueName(string name){if(names.Add(name))return name;var stem=System.Text.RegularExpressions.Regex.Replace(name,@"\d+$","");int index=1;while(!names.Add(stem+index))index++;return stem+index;}
         double left=fragment.Nodes.Min(n=>n.X),top=fragment.Nodes.Min(n=>n.Y);
-        double Coordinate(double value)=>Math.Round(Math.Clamp(value,0,4850)/5)*5;
-        var nodes=fragment.Nodes.Select(n=>n with {Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false),Name=UniqueName(n.Name),X=Coordinate(x+n.X-left),Y=Coordinate(y+n.Y-top),Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray();
+        double Coordinate(double value,bool first){double rounded=Math.Round((first?value:Math.Min(value,4850))/5)*5;return rounded<0?5:rounded;}
+        // Native PasteItemsCommandExecute constrains later items to PageWidth-150,
+        // but the first pasted item's explicit point is only rounded and floored.
+        var nodes=fragment.Nodes.Select((n,index)=>n with {Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false),Name=UniqueName(n.Name),X=Coordinate(x+n.X-left,index==0),Y=Coordinate(y+n.Y-top,index==0),Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray();
         var connections=fragment.Connections.Select(c=>c with {FromNode=ids.GetValueOrDefault(c.FromNode,c.FromNode),ToNode=ids[c.ToNode]}).ToArray();
         IReadOnlyList<WirePointDocument>? TranslatedPath(ExecutionLinkDocument edge){
             if(edge.PathPoints is null||!ids.ContainsKey(edge.FromNode))return null;var source=fragment.Nodes.Single(n=>n.Id==edge.FromNode);var target=fragment.Nodes.Single(n=>n.Id==edge.ToNode);var copiedSource=nodes.Single(n=>n.Id==ids[source.Id]);var copiedTarget=nodes.Single(n=>n.Id==ids[target.Id]);

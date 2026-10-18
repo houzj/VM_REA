@@ -38,6 +38,8 @@ public partial class MainWindow
  {
   foreach(var handle in wireHandles)GraphLayer.Children.Remove(handle);wireHandles.Clear();
   if(!EditableCanvas||selectedWire is null||!wireViews.TryGetValue(selectedWire,out var entry))return;
+  // Connection.OnIsSelectedChanged uses IsFocused; LostFocus clears MidPoints.
+  if(wireDrag is null&&(!wireHitPaths.TryGetValue(selectedWire,out var hit)||!hit.IsKeyboardFocused))return;
   var points=wireDrag?.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray()??entry.Points;
   for(int i=0;i<points.Count-1;i++)
   {

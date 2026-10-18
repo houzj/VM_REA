@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -30,8 +30,9 @@ public partial class MainWindow
     readonly HashSet<string> selectedNodes=new(StringComparer.Ordinal);
     readonly Dictionary<string,Canvas> nodeCards=new();
     readonly Dictionary<string,(double Scale,double X,double Y)> canvasViews=new();
+    readonly Dictionary<(string Procedure,string From,string To),(RoutePort Source,RoutePort Target,IReadOnlyList<RoutePoint> Points)> automaticRoutes=new();
     string? canvasProcedure,selectedWire;
-    bool syncingViewport,eyeExpanded=true,eyeDragging,panning,boxSelecting;
+    bool syncingViewport,eyeExpanded=true,eyeDragging,panning,boxSelecting,connectionCaptureStarting;
     Point pointerStart,eyePointerStart,eyeRegionStart,nodePointerStart;
     const double DiagramPageSize=5000; // DiagramPage.DiagramPageWidth and constructor.
     double worldWidth=DiagramPageSize,worldHeight=DiagramPageSize;
@@ -59,6 +60,7 @@ public partial class MainWindow
         MiniMapPreview.Fill=new VisualBrush {Visual=GraphLayer}; // ZoomArea.RectEagleEye.Fill = new VisualBrush(cp).
         MiniMapPanel.Effect=new System.Windows.Media.Effects.DropShadowEffect {Opacity=.45,ShadowDepth=2,BlurRadius=8,Color=Colors.Black};
         GraphLayer.Background=OriginalCanvasGrid();
+        doc.SolutionReplaced+=()=>automaticRoutes.Clear();
         CanvasScrollViewer.ScrollChanged+=(_,_)=> {if(!syncingViewport){panX=-CanvasScrollViewer.HorizontalOffset;panY=-CanvasScrollViewer.VerticalOffset;UpdateMiniMap();}};
     }
 
@@ -91,11 +93,33 @@ public partial class MainWindow
         worldHeight=DiagramPageSize;
         GraphLayer.Width=worldWidth;GraphLayer.Height=worldHeight;
         var boxes=procedure.Nodes.ToDictionary(n=>n.Id,n=>new RouteRect(n.X,n.Y,NodeWidth,NodeVisualHeight(n)));
-        foreach(var wire in ProcedureGraph.ExecutionEdges(procedure))
+        var wires=ProcedureGraph.ExecutionEdges(procedure).ToArray();
+        var activeWires=wires.Select(w=>(w.FromNode,w.ToNode)).ToHashSet();
+        var liveProcedures=doc.Document.Procedures.Select(p=>p.Id).ToHashSet();
+        foreach(var old in automaticRoutes.Keys.Where(k=>!liveProcedures.Contains(k.Procedure)||(k.Procedure==procedure.Id&&!activeWires.Contains((k.From,k.To)))).ToArray())automaticRoutes.Remove(old);
+        foreach(var wire in wires)
         {
             if(!boxes.TryGetValue(wire.FromNode,out var sourceBox)||!boxes.TryGetValue(wire.ToNode,out var targetBox))continue;
-            double routeWidth=Math.Max(200,boxes.Values.Max(b=>b.Right)+100),routeHeight=Math.Max(200,boxes.Values.Max(b=>b.Bottom)+100);
-            var points=wire.PathPoints is {Count:>1}?wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray():VmOrthogonalRouter.Route(Port(sourceBox,wire.SourceIndex),Port(targetBox,wire.TargetIndex),boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight).Points;
+            var cacheKey=(procedure.Id,wire.FromNode,wire.ToNode);
+            IReadOnlyList<RoutePoint> points;
+            if(wire.PathPoints is {Count:>1})
+            {
+                automaticRoutes.Remove(cacheKey);
+                points=wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray();
+            }
+            else
+            {
+                var source=Port(sourceBox,wire.SourceIndex);var target=Port(targetBox,wire.TargetIndex);
+                if(automaticRoutes.TryGetValue(cacheKey,out var previous)&&previous.Source==source&&previous.Target==target)points=previous.Points;
+                else
+                {
+                    double routeWidth=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Right)+100)),routeHeight=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Bottom)+100));
+                    // Connection.OnPositionChanged invalidates only its own endpoint/port changes.
+                    // DiagramPage.GetPathMap is therefore rerun for those changes, not for an unrelated obstacle move.
+                    points=VmOrthogonalRouter.Route(source,target,boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight,1_100_000).Points;
+                    if(points.Count>=2)automaticRoutes[cacheKey]=(source,target,points);else automaticRoutes.Remove(cacheKey);
+                }
+            }
             if(points.Count<2) { StatusText.Text="有连线无法在当前画布范围内完成布线";continue; }
             string key=wire.FromNode+">"+wire.ToNode;
             var displayedPoints=wire.PathPoints is {Count:>1}?VmOrthogonalRouter.Passivate(points):points;
@@ -103,12 +127,19 @@ public partial class MainWindow
             wireViews[key]=(wire,path,wire.PathPoints is {Count:>1}?points:CleanWirePoints(points));
             GraphLayer.Children.Add(path);
             var arrow=new Polygon {Points=OriginalWireArrow(displayedPoints),IsHitTestVisible=false};arrow.SetBinding(System.Windows.Shapes.Shape.FillProperty,new System.Windows.Data.Binding("Stroke"){Source=path});wireArrows[key]=arrow;GraphLayer.Children.Add(arrow);
-            var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=12,Focusable=true};
+            // Native Connection is one 2px Shape: its stroke is also the hit area.
+            // The transparent overlay preserves our split render/focus architecture,
+            // but must use the same width rather than expanding selection to 12px.
+            var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=2,Focusable=true};
             // Connection.RequestBringIntoView suppresses focus-driven scroll jumps.
             hit.RequestBringIntoView+=(_,e)=>e.Handled=true;
-            hit.MouseEnter+=(_,_)=>path.StrokeThickness=3;hit.MouseLeave+=(_,_)=>path.StrokeThickness=selectedWire==key?3:2;
-            hit.MouseLeftButtonDown+=(_,e)=> {selectedWire=key;selected=null;selectedNodes.Clear();boxSelectionActive=false;hit.Focus();RefreshNodeSelection();RefreshRight();e.Handled=true;};
-            var menu=new ContextMenu();var delete=new MenuItem {Header="删除连线",IsEnabled=!isLocked&&activeRun is null};delete.Click+=(_,_)=>Safe(()=> {doc.DisconnectExecution(wire);selectedWire=null;});menu.Items.Add(delete);hit.ContextMenu=menu;
+            hit.LostKeyboardFocus+=(_,_)=>DrawWireHandles();
+            hit.GotKeyboardFocus+=(_,_)=>DrawWireHandles();
+            // Original Connection keeps a 2px visible stroke on hover/focus;
+            // only Shape_DragEnter for an insertion payload temporarily uses 10px.
+            // Connection.OnPreviewMouseDown selects for every mouse button, including right-click.
+            hit.PreviewMouseDown+=(_,e)=> {selectedWire=key;selected=null;selectedNodes.Clear();boxSelectionActive=false;hit.Focus();RefreshNodeSelection();RefreshRight();e.Handled=true;};
+            var menu=new ContextMenu();var delete=new MenuItem {Header="删除",IsEnabled=!isLocked&&activeRun is null};delete.Click+=(_,_)=>Safe(()=> {doc.DisconnectExecution(wire);selectedWire=null;});menu.Items.Add(delete);hit.ContextMenu=menu;
             wireHitPaths[key]=hit;GraphLayer.Children.Add(hit);
         }
         for(int i=0;i<procedure.Nodes.Count;i++)
@@ -122,7 +153,7 @@ public partial class MainWindow
             card.MouseLeave+=(_,_)=>Dispatcher.BeginInvoke(new Action(()=> {if(pendingConnection is null&&!card.IsMouseOver&&!ports.Any(p=>p.IsMouseOver))foreach(var port in ports)port.Visibility=Visibility.Collapsed;}));
             var menu=new ContextMenu();var open=new MenuItem {Header="参数设置"};open.Click+=(_,_)=>OpenNode(node.Id);menu.Items.Add(open);if(node.ModuleId==WorkflowCalls.ModuleId){var enter=new MenuItem {Header="进入 Group",IsEnabled=node.Call is not null};enter.Click+=(_,_)=>EnterSubprogram(node.Id);menu.Items.Add(enter);}
             var copy=new MenuItem {Header="复制",InputGestureText="Ctrl+C",IsEnabled=EditableCanvas};copy.Click+=(_,_)=>CopySelection();menu.Items.Add(copy);
-            var remove=new MenuItem {Header="删除",IsEnabled=!isLocked&&activeRun is null};remove.Click+=(_,_)=> {selectedNodes.Add(node.Id);DeleteSelection();};menu.Items.Add(remove);card.ContextMenu=menu;
+            var remove=new MenuItem {Header="删除",IsEnabled=!isLocked&&activeRun is null};remove.Click+=(_,_)=> {selectedNodes.Add(node.Id);DeleteSelection();};menu.Items.Add(remove);card.ContextMenu=parameterEditorOpen?null:menu;
             card.MouseRightButtonDown+=(_,_)=> {if(!selectedNodes.Contains(node.Id)){selectedNodes.Clear();boxSelectionActive=false;}selectedNodes.Add(node.Id);selected=node.Id;RefreshNodeSelection();RefreshRight();};
         }
         DrawSelectionGroup();DrawWireHandles();ApplyCanvasTransform();
@@ -165,6 +196,9 @@ public partial class MainWindow
     void NodeDown(object sender,MouseButtonEventArgs e)
     {
         if(sender is not Canvas {Tag:string id})return;
+        // DiagramItem.OnPreviewMouseLeftButtonDown consumes a single click
+        // while the owning DiagramArea has IsOpenParams=true.
+        if(parameterEditorOpen&&e.ClickCount<2){e.Handled=true;return;}
         GraphLayer.Focus();selectedWire=null;
         if(e.ClickCount==2){if(doc.CurrentProcedure.Nodes.Single(n=>n.Id==id).ModuleId==WorkflowCalls.ModuleId)EnterSubprogram(id);else OpenNode(id);e.Handled=true;return;}
         if(!selectedNodes.Contains(id)){selectedNodes.Clear();selectedNodes.Add(id);boxSelectionActive=false;}
@@ -189,21 +223,40 @@ public partial class MainWindow
         if(Math.Abs(delta.X)<=3&&Math.Abs(delta.Y)<=3&&movingGhosts.Count==0)return;
         double left=movingNodes.Values.Min(p=>p.X),top=movingNodes.Values.Min(p=>p.Y);
         double dx=Snap(left+delta.X)-left,dy=Snap(top+delta.Y)-top;
-        dx=Math.Clamp(dx,-left,Math.Max(-left,DiagramPageSize-NodeWidth-movingNodes.Values.Max(p=>p.X)));
-        double bottom=movingNodes.Max(entry=>entry.Value.Y+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key)));
-        dy=Math.Clamp(dy,-top,Math.Max(-top,DiagramPageSize-bottom));
+        // ItemsPage.GetDropItems clamps each selected DiagramItem separately.
+        // A group-wide limit would freeze all items when just one reaches an edge.
+        if(movingNodes.Count==1)
+        {
+            dx=Math.Clamp(dx,-left,Math.Max(-left,DiagramPageSize-NodeWidth-movingNodes.Values.Max(p=>p.X)));
+            double bottom=movingNodes.Max(entry=>entry.Value.Y+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key)));
+            dy=Math.Clamp(dy,-top,Math.Max(-top,DiagramPageSize-bottom));
+        }
         foreach(var entry in movingNodes)
         {
             if(!movingGhosts.TryGetValue(entry.Key,out var ghost))
             {
                 var node=doc.CurrentProcedure.Nodes.First(n=>n.Id==entry.Key);ghost=CreateNodeCard(node,doc.CurrentProcedure.Nodes.ToList().FindIndex(n=>n.Id==entry.Key),true);ghost.Opacity=.7;ghost.IsHitTestVisible=false;Panel.SetZIndex(ghost,60);movingGhosts[entry.Key]=ghost;GraphLayer.Children.Add(ghost);
             }
-            Canvas.SetLeft(ghost,entry.Value.X+dx-10);Canvas.SetTop(ghost,entry.Value.Y+dy-10);
+            var height=NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key));
+            Canvas.SetLeft(ghost,Math.Clamp(entry.Value.X+dx,0,DiagramPageSize-NodeWidth)-10);
+            Canvas.SetTop(ghost,Math.Clamp(entry.Value.Y+dy,0,DiagramPageSize-height)-10);
         }
-        if(boxSelectionActive){if(groupMoveFrame is not null)GraphLayer.Children.Remove(groupMoveFrame);var area=SelectedBounds();area.Offset(dx,dy);groupMoveFrame=GroupRectangle(area,false);groupMoveFrame.Opacity=.7;GraphLayer.Children.Add(groupMoveFrame);}
+        if(boxSelectionActive)
+        {
+            if(groupMoveFrame is not null)GraphLayer.Children.Remove(groupMoveFrame);
+            var leftEdge=movingGhosts.Values.Min(g=>Canvas.GetLeft(g)+10);
+            var topEdge=movingGhosts.Values.Min(g=>Canvas.GetTop(g)+10);
+            var rightEdge=movingGhosts.Values.Max(g=>Canvas.GetLeft(g)+10+NodeWidth);
+            var bottomEdge=movingGhosts.Max(g=>Canvas.GetTop(g.Value)+10+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==g.Key)));
+            var area=new Rect(new Point(leftEdge,topEdge),new Point(rightEdge,bottomEdge));area.Inflate(10,10);
+            groupMoveFrame=GroupRectangle(area,false);groupMoveFrame.Opacity=.7;GraphLayer.Children.Add(groupMoveFrame);
+        }
         DrawAlignmentGuides(left+dx,top+dy);
         if(movingNodes.Count==1)UpdateNodeHotRegion(left+dx,top+dy,movingNodes.Keys);
-        if(movingNodes.Count==1&&!nodeCopyDrag)UpdateInsertionWire(point,movingNodes.Keys);
+        // Connection.Shape_DragEnter thickens for any List<DiagramItem>; Shape_Drop
+        // and VmConnectionDecorator.InsertModule accept only a single item.
+        // Keep the visual hover for a multi-selection/copy drag without making it insertable.
+        UpdateInsertionWire(point,movingNodes.Count==1&&!nodeCopyDrag?movingNodes.Keys:[]);
     }
     void CommitNodeMove()
     {
@@ -230,10 +283,13 @@ public partial class MainWindow
         GraphLayer.Focus();selected=null;selectedWire=null;selectedNodes.Clear();boxSelectionActive=false;DrawSelectionGroup();DrawWireHandles();RefreshRight();
         if(isLocked||activeRun is not null){RenderGraph();return;}
         canvasGestureRevision=doc.Revision;pointerStart=e.GetPosition(GraphLayer);boxSelecting=true;
-        selectionBox=new Rectangle {Stroke=orange,StrokeThickness=1/scale,Fill=new SolidColorBrush(Color.FromArgb(20,100,200,100)),IsHitTestVisible=false};GraphLayer.Children.Add(selectionBox);CanvasViewport.CaptureMouse();e.Handled=true;
+        // ItemsPage.ToolItemGrid_PreviewMouseMove uses an unfilled LightSlateGray
+        // adorner path with a {2,1} dash pattern during marquee selection.
+        selectionBox=new Rectangle {Stroke=Brushes.LightSlateGray,StrokeThickness=1/scale,StrokeDashArray=new DoubleCollection {2,1},Fill=Brushes.Transparent,IsHitTestVisible=false};GraphLayer.Children.Add(selectionBox);CanvasViewport.CaptureMouse();e.Handled=true;
     }
     void CanvasPointerMove(object sender,MouseEventArgs e)
     {
+        if(connectionCaptureStarting)return;
         if(wireDrag is not null){PreviewWireDrag(e.GetPosition(GraphLayer));return;}
         if(panning)
         {
@@ -247,8 +303,23 @@ public partial class MainWindow
         }
         if(pendingConnection is {} from)
         {
-            UpdateConnectionPreview(e.GetPosition(GraphLayer));
+            AdvanceConnectionPreview(e.GetPosition(GraphLayer),e.LeftButton);
         }
+    }
+    void AdvanceConnectionPreview(Point point,MouseButtonState leftButton)
+    {
+        // Connector.ToolItemGrid_PreviewMouseMove checks the left button
+        // before creating its adorner/capture on the first move.
+        if(connectionPreview is null)
+        {
+            if(leftButton!=MouseButtonState.Pressed){CancelCanvasGesture();return;}
+            // Native Connector removes its first-move handler before CaptureMouse;
+            // ignore a reentrant move caused by WPF capture changing ownership.
+            connectionCaptureStarting=true;
+            try{CanvasViewport.CaptureMouse();}
+            finally{connectionCaptureStarting=false;}
+        }
+        UpdateConnectionPreview(point);
     }
     void MoveCanvasPan(Point position)
     {
@@ -260,7 +331,10 @@ public partial class MainWindow
     void CanvasPointerUp(object sender,MouseButtonEventArgs e)
     {
         if(e.ChangedButton!=MouseButton.Left)return;
-        if(wireDrag is not null){FinishWireDrag(IsCanvasDropPoint(e.GetPosition(CanvasViewport)));e.Handled=true;return;}
+        // Native Connection.MouseLeftButtonUp always ends the captured drag.
+        // Its MouseMove clamps to Page bounds; leaving the visible viewport is
+        // not an undo condition. Escape/lost capture still cancel explicitly.
+        if(wireDrag is not null){FinishWireDrag(true);e.Handled=true;return;}
         if(panning){panning=false;CanvasViewport.ReleaseMouseCapture();UpdateMiniMap();e.Handled=true;return;}
         if(movingNodes is not null){CompleteNodeDrop(e.GetPosition(CanvasViewport));e.Handled=true;return;}
         if(boxSelecting)
@@ -278,7 +352,9 @@ public partial class MainWindow
     {
         if(Keyboard.FocusedElement is TextBox||Keyboard.FocusedElement is ComboBox)return;
         if(e.Key==Key.Escape){selectedWire=null;CancelCanvasGesture();e.Handled=true;}
-        if(e.Key==Key.Delete&&(GraphLayer.IsKeyboardFocusWithin||CanvasViewport.IsMouseOver)){DeleteSelection();e.Handled=true;}
+        // Native DiagramItem/RectDragPanal delete handlers are keyboard-focus scoped;
+        // hovering the canvas while a toolbar or another pane owns focus is insufficient.
+        if(e.Key==Key.Delete&&GraphLayer.IsKeyboardFocusWithin){DeleteSelection();e.Handled=true;}
         if((Keyboard.Modifiers&ModifierKeys.Control)!=0&&GraphLayer.IsKeyboardFocusWithin)
         {
             if(e.Key==Key.C){CopySelection();e.Handled=true;}
@@ -306,7 +382,8 @@ public partial class MainWindow
         {
             // ZoomArea.OnChangeZoom changes DiagramZoomIndex only for a nonzero delta.
             MoveCanvasZoomByWheel(e.Delta,e.GetPosition(CanvasViewport));
-            e.Handled=true;
+            // ZoomArea.OnPreviewMouseWheel does not consume Ctrl zoom; only
+            // OnHoriScroll's Shift branch marks the routed event handled.
         }
     }
     void MoveCanvasZoomByWheel(int delta,Point anchor)
