@@ -145,7 +145,7 @@ public partial class MainWindow : Window
  bool ConfirmPendingChanges(){if(parameterEditorOpen){StatusText.Text="请先关闭参数窗口";return false;}if(!doc.IsDirty)return true;var answer=MessageBox.Show(this,"当前方案有未保存的修改。是否先保存？","未保存的方案",MessageBoxButton.YesNoCancel,MessageBoxImage.Warning);if(answer==MessageBoxResult.Cancel)return false;if(answer==MessageBoxResult.No)return true;return Save(false);}
  void Demo()=>OpenSampleSolution();
  void LoadDemo(){string f=System.IO.Path.Combine(AppContext.BaseDirectory,"demo.vmx.json");if(System.IO.File.Exists(f))doc.Load(f);}
- void Open(){var d=new OpenFileDialog{Filter="流程方案|*.vmx.json;*.json"};if(d.ShowDialog(this)==true&&ConfirmPendingChanges()){doc.Load(d.FileName);RecentSolutionStore.Update(doc.FilePath!);RefreshRecentSolutionsMenu();}}
+ void Open()=>OpenSolutionFromFileMenu();
  bool Save(bool asNew){string? f=doc.FilePath;if(asNew||f is null){var d=new SaveFileDialog{Filter="流程方案|*.vmx.json",FileName="solution.vmx.json"};if(d.ShowDialog(this)!=true)return false;f=d.FileName;}doc.Save(f);RecentSolutionStore.Update(doc.FilePath!);RefreshRecentSolutionsMenu();return true;}
  void Validate(){var v=doc.Validate();StatusText.Text=v.IsValid?"流程校验通过":string.Join("；",v.Issues.Select(x=>x.Message));}
 

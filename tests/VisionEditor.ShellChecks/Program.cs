@@ -28,9 +28,13 @@ recentStore.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.
 var sampleDirectoryPath=Path.GetFullPath("analysis/full-audit/shell-sample-directory.txt");
 if(File.Exists(sampleDirectoryPath))File.Delete(sampleDirectoryPath);
 typeof(MainWindow).Assembly.GetType("VisionEditor.SampleDirectoryPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,sampleDirectoryPath);
+var openDirectoryPath=Path.GetFullPath("analysis/full-audit/shell-open-directory.txt");
+if(File.Exists(openDirectoryPath))File.Delete(openDirectoryPath);
+typeof(MainWindow).Assembly.GetType("VisionEditor.OpenSolutionDirectoryPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,openDirectoryPath);
 var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
 var samplePicker=new FixedSamplePicker();
-var window=new MainWindow(samplePicker){ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
+var solutionPicker=new FixedSolutionPicker();
+var window=new MainWindow(samplePicker,solutionPicker){ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
 void Pump(){window.UpdateLayout();window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);}
 void Check(bool value,string description){if(!value)throw new Exception(description);Console.WriteLine("PASS: "+description);}
@@ -170,6 +174,27 @@ try
  samplePicker.NextPath=null;
  sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
  Check(samplePicker.LastInitialDirectory==Path.GetDirectoryName(demoPath)&&document.FilePath==demoPath,"Cancelling the sample picker keeps the loaded solution unchanged");
+ var openMenu=(MenuItem)fileRoot.Items[1];
+ var activeRunField=typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
+ var continuousField=typeof(MainWindow).GetField("continuousRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
+ using(var pendingRun=new CancellationTokenSource())
+ {
+  activeRunField.SetValue(window,pendingRun);continuousField.SetValue(window,true);
+  solutionPicker.OnPick=()=>Check(!(bool)continuousField.GetValue(window)!&&!pendingRun.IsCancellationRequested,"Open command stops continuous mode before showing the picker without cancelling an active round");
+  openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
+  Check(document.FilePath==demoPath&&!File.Exists(openDirectoryPath),"Cancelling Open leaves the solution and remembered folder unchanged");
+  solutionPicker.NextPath=recentSecond;
+  openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
+  Check(document.FilePath==demoPath&&!pendingRun.IsCancellationRequested&&File.ReadAllText(openDirectoryPath)==Path.GetDirectoryName(recentSecond),"An active one-shot run prevents document replacement while retaining the chosen directory");
+  activeRunField.SetValue(window,null);
+ }
+ solutionPicker.OnPick=null;solutionPicker.NextPath=recentSecond;
+ openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
+ Check(document.FilePath==recentSecond&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentSecond),"Open picker loads a saved solution and updates recent solutions");
+ Check(solutionPicker.LastInitialDirectory==Path.GetDirectoryName(recentSecond)&&File.ReadAllText(openDirectoryPath)==Path.GetDirectoryName(recentSecond),"Open picker remembers its selected directory");
+ solutionPicker.NextPath=null;
+ openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
+ Check(solutionPicker.LastInitialDirectory==Path.GetDirectoryName(recentSecond)&&document.FilePath==recentSecond,"Next Open starts in the remembered directory; cancelling retains the solution");
  Console.WriteLine("Shell command and input checks passed.");
 }
 
@@ -182,4 +207,12 @@ sealed class FixedSamplePicker : ISampleSolutionPicker
  public string? NextPath {get;set;}=Path.Combine(AppContext.BaseDirectory,"demo.vmx.json");
  public string? LastInitialDirectory {get;private set;}
  public string? Pick(MainWindow owner,string initialDirectory){LastInitialDirectory=initialDirectory;return NextPath;}
+}
+
+sealed class FixedSolutionPicker : ISolutionFilePicker
+{
+ public string? NextPath {get;set;}
+ public string? LastInitialDirectory {get;private set;}
+ public Action? OnPick {get;set;}
+ public string? Pick(MainWindow owner,string initialDirectory){LastInitialDirectory=initialDirectory;OnPick?.Invoke();return NextPath;}
 }
