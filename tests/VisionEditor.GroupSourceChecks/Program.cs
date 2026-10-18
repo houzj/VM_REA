@@ -211,6 +211,20 @@ SolutionStore.Save(path, solution); solution = SolutionStore.Load(path);
 parentRun = new SolutionExecutor(registry).RunAsync(new(solution, Environment.CurrentDirectory), "parent").GetAwaiter().GetResult();
 Check(parentRun.Status == SessionStatus.Success && parentRun.Calls["group"].WorkflowOutputs["out"].As<long>() == 5,
     "Multi-selected Group input bindings survive save and reopen with identical runtime result");
+var categories = Enumerable.Range(0, 32).Select(i => new WorkflowRunCategory("category-" + i, "分组" + i)).ToArray();
+ReplaceBody(Body() with { Configuration = Body().Configuration with { RunCategories = categories } });
+var limitConfiguration = window.CreateRunConfigurationWindow(); limitConfiguration.Show(); Pump();
+Children(limitConfiguration).OfType<Button>().Single(b => Equals(b.Tag, "GroupCategoryAdd"))
+    .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); Pump();
+Check(Body().Configuration.RunCategories!.Count == 32 && ((TextBlock)window.FindName("Error")).Text.Contains("32"),
+    "Native default Group run-category limit reports error without adding a 33rd category");
+limitConfiguration.Close(); Pump();
+parentRun = new SolutionExecutor(registry).RunAsync(new(solution, Environment.CurrentDirectory), "parent").GetAwaiter().GetResult();
+Check(parentRun.Status == SessionStatus.Success && parentRun.Calls["group"].WorkflowOutputs["out"].As<long>() == 5,
+    "Rejected category addition leaves real multi-target Group execution unchanged");
+SolutionStore.Save(path, solution); solution = SolutionStore.Load(path);
+Check(Body().Configuration.RunCategories!.Count == 32 && Body().Configuration.RunCategories![0].Id == categories[0].Id,
+    "Rejected category addition preserves category identities after save and reopen");
 var originalInputs = Body().Configuration.Inputs;
 var limitInputs = originalInputs.Concat(Enumerable.Range(originalInputs.Count, 1024 - originalInputs.Count)
     .Select(i => new WorkflowInterfaceItem("limit-" + i, "limit" + i, DataKind.Integer))).ToArray();

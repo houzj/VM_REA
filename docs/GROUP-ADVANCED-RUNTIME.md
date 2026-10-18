@@ -54,6 +54,8 @@
 
 关联总数按ImvsSdkDefine.IMVS_DYNAMIC_PARAM_RELATION_LIST的128项数组界限校验（含主关联），不是按Group输入1024项限制。
 
+2026-10-18 类别入口补核：原始 `Apps.XmlParser.ParamTab/ParamConfigDataBase.cs` 静态构造默认 `MaxRunParamsNum=32`，再尝试从 `ConfigurationHelper.GetConfig("MaxRunParamsNum")` 覆盖；`AddGroupCommandExecute` 在类别数达到该值时提示并拒绝。重建 Group 双栏窗口在默认 32 类别时前置显示明确错误，保持数据不变；框架验证仍保留上限。`VisionEditor.GroupSourceChecks` 在真实窗口创建 32 类别并点击“添加组”，确认未产生第 33 类别、多目标参数同步后的实际 Group 输出仍为 5、保存重开后类别 ID 不变，专项累计 25 项。当前独立框架固定 32，尚未实现读取原生配置覆盖值；不能宣称覆盖自定义安装配置。
+
 ROI单元格无效数值会拒绝提交、保留原几何且窗口不关闭，修正后可成功运行。截图展示过校验提示的状态。直接写值/同步当前要求相关目标先解除参数订阅，原生订阅中的当前值同步语义仍需动态差分。公共动态参数名/API暴露的完整原生映射尚需进一步核对；当前提供界面与框架方法路由。
 
 最终发布：dist/VisionEditor-WpfGroupAdvancedRuntime；启动入口已切换。Core/Plugin/WPF/EditorClose均exit0，90秒看门狗内退出，详见group-advanced-roi-final-lifecycle和HANDOFF。
