@@ -14,6 +14,8 @@
 
 后续核对 `analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupOutputParam.cs` 的 `DefaultStartName => "out"` 及同程序集 `DynamicObjectConfigControl/GroupParam.cs:293–300,367–385` 的 `GetUniqueName`：首个独立输出应叫 `out`，撞名后是 `out0`，同时检查输入和输出名称。原 WPF 适配器首个误叫 `out0`；已更正。真实窗口连续添加两项、删除第二项、绑定第一个实际 Point 来源、两轮累积、撤销重做和保存重开验证为 8 项。PointF 三分量合同已在 `CONTRACT-REQUESTS.md` 登记，当前 Point2 仍只属独立适配。
 
+同一原生命名逻辑也作用于 Group 输入：`analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupInputParam.cs` 声明起始名 `in`，`GroupParam.GetUniqueName` 在输入和输出全集中查重。当前简单输入原先从 `in0` 开始，已修正为先 `in`、撞名后 `in0`。`VisionEditor.GroupInputNameChecks` 在真实 WPF 窗口新增两项、删除第二项，将首项接到父级真实整数源和内部消费节点，运行输出 7，并完成撤销重做及保存重开（7 项）。原生输入批量选择器和全部复合类型仍开放。
+
 日期：2026-10-16。该清单一次覆盖 Group 全范围；完成两项不代表整个 Group 完成。状态分别记录源码证据、实现、真实 VM 对照，不能用测试通过替代原生验收。
 
 ## 六个功能域
