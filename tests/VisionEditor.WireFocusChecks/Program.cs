@@ -56,6 +56,27 @@ internal static class Program
    var file=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"wire-focus-"+Guid.NewGuid().ToString("N")+".vmx.json");
    try{doc.Save(file);doc.Load(file);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.SequenceEqual(savedPoints),"保存重开保留中点调整后的路径");}
    finally{if(System.IO.File.Exists(file))System.IO.File.Delete(file);}
+   var edgeHit=hits[first+">"+second];edgeHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
+   var edgeHandle=handles[handles.Count/2];var edgeStart=new Point(Canvas.GetLeft(edgeHandle)+3,Canvas.GetTop(edgeHandle)+3);
+   edgeHandle.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+   Check(Field("wireDrag") is not null,"真实 WPF 中点柄再次启动边界拖动");
+   var preview=typeof(MainWindow).GetMethod("PreviewWireDrag",BindingFlags.Instance|BindingFlags.NonPublic)!;
+   preview.Invoke(window,[edgeStart+new Vector(35,45)]);Pump();
+   var outside=viewport.PointToScreen(new Point(viewport.ActualWidth+20,Math.Max(20,viewport.ActualHeight/2)));
+   SetCursorPos((int)outside.X,(int)outside.Y);Mouse.Synchronize();Pump();
+   GetCursorPos(out var actualCursor);var actualViewportPoint=viewport.PointFromScreen(new Point(actualCursor.X,actualCursor.Y));
+   Check(!new Rect(0,0,viewport.ActualWidth,viewport.ActualHeight).Contains(actualViewportPoint),"实际系统指针位于可见视口之外");
+   long outerRevision=doc.Revision;
+   viewport.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseUpEvent});Pump();
+   var outerPoints=ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.ToArray();
+   Check(Field("wireDrag") is null&&doc.Revision==outerRevision+1&&!outerPoints.SequenceEqual(savedPoints),"视口外松开按原生 MouseLeftButtonUp 提交最后路径");
+   var outerBmp=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);outerBmp.Render(window);
+   var outerPng=new PngBitmapEncoder();outerPng.Frames.Add(BitmapFrame.Create(outerBmp));using(var stream=System.IO.File.Create(System.IO.Path.Combine("analysis","full-audit","wire-midpoint-outside-release.png")))outerPng.Save(stream);
+   doc.Undo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.SequenceEqual(savedPoints),"视口外松开提交可一次撤销");
+   doc.Redo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.SequenceEqual(outerPoints),"视口外松开提交可重做");
+   file=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"wire-outside-"+Guid.NewGuid().ToString("N")+".vmx.json");
+   try{doc.Save(file);doc.Load(file);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.SequenceEqual(outerPoints),"视口外松开路径保存重开不丢失");}
+   finally{if(System.IO.File.Exists(file))System.IO.File.Delete(file);}
    var restored=hits[first+">"+second];
    var rightPoint=new Point((savedPoints[0].X+savedPoints[1].X)/2,(savedPoints[0].Y+savedPoints[1].Y)/2);
    var rightScreen=graph.PointToScreen(rightPoint);SetCursorPos((int)rightScreen.X,(int)rightScreen.Y);

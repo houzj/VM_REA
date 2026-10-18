@@ -308,7 +308,10 @@ public partial class MainWindow
     void CanvasPointerUp(object sender,MouseButtonEventArgs e)
     {
         if(e.ChangedButton!=MouseButton.Left)return;
-        if(wireDrag is not null){FinishWireDrag(IsCanvasDropPoint(e.GetPosition(CanvasViewport)));e.Handled=true;return;}
+        // Native Connection.MouseLeftButtonUp always ends the captured drag.
+        // Its MouseMove clamps to Page bounds; leaving the visible viewport is
+        // not an undo condition. Escape/lost capture still cancel explicitly.
+        if(wireDrag is not null){FinishWireDrag(true);e.Handled=true;return;}
         if(panning){panning=false;CanvasViewport.ReleaseMouseCapture();UpdateMiniMap();e.Handled=true;return;}
         if(movingNodes is not null){CompleteNodeDrop(e.GetPosition(CanvasViewport));e.Handled=true;return;}
         if(boxSelecting)
