@@ -127,7 +127,10 @@ public partial class MainWindow
             wireViews[key]=(wire,path,wire.PathPoints is {Count:>1}?points:CleanWirePoints(points));
             GraphLayer.Children.Add(path);
             var arrow=new Polygon {Points=OriginalWireArrow(displayedPoints),IsHitTestVisible=false};arrow.SetBinding(System.Windows.Shapes.Shape.FillProperty,new System.Windows.Data.Binding("Stroke"){Source=path});wireArrows[key]=arrow;GraphLayer.Children.Add(arrow);
-            var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=12,Focusable=true};
+            // Native Connection is one 2px Shape: its stroke is also the hit area.
+            // The transparent overlay preserves our split render/focus architecture,
+            // but must use the same width rather than expanding selection to 12px.
+            var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=2,Focusable=true};
             // Connection.RequestBringIntoView suppresses focus-driven scroll jumps.
             hit.RequestBringIntoView+=(_,e)=>e.Handled=true;
             hit.LostKeyboardFocus+=(_,_)=>DrawWireHandles();

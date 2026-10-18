@@ -36,6 +36,15 @@ internal static class Program
    var hits=(Dictionary<string,Path>)Field("wireHitPaths")!;
    var handles=(List<Rectangle>)Field("wireHandles")!;
    var hit=hits[first+">"+second];
+   var wireGeometry=(PathGeometry)hit.Data;
+   var figure=wireGeometry.Figures.Single();
+   var route=new[]{figure.StartPoint}.Concat(figure.Segments.OfType<LineSegment>().Select(s=>s.Point)).ToArray();
+   var segment=route.Zip(route.Skip(1),(a,b)=>(a,b,length:(b-a).Length)).OrderByDescending(s=>s.length).First();
+   var center=new Point((segment.a.X+segment.b.X)/2,(segment.a.Y+segment.b.Y)/2);
+   var across=segment.a.X==segment.b.X?new Vector(7,0):new Vector(0,7);
+   var layer=(Canvas)window.FindName("GraphLayer")!;
+   Check(hit.StrokeThickness==2&&ReferenceEquals(layer.InputHitTest(center),hit),"实际 WPF 中心线以原生2像素范围命中");
+   Check(!ReferenceEquals(layer.InputHitTest(center+across),hit),"偏离中心线7像素不再误选连线");
    var displayed=graphWire();
    Path graphWire()=>((Canvas)window.FindName("GraphLayer")!).Children.OfType<Path>().Single(p=>!p.IsHitTestVisible&&p.StrokeThickness==2);
    hit.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice,Environment.TickCount){RoutedEvent=UIElement.MouseEnterEvent});Pump();
@@ -44,6 +53,16 @@ internal static class Program
    Check(displayed.StrokeThickness==2,"连线鼠标离开后仍保持2像素可见线宽");
    hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
    Check(hit.IsKeyboardFocused&&handles.Count>0&&displayed.StrokeThickness==2,"实际连线点击取得焦点并显示中点柄，选中仍保持2像素");
+   if(args.Contains("--hit-only"))
+   {
+    ((MenuItem)hit.ContextMenu!.Items[0]).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));Pump();
+    Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Count==0,"2像素命中线选中后菜单删除实际连线");
+    doc.Undo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Count==1,"命中线菜单删除可一次撤销");
+    var hitFile=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"wire-hit-"+Guid.NewGuid().ToString("N")+".vmx.json");
+    try{doc.Save(hitFile);doc.Load(hitFile);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Count==1,"命中线删除撤销后保存重开保留连线");}
+    finally{if(System.IO.File.Exists(hitFile))System.IO.File.Delete(hitFile);}
+    return;
+   }
    if(args.Contains("--hover-only"))return;
    var other=(Button)window.FindName("AddProcedureButton")!;other.Focus();Pump();
    Check(other.IsKeyboardFocused&&handles.Count==0,"转焦工具栏立即清除连线中点柄");
