@@ -246,7 +246,10 @@ public partial class MainWindow
         }
         DrawAlignmentGuides(left+dx,top+dy);
         if(movingNodes.Count==1)UpdateNodeHotRegion(left+dx,top+dy,movingNodes.Keys);
-        if(movingNodes.Count==1&&!nodeCopyDrag)UpdateInsertionWire(point,movingNodes.Keys);
+        // Connection.Shape_DragEnter thickens for any List<DiagramItem>; Shape_Drop
+        // and VmConnectionDecorator.InsertModule accept only a single item.
+        // Keep the visual hover for a multi-selection/copy drag without making it insertable.
+        UpdateInsertionWire(point,movingNodes.Count==1&&!nodeCopyDrag?movingNodes.Keys:[]);
     }
     void CommitNodeMove()
     {
