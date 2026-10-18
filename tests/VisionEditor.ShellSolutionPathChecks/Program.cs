@@ -25,10 +25,13 @@ internal static class Program
             typeof(MainWindow).GetField("revealSolutionFile", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .SetValue(window, (Action<string>)(path => selected = path));
             document.NewSolution(false);
+            var title = (TextBlock)window.FindName("WindowProjectName")!;
+            if (title.Text != string.Empty) throw new Exception("未保存方案的标题不应显示示例文件名");
             button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
             if (selected is not null) throw new Exception("未保存方案不应打开文件管理器");
             Directory.CreateDirectory(Path.GetDirectoryName(file)!);
             document.Save(file);
+            if (title.Text != "mf01-solution-path") throw new Exception("保存后标题没有更新为实际方案文件名");
             button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
             if (selected != file || !status.Text.Contains(file, StringComparison.Ordinal))
                 throw new Exception("标题点击未将真实方案文件交给文件管理器入口");
