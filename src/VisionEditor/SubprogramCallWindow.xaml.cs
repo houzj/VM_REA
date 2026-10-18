@@ -60,8 +60,8 @@ public partial class SubprogramCallWindow:Window
   var gap=new DockPanel{Margin=new Thickness(0,6,0,6)};gap.Children.Add(new TextBlock{Text="循环间隔(ms)",Width=89,VerticalAlignment=VerticalAlignment.Center});
   var input=new TextBox{Text=settings.IntervalMs.ToString(),Width=70,Tag="GroupLoopTimeGapValue"};DockPanel.SetDock(input,Dock.Right);gap.Children.Add(input);
   var slider=new Slider{Minimum=0,Maximum=10000,TickFrequency=1,IsSnapToTickEnabled=true,Value=settings.IntervalMs,Tag="GroupLoopTimeGapSlider",VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,8,0)};
-  gap.Children.Add(slider);bool updating=false;
-  void CommitGap(int value){if(value==settings.IntervalMs)return;Safe(()=>setLoopParameter!("LoopTimeGap",System.Text.Json.JsonSerializer.SerializeToElement(value)));}
+  gap.Children.Add(slider);bool updating=false;int committedGap=settings.IntervalMs;
+  void CommitGap(int value){if(value==committedGap)return;Safe(()=>{setLoopParameter!("LoopTimeGap",System.Text.Json.JsonSerializer.SerializeToElement(value));committedGap=value;});}
   slider.ValueChanged+=(_,_)=>{if(!updating)input.Text=((int)slider.Value).ToString();};
   slider.AddHandler(System.Windows.Controls.Primitives.Thumb.DragCompletedEvent,new System.Windows.Controls.Primitives.DragCompletedEventHandler((_,_)=>CommitGap((int)slider.Value)));
   slider.PreviewMouseLeftButtonUp+=(_,_)=>CommitGap((int)slider.Value);

@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
 using VisionEditor;
@@ -26,6 +27,7 @@ internal static class Program
   var slider=Children(window).OfType<Slider>().Single(s=>Equals(s.Tag,"GroupLoopTimeGapSlider"));var input=Children(window).OfType<TextBox>().Single(t=>Equals(t.Tag,"GroupLoopTimeGapValue"));
   Check(slider.Minimum==0&&slider.Maximum==10000&&slider.TickFrequency==1&&slider.IsSnapToTickEnabled,"WPF Group interval exposes XML Integer slider bounds and unit ticks");
   slider.Value=500;Pump();Check(input.Text=="500","Slider value updates visible numeric value during drag");
+  slider.RaiseEvent(new DragCompletedEventArgs(0,0,false){RoutedEvent=Thumb.DragCompletedEvent});
   slider.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice,0,slider,null){RoutedEvent=Keyboard.LostKeyboardFocusEvent});Pump();
   Check(Group().Parameters["LoopTimeGap"].GetInt32()==500,"Actual WPF slider commits Group interval");
   editor.Undo();Check(Group().Parameters["LoopTimeGap"].GetInt32()==0,"Undo restores prior interval");editor.Redo();Check(Group().Parameters["LoopTimeGap"].GetInt32()==500,"Redo restores slider interval");
