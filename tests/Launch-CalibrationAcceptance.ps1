@@ -1,8 +1,8 @@
 #Requires -Version 7.0
-param([ValidateSet('N点标定','N图像标定','平移旋转标定','旋转标定','标定加载')][string]$Tool='N点标定',[string]$SampleCalibFile='',[switch]$CalibrationPair)
+param([ValidateSet('N点标定','N图像标定','平移旋转标定','旋转标定','标定加载','相机映射')][string]$Tool='N点标定',[string]$SampleCalibFile='',[switch]$CalibrationPair)
 $ErrorActionPreference='Stop'
 $workspace=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$module=@{'N点标定'='vision.n-point-calibration';'N图像标定'='vision.n-image-calibration';'平移旋转标定'='vision.translation-calibration';'旋转标定'='vision.rotate-calibration';'标定加载'='vision.read-calib-file'}[$Tool]
+$module=@{'N点标定'='vision.n-point-calibration';'N图像标定'='vision.n-image-calibration';'平移旋转标定'='vision.translation-calibration';'旋转标定'='vision.rotate-calibration';'标定加载'='vision.read-calib-file';'相机映射'='vision.camera-mapping'}[$Tool]
 $run=Join-Path $workspace ('analysis/manual-acceptance/'+[guid]::NewGuid().ToString('N'))
 $artifacts=Join-Path $run 'build'
 New-Item -ItemType Directory -Path $run | Out-Null

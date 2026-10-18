@@ -26,7 +26,7 @@
 
 ## 声明中已有的名称差异
 
-主声明XML第3–8组名称是 `TargetInputN/ObjectInputN`；AlgorithmTab操作参数和公开SDK CameraMapParam却为 `TargetPointInputN/ObjectPointInputN`。第1–2组一致。当前独立实现使用UI/SDK名字支持交互，原始XML未改；尚未证明原厂平台是否在动态IO阶段消除该差异，不能静默称两者完全相同。
+主声明XML与原厂AlgorithmTab第3–8组都使用 `TargetInputN/ObjectInputN`，第1–2组使用 `TargetPointInputN/ObjectPointInputN`。公开SDK CameraMapParam的第3–8组属性仍叫 `TargetPointInputN/ObjectPointInputN`。先前文档把AlgorithmTab误列为SDK命名，2026-10-18按安装原文件逐组纠正。当前Descriptor、alias provider和Runtime统一实际UI/主声明名称；原始XML未改。不能把SDK封装属性命名当作UI目的端口。
 
 ## 公共接口建议与当前边界
 
@@ -34,7 +34,7 @@ Producer 为统一图数据/订阅框架；Consumer 为相机映射及其余含C
 
 验收至少覆盖：绑定完整POINT后X/Y读回各自叶来源；单改X保留Y；来源来自不同组合时显示派生元组而非虚构单一POINT；完整重新绑定替换两轴；清空组合清两轴；Index.All/单元素/索引引用；不同流程同NodeId隔离；第一/第二叶拒绝时的可观测状态。原厂失败边界没有运行证据的项应保留未知。
 
-当前产品实现 `IToolPointInputAliasProvider`，声明16组（8个示教点与8个运行点）UI/SDK原名组合到X/Y映射。主宿主消费公共 `PointAliasConfigurationSubscriptions`；生产PointPair在模式变化时重新读取可见子选择器。真实工具检查已覆盖完整POINT拆成叶、按坐标读回、改X保留Y、组合只读元组、Undo恢复共同POINT，以及数组POINT两组展开成4点经GraphExecutor运行。全部9项数组运行输出与受控官方模块比较通过0.003固定阈值。
+当前产品实现 `IToolPointInputAliasProvider`，声明16组（8个示教点与8个运行点）UI/主声明原名组合到X/Y映射。主宿主消费公共 `PointAliasConfigurationSubscriptions`；生产PointPair在模式变化时重新读取可见子选择器。真实工具检查已覆盖完整POINT拆成叶、按坐标读回、改X保留Y、组合只读元组、Undo恢复共同POINT，以及数组POINT两组展开成4点经GraphExecutor运行。全部9项数组运行输出与受控官方模块比较通过0.003固定阈值。2026-10-18另已逐16组验证原名并实际Graph接通全部8组32条叶、执行16点，避免只测1/2组漏掉短名称。
 
 Runtime保留旧独立组合端口和逐轴覆盖作为兼容路径；正常公共别名路径只存X/Y叶绑定，不把两个来源当作独立可冲突的权威。批事务原子性是托管文档安全规则，仍不是原厂逐叶失败回滚证明。单下标/索引引用继续明确Unsupported。原厂缺失组合force操作忽略已另行补证；原厂桌面和完整原生订阅平台未验证。
 

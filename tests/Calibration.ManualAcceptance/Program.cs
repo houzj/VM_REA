@@ -25,6 +25,17 @@ static class Program {
     void Invoke(string name,params object[] values)=>typeof(MainWindow).GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,values);
     var document=(VisionEditor.Core.GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
     document.NewSolution();
+    if(id=="vision.camera-mapping"){
+     var registry=(VisionFramework.ModuleRegistry)typeof(MainWindow).GetField("modules",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+     registry.Register(new CameraPoints().Descriptor,()=>new CameraPoints());
+     var source=document.AddNode("acceptance.camera-points","1",50,50);
+     var camera=document.AddNode(id,"1.0.0",250,50);document.ConnectExecution(source,camera);
+     document.BindInput(source,"Object.X",camera,"ObjectPointX1");document.BindInput(source,"Object.Y",camera,"ObjectPointY1");
+     document.BindInput(source,"Target.X",camera,"TargetPointX1");document.BindInput(source,"Target.Y",camera,"TargetPointY1");
+     var task=(Task)typeof(MainWindow).GetMethod("RunProcedure",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,new object[]{document.CurrentProcedureId})!;
+     var frame=new DispatcherFrame();_=task.ContinueWith(_=>window.Dispatcher.BeginInvoke(()=>frame.Continue=false));if(!task.IsCompleted)Dispatcher.PushFrame(frame);task.GetAwaiter().GetResult();
+     Console.WriteLine("MANUAL_ACCEPTANCE_READY "+id+" synthetic point fixture; no device tests");Invoke("OpenToolConfiguration",camera);return;
+    }
     if(args.Contains("--calibration-pair"))document.AddNode(VisionPlugins.Calibration.NImagePlugin.Id,"1.0.0",50,50);
     string? sample=args.Length>1&&!framework?args[1]:null;
     if(framework){
@@ -53,5 +64,9 @@ static class Program {
    }));
    return app.Run(window);
   }catch(Exception e){Console.Error.WriteLine(e);return 1;}
+ }
+ sealed class CameraPoints:VisionFramework.IModule {
+  public VisionFramework.ModuleDescriptor Descriptor=>new("acceptance.camera-points","1","验收点阵（测试夹具）",[],new[]{"Object.X","Object.Y","Target.X","Target.Y"}.Select(n=>new VisionFramework.PortDescriptor(n,VisionFramework.DataKind.NumberArray)).ToArray(),[]);
+  public ValueTask<VisionFramework.ModuleResult> ExecuteAsync(VisionFramework.ModuleExecutionContext context,CancellationToken token)=>ValueTask.FromResult(new VisionFramework.ModuleResult(VisionFramework.ModuleStatus.Success,new Dictionary<string,VisionFramework.PortValue>{{"Object.X",VisionFramework.PortValue.Numbers(new double[]{0,10,0,10})},{"Object.Y",VisionFramework.PortValue.Numbers(new double[]{0,0,10,10})},{"Target.X",VisionFramework.PortValue.Numbers(new double[]{5,25,5,25})},{"Target.Y",VisionFramework.PortValue.Numbers(new double[]{-7,-7,23,23})}}));
  }
 }

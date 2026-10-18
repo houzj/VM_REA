@@ -28,7 +28,9 @@ public partial class MainWindow {
    void Apply(Dictionary<string,JsonElement> values){
     if(!active||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||!StringComparer.OrdinalIgnoreCase.Equals(ownerDirectory,doc.BaseDirectory))throw new InvalidOperationException("当前模块不可编辑。");
     if(!doc.Document.Procedures.Any(p=>p.Id==procedure.Id&&p.Nodes.Any(n=>n.Id==id)))throw new InvalidOperationException("模块已移除。");
+    var before=doc.Document.Procedures.Single(p=>p.Id==procedure.Id).Nodes.Single(n=>n.Id==id).Parameters;
     doc.SetProcedureNodeParameters(procedure.Id,id,values);
+    executionScope.ForProcedure(procedure.Id).RememberConfigurationParameters(node.ModuleId,id,before,values);
    }
    var context=new ToolEditorContext(node,ownerDirectory,Apply,_=>throw new NotSupportedException("配置执行服务尚未连接。"),procedure.Nodes.ToList().FindIndex(n=>n.Id==id)){ConfigurationActive=()=>active};
    context=ConnectToolEditorServices(context,id);

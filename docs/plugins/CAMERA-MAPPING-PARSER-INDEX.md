@@ -1,0 +1,31 @@
+# 相机映射原厂解析器缺失操作与索引证据
+
+## 缺失组合必填操作
+
+安装版类型清单只有 `SetFilterForcePropertyOperation`，没有 `SetCombinationForcePropertyOperation`。原厂 `OperationManager.CreatInstanceBySetter` 只在 ActivatorWrap.TypeTable 存在类型时创建实例；缺失类型且 IgnoreUnknown=true 时不赋 Operation，false 时抛出 `...is unKnown`。`AlgorithmTabRoot` 构造使用 `loadXml(path, ignoreUnknown:true)`；`Trigger.Init` 在此阶段创建Setter；`Setter.Operate` 仅在Operation非null时调用。因此相机映射XML的16处缺失组合操作实际被忽略，不代表有一套必填属性投影待实现。
+
+`RunParser.ps1` 编译独立.NET Framework探针：原厂DLL只读加载、XML复制至本工作树、参数/Owner为明确synthetic模型，无原生模块或设备。`operation-factory.json` 实跑默认IgnoreUnknown=false；切true时缺失操作及虚构操作均null且可调用Setter.Operate无异常；切false时二者均抛Unknown；实际存在的SetFilterForcePropertyOperation正常创建。真实相机AlgorithmTab加载后，16个CustomVisible触发均Operation=null，逐一调用Trigger.OnTrigger无异常，记录于 `analysis/camera-mapping/parser/model/probe.json`。
+
+产品只为这个工具注册专用SourceIgnoredCombinationForceRule，Apply/Revert均无操作；保留原XML，不创设必填投影，不改变公共框架对其他未知操作的诊断。63项实际WPF/Graph检查包含该行为。
+
+源码路径：`D:/MyWork/REA逆向测试/analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/{OperationManager,Setter,Trigger,AlgorithmTabRoot}.cs`，以及 `Apps.XmlParser/Hik.Xml.BaseNode.decompiled.cs`。
+
+## 索引来源与边界
+
+- ButtonSelecter内置IndexOpenSetter为GetFrontFilterTreeOperation，类型仅 `int`。该操作请求Output，不包含自身或内部模块；GetFrontFilterTree使用GetFrontParamItems，即递归执行前驱，加非Solution父容器。可另含全局/局部变量入口；候选输出还受CanSubscribe、Visible、IsPrivate及类型约束。不能把任意Number输出、任意同流程节点作为索引候选。
+- 手工文本解析范围与候选树不同：`GetBindIndex` 对带点文本调用GetIoByPathFromAround；后者按模块ID解析自身、周边同父模块/父容器/本容器内部模块、特定变量模块，再找Visible输出、继而输入。此路径没有再检查int类型。不能把手工解析较宽的范围伪称为候选UI范围。
+- `SetCombinationSourceOperation` 从首个 `[` 起提取索引文本并移除全部方括号，先写RelateIO，再写RelateIndex。RelateIndex递归设置全部子叶，并触发取消旧订阅/重新订阅。失败分支清当前_relateIO和_relateIndex，未证明整组回滚。
+- `VmModule.GetPubInfo` 将索引发送到原生SubscribeResult：无索引→nIsIndexConstant=1、strIndexContent="All"；常量→原Name和常量标志；输出引用→nIndexModuleID=索引来源Root.ID、strIndexContent=来源Name。官方托管边界探针已实际验证空、0、1的结构体，输出 `nativeSubscribeExecuted:false`。
+- `SubscriptionInfo`显示完整来源与索引；组合RelateIndex读取首个非null子索引，不能据此证明所有叶索引相同。原厂组合来源重建与叶数量、来源父身份有关，须与公共实现的严格一致索引规则分开记录。
+
+探针没有执行原生SubscribeResult，故索引0基/1基、越界、负值、动态数组索引长度及原生失败后的有效订阅状态仍未知。曾试扩展负值/小数输入时自有探针超时，未确认该次卡点；已按30秒上限终止该自有进程，最终复现仅保留空/0/1安全托管边界。不能据输出结构体宣称已验证原生取元素行为。本轮不修改公共索引契约，继续明确Unsupported。
+
+精确源码：ButtonSelecter.IndexOpenSetter/IndexClickCommandExecute；SetFilterSourceOperation.GetBindIndex；SetCombinationSourceOperation.Operate；VmModuleExtern.GetFrontFilterTree/GetIoByPathFromAround/GetAroundModuleById；VmModule.GetFrontParamItems/GetPubInfo/Subscribe；VmIO.RelateIndex。
+
+## 独立平台入口尝试
+
+`PlatformIndexEntryProbe.cs` 实跑安装SDK版本V4.4.0_build_Apr29_2025，以明确Server/VisionMasterServer.exe路径调用PF_CreateHandle返回0，独立IMVS_AddOneProcess返回0，过程ID10000；相机映射IMVS_AddOneModule返回0x80100015、无模块ID。PF_DestroyHandle返回0，结束后未发现遗留VisionMaster/Server进程。日志定位模块Init/CreateToolInstance与全局MVD CreateGlobalInitToolInstance均失败于0x80100015，SDK锁类型为原厂1；未改锁类型、补授权或修改原厂库。
+
+最小缺失入口为可合法初始化的独立平台MVD算法环境，随后才能建立发布/订阅模块并观察真实ModuleFrame取值。该接口不是CameraMap算法SDK的点下标；算法SDK只消费已经选取的数据，不能用算法点序列证明工作流订阅索引0/1基。
+
+平台原生日志还出现尝试清理安装目录旧ImageTemp路径，且进程快照报AccessDenied。由于清理可能跨出自有临时目录，停止继续启动平台；RunPlatformIndex.ps1默认拒绝启动，须先建立隔离的原厂运行与临时目录后明确启用。没有发出删除安装目录或终止其他任务进程的命令。日志为 `analysis/camera-mapping/parser/platform-entry.jsonl` 及parser/log/{ModuleProxy,Modules,SDK}；不把“句柄创建成功”写成“索引运行成功”。
