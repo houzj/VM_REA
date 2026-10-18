@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Threading;
 using VisionEditor;
 using VisionEditor.Core;
@@ -35,7 +36,19 @@ internal static class Program
   editor.SetWorkflowConfiguration("body",Body().Configuration with{Subscriptions=[new("sink","value",false,new(WorkflowSourceKind.WorkflowInput,input.Id))]});
   var run=Run();Check(run.Status==SessionStatus.Success&&run.Calls["group"].WorkflowInputs["in"].As<long>()==7&&run.Calls["group"].WorkflowOutputs["result"].As<long>()==7,"Named input carries actual parent value into internal module and result");
   editor.Undo();Check(Body().Configuration.Subscriptions.Count==0,"Undo clears internal input consumer atomically");editor.Redo();Check(Run().Calls["group"].WorkflowOutputs["result"].As<long>()==7,"Redo restores Group data flow");
-  window.Close();editor.Save(path);editor.Load(path);Check(Body().Configuration.Inputs.Single().Name=="in"&&Run().Calls["group"].WorkflowOutputs["result"].As<long>()==7,"Save and reopen retain native input name and actual execution");
+  var nameBox=Children(window).OfType<TextBox>().Single(c=>Equals(c.Tag,"GroupInputName:"+input.Id));
+  Check(nameBox.MaxLength==31,"Actual Group input editor uses native VmIO 31-character typing limit");
+  nameBox.Text="";
+  var typing=new TextComposition(InputManager.Current,nameBox,new string('a',40));
+  nameBox.RaiseEvent(new TextCompositionEventArgs(InputManager.Current.PrimaryKeyboardDevice,typing){RoutedEvent=TextCompositionManager.TextInputEvent});Pump();
+  Check(nameBox.Text==new string('a',31),"WPF text input stops at 31 characters rather than committing a longer value");
+  nameBox.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice,0,nameBox,null){RoutedEvent=Keyboard.LostKeyboardFocusEvent});Pump();
+  var renamed=new string('a',31);Check(Body().Configuration.Inputs.Single().Name==renamed&&Parent().Configuration.Subscriptions.Single().Target==renamed,
+   "Actual WPF input rename propagates 31-character name to parent subscription");
+  Check(Run().Calls["group"].WorkflowOutputs["result"].As<long>()==7,"Renamed input still carries real parent value into internal consumer");
+  editor.Undo();Check(Body().Configuration.Inputs.Single().Name=="in"&&Run().Calls["group"].WorkflowOutputs["result"].As<long>()==7,"Undo restores previous input identity and run");
+  editor.Redo();Check(Body().Configuration.Inputs.Single().Name==renamed&&Run().Calls["group"].WorkflowOutputs["result"].As<long>()==7,"Redo restores renamed input and run");
+  window.Close();editor.Save(path);editor.Load(path);Check(Body().Configuration.Inputs.Single().Name==renamed&&Run().Calls["group"].WorkflowOutputs["result"].As<long>()==7,"Save and reopen retain 31-character input name and actual execution");
   app.Shutdown();Console.WriteLine($"PASS {checks} Group input name checks");
  }
  static void Pump(){var frame=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>frame.Continue=false));Dispatcher.PushFrame(frame);}

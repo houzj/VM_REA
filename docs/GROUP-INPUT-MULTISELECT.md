@@ -19,3 +19,11 @@
 原始 `GroupParam.AddCommandCmdExecute` 对单一叶类型先添加，再检查 `owner.Inputs.GetAllLeafIO().Count() > 1024`，超出时移除刚添加的接口并显示错误；多选分支则在创建前比较现有叶数与新增叶数。重建窗口的单一类型入口现在于已有 1024 个扁平输入时直接显示上限错误，不创建接口。底层 `WorkflowConfiguration.Validate` 的 1024 项防护继续有效，避免非 UI 路径绕过。
 
 专项真实 WPF 检查将已有输入扩充到 1024 项，点击类型选择与“添加”按钮后确认窗口提示、接口数量及旧 ID 不变，保存重开仍为相同 1024 项；达到限额前，专项已经验证多选来源的父流程实际执行和重开后 `out=5`。本次专项累计 22 项通过。这里的前置拒绝是独立实现，不宣称与原生“添加后回滚”的短暂对象生命周期完全一致；组合 IO 的叶数限额仍属开放范围。
+
+## 2026-10-18 名称编辑与复合限额核查
+
+原始 `DynamicIOConfigControl.xaml` 的输入/输出名称框声明 `MaxLength="{x:Static core:VmIO.MaxNameLenth}"`；`VM.Core/VmIO.cs` 常量为 31。名称在失焦时由 `VmIODecorate.TextChangedExecute` 提交，非法字符和重名仍受 `CommonNameCheck`/`CheckName` 检查。新建来源名的 `GroupParam.FixName` 上限是 32，因而“来源自动命名”和“手动编辑键入”确有不同上限。重建的 Group 输入编辑框现限制真实键入至 31 字符，仍由既有失焦处理与底层配置校验提交。
+
+`VisionEditor.GroupInputNameChecks` 向真实 WPF 文本框发送 40 字符文本输入事件，检查只出现 31 字符；失焦后父级 Group 输入订阅随名称更新，实际父级源值 7 仍进入内部消费节点。撤销、重做、保存重开均保留对应名称和运行结果，共 13 项通过。这是已实现扁平输入的交互闭合；并未改变非 UI API 对名称长度的独立约束。
+
+原始 `GroupParam.AddCommandCmdExecute` 对组合 IO 也调用 `GetAllLeafIO()` 计数，`AddIOFromCombination` 从 `CombinRoot` 模板递归创建叶字段；超限回滚已由反编译确认。当前 `WorkflowInterfaceItem` 是扁平端口，`CompoundOutputFields` 只是部分已恢复输出字段的托管投影，不能证明每种可添加组合输入的完整原生叶数。此处保持未闭合，不把端口数当原生叶数，也不猜测缺失类型的上限行为。
