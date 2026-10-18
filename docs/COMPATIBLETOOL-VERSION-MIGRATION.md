@@ -26,8 +26,9 @@
 | `analysis/decompiled/VM.Core/VM.Core/VmSolution.cs`（保存与加载委托） | `C141E2C53913B233B768782D6757FAE5997ECAF638B35DB2DDF98F5EF951A13E` | SaveAs 委托 base 的保存路径；底层同步保存传零指针/零长度；Load 委托 SDK 并经过回调/异常处理 | 反编译重建源码，不是原始 C#；不能推出容器布局和原生事务语义 |
 | `analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs`（SDK 包装） | `46B1D8249E3A30FE3BF7A0ED8E92207835F1A8E272833D5462041BC1756F220A` | Save/Load/version 三个调用的错误码、等待回调和异步错误检查 | 仅描述托管包装器行为 |
 | `analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs`（P/Invoke 声明） | `6A60F612FB385987FF96D6973844A256402F097D1EB371E7AD462C44E57127D0` | 声明了 `IMVS_SaveSolution(handle,path,password,pData,nDataLen)`、`IMVS_LoadSolution(handle,path,password,checkFlag,silentFlag)` 及版本查询入口；DLL 名为 `iMVS-6000PlatformSDK.dll` | P/Invoke 声明是托管接口证据，不等于 native ABI/实现反汇编证据；调用约定、内部容器和字段未知 |
+| 安装版 SDK C 头 `Development/V4.x/Includes/iMVS-6000PlatformSDKC.h` 与 `iMVS-6000PlatformSDKDefine.h` | 分别为 `2839B317C7F40E0791ADE924B2DBF1B6FB49E8CFCCD0BBE88B648C8C95331B2B`、`4F1D84AE3EB0C150AADF2682CFFE05B6CECF113B99329C64789CEFF3A57EE769` | 公开的 V4.x C 接口声明 `__stdcall IMVS_PF_SaveSolution`、`IMVS_PF_SyncSaveSolution`、`IMVS_PF_LoadSolution` 和版本查询；保存输入结构明示路径、密码、`pAdditionData` 与 `nDataLen`，结构另有保留字段；头文件也声明 Save/Load 进度查询 | SDK 头是接口/字段定义证据，不包含其函数体；`IMVS_PF_*` 公共接口与托管 `IMVS_*` 入口的内部映射关系未由此证明；容器编码/压缩/加密/资源布局仍未知 |
 
-尝试使用本机 REA 打开已定位的 x64 SDK 二进制时，深度分析不可用：Ghidra 未配置，IDA 未注册连接，Hopper 不支持当前 Windows 主机。该失败不影响以上已解出的托管证据，但本轮没有获得任何 native 函数体，因此不能将 SDK 包装签名写成原生算法结论。
+安装目录还带有 SDK 样例源码，但它没有暴露 `.sol` 容器实现。本轮尝试使用 REA 打开已定位的 x64 SDK 二进制时，深度分析不可用：Ghidra 未配置，IDA 未注册连接，Hopper 不支持当前 Windows 主机。故目前比“只知托管包装”多确认了 V4.x 公开 C 接口的调用约定与保存数据结构，但仍没有获得 native 函数体；不能把接口声明写成原生序列化算法结论。
 
 ## 迁移调用链
 
