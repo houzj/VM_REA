@@ -33,6 +33,11 @@ internal static class Program
    start.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
    Check(Field("pendingConnection") is not null,"实际 WPF 起点端口按下启动连接");
    var pointer=new Point(525,325);long revision=doc.Revision;
+   Call("FinishConnection",pointer);Pump();
+   Check(doc.Revision==revision&&doc.CurrentProcedure.ExecutionLinks!.Count==0,"未经过目标预览的直接释放不凭空创建连线");
+   start=ports[(source,3)];start.Visibility=Visibility.Visible;
+   start.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+   Check(Field("pendingConnection") is not null,"直接释放后可再次由起点端口开始连接");
    Call("UpdateConnectionPreview",pointer);Pump();
    var preview=(System.Windows.Shapes.Path)Field("connectionPreview")!;
    var figure=((PathGeometry)preview.Data).Figures.Single();
@@ -43,14 +48,14 @@ internal static class Program
    var dir=Path.Combine("analysis","full-audit");Directory.CreateDirectory(dir);
    var bitmap=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(window);
    var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using(var output=File.Create(Path.Combine(dir,"connection-pointer-preview.png")))png.Save(output);
-   Call("FinishConnection",pointer);Pump();
+   Call("FinishConnection",new Point(525,355));Pump();
    var link=ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single();
-   Check(link.FromNode==source&&link.ToNode==target&&link.SourceIndex==3&&link.TargetIndex==1,"松开后按目标最近端口建立真实连接");
+   Check(link.FromNode==source&&link.ToNode==target&&link.SourceIndex==3&&link.TargetIndex==3,"已预览目标保持不变，松开位置决定最近目标端口");
    Check(doc.Revision==revision+1,"建连为单次撤销事务");
    doc.Undo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Count==0,"撤销移除目标连接");
-   doc.Redo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().TargetIndex==1,"重做恢复目标端口索引");
+   doc.Redo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().TargetIndex==3,"重做恢复目标端口索引");
    var file=Path.Combine(Path.GetTempPath(),"connection-preview-"+Guid.NewGuid().ToString("N")+".vmx.json");
-   try{doc.Save(file);doc.Load(file);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().TargetIndex==1,"保存重开保留提交连接及目标端口");}
+   try{doc.Save(file);doc.Load(file);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().TargetIndex==3,"保存重开保留提交连接及目标端口");}
    finally{if(File.Exists(file))File.Delete(file);}
   }
   finally{window.Close();app.Shutdown();}

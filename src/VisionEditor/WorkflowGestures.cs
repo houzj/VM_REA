@@ -192,7 +192,17 @@ public partial class MainWindow
  }
  void FinishConnection(Point point)
  {
-  var source=pendingConnection;var target=FindConnectionTarget(point);pendingConnection=null;connectionTarget=null;
+  // Connector.ToolItemGrid_PreviewMouseUp consumes oldItem recorded by
+  // AttachedDiagramItem_PreviewMouseMove; mouse-up cannot discover a new item.
+  // Only the nearest connector index is computed from the release position.
+  var source=pendingConnection;var previewTarget=connectionTarget;
+  (string Node,int Port)? target=null;
+  if(previewTarget is {} previous&&doc.CurrentProcedure.Nodes.FirstOrDefault(n=>n.Id==previous.Node) is {} node)
+  {
+   int index=Enumerable.Range(0,4).OrderBy(i=>{var p=Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),i).Anchor;return Math.Pow(p.X-point.X,2)+Math.Pow(p.Y-point.Y,2);}).First();
+   target=(node.Id,index);
+  }
+  pendingConnection=null;connectionTarget=null;
   CanvasViewport.ReleaseMouseCapture();
   if(source is {} from&&target is {} to&&EditableCanvas)Safe(()=>doc.ConnectExecution(from.Node,to.Node,from.Port,to.Port));
   RenderGraph();
