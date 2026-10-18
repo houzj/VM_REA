@@ -109,3 +109,12 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 原生依据：`VmProcedureDecorator.SetTimeOutCommandExe`打开`TimeOutSet`，XAML定义0—100000毫秒，确认调用`ProcessManager.SetProcedureWaitTime`。SDK后端超时语义尚未恢复；当前协作取消是独立托管行为。
 - 双线协调：插件线正在自己的工作树修改`Contracts.cs`；两线提交后由main审查合并，不在插件工作树复制本字段或直接覆盖其在制改动。回归同时验证旧方案、新字段往返、慢模块释放及插件线的流程身份状态。
 
+## FCR-015：原生 Group PointF 三分量输出合同（请求，未实现）
+
+- 生产者：插件线的 PointF 输出工具及工具描述符；框架线的 Group 输出配置器和累积器消费该声明。当前 `DataKind.Point` / `VisionCore.Point2` 仅含 X、Y，不能暗中把原生 R 丢弃或填零。
+- 消费者：Group 输出页的 PointF 三子行、公共输出端口、跨流程订阅、累积数组、调试结果和持久化层。需要明确第三分量是角度还是其他量及其单位、下游端口身份。
+- Payload：拟定独立强类型 PointF(X,Y,R) 或显式三叶字段协议，包含完整类型/基数、字段名、数值范围及端口映射。具体 API 和 JSON 形状须两线审查后决定；不得未经同意替换现有 `Point2`。
+- Lifecycle：工具产生完整三分量快照 → Group 配置选择点输出及三个子字段 → 每轮读取/累积 → 调试显示、跨流程消费 → 保存重开/复制重映射/清理。失效或缺字段时应显式报错，不默默退化为二分量。
+- 兼容：旧 `Point2` 方案仍按 X/Y 独立类型读取，新增合同应为可选/版本化，不让插件线在制合同产生二次实现；原生 `.sol`/ABI 往返另行取证。
+- 验收证据：`analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:1078–1177` 的 `PointFParam` 三子行和独立“增加点输出”；`analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/PointF.cs` 的 `SubChildren` 将其命名为 `.X/.Y/.R`，R 初始范围 -360..360。需选真实 PointF 工具逐项 WPF 操作，验证三叶数据下游、累积、撤销、保存重开，并与原生 VM 同状态对照；当前只完成独立 Point2 入口及两分量数据运行，不能作为本合同验收。
+

@@ -30,17 +30,18 @@ internal static class Program
   {ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};window.Show();Pump();
   var tabs=Children(window).OfType<TabControl>().First(t=>t.Items.Count==5);tabs.SelectedIndex=1;Pump();
   Children(window).OfType<Button>().Single(b=>Equals(b.Tag,"GroupOutputAddPoint")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
-  var output=Body().Configuration.Outputs.Single();Check(output.Kind==DataKind.Point&&output.Name=="out0","Actual WPF dedicated point-output button adds Point interface");
+  var output=Body().Configuration.Outputs.Single();Check(output.Kind==DataKind.Point&&output.Name=="out","Actual WPF dedicated point-output button starts with source-confirmed out name");
+  Children(window).OfType<Button>().Single(b=>Equals(b.Tag,"GroupOutputAddPoint")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(Body().Configuration.Outputs.Any(o=>o.Name=="out0"),"Second WPF point output uses native out0 collision suffix");var extra=Body().Configuration.Outputs.Single(o=>o.Name=="out0");Children(window).OfType<Button>().Single(b=>Equals(b.Tag,"GroupOutputDelete:"+extra.Id)).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();Check(Body().Configuration.Outputs.Count==1,"Actual WPF delete removes second output without disturbing first");
   editor.SetWorkflowConfiguration("body",Body().Configuration with{Outputs=[output with{NodeId="point",Port="point"}]});
   tabs.SelectedIndex=0;Pump();tabs.SelectedIndex=1;Pump();
   Children(window).OfType<CheckBox>().Single(c=>Equals(c.Tag,"GroupOutputAccumulate:"+output.Id)).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
   // RaiseEvent does not flip IsChecked when no input device is involved.
   if(!Body().Configuration.Outputs.Single().Accumulate){var checkbox=Children(window).OfType<CheckBox>().Single(c=>Equals(c.Tag,"GroupOutputAccumulate:"+output.Id));checkbox.IsChecked=true;checkbox.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();}
   Check(Body().Configuration.Outputs.Single().Accumulate&&Group().Call!.Outputs.Single().Cardinality==ValueCardinality.Array,"WPF accumulation switch updates public Point array signature");
-  var run=Run();var points=run.Calls["group"].WorkflowOutputs["out0"].As<IReadOnlyList<Point2>>();Check(run.Status==SessionStatus.Success&&points.Count==2&&points[0].X==0&&points[1].X==1,"Two actual Group rounds export ordered Point values");
+  var run=Run();var points=run.Calls["group"].WorkflowOutputs["out"].As<IReadOnlyList<Point2>>();Check(run.Status==SessionStatus.Success&&points.Count==2&&points[0].X==0&&points[1].X==1,"Two actual Group rounds export ordered Point values");
   editor.Undo();Check(!Body().Configuration.Outputs.Single().Accumulate&&Group().Call!.Outputs.Single().Cardinality==ValueCardinality.Scalar,"Undo restores scalar output signature");
-  editor.Redo();Check(Body().Configuration.Outputs.Single().Accumulate&&Run().Calls["group"].WorkflowOutputs["out0"].ElementCount==2,"Redo restores Point accumulation and runtime data");
-  window.Close();editor.Save(path);editor.Load(path);Check(Body().Configuration.Outputs.Single().Kind==DataKind.Point&&Run().Calls["group"].WorkflowOutputs["out0"].ElementCount==2,"Save and reopen retains Point output and two-round data");
+  editor.Redo();Check(Body().Configuration.Outputs.Single().Accumulate&&Run().Calls["group"].WorkflowOutputs["out"].ElementCount==2,"Redo restores Point accumulation and runtime data");
+  window.Close();editor.Save(path);editor.Load(path);Check(Body().Configuration.Outputs.Single().Kind==DataKind.Point&&Run().Calls["group"].WorkflowOutputs["out"].ElementCount==2,"Save and reopen retains Point output and two-round data");
   app.Shutdown();Console.WriteLine($"PASS {checks} Group point output checks");
  }
  static void Pump(){var frame=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>frame.Continue=false));Dispatcher.PushFrame(frame);}

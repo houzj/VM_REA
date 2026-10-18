@@ -12,6 +12,8 @@
 
 `VisionEditor.GroupPointOutputChecks` 通过真实 WPF 按钮添加 Point 输出、绑定实际节点产出并开启累积，运行两轮得到两个有序点；公共端口变为 Point 数组，撤销/重做与保存重开后运行结果一致（6 项）。点输出 X/Y 等子字段行、编辑弹层及真实 VM 视觉差分仍开放。
 
+后续核对 `analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupOutputParam.cs` 的 `DefaultStartName => "out"` 及同程序集 `DynamicObjectConfigControl/GroupParam.cs:293–300,367–385` 的 `GetUniqueName`：首个独立输出应叫 `out`，撞名后是 `out0`，同时检查输入和输出名称。原 WPF 适配器首个误叫 `out0`；已更正。真实窗口连续添加两项、删除第二项、绑定第一个实际 Point 来源、两轮累积、撤销重做和保存重开验证为 8 项。PointF 三分量合同已在 `CONTRACT-REQUESTS.md` 登记，当前 Point2 仍只属独立适配。
+
 日期：2026-10-16。该清单一次覆盖 Group 全范围；完成两项不代表整个 Group 完成。状态分别记录源码证据、实现、真实 VM 对照，不能用测试通过替代原生验收。
 
 ## 六个功能域
