@@ -78,7 +78,11 @@ public partial class MainWindow
  {
   if(!EditableCanvas||graphClipboard is not {Nodes.Count:>0} snapshot||graphClipboardSolution!=doc.Document.Id)return;
   var first=new Point(snapshot.Nodes.Min(n=>n.X),snapshot.Nodes.Min(n=>n.Y));
-  var target=position??new Point(Math.Min(first.X+100,4850),Math.Min(first.Y+100,4850));
+  // Native PasteItemsCommandExecute treats (0,0) as the keyboard-paste sentinel,
+  // even when it came from the canvas context menu at the origin.
+  var keyboardPoint=position is null||position.Value.X==0&&position.Value.Y==0;
+  var target=keyboardPoint?new Point(Math.Min(first.X+100,4850),Math.Min(first.Y+100,4850)):position!.Value;
+  target=new Point(Math.Max(5,Math.Round(Math.Min(target.X,4850)/5)*5),Math.Max(5,Math.Round(Math.Min(target.Y,4850)/5)*5));
   SelectPasted(doc.PasteNodes(snapshot,target.X,target.Y));
  }
  void SelectPasted(IReadOnlyList<string> ids)
