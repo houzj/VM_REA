@@ -254,7 +254,9 @@ public partial class MainWindow
         GraphLayer.Focus();selected=null;selectedWire=null;selectedNodes.Clear();boxSelectionActive=false;DrawSelectionGroup();DrawWireHandles();RefreshRight();
         if(isLocked||activeRun is not null){RenderGraph();return;}
         canvasGestureRevision=doc.Revision;pointerStart=e.GetPosition(GraphLayer);boxSelecting=true;
-        selectionBox=new Rectangle {Stroke=orange,StrokeThickness=1/scale,Fill=new SolidColorBrush(Color.FromArgb(20,100,200,100)),IsHitTestVisible=false};GraphLayer.Children.Add(selectionBox);CanvasViewport.CaptureMouse();e.Handled=true;
+        // ItemsPage.ToolItemGrid_PreviewMouseMove uses an unfilled LightSlateGray
+        // adorner path with a {2,1} dash pattern during marquee selection.
+        selectionBox=new Rectangle {Stroke=Brushes.LightSlateGray,StrokeThickness=1/scale,StrokeDashArray=new DoubleCollection {2,1},Fill=Brushes.Transparent,IsHitTestVisible=false};GraphLayer.Children.Add(selectionBox);CanvasViewport.CaptureMouse();e.Handled=true;
     }
     void CanvasPointerMove(object sender,MouseEventArgs e)
     {
