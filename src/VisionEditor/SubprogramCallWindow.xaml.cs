@@ -57,7 +57,17 @@ public partial class SubprogramCallWindow:Window
    var button=new Button{Content=subscription is null?item.Item3.ToString():sources(DataKind.Integer).FirstOrDefault(s=>s.Reference==subscription.Source)?.Label??"------"};
    button.Click+=(_,_)=>{var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("","",DataKind.Integer,"解除订阅")}.Concat(sources(DataKind.Integer))){Owner=this};if(picker.ShowDialog()==true&&picker.Selection is {} chosen)Safe(()=>bindLoopParameter!(item.Item1,chosen.Reference));};row.Children.Add(button);panel.Children.Add(row);
   }
-  var gap=new DockPanel{Margin=new Thickness(0,6,0,6)};gap.Children.Add(new TextBlock{Text="循环间隔(ms)",Width=89,VerticalAlignment=VerticalAlignment.Center});var input=new TextBox{Text=settings.IntervalMs.ToString()};input.LostKeyboardFocus+=(_,_)=>Safe(()=>{if(!int.TryParse(input.Text,out var value)||value is <0 or >10000)throw new ArgumentException("循环间隔范围为0～10000ms。");setLoopParameter!("LoopTimeGap",System.Text.Json.JsonSerializer.SerializeToElement(value));});gap.Children.Add(input);panel.Children.Add(gap);BuildBreakPanel(panel);
+  var gap=new DockPanel{Margin=new Thickness(0,6,0,6)};gap.Children.Add(new TextBlock{Text="循环间隔(ms)",Width=89,VerticalAlignment=VerticalAlignment.Center});
+  var input=new TextBox{Text=settings.IntervalMs.ToString(),Width=70,Tag="GroupLoopTimeGapValue"};DockPanel.SetDock(input,Dock.Right);gap.Children.Add(input);
+  var slider=new Slider{Minimum=0,Maximum=10000,TickFrequency=1,IsSnapToTickEnabled=true,Value=settings.IntervalMs,Tag="GroupLoopTimeGapSlider",VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,8,0)};
+  gap.Children.Add(slider);bool updating=false;
+  void CommitGap(int value){if(value==settings.IntervalMs)return;Safe(()=>setLoopParameter!("LoopTimeGap",System.Text.Json.JsonSerializer.SerializeToElement(value)));}
+  slider.ValueChanged+=(_,_)=>{if(!updating)input.Text=((int)slider.Value).ToString();};
+  slider.AddHandler(System.Windows.Controls.Primitives.Thumb.DragCompletedEvent,new System.Windows.Controls.Primitives.DragCompletedEventHandler((_,_)=>CommitGap((int)slider.Value)));
+  slider.PreviewMouseLeftButtonUp+=(_,_)=>CommitGap((int)slider.Value);
+  slider.LostKeyboardFocus+=(_,_)=>CommitGap((int)slider.Value);
+  input.LostKeyboardFocus+=(_,_)=>{if(!int.TryParse(input.Text,out var value)||value is <0 or >10000){Safe(()=>throw new ArgumentException("循环间隔范围为0～10000ms。"));return;}if(value==settings.IntervalMs)return;updating=true;slider.Value=value;updating=false;CommitGap(value);};
+  panel.Children.Add(gap);BuildBreakPanel(panel);
  }
  static string TypeName(DataKind kind)=>kind switch{DataKind.GrayImage=>"图像",DataKind.Integer=>"int",DataKind.Number=>"float",DataKind.Text=>"string",DataKind.Circle=>"圆",DataKind.Point=>"点",DataKind.Fixture=>"位置修正",DataKind.Components=>"连通域",DataKind.Region=>"区域",_=>kind.ToString()};
  string InputLabel(string port){var p=owner();var subscription=p.Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node().Id&&b.Target==port&&!b.IsParameter);if(subscription is not null){var s=subscription.Source;return s.Kind switch{WorkflowSourceKind.GroupLoopIndex=>"Group.LoopIndex",WorkflowSourceKind.LocalVariable=>"局部变量."+p.Configuration.Variables.Single(v=>v.Id==s.Id).Name,WorkflowSourceKind.WorkflowInput=>"流程输入."+p.Configuration.Inputs.Single(v=>v.Id==s.Id).Name,_=>p.Nodes.Single(n=>n.Id==s.Id).Name+"."+s.Port};}var c=p.Connections.FirstOrDefault(c=>c.ToNode==node().Id&&c.ToPort==port);return c is null?"------":p.Nodes.Single(n=>n.Id==c.FromNode).Name+"."+c.FromPort;}
