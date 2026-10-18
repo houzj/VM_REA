@@ -25,8 +25,12 @@ var recentPath=Path.GetFullPath("analysis/full-audit/shell-recent-solutions.json
 if(File.Exists(recentPath))File.Delete(recentPath);
 var recentStore=typeof(MainWindow).Assembly.GetType("VisionEditor.RecentSolutionStore")!;
 recentStore.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,recentPath);
+var sampleDirectoryPath=Path.GetFullPath("analysis/full-audit/shell-sample-directory.txt");
+if(File.Exists(sampleDirectoryPath))File.Delete(sampleDirectoryPath);
+typeof(MainWindow).Assembly.GetType("VisionEditor.SampleDirectoryPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,sampleDirectoryPath);
 var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
-var window=new MainWindow{ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
+var samplePicker=new FixedSamplePicker();
+var window=new MainWindow(samplePicker){ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
 void Pump(){window.UpdateLayout();window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);}
 void Check(bool value,string description){if(!value)throw new Exception(description);Console.WriteLine("PASS: "+description);}
@@ -162,8 +166,20 @@ try
  sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
  var demoPath=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));
  Check(document.FilePath==demoPath&&Equals(((MenuItem)recentMenu.Items[0]).Tag,demoPath),"Opening the shipped example records the loaded sample as the newest recent solution");
+ Check(samplePicker.LastInitialDirectory==AppContext.BaseDirectory&&File.ReadAllText(sampleDirectoryPath)==Path.GetDirectoryName(demoPath),"Sample picker starts in the shipped example directory and remembers the chosen folder");
+ samplePicker.NextPath=null;
+ sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
+ Check(samplePicker.LastInitialDirectory==Path.GetDirectoryName(demoPath)&&document.FilePath==demoPath,"Cancelling the sample picker keeps the loaded solution unchanged");
  Console.WriteLine("Shell command and input checks passed.");
 }
+
 finally{window.Close();app.Shutdown();}
 }
+}
+
+sealed class FixedSamplePicker : ISampleSolutionPicker
+{
+ public string? NextPath {get;set;}=Path.Combine(AppContext.BaseDirectory,"demo.vmx.json");
+ public string? LastInitialDirectory {get;private set;}
+ public string? Pick(MainWindow owner,string initialDirectory){LastInitialDirectory=initialDirectory;return NextPath;}
 }
