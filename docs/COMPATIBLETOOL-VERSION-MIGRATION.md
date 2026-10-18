@@ -10,6 +10,11 @@
 | 迁移工具入口 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/Program.cs:10-46` | `796184f7cbe03c2c9c267873b0992e1cc4b1574ff6f46814bf6285288aca2bb7` | 参数组合、四类迁移入口、异常捕获、返回码与 SDK 释放 |
 | 方案/流程/Group/设计转换 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/ConvertHelper.cs:131-585` | `e402795ab8954269b1886274786f7734afc0970abfbeb53c098701831c53ab35` | 版本分段、迁移步骤、保存入口和原生 SDK 边界 |
 | 动态 IO 迁移规则 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/DynamicIOUtils.cs:33-520` | `7e823cdab9ecfd0b5665e6ba2b2ecbd2b7851bdd5026430e7882cef343309515` | V4.2、V4.3、V4.4 的部分工具级动态输入输出改写 |
+| IsReady 重建 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/CompatIsReadyPropertyUtils.cs:15-247` | `41bf41e9727bf41405cb12ac5b1d9dccac1142b4efa6f583d2569aa48a948894` | 递归检查流程/Group模块的动态输入是否就绪，并写 `IsReady`、`UnReadyModuleNames` UI 数据 |
+| 模板匹配模型迁移 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/TempMatchUtils.cs:21-620` | `701d2b8f1c49357ce621ae19a9ae60e1e642fea68d3e8afb94c372b7cd0b85ff` | 对明确列出的匹配/检测模块调用其专属模型转换控件和模型数据构建逻辑 |
+| 全局变量/绑定迁移 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/GlobalVarUtils.cs:53-453` | `5b8a918bbfd387ddba0ceb47050c9efb885161d0038c5bef7ded6ffd0bbb826f` | 读取全局变量与模块绑定，更新参数名/type/index并分批重建绑定 |
+| 定制模块迁移 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/CustomizedModuleUtils.cs:13-154` | `0745a14106c9ed8a0a869a6dcaf4fbd2993a7bcaa6b9bae18889528a8fca056a` | 扫描对象模块并分发专属 `CustomizedCompatible`；托管枚举中仅见 `TestModu` |
+| 前端设计迁移 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/FrontendUIUtils.cs:44-402` | `dde697e974174d6bbe35535d90d6f17e63c44dfcb71b909959fc7c4e9d54c362` | 设计器缓冲区读取、XAML/XML 改写、版本属性及布局转换 |
 | 序列化调用边界 | `analysis/full-audit/solution-serialization-contract.json` 中 `save`、`load`、`version-migration` 链 | 报告记录了托管文件与 SDK 头文件哈希 | 方案读写由 SDK/native 承担；迁移器转换规则和原生容器仍有未知项 |
 
 ## 迁移调用链
@@ -20,10 +25,21 @@
 4. 方案从 V4.0/V4.1 到 V4.4 的托管步骤包括：IsReady 数据、动态 IO、模板匹配模型、前端设计、定制模块；V4.2→V4.3 处理动态 IO；V4.3→V4.4 更新前端设计、动态 IO、全局变量和定制模块。V4.4 的动态 IO步骤还会更新特定模块，并对原生模块类型 `0` 清空 `PathPoints` 用户数据。
 5. V4.3→V4.4 的设计文档转换有 XML 层实现；V4.0→V4.4 的设计 XML 路径经过 VM4.2、VM4.3/4.4 两个转换工具。以上只覆盖显式托管步骤，插件模型、附件、ROI 持久化和二进制容器仍由 SDK/插件层负责。
 
+## 转换器职责拆分
+
+| 子系统 | 反编译可见的具体行为 | 不能由此推出的结论 |
+|---|---|---|
+| `CompatIsReadyPropertyUtils` | 读取流程/Group 的首层模块树；递归处理嵌套 `IMVSGroup`；按模块 XML 中的动态 IO 树解析 readiness；向对象 UI 数据写入未就绪模块名和 `IsReady` 字节 | 这不是算法校验；未证明缺 XML、缺插件或 SDK 报错时状态完整 |
+| `DynamicIOUtils` | V4.2 路径扫描动态输入/输出用户数据并更新 IO；也处理 GlobalVariableModule。V4.3 路径针对 `IMVSTargetTrackModu` 更新动态 IO，并把订阅名 `roicenterx/roicentery/roiwidth/roiheight/roiangle` 改为 `BoxCenterx/BoxCentery/BoxWidth/BoxHeight/BoxAngle`。V4.4 路径应用特殊模块表，并删除 type 0 节点的 `PathPoints` UI blob | 未涵盖全部插件所有版本；迁移后的每个新参数/模型含义需工具线逐插件差分 |
+| `TempMatchUtils` | 按模块名处理 HP/快速特征匹配、灰度匹配、MarkFind、Inspect、MarkInsp 等模型；部分通过加载插件 DLL、反射专属迁移控件并重建模型 | 不能把模型迁移泛化到全工具集；真实模型字节与原厂可运行结果仍待对照 |
+| `FrontendUIUtils` | 对 DESIGNERBUFFER 做 XML/XAML 转换；删/改特定 localization、标题和中文按钮文案；将 4.3 设计节点转成 4.4 节点并补充属性/尺寸 | 不能视为任意第三方 XAML 的无损往返 |
+| `GlobalVarUtils` | 用 `CompatibleTool.xml` 的 IO 改名映射，重建模块参数绑定；将索引订阅改为 `All`，绑定按 128 项批次写回，并更新全局变量结果参数名/type | 转换只在 solution 的 V4.4 路径显式调用；无全部变量种类和失败回滚差分 |
+| `CustomizedModuleUtils` | V4.2 扫描对象内流程/Group/模块，根据定制模块枚举分发 `CustomizedCompatible`；当前托管枚举只列 `TestModu`；V4.4 方法直接返回 `true` | 这不是所有自定义插件的迁移支持证明 |
+
 ## 已发现的源码风险点
 
 - `ConvertSolution`、`ConvertProcedure`、`ConvertGroup` 在版本分支之后都会无条件执行 `Convert*4_3To4_4` 并重新赋值给 `flag`。对 V4.2，前一阶段的动态 IO 返回值可能被覆盖；对 V4.0/V4.1，前一阶段聚合迁移结果也可能被覆盖。流程和 Group 的 V4.3→V4.4 帮助方法在反编译代码中只返回 `true`（流程还重复记录 GlobalVar 日志），因而静态控制流显示先前失败可能不再阻止保存。需要原版受控样本才能确认这是实际迁移器缺陷、反编译重建异常，还是受其他 SDK 状态门控。
-- `Program.Main` 将收到的命令参数拼接后按分号切分，但检查 `Count() >= 4` 后读取 `array[4]`。按静态代码，恰好四段参数会进入异常路径；主程序当前调用通常传五段。密码和包含分号的字段边界也未见可靠转义协议。尚无实际进程参数观测验证。
+- `Program.Main` 先检查原始 `args.Count() >= 4`，然后才把参数拼接并按分号切分，随后读取 `array[4]`。因此此检查并不保证切分后有五段；主程序传入的命令行实际如何落入 `args`，需结合 Windows 参数解析和原版进程观测复核。密码和包含分号的字段边界也未见可靠转义协议，静态风险不等于已复现崩溃。
 - 主程序启动迁移器后等待退出并检查输出文件。反编译代码没有显示读取迁移进程的 ExitCode，也没有显示 `Process` 的 `using`/`Dispose`；这是静态资源管理风险记录，不代表已观测到 VM 进程泄漏。
 - `ConvertSolution4_3To4_4` 将多个子步骤用按位 `&` 汇总，能保证各步骤均被调用；早期分支则通过顺序赋值覆盖结果，不能把它们简化成相同的失败传播模型。
 
