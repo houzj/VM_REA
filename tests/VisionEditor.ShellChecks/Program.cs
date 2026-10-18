@@ -32,14 +32,17 @@ try
  var header=Find<Grid>("ShellHeader");var toolbar=Find<StackPanel>("ToolBar");
  var menu=Find<Menu>("MenuHost");
  Check(window.WindowState==WindowState.Normal,"Window starts normal");
- var maximize=header.Children.OfType<Grid>().SelectMany(g=>g.Children.OfType<Grid>()).SelectMany(g=>g.Children.OfType<StackPanel>()).SelectMany(g=>g.Children.OfType<Button>()).First(b=>Equals(b.Content,"□"));
+ var maximize=Find<Button>("MaximizeButton");
+ Check(Equals(maximize.ToolTip,"最大化"),"Normal titlebar advertises maximize");
  maximize.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,maximize));Pump();
  Check(window.WindowState==WindowState.Maximized,"Titlebar maximize button changes window state");
+ Check(Equals(maximize.ToolTip,"向下还原")&&Find<Image>("MaximizeIcon").Source.ToString()!.EndsWith("windowshift_ic_normal.png",StringComparison.OrdinalIgnoreCase),"Maximized titlebar switches to native restore icon and tooltip");
  var content=Find<DockPanel>("WindowContent");
  Directory.CreateDirectory("analysis/full-audit");
  Check(NativeWindowFrame.FitsWorkArea(window,content,Path.GetFullPath("analysis/full-audit/shell-window-work-area.json")),"Maximized shell remains in work area");
  maximize.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,maximize));Pump();
  Check(window.WindowState==WindowState.Normal,"Titlebar maximize button restores normal state");
+ Check(Equals(maximize.ToolTip,"最大化")&&Find<Image>("MaximizeIcon").Source.ToString()!.EndsWith("windowshift_ic_maximize.png",StringComparison.OrdinalIgnoreCase),"Restored titlebar switches to native maximize icon and tooltip");
  var headerHandler=typeof(MainWindow).GetMethod("HeaderMouseDown",BindingFlags.NonPublic|BindingFlags.Instance)!;
  var onMenu=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent,Source=menu.Items[0]};
  headerHandler.Invoke(window,[header,onMenu]);
