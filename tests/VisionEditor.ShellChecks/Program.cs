@@ -158,6 +158,10 @@ try
  Check(document.FilePath==recentFirst&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentFirst),"Recent menu reopens an actual saved solution and moves it to the top");
  using(var recentData=JsonDocument.Parse(File.ReadAllText(recentPath)))
   Check(recentData.RootElement.EnumerateArray().Any(entry=>entry.GetProperty("Path").GetString()==recentFirst),"Recent solutions survive in the independent shell preference file");
+ var sampleMenu=(MenuItem)fileRoot.Items[4];
+ sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
+ var demoPath=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));
+ Check(document.FilePath==demoPath&&Equals(((MenuItem)recentMenu.Items[0]).Tag,demoPath),"Opening the shipped example records the loaded sample as the newest recent solution");
  Console.WriteLine("Shell command and input checks passed.");
 }
 finally{window.Close();app.Shutdown();}
