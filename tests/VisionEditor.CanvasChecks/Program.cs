@@ -189,6 +189,37 @@ internal static class Program
             string viewportFile=Path.Combine(Path.GetTempPath(),"vision-canvas-pan-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(viewportFile);doc.Load(viewportFile);Check(doc.CurrentProcedure.Nodes.Count==0,"pan and zoom leave solution data valid after save and reopen");}
             finally {if(File.Exists(viewportFile))File.Delete(viewportFile);}
+
+            doc.NewSolution();Pump();
+            string originalFlow=doc.CurrentProcedureId;
+            string searchFlow=doc.AddProcedure("定位验证");
+            doc.SelectProcedure(searchFlow);
+            string searchNode=doc.AddNode("vision.image-source","1.0.0",2500,2100);Pump();
+            Invoke("SetCanvasZoom",1.6,new Point(180,140));Pump();
+            doc.SelectProcedure(originalFlow);Pump();
+            revision=doc.Revision;
+            Invoke("ProcedureListClick",window.FindName("ProcedureListButton")!,new RoutedEventArgs());Pump();
+            var listPopup=(Popup)typeof(MainWindow).GetField("workflowListPopup",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var listTree=(TreeView)((Border)listPopup.Child).Child;
+            var flowItem=listTree.Items.OfType<TreeViewItem>().Single(item=>(string)item.Tag==searchFlow);
+            var nodeItem=flowItem.Items.OfType<TreeViewItem>().Single(item=>(string)item.Tag==searchNode);
+            nodeItem.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.PreviewMouseLeftButtonDownEvent});Pump();
+            Check(!listPopup.IsOpen&&doc.CurrentProcedureId==searchFlow&&selected.SetEquals([searchNode]),"actual workflow list leaf click opens target flow and selects its node");
+            var located=doc.CurrentProcedure.Nodes.Single(n=>n.Id==searchNode);
+            double actualZoom=(double)typeof(MainWindow).GetField("scale",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(Math.Abs(actualZoom-1.6)<.001,"target workflow restores its own zoom before node search");
+            var view=(FrameworkElement)window.FindName("CanvasViewport")!;
+            double expectedX=Math.Max(0,located.X-view.ActualWidth*.5+50)*actualZoom;
+            double expectedY=Math.Max(0,located.Y-view.ActualHeight*.5+15)*actualZoom;
+            Check(Math.Abs(scroll.HorizontalOffset-expectedX)<1&&Math.Abs(scroll.VerticalOffset-expectedY)<1,$"native SearchModel scroll formula positions selected node at {expectedX:0.##},{expectedY:0.##}; actual {scroll.HorizontalOffset:0.##},{scroll.VerticalOffset:0.##}");
+            Check(doc.Revision==revision,"workflow list search changes view and selection without editing document");
+            Capture("canvas-workflow-list-search.png");
+            doc.Undo();Pump();
+            Check(doc.CurrentProcedure.Nodes.All(n=>n.Id!=searchNode),"undo after view-only search still targets preceding node-add transaction");
+            doc.Redo();Pump();
+            string searchFile=Path.Combine(Path.GetTempPath(),"vision-canvas-search-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try {doc.Save(searchFile);doc.Load(searchFile);Check(doc.Document.Procedures.Single(p=>p.Id==searchFlow).Nodes.Single(n=>n.Id==searchNode).X==2500,"searched node persists through save and reopen");}
+            finally {if(File.Exists(searchFile))File.Delete(searchFile);}
         }
         finally {window.Close();application.Shutdown();}
     }
