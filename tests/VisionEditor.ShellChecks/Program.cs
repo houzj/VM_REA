@@ -154,7 +154,7 @@ try
  var recentFirst=Path.GetFullPath("analysis/full-audit/shell-recent-first.vmx.json");
  var recentSecond=Path.GetFullPath("analysis/full-audit/shell-recent-second.vmx.json");
  document.Save(recentFirst);
- var saveMenu=(MenuItem)((MenuItem)menu.Items[0]).Items[2];
+ var saveMenu=((MenuItem)menu.Items[0]).Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"保存"));
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
  document.Save(recentSecond);
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
@@ -166,7 +166,7 @@ try
  Check(document.FilePath==recentFirst&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentFirst),"Recent menu reopens an actual saved solution and moves it to the top");
  using(var recentData=JsonDocument.Parse(File.ReadAllText(recentPath)))
   Check(recentData.RootElement.EnumerateArray().Any(entry=>entry.GetProperty("Path").GetString()==recentFirst),"Recent solutions survive in the independent shell preference file");
- var sampleMenu=(MenuItem)fileRoot.Items[4];
+ var sampleMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"打开示例"));
  sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
  var demoPath=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));
  Check(document.FilePath==demoPath&&Equals(((MenuItem)recentMenu.Items[0]).Tag,demoPath),"Opening the shipped example records the loaded sample as the newest recent solution");
@@ -196,9 +196,19 @@ try
  openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
  Check(solutionPicker.LastInitialDirectory==Path.GetDirectoryName(recentSecond)&&document.FilePath==recentSecond,"Next Open starts in the remembered directory; cancelling retains the solution");
  var exitMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"退出"));
+ Check(string.Join(",",fileRoot.Items.OfType<MenuItem>().Select(item=>item.Header))=="新建方案,打开方案,最近打开,打开示例,保存,另存为,退出","File menu follows the source order for implemented native commands");
+ Check(fileRoot.Items[fileRoot.Items.IndexOf(sampleMenu)-1] is Separator&&fileRoot.Items[fileRoot.Items.IndexOf(saveMenu)-1] is Separator,"Source separator flags appear before sample and save commands");
  Check(fileRoot.Items[fileRoot.Items.IndexOf(exitMenu)-1] is Separator,"File menu separates its native Exit command from solution commands");
  fileRoot.IsSubmenuOpen=true;Pump();
  Check(exitMenu.IsVisible&&exitMenu.ActualWidth>0&&exitMenu.ActualHeight>0,"File Exit appears as a laid-out WPF menu item in the opened menu");
+ var filePopup=fileRoot.Template.FindName("PART_Popup",fileRoot) as Popup;
+ if(filePopup?.Child is FrameworkElement popupContent&&popupContent.ActualWidth>0&&popupContent.ActualHeight>0)
+ {
+  var menuBitmap=new RenderTargetBitmap((int)Math.Ceiling(popupContent.ActualWidth),(int)Math.Ceiling(popupContent.ActualHeight),96,96,PixelFormats.Pbgra32);
+  menuBitmap.Render(popupContent);var menuPng=new PngBitmapEncoder();menuPng.Frames.Add(BitmapFrame.Create(menuBitmap));
+  using var menuFile=File.Create("analysis/full-audit/shell-file-menu.png");menuPng.Save(menuFile);
+  Check(menuBitmap.PixelWidth>0&&menuBitmap.PixelHeight>0,"File submenu renders a reviewable test-only bitmap");
+ }
  var closed=false;window.Closed+=(_,_)=>closed=true;
  exitMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,exitMenu));Pump();
  Check(closed&&!window.IsVisible,"File Exit invokes the same real WPF window close path as the titlebar");
