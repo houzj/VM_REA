@@ -31,10 +31,14 @@ typeof(MainWindow).Assembly.GetType("VisionEditor.SampleDirectoryPreference")!.G
 var openDirectoryPath=Path.GetFullPath("analysis/full-audit/shell-open-directory.txt");
 if(File.Exists(openDirectoryPath))File.Delete(openDirectoryPath);
 typeof(MainWindow).Assembly.GetType("VisionEditor.OpenSolutionDirectoryPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,openDirectoryPath);
+var saveDirectoryPath=Path.GetFullPath("analysis/full-audit/shell-save-directory.txt");
+if(File.Exists(saveDirectoryPath))File.Delete(saveDirectoryPath);
+typeof(MainWindow).Assembly.GetType("VisionEditor.SaveSolutionDirectoryPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,saveDirectoryPath);
 var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
 var samplePicker=new FixedSamplePicker();
 var solutionPicker=new FixedSolutionPicker();
-var window=new MainWindow(samplePicker,solutionPicker){ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
+var savePicker=new FixedSavePicker();
+var window=new MainWindow(samplePicker,solutionPicker,savePicker){ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
 void Pump(){window.UpdateLayout();window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);}
 void Check(bool value,string description){if(!value)throw new Exception(description);Console.WriteLine("PASS: "+description);}
@@ -195,6 +199,29 @@ try
  solutionPicker.NextPath=null;
  openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
  Check(solutionPicker.LastInitialDirectory==Path.GetDirectoryName(recentSecond)&&document.FilePath==recentSecond,"Next Open starts in the remembered directory; cancelling retains the solution");
+ var saveAsMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"另存为"));
+ var recentCount=recentMenu.Items.Count;
+ saveAsMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveAsMenu));Pump();
+ Check(document.FilePath==recentSecond&&!File.Exists(saveDirectoryPath)&&recentMenu.Items.Count==recentCount&&savePicker.LastInitialDirectory==string.Empty,"Cancelling Save As retains document, directory preference and recent history");
+ var saveAsPath=Path.GetFullPath("analysis/full-audit/save-as-target/shell-save-as.vmx.json");
+ Directory.CreateDirectory(Path.GetDirectoryName(saveAsPath)!);
+ if(File.Exists(saveAsPath))File.Delete(saveAsPath);
+ savePicker.NextPath=saveAsPath;
+ saveAsMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveAsMenu));Pump();
+ Check(document.FilePath==saveAsPath&&File.Exists(saveAsPath)&&Equals(((MenuItem)recentMenu.Items[0]).Tag,saveAsPath),"Save As menu writes a real solution and refreshes recent history");
+ Check(File.ReadAllText(saveDirectoryPath)==Path.GetDirectoryName(saveAsPath)&&File.ReadAllText(openDirectoryPath)==Path.GetDirectoryName(recentSecond),"Successful Save As persists a directory separate from Open");
+ savePicker.NextPath=null;
+ saveAsMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveAsMenu));Pump();
+ Check(savePicker.LastInitialDirectory==Path.GetDirectoryName(saveAsPath)&&document.FilePath==saveAsPath,"Next Save As starts in its remembered directory; cancellation keeps the active path");
+ savePicker.NextPath="bad\0name.vmx.json";
+ saveAsMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveAsMenu));Pump();
+ Check(document.FilePath==saveAsPath&&File.ReadAllText(saveDirectoryPath)==Path.GetDirectoryName(saveAsPath)&&Equals(((MenuItem)recentMenu.Items[0]).Tag,saveAsPath),"Failed Save As cannot mutate the document path, saved directory or recent history");
+ document.AddProcedure("工具栏保存复验");Pump();
+ var pickerCalls=savePicker.Calls;
+ var saveTool=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"保存"));
+ saveTool.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,saveTool));Pump();
+ using(var savedJson=JsonDocument.Parse(File.ReadAllText(saveAsPath)))
+  Check(savePicker.Calls==pickerCalls&&!document.IsDirty&&savedJson.RootElement.GetProperty("Procedures").EnumerateArray().Any(p=>p.GetProperty("Name").GetString()=="工具栏保存复验"),"Toolbar Save writes changes to the existing path without reopening Save As");
  var exitMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"退出"));
  Check(string.Join(",",fileRoot.Items.OfType<MenuItem>().Select(item=>item.Header))=="新建方案,打开方案,最近打开,打开示例,保存,另存为,退出","File menu follows the source order for implemented native commands");
  Check(fileRoot.Items[fileRoot.Items.IndexOf(sampleMenu)-1] is Separator&&fileRoot.Items[fileRoot.Items.IndexOf(saveMenu)-1] is Separator,"Source separator flags appear before sample and save commands");
@@ -232,4 +259,12 @@ sealed class FixedSolutionPicker : ISolutionFilePicker
  public string? LastInitialDirectory {get;private set;}
  public Action? OnPick {get;set;}
  public string? Pick(MainWindow owner,string initialDirectory){LastInitialDirectory=initialDirectory;OnPick?.Invoke();return NextPath;}
+}
+
+sealed class FixedSavePicker : ISolutionSavePicker
+{
+ public string? NextPath {get;set;}
+ public string? LastInitialDirectory {get;private set;}
+ public int Calls {get;private set;}
+ public string? Pick(MainWindow owner,string initialDirectory){Calls++;LastInitialDirectory=initialDirectory;return NextPath;}
 }
