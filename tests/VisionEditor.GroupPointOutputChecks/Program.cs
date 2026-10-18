@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Threading;
 using VisionCore;
 using VisionEditor;
@@ -41,7 +42,18 @@ internal static class Program
   var run=Run();var points=run.Calls["group"].WorkflowOutputs["out"].As<IReadOnlyList<Point2>>();Check(run.Status==SessionStatus.Success&&points.Count==2&&points[0].X==0&&points[1].X==1,"Two actual Group rounds export ordered Point values");
   editor.Undo();Check(!Body().Configuration.Outputs.Single().Accumulate&&Group().Call!.Outputs.Single().Cardinality==ValueCardinality.Scalar,"Undo restores scalar output signature");
   editor.Redo();Check(Body().Configuration.Outputs.Single().Accumulate&&Run().Calls["group"].WorkflowOutputs["out"].ElementCount==2,"Redo restores Point accumulation and runtime data");
-  window.Close();editor.Save(path);editor.Load(path);Check(Body().Configuration.Outputs.Single().Kind==DataKind.Point&&Run().Calls["group"].WorkflowOutputs["out"].ElementCount==2,"Save and reopen retains Point output and two-round data");
+  var nameBox=Children(window).OfType<TextBox>().Single(c=>Equals(c.Tag,"GroupOutputName:"+output.Id));
+  Check(nameBox.MaxLength==31,"Actual Group output name editor uses native VmIO typing limit");
+  nameBox.Text="";
+  var typing=new TextComposition(InputManager.Current,nameBox,new string('p',40));
+  nameBox.RaiseEvent(new TextCompositionEventArgs(InputManager.Current.PrimaryKeyboardDevice,typing){RoutedEvent=TextCompositionManager.TextInputEvent});Pump();
+  var renamed=new string('p',31);Check(nameBox.Text==renamed,"WPF output typing stops at 31 characters");
+  nameBox.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice,0,nameBox,null){RoutedEvent=Keyboard.LostKeyboardFocusEvent});Pump();
+  Check(Body().Configuration.Outputs.Single().Name==renamed&&Group().Call!.Outputs.Single().Name==renamed&&Run().Calls["group"].WorkflowOutputs[renamed].ElementCount==2,
+   "Actual WPF output rename updates parent signature and two-round Point data");
+  editor.Undo();Check(Body().Configuration.Outputs.Single().Name=="out"&&Run().Calls["group"].WorkflowOutputs["out"].ElementCount==2,"Undo restores output name and actual data");
+  editor.Redo();Check(Body().Configuration.Outputs.Single().Name==renamed&&Run().Calls["group"].WorkflowOutputs[renamed].ElementCount==2,"Redo restores output name and actual data");
+  window.Close();editor.Save(path);editor.Load(path);Check(Body().Configuration.Outputs.Single().Kind==DataKind.Point&&Run().Calls["group"].WorkflowOutputs[renamed].ElementCount==2,"Save and reopen retains renamed Point output and two-round data");
   app.Shutdown();Console.WriteLine($"PASS {checks} Group point output checks");
  }
  static void Pump(){var frame=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>frame.Continue=false));Dispatcher.PushFrame(frame);}
