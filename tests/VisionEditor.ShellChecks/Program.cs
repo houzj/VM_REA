@@ -283,6 +283,28 @@ try
  var populatedStatus=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);
  populatedStatus.Render(window);var populatedPng=new PngBitmapEncoder();populatedPng.Frames.Add(BitmapFrame.Create(populatedStatus));
  using(var file=File.Create("analysis/full-audit/shell-status-with-node.png"))populatedPng.Save(file);
+ window.Width=900;window.Height=700;Pump();
+ var workarea=Find<Grid>("WorkareaGrid");var splitter=Find<GridSplitter>("WorkareaSplitter");
+ var rightColumn=(ColumnDefinition)window.FindName("RightWorkareaColumn");
+ splitter.RaiseEvent(new DragStartedEventArgs(0,0){RoutedEvent=Thumb.DragStartedEvent});Pump();
+ Check(Math.Abs(rightColumn.MaxWidth-Math.Max(rightColumn.MinWidth,workarea.ActualWidth-65))<1,
+  "Source splitter drag start caps the right result column at workarea width minus 65 pixels");
+ splitter.RaiseEvent(new DragDeltaEventArgs(-1000,0){RoutedEvent=Thumb.DragDeltaEvent});Pump();
+ var leftColumn=(ColumnDefinition)window.FindName("LeftWorkareaColumn");
+ Check(leftColumn.ActualWidth>=59&&rightColumn.ActualWidth>=400,
+  "Narrow resized shell retains a visible workflow side at the splitter limit");
+ var atLimit=rightColumn.ActualWidth;
+ var splitterImage=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);
+ splitterImage.Render(window);var splitterPng=new PngBitmapEncoder();splitterPng.Frames.Add(BitmapFrame.Create(splitterImage));
+ using(var file=File.Create("analysis/full-audit/shell-splitter-limit.png"))splitterPng.Save(file);
+ splitter.RaiseEvent(new DragDeltaEventArgs(80,0){RoutedEvent=Thumb.DragDeltaEvent});Pump();
+ Check(rightColumn.ActualWidth<atLimit&&leftColumn.ActualWidth>59,
+  "Splitter can be dragged back after reaching the source width cap");
+ window.Width=800;Find<Button>("ToggleToolboxButton").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+ splitter.RaiseEvent(new DragStartedEventArgs(0,0){RoutedEvent=Thumb.DragStartedEvent});
+ splitter.RaiseEvent(new DragDeltaEventArgs(-1000,0){RoutedEvent=Thumb.DragDeltaEvent});Pump();
+ Check(workarea.ActualWidth>465&&rightColumn.MaxWidth>=400&&leftColumn.ActualWidth>=59,
+  "Expanded toolbox at minimum window width recalculates a nonnegative splitter cap");
  var closed=false;window.Closed+=(_,_)=>closed=true;
  exitMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,exitMenu));Pump();
  Check(closed&&!window.IsVisible,"File Exit invokes the same real WPF window close path as the titlebar");
