@@ -6,6 +6,12 @@
 
 # Group 全功能逆向与验收清单
 
+## 2026-10-18 点输出独立入口
+
+原始 `analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:1161–1177` 的 `VMGroupOutputParam` 模板并列绑定“增加输出”和“增加点输出”两个命令；同文件 `PointFParam` 模板将点输出展开为多行子字段。`analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/VMGroupOutputParam.cs` 确认两个独立命令名字段。当前 Group 输出页补上“增加点输出”的独立 WPF 入口，仍保留已有通用类型选择器；不能因此宣称原生点行模板或命令全等价。
+
+`VisionEditor.GroupPointOutputChecks` 通过真实 WPF 按钮添加 Point 输出、绑定实际节点产出并开启累积，运行两轮得到两个有序点；公共端口变为 Point 数组，撤销/重做与保存重开后运行结果一致（6 项）。点输出 X/Y 等子字段行、编辑弹层及真实 VM 视觉差分仍开放。
+
 日期：2026-10-16。该清单一次覆盖 Group 全范围；完成两项不代表整个 Group 完成。状态分别记录源码证据、实现、真实 VM 对照，不能用测试通过替代原生验收。
 
 ## 六个功能域
