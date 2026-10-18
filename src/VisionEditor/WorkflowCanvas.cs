@@ -132,7 +132,8 @@ public partial class MainWindow
             hit.RequestBringIntoView+=(_,e)=>e.Handled=true;
             hit.LostKeyboardFocus+=(_,_)=>DrawWireHandles();
             hit.GotKeyboardFocus+=(_,_)=>DrawWireHandles();
-            hit.MouseEnter+=(_,_)=>path.StrokeThickness=3;hit.MouseLeave+=(_,_)=>path.StrokeThickness=selectedWire==key?3:2;
+            // Original Connection keeps a 2px visible stroke on hover/focus;
+            // only Shape_DragEnter for an insertion payload temporarily uses 10px.
             // Connection.OnPreviewMouseDown selects for every mouse button, including right-click.
             hit.PreviewMouseDown+=(_,e)=> {selectedWire=key;selected=null;selectedNodes.Clear();boxSelectionActive=false;hit.Focus();RefreshNodeSelection();RefreshRight();e.Handled=true;};
             var menu=new ContextMenu();var delete=new MenuItem {Header="删除",IsEnabled=!isLocked&&activeRun is null};delete.Click+=(_,_)=>Safe(()=> {doc.DisconnectExecution(wire);selectedWire=null;});menu.Items.Add(delete);hit.ContextMenu=menu;

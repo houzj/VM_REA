@@ -43,6 +43,10 @@ internal static class Program
    bool bold=views.Values.Cast<object>().Any(v=>((System.Windows.Shapes.Path)v.GetType().GetField("Item2")!.GetValue(v)!).StrokeThickness==10);
    Check(bold,"多节点拖过连线时按原生 DragEnter 加粗预览");
    Check(doc.Revision==revision&&doc.CurrentProcedure.ExecutionLinks!.Count==1,"预览不修改连接数据");
+   Call("PreviewNodeMove",new Point(40,40));Pump();
+   Check(views.Values.Cast<object>().All(v=>((System.Windows.Shapes.Path)v.GetType().GetField("Item2")!.GetValue(v)!).StrokeThickness==2),"节点拖离连线后恢复2像素可见线宽");
+   Call("PreviewNodeMove",wirePoint.Value);Pump();
+   Check(views.Values.Cast<object>().Any(v=>((System.Windows.Shapes.Path)v.GetType().GetField("Item2")!.GetValue(v)!).StrokeThickness==10),"重新拖入连线仍显示10像素插入预览");
    var dir=Path.Combine("analysis","full-audit");Directory.CreateDirectory(dir);
    var bitmap=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(window);
    var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using(var output=File.Create(Path.Combine(dir,"wire-multinode-hover.png")))png.Save(output);

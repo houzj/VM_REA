@@ -18,8 +18,8 @@ internal static class Program
  [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] static extern bool GetCursorPos(out NativePoint point);
  [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] static extern bool SetCursorPos(int x,int y);
  [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] static extern bool PostMessage(IntPtr hwnd,uint message,IntPtr wparam,IntPtr lparam);
- [STAThread] static int Main(){try{Run();return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
- static void Run()
+ [STAThread] static int Main(string[] args){try{Run(args);return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ static void Run(string[] args)
  {
   var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
   var window=new MainWindow{Width=1200,Height=780,Left=110,Top=80,Topmost=true,WindowStartupLocation=WindowStartupLocation.Manual};
@@ -36,8 +36,15 @@ internal static class Program
    var hits=(Dictionary<string,Path>)Field("wireHitPaths")!;
    var handles=(List<Rectangle>)Field("wireHandles")!;
    var hit=hits[first+">"+second];
+   var displayed=graphWire();
+   Path graphWire()=>((Canvas)window.FindName("GraphLayer")!).Children.OfType<Path>().Single(p=>!p.IsHitTestVisible&&p.StrokeThickness==2);
+   hit.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice,Environment.TickCount){RoutedEvent=UIElement.MouseEnterEvent});Pump();
+   Check(displayed.StrokeThickness==2,"连线鼠标悬停保持原生2像素可见线宽");
+   hit.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice,Environment.TickCount){RoutedEvent=UIElement.MouseLeaveEvent});Pump();
+   Check(displayed.StrokeThickness==2,"连线鼠标离开后仍保持2像素可见线宽");
    hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
-   Check(hit.IsKeyboardFocused&&handles.Count>0,"实际连线点击取得焦点并显示中点柄");
+   Check(hit.IsKeyboardFocused&&handles.Count>0&&displayed.StrokeThickness==2,"实际连线点击取得焦点并显示中点柄，选中仍保持2像素");
+   if(args.Contains("--hover-only"))return;
    var other=(Button)window.FindName("AddProcedureButton")!;other.Focus();Pump();
    Check(other.IsKeyboardFocused&&handles.Count==0,"转焦工具栏立即清除连线中点柄");
    hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();Check(hit.IsKeyboardFocused&&handles.Count>0,"再次点击连线重新生成中点柄");
