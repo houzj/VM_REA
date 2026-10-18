@@ -22,6 +22,13 @@ result=await engine.RunAsync(chain with{Nodes=[Node("a","source"),Node("b","bad"
 result=await engine.RunAsync(chain with{Nodes=[Node("a","source"),Node("b","nomatch"),Node("c","pass")]},".");Check(result.Nodes[1].Status==NodeRunStatus.NoMatch&&result.Nodes[2].Status==NodeRunStatus.Success,"no match distinction");
 int before=disposed;result=await engine.RunAsync(P(Node("s","slow",10)),".");Check(result.Status==SessionStatus.TimedOut&&disposed==before+1,"timeout cleanup");
 using(var cancel=new CancellationTokenSource(10)){before=disposed;result=await engine.RunAsync(P(Node("s","slow")),".",cancellationToken:cancel.Token);Check(result.Status==SessionStatus.Cancelled&&disposed==before+1,"cancel cleanup");}
+using(var alreadyCancelled=new CancellationTokenSource()){
+ alreadyCancelled.Cancel();before=disposed;
+ result=await engine.RunAsync(P(),".",cancellationToken:alreadyCancelled.Token);Check(result.Status==SessionStatus.Cancelled&&result.Nodes.Count==0,"pre-cancelled empty workflow cannot report success");
+ result=await engine.RunAsync(P(Node("disabled","source") with{Enabled=false}),".",cancellationToken:alreadyCancelled.Token);Check(result.Status==SessionStatus.Cancelled&&result.Nodes.Single().Status==NodeRunStatus.Skipped&&disposed==before,"pre-cancelled disabled workflow cannot report success or execute modules");
+ var emptySolution=new SolutionDocument(SolutionStore.CurrentVersion,"cancelled-solution","cancelled-solution",[P()],[]);
+ result=await new SolutionExecutor(registry).RunAsync(new SolutionWorkspace(emptySolution,Path.GetFullPath(".")),"p",cancellationToken:alreadyCancelled.Token);Check(result.Status==SessionStatus.Cancelled,"solution call preserves pre-cancelled empty workflow status");
+}
 result=await engine.RunAsync(P(Node("a","source")),".",new ThrowProgress());Check(result.Status==SessionStatus.Success,"observer isolation");
 var paramDesc=new ModuleDescriptor("param","1","param",[],[],[new("v",ParameterKind.Integer,true,Minimum:0,Maximum:10)]);registry.Register(paramDesc,()=>new TestModule(paramDesc,(c,t)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary<string,PortValue>())),()=>disposed++));
 Check(!GraphValidator.Validate(P(Node("p","param")),registry).IsValid,"missing parameter");
