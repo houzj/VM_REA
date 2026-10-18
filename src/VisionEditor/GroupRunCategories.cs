@@ -32,7 +32,7 @@ public partial class SubprogramCallWindow{
   var kind=primaryInput?.Kind??WorkflowSubscriptions.ParameterType(primaryParameter!.Kind);
   var cardinality=primaryInput?.Cardinality??ValueCardinality.Scalar;
   // VM's GetParamsOfEqualTypeTree uses the original tool type and parameter name, not just a value kind.
-  var options=GroupBody().Nodes.Where(n=>n.ModuleId==primary.ModuleId&&n.ModuleVersion==primary.ModuleVersion)
+  var options=GroupBody().Nodes.Where(n=>n.ModuleId==primary.ModuleId)
    .SelectMany(n=>proxy.IsInput
     ?groupRegistry.GetDescriptor(n).Inputs.Where(p=>p.Name==proxy.Parameter&&p.Kind==kind&&p.Cardinality==cardinality)
       .Select(p=>new WorkflowSourceOption(n.Id,p.Name,kind,n.Name+"."+p.Name){IsInput=true})
