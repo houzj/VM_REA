@@ -82,7 +82,10 @@ public partial class MainWindow
   // even when it came from the canvas context menu at the origin.
   var keyboardPoint=position is null||position.Value.X==0&&position.Value.Y==0;
   var target=keyboardPoint?new Point(Math.Min(first.X+100,4850),Math.Min(first.Y+100,4850)):position!.Value;
-  target=new Point(Math.Max(5,Math.Round(Math.Min(target.X,4850)/5)*5),Math.Max(5,Math.Round(Math.Min(target.Y,4850)/5)*5));
+  // PasteItemsCommandExecute caps the (0,0) keyboard sentinel, while a real
+  // context-menu point used for the first pasted item has no upper cap.
+  static double NativePasteCoordinate(double value){double rounded=Math.Round(value/5)*5;return rounded<0?5:rounded;}
+  target=new Point(NativePasteCoordinate(target.X),NativePasteCoordinate(target.Y));
   SelectPasted(doc.PasteNodes(snapshot,target.X,target.Y));
  }
  void SelectPasted(IReadOnlyList<string> ids)
