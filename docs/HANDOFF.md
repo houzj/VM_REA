@@ -223,3 +223,8 @@ At the user's request, the original checkout now develops framework and integrat
 
 四线顺序合入后，主工作区完整 WPF 操作回归 456 项通过。真实 VM 桌面鼠标/DPI、原生复合类型重建与 `.sol/.solx` 往返仍未关闭；插件工作树未在本批合流。
 
+## 2026-10-18 主框架 MF-05：方案替换后的结果视图边界
+
+- 新增 `MF05-RESULT-LIFECYCLE.md`：追踪原生 CreateNewSolution、方案 LoadBegin/LoadEnd 与 ModuleResultView 的模块源重绑定/数据缓存清理。原生显式清除命令是当前模块级 SDK 调用；方案级运行日志与底部耗时的全局清理没有托管证据，也没有真实 VM 操作差分。
+- 当前独立实现的 `HistoryGrid` 是方案运行摘要，粒度不同于原生模块历史。本轮没有为追求表面一致而擅自清空或重命名；需在真实 VM 对“运行后新建方案/加载另一方案”与“切换模块/模块历史清除”做对照，再确定 F-16 的 UI 行为。
+
