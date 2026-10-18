@@ -1,5 +1,6 @@
 using System.IO;
 using System.Reflection;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -20,6 +21,10 @@ Directory.CreateDirectory("analysis/full-audit");
 var lockPreferencePath=Path.GetFullPath("analysis/full-audit/shell-lock-preferences.json");
 if(File.Exists(lockPreferencePath))File.Delete(lockPreferencePath);
 typeof(MainWindow).Assembly.GetType("VisionEditor.ShellLockPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,lockPreferencePath);
+var recentPath=Path.GetFullPath("analysis/full-audit/shell-recent-solutions.json");
+if(File.Exists(recentPath))File.Delete(recentPath);
+var recentStore=typeof(MainWindow).Assembly.GetType("VisionEditor.RecentSolutionStore")!;
+recentStore.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,recentPath);
 var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
 var window=new MainWindow{ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
@@ -138,6 +143,21 @@ try
  Check(window.OwnedWindows.OfType<ShellTimeDialog>().Count()==1,"Repeated timing command replaces the prior detail window");
  document.AddProcedure("耗时检查流程");Pump();
  Check(!window.OwnedWindows.OfType<ShellTimeDialog>().Any(),"Changing the active procedure closes stale timing details");
+ var recentFirst=Path.GetFullPath("analysis/full-audit/shell-recent-first.vmx.json");
+ var recentSecond=Path.GetFullPath("analysis/full-audit/shell-recent-second.vmx.json");
+ document.Save(recentFirst);
+ var saveMenu=(MenuItem)((MenuItem)menu.Items[0]).Items[2];
+ saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
+ document.Save(recentSecond);
+ saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
+ var fileRoot=(MenuItem)menu.Items[0];var recentMenu=(MenuItem)fileRoot.Items[fileRoot.Items.Count-1];
+ recentMenu.IsSubmenuOpen=true;Pump();
+ Check(recentMenu.Items.Count==2&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentSecond)&&Equals(((MenuItem)recentMenu.Items[1]).Tag,recentFirst),"Save menu persists and orders recent solution paths");
+ var earlier=(MenuItem)recentMenu.Items[1];
+ earlier.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,earlier));Pump();
+ Check(document.FilePath==recentFirst&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentFirst),"Recent menu reopens an actual saved solution and moves it to the top");
+ using(var recentData=JsonDocument.Parse(File.ReadAllText(recentPath)))
+  Check(recentData.RootElement.EnumerateArray().Any(entry=>entry.GetProperty("Path").GetString()==recentFirst),"Recent solutions survive in the independent shell preference file");
  Console.WriteLine("Shell command and input checks passed.");
 }
 finally{window.Close();app.Shutdown();}
