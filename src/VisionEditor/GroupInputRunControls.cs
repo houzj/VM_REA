@@ -32,7 +32,7 @@ public partial class SubprogramCallWindow{
  void BindProxySource(WorkflowRunParameter proxy,WorkflowValueReference? source){if(setGroupProxySource is not null)setGroupProxySource(proxy.Id,source);else bindGroupTarget!(proxy.NodeId,proxy.Parameter,proxy.IsInput,source);}
  void ChooseGroupRunSource(WorkflowRunParameter proxy){var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("","",DataKind.Text,"解除订阅")}.Concat(GroupRunSources(proxy))){Owner=this};if(picker.ShowDialog()==true&&picker.Selection is {} option)Safe(()=>BindProxySource(proxy,option.Reference));}
  void ChooseGroupRunParameters(){if(groupRegistry is null)return;var window=CreateRunConfigurationWindow();window.ShowDialog();}
- public GroupRunConfigurationWindow CreateRunConfigurationWindow(){if(groupRegistry is null)throw new InvalidOperationException("缺少模块注册表");var window=new GroupRunConfigurationWindow(GroupBody,groupRegistry,c=>{saveGroupConfiguration!(c);Refresh();},ProxyConfiguration,Categories){Owner=this,ConfirmClear=()=>ConfirmRunDelete(true)};groupRunConfiguration=window;window.Closed+=(_,_)=>{groupRunConfiguration=null;Refresh();};return window;}
+ public GroupRunConfigurationWindow CreateRunConfigurationWindow(){if(groupRegistry is null)throw new InvalidOperationException("缺少模块注册表");var window=new GroupRunConfigurationWindow(GroupBody,groupRegistry,c=>{saveGroupConfiguration!(c);Refresh();},ProxyConfiguration,Categories,groupCategoryExpansion){Owner=this,ConfirmClear=()=>ConfirmRunDelete(true)};groupRunConfiguration=window;window.Closed+=(_,_)=>{groupRunConfiguration=null;Refresh();};return window;}
  public Window ActiveConfigurationOwner=>(Window?)groupRunConfiguration??this;
- GroupRunConfigurationWindow? groupRunConfiguration;
+ GroupRunConfigurationWindow? groupRunConfiguration;readonly Dictionary<string,bool> groupCategoryExpansion=new();
 }
