@@ -25,6 +25,8 @@ public sealed record GroupLoop(bool Enabled,int Start,int End,int IntervalMs)
   if(interval is <0 or >10000)throw new InvalidDataException("Group loop interval must be 0..10000 ms.");
   var step=Integer("LoopStep",1);
   if(step==0)throw new InvalidDataException("Group LoopStep must be nonzero.");
-  return new(enabled,enabled?Integer("StartIndex",0):0,enabled?Integer("EndIndex",1):1,interval){Step=step};
+  // The independent one-shot mode normalizes its range to [0,1); the hidden
+  // step must be normalized with that range or a negative saved step reruns it.
+  return new(enabled,enabled?Integer("StartIndex",0):0,enabled?Integer("EndIndex",1):1,interval){Step=enabled?step:1};
  }
 }
