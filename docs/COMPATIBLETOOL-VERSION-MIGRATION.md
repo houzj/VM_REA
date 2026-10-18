@@ -17,6 +17,18 @@
 | 前端设计迁移 | `analysis/decompiled/CompatibleTool.Audit/CompatibleTool/FrontendUIUtils.cs:44-402` | `dde697e974174d6bbe35535d90d6f17e63c44dfcb71b909959fc7c4e9d54c362` | 设计器缓冲区读取、XAML/XML 改写、版本属性及布局转换 |
 | 序列化调用边界 | `analysis/full-audit/solution-serialization-contract.json` 中 `save`、`load`、`version-migration` 链 | 报告记录了托管文件与 SDK 头文件哈希 | 方案读写由 SDK/native 承担；迁移器转换规则和原生容器仍有未知项 |
 
+### SDK 托管边界的进一步确认（静态）
+
+本轮对反编译的 `VM.PlatformSDKCS` 与 `VM.Core` 再核对，确认托管层没有实现 `.sol` 字节格式的读写器：`VmSolution` 最终把读写委托给 `SolutionManager.SyncSaveSolution/SyncLoadSolution`，后者再调用 `ServerSDKAPI.IMVS_SaveSolution/IMVS_LoadSolution`。常规 `SaveAs` 路径传给保存 API 的附加缓冲区是 `IntPtr.Zero`、长度 `0`；保存/加载调用返回非零即转成 `VmException`。同步 Save/Load 还会等待 SDK 回调；Load 在 SDK 模式下另检查异步加载错误码。方案版本查询同样通过 `IMVS_GetSolutionVersion` 返回原生结构中的 `strTargetSolutionInfo`。
+
+| 反编译证据 | SHA-256 | 本轮静态确认 | 证据限制 |
+|---|---|---|---|
+| `analysis/decompiled/VM.Core/VM.Core/VmSolution.cs`（保存与加载委托） | `C141E2C53913B233B768782D6757FAE5997ECAF638B35DB2DDF98F5EF951A13E` | SaveAs 委托 base 的保存路径；底层同步保存传零指针/零长度；Load 委托 SDK 并经过回调/异常处理 | 反编译重建源码，不是原始 C#；不能推出容器布局和原生事务语义 |
+| `analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs`（SDK 包装） | `46B1D8249E3A30FE3BF7A0ED8E92207835F1A8E272833D5462041BC1756F220A` | Save/Load/version 三个调用的错误码、等待回调和异步错误检查 | 仅描述托管包装器行为 |
+| `analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs`（P/Invoke 声明） | `6A60F612FB385987FF96D6973844A256402F097D1EB371E7AD462C44E57127D0` | 声明了 `IMVS_SaveSolution(handle,path,password,pData,nDataLen)`、`IMVS_LoadSolution(handle,path,password,checkFlag,silentFlag)` 及版本查询入口；DLL 名为 `iMVS-6000PlatformSDK.dll` | P/Invoke 声明是托管接口证据，不等于 native ABI/实现反汇编证据；调用约定、内部容器和字段未知 |
+
+尝试使用本机 REA 打开已定位的 x64 SDK 二进制时，深度分析不可用：Ghidra 未配置，IDA 未注册连接，Hopper 不支持当前 Windows 主机。该失败不影响以上已解出的托管证据，但本轮没有获得任何 native 函数体，因此不能将 SDK 包装签名写成原生算法结论。
+
 ## 迁移调用链
 
 1. `ProjectManager` 调用 `IMVS_GetSolutionVersion`，对返回的 `strTargetSolutionInfo` 作字符串版本比较。低于本机 `Lang_version` 时，显示升级遮罩，并在原方案同目录选择 `原名_目标版本.sol`；文件已存在时依次尝试带序号的新名字，不覆盖旧迁移输出。
