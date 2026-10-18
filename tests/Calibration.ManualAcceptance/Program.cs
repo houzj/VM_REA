@@ -25,6 +25,7 @@ static class Program {
     void Invoke(string name,params object[] values)=>typeof(MainWindow).GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,values);
     var document=(VisionEditor.Core.GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
     document.NewSolution();
+    if(args.Contains("--calibration-pair"))document.AddNode(VisionPlugins.Calibration.NImagePlugin.Id,"1.0.0",50,50);
     string? sample=args.Length>1&&!framework?args[1]:null;
     if(framework){
      Invoke("AddModule","vision.image-source");

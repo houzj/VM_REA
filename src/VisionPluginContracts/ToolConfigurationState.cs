@@ -218,7 +218,7 @@ public sealed class ToolConfigurationState {
  public bool ApplySubscription(ConfigurationNodeState node,ConfigurationSubscriptionBindingResult result,bool parameter=false) {
   if(result.Status!=ConfigurationSubscriptionStatus.Available){Diagnose("SubscriptionService",result.Status.ToString(),node,result.Diagnostic??"Subscription service is unavailable.");return false;}
   if(result.Binding!=null&&result.DisplayText==null){Diagnose("SubscriptionPresentation","ReadSubscription",node,"Bound reference is missing service-produced presentation text.");return false;}
-  node.SubscriptionBinding=result.Binding;subscriptionWriteDepth++;
+  node.SubscriptionBinding=result.Binding;node.Assign("BindingReadOnly",result.ReadOnly.ToString());subscriptionWriteDepth++;
   try {
    if(parameter){node.Assign("Subscription",result.DisplayText??"");if(result.Binding!=null)Change(node,"IsSub","True",ConfigurationChangeKind.Programmatic);Changed?.Invoke();}
    else Change(node,"CurValue",result.DisplayText??"",ConfigurationChangeKind.Programmatic);

@@ -50,7 +50,7 @@ public sealed class ConfigurationSubscriptionTreeNode {
 }
 public sealed record ConfigurationSubscriptionTreeResult(ConfigurationSubscriptionStatus Status,IReadOnlyList<ConfigurationSubscriptionTreeNode> Roots,string? Diagnostic=null,IReadOnlyList<string>? UnsupportedCapabilities=null);
 /// <summary>DisplayText is service-produced presentation only. Binding remains the authority.</summary>
-public sealed record ConfigurationSubscriptionBindingResult(ConfigurationSubscriptionStatus Status,ConfigurationSubscriptionBinding? Binding,string? DisplayText=null,string? Diagnostic=null);
+public sealed record ConfigurationSubscriptionBindingResult(ConfigurationSubscriptionStatus Status,ConfigurationSubscriptionBinding? Binding,string? DisplayText=null,string? Diagnostic=null){public bool ReadOnly{get;init;}}
 public interface IToolConfigurationSubscriptionService {
  ConfigurationSubscriptionTreeResult Enumerate(ConfigurationSubscriptionQuery query);
  ConfigurationSubscriptionBindingResult Read(ConfigurationSubscriptionDestination destination);
@@ -59,7 +59,7 @@ public interface IToolConfigurationSubscriptionService {
 public static class ConfigurationSubscriptionValidation {
  public static string NativeType(ConfigurationSubscriptionReference reference)=>reference switch {
   ConfigurationOutputReference x=>x.NativeType,ConfigurationGlobalReference x=>x.NativeType,
-  ConfigurationExternalReference x=>x.NativeType,ConfigurationConstantReference x=>x.NativeType,_=>""};
+  ConfigurationExternalReference x=>x.NativeType,ConfigurationConstantReference x=>x.NativeType,ConfigurationPointTupleReference=>"POINT",_=>""};
  public static string? Check(ConfigurationSubscriptionQuery query,ConfigurationSubscriptionBinding binding) {
   ArgumentNullException.ThrowIfNull(query);ArgumentNullException.ThrowIfNull(binding);
   string nativeType=NativeType(binding.Reference);

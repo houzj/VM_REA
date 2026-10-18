@@ -11,6 +11,11 @@ public sealed record NImageCalibrationFileData(string Created,int TranslationCou
 /// <summary>Independent serialization of the module's CalibInfo XML, distinct from SDK configuration export.</summary>
 public static class NImageFile
 {
+ /// <summary>WriteXmlData only computes world/camera rotation relation for exactly three
+ /// rotation images. CareraMove flips that relation and its derived handedness;
+ /// other rotation counts keep the -999 relation sentinel. The homography is unchanged.</summary>
+ public static NImageCalibrationFileData ForCameraMovement(NImageCalibrationFileData data,bool cameraMoves)=>
+  cameraMoves&&data.RotationCount==3&&data.RotationDirection is 1 or -1?data with{RotationDirection=-data.RotationDirection,Handedness=data.Handedness is 1 or -1?-data.Handedness:data.Handedness}:data;
  static readonly CultureInfo Culture=CultureInfo.InvariantCulture;
  static string F(double v){if(!double.IsFinite(v)||!float.IsFinite((float)v))throw new InvalidDataException("标定文件包含非有限数。");return ((float)v).ToString("G8",Culture);}
  public static XDocument Document(NImageCalibrationFileData d){

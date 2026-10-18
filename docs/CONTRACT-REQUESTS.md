@@ -123,3 +123,12 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - PointPair 复合字段按原厂 CLR 声明登记独立子状态（保留无 Name、原始 XML 与元素身份），GetNode(element) 取值；ControlContext.CreateChild(element) 继承 Owner 和刷新生命周期。禁止以同名局部标签做全局查找。新增状态测试覆盖两组 POINT destination 和数值隔离。
 - PointPair 原厂 AddButton 仅移动内存 Collection/Items；公共 State.GetChildren/MoveBefore 维护运行时同父元素顺序，View保留控件实例重排，不写入自创持久化参数。EnumerationG 使用原厂 GetFrontParamItemsOperation/IMAGE + SetCombinationSourceOperation/InputImage 查询与 typed 下拉绑定。标定路径模板与三态资源已提升到公共 Contracts，NPoint包装仅转发。
 - 相机映射后续缺口（未在本次验收节点实现）：原厂组合 POINT 与逐 X/Y 输入的别名/分量绑定，需要共享服务显式描述关联、组合来源投影、单轴覆盖及一次事务切换。当前独立 POINT 端口类型/基数校验不能代替该语义；运行时逐轴覆盖仅是独立兼容行为，原厂字段/切换证据由相机映射清单补齐后实施。
+
+### 四工具后续公共接口（本线在制，尚未通知为已同步）
+
+- POINT 别名：N 点、N 图像、相机映射声明 IToolPointInputAliasProvider；公共服务将组合绑定变为真实 X/Y 两条叶订阅。混合来源以只读 typed tuple 回读；数组使用显式 NumberArray 传输。GraphEditorDocument.SetProcedureInputSubscriptions 统一验证并提供一次 Undo，宿主在关闭、换方案、锁定或执行中拒绝写入。此原子性为托管安全设计，原厂逐次失败副作用未声称一致。
+- CompoundOutputFields 的 POINT.X/Y 同时供普通图执行与配置自运行使用；不得在 UI 枚举可选来源后缺失实际执行投影。共享文件由本线本轮协调所有，不改另一工作树。索引 ABI 仍明确 Unsupported，不能由官方托管 GetPubInfo 的 0/1 字符串结果推断 native SubscribeResult 的边界。
+- 图像对象：ToolDisplayObjectStore 的 DisplayObjectSettings 与算法参数分开；公共 ImageViewConfig 适配 source getter/setter，严格写后回读并保留当前弹层。ToolDisplayGraphic 承载真实 point/path/coordinate/rect，ToolDisplayPresenter 统一绘制；XML 重复对象保持源定义，不虚构唯一身份。消费者为四个标定工具。
+- RGB：VisionData 的 ImageColorConversion.ToMono8 支持 RGB24 与行跨度，为 N 图像标定及图像源 Mono 输出提供公共核。文件解码器的灰度算法保持单独契约，见 N 图像 RGB 原厂像素对照报告。
+- 仍需实现：标定板原厂普通配置窗口的外置 ROISelecter 会话服务（调用方、输入图尺寸、RoiType 参数、Single Box、FullScreen、RoiTypeSeq、一次配置事务、提交后执行、关闭/换节点取消绘制）。禁止为板工具单独新建另一套图像配置窗口。完整原厂高亮/DPI 交互尚未闭合。
+- 证据、独立设计与未验证边界见 plugins/CALIBRATION-SHARED-DISPLAY-POINT.md；本轮手动验收及提交前仍属在制，不表示主框架已采用。

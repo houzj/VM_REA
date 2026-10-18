@@ -6,17 +6,29 @@ using VisionFramework;
 namespace VisionPluginContracts;
 
 /// <summary>Host-neutral, explicitly limited bridge. It never resolves identity from captions and never runs an algorithm.</summary>
-public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationSubscriptionService {
+public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationSubscriptionBatchService {
  readonly Func<ProcedureDocument> getProcedure;readonly ModuleRegistry registry;readonly string targetNodeId;readonly string procedureId;
  readonly Action<ConfigurationSubscriptionDestination,WorkflowValueReference?> apply;
+ readonly Action<IReadOnlyList<ConfigurationSubscriptionDocumentChange>>? applyBatch;
  public static IReadOnlyList<string> UnsupportedCapabilities {get;}=Array.AsReadOnly(new[]{
   "GlobalVariables","LocalVariables","WorkflowInputs","ParentContainerInputs","ArrayIndex",
   "NativeCanSubscribeMetadata","NativeVisibilityMetadata","NativePrivateMetadata","NativeTimestampMetadata","NativeFieldHierarchy","NativeNumericWidth"});
  public WorkflowConfigurationSubscriptionService(Func<ProcedureDocument> getProcedure,ModuleRegistry registry,string targetNodeId,
-  Action<ConfigurationSubscriptionDestination,WorkflowValueReference?> apply) {
+  Action<ConfigurationSubscriptionDestination,WorkflowValueReference?> apply,Action<IReadOnlyList<ConfigurationSubscriptionDocumentChange>>? applyBatch=null) {
   this.getProcedure=getProcedure??throw new ArgumentNullException(nameof(getProcedure));this.registry=registry??throw new ArgumentNullException(nameof(registry));
   ArgumentException.ThrowIfNullOrEmpty(targetNodeId);this.targetNodeId=targetNodeId;this.apply=apply??throw new ArgumentNullException(nameof(apply));
-  procedureId=(getProcedure()??throw new InvalidDataException("No current procedure.")).Id;
+  procedureId=(getProcedure()??throw new InvalidDataException("No current procedure.")).Id;this.applyBatch=applyBatch;
+ }
+ public ConfigurationSubscriptionBatchResult BindMany(IReadOnlyList<ConfigurationSubscriptionChange> changes){
+  try{
+   if(applyBatch is null)throw Unsupported("Host has no batch input binding transaction.");
+   var p=Snapshot();var encoded=new List<ConfigurationSubscriptionDocumentChange>();
+   if(changes.Select(c=>(c.Destination.Domain,c.Destination.Name)).Distinct().Count()!=changes.Count)throw new InvalidDataException("Duplicate binding destination.");
+   foreach(var change in changes){var destination=change.Destination;if(destination.Domain==ConfigurationSubscriptionDomain.Parameter||destination.Domain==ConfigurationSubscriptionDomain.Display)throw Unsupported("Only input bindings participate in this batch.");var spec=Target(p,destination);WorkflowValueReference? source=null;
+    if(change.Binding is {} binding){if(binding.Index.Kind!=ConfigurationSubscriptionIndexKind.All)throw Unsupported("Array index is not represented by this document bridge.");var query=new ConfigurationSubscriptionQuery(destination,destination.NativeType.Split(';',StringSplitOptions.RemoveEmptyEntries));if(ConfigurationSubscriptionValidation.Check(query,binding) is {} error)throw new InvalidDataException(error);source=Encode(p,destination,spec,binding.Reference);}encoded.Add(new(destination,source));
+   }
+   applyBatch(encoded.AsReadOnly());var after=Snapshot();foreach(var change in encoded)if(Stored(after,change.Destination)!=change.Source)throw new InvalidDataException("Batch host did not persist the requested bindings.");return new(ConfigurationSubscriptionStatus.Available);
+  }catch(BridgeException error){return new(error.Status,error.Message);}catch(Exception error){return new(ConfigurationSubscriptionStatus.Failed,error.Message);}
  }
  public ConfigurationSubscriptionTreeResult Enumerate(ConfigurationSubscriptionQuery query) {
   try {

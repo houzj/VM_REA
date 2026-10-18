@@ -26,6 +26,7 @@ public sealed record ToolDisplayFrame(VisionCore.IImageData? Image, string Text,
     double FontSize, double Opacity, double PositionX, double PositionY, string RecordText,
     IReadOnlyList<ToolDisplayCell> ResultList)
 {
+    public IReadOnlyList<ToolDisplayGraphic> Graphics { get; init; } = Array.Empty<ToolDisplayGraphic>();
     public bool TextVisible { get; init; }
     public bool ImageVisible { get; init; }
     public bool RecordVisible { get; init; }

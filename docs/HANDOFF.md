@@ -173,3 +173,15 @@ At the user's request, the original checkout now develops framework and integrat
 - 已经用户授权的真实桌面 CMD 路径启动 Start-NPoint-Acceptance.cmd；本次产物 analysis/manual-acceptance/b2c54e73712744d88ebcd82d0470aa94，启动日志 MANUAL_ACCEPTANCE_READY vision.n-point-calibration。用户已明确回复“通过本轮配置架构验收”。本节点按该范围中文提交推送，并通知主框架按需同步；通知不代表主框架已采用新基线。
 - 整个工具未闭合：N 点原厂显示路径/旋转轴点完整交互及桌面同状态对照仍开放；其余三线的数值差异、ROI/显示复杂叶及生产注册由各线继续推进。原始证据和其他工作树均未修改，original-config.xml 本地暂存继续保留。
 - 暂存提交内容已导出到 analysis/commit-review/npoint-accepted 验证，不依赖 N 图像/标定板/相机映射的在制实现。N 点项目独立构建0警告0错误；三份嵌入原厂XML与工作区字节SHA256一致。导出副本全解决方案构建仍受既有 VmRouting.Checks 对仓库外 analysis/decompiled/ConnectorOrientation.cs 的相对路径依赖影响（源工作树全构建已通过），此项不冒充可独立完整构建成功。
+
+## 四工具继续：公共点绑定、对象显示与 N 图像生产接线（2026-10-18 人工验收通过）
+
+- N 点与 N 图像共享普通配置宿主、源 XML 三页签、ImageViewConfig、真实 point/path 显示；组合 POINT 和 X/Y 通过叶订阅单一来源读写，宿主配置自运行也实际展开复合输出。新增批量叶订阅事务及显式 POINT.X/Y 投影在本工作树统一完成，未修改主框架工作树。
+- 按 0x7ff3c0/0x7fcf60/0x7fd4e0 修正归一化常量、初始 float 正规方程、完整 float 逆和重投影误差；NPointSolver 404 原厂案例、365 矩阵、11066 字段检查无意外失败，24 个已记录差异字段与788个病态/并列观察仍保留，不算精确通过。
+- N 图像从生产注册进入真实宿主，RGB/Mono、实际像素识别、分批/重置/流程隔离、标量、修正与真实 XML 已接线。最新独立构建0警告0错误；229 原厂输出/SDK/XML、9 板拟合（81/81 float 位）、19 批次、63 实际17帧、18旧solver检查通过。9+0和9+3静止/移动文件的特定矩阵均恢复9/9位一致，保持原1e-4门槛；不扩称任意图像/原生生命周期全等。
+- 最终公共回归 `analysis/configuration-regression/calibration-native-float-final/summary.json`：31程序全部exit0，含458真实WPF、5751 N点插件、53生产配置、23图形、25点别名和10真实标定宿主检查。全方案0错误、4条现存nullable警告。初次整组WPF在373项后触发180秒看门狗，未计通过；独立Group场景通过，最终完整WPF149秒完成。看门狗仅对较长WPF程序可配置为600秒，未改变算法容差。
+- 原厂 NImageAlgorithmTab/Display 两份嵌入 XML 与安装文件 SHA256 分别一致：A83474FEC309E81EAED70366AD813A2D5A06A02A8DCC9F12D398079E16E5C3C3、89A9D3665D9A90CFB751008DA7559F1BD179DBA84A15F134D5117795A62014E8。实际宿主两份截图已检查，保存在 analysis/full-audit/calibration-host，仅测试包含截图代码。
+- 经真实桌面 CMD 启动 `Start-Calibration-Pair-Acceptance.cmd`；产物 `analysis/manual-acceptance/c66e42db5d884aa8ae82e08c8da8e73b`、PID29936，日志 READY、stderr空，保留用户交互实例。用户于2026-10-18明确回复“通过本轮验收”；本节点据此中文提交推送，并通知主框架按需采用。通知不表示主框架已经同步，采用SHA仍须接收方回报。此前已验收公共架构提交为6eef4df1168acde326c4dc3e23c093ed5a9f34d7。
+- 标定板与相机映射仍按独立清单在制：外置ROI桥接、板圆点/部分角度分支及原生索引边界未闭合；其专属在制文件不随本次人工验收自动计为完成。未做设备测试。original-config.xml SHA256仍为50a28a73dbed17866a8565575dc6ed811c19f18f7dbd9d4d36459e32ee6a6909，未修改。
+
+- 验收后最终暂存副本验证：analysis/commit-review/calibration-accepted-20261018 中真实宿主独立构建0错误、2条现存nullable警告，N图像检查工程独立构建0警告0错误；10项真实宿主、229项原厂输出/文件及9组板矩阵均通过。另修复两个测试入口未自动创建报告目录的问题，仅影响测试报告落盘，不改产品逻辑；未依赖标定板或相机映射在制文件。

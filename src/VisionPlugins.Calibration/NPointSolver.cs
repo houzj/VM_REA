@@ -56,18 +56,28 @@ public static class NPointSolver
         offsets = offsets.Select(p => p with { ImageX = p.ImageX - options.OriginX, ImageY = p.ImageY - options.OriginY }).ToArray();
         var matrix = SelectFourPointFit(offsets, options);
         if (matrix is null) return new() { Status = 1, ErrorCode = 0x10103007 };
-        var inv = Inverse(matrix);
+        var inv = FloatInverse(matrix);
         if (inv is null) return new() { Status = 1, ErrorCode = 0x10103007 };
-        var imageErrors = offsets.Select(p => Distance(Transform(inv, p.WorldX, p.WorldY), (p.ImageX, p.ImageY))).ToArray();
+        // 0x7ff3c0 computes inverse reprojection and sqrt in float; the running
+        // sum is left-associated (sum + e0 + e1), not a double LINQ average.
+        var imageErrors = offsets.Select(p => {
+            float x=(float)p.WorldX,y=(float)p.WorldY;
+            float z=(float)inv[6]*x+(float)inv[7]*y+(float)inv[8];
+            float dx=((float)inv[0]*x+(float)inv[1]*y+(float)inv[2])/z-(float)p.ImageX;
+            float dy=((float)inv[3]*x+(float)inv[4]*y+(float)inv[5])/z-(float)p.ImageY;
+            return (double)MathF.Sqrt(dx*dx+dy*dy);
+        }).ToArray();
+        float errorSum=0;foreach(var error in imageErrors)errorSum+=(float)error;
+        double meanError=errorSum/offsets.Count;
         const double epsilon = 1.1920928955078125e-7;
         double precision = (Math.Sqrt(matrix[0] * matrix[0] + matrix[1] * matrix[1]) +
                             Math.Sqrt(matrix[3] * matrix[3] + matrix[4] * matrix[4])) / (2 * (matrix[8] + epsilon));
         var result = new NPointSolveResult
         {
-            Status = imageErrors.Average() > 1.5 ? 0x1010304b : imageErrors.Max() > 5 ? 0x1010304a : 0,
-            Matrix = matrix, OffsetError = imageErrors.Average(), OffsetMaxError = imageErrors.Max(),
+            Status = meanError > 1.5 ? 0x1010304b : imageErrors.Max() > 5 ? 0x1010304a : 0,
+            Matrix = matrix, OffsetError = meanError, OffsetMaxError = imageErrors.Max(),
             OffsetMaxErrorPointNum = Array.IndexOf(imageErrors, imageErrors.Max()),
-            OffsetWorldError = imageErrors.Average() * precision, OffsetWorldMaxError = imageErrors.Max() * precision,
+            OffsetWorldError = meanError * precision, OffsetWorldMaxError = imageErrors.Max() * precision,
             PixelPrecision = precision
         };
         if (rotations.Count != 0) result = SolveRotation(result, rotations, options);
@@ -160,7 +170,7 @@ public static class NPointSolver
             RotateWorldMaxError = errors.Max() * result.PixelPrecision };
     }
 
-    static double[]? Fit(IReadOnlyList<NPointPair> points, double[] weights, int freedom, bool nativeNormal = false)
+    static double[]? Fit(IReadOnlyList<NPointPair> points, double[] weights, int freedom, bool nativeNormal = false, bool nested = true)
     {
         var rows = new List<double[]>(); var values = new List<double>(); var w = new List<double>();
         foreach (var (p, i) in points.Select((p, i) => (p, i)))
@@ -171,7 +181,7 @@ public static class NPointSolver
             else { rows.Add([x, -y, 1, 0]); rows.Add([y, x, 0, 1]); }
             values.Add(u); values.Add(v); w.Add(weights[i]); w.Add(weights[i]);
         }
-        var a = LeastSquares(rows, values, w, nativeNormal);
+        var a = nativeNormal ? FloatNestedNormal(rows, values, w, nested) : LeastSquares(rows, values, w);
         return a is null ? null : freedom == 1 ? [.. a, 1] : freedom == 2 ? [.. a, 0, 0, 1] : [a[0], -a[1], a[2], a[1], a[0], a[3], 0, 0, 1];
     }
 
@@ -213,13 +223,17 @@ public static class NPointSolver
         {
             float x = 0, y = 0; foreach (var q in p) { x += (float)q.X; y += (float)q.Y; } x *= 1f / p.Length; y *= 1f / p.Length;
             float sum = 0; foreach (var q in p) { float dx = (float)q.X - x, dy = (float)q.Y - y; sum += MathF.Sqrt(dx * dx + dy * dy); }
-            return (x, y, MathF.Sqrt(2) / (sum / p.Length));
+            // Native 0x1807ff3c0: float at 0x18162b69c is 1.0 (00 00 80 3f).
+            // Preserve sum * inverseCount rounding; this is not sqrt(2) normalization.
+            return (x, y, 1f / (sum * (1f / p.Length)));
         }
         var ni = Normalize(points.Select(p => (p.ImageX, p.ImageY)).ToArray()); var nw = Normalize(points.Select(p => (p.WorldX, p.WorldY)).ToArray());
         double ix = ni.X, iy = ni.Y, si = ni.Scale, wx = nw.X, wy = nw.Y, sw = nw.Scale;
         var normalized = points.Select(p => new NPointPair((float)((float)((float)p.ImageX - ni.X) * ni.Scale), (float)((float)((float)p.ImageY - ni.Y) * ni.Scale),
             (float)((float)((float)p.WorldX - nw.X) * nw.Scale), (float)((float)((float)p.WorldY - nw.Y) * nw.Scale))).ToArray();
-        var weights = Enumerable.Repeat(1d, points.Length).ToArray(); var h = Fit(normalized, weights, o.Freedom);
+        // 0x7fcf60 feeds the original design matrix to 0x8580e0/0x7075e0;
+        // refinement feeds its already formed normal matrix to that same solver.
+        var weights = Enumerable.Repeat(1d, points.Length).ToArray(); var h = Fit(normalized, weights, o.Freedom, true, false);
         bool converged = false; const double eps = 1.1920928955078125e-7;
         for (int iteration = 0; h is not null && iteration < 50; iteration++)
         {
@@ -246,7 +260,12 @@ public static class NPointSolver
         }
         if (!converged || h is null) return null;
         double[] ti = [si, 0, (float)(-(float)si * (float)ix), 0, si, (float)(-(float)si * (float)iy), 0, 0, 1];
-        double[] twInverse = [(float)(1f / (float)sw), 0, wx, 0, (float)(1f / (float)sw), wy, 0, 0, 1];
+        // 0x7fcf60/0x7fd4e0 use the full float determinant/adjugate inverse,
+        // not the algebraically equivalent 1/scale and original centroid shortcut.
+        // Its rounding is observable in the original exported calibration matrix.
+        var twInverse = FloatInverse([(float)sw, 0, (float)(-(float)sw * (float)wx),
+            0, (float)sw, (float)(-(float)sw * (float)wy), 0, 0, 1]);
+        if (twInverse is null) return null;
         static double[] Multiply(double[] a, double[] b) => Enumerable.Range(0, 9).Select(i => {
             float sum = 0; for (int k = 0; k < 3; k++) sum += (float)a[i / 3 * 3 + k] * (float)b[k * 3 + i % 3]; return (double)sum;
         }).ToArray();

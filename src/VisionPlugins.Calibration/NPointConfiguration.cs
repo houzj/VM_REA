@@ -7,13 +7,16 @@ using VisionPluginContracts;
 
 namespace VisionPlugins.Calibration;
 
-public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplayProvider {
+public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplayProvider,IToolPointInputAliasProvider {
+ public IReadOnlyList<ToolPointInputAlias> PointInputAliases {get;}=new[]{new ToolPointInputAlias("Image Point","ImagePointX","ImagePointY"),new("Physical Point","PhysicalPointX","PhysicalPointY")};
+ public static IReadOnlyList<ToolDisplayObjectDefinition> DisplayObjectDefinitions {get;}=LoadDisplayObjects();
+ static IReadOnlyList<ToolDisplayObjectDefinition> LoadDisplayObjects(){using var stream=typeof(NPointPlugin).Assembly.GetManifestResourceStream("VisionPlugins.Calibration.Resources.NPointDisplay.xml")??throw new InvalidDataException("Missing N-point display model.");using var reader=new StreamReader(stream);return ToolDisplayObjectDefinition.Parse(reader.ReadToEnd());}
  public ToolDisplayDefinition DisplayDefinition {get;}=new(
   "ModuStatus:{0},CalibStatus{1},CalibErrStatus:{2},CalibProgress:{3}/{4}",
   ["ModuStatus","CalibStatus","CalibErrStatus","CalibCurIndex","CalibTotalNum"],
   ["ModuStatus","CalibStatus","CalibErrStatus"]);
  public ToolDisplayFrame? LastDisplay(NodeDocument node,string baseDirectory,ModuleExecutionScope? scope){
-  var raw=GetState(node.Id,baseDirectory,scope);lock(raw.Gate)return raw.DisplayOutputs is null?null:ToolDisplayService.Build(DisplayDefinition,ToolDisplayService.Read(node.Parameters,DisplayDefinition),raw.DisplayInputs??[],raw.DisplayOutputs,diagnostic:raw.DisplayDiagnostic);
+  var raw=GetState(node.Id,baseDirectory,scope);lock(raw.Gate)return raw.DisplayOutputs is null?null:ToolDisplayService.Build(DisplayDefinition,ToolDisplayService.Read(node.Parameters,DisplayDefinition),raw.DisplayInputs??[],raw.DisplayOutputs,diagnostic:raw.DisplayDiagnostic) with{Graphics=ToolDisplayGraphics.Build(DisplayObjectDefinitions,node.Parameters,raw.DisplayInputs??[],raw.DisplayOutputs)};
  }
  public ToolConfigurationSession CreateConfiguration(ToolEditorContext context){
   const string language="Chinese";var text=ConfigurationLocalization.ForLanguage(language).Get;
@@ -74,7 +77,7 @@ public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplay
    if(request.Kind==ConfigurationOperationKind.ResetParameters){
     if(!confirmations.Confirm(owner(),new(text("Lang_Sure"),text("Lang_ResetAlgoParamTips")+"?")))return new(true);
     if(context.ResetConfigurationParameters is null)return new(true,Error:"Atomic parameter reset service is unavailable.");
-    var next=new Dictionary<string,JsonElement>(values);foreach(var p in Descriptor.Parameters.Where(p=>p.Name!="ConfigurationUserData"&&p.Name!=ToolDisplayService.SettingsParameter&&p.Name!=ToolConfigurationDisplaySubscriptions.ParameterName&&p.Name!="ClearRevision"))next[p.Name]=p.DefaultValue!.Value.Clone();context.ResetConfigurationParameters(next.ToDictionary(p=>p.Key,p=>p.Value.Clone()));values=next;UpdateConfiguration(Current(),values);foreach(var node in state!.Nodes)if(node.Name is {} name&&next.TryGetValue(name,out var value))state.RefreshParameter(node);Notify(text("Lang_ResetAlgoParamSuccess"));return new(true);
+    var next=new Dictionary<string,JsonElement>(values);foreach(var p in Descriptor.Parameters.Where(p=>p.Name!="ConfigurationUserData"&&p.Name!=ToolDisplayService.SettingsParameter&&p.Name!=ToolConfigurationDisplaySubscriptions.ParameterName&&p.Name!=ToolDisplayObjectStore.ParameterName&&p.Name!="ClearRevision"))next[p.Name]=p.DefaultValue!.Value.Clone();context.ResetConfigurationParameters(next.ToDictionary(p=>p.Key,p=>p.Value.Clone()));values=next;UpdateConfiguration(Current(),values);foreach(var node in state!.Nodes)if(node.Name is {} name&&next.TryGetValue(name,out var value))state.RefreshParameter(node);Notify(text("Lang_ResetAlgoParamSuccess"));return new(true);
    }
    return adapter.Dispatch(request);
   });

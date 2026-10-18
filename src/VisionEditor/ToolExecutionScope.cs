@@ -35,8 +35,12 @@ public partial class MainWindow {
     var config=Flow().Configuration;var bindings=config.Subscriptions.Where(b=>b.NodeId!=node||b.Target!=destination.Name||!b.IsParameter);
     doc.SetWorkflowConfiguration(procedure,config with{Subscriptions=(reference is null?bindings:bindings.Append(new(node,destination.Name,true,reference))).ToArray()});
    }else doc.SetProcedureInputSubscription(procedure,node,destination.Name,reference);
+  },changes=>{
+   if(!Alive()||windowClosed||isLocked||activeRun is not null||activeConfigurationRuns>0||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");
+   doc.SetProcedureInputSubscriptions(procedure,node,changes.ToDictionary(change=>change.Destination.Name,change=>change.Source));
   });
-  IToolConfigurationSubscriptionService completeSubscriptions=new ToolConfigurationDisplaySubscriptions(configurationSubscriptions,Flow,modules,node,()=>Flow().Nodes.Single(n=>n.Id==node).Parameters,next=>context.Apply(next));
+  IToolConfigurationSubscriptionService inputSubscriptions=plugins.Find(context.Node.ModuleId) is IToolPointInputAliasProvider aliases?new PointAliasConfigurationSubscriptions(configurationSubscriptions,Flow,modules,node,aliases.PointInputAliases):configurationSubscriptions;
+  IToolConfigurationSubscriptionService completeSubscriptions=new ToolConfigurationDisplaySubscriptions(inputSubscriptions,Flow,modules,node,()=>Flow().Nodes.Single(n=>n.Id==node).Parameters,next=>context.Apply(next));
   var presentation=new ConfigurationPresentationBridge(request=>{
    if(!Alive()||windowClosed||doc.SolutionId!=solution)return new(ConfigurationPresentationStatus.Failed,"Configuration solution is no longer active.");
    if(request.NodeId!=node||request.Kind!=ConfigurationPresentationKind.ImageSourceMode||!Enum.IsDefined(request.SourceMode))return new(ConfigurationPresentationStatus.Unsupported,"Unsupported presentation request or owner identity.");
@@ -77,7 +81,7 @@ public partial class MainWindow {
   PortValue Output(string id,string port){
    NodeRunRecord? record=configurationResults.GetValueOrDefault(procedureId)?.GetValueOrDefault(id)
     ??(workflowSessions.TryGetValue(procedureId,out var session)?session.Nodes.FirstOrDefault(n=>n.NodeId==id):null);
-   return record is not null&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&record.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException("订阅图像或数据尚无运行结果。");
+   return record is not null&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&CompoundOutputFields.Expand(record.Outputs).TryGetValue(port,out var value)?value:throw new InvalidDataException("订阅图像或数据尚无运行结果。");
   }
   PortValue Resolve(WorkflowValueReference source)=>source.Kind switch{
    WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),

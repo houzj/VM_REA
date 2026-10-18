@@ -96,7 +96,7 @@ public sealed class ToolConfigurationSubscriptionSelector:Grid {
   Unloaded+=(_,_)=>Close();Refresh();Read();
  }
  void Fail(string operation,string diagnostic){Diagnostic=diagnostic;message.Text=diagnostic;value.ToolTip=diagnostic;state.ReportSubscriptionDiagnostic(node,operation,diagnostic);}
- public void Refresh(){value.IsReadOnly=bool.TryParse(node.Get("ReadOnly"),out var readOnly)&&readOnly;value.Text=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter?node.Get("Subscription")??"":node.Value;value.ToolTip=Diagnostic??value.Text;IsEnabled=node.Enabled;toggle.Visibility=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter&&!node.SubscribeVisible?Visibility.Collapsed:Visibility.Visible;}
+ public void Refresh(){value.IsReadOnly=(bool.TryParse(node.Get("ReadOnly"),out var readOnly)&&readOnly)||(bool.TryParse(node.Get("BindingReadOnly"),out var bindingReadOnly)&&bindingReadOnly);value.Text=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter?node.Get("Subscription")??"":node.Value;value.ToolTip=Diagnostic??value.Text;IsEnabled=node.Enabled;toggle.Visibility=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter&&!node.SubscribeVisible?Visibility.Collapsed:Visibility.Visible;}
  public void Close(){popup.IsOpen=false;toggle.IsChecked=false;choosingIndex=false;}
  public void Read() {
   if(query==null){Fail("Read","Unsupported source-declared subscription query.");return;}
