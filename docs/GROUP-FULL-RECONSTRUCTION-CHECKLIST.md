@@ -14,6 +14,8 @@
 
 2026-10-18 补核同一原生 `DynamicIOConfigControl.xaml` 名称编辑模板：`MaxLength` 绑定 `VmIO.MaxNameLenth`（`VM.Core/VmIO.cs` 为 31），失焦调用 `VmIODecorate.TextChangedExecute`。Group 输出名称框现限制实际键入 31 字符。`VisionEditor.GroupPointOutputChecks` 对真实 WPF 输出框发送 40 字符文本输入，仅接受 31 字符；失焦提交后 Group 对外端口改名，两轮实际 Point 累积仍按新名称导出；撤销重做、保存重开继续运行，共 13 项通过。新建来源名的 `GroupParam.FixName` 可截到 32 字符，不能与手动编辑上限混同。原生 PointF 三分量及完整子字段模板仍开放。
 
+同一原始 `GroupParam.AddCommandCmdExecute` 对输出单一叶类型在新增后调用 `owner.Outputs.GetAllLeafIO().Count() > 1024` 并回滚，也对多选组合按新增叶数预检。重建输出页的通用“增加输出”和“增加点输出”共用前置上限检查：已有 1024 个扁平输出时给出明确错误，保持旧数据。专项窗口先验证两轮 Point 累积，再填至 1024 项，实际点击添加、检查错误和首项 ID，保存重开后数目与 ID 不变，累计 15 项。前置拒绝是独立实现；复合 IO 的原生模板叶数与短暂回滚生命周期仍未闭合。
+
 后续核对 `analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupOutputParam.cs` 的 `DefaultStartName => "out"` 及同程序集 `DynamicObjectConfigControl/GroupParam.cs:293–300,367–385` 的 `GetUniqueName`：首个独立输出应叫 `out`，撞名后是 `out0`，同时检查输入和输出名称。原 WPF 适配器首个误叫 `out0`；已更正。真实窗口连续添加两项、删除第二项、绑定第一个实际 Point 来源、两轮累积、撤销重做和保存重开验证为 8 项。PointF 三分量合同已在 `CONTRACT-REQUESTS.md` 登记，当前 Point2 仍只属独立适配。
 
 同一原生命名逻辑也作用于 Group 输入：`analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupInputParam.cs` 声明起始名 `in`，`GroupParam.GetUniqueName` 在输入和输出全集中查重。当前简单输入原先从 `in0` 开始，已修正为先 `in`、撞名后 `in0`。`VisionEditor.GroupInputNameChecks` 在真实 WPF 窗口新增两项、删除第二项，将首项接到父级真实整数源和内部消费节点，运行输出 7，并完成撤销重做及保存重开（7 项）。原生输入批量选择器和全部复合类型仍开放。

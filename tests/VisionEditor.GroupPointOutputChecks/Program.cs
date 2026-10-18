@@ -54,6 +54,19 @@ internal static class Program
   editor.Undo();Check(Body().Configuration.Outputs.Single().Name=="out"&&Run().Calls["group"].WorkflowOutputs["out"].ElementCount==2,"Undo restores output name and actual data");
   editor.Redo();Check(Body().Configuration.Outputs.Single().Name==renamed&&Run().Calls["group"].WorkflowOutputs[renamed].ElementCount==2,"Redo restores output name and actual data");
   window.Close();editor.Save(path);editor.Load(path);Check(Body().Configuration.Outputs.Single().Kind==DataKind.Point&&Run().Calls["group"].WorkflowOutputs[renamed].ElementCount==2,"Save and reopen retains renamed Point output and two-round data");
+  var limitOutputs=Body().Configuration.Outputs.Concat(Enumerable.Range(1,1023)
+   .Select(i=>new WorkflowInterfaceItem("limit-"+i,"limit"+i,DataKind.Integer))).ToArray();
+  editor.SetWorkflowConfiguration("body",Body().Configuration with{Outputs=limitOutputs});
+  var limitWindow=new SubprogramCallWindow(()=>editor.Document.Procedures.Single(p=>p.Id=="main"),Group,()=>editor.Document.Procedures,_=>{},(_,_)=>{},_=>[],()=>Task.CompletedTask,()=>{},()=>null,
+   saveGroupConfiguration:c=>editor.SetWorkflowConfiguration("body",c),groupSources:kind=>kind==DataKind.Point?[new WorkflowSourceOption("point","point",DataKind.Point,"点.point")]:[],groupRegistry:registry)
+  {ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};limitWindow.Show();Pump();
+  var limitTabs=Children(limitWindow).OfType<TabControl>().First(t=>t.Items.Count==5);limitTabs.SelectedIndex=1;Pump();
+  Children(limitWindow).OfType<Button>().Single(b=>Equals(b.Tag,"GroupOutputAdd")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));Pump();
+  Check(Body().Configuration.Outputs.Count==1024&&((TextBlock)limitWindow.FindName("Error")).Text.Contains("1024"),
+   "Native Group output limit reports error without changing 1024 existing flat outputs");
+  limitWindow.Close();editor.Save(path);editor.Load(path);
+  Check(Body().Configuration.Outputs.Count==1024&&Body().Configuration.Outputs.First().Id==output.Id,
+   "Rejected output addition preserves original output identity after save and reopen");
   app.Shutdown();Console.WriteLine($"PASS {checks} Group point output checks");
  }
  static void Pump(){var frame=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>frame.Continue=false));Dispatcher.PushFrame(frame);}
