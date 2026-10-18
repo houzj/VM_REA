@@ -107,7 +107,7 @@ public partial class MainWindow
   if(!EditableCanvas||selectedNodes.Count==0)return;var area=SelectedBounds();
   var positions=doc.CurrentProcedure.Nodes.Where(n=>selectedNodes.Contains(n.Id)).ToDictionary(n=>n.Id,n=>direction switch {
    "left"=>(area.Left+10,n.Y),"right"=>(area.Right-NodeWidth-10,n.Y),"centerX"=>(area.Left+Snap((area.Width-NodeWidth)/2),n.Y),
-   "top"=>(n.X,area.Top+10),"bottom"=>(n.X,area.Bottom-NodeVisualHeight(n)-10),"centerY"=>(n.X,Snap(area.Top+area.Height/2-NodeVisualHeight(n)/2)),_=>(n.X,n.Y)});
+   "top"=>(n.X,area.Top+10),"bottom"=>(n.X,area.Bottom-NodeVisualHeight(n)-10),"centerY"=>(n.X,area.Top+Snap((area.Height-NodeVisualHeight(n))/2)),_=>(n.X,n.Y)});
   doc.MoveNodes(positions);
  }
  void DistributeSelection(bool horizontal)
