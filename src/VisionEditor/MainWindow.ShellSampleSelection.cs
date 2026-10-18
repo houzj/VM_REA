@@ -66,6 +66,10 @@ public partial class MainWindow
         var path = sampleSolutionPicker.Pick(this, SampleDirectoryPreference.InitialDirectory());
         if (string.IsNullOrWhiteSpace(path)) return;
         SampleDirectoryPreference.Remember(path);
+        if (!File.Exists(path)) { StatusText.Text = "示例方案文件不存在"; return; }
+        // The native OpenSamples delegates to LoadSolution, which stops continuous run.
+        continuousRun = false;
+        if (activeRun is not null) { StatusText.Text = "请等待当前流程运行结束"; return; }
         if (!ConfirmPendingChanges()) return;
         doc.Load(path);
         RecentSolutionStore.Update(doc.FilePath!);

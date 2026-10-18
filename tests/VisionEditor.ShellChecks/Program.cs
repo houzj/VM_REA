@@ -190,13 +190,26 @@ try
  using(var recentData=JsonDocument.Parse(File.ReadAllText(recentPath)))
   Check(recentData.RootElement.EnumerateArray().Any(entry=>entry.GetProperty("Path").GetString()==recentFirst),"Recent solutions survive in the independent shell preference file");
  var sampleMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"打开示例"));
+ var sampleRunField=typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
+ var sampleContinuousField=typeof(MainWindow).GetField("continuousRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
+ using(var sampleRound=new CancellationTokenSource())
+ {
+  sampleRunField.SetValue(window,sampleRound);sampleContinuousField.SetValue(window,true);
+  sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
+  Check(!(bool)sampleContinuousField.GetValue(window)!&&!sampleRound.IsCancellationRequested&&document.FilePath==recentFirst&&samplePicker.LastInitialDirectory==AppContext.BaseDirectory,"Sample command stops continuous mode after selection and keeps the active single round and document");
+  sampleRunField.SetValue(window,null);
+ }
  sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
  var demoPath=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"demo.vmx.json"));
  Check(document.FilePath==demoPath&&Equals(((MenuItem)recentMenu.Items[0]).Tag,demoPath),"Opening the shipped example records the loaded sample as the newest recent solution");
- Check(samplePicker.LastInitialDirectory==AppContext.BaseDirectory&&File.ReadAllText(sampleDirectoryPath)==Path.GetDirectoryName(demoPath),"Sample picker starts in the shipped example directory and remembers the chosen folder");
+ Check(samplePicker.LastInitialDirectory==Path.GetDirectoryName(demoPath)&&File.ReadAllText(sampleDirectoryPath)==Path.GetDirectoryName(demoPath),"Next sample picker starts in the remembered example directory");
  samplePicker.NextPath=null;
  sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
  Check(samplePicker.LastInitialDirectory==Path.GetDirectoryName(demoPath)&&document.FilePath==demoPath,"Cancelling the sample picker keeps the loaded solution unchanged");
+ samplePicker.NextPath=Path.Combine(Path.GetDirectoryName(demoPath)!,"missing-sample.vmx.json");
+ sampleContinuousField.SetValue(window,true);
+ sampleMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,sampleMenu));Pump();
+ Check(document.FilePath==demoPath&&Equals(((MenuItem)recentMenu.Items[0]).Tag,demoPath)&&Find<TextBlock>("StatusText").Text=="示例方案文件不存在"&&(bool)sampleContinuousField.GetValue(window)!,"Missing sample path does not stop continuous mode, replace the solution or enter recent history");
  var openMenu=(MenuItem)fileRoot.Items[1];
  var activeRunField=typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
  var continuousField=typeof(MainWindow).GetField("continuousRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
