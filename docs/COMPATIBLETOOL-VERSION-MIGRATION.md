@@ -42,6 +42,8 @@
 
 `CircleFind.sol` 的 `SolutionFile/VmServer.xml` 可读 XML，包含版本 `V4.4.0`、方案名、模块及流程列表、连线/订阅关系；`UiParamData` 条目解压后是 VM 二进制记录（以 `fU3"` 等字节起始），不应作为普通 XML 解析。目录内单独存放 `MoudleFrame` 与图像附件，说明方案包不只是单一 XML 文件。该样本证明的是“这些未加密 SDK 样本能按 ZIP 目录读取”，不是所有 `.sol` 版本/密码模式都用相同封装，更没有证明 SDK 保存时的压缩参数、加密、校验、写入顺序、未知条目保留策略或旧版本迁移往返。
 
+对本机 `D:\Program Files\VisionMaster4.4.0` 安装目录递归列出的 11 个 `.sol` 样本逐个读取 `SolutionFile/VmServer.xml` 版本节点，观察结果全为 `V4.4.0`。因此当前机器提供了 V4.4 同版本样本证据，但没有安装版旧版本 `.sol` 样本可做迁移前后差分；数量和版本只代表本次安装快照。
+
 ## 迁移调用链
 
 1. `ProjectManager` 调用 `IMVS_GetSolutionVersion`，对返回的 `strTargetSolutionInfo` 作字符串版本比较。低于本机 `Lang_version` 时，显示升级遮罩，并在原方案同目录选择 `原名_目标版本.sol`；文件已存在时依次尝试带序号的新名字，不覆盖旧迁移输出。
