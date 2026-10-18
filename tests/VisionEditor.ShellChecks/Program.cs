@@ -158,7 +158,7 @@ try
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
  document.Save(recentSecond);
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
- var fileRoot=(MenuItem)menu.Items[0];var recentMenu=(MenuItem)fileRoot.Items[fileRoot.Items.Count-1];
+ var fileRoot=(MenuItem)menu.Items[0];var recentMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"最近打开"));
  recentMenu.IsSubmenuOpen=true;Pump();
  Check(recentMenu.Items.Count==2&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentSecond)&&Equals(((MenuItem)recentMenu.Items[1]).Tag,recentFirst),"Save menu persists and orders recent solution paths");
  var earlier=(MenuItem)recentMenu.Items[1];
@@ -195,6 +195,13 @@ try
  solutionPicker.NextPath=null;
  openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
  Check(solutionPicker.LastInitialDirectory==Path.GetDirectoryName(recentSecond)&&document.FilePath==recentSecond,"Next Open starts in the remembered directory; cancelling retains the solution");
+ var exitMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"退出"));
+ Check(fileRoot.Items[fileRoot.Items.IndexOf(exitMenu)-1] is Separator,"File menu separates its native Exit command from solution commands");
+ fileRoot.IsSubmenuOpen=true;Pump();
+ Check(exitMenu.IsVisible&&exitMenu.ActualWidth>0&&exitMenu.ActualHeight>0,"File Exit appears as a laid-out WPF menu item in the opened menu");
+ var closed=false;window.Closed+=(_,_)=>closed=true;
+ exitMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,exitMenu));Pump();
+ Check(closed&&!window.IsVisible,"File Exit invokes the same real WPF window close path as the titlebar");
  Console.WriteLine("Shell command and input checks passed.");
 }
 
