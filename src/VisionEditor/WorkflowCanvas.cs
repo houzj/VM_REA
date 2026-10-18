@@ -320,7 +320,9 @@ public partial class MainWindow
     {
         if(Keyboard.FocusedElement is TextBox||Keyboard.FocusedElement is ComboBox)return;
         if(e.Key==Key.Escape){selectedWire=null;CancelCanvasGesture();e.Handled=true;}
-        if(e.Key==Key.Delete&&(GraphLayer.IsKeyboardFocusWithin||CanvasViewport.IsMouseOver)){DeleteSelection();e.Handled=true;}
+        // Native DiagramItem/RectDragPanal delete handlers are keyboard-focus scoped;
+        // hovering the canvas while a toolbar or another pane owns focus is insufficient.
+        if(e.Key==Key.Delete&&GraphLayer.IsKeyboardFocusWithin){DeleteSelection();e.Handled=true;}
         if((Keyboard.Modifiers&ModifierKeys.Control)!=0&&GraphLayer.IsKeyboardFocusWithin)
         {
             if(e.Key==Key.C){CopySelection();e.Handled=true;}
