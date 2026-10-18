@@ -211,6 +211,20 @@ SolutionStore.Save(path, solution); solution = SolutionStore.Load(path);
 parentRun = new SolutionExecutor(registry).RunAsync(new(solution, Environment.CurrentDirectory), "parent").GetAwaiter().GetResult();
 Check(parentRun.Status == SessionStatus.Success && parentRun.Calls["group"].WorkflowOutputs["out"].As<long>() == 5,
     "Multi-selected Group input bindings survive save and reopen with identical runtime result");
+var originalInputs = Body().Configuration.Inputs;
+var limitInputs = originalInputs.Concat(Enumerable.Range(originalInputs.Count, 1024 - originalInputs.Count)
+    .Select(i => new WorkflowInterfaceItem("limit-" + i, "limit" + i, DataKind.Integer))).ToArray();
+SaveGroupInputs(limitInputs, new Dictionary<string, WorkflowValueReference?>());
+tabs.SelectedIndex = 1; Pump(); tabs.SelectedIndex = 0; Pump();
+Children(window).OfType<ComboBox>().Single(c => Equals(c.Tag, "GroupInputAddType")).SelectedIndex = 1;
+Children(window).OfType<Button>().Single(b => Equals(b.Tag, "GroupInputAdd"))
+    .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); Pump();
+Check(Body().Configuration.Inputs.Count == 1024 && ((TextBlock)window.FindName("Error")).Text.Contains("1024"),
+    "Native single-type Group input limit reports error without mutating 1024 existing inputs");
+SolutionStore.Save(path, solution); solution = SolutionStore.Load(path);
+Check(Body().Configuration.Inputs.Count == 1024 && Body().Configuration.Inputs.Take(originalInputs.Count)
+    .Select(i => i.Id).SequenceEqual(originalInputs.Select(i => i.Id)),
+    "Rejected input addition preserves existing identities after save and reopen");
 window.Close(); app.Shutdown(); Console.WriteLine($"PASS {checks} Group source WPF and runtime checks");
 }
 
