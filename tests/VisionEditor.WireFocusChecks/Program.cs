@@ -1,0 +1,62 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+using VisionEditor;
+using VisionEditor.Core;
+using VisionFramework;
+
+internal static class Program
+{
+ [StructLayout(LayoutKind.Sequential)] struct NativePoint {public int X;public int Y;}
+ [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] static extern bool GetCursorPos(out NativePoint point);
+ [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] static extern bool SetCursorPos(int x,int y);
+ [DllImport("user32.dll")] [return:MarshalAs(UnmanagedType.Bool)] static extern bool PostMessage(IntPtr hwnd,uint message,IntPtr wparam,IntPtr lparam);
+ [STAThread] static int Main(){try{Run();return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ static void Run()
+ {
+  var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+  var window=new MainWindow{Width=1200,Height=780,Left=110,Top=80,Topmost=true,WindowStartupLocation=WindowStartupLocation.Manual};
+  SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
+  object? Field(string name)=>typeof(MainWindow).GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window);
+  void Pump(){window.UpdateLayout();window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);}
+  void Check(bool ok,string label){if(!ok)throw new Exception(label);Console.WriteLine("PASS "+label);}
+  var previousCursor=GetCursorPos(out var cursor)?cursor:new NativePoint();
+  try
+  {
+   window.Show();window.Activate();Pump();
+   var doc=(GraphEditorDocument)Field("doc")!;doc.NewSolution();
+   var first=doc.AddNode("vision.image-source","1.0.0",140,170);var second=doc.AddNode("vision.image-source","1.0.0",380,360);doc.ConnectExecution(first,second);Pump();
+   var hits=(Dictionary<string,Path>)Field("wireHitPaths")!;
+   var handles=(List<Rectangle>)Field("wireHandles")!;
+   var hit=hits[first+">"+second];
+   hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+   Check(hit.IsKeyboardFocused&&handles.Count>0,"实际连线点击取得焦点并显示中点柄");
+   var other=(Button)window.FindName("AddProcedureButton")!;other.Focus();Pump();
+   Check(other.IsKeyboardFocused&&handles.Count==0,"转焦工具栏立即清除连线中点柄");
+   hit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();Check(hit.IsKeyboardFocused&&handles.Count>0,"再次点击连线重新生成中点柄");
+   var output=System.IO.Path.Combine("analysis","full-audit","wire-midpoint-focus.png");System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(output)!);
+   var bmp=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);bmp.Render(window);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bmp));using(var stream=System.IO.File.Create(output))png.Save(stream);
+   var handle=handles[handles.Count/2];var graph=(Canvas)window.FindName("GraphLayer")!;var viewport=(FrameworkElement)window.FindName("CanvasViewport")!;
+   var start=new Point(Canvas.GetLeft(handle)+3,Canvas.GetTop(handle)+3);
+   Check(handle.IsLoaded&&graph.Children.Contains(handle),"中点柄实际位于当前画布");handle.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();Check(Field("wireDrag") is not null,"WPF 中点柄鼠标按下启动拖动");
+   var destination=start+new Vector(25,35);var screen=graph.PointToScreen(destination);SetCursorPos((int)screen.X,(int)screen.Y);var client=graph.TranslatePoint(destination,window);PostMessage(new WindowInteropHelper(window).Handle,0x0200,IntPtr.Zero,(IntPtr)((int)client.X|((int)client.Y<<16)));Mouse.Synchronize();Pump();
+   viewport.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice,Environment.TickCount){RoutedEvent=UIElement.MouseMoveEvent});Pump();
+   Check(Field("wireDrag") is not null&&new Rect(0,0,viewport.ActualWidth,viewport.ActualHeight).Contains(Mouse.GetPosition(viewport)),"鼠标移动时拖动保持有效且落点在视口内");
+   viewport.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseUpEvent});Pump();Check(Field("wireDrag") is null,"WPF 预览鼠标释放结束拖动");
+   var wire=ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single();Check(wire.PathPoints is {Count:>1},"实际中点拖动提交路径坐标");
+   var savedPoints=wire.PathPoints!.ToArray();doc.Undo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints is null,"连线路径一次撤销恢复自动计算");
+   doc.Redo();Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.SequenceEqual(savedPoints),"中点拖动重做恢复所提交坐标");
+   var file=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"wire-focus-"+Guid.NewGuid().ToString("N")+".vmx.json");
+   try{doc.Save(file);doc.Load(file);Pump();Check(ProcedureGraph.ExecutionEdges(doc.CurrentProcedure).Single().PathPoints!.SequenceEqual(savedPoints),"保存重开保留中点调整后的路径");}
+   finally{if(System.IO.File.Exists(file))System.IO.File.Delete(file);}
+  }
+  finally{SetCursorPos(previousCursor.X,previousCursor.Y);window.Close();app.Shutdown();}
+ }
+}
