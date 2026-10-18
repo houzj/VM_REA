@@ -183,9 +183,10 @@ public partial class MainWindow
   connectionTarget=FindConnectionTarget(point);
   foreach(var pair in executionPorts){bool target=connectionTarget is {} hit&&pair.Key.Node==hit.Node;pair.Value.Visibility=pair.Key.Node==source.Node||target?Visibility.Visible:Visibility.Collapsed;SetPortHit(pair.Value,connectionTarget==pair.Key);}
   var node=doc.CurrentProcedure.Nodes.Single(n=>n.Id==source.Node);
-  IReadOnlyList<RoutePoint> route;
-  if(connectionTarget is {} destination){var target=doc.CurrentProcedure.Nodes.Single(n=>n.Id==destination.Node);var boxes=doc.CurrentProcedure.Nodes.Select(n=>new {n.Id,Box=new RouteRect(n.X,n.Y,NodeWidth,NodeVisualHeight(n))}).ToArray();route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Route(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),Port(new(target.X,target.Y,NodeWidth,NodeVisualHeight(target)),destination.Port),boxes.Where(n=>n.Id!=node.Id&&n.Id!=target.Id).Select(n=>n.Box),Math.Min(DiagramPageSize,Math.Max(200,boxes.Max(n=>n.Box.Right)+100)),Math.Min(DiagramPageSize,Math.Max(200,boxes.Max(n=>n.Box.Bottom)+100)),1_100_000).Points;}
-  else route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Preview(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),new(point.X,point.Y));
+  // Connector.AttachedDiagramItem_PreviewMouseMove always draws
+  // GetConnectionLine(source, current pointer). Target hit testing only
+  // highlights its nearest connector; the routed connection is made on up.
+  IReadOnlyList<RoutePoint> route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Preview(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),new(point.X,point.Y));
   if(connectionPreview is not null)GraphLayer.Children.Remove(connectionPreview);
   connectionPreview=new System.Windows.Shapes.Path {Data=LineGeometry(route),Stroke=new SolidColorBrush(Color.FromRgb(255,167,15)),StrokeThickness=2,StrokeDashArray=new DoubleCollection {5,2.5},StrokeLineJoin=PenLineJoin.Round,IsHitTestVisible=false};Panel.SetZIndex(connectionPreview,60);GraphLayer.Children.Add(connectionPreview);
  }
