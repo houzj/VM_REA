@@ -220,6 +220,29 @@ internal static class Program
             string searchFile=Path.Combine(Path.GetTempPath(),"vision-canvas-search-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(searchFile);doc.Load(searchFile);Check(doc.Document.Procedures.Single(p=>p.Id==searchFlow).Nodes.Single(n=>n.Id==searchNode).X==2500,"searched node persists through save and reopen");}
             finally {if(File.Exists(searchFile))File.Delete(searchFile);}
+
+            doc.NewSolution();
+            string cornerSource=doc.AddNode("vision.image-source","1.0.0",4300,4200);
+            string cornerTarget=doc.AddNode("vision.image-source","1.0.0",4600,4550);
+            string cornerObstacle=doc.AddNode("vision.image-source","1.0.0",4450,4380);
+            doc.ConnectExecution(cornerSource,cornerTarget,3,1);Pump();
+            string cornerKey=cornerSource+">"+cornerTarget;
+            var cornerHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[cornerKey];
+            var cornerArrow=((Dictionary<string,System.Windows.Shapes.Polygon>)typeof(MainWindow).GetField("wireArrows",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[cornerKey];
+            Check(cornerHit.Data is not null&&cornerArrow.Points.Count==3,"lower-right 5000 canvas route renders interactive path and directed arrow beyond former 250k-cell cap");
+            scroll.ScrollToHorizontalOffset(4200);scroll.ScrollToVerticalOffset(4150);Pump();
+            cornerHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            Check((string?)typeof(MainWindow).GetField("selectedWire",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)==cornerKey,"lower-right connection remains hover/select hit-testable");
+            Capture("canvas-corner-route-selected.png");
+            revision=doc.Revision;
+            doc.MoveNode(cornerTarget,4700,4700);Pump();
+            var movedHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[cornerKey];
+            Check(movedHit.Data is not null&&doc.CurrentProcedure.ExecutionLinks!.Single().PathPoints is null&&doc.Revision==revision+1,"moving destination recalculates extreme route in one undo transaction");
+            doc.Undo();Pump();
+            Check(doc.CurrentProcedure.Nodes.Single(n=>n.Id==cornerTarget).Y==4550&&((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!).ContainsKey(cornerKey),"undo restores corner node and visible connection");
+            string cornerFile=Path.Combine(Path.GetTempPath(),"vision-canvas-corner-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try {doc.Save(cornerFile);doc.Load(cornerFile);Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Single().ToNode==cornerTarget&&((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!).ContainsKey(cornerKey),"extreme route survives save/reopen and redraw");}
+            finally {if(File.Exists(cornerFile))File.Delete(cornerFile);}
         }
         finally {window.Close();application.Shutdown();}
     }

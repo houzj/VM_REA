@@ -94,8 +94,10 @@ public partial class MainWindow
         foreach(var wire in ProcedureGraph.ExecutionEdges(procedure))
         {
             if(!boxes.TryGetValue(wire.FromNode,out var sourceBox)||!boxes.TryGetValue(wire.ToNode,out var targetBox))continue;
-            double routeWidth=Math.Max(200,boxes.Values.Max(b=>b.Right)+100),routeHeight=Math.Max(200,boxes.Values.Max(b=>b.Bottom)+100);
-            var points=wire.PathPoints is {Count:>1}?wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray():VmOrthogonalRouter.Route(Port(sourceBox,wire.SourceIndex),Port(targetBox,wire.TargetIndex),boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight).Points;
+            double routeWidth=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Right)+100)),routeHeight=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Bottom)+100));
+            // Native DiagramPage.GetPathMap allocates up to (5000/5+32)^2 cells.
+            // The adapter's 250k default would discard valid paths near the lower-right corner.
+            var points=wire.PathPoints is {Count:>1}?wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray():VmOrthogonalRouter.Route(Port(sourceBox,wire.SourceIndex),Port(targetBox,wire.TargetIndex),boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight,1_100_000).Points;
             if(points.Count<2) { StatusText.Text="有连线无法在当前画布范围内完成布线";continue; }
             string key=wire.FromNode+">"+wire.ToNode;
             var displayedPoints=wire.PathPoints is {Count:>1}?VmOrthogonalRouter.Passivate(points):points;
