@@ -9,4 +9,6 @@ Shared files are assigned per feature in docs/PLUGIN-FRAMEWORK-BOUNDARY.md. A pr
 
 Keep screenshot/export helpers in tests. Do not introduce screenshot code into product assemblies. Do not spawn subagents unless the user explicitly requests delegation. Do not modify the other worktree or terminate processes owned by another task.
 
+For manual acceptance, “start the app” means show the current build on the user's interactive desktop (`WinSta0\Default`), not merely create a process or window on `CodexSandboxDesktop-*`. Verify a visible `VisionMaster` window by enumerating the input desktop; `Get-Process.MainWindowHandle` from the sandbox can be zero for a valid user-desktop window. A temporary Task Scheduler task with interactive-token logon can start the current build there; remove only that temporary task afterward and leave the app open. Do not touch windows or processes owned by other tasks.
+
 Evidence is local at D:/MyWork/REA逆向测试/analysis/decompiled and D:/MyWork/REA逆向测试/analysis/full-audit. Read original evidence there; write generated reports, screenshots and build outputs to the current worktree. Raw decompiled assemblies/projects and full audit outputs are intentionally excluded from Git. Required UI assets and the image sample are tracked for builds; their presence does not establish runtime parity.
