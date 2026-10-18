@@ -213,18 +213,34 @@ public partial class MainWindow
         if(Math.Abs(delta.X)<=3&&Math.Abs(delta.Y)<=3&&movingGhosts.Count==0)return;
         double left=movingNodes.Values.Min(p=>p.X),top=movingNodes.Values.Min(p=>p.Y);
         double dx=Snap(left+delta.X)-left,dy=Snap(top+delta.Y)-top;
-        dx=Math.Clamp(dx,-left,Math.Max(-left,DiagramPageSize-NodeWidth-movingNodes.Values.Max(p=>p.X)));
-        double bottom=movingNodes.Max(entry=>entry.Value.Y+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key)));
-        dy=Math.Clamp(dy,-top,Math.Max(-top,DiagramPageSize-bottom));
+        // ItemsPage.GetDropItems clamps each selected DiagramItem separately.
+        // A group-wide limit would freeze all items when just one reaches an edge.
+        if(movingNodes.Count==1)
+        {
+            dx=Math.Clamp(dx,-left,Math.Max(-left,DiagramPageSize-NodeWidth-movingNodes.Values.Max(p=>p.X)));
+            double bottom=movingNodes.Max(entry=>entry.Value.Y+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key)));
+            dy=Math.Clamp(dy,-top,Math.Max(-top,DiagramPageSize-bottom));
+        }
         foreach(var entry in movingNodes)
         {
             if(!movingGhosts.TryGetValue(entry.Key,out var ghost))
             {
                 var node=doc.CurrentProcedure.Nodes.First(n=>n.Id==entry.Key);ghost=CreateNodeCard(node,doc.CurrentProcedure.Nodes.ToList().FindIndex(n=>n.Id==entry.Key),true);ghost.Opacity=.7;ghost.IsHitTestVisible=false;Panel.SetZIndex(ghost,60);movingGhosts[entry.Key]=ghost;GraphLayer.Children.Add(ghost);
             }
-            Canvas.SetLeft(ghost,entry.Value.X+dx-10);Canvas.SetTop(ghost,entry.Value.Y+dy-10);
+            var height=NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key));
+            Canvas.SetLeft(ghost,Math.Clamp(entry.Value.X+dx,0,DiagramPageSize-NodeWidth)-10);
+            Canvas.SetTop(ghost,Math.Clamp(entry.Value.Y+dy,0,DiagramPageSize-height)-10);
         }
-        if(boxSelectionActive){if(groupMoveFrame is not null)GraphLayer.Children.Remove(groupMoveFrame);var area=SelectedBounds();area.Offset(dx,dy);groupMoveFrame=GroupRectangle(area,false);groupMoveFrame.Opacity=.7;GraphLayer.Children.Add(groupMoveFrame);}
+        if(boxSelectionActive)
+        {
+            if(groupMoveFrame is not null)GraphLayer.Children.Remove(groupMoveFrame);
+            var leftEdge=movingGhosts.Values.Min(g=>Canvas.GetLeft(g)+10);
+            var topEdge=movingGhosts.Values.Min(g=>Canvas.GetTop(g)+10);
+            var rightEdge=movingGhosts.Values.Max(g=>Canvas.GetLeft(g)+10+NodeWidth);
+            var bottomEdge=movingGhosts.Max(g=>Canvas.GetTop(g.Value)+10+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==g.Key)));
+            var area=new Rect(new Point(leftEdge,topEdge),new Point(rightEdge,bottomEdge));area.Inflate(10,10);
+            groupMoveFrame=GroupRectangle(area,false);groupMoveFrame.Opacity=.7;GraphLayer.Children.Add(groupMoveFrame);
+        }
         DrawAlignmentGuides(left+dx,top+dy);
         if(movingNodes.Count==1)UpdateNodeHotRegion(left+dx,top+dy,movingNodes.Keys);
         if(movingNodes.Count==1&&!nodeCopyDrag)UpdateInsertionWire(point,movingNodes.Keys);
