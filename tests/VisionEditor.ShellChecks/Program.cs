@@ -32,6 +32,13 @@ try
  var header=Find<Grid>("ShellHeader");var toolbar=Find<StackPanel>("ToolBar");var toolbarScroll=Find<ScrollViewer>("ToolBarScroll");
  var menu=Find<Menu>("MenuHost");
  Check(window.WindowState==WindowState.Normal,"Window starts normal");
+ var procedureTabs=Find<TabControl>("ProcedureTabs");
+ var fileMenu=(MenuItem)menu.Items[0];fileMenu.IsSubmenuOpen=true;Pump();
+ Check(ReferenceEquals(FocusManager.GetFocusedElement(procedureTabs),fileMenu),"Opening a main menu records the menu as the procedure focus element");
+ fileMenu.IsSubmenuOpen=false;Pump();
+ var stopTool=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"停止"));
+ stopTool.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,stopTool));Pump();
+ Check(ReferenceEquals(FocusManager.GetFocusedElement(procedureTabs),stopTool),"Clicking a toolbar command records the button as the procedure focus element");
  var maximize=Find<Button>("MaximizeButton");
  Check(Equals(maximize.ToolTip,"最大化"),"Normal titlebar advertises maximize");
  maximize.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,maximize));Pump();
