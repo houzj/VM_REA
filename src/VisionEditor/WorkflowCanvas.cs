@@ -30,6 +30,7 @@ public partial class MainWindow
     readonly HashSet<string> selectedNodes=new(StringComparer.Ordinal);
     readonly Dictionary<string,Canvas> nodeCards=new();
     readonly Dictionary<string,(double Scale,double X,double Y)> canvasViews=new();
+    readonly Dictionary<(string Procedure,string From,string To),(RoutePort Source,RoutePort Target,IReadOnlyList<RoutePoint> Points)> automaticRoutes=new();
     string? canvasProcedure,selectedWire;
     bool syncingViewport,eyeExpanded=true,eyeDragging,panning,boxSelecting;
     Point pointerStart,eyePointerStart,eyeRegionStart,nodePointerStart;
@@ -59,6 +60,7 @@ public partial class MainWindow
         MiniMapPreview.Fill=new VisualBrush {Visual=GraphLayer}; // ZoomArea.RectEagleEye.Fill = new VisualBrush(cp).
         MiniMapPanel.Effect=new System.Windows.Media.Effects.DropShadowEffect {Opacity=.45,ShadowDepth=2,BlurRadius=8,Color=Colors.Black};
         GraphLayer.Background=OriginalCanvasGrid();
+        doc.SolutionReplaced+=()=>automaticRoutes.Clear();
         CanvasScrollViewer.ScrollChanged+=(_,_)=> {if(!syncingViewport){panX=-CanvasScrollViewer.HorizontalOffset;panY=-CanvasScrollViewer.VerticalOffset;UpdateMiniMap();}};
     }
 
@@ -91,13 +93,33 @@ public partial class MainWindow
         worldHeight=DiagramPageSize;
         GraphLayer.Width=worldWidth;GraphLayer.Height=worldHeight;
         var boxes=procedure.Nodes.ToDictionary(n=>n.Id,n=>new RouteRect(n.X,n.Y,NodeWidth,NodeVisualHeight(n)));
-        foreach(var wire in ProcedureGraph.ExecutionEdges(procedure))
+        var wires=ProcedureGraph.ExecutionEdges(procedure).ToArray();
+        var activeWires=wires.Select(w=>(w.FromNode,w.ToNode)).ToHashSet();
+        var liveProcedures=doc.Document.Procedures.Select(p=>p.Id).ToHashSet();
+        foreach(var old in automaticRoutes.Keys.Where(k=>!liveProcedures.Contains(k.Procedure)||(k.Procedure==procedure.Id&&!activeWires.Contains((k.From,k.To)))).ToArray())automaticRoutes.Remove(old);
+        foreach(var wire in wires)
         {
             if(!boxes.TryGetValue(wire.FromNode,out var sourceBox)||!boxes.TryGetValue(wire.ToNode,out var targetBox))continue;
-            double routeWidth=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Right)+100)),routeHeight=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Bottom)+100));
-            // Native DiagramPage.GetPathMap allocates up to (5000/5+32)^2 cells.
-            // The adapter's 250k default would discard valid paths near the lower-right corner.
-            var points=wire.PathPoints is {Count:>1}?wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray():VmOrthogonalRouter.Route(Port(sourceBox,wire.SourceIndex),Port(targetBox,wire.TargetIndex),boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight,1_100_000).Points;
+            var cacheKey=(procedure.Id,wire.FromNode,wire.ToNode);
+            IReadOnlyList<RoutePoint> points;
+            if(wire.PathPoints is {Count:>1})
+            {
+                automaticRoutes.Remove(cacheKey);
+                points=wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray();
+            }
+            else
+            {
+                var source=Port(sourceBox,wire.SourceIndex);var target=Port(targetBox,wire.TargetIndex);
+                if(automaticRoutes.TryGetValue(cacheKey,out var previous)&&previous.Source==source&&previous.Target==target)points=previous.Points;
+                else
+                {
+                    double routeWidth=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Right)+100)),routeHeight=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Bottom)+100));
+                    // Connection.OnPositionChanged invalidates only its own endpoint/port changes.
+                    // DiagramPage.GetPathMap is therefore rerun for those changes, not for an unrelated obstacle move.
+                    points=VmOrthogonalRouter.Route(source,target,boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight,1_100_000).Points;
+                    if(points.Count>=2)automaticRoutes[cacheKey]=(source,target,points);else automaticRoutes.Remove(cacheKey);
+                }
+            }
             if(points.Count<2) { StatusText.Text="有连线无法在当前画布范围内完成布线";continue; }
             string key=wire.FromNode+">"+wire.ToNode;
             var displayedPoints=wire.PathPoints is {Count:>1}?VmOrthogonalRouter.Passivate(points):points;

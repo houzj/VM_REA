@@ -36,6 +36,14 @@ for(int n=0;n<40;n++){
  Check(actual.Points.SequenceEqual(expected.Select(p=>new RoutePoint(p.X,p.Y))),"seeded original differential");
 }
 RoutePort Port(RouteRect r,PortDirection d)=>new(d switch {PortDirection.Left=>new(r.X,r.Y+r.Height/2),PortDirection.Right=>new(r.Right,r.Y+r.Height/2),PortDirection.Up=>new(r.X+r.Width/2,r.Y),_=>new(r.X+r.Width/2,r.Bottom)},d,r);
+foreach(var (source,target,walls) in new[]{
+    (Port(new(400,320,110,30),PortDirection.Down),Port(new(140,120,110,30),PortDirection.Up),new[]{new RouteRect(300,200,110,30)}),
+    (Port(new(180,150,110,30),PortDirection.Down),Port(new(220,160,110,30),PortDirection.Up),new[]{new RouteRect(210,145,110,30)}),
+    (Port(new(180,150,110,30),PortDirection.Right),Port(new(180,150,110,30),PortDirection.Left),Array.Empty<RouteRect>())}){
+ var actual=VmOrthogonalRouter.Route(source,target,walls,600,450);
+ var expected=Oracle(source,target,walls,600,450);
+ Check(actual.Points.SequenceEqual(expected.Select(p=>new RoutePoint(p.X,p.Y))),"reverse or overlapping endpoints match original AStar and PathFinder");
+}
 foreach(var sd in Enum.GetValues<PortDirection>())foreach(var td in Enum.GetValues<PortDirection>()){
  var source=Port(new(50,50,100,40),sd);var target=Port(new(350,300,100,40),td);var walls=new[]{new RouteRect(180,150,100,50)};
  var actual=VmOrthogonalRouter.Route(source,target,walls,600,450);var expected=Oracle(source,target,walls,600,450);

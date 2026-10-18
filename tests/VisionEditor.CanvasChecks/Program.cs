@@ -243,6 +243,40 @@ internal static class Program
             string cornerFile=Path.Combine(Path.GetTempPath(),"vision-canvas-corner-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(cornerFile);doc.Load(cornerFile);Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Single().ToNode==cornerTarget&&((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!).ContainsKey(cornerKey),"extreme route survives save/reopen and redraw");}
             finally {if(File.Exists(cornerFile))File.Delete(cornerFile);}
+
+            doc.NewSolution();
+            string stableSource=doc.AddNode("vision.image-source","1.0.0",100,100);
+            string stableTarget=doc.AddNode("vision.image-source","1.0.0",500,350);
+            string movingObstacle=doc.AddNode("vision.image-source","1.0.0",900,900);
+            doc.ConnectExecution(stableSource,stableTarget,3,1);Pump();
+            scroll.ScrollToHorizontalOffset(0);scroll.ScrollToVerticalOffset(0);Pump();
+            string stableKey=stableSource+">"+stableTarget;
+            var automatic=(System.Collections.IDictionary)typeof(MainWindow).GetField("automaticRoutes",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var cached=automatic[(doc.CurrentProcedureId,stableSource,stableTarget)]!;
+            var originalPoints=(IReadOnlyList<RoutePoint>)cached.GetType().GetField("Item3")!.GetValue(cached)!;
+            var longest=originalPoints.Zip(originalPoints.Skip(1),(a,b)=>(A:a,B:b,Length:Math.Abs(a.X-b.X)+Math.Abs(a.Y-b.Y))).OrderByDescending(p=>p.Length).First();
+            double obstacleX=Math.Clamp(Math.Round(((longest.A.X+longest.B.X)/2-55)/5)*5,0,4800);
+            double obstacleY=Math.Clamp(Math.Round(((longest.A.Y+longest.B.Y)/2-15)/5)*5,0,4800);
+            string BeforePath()=>((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[stableKey].Data.ToString();
+            string originalPath=BeforePath();revision=doc.Revision;
+            doc.MoveNode(movingObstacle,obstacleX,obstacleY);Pump();
+            var sourceBox=new RouteRect(100,100,110,30);var targetBox=new RouteRect(500,350,110,30);
+            var wouldReroute=VmOrthogonalRouter.Route(new(new(155,130),PortDirection.Down,sourceBox),new(new(555,350),PortDirection.Up,targetBox),[new RouteRect(obstacleX,obstacleY,110,30)],1100,1100);
+            Check(wouldReroute.Points.Count>1&&!wouldReroute.Points.SequenceEqual(originalPoints),"moved obstacle intersects prior route and a fresh native routing call would choose a different geometry");
+            Check(BeforePath()==originalPath&&doc.Revision==revision+1,"unrelated obstacle move preserves existing Connection path until its own endpoints change");
+            var retainedArrow=((Dictionary<string,System.Windows.Shapes.Polygon>)typeof(MainWindow).GetField("wireArrows",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[stableKey];
+            Check(retainedArrow.Points.Count==3,"retained route keeps its directed arrow");
+            var retainedHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[stableKey];
+            retainedHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            Check((string?)typeof(MainWindow).GetField("selectedWire",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)==stableKey,"retained route remains selectable through real WPF hit path");
+            Capture("canvas-obstacle-move-retains-route.png");
+            doc.MoveNode(stableTarget,500,400);Pump();
+            Check(BeforePath()!=originalPath&&doc.Revision==revision+2,"moving this connection's endpoint invalidates and recomputes its path");
+            doc.Undo();Pump();Check(doc.CurrentProcedure.Nodes.Single(n=>n.Id==stableTarget).Y==350,"undo restores endpoint position");
+            doc.Undo();Pump();Check(doc.CurrentProcedure.Nodes.Single(n=>n.Id==movingObstacle).X==900,"second undo restores independent obstacle position");
+            string stableFile=Path.Combine(Path.GetTempPath(),"vision-canvas-obstacle-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try {doc.Save(stableFile);doc.Load(stableFile);Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Single().ToNode==stableTarget&&BeforePath().Length>0,"connection survives save/reopen and rebuilds route on solution replacement");}
+            finally {if(File.Exists(stableFile))File.Delete(stableFile);}
         }
         finally {window.Close();application.Shutdown();}
     }
