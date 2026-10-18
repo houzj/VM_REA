@@ -32,7 +32,7 @@ public partial class MainWindow
     readonly Dictionary<string,(double Scale,double X,double Y)> canvasViews=new();
     readonly Dictionary<(string Procedure,string From,string To),(RoutePort Source,RoutePort Target,IReadOnlyList<RoutePoint> Points)> automaticRoutes=new();
     string? canvasProcedure,selectedWire;
-    bool syncingViewport,eyeExpanded=true,eyeDragging,panning,boxSelecting;
+    bool syncingViewport,eyeExpanded=true,eyeDragging,panning,boxSelecting,connectionCaptureStarting;
     Point pointerStart,eyePointerStart,eyeRegionStart,nodePointerStart;
     const double DiagramPageSize=5000; // DiagramPage.DiagramPageWidth and constructor.
     double worldWidth=DiagramPageSize,worldHeight=DiagramPageSize;
@@ -286,6 +286,7 @@ public partial class MainWindow
     }
     void CanvasPointerMove(object sender,MouseEventArgs e)
     {
+        if(connectionCaptureStarting)return;
         if(wireDrag is not null){PreviewWireDrag(e.GetPosition(GraphLayer));return;}
         if(panning)
         {
@@ -299,8 +300,23 @@ public partial class MainWindow
         }
         if(pendingConnection is {} from)
         {
-            UpdateConnectionPreview(e.GetPosition(GraphLayer));
+            AdvanceConnectionPreview(e.GetPosition(GraphLayer),e.LeftButton);
         }
+    }
+    void AdvanceConnectionPreview(Point point,MouseButtonState leftButton)
+    {
+        // Connector.ToolItemGrid_PreviewMouseMove checks the left button
+        // before creating its adorner/capture on the first move.
+        if(connectionPreview is null)
+        {
+            if(leftButton!=MouseButtonState.Pressed){CancelCanvasGesture();return;}
+            // Native Connector removes its first-move handler before CaptureMouse;
+            // ignore a reentrant move caused by WPF capture changing ownership.
+            connectionCaptureStarting=true;
+            try{CanvasViewport.CaptureMouse();}
+            finally{connectionCaptureStarting=false;}
+        }
+        UpdateConnectionPreview(point);
     }
     void MoveCanvasPan(Point position)
     {

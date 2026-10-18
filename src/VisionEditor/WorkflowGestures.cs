@@ -166,7 +166,7 @@ public partial class MainWindow
  void BeginConnection(string nodeId,int port)
  {
   if(!EditableCanvas||port is <0 or >3||!doc.CurrentProcedure.Nodes.Any(n=>n.Id==nodeId))return;
-  canvasGestureRevision=doc.Revision;selectedWire=null;pendingConnection=(nodeId,port);connectionTarget=null;GraphLayer.Focus();DrawWireHandles();CanvasViewport.CaptureMouse();
+  canvasGestureRevision=doc.Revision;selectedWire=null;pendingConnection=(nodeId,port);connectionTarget=null;GraphLayer.Focus();DrawWireHandles();
  }
  void SetPortHit(Border port,bool highlighted)
  {
