@@ -1,5 +1,13 @@
 # Integration handoff
 
+## 2026-10-18 — 第二批 MF-01 / MF-02 / MF-04 / MF-05 合并验收
+
+- MF-01：菜单与工具栏撤销/重做统一遵守原始 `TitleMenueItemData` 的参数窗口开启禁用条件。实际 WPF 专项验证四入口保护，关闭窗口后对真实节点名撤销/重做；原生警告弹窗视觉未复刻。见 `MF01-SHELL-HISTORY.md`。
+- MF-02：依据 `SearchModuleCommandExecute`、`ItemsPage` 和 `ZoomArea` 定位链修正工作流列表的节点跳转；160% 缩放时实际 WPF 滚动到 (3556.8,2888.8)，视图切换不修改文档，撤销及保存重开正常。列表弹层/Group 嵌套路径的原生差分仍开放。见 `MF02-WORKFLOW-LIST-SEARCH.md`。
+- MF-04：删除或改型局部变量时，同一次文档事务清理 Group 中断操作数和动态索引的失效引用。实际 WPF 删除/改型、Group 运行、撤销重做、保存重开专项 19 项通过。原生变量订阅解绑有证据，具体 GroupBreak 清空规则属独立模型一致性实现。见 `GROUP-VARIABLE-BREAK-CLEANUP.md`。
+- MF-05：预取消的空流程或仅禁用节点流程不再误报成功；执行作用域停止也参与最终状态汇总。完整方案调用与执行专项 71 项通过；原生 `StopExecute` 的返回状态/设备回调仍未证实。见 `MF05-CANCELLATION-EDGE.md`。
+- 合并后的主窗口历史专项、画布专项 42 项、Group 清理专项 19 项、完整实际 WPF 回归 456 项通过。以上仅关闭所列边界，框架总清单的原生差异仍开放。插件分支继续由用户决定何时合流，本次没有合入。
+
 ## 2026-10-18 — 主框架 MF-01 / MF-02 / MF-04 独立闭合点
 
 - MF-01：依据原始 `App.ShowMainWindow` 启动链核对当前 STA 入口。测试脚本只启动并清理自己创建的进程；三次工作树启动窗口耗时 4.7—6.6 秒，main 的 Release 构建实测 8.953 秒出现 `VisionMaster` 窗口。旧发布进程无窗口句柄的原因仍未确认；产品入口未改。见 `MF01-STARTUP-DIAGNOSTIC.md`。
