@@ -1,5 +1,14 @@
 # Integration handoff
 
+## 2026-10-19 — 第二轮四方向独立取证
+
+- 工具加载：闭合悬停/展开/右键共享缓存、扫描失败残留和Group回调到模型/装饰器的时序，见 [LOADER-ROUND2-20261019.md](LOADER-ROUND2-20261019.md)。主宿主动态发现仍未接入。
+- 撤销：闭合首次旧值/延迟新值捕获、同模块part去重、不同对象恢复载荷、密码取消移栈以及Group写入到Register，见 [UNDO-ROUND2-20261019.md](UNDO-ROUND2-20261019.md)。未执行厂商服务，未将简单布尔抑制作为原生复刻。
+- 持久化：8个随包sol、122条MoudleFrame记录的外层候选结构，两份独立读取器的名称/偏移/长度/载荷哈希一致；检查器保留名称槽原hex。真实样本前后哈希不变；6个合成夹具验证正常记录、四类坏输入和剩余字节报告，PowerShell AST检查通过。见 [SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)。mdata内部与原机保存往返仍未知。
+- 运行Tab：补入VM.Xml/BaseNode的原始程序集身份与反射集合装配，追踪集合钩子和缓存边界，见 [VARIABLE-TAB-ROUND2-20261019.md](VARIABLE-TAB-ROUND2-20261019.md)。未取得原机真实Params.Data/Tabs差分。
+
+本轮产品代码未改，未访问或修改tool-plugins，没有新建工作树、执行厂商代码或干预其他任务进程。证据分别保留于 `analysis/full-audit/{loader,undo,sol,variable-tab}-round2-20261019/`，汇总清单在 `analysis/full-audit/parallel-round2-20261019/`。未声称完整原生等价；没有因仅文档和测试辅助改动重跑整套WPF回归。
+
 ## 2026-10-19 — 四方向只读并行复核与最小修复
 
 四个独立方向完成工具发现、VM.UnRedo CIL、真实sol容器、变量目标Tab审查，完整结论与边界见 [PARALLEL-RECONSTRUCTION-20261019.md](PARALLEL-RECONSTRUCTION-20261019.md)。修正目录策略最后匹配覆盖；11项检查通过。新增测试专用只读样本检查器，递归发现8个样本、98个UI条目完整消费、原件哈希不变。更新FCR-019/022，保留本地CIL和JSON证据。没有执行厂商服务、没有实现原生sol导入器或撤销栈，没有修改tool-plugins；本地通过不代表VM等价。

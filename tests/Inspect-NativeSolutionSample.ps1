@@ -46,6 +46,44 @@ function Read-CandidateUiFields([byte[]]$Bytes) {
     finally { $reader.Dispose(); $stream.Dispose() }
 }
 
+function Read-CandidateModuleFrame([byte[]]$Bytes) {
+    $stream = [IO.MemoryStream]::new($Bytes, $false)
+    $reader = [IO.BinaryReader]::new($stream)
+    try {
+        $header = $reader.ReadBytes(4)
+        if ($header.Length -ne 4) { throw 'Truncated module frame header.' }
+        $count = Read-U32BigEndian $reader
+        if ($count -gt 65536) { throw 'Module frame count exceeds audit limit.' }
+        $records = [Collections.Generic.List[object]]::new()
+        for ($index = 0; $index -lt $count; $index++) {
+            $offset = $stream.Position
+            if ($stream.Length - $offset -lt 260) { throw 'Truncated module frame name/length.' }
+            $name = $reader.ReadBytes(256)
+            $nameLength = 256
+            for ($n = 0; $n -lt 256; $n += 2) {
+                if ($name[$n] -eq 0 -and $name[$n + 1] -eq 0) { $nameLength = $n; break }
+            }
+            $length = Read-U32BigEndian $reader
+            if ($length -gt $stream.Length - $stream.Position) { throw 'Module frame payload exceeds remaining data.' }
+            $payloadOffset = $stream.Position
+            $payload = $reader.ReadBytes([int]$length)
+            $records.Add([pscustomobject]@{
+                Offset = $offset; Name = [Text.Encoding]::Unicode.GetString($name, 0, $nameLength)
+                NameSlotHex = [Convert]::ToHexString($name); PayloadOffset = $payloadOffset
+                PayloadLength = $length; PayloadSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($payload))
+                PayloadPrefixHex = [Convert]::ToHexString($payload, 0, [Math]::Min(32, $payload.Length))
+            })
+        }
+        return [pscustomobject]@{
+            EvidenceType = 'independent sample-framing decoder; not a native format contract'
+            UninterpretedHeaderHex = [Convert]::ToHexString($header); CandidateRecordCount = $count
+            Records = $records.ToArray(); ConsumedBytes = $stream.Position
+            TrailingBytes = $stream.Length - $stream.Position
+        }
+    }
+    finally { $reader.Dispose(); $stream.Dispose() }
+}
+
 $samples = [Collections.Generic.List[object]]::new()
 foreach ($inputPath in $SamplePath) {
     $resolved = (Resolve-Path -LiteralPath $inputPath).Path
@@ -87,6 +125,13 @@ foreach ($inputPath in $SamplePath) {
                 finally { $buffer.Dispose(); $stream.Dispose() }
                 try { $item.UiCandidate = Read-CandidateUiFields $bytes }
                 catch { $item.UiCandidate = [pscustomobject]@{ Unsupported = $true; Reason = $_.Exception.Message } }
+            }
+            if ($normalized.EndsWith('/MoudleFrame', [StringComparison]::Ordinal)) {
+                $stream = $entry.Open(); $buffer = [IO.MemoryStream]::new()
+                try { $stream.CopyTo($buffer); $bytes = $buffer.ToArray() }
+                finally { $buffer.Dispose(); $stream.Dispose() }
+                try { $item.ModuleFrameCandidate = Read-CandidateModuleFrame $bytes }
+                catch { $item.ModuleFrameCandidate = [pscustomobject]@{ Unsupported = $true; Reason = $_.Exception.Message } }
             }
             $entries.Add([pscustomobject]$item)
         }
