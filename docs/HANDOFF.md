@@ -310,3 +310,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第十二批：完整关闭A03.3实施
 
 基线f53aa7b828807e3dfd20875b24b84b03cc8bc41b。四方向三子槽+root，选未完成A03.3并固定原criterion；每容器缩放字段/持久化、画布与Fit消费、非活动页及同页snapshot恢复、owned复制删除身份已实施，Core29及实际WPF29自审核通过。首轮WPF测试缺System.IO编译失败保留日志，修复测试引用后exit0；主项目构建0错误、既有CS8603告警保留。原通知alias、原SDK格式及原机验收未知单列，不作为实施分母。总实施31/96=32.29%，本批+1，剩余65。B06资格合同与C04原生载荷仍有真实缺口，不用报告或另造独立载荷计完成。完整证据reverse/BATCH12-20261019.md、analysis/full-audit/batch12-20261019，提交SHA由HEAD-after.txt保全。tool-plugins不读不改、不自动推送。
+
+## 2026-10-19 第十三批：迁移实施与长稳在途
+
+基线b11594396061226f669f2bfe49d8378f0af27b21。四方向独立审查/实施：恢复A06真实关闭缓冲依赖，REA取得B05真实全局模块；不以假窗口/三标量替代。D新增纯托管运行界面XML迁移CLI，18项自审及真实CLI成功/拒覆盖通过，native分支仍未实施，D04.1 partial。C新增受控30分钟资源基线工具，UTC12:02:03自有PID54372已启动，固定GUID见framework-reverse-plan.json ownedRuns；最早北京时间20:32足时，summary/退出齐备前C07.1 partial不计完成。总实施31/96=32.29%，本轮暂+0；不是以人工验收挡分。所有失败/源代码/实际输出/哈希留batch13审计；tool-plugins不动，不自动推送。下一心跳先收取已有owned run，不重复启动。

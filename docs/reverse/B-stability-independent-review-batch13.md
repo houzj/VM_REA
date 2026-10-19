@@ -1,0 +1,13 @@
+# 第十三批 FrameworkStabilityProbe13 独立复审
+
+复审 `tests/FrameworkStabilityProbe13/Program.cs` 与项目文件，仅静态阅读；未修改探针、未构建、未启动。根线为唯一启动者。原单元 C07.1 为“长稳负载/时长及内存线程句柄基线”；C07.2 并发/增长验收、C07.3 完整退出等范围不能由本文工具代替。
+
+负载有真实产品调用：每轮新建 GraphEditorDocument，重命名两次并 Undo/Redo；非活动流程缩放、复制流程、创建并进入 Group、独立缩放；每32轮 Save/Load/SaveAs/再次Load。每轮有实际断言与10ms停顿，明确不执行插件、调度或原SDK。固定单个注册表只有 WorkflowCalls。不是空循环或仅分配测试数据。
+
+自身资源采样使用 Process.GetCurrentProcess/Refresh；记录 PID、启动时刻、进程路径/hash、Core/Framework程序集hash、运行时/OS/架构；记录 private/working/managed bytes、thread/handle数量和CPU秒。不会枚举或控制其他进程。自有 GUID 子目录存 marker、status、samples、summary、文件哈希；仅重复覆盖该目录中两个自有方案文件，不清其他目录。
+
+持续时间由 Stopwatch 测量；参数要求1800..86400秒。取消或负载/采样异常保留failure，结果要求达到请求时长、预热后至少10样本、无取消、无异常、cycles/saves>0及预算内，退出码才0。120秒预热、10秒目标采样，首末各5个样本中位数差；内存64MiB、线程8、句柄64明确为独立诊断包络，不是原厂阈值。一次阻塞可导致采样间隔不均；原始 elapsed 样本必须随结果保留，不能只报摘要。
+
+文件生命周期是真实 Save/Load 调用：SolutionStore.Save 在using内创建FileShare.None临时流，写入/Flush(true)/关闭后原子Move；Load使用using文件/JSON。重复覆写能暴露部分持续占用，但探针没有显式独占复开、退出后外部句柄检查，不可声称它完成了专门退出/文件锁释放矩阵。GraphEditorDocument不是原SDK会话；每轮新建文档验证分配/回收压力，不覆盖一个持久宿主事件订阅的长期泄漏。
+
+自审结论：工具实现符合 C07.1 的 main/Core 文档基线范围，根线取得真实完整时长输出并核对身份/断言/样本后，可据用户实施口径认定该基线单元交付；当前只读复审不等于实际运行通过。不能将30分钟Core结果描述为全WPF宿主/native/设备/并发长稳或完全无泄漏。工具范围和预算应在最终报告保持原文字限定，不为计分扩展声明。

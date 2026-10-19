@@ -153,7 +153,7 @@
 
 前置：A05、B06；完整包未因本表计分关闭。
 
-证据：[MF01-FRONTEND-UI-SOURCE-AUDIT.md](MF01-FRONTEND-UI-SOURCE-AUDIT.md)
+证据：[MF01-FRONTEND-UI-SOURCE-AUDIT.md](MF01-FRONTEND-UI-SOURCE-AUDIT.md)、[A06-close-dependency-batch13.md](reverse/A06-close-dependency-batch13.md)
 
 当前实现/工具位置：未取得对应产品实现证据
 
@@ -251,7 +251,7 @@
 
 前置：B01、B04；完整包未因本表计分关闭。
 
-证据：[GROUP-LOCAL-VARIABLE-BINDING.md](GROUP-LOCAL-VARIABLE-BINDING.md)、[GROUP-LOCAL-VARIABLE-TYPE.md](GROUP-LOCAL-VARIABLE-TYPE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B05-gvar-preflight-batch7.md](reverse/B05-gvar-preflight-batch7.md)、[B05-native-dispatch-batch8.md](reverse/B05-native-dispatch-batch8.md)、[B05-binary-binding-batch9.md](reverse/B05-binary-binding-batch9.md)
+证据：[GROUP-LOCAL-VARIABLE-BINDING.md](GROUP-LOCAL-VARIABLE-BINDING.md)、[GROUP-LOCAL-VARIABLE-TYPE.md](GROUP-LOCAL-VARIABLE-TYPE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B05-gvar-preflight-batch7.md](reverse/B05-gvar-preflight-batch7.md)、[B05-native-dispatch-batch8.md](reverse/B05-native-dispatch-batch8.md)、[B05-binary-binding-batch9.md](reverse/B05-binary-binding-batch9.md)、[B-global-module-review-batch13.md](reverse/B-global-module-review-batch13.md)
 
 当前实现/工具位置：`src/VisionFramework/WorkflowConfiguration.cs`、`src/VisionFramework/WorkflowSubscriptions.cs`、`src/VisionEditor/WorkflowLocalVariablesWindow.xaml.cs`
 
@@ -391,13 +391,13 @@
 
 前置：C03、C04、C05、C06；完整包未因本表计分关闭。
 
-证据：[MF05-PROCESS-LIFETIME-AUDIT.md](MF05-PROCESS-LIFETIME-AUDIT.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)
+证据：[MF05-PROCESS-LIFETIME-AUDIT.md](MF05-PROCESS-LIFETIME-AUDIT.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[C-stability-baseline-batch13.md](reverse/C-stability-baseline-batch13.md)
 
-当前实现/工具位置：`tests/Check-ProcessExit.ps1`
+当前实现/工具位置：`tests/Check-ProcessExit.ps1`、`tests/FrameworkStabilityProbe13/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| C07.1 | 长稳负载/时长及内存线程句柄基线 | 未取得交付 | 未取得交付 | 未取得交付 | 没有符合总计划定义的测量基线。 |
+| C07.1 | 长稳负载/时长及内存线程句柄基线 | 未取得交付 | 部分 | 未取得交付 | 没有符合总计划定义的测量基线。 第十三批已交付真实main/Core固定1800秒负载与自身PID资源基线工具，已启动PID54372；足时summary及退出证据未取得，暂不计完成。无全宿主/SDK/并发长稳声明。 |
 | C07.2 | 持续并发运行与资源增长验收 | 部分 | 未取得交付 | 未取得交付 | 已知队列/线程源码不等于长稳运行证据。 |
 | C07.3 | 运行异常、失败后重启和关闭恢复 | 部分 | 部分 | 部分 | 已有局部恢复检查，未完成长稳并发故障矩阵。 |
 
@@ -461,13 +461,13 @@
 
 前置：D03；完整包未因本表计分关闭。
 
-证据：[COMPATIBLETOOL-VERSION-MIGRATION.md](COMPATIBLETOOL-VERSION-MIGRATION.md)
+证据：[COMPATIBLETOOL-VERSION-MIGRATION.md](COMPATIBLETOOL-VERSION-MIGRATION.md)、[D-frontend-migration-implementation-batch13.md](reverse/D-frontend-migration-implementation-batch13.md)
 
-当前实现/工具位置：未取得对应产品实现证据
+当前实现/工具位置：`src/FrontendDesignMigration/DesignConverter.cs`、`src/FrontendDesignMigration/Program.cs`、`tests/FrontendDesignMigrationChecks13/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| D04.1 | CompatibleTool托管版本转换调度 | 达成 | 未取得交付 | 未验证 | 转换顺序/异常源码已审，原工具未执行。 |
+| D04.1 | CompatibleTool托管版本转换调度 | 达成 | 部分 | 未验证 | 转换顺序/异常源码已审，原工具未执行。 第十三批交付可执行纯托管V4.0 Root运行界面XML→V4.4.0转换，18项自审核及实际CLI成功/拒覆盖通过。模板路径与base64编码显式传入，不猜原默认；native solution/process/group转换仍未实施，整单元不计完成。 |
 | D04.2 | 版本依赖、缺失插件及转换失败恢复 | 部分 | 未取得交付 | 阻塞 | 没有完整旧版依赖/配置/格式矩阵。 |
 | D04.3 | 旧版原样本迁移、执行与再保存 | 未取得交付 | 未取得交付 | 阻塞 | 缺旧版样本和native迁移往返。 |
 
