@@ -164,6 +164,8 @@ tool-plugins负责工具算法及运行所需公共配置模型、模板、专�
 
 ## 状态、派工与证据门槛
 
+2026-10-19全面对账：现有32包按固定3个具名验收单元映射为96项，源码/实现/验证分别严格计分，三层交集为综合达成率，完整包关闭率单列。权威定义、证据、失败、分母版本与剩余任务见 [成果对账](FRAMEWORK-PROGRESS-RECONCILIATION.md) 和 [数据矩阵](framework-progress-audit.json)。统计基础设施不新增逆向完成项，不把partial折半；新增范围必须保留分母版本变更，不能凭新拆报告抬分。
+
 任务status允许planned、ready、running、evidence-ready、implementation-ready、verifying、closed、blocked。blocked必须写明实际缺失资源/证据/交付、已做工作和解除条件；可并行子项仍继续。JSON初始全部planned，表示本计划新任务尚未执行，不否定历史已实现子集。source/runtime/implementation/operation/differential分别维护，禁止用一个完成百分比折叠。
 
 每批流程：主智能固定SHA与工作树状态→选择依赖满足的任务/子项→登记唯一负责人/文件锁/原机资源→并行取证→审查证据及反编译歧义→确认合同→仅证据充分部分实施→串行构建/实际操作→中文提交和更新台账/HANDOFF/验收源。下一批按未解决问题和依赖挑选，不按“再开四份报告”滚动。

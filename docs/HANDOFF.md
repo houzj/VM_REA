@@ -280,3 +280,9 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第六批：隔离新前置与受控操作
 
 基线48a0760，固定A03/B02/C02/D02四子项并第四位独立复核。自有子进程RegOverridePredefKey映射成功、宿主观察值不变且自有键清理；原logger装载/watch/output仍未跑。B02提前源码预审静态4/4，不绕过B01/A01依赖；C02原清值叶方法合成对象4案例32断言通过；D02自有保存子进程中断4断言及只读独立复核通过。总任务0/32=0%，本批整包+0，子项3done/1blocked；解除映射前置1，完整运行隔离未解除，产品修复0，原机差分0。审计含所有脚本/API失败，目录analysis/full-audit/batch6-20261019，报告reverse/BATCH6-20261019.md。tool-plugins未访问、不采用来信、不推送；后续只按新条件推进剩余门槛。
+
+## 2026-10-19 全量成果对账与真实进度
+
+按用户指令暂停扩展逆向，仅对账冻结70b3b42的总计划/23域/历史实现/六批源码报告/后续失败。建立plan-units-v1：32包各3具名验收单元，共96；源码51/96=53.1%，实现29/96=30.2%，验证29/96=30.2%，三层同达成28/96=29.2%，68项至少一层未达成。0/32是最终整包关闭率，撤回其作为整体逆向完成率的旧表达。没有部分折半、没有将本次统计工具计新增逆向成果；历史验证非本次重跑，FCR-024资产Undo与Shell默认输入失败继续保留。
+
+权威数据docs/framework-progress-audit.json，逐包逐项证据/边界docs/FRAMEWORK-PROGRESS-RECONCILIATION.md，可复算tests/ProgressAudit/Reconcile.py，来源哈希与剩余CSV在analysis/full-audit/progress-reconciliation-20261019。没有运行新产品/原机验证、没有改产品、没有访问tool-plugins或自动采用来信、没有推送。总计划/PARALLEL/进度规则/任务JSON同步新口径，父包依赖及未关闭状态不变。
