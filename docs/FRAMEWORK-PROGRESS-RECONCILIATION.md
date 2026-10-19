@@ -109,7 +109,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[A03-tabs-batch2.md](reverse/A03-tabs-batch2.md)、[A03-canvas-replacement-fix.md](reverse/A03-canvas-replacement-fix.md)、[A03-binding-batch4.md](reverse/A03-binding-batch4.md)、[A03-process-isolation-batch6.md](reverse/A03-process-isolation-batch6.md)、[A03-owned-logger-batch7.md](reverse/A03-owned-logger-batch7.md)
+证据：[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[A03-tabs-batch2.md](reverse/A03-tabs-batch2.md)、[A03-canvas-replacement-fix.md](reverse/A03-canvas-replacement-fix.md)、[A03-binding-batch4.md](reverse/A03-binding-batch4.md)、[A03-process-isolation-batch6.md](reverse/A03-process-isolation-batch6.md)、[A03-owned-logger-batch7.md](reverse/A03-owned-logger-batch7.md)、[A03-config-error-batch8.md](reverse/A03-config-error-batch8.md)
 
 当前实现/工具位置：`src/VisionEditor/WorkflowTabs.cs`、`src/VisionEditor/GroupCanvasNavigation.cs`、`src/VisionEditor/WorkflowCanvas.cs`
 
@@ -117,7 +117,7 @@
 |---|---|---|---|---|---|
 | A03.1 | 流程增删复制切换和Tab归属 | 达成 | 达成 | 达成 | 当前独立文档行为已实现并操作验证。 |
 | A03.2 | 嵌套Group进入/返回和显示模型归属 | 达成 | 达成 | 达成 | 当前Group导航已验；不计所有原厂视觉状态。 |
-| A03.3 | 每显示容器缩放持久化及非活动Tab历史 | 达成 | 部分 | 阻塞 | 原CIL/资源已追；main仍为会话视口，原绑定反馈受隔离条件限制。 第七批：原日志配置读取阶段失败；最终子进程退出码未知，finally日志缺失。受控核验发现自有键残留，根线仅清理该精确GUID键并确认不存在。装饰器/SDK运行仍未获证。 |
+| A03.3 | 每显示容器缩放持久化及非活动Tab历史 | 达成 | 部分 | 阻塞 | 原CIL/资源已追；main仍为会话视口，原绑定反馈受隔离条件限制。 第七批：原日志配置读取阶段失败；最终子进程退出码未知，finally日志缺失。受控核验发现自有键残留，根线仅清理该精确GUID键并确认不存在。装饰器/SDK运行仍未获证。 第八批：静态定位配置错误产生/吞没链；旧运行未保留内层异常，原因不可判定，不再运行。 |
 
 ### A04 节点手势、路由和视口
 
@@ -249,7 +249,7 @@
 
 前置：B01、B04；完整包未因本表计分关闭。
 
-证据：[GROUP-LOCAL-VARIABLE-BINDING.md](GROUP-LOCAL-VARIABLE-BINDING.md)、[GROUP-LOCAL-VARIABLE-TYPE.md](GROUP-LOCAL-VARIABLE-TYPE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B05-gvar-preflight-batch7.md](reverse/B05-gvar-preflight-batch7.md)
+证据：[GROUP-LOCAL-VARIABLE-BINDING.md](GROUP-LOCAL-VARIABLE-BINDING.md)、[GROUP-LOCAL-VARIABLE-TYPE.md](GROUP-LOCAL-VARIABLE-TYPE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B05-gvar-preflight-batch7.md](reverse/B05-gvar-preflight-batch7.md)、[B05-native-dispatch-batch8.md](reverse/B05-native-dispatch-batch8.md)
 
 当前实现/工具位置：`src/VisionFramework/WorkflowConfiguration.cs`、`src/VisionFramework/WorkflowSubscriptions.cs`、`src/VisionEditor/WorkflowLocalVariablesWindow.xaml.cs`
 
@@ -257,7 +257,7 @@
 |---|---|---|---|---|---|
 | B05.1 | 流程IO和局部变量的作用域、订阅与改型 | 达成 | 达成 | 达成 | 当前已实现类型/操作，完整gvar/全局服务另列。 |
 | B05.2 | 原全局变量模块的创建、服务与执行消费 | 部分 | 未取得交付 | 阻塞 | 有原全局绑定链，但完整模块/会话未交付main。 |
-| B05.3 | 原gvar导入导出和往返 | 部分 | 未取得交付 | 阻塞 | 存在托管入口线索，无原格式往返和产品实现证据。 第七批：路径UTF8+NUL经GlobalValueImport/Export进入IMVS_SetBinaryData；原生格式消费者、覆盖/密码/事务仍未知，未运行SDK。 |
+| B05.3 | 原gvar导入导出和往返 | 部分 | 未取得交付 | 阻塞 | 存在托管入口线索，无原格式往返和产品实现证据。 第七批：路径UTF8+NUL经GlobalValueImport/Export进入IMVS_SetBinaryData；原生格式消费者、覆盖/密码/事务仍未知，未运行SDK。 第八批：原生SetBinaryData入口经66f090到对象+23a8函数指针/0bd2消息；实际绑定、gvar格式仍未知。 |
 
 ### B06 Group配置、ROI和结果消费边界
 
@@ -319,7 +319,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[MF05-CONTINUOUS-RUN-CALLCHAIN.md](MF05-CONTINUOUS-RUN-CALLCHAIN.md)、[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C02-clear-leaf-batch6.md](reverse/C02-clear-leaf-batch6.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[C02-value-consumer-batch7.md](reverse/C02-value-consumer-batch7.md)
+证据：[MF05-CONTINUOUS-RUN-CALLCHAIN.md](MF05-CONTINUOUS-RUN-CALLCHAIN.md)、[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C02-clear-leaf-batch6.md](reverse/C02-clear-leaf-batch6.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[C02-value-consumer-batch7.md](reverse/C02-value-consumer-batch7.md)、[C02-begin-isolation-batch8.md](reverse/C02-begin-isolation-batch8.md)
 
 当前实现/工具位置：`src/VisionEditor/WorkflowExecution.cs`、`src/VisionFramework/GraphExecutor.cs`
 
@@ -327,7 +327,7 @@
 |---|---|---|---|---|---|
 | C02.1 | 当前单次/连续/停止及失败状态执行 | 达成 | 达成 | 达成 | 独立执行器实际验证，非native调度器复刻。 |
 | C02.2 | 原参数准备、等待与超时边界消费 | 达成 | 部分 | 部分 | 原叶等待可运行，但当前取消/超时策略与SDK不同。 |
-| C02.3 | 清结果配置、回调队列及消费者状态 | 达成 | 部分 | 部分 | 原清值叶32项通过；真实Begin到消费者仍未闭合。 第七批：原Value getter受控5例35断言通过：清_value后可从merge列表或已注册RelateIO恢复；合成图不替代真实Begin/SDK/桌面。 |
+| C02.3 | 清结果配置、回调队列及消费者状态 | 达成 | 部分 | 部分 | 原清值叶32项通过；真实Begin到消费者仍未闭合。 第七批：原Value getter受控5例35断言通过：清_value后可从merge列表或已注册RelateIO恢复；合成图不替代真实Begin/SDK/桌面。 第八批：真实Begin前置静态初始化/实例/后台线程/SDK副作用已审查，运行硬前提尚未满足，未重复合成getter。 |
 
 ### C03 结果历史与方案替换生命周期
 
@@ -417,7 +417,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)、[D01-save-callback-batch5.md](reverse/D01-save-callback-batch5.md)、[D01-native-save-batch7.md](reverse/D01-native-save-batch7.md)、[D01-native-save-review-batch7.md](reverse/D01-native-save-review-batch7.md)
+证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)、[D01-save-callback-batch5.md](reverse/D01-save-callback-batch5.md)、[D01-native-save-batch7.md](reverse/D01-native-save-batch7.md)、[D01-native-save-review-batch7.md](reverse/D01-native-save-review-batch7.md)、[D01-save-callees-batch8.md](reverse/D01-save-callees-batch8.md)
 
 当前实现/工具位置：`tests/Inspect-NativeSolutionSample.ps1`
 
@@ -425,7 +425,7 @@
 |---|---|---|---|---|---|
 | D01.1 | 保存加载托管入口、回调及完成标志 | 达成 | 未取得交付 | 未验证 | 原CIL链已取，未运行原SDK保存回调。 |
 | D01.2 | 8个原样本外层记录边界的只读解析 | 达成 | 达成 | 达成 | 只读辅助解析，非产品原生导入器；不解释未知首字段。 |
-| D01.3 | native writer/reader与单操作字段归因 | 部分 | 未取得交付 | 阻塞 | 缺已配置native provider及受控保存差分。 第七批：两个保存导出原PE指令已取得并独立复核，SDK1段78行、ModuleFrame4段158行；跨模块callee、writer/reader字段及事务仍未闭合。 |
+| D01.3 | native writer/reader与单操作字段归因 | 部分 | 未取得交付 | 阻塞 | 缺已配置native provider及受控保存差分。 第七批：两个保存导出原PE指令已取得并独立复核，SDK1段78行、ModuleFrame4段158行；跨模块callee、writer/reader字段及事务仍未闭合。 第八批：保存callee与下一层消费者原指令已取；SDK+2398绑定未知，ModuleFrame事件/回调封装不能视作落盘完成。 |
 
 ### D02 独立存储与资源事务补齐
 
