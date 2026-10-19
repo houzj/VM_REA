@@ -2,7 +2,7 @@
 
 2026-10-19；冻结基线 `70b3b4297a798cc0f0f7c149aeaf49be1031be72`。仅 main；tool-plugins 未访问、未计入。
 
-**当前实施总进度：30/96 = 31.25%。**
+**当前实施总进度：31/96 = 32.29%。**
 
 用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
@@ -11,7 +11,7 @@
 | 层次 | 严格达成 | 进度 | 尚未达成 |
 |---|---:|---:|---:|
 | 源码 | 51/96 | **53.1%** | 45 |
-| 实现 | 30/96 | **31.2%** | 66 |
+| 实现 | 31/96 | **32.3%** | 65 |
 | 验证 | 29/96 | **30.2%** | 67 |
 
 ## 分母与计数规则
@@ -34,7 +34,7 @@
 |---|---|---:|---:|---:|---:|
 | A01 | 工具加载与Group导入时序 | 3 | 1 | 1 | 1 |
 | A02 | 主窗口状态与DPI | 2 | 2 | 2 | 2 |
-| A03 | 流程Tab与Group导航 | 3 | 2 | 2 | 2 |
+| A03 | 流程Tab与Group导航 | 3 | 3 | 2 | 2 |
 | A04 | 节点手势、路由和视口 | 3 | 3 | 3 | 3 |
 | A05 | 菜单、工具栏及全局入口清点 | 1 | 1 | 1 | 1 |
 | A06 | 运行界面编辑与显示布局 | 1 | 0 | 0 | 0 |
@@ -111,15 +111,15 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[A03-tabs-batch2.md](reverse/A03-tabs-batch2.md)、[A03-canvas-replacement-fix.md](reverse/A03-canvas-replacement-fix.md)、[A03-binding-batch4.md](reverse/A03-binding-batch4.md)、[A03-process-isolation-batch6.md](reverse/A03-process-isolation-batch6.md)、[A03-owned-logger-batch7.md](reverse/A03-owned-logger-batch7.md)、[A03-config-error-batch8.md](reverse/A03-config-error-batch8.md)、[A-canvas-implementation-batch10.md](reverse/A-canvas-implementation-batch10.md)
+证据：[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[A03-tabs-batch2.md](reverse/A03-tabs-batch2.md)、[A03-canvas-replacement-fix.md](reverse/A03-canvas-replacement-fix.md)、[A03-binding-batch4.md](reverse/A03-binding-batch4.md)、[A03-process-isolation-batch6.md](reverse/A03-process-isolation-batch6.md)、[A03-owned-logger-batch7.md](reverse/A03-owned-logger-batch7.md)、[A03-config-error-batch8.md](reverse/A03-config-error-batch8.md)、[A-canvas-implementation-batch10.md](reverse/A-canvas-implementation-batch10.md)、[A-container-zoom-implementation-batch12.md](reverse/A-container-zoom-implementation-batch12.md)、[A03-closure-source-review-batch12.md](reverse/A03-closure-source-review-batch12.md)、[C-review-container-zoom-batch12.md](reverse/C-review-container-zoom-batch12.md)、[BATCH12-20261019.md](reverse/BATCH12-20261019.md)
 
-当前实现/工具位置：`src/VisionEditor/WorkflowTabs.cs`、`src/VisionEditor/GroupCanvasNavigation.cs`、`src/VisionEditor/WorkflowCanvas.cs`
+当前实现/工具位置：`src/VisionEditor/WorkflowTabs.cs`、`src/VisionEditor/GroupCanvasNavigation.cs`、`src/VisionEditor/WorkflowCanvas.cs`、`src/VisionEditor.Core/GraphEditorDocument.Viewport.cs`、`src/VisionFramework/Contracts.cs`、`src/VisionFramework/SolutionStore.cs`、`tests/ContainerZoomChecks/Program.cs`、`tests/ViewportDocumentChecks12/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | A03.1 | 流程增删复制切换和Tab归属 | 达成 | 达成 | 达成 | 当前独立文档行为已实现并操作验证。 |
 | A03.2 | 嵌套Group进入/返回和显示模型归属 | 达成 | 达成 | 达成 | 当前Group导航已验；不计所有原厂视觉状态。 |
-| A03.3 | 每显示容器缩放持久化及非活动Tab历史 | 达成 | 部分 | 阻塞 | 原CIL/资源已追；main仍为会话视口，原绑定反馈受隔离条件限制。 第七批：原日志配置读取阶段失败；最终子进程退出码未知，finally日志缺失。受控核验发现自有键残留，根线仅清理该精确GUID键并确认不存在。装饰器/SDK运行仍未获证。 第八批：静态定位配置错误产生/吞没链；旧运行未保留内层异常，原因不可判定，不再运行。 第十批：本批修复每Tab显示Group记忆、删除/换方案回退及overview节点显式所属root导航，12项通过；原已done单元不重复计分，缩放持久化仍未实施。 |
+| A03.3 | 每显示容器缩放持久化及非活动Tab历史 | 达成 | 达成 | 阻塞 | 第十二批按原UserData/ticks链实施每容器CanvasZoomIndex、存读、真实画布/Fit消费、复制删除及非活动Tab snapshot恢复；Core29项与实际WPF29项自审核通过。main JSON/整文档snapshot/主动重读为明确独立适配，不是原SDK字节格式。原厂ProceZoomIndex与PartentZoomIndex通知反馈、native存储及原机差分保留未知，仅验证层blocked，不阻实施计分。此前原日志配置隔离失败保留。 |
 
 ### A04 节点手势、路由和视口
 

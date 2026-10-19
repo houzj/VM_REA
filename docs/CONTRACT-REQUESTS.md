@@ -217,3 +217,11 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 ### FCR-019 第四批装配证据补记（不改变共享接口）
 
 [B01-lazy-root-batch4](reverse/B01-lazy-root-batch4.md)补齐ModuleParam.Data缓存发布点、Owner/共享Params、InitLoad与XmlLoaded/Setter通知链。真实Owner为ISubjectModel时，InitLoad在AlgorithmTabRoot的loadXml try之外，proxy会加载/激活工具程序集；loadXml会改XML文件属性。16项原方法检查仅使用正常ModuleParam、Parent=null与任务自有XML，不是实际VM候选装配/绑定。实际定义Hik.Xml.BaseNode的程序集已通过REA身份确认是VM.Xml.dll，不能按反编译目录假定归属。仍不据此新增main插件配置模型；真实SDK订阅写入、全局变量确认/取消和生命周期仍待原源码/运行补证。既有FCR-024失败及交接边界不变。
+
+## FCR-025：main容器缩放持久化字段（本地实施，未跨项目合流）
+
+- Producer：main画布缩放/适应入口；consumer：GraphEditorDocument、SolutionStore及画布恢复。唯一提交所有者main根线，仅在本工作区修改Contracts中的ProcedureDocument；不涉及插件配置模型，不操作tool-plugins。
+- Payload：可选JSON属性CanvasZoomIndex，托管int默认9；本地UI与加载校验限定0..19，映射(index+1)/10。原setter不校验任意int，本地范围检查是独立格式边界。
+- Lifecycle：缩放写当前容器→Dirty/Changed，不新建结构历史root、不清redo、不增结构Revision；现有整文档snapshot保存并回放，包括非活动容器；Save/Load保留。overview/pan保持会话态。
+- Compatibility：既有独立JSON缺属性默认9；原native UserData/SDK载荷不是此JSON字段。旧版main加载器采用UnmappedMemberHandling.Disallow，不能承诺旧可执行程序打开新增字段文件；本次新版本可读取既有无字段文件，未改独立格式版本号。插件合流由用户决定，本条不是插件线派工。
+- Evidence/acceptance：VmModuleSetDecorator.ProceZoomIndex/UserData、ZoomArea._ZoomTicks及原UnRedo part链，详见reverse/A03-closure-source-review-batch12.md；本批真实Core/WPF自审核覆盖根/Group、保存重开、复制及非活动Undo/Redo。原绑定alias反馈与原生格式验收继续未知。

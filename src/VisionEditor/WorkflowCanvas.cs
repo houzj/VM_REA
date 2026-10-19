@@ -90,9 +90,12 @@ public partial class MainWindow
             pendingConnection=null;connectionTarget=null;boxSelecting=false;boxSelectionActive=false;panning=false;CancelNodeMove();
             if(canvasProcedure is not null)canvasViews[canvasProcedure]=(scale,panX,panY);
             canvasProcedure=doc.CurrentProcedureId;
-            var saved=canvasViews.GetValueOrDefault(canvasProcedure,(1d,0d,0d));scale=saved.Item1;panX=saved.Item2;panY=saved.Item3;
+            var saved=canvasViews.GetValueOrDefault(canvasProcedure,(1d,0d,0d));panX=saved.Item2;panY=saved.Item3;
             selectedNodes.Clear();selectedWire=null;pendingConnection=null;
         }
+        // The displayed container owns its discrete zoom value. Re-read even on
+        // the same page so history restored while another tab was active is shown.
+        scale=(doc.CurrentProcedure.CanvasZoomIndex+1)/10d;
         if(HasEditingGesture){ApplyCanvasTransform();return;}
         var procedure=doc.CurrentProcedure;
         selectedNodes.RemoveWhere(id=>procedure.Nodes.All(n=>n.Id!=id));
@@ -419,7 +422,15 @@ public partial class MainWindow
     }
     void SetCanvasZoom(double value,Point anchor)
     {
-        Point world=World(anchor);scale=Math.Clamp(Math.Round(value,1),.1,2);panX=anchor.X-world.X*scale;panY=anchor.Y-world.Y*scale;ApplyCanvasTransform();
+        Point world=World(anchor);scale=Math.Clamp(Math.Round(value,1),.1,2);panX=anchor.X-world.X*scale;panY=anchor.Y-world.Y*scale;PersistContainerZoom();ApplyCanvasTransform();
+    }
+    void PersistContainerZoom()
+    {
+        // The solution overview and scroll offsets remain session view state.
+        // The independent solution format stores the original 20-tick index,
+        // rather than claiming to serialize native ProceZoomIndex UserData.
+        if(!workflowOverview&&doc.HasCurrentProcedure)
+            doc.SetContainerZoomIndex(doc.CurrentProcedureId,(int)Math.Round(scale*10)-1);
     }
     void ApplyCanvasTransform()
     {
@@ -440,10 +451,10 @@ public partial class MainWindow
     }
     void Fit()
     {
-        var nodes=doc.CurrentProcedure.Nodes;if(nodes.Count==0){scale=1;panX=panY=0;ApplyCanvasTransform();return;}
+        var nodes=doc.CurrentProcedure.Nodes;if(nodes.Count==0){scale=1;panX=panY=0;PersistContainerZoom();ApplyCanvasTransform();return;}
         double left=nodes.Min(n=>n.X)-20,top=nodes.Min(n=>n.Y)-20,right=nodes.Max(n=>n.X+NodeWidth)+20,bottom=nodes.Max(n=>n.Y+NodeHeight)+20;
         scale=Math.Clamp(Math.Floor(Math.Min(CanvasViewport.ActualWidth/(right-left),CanvasViewport.ActualHeight/(bottom-top))*10)/10,.1,2);
-        panX=(CanvasViewport.ActualWidth-(right-left)*scale)/2-left*scale;panY=(CanvasViewport.ActualHeight-(bottom-top)*scale)/2-top*scale;ApplyCanvasTransform();
+        panX=(CanvasViewport.ActualWidth-(right-left)*scale)/2-left*scale;panY=(CanvasViewport.ActualHeight-(bottom-top)*scale)/2-top*scale;PersistContainerZoom();ApplyCanvasTransform();
     }
 
     void UpdateMiniMap()

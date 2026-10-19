@@ -306,3 +306,7 @@ At the user's request, the original checkout now develops framework and integrat
 按用户指令暂停扩展逆向，仅对账冻结70b3b42的总计划/23域/历史实现/六批源码报告/后续失败。建立plan-units-v1：32包各3具名验收单元，共96；源码51/96=53.1%，实现29/96=30.2%，验证29/96=30.2%，三层同达成28/96=29.2%，68项至少一层未达成。0/32是最终整包关闭率，撤回其作为整体逆向完成率的旧表达。没有部分折半、没有将本次统计工具计新增逆向成果；历史验证非本次重跑，FCR-024资产Undo与Shell默认输入失败继续保留。
 
 权威数据docs/framework-progress-audit.json，逐包逐项证据/边界docs/FRAMEWORK-PROGRESS-RECONCILIATION.md，可复算tests/ProgressAudit/Reconcile.py，来源哈希与剩余CSV在analysis/full-audit/progress-reconciliation-20261019。没有运行新产品/原机验证、没有改产品、没有访问tool-plugins或自动采用来信、没有推送。总计划/PARALLEL/进度规则/任务JSON同步新口径，父包依赖及未关闭状态不变。
+
+## 2026-10-19 第十二批：完整关闭A03.3实施
+
+基线f53aa7b828807e3dfd20875b24b84b03cc8bc41b。四方向三子槽+root，选未完成A03.3并固定原criterion；每容器缩放字段/持久化、画布与Fit消费、非活动页及同页snapshot恢复、owned复制删除身份已实施，Core29及实际WPF29自审核通过。首轮WPF测试缺System.IO编译失败保留日志，修复测试引用后exit0；主项目构建0错误、既有CS8603告警保留。原通知alias、原SDK格式及原机验收未知单列，不作为实施分母。总实施31/96=32.29%，本批+1，剩余65。B06资格合同与C04原生载荷仍有真实缺口，不用报告或另造独立载荷计完成。完整证据reverse/BATCH12-20261019.md、analysis/full-audit/batch12-20261019，提交SHA由HEAD-after.txt保全。tool-plugins不读不改、不自动推送。
