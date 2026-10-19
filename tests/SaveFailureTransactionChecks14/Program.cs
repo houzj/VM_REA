@@ -11,7 +11,8 @@ int checks=0;var labels=new List<string>();var failures=new List<object>();
 void Check(bool ok,string label){if(!ok)throw new Exception(label);checks++;labels.Add(label);Console.WriteLine("PASS "+label);}
 string Json(object value)=>JsonSerializer.Serialize(value);
 string Digest(string path)=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
-string History(GraphEditorDocument doc,string name){var stack=(IEnumerable)typeof(GraphEditorDocument).GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(doc)!;return string.Join("\n",stack.Cast<object>().Select(s=>JsonSerializer.Serialize(s,s.GetType())));}
+// The actual representation now contains roots/parts and both payloads, rather than two snapshot stacks.
+string History(GraphEditorDocument doc,string name){var engine=typeof(GraphEditorDocument).GetField("history",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(doc)!;var stack=(IEnumerable)engine.GetType().GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(engine)!;return string.Join("\n",stack.Cast<object>().Select(s=>JsonSerializer.Serialize(s,s.GetType())));}
 string State(GraphEditorDocument doc)=>Json(new{Document=Json(doc.Document),doc.CurrentProcedureId,doc.FilePath,doc.BaseDirectory,doc.IsDirty,doc.Revision,doc.CanUndo,doc.CanRedo,Undo=History(doc,"undo"),Redo=History(doc,"redo")});
 void Record(string phase,Exception error)=>failures.Add(new{phase,type=error.GetType().FullName,hresult=$"0x{error.HResult:X8}",error.Message,error.StackTrace});
 try

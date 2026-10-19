@@ -225,3 +225,15 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - Lifecycle：缩放写当前容器→Dirty/Changed，不新建结构历史root、不清redo、不增结构Revision；现有整文档snapshot保存并回放，包括非活动容器；Save/Load保留。overview/pan保持会话态。
 - Compatibility：既有独立JSON缺属性默认9；原native UserData/SDK载荷不是此JSON字段。旧版main加载器采用UnmappedMemberHandling.Disallow，不能承诺旧可执行程序打开新增字段文件；本次新版本可读取既有无字段文件，未改独立格式版本号。插件合流由用户决定，本条不是插件线派工。
 - Evidence/acceptance：VmModuleSetDecorator.ProceZoomIndex/UserData、ZoomArea._ZoomTicks及原UnRedo part链，详见reverse/A03-closure-source-review-batch12.md；本批真实Core/WPF自审核覆盖根/Group、保存重开、复制及非活动Undo/Redo。原绑定alias反馈与原生格式验收继续未知。
+
+## FCR-026：main托管发现加载接缝（部分实施，入口协调锁保留）
+
+- Producer：main通用发现/加载器与用户明确选定的既有IVisionToolPlugin实现；consumer：既有ToolPluginRegistry.Register及ModuleRegistry。唯一实现所有者main A线，本批不修改公开插件Contracts或注册/配置锁文件。
+- Payload：ManagedToolPluginReference的绝对AssemblyPath、TypeFullName、SHA256、ModuleId、Version；LoadedToolPlugin返回当前真实IVisionToolPlugin及程序集身份。它是方法参数，不新增参数配置模型/外部manifest或人工审批流程。
+- Lifecycle：选定引用→静态PE/type/合同引用/hash核对→Default ALC同名/实际MVID/hash复核→无参构造与Manifest/Descriptor身份→私有registry校验；由未来单一注册者明确写真实registry。无自动目录扫描、依赖resolver hook或失败自动重试。类型兼容不等于执行隔离；本批只运行自有fixture，原SDK/DLL未执行。
+- Compatibility：复用现IVisionToolPlugin/IToolNodeDescriptorProvider，不改现公开合同。main启动/目录到注册入口仍按PLUGIN-FRAMEWORK-BOUNDARY协调锁保留，用户选择合流后逐接口审，不能把此helper计A07.1完整关闭。
+- Evidence/acceptance：原ToolBoxItemData.AddNewItem程序集/类型构造链见reverse/A07-managed-loader-partial-batch16.md；自有fixture验证真实registry、节点执行、方案往返和错误边界；完整宿主发现入口尚未接入。
+
+### FCR-022 第十六批main普通root/part实施
+
+main GraphEditorDocument已改为真实DocumentHistoryEngine的root/part旧新载荷、首次Undo补new、predicate/forbid/replay/lazy准入和排序，不再走交换Snapshot栈。既有ExecuteConfigurationEdit布尔范围API不变；默认保留15根，异常保留LastHistoryError而不造事务回滚。main payload仍是自身不可变文档与BaseDirectory，CanvasZoomIndex在回放间的合并为明确独立视图适配。公开SDK Group/模块采集、TempFiles二进制载荷和RecoverStack另项仍缺，不能由普通root/part自审核推成native payload已实现。插件项目未被改动或调度。

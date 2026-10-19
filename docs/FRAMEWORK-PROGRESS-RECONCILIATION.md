@@ -2,7 +2,7 @@
 
 2026-10-19；冻结基线 `70b3b4297a798cc0f0f7c149aeaf49be1031be72`。仅 main；tool-plugins 未访问、未计入。
 
-**当前实施总进度：32/96 = 33.33%。**
+**当前实施总进度：33/96 = 34.38%。**
 
 用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
@@ -11,7 +11,7 @@
 | 层次 | 严格达成 | 进度 | 尚未达成 |
 |---|---:|---:|---:|
 | 源码 | 51/96 | **53.1%** | 45 |
-| 实现 | 32/96 | **33.3%** | 64 |
+| 实现 | 33/96 | **34.4%** | 63 |
 | 验证 | 29/96 | **30.2%** | 67 |
 
 ## 分母与计数规则
@@ -48,7 +48,7 @@
 | B06 | Group配置、ROI和结果消费边界 | 3 | 1 | 1 | 1 |
 | B07 | 插件交接合同与真实消费 | 2 | 1 | 1 | 1 |
 | B08 | 模型与Group组合验收 | 1 | 1 | 1 | 1 |
-| C01 | 撤销root/part实际捕获 | 3 | 1 | 0 | 0 |
+| C01 | 撤销root/part实际捕获 | 3 | 2 | 0 | 0 |
 | C02 | 单次/连续/停止调度与参数准备 | 3 | 1 | 1 | 1 |
 | C03 | 结果历史与方案替换生命周期 | 2 | 0 | 0 | 0 |
 | C04 | 撤销恢复与临时文件所有权 | 2 | 0 | 0 | 0 |
@@ -167,13 +167,13 @@
 
 前置：A01、B07；完整包未因本表计分关闭。
 
-证据：[TOOL-DISCOVERY-METADATA.md](TOOL-DISCOVERY-METADATA.md)、[ROI-REAL-TOOL.md](ROI-REAL-TOOL.md)
+证据：[TOOL-DISCOVERY-METADATA.md](TOOL-DISCOVERY-METADATA.md)、[ROI-REAL-TOOL.md](ROI-REAL-TOOL.md)、[A07-managed-loader-partial-batch16.md](reverse/A07-managed-loader-partial-batch16.md)
 
-当前实现/工具位置：`src/VisionEditor/ToolDirectoryCatalog.cs`、`src/VisionEditor/MainWindow.xaml.cs`
+当前实现/工具位置：`src/VisionEditor/ToolDirectoryCatalog.cs`、`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ManagedToolPluginLoader.cs`、`tests/ManagedToolPluginChecks16/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| A07.1 | 发现目录到真实ModuleRegistry的动态映射 | 达成 | 部分 | 部分 | ToolDirectoryCatalog仅元数据，尚未接主工具箱动态注册。 |
+| A07.1 | 发现目录到真实ModuleRegistry的动态映射 | 达成 | 部分 | 部分 | ToolDirectoryCatalog仅元数据，尚未接主工具箱动态注册。 第十六批明确托管程序集/type/hash引用的当前合同预检与加载API已实现，17项自有fixture真实registry/节点/存读/编辑器工厂检查通过；启动和目录发现注册入口协调锁仍保留，未接入主窗口，整单元仍partial。 |
 | A07.2 | 缺插件、版本冲突及刷新失败处理 | 部分 | 部分 | 部分 | 已有拒绝与缺目录子集，未有完整宿主刷新矩阵。 |
 | A07.3 | 既有真实插件注册到根流程/Group消费 | 达成 | 达成 | 达成 | 仅main历史集成的图像源/二值等工具，不含tool-plugins在制。 |
 
@@ -195,7 +195,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[VARIABLE-TAB-ROUND2-20261019.md](VARIABLE-TAB-ROUND2-20261019.md)、[B01-first-fill-batch3.md](reverse/B01-first-fill-batch3.md)、[B01-lazy-root-batch4.md](reverse/B01-lazy-root-batch4.md)、[B01-binding-batch5.md](reverse/B01-binding-batch5.md)
+证据：[VARIABLE-TAB-ROUND2-20261019.md](VARIABLE-TAB-ROUND2-20261019.md)、[B01-first-fill-batch3.md](reverse/B01-first-fill-batch3.md)、[B01-lazy-root-batch4.md](reverse/B01-lazy-root-batch4.md)、[B01-binding-batch5.md](reverse/B01-binding-batch5.md)、[B-selection-complete-gate-batch16.md](reverse/B-selection-complete-gate-batch16.md)
 
 当前实现/工具位置：`src/VisionEditor/WorkflowVariableTargetsWindow.xaml.cs`、`src/VisionEditor/WorkflowSourcePicker.cs`
 
@@ -307,13 +307,13 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[UNDO-ROUND2-20261019.md](UNDO-ROUND2-20261019.md)、[C01-undo-batch1.md](reverse/C01-undo-batch1.md)、[C01-registration-batch5.md](reverse/C01-registration-batch5.md)、[C-history-suppression-batch10.md](reverse/C-history-suppression-batch10.md)
+证据：[UNDO-ROUND2-20261019.md](UNDO-ROUND2-20261019.md)、[C01-undo-batch1.md](reverse/C01-undo-batch1.md)、[C01-registration-batch5.md](reverse/C01-registration-batch5.md)、[C-history-suppression-batch10.md](reverse/C-history-suppression-batch10.md)、[C-root-part-engine-batch16.md](reverse/C-root-part-engine-batch16.md)、[B-history-engine-independent-review-batch16.md](reverse/B-history-engine-independent-review-batch16.md)、[BATCH16-20261019.md](reverse/BATCH16-20261019.md)
 
-当前实现/工具位置：`src/VisionEditor.Core/GraphEditorDocument.cs`、`src/VisionEditor.Core/GraphEditorDocument.History.cs`、`src/VisionEditor/SubprogramCallHost.cs`
+当前实现/工具位置：`src/VisionEditor.Core/GraphEditorDocument.cs`、`src/VisionEditor.Core/GraphEditorDocument.History.cs`、`src/VisionEditor/SubprogramCallHost.cs`、`src/VisionEditor.Core/DocumentHistoryEngine.cs`、`tests/DocumentHistoryEngineChecks16/Program.cs`、`tests/DocumentHistoryHostChecks16/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| C01.1 | root/part、旧新值与普通动作撤销 | 达成 | 部分 | 部分 | 原合成服务13项已验；main为独立文档快照。 |
+| C01.1 | root/part、旧新值与普通动作撤销 | 达成 | 达成 | 部分 | 第十六批真实DocumentHistoryEngine实现root/part旧新载荷、首次Undo完成new、predicate/forbid/replay/lazy准入、普通/CopyModule排序、容量与异常迁栈；GraphEditorDocument普通/配置编辑真实消费，不再使用旧Snapshot双栈。46引擎+12真实文档适配检查及配置/保存/Group/视口回归通过。main载荷为自身文档；CanvasZoomIndex在回放间仅合并视图字段为独立适配，LastHistoryError为本地诊断。C01.3原SDK载荷及C04文件/密码恢复仍另项未实施，不声称native完全等价。 |
 | C01.2 | Group配置期禁止记录及异常复位合同 | 达成 | 达成 | 部分 | main文档配置历史seam与真实Group modal/modeless写回已接入，布尔嵌套/异常finally独立适配，29项通过；不是原SDK载荷回放。 原厂/人工差分后置，不参与实施计分。 |
 | C01.3 | 真实Group参数采集与SDK Undo/Redo | 达成 | 未取得交付 | 阻塞 | 静态注册链闭合，实际原Group/专属TempFiles未观测。 |
 

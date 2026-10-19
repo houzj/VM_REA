@@ -322,3 +322,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第十五批：A01.2实施完成
 
 基线f7709efea904063991ca87a8c71b68a3d4ae2614，四方向三子槽+root。A01.2实际palette首次/hover/Expanded/画布菜单同状态、失败sticky前缀、成功排序和显式Refresh新身份完整实施，17项实际MainWindow控件自审通过，计完成+1；JSON载体/原锚点差异明示，不关闭A01.3/A07。另落实500条有界流程摘要/稳定序号/真实selected模块耗时/算法不可用，以及原方案显式声明图和ProceZoomIndex只读解释；C03.3/D03.1原native未知仍partial。105项限定自审通过，Core首轮漏目录参数拒绝保留、正确参数后通过；既有CS8603保留。总实施32/96=33.33%，剩余64。证据reverse/BATCH15-20261019.md与batch15审计；长稳失败未重跑，tool-plugins未访问、不采用来信、不自动推送。
+
+## 2026-10-19 第十六批：C01.1实施完成
+
+基线258490780a0a31fe3b1a0a7df99c16e16d319358。真实DocumentHistoryEngine root/part旧新值、首次Undo补new、predicate/forbid/replay/lazy准入、原priority/CopyModule排序与异常迁栈实施，并将GraphEditorDocument旧Snapshot栈真正替换；配置布尔scope保留，缩放回放间仅合并视图为独立适配。355项限定自审核全部exit0，既有CS8603保留，C01.1计done。原SDK/TempFiles/Recover仍各项未完成。A当前合同托管loader有实际fixture注册/执行/存读但startup锁未接，A07.1仍partial并登记FCR-026；B候选/gvar缺真实能力不猜造。总实施33/96=34.38%，本批+1，剩余63。原长稳失败未重跑，tool-plugins未读未改，不采用来信、不自动推送。报告reverse/BATCH16-20261019.md和batch16审计保全完整源/失败/未知/hash。

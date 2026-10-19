@@ -7,10 +7,8 @@ public sealed partial class GraphEditorDocument
 {
     readonly ModuleRegistry registry;
     SolutionDocument document = null!;
-    readonly Stack<Snapshot> undo = new(), redo = new();
-    sealed record Snapshot(SolutionDocument Document, string ProcedureId, string BaseDirectory) {
-        public bool ForbidBuild { get; set; }
-    }
+    readonly DocumentHistoryEngine<Snapshot> history = new();
+    sealed record Snapshot(SolutionDocument Document, string ProcedureId, string BaseDirectory);
     public GraphEditorDocument(ModuleRegistry registry) { this.registry = registry; NewSolution(); }
     public SolutionDocument Document => Copy(document);
     public string SolutionId=>document.Id;
@@ -21,20 +19,21 @@ public sealed partial class GraphEditorDocument
     public string? FilePath { get; private set; }
     public bool IsDirty { get; private set; }
     public long Revision { get; private set; }
-    public bool CanUndo => undo.Count != 0;
-    public bool CanRedo => redo.Count != 0;
+    public bool CanUndo => history.UndoCount != 0;
+    public bool CanRedo => history.RedoCount != 0;
+    public Exception? LastHistoryError => history.LastError;
     public event Action? Changed;
     public event Action? SolutionReplaced;
     public Func<SolutionDocument,string,SolutionDocument>? PrepareSave {get;set;}
     public void NewSolution(bool createProcedure=true) {
         document = new(SolutionStore.CurrentVersion, Guid.NewGuid().ToString("N"), "New solution", createProcedure?[new("main", "Main", [], [], [])]:[], []);
         CurrentProcedureId = createProcedure?"main":""; BaseDirectory = Path.GetFullPath(Environment.CurrentDirectory); FilePath = null;
-        undo.Clear(); redo.Clear(); IsDirty = true; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
+        history.Clear(); IsDirty = true; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Load(string path) {
         string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);
         document = Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()}); CurrentProcedureId = loaded.Procedures.FirstOrDefault()?.Id??"";
-        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; undo.Clear(); redo.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
+        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; history.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Save(string path) {
         string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;
@@ -241,15 +240,34 @@ public sealed partial class GraphEditorDocument
     public void DisconnectExecution(ExecutionLinkDocument link){var p=CurrentProcedure;var links=ProcedureGraph.ExecutionEdges(p);if(!links.Any(e=>e.FromNode==link.FromNode&&e.ToNode==link.ToNode))throw new KeyNotFoundException("Execution link not found.");ChangeProcedure(p=>p with{ExecutionLinks=links.Where(e=>e.FromNode!=link.FromNode||e.ToNode!=link.ToNode).ToArray()});}
     public void Disconnect(ConnectionDocument connection) { if(!CurrentProcedure.Connections.Contains(connection))throw new KeyNotFoundException("Connection not found."); ChangeProcedure(p=>p with {Connections=p.Connections.Where(c=>c!=connection).ToArray()}); }
     public void DeleteNode(string id)=>DeleteNodes([id]);
-    public void Undo() => Restore(undo,redo);
-    public void Redo() => Restore(redo,undo);
+    public void Undo() {
+        if (history.CurrentRoot is { } root)
+            foreach (var part in root.Parts.Where(p=>p.IsDataComplete)) part.AdaptNewValue(MergeCurrentView);
+        history.Undo();
+    }
+    public void Redo() {
+        if (history.NextRedoRoot is { } root)
+            foreach (var part in root.Parts) part.AdaptOldValue(MergeCurrentView);
+        history.Redo();
+    }
     public ProcedureValidationResult Validate() => GraphValidator.Validate(CurrentProcedure,registry);
     NodeDocument Node(string id)=>CurrentProcedure.Nodes.SingleOrDefault(n=>n.Id==id)??throw new KeyNotFoundException(id);
     void ChangeNode(string id,Func<NodeDocument,NodeDocument> action) { _=Node(id); ChangeProcedure(p=>p with {Nodes=p.Nodes.Select(n=>n.Id==id?action(n):n).ToArray()}); }
     void ChangeProcedure(Func<ProcedureDocument,ProcedureDocument> action)=>Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==CurrentProcedureId?action(p):p).ToArray()});
-    void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document)))))); SolutionStore.ValidateStructure(next); RecordEditHistory();redo.Clear();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??"";IsDirty=true;Revision++;Changed?.Invoke(); }
+    void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document)))))); SolutionStore.ValidateStructure(next); RecordEditHistory();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??"";IsDirty=true;Revision++;Changed?.Invoke(); }
     Snapshot Capture()=>new(Copy(document),CurrentProcedureId,BaseDirectory);
-    void Restore(Stack<Snapshot> source,Stack<Snapshot> destination) { if(source.Count==0)return; var s=source.Peek();var next=Rebase(s.Document,s.BaseDirectory,BaseDirectory);destination.Push(Capture());source.Pop();document=next;CurrentProcedureId=s.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke(); }
+    void RestoreSnapshot(Snapshot snapshot) {
+        var next=Rebase(snapshot.Document,snapshot.BaseDirectory,BaseDirectory);
+        document=next;CurrentProcedureId=snapshot.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke();
+    }
+    Snapshot MergeCurrentView(Snapshot snapshot) {
+        // Independent main view-data adapter: retain A03.3 zoom changes made
+        // between replays without altering the action's structural old/new data.
+        if(snapshot is null)return snapshot!; // Preserve an original failed-completion payload; do not invent one.
+        var zoom=document.Procedures.ToDictionary(p=>p.Id,p=>p.CanvasZoomIndex,StringComparer.Ordinal);
+        return snapshot with{Document=snapshot.Document with{Procedures=snapshot.Document.Procedures.Select(p=>
+            zoom.TryGetValue(p.Id,out var index)?p with{CanvasZoomIndex=index}:p).ToArray()}};
+    }
     static void Position(double x,double y) { if(!double.IsFinite(x)||!double.IsFinite(y))throw new ArgumentOutOfRangeException(nameof(x)); }
     static void RequireName(string name) { if(string.IsNullOrWhiteSpace(name))throw new ArgumentException("Name is required."); }
     static SolutionDocument Copy(SolutionDocument d)=>d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=>p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with {Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray()}).ToArray()}).ToArray()};

@@ -43,18 +43,25 @@ public sealed partial class GraphEditorDocument
     /// <summary>Sets the current history root's flag; an empty undo stack is unaffected.</summary>
     public void SetHistoryRecordingForbidden(bool forbidden)
     {
-        if (undo.TryPeek(out var root)) root.ForbidBuild = forbidden;
+        history.SetForbidRecord(forbidden);
     }
 
     void RecordEditHistory()
     {
         if (configurationHistory is { NeedsRoot: true } session && session.SolutionId == SolutionId)
         {
-            undo.Push(Capture());
+            BeginDocumentHistoryRoot();
             session.NeedsRoot = false;
             SetHistoryRecordingForbidden(session.ForbidBuild);
         }
-        else if (!undo.TryPeek(out var root) || !root.ForbidBuild)
-            undo.Push(Capture());
+        else if (history.CurrentRoot is not { ForbidBuild: true })
+            BeginDocumentHistoryRoot();
+    }
+
+    void BeginDocumentHistoryRoot()
+    {
+        if (!history.BeginRoot()) return;
+        history.RegisterPart("document",Capture,RestoreSnapshot,
+            canRegister:(root,key)=>!root.Parts.Any(part=>part.Key==key));
     }
 }
