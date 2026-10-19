@@ -133,7 +133,20 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - Payload：至少包含所属流程/Group/节点实例身份、参数名、对应描述符、只读当前参数和订阅快照、可空专属装饰器能力，以及原子 Apply/Cancel 回调。具体接口需双线审查，不能把原生 `IDecorate` 假定为现有 WPF 接口。
 - Lifecycle：选中运行参数 → 框架定位第一个关联节点 → 插件工厂提供 `GetSupportDisplayForGroupData` 等价视图或通用视图 → 右侧更新 → 编辑经既有配置事务提交 → 取消/切换/关闭释放订阅和会话。选中类别时恢复 Group 本体装饰器；方案重开时不保存窗口焦点状态。
 - 兼容：工厂应可选；未接入的工具继续使用现有运行参数代理编辑，不复制插件配置模板到主线。旧方案的参数和订阅格式不因窗口接线改变。
-- 验收证据：原始 `GroupRunParam.cs:325–357` 的 `SelectedCommandExecute` 调用 `GetFirstParamRelationModule`、`GetSupportDisplayForGroupData`/`CommonParamDecorate`、`OnUpdateDecorateEvent`；`DynamicRunParamConfigControl.xaml:26–44` 的类别树和 `SelectedItemChanged`。待插件侧真实工具接入后，需逐项操作选中类别/普通参数/专属复杂参数、编辑后运行数据、撤销重做、保存重开与窗口关闭释放。当前主线只有显式“工具配置”按钮，不宣称右侧动态装饰器等价。
+- ROISelecter 源码证据补充：`Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/ROISelecter.cs` 的 `DisplayForGroupType=RoiConfigControl` 与 `IGroupRunParamWithMultiParams`；`DynamicObjectConfigControl.XmlData.Extern/DynamicExtern.cs::GetSupportDisplayForGroupData` 产生 `ROISelecterForGroupDecorate`；`DynamicObjectConfigControl/datatemplate/paramusercontroldatatemplate.xaml` 将 `ROISelecter_GroupControl` 映射到 `ModuleROIConfigControl`；装饰器把原始 `ROIList` 直连并将 ROI 操作转给 `IROISelecter`；`ModuleROIConfigControl.xaml` 绑定模块图像、原始 ROI 列表及 `RenderControlBase` 命令。单参数模板 `RoiConfigControl` 与 Group 装饰模板 `ROISelecter_GroupControl` 是两条路由，不能合并猜测。源码详情和未确认点见 `GROUP-NATIVE-EDITORS.md` 的“源码级调用与数据链复核”。
+- ROI复制链的源码结论：`VMBaseControls/ImageViewBox.xaml.cs::CanCopyRoi` 调用 `RoiCopyCommand.CanExecute` 作模式门控，`CopyRoi` 自行克隆并写入私有粘贴对象；代理的 `RoiCopyCommandExecute` 空方法体不表示复制功能不存在，也不能在代理层再实现一次复制。
+- 待插件线提供可消费工厂时，验收需用真实 ROISelecter 工具验证：类别/普通/专属参数切换，精确关联模块和 IMAGE 来源，ROI 选择/添加/更新/删除/粘贴及复制能力门控，多字段参数和序号写回，SelfRun 前后数据、取消/撤销、关闭释放。完整调用链和本轮验证结果见 `GROUP-NATIVE-EDITORS.md`。
+- 当前主线只有显式“工具配置”按钮，不宣称右侧动态装饰器等价。未完成的插件侧能力应由插件项目在其边界内实现；主线只消费已审查并集成的合同，不复制插件模板。
+
+## FCR-019：参数目标的原生可见/可订阅能力（请求，未实现；2026-10-19修订）
+
+- 生产方：插件项目的公共参数描述符与各工具动态参数配置；消费者：主框架工作流局部变量“目标输出”树及 Group 运行参数代理树。
+- 证据：随包 `Module(sp)/x64/Collection/ImageSourceModule/ImageSourceModuleAlgorithmTab.xml` 将StitchStartHeight/StitchHeight标为CustomVisible=False，StitchEnable=True触发VisibleOperation；该XML的CurValue/DefaultValue为True，只有Tab_Basic Params。不能由本地False状态推定原机默认值或有效订阅候选。
+- 目标链：GlobalVariableItem.ModifyRunParamsExecute经RunParamsSelectData.GetSubRunParamsTree调用AlgorithmTabRoot.GetRunParamsTree，后者从Tab_Run Params.Collection枚举，AddSubChildToTree检查DisplayNameA；RunParamsBaseNode.IsSupportSub读取ISubInfo/SubscribeVisibleA，没有直接按CustomVisibleA过滤。Group的RunParamPickDataExtern则明确按CustomVisibleA等条件过滤。旧合同按关闭拼接即必须从局部变量目标树隐藏的验收推断撤回；运行时Tab装配和实际目标集合仍未知。
+- 负载：分别表达Tab归属、CustomVisible、SubscribeVisible/CanSubscribe、ISubInfo支持及触发关系；局部变量和Group候选分别按源谓词计算，不合并为一种隐藏布尔值。优先表达现有节点参数依赖，不传递UI控件或未审计委托。
+- 生命周期：节点参数修改后重新求值目标集合；已保存但暂不可见的订阅仍保留/执行策略需按源码另行确认，目标不可用时应显示状态而不是静默删除；切换节点、关闭配置器不得留过期参数会话。
+- 兼容：字段可选；旧插件未声明时保持现有静态参数行为并标为未验证。该合同由插件线在自己的边界内实现并提交；主线只消费经审查的字段，不修改插件工作树。
+- 验收：分别采集StitchEnable两态下运行时Tab树、局部变量目标、Group候选、可订阅属性、存量绑定及执行/保存重开；依据真实树与方法谓词确定集合，不预设隐藏结果。无元数据插件维持兼容；完整修订依据见MAIN-PENDING-REVIEW.md。
 
 ## FCR-020：Group运行类别与代理数量配置源（框架线实现，独立XML读取）
 
@@ -162,4 +175,14 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 本地对照：`src/VisionEditor/SubprogramCallHost.cs::CreateBoundGroupWindow` 的 Group 配置保存回调逐次调用 `doc.SetWorkflowConfiguration(Body().Id, configuration)`；`GroupRunConfigurationWindow.Change` 每次控件事件立即调用保存委托。`src/VisionEditor.Core/GraphEditorDocument.cs::SetWorkflowConfiguration` 做相等检查后进入 `Edit`；`Edit` 每次先 `undo.Push(Capture())`、清空 redo、替换完整文档并递增 Revision；`Undo/Restore` 恢复整个方案快照。故每个不同的配置写回单独生成撤销项。
 - 相关窗口证据：`DynamicRunParamConfigControl.xaml.cs::EditRunParam` 返回 `DynamicRunParamConfigWin.ShowDialog()`；`DynamicRunParamConfigWin.xaml` 设置 `CancelVisible="Collapsed"`；`DynamicRunParamConfigWin.OnClosing` 在非加载态强制设 `DialogResult=true`，加载中则 `e.Cancel=true`；共享 `ConfirmBaseWindow.CancelButton_Click` 设 false，但相应按钮不可见。`ParamConfigDataBase.AddGroupCommandExecute/DeleteAllParams` 直接更新 `Owner.UserData`/父集合，`RunParamConfigDecorate.Name` 调SDK修改参数名，说明配置不是确认时才整体提交。`ConfigCommandExecute` 没有检查 `method.Invoke` 返回值，也未用 `try/finally`，因此异常恢复保障未知。
 - 验收：隔离输出 `dotnet run --project tests/VisionEditor.GroupCategoryExpansionChecks/VisionEditor.GroupCategoryExpansionChecks.csproj -p:BuildInParallel=false -p:UseSharedCompilation=false` 退出码0，`PASS 30 Group category expansion checks`。真实 WPF 控件连续执行分类名编辑、候选复选框添加代理两次写回，再调用文档 Undo 两次/Redo 两次；每一步参数和分类状态均按单次写回边界变化，六项新增断言通过。截图 `analysis/full-audit/group-run-config-f15-confirm-close.png` 已目检；此为离屏真实 WPF 客户区，不是用户桌面或 VM 对照。此前还实际验证“确定”和关闭窗口保留即时变更、重开及 Group 输出有效。VM 服务行为仍需取得 `myLibs/VM.UnRedo.dll` 与接口/运行时证据后做同状态核验；取消/回滚不适用原生窗口，异常恢复继续标未知。
+
+
+## FCR-023：Group原生IO类型与本地托管类型的能力边界（请求，未实现原生合同）
+
+- Producer：框架数据合同与插件原始结果生产者；consumer：Group输入/输出类型菜单、来源选择器、序列化及执行器。
+- 原始证据：GroupParam.InputOutputTypes经LeafIOTypeEnum/CombinationIOTypeEnum生成候选，GroupParam.AddCommandCmdExecute分别调用AddLeafIO/AddCombinationIO并统计SDK叶IO数量。原始pointset与POINT组合类型分立；DynamicOutput.ConvertTypeName对POLYGON/ROIPOLYGON另作转换。现有DataKind.Point数组及DataKind.Region没有这些原生ABI和生产链证明。
+- Payload：需提供经源码确认的原生类型名、托管形状、基数、叶字段、支持能力和序列化/执行规则；未知类型必须不可创建，不能按名称猜测映射。尚未新增通用插件合同字段。当前pointset/POLYGON菜单项禁用；原有Point数组、Region和Components仍按独立托管合同使用。
+- Lifecycle：插件注册能力→Group枚举→创建/绑定→保存重开→真实执行→输出/清理。候选列表1024项计数是本地接口数策略，不宣称等同原生SDK复合叶IO计数。
+- 兼容：现有vmx.json格式、DataKind及基数不变；仅改变UI类型标签和可创建能力，不迁移或删除既有独立托管端口。WorkflowSourceOption.NodeName是可空UI元数据，由主框架提供，订阅树消费；未填时回退到Label，不写入方案。
+- 验收：须用实际pointset/POLYGON原生生产者验证结构、字段、基数、数组/索引/复制、Group输入输出、存储及实际执行，取得原机/SDK差分后再开放。当前20项本地审查只确认未知类型拒绝创建、真实BMP标量导出、删除/撤销和保存重开，不关闭原生合同。
 

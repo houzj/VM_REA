@@ -49,7 +49,7 @@ public sealed class NativeCompoundSourceSelector : Grid
    var first=group.First();
    // A null-source action is a leaf, not an empty expandable module heading.
    if(group.Key.Length==0){foreach(var item in group)SubscriptionTree.Items.Add(Leaf(item,item.Label));continue;}
-   var suffix="."+first.Port;var title=first.Port.Length>0&&first.Label.EndsWith(suffix,StringComparison.Ordinal)?first.Label[..^suffix.Length]:first.NodeId;
+   var suffix="."+first.Port;var title=first.NodeName??(first.Port.Length>0&&first.Label.EndsWith(suffix,StringComparison.Ordinal)?first.Label[..^suffix.Length]:first.Label.Split('.',2)[0]);
    var root=new TreeViewItem{Header=title,IsExpanded=true};SubscriptionTree.Items.Add(root);
    var branches=new Dictionary<string,TreeViewItem>(StringComparer.Ordinal);
    foreach(var option in group){
