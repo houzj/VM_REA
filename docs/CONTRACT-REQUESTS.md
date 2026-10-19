@@ -202,3 +202,12 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 兼容：现有vmx.json格式、DataKind及基数不变；仅改变UI类型标签和可创建能力，不迁移或删除既有独立托管端口。WorkflowSourceOption.NodeName是可空UI元数据，由主框架提供，订阅树消费；未填时回退到Label，不写入方案。
 - 验收：须用实际pointset/POLYGON原生生产者验证结构、字段、基数、数组/索引/复制、Group输入输出、存储及实际执行，取得原机/SDK差分后再开放。当前20项本地审查只确认未知类型拒绝创建、真实BMP标量导出、删除/撤销和保存重开，不关闭原生合同。
 
+
+## FCR-024：插件资产在另存与历史恢复间的纯重定位（请求，未实现）
+
+- Producer：插件资产持久化/公共插件框架能力；consumer：main GraphEditorDocument SaveAs、Snapshot/Restore。用户决定跨项目交接，本请求不自动调度插件项目。
+- Payload：旧/新基目录、方案/流程/节点身份、不可变资源引用及经插件解释的私有资产路径；需要不执行工具、不采当前运行状态、不读取设备、不产生保存副作用的重定位或稳定身份能力。具体接口签名尚未决定，不在 Core 硬编码 ImagePaths。
+- Lifecycle：捕获准备前历史 → 当前文档 PrepareSave/跨目录另存 → Undo/Redo 恢复旧快照到当前基目录 → 资产解析。重定位不能把当前 scope 状态写入旧快照，不能以反复调用带 I/O 的 PrepareSave 代替纯合同。
+- Compatibility：能力应可选并明确诊断旧插件不支持的情形；不静默丢弃历史/资源，不猜改私有 JSON 或原生方案。未改共享 Contracts，也未改 tool-plugins。
+- Evidence：main 6a2cf54 的实际 ImageSourcePlugin/ToolPluginRegistry/GraphEditorDocument 链见 [D02 诊断](reverse/D02-asset-history-batch3.md) 与[独立审查](reverse/D02-asset-history-review-batch3.md)。真实失败 exit1/passed=false：原外部图像仍在时，跨目录 SaveAs 后 Undo 恢复旧相对路径且资源0，新基目录解析失败；Redo、离线嵌入重开通过。这是独立实现集成缺口，尚非原生 VM 行为规格。
+- Acceptance：保留当前失败样本；合同落地后对准备前/后、多层历史、跨目录另存、Undo/Redo、源文件存在及删除后重开分别核对身份和编码字节，并用实际模块执行核对图像结果。须验证校准等带运行状态准备器不会污染旧快照；原生方案/VM 差分独立验收，不能据本地测试关闭。

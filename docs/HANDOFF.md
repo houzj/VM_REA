@@ -264,3 +264,7 @@ At the user's request, the original checkout now develops framework and integrat
 配置修复提交2d6ddd8：审查Group IO/订阅/显示、局部变量及既有WPF夹具；修复输出多选空候选、显示删除漏接事件和搜索提示占用数据；排除pointset→Point数组、POLYGON→Region、无共享状态的独立订阅窗及禁用运行区候选。原始22份在制文件及674份既有审计证据保全在analysis/full-audit/main-pending-review-20261019，含补丁、SHA-256、失败记录和新验证日志。tool-plugins不修改。
 
 新增20项实际WPF审查、6项订阅弹层、完整456项WPF、71项执行及93项调用检查均exit0；截图和方案保存在tests产生的审计目录。构建0错误，既有nullable/装箱警告保留。MF-05保存回调顺序及取消/异常复位说明已按源码修订；FCR-019撤回仅凭CustomVisible判断局部变量目标隐藏的旧推断，改按Tab_Run Params/ISubInfo/SubscribeVisible调用链待验收。安装ImageSource XML默认StitchEnable=True，非本地False默认；不得混称。完整采纳/排除及源路径见MAIN-PENDING-REVIEW.md，未知native/ABI/设备/真实桌面差分继续开放。
+
+## 2026-10-19 源码级总计划第三批
+
+基线6a2cf54，四方向分批使用三个并发子槽，第四位独立复核D02；本批全部子任务已完成，无产品修改、自动推送或tool-plugins操作。A03新增37方法CIL；B01原首次填充8组合成输入44检查通过；C02原配置写入17断言通过，纠正SaveConfig重载存储/缓存边界。D02实际插件PrepareSave/另存/Undo诊断exit1：旧相对路径在新基目录失效，Redo与离线嵌入重开正常；保留passed=false并登记FCR-024，未以有副作用PrepareSave批量改旧历史。报告与下一步见reverse/BATCH3-20261019.md及framework-reverse-plan.json；32包仍未完成，原生/桌面差分继续开放。
