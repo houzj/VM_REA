@@ -2,7 +2,9 @@
 
 2026-10-19；冻结基线 `70b3b4297a798cc0f0f7c149aeaf49be1031be72`。仅 main；tool-plugins 未访问、未计入。
 
-**当前计划验收单元三层均达成：28/96 = 29.2%。**
+**当前实施总进度：29/96 = 30.2%。**
+
+用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
 这是本次逐项证据对账的结果，不是重跑测试后的原机等价结论。以前0/32只统计新计划的整包最终关闭，未回填早已合入main的子集成果；因此它不能代表当前整体逆向进度。此次修正统计，不将历史成果说成本轮新增。
 
@@ -16,7 +18,7 @@
 
 总计划32包，每包3个具名验收单元，共96项；每项分别审核源码、实现、验证，因此每层分母均为96。下表列明全部单元，不按文件/方法/测试数量计权，不给部分完成折半。
 
-综合值只计算三层同时达成的同一单元，不平均三层百分比。本次统计工具和进度文档不新增逆向完成项；D08仍为部分。
+总进度仅计算implementation=done的单元/96；源码取证数量、人工验收及历史三层交集均不参与。实施须有明确交付及自审核依据；部分实施不折半。统计口径修正不计本批新增实施；D08仍为部分。
 
 实现包括当前main的明确独立重构及计划要求的可执行逆向辅助工具，不能直接称VM等价。验证为有证据的已列操作范围；有已知反例则记失败。原方法合成输入、离屏WPF、原机差分分别保留边界。
 
@@ -179,14 +181,14 @@
 
 前置：A02、A03、A04、A05、A06、A07；完整包未因本表计分关闭。
 
-证据：[FRAMEWORK-REVERSE-CHECKLIST.md](FRAMEWORK-REVERSE-CHECKLIST.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)
+证据：[FRAMEWORK-REVERSE-CHECKLIST.md](FRAMEWORK-REVERSE-CHECKLIST.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A08-input-failure-batch9.md](reverse/A08-input-failure-batch9.md)
 
 当前实现/工具位置：`tests/VisionEditor.WpfChecks/Program.cs`、`tests/VisionEditor.ShellChecks/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | A08.1 | 已实现壳/画布/导航的控件事件回归交付 | 达成 | 达成 | 达成 | 本单元是验收套件交付，非全原厂功能闭合。 |
-| A08.2 | 真实键鼠、弹层、DPI及原机同状态矩阵 | 部分 | 部分 | 失败 | Shell默认键鼠/弹层失败保留，control-events-only不得覆盖。 |
+| A08.2 | 真实键鼠、弹层、DPI及原机同状态矩阵 | 部分 | 部分 | 失败 | Shell默认键鼠/弹层失败保留，control-events-only不得覆盖。 第九批：历史失败使用RaiseEvent、未记录输入桌面；不能认定产品缺陷或离屏原因，失败保留，人工桌面验证后置。 |
 | A08.3 | 发布版全部壳状态的综合差分 | 部分 | 部分 | 未验证 | 有当前子集发布/退出记录，无完整原机综合矩阵。 |
 
 ### B01 实际运行Tab与变量目标
@@ -249,7 +251,7 @@
 
 前置：B01、B04；完整包未因本表计分关闭。
 
-证据：[GROUP-LOCAL-VARIABLE-BINDING.md](GROUP-LOCAL-VARIABLE-BINDING.md)、[GROUP-LOCAL-VARIABLE-TYPE.md](GROUP-LOCAL-VARIABLE-TYPE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B05-gvar-preflight-batch7.md](reverse/B05-gvar-preflight-batch7.md)、[B05-native-dispatch-batch8.md](reverse/B05-native-dispatch-batch8.md)
+证据：[GROUP-LOCAL-VARIABLE-BINDING.md](GROUP-LOCAL-VARIABLE-BINDING.md)、[GROUP-LOCAL-VARIABLE-TYPE.md](GROUP-LOCAL-VARIABLE-TYPE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B05-gvar-preflight-batch7.md](reverse/B05-gvar-preflight-batch7.md)、[B05-native-dispatch-batch8.md](reverse/B05-native-dispatch-batch8.md)、[B05-binary-binding-batch9.md](reverse/B05-binary-binding-batch9.md)
 
 当前实现/工具位置：`src/VisionFramework/WorkflowConfiguration.cs`、`src/VisionFramework/WorkflowSubscriptions.cs`、`src/VisionEditor/WorkflowLocalVariablesWindow.xaml.cs`
 
@@ -257,7 +259,7 @@
 |---|---|---|---|---|---|
 | B05.1 | 流程IO和局部变量的作用域、订阅与改型 | 达成 | 达成 | 达成 | 当前已实现类型/操作，完整gvar/全局服务另列。 |
 | B05.2 | 原全局变量模块的创建、服务与执行消费 | 部分 | 未取得交付 | 阻塞 | 有原全局绑定链，但完整模块/会话未交付main。 |
-| B05.3 | 原gvar导入导出和往返 | 部分 | 未取得交付 | 阻塞 | 存在托管入口线索，无原格式往返和产品实现证据。 第七批：路径UTF8+NUL经GlobalValueImport/Export进入IMVS_SetBinaryData；原生格式消费者、覆盖/密码/事务仍未知，未运行SDK。 第八批：原生SetBinaryData入口经66f090到对象+23a8函数指针/0bd2消息；实际绑定、gvar格式仍未知。 |
+| B05.3 | 原gvar导入导出和往返 | 部分 | 未取得交付 | 阻塞 | 存在托管入口线索，无原格式往返和产品实现证据。 第七批：路径UTF8+NUL经GlobalValueImport/Export进入IMVS_SetBinaryData；原生格式消费者、覆盖/密码/事务仍未知，未运行SDK。 第八批：原生SetBinaryData入口经66f090到对象+23a8函数指针/0bd2消息；实际绑定、gvar格式仍未知。 第九批：SDK+23a8静态绑定PlatformManager!PF_M_SetBinaryData，0bd2到SPSetBinaryData，再取VM_PROXY_RecvServerCommand；实际代理模块/格式仍缺。 |
 
 ### B06 Group配置、ROI和结果消费边界
 
@@ -333,7 +335,7 @@
 
 前置：C02、D02；完整包未因本表计分关闭。
 
-证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)
+证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C03-history-lifecycle-batch9.md](reverse/C03-history-lifecycle-batch9.md)
 
 当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ToolExecutionScope.cs`
 
@@ -341,7 +343,7 @@
 |---|---|---|---|---|---|
 | C03.1 | 原结果视图切源、缓存与旧事件解绑 | 达成 | 部分 | 部分 | 主线有替换清理子集，原回调跨方案处置未全验。 |
 | C03.2 | 清结果有效配置到实际SDK消费 | 达成 | 未取得交付 | 阻塞 | 原配置重载已明确；main未恢复同一条件控制。 |
-| C03.3 | 历史、底部耗时与全局结果缓存生命周期 | 部分 | 部分 | 部分 | 当前独立摘要粒度不同，原全局UI策略证据不足。 |
+| C03.3 | 历史、底部耗时与全局结果缓存生命周期 | 部分 | 部分 | 部分 | 当前独立摘要粒度不同，原全局UI策略证据不足。 第九批：原历史/计时绑定及切源链新增；静态待通知cache跨实例保留，完整宿主与native缓存未闭合。 |
 
 ### C04 撤销恢复与临时文件所有权
 
@@ -417,7 +419,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)、[D01-save-callback-batch5.md](reverse/D01-save-callback-batch5.md)、[D01-native-save-batch7.md](reverse/D01-native-save-batch7.md)、[D01-native-save-review-batch7.md](reverse/D01-native-save-review-batch7.md)、[D01-save-callees-batch8.md](reverse/D01-save-callees-batch8.md)
+证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)、[D01-save-callback-batch5.md](reverse/D01-save-callback-batch5.md)、[D01-native-save-batch7.md](reverse/D01-native-save-batch7.md)、[D01-native-save-review-batch7.md](reverse/D01-native-save-review-batch7.md)、[D01-save-callees-batch8.md](reverse/D01-save-callees-batch8.md)、[D01-save-binding-batch9.md](reverse/D01-save-binding-batch9.md)
 
 当前实现/工具位置：`tests/Inspect-NativeSolutionSample.ps1`
 
@@ -425,7 +427,7 @@
 |---|---|---|---|---|---|
 | D01.1 | 保存加载托管入口、回调及完成标志 | 达成 | 未取得交付 | 未验证 | 原CIL链已取，未运行原SDK保存回调。 |
 | D01.2 | 8个原样本外层记录边界的只读解析 | 达成 | 达成 | 达成 | 只读辅助解析，非产品原生导入器；不解释未知首字段。 |
-| D01.3 | native writer/reader与单操作字段归因 | 部分 | 未取得交付 | 阻塞 | 缺已配置native provider及受控保存差分。 第七批：两个保存导出原PE指令已取得并独立复核，SDK1段78行、ModuleFrame4段158行；跨模块callee、writer/reader字段及事务仍未闭合。 第八批：保存callee与下一层消费者原指令已取；SDK+2398绑定未知，ModuleFrame事件/回调封装不能视作落盘完成。 |
+| D01.3 | native writer/reader与单操作字段归因 | 部分 | 未取得交付 | 阻塞 | 缺已配置native provider及受控保存差分。 第七批：两个保存导出原PE指令已取得并独立复核，SDK1段78行、ModuleFrame4段158行；跨模块callee、writer/reader字段及事务仍未闭合。 第八批：保存callee与下一层消费者原指令已取；SDK+2398绑定未知，ModuleFrame事件/回调封装不能视作落盘完成。 第九批：SDK+2398静态绑定PlatformManager!PF_M_MsgDeal，再交602df0；未连到ModuleFrame writer。 |
 
 ### D02 独立存储与资源事务补齐
 

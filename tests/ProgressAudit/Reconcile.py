@@ -59,13 +59,18 @@ def main():
                "allThreePercent": round(complete / 96 * 100, 1),
                "closedPackages": sum(t["status"] == "closed" for t in plan["tasks"]),
                "newProductTestsRun": 0,
-               "meaning": "具名验收单元三层均达成率；不是工时、函数覆盖率或完整原厂等价率"}
+               "overallCompletionPercent": round(done['implementation'] / 96 * 100, 1),
+               "overallDone": done['implementation'],
+               "overallRemaining": 96 - done['implementation'],
+               "overallPolicy": "implementation-self-review-v1",
+               "meaning": "用户指定：只按实施完成并自审核的单元统计总进度；人工验收不参与，源码/验证及三层交集仅保留为证据维度"}
     data["summary"] = summary
     (DOC / "framework-progress-audit.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     lines = ["# 框架逆向成果全面对账", "", f"2026-10-19；冻结基线 `{data['baseline']}`。仅 main；tool-plugins 未访问、未计入。", "",
-             f"**当前计划验收单元三层均达成：{complete}/96 = {summary['allThreePercent']}%。**", "",
+             f"**当前实施总进度：{done['implementation']}/96 = {summary['overallCompletionPercent']}%。**", "",
+             "用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。", "",
              "这是本次逐项证据对账的结果，不是重跑测试后的原机等价结论。以前0/32只统计新计划的整包最终关闭，未回填早已合入main的子集成果；因此它不能代表当前整体逆向进度。此次修正统计，不将历史成果说成本轮新增。", "",
              "| 层次 | 严格达成 | 进度 | 尚未达成 |", "|---|---:|---:|---:|"]
     for s in STAGES:
@@ -73,7 +78,7 @@ def main():
         lines.append(f"| {LABELS[s]} | {q['done']}/96 | **{q['percent']}%** | {q['remaining']} |")
     lines += ["", "## 分母与计数规则", "",
               "总计划32包，每包3个具名验收单元，共96项；每项分别审核源码、实现、验证，因此每层分母均为96。下表列明全部单元，不按文件/方法/测试数量计权，不给部分完成折半。", "",
-              "综合值只计算三层同时达成的同一单元，不平均三层百分比。本次统计工具和进度文档不新增逆向完成项；D08仍为部分。", "",
+              "总进度仅计算implementation=done的单元/96；源码取证数量、人工验收及历史三层交集均不参与。实施须有明确交付及自审核依据；部分实施不折半。统计口径修正不计本批新增实施；D08仍为部分。", "",
               "实现包括当前main的明确独立重构及计划要求的可执行逆向辅助工具，不能直接称VM等价。验证为有证据的已列操作范围；有已知反例则记失败。原方法合成输入、离屏WPF、原机差分分别保留边界。", "",
               "历史验证未在本次重新执行；最近产品源码改动为6a2cf54的画布方案替换，后续批次主要是报告与探针。旧的framework-acceptance.json基线较旧，以专题报告和后续失败更正，不覆盖旧记录。", "",
               "该分母是总计划的交付单元，不是原程序所有入口/函数的穷举，也不是工时预测。未来发现新范围须升级分母版本并保留前后差异，不能临时拆小已完成项抬高进度。", "",
