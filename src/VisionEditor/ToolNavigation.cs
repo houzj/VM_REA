@@ -57,7 +57,7 @@ public partial class MainWindow
                 {
                     if(plugins.Find(reference.ModuleId) is not null||modules.Descriptors.Any(d=>d.Id==reference.ModuleId))
                         throw new InvalidOperationException("Catalog plugin identity is already registered; refresh cannot replace a live module.");
-                    plugins.Register(loaded.Plugin,modules);
+                    plugins.Register(loaded.Plugin,modules,reference.ModuleId,reference.Version);
                 });
             }
             yield return tool;

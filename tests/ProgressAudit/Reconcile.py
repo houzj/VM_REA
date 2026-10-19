@@ -4,6 +4,7 @@ No reverse target, test application, external process or other worktree is run.
 Statuses are reviewed judgments in JSON, never inferred from keyword counts.
 """
 import collections
+from decimal import Decimal, ROUND_HALF_UP
 import csv
 import hashlib
 import json
@@ -50,6 +51,9 @@ def main():
     for stage in STAGES:
         assert plan["latestReconciliation"][stage]["done"] == done[stage]
     assert plan["latestReconciliation"]["allThree"]["done"] == complete
+    overall_percent = float((Decimal(done["implementation"]) * 100 / 96).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    assert plan["latestReconciliation"]["overall"]["done"] == done["implementation"]
+    assert plan["latestReconciliation"]["overall"]["percent"] == overall_percent
     summary = {"denominatorVersion": data["denominatorVersion"], "units": 96,
                "packages": 32, "domains": 23, "baseline": data["baseline"],
                "layers": {s: {"done": done[s], "total": 96,
@@ -59,7 +63,7 @@ def main():
                "allThreePercent": round(complete / 96 * 100, 1),
                "closedPackages": sum(t["status"] == "closed" for t in plan["tasks"]),
                "newProductTestsRun": 0,
-               "overallCompletionPercent": round(done['implementation'] / 96 * 100, 2),
+               "overallCompletionPercent": overall_percent,
                "overallDone": done['implementation'],
                "overallRemaining": 96 - done['implementation'],
                "overallPolicy": "implementation-self-review-v1",

@@ -15,7 +15,23 @@ public interface IToolNodeDescriptorProvider {ModuleDescriptor DescribeNode(Node
 public sealed class ToolPluginRegistry {
  readonly Dictionary<string,IVisionToolPlugin> plugins=new();
  public IEnumerable<IVisionToolPlugin> Plugins=>plugins.Values;
- public void Register(IVisionToolPlugin plugin,ModuleRegistry modules){if(plugin.Manifest.Id!=plugin.Descriptor.Id||plugin.Manifest.Version!=plugin.Descriptor.Version)throw new ArgumentException("Plugin identity mismatch");if(!plugins.TryAdd(plugin.Manifest.Id,plugin))throw new InvalidOperationException("Duplicate plugin");modules.Register(plugin.Descriptor,plugin.CreateRuntime,plugin is IToolNodeDescriptorProvider dynamicProvider?dynamicProvider.DescribeNode:null);}
+ bool registering;
+ public void Register(IVisionToolPlugin plugin,ModuleRegistry modules)=>Register(plugin,modules,null,null);
+ // Current-host identity guard; capture external metadata once before any registry mutation.
+ public void Register(IVisionToolPlugin plugin,ModuleRegistry modules,string? expectedId,string? expectedVersion){
+  ArgumentNullException.ThrowIfNull(plugin);ArgumentNullException.ThrowIfNull(modules);
+  if(registering)throw new InvalidOperationException("Reentrant plugin registration");
+  registering=true;
+  try{
+   var manifest=plugin.Manifest;var descriptor=plugin.Descriptor;
+   if(manifest.Id!=descriptor.Id||manifest.Version!=descriptor.Version||expectedId is not null&&manifest.Id!=expectedId||expectedVersion is not null&&manifest.Version!=expectedVersion)throw new ArgumentException("Plugin identity mismatch");
+   if(plugins.ContainsKey(manifest.Id))throw new InvalidOperationException("Duplicate plugin registration");
+   // ModuleRegistry freezes and validates before publishing. No plugin getter runs after it commits.
+   modules.Register(descriptor,plugin.CreateRuntime,plugin is IToolNodeDescriptorProvider dynamicProvider?dynamicProvider.DescribeNode:null);
+   plugins.Add(manifest.Id,plugin);
+  }finally{registering=false;}
+ }
+
  public IVisionToolPlugin? Find(string id)=>plugins.GetValueOrDefault(id);
  public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory)=>PrepareSave(document,baseDirectory,null);
  public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){

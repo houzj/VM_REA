@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "auditDate": "2026-10-19",
-  "baseline": "bd9ce6882fc5c47688e05bc5361dbe951ecbef01",
+  "baseline": "287ac42883ca538c594938fda16eef74f0a664a5",
   "scope": "main框架；不访问tool-plugins，来信和未合流内容均不计入",
   "denominatorVersion": "plan-units-v1",
   "denominatorPolicy": "总计划32包，每包固定3个具名验收单元；源码/实现/验证均96项，三层独立等权计数，不给partial折半；不是工时估算或原厂所有函数覆盖率。新增范围须版本化记录分母变更。",
@@ -19,7 +19,7 @@
     "failed": "存在明确失败/反例，计0"
   },
   "nativeParityNote": "96项验证达成率只反映声明范围的操作/交付证据；所有完整包原厂等价仍未验收，不作为本次三层进度的替代。",
-  "validationFreshness": "第十八批214项限定本地自审核通过，详见本批报告；历史原机失败/未知继续保留，未执行SDK或交互桌面验收。",
+  "validationFreshness": "第十九批130项正向/拒绝自审核通过，另11项unsafe反例单列；D02.2失败未修复，原厂/SDK/桌面差分继续未知。",
   "packages": [
     {
       "taskId": "A01",
@@ -369,7 +369,9 @@
         "docs/ROI-REAL-TOOL.md",
         "docs/reverse/A07-managed-loader-partial-batch16.md",
         "docs/reverse/A-runtime-editor-batch18.md",
-        "docs/reverse/BATCH18-20261019.md"
+        "docs/reverse/BATCH18-20261019.md",
+        "docs/reverse/A-loader-failure-matrix-batch19.md",
+        "docs/reverse/BATCH19-20261019.md"
       ],
       "implementationArtifacts": [
         "src/VisionEditor/ToolDirectoryCatalog.cs",
@@ -378,7 +380,11 @@
         "tests/ManagedToolPluginChecks16/Program.cs",
         "src/VisionEditor/ManagedToolCatalogLoadSession.cs",
         "src/VisionEditor/ToolNavigation.cs",
-        "tests/ManagedToolCatalogHostChecks18/Program.cs"
+        "tests/ManagedToolCatalogHostChecks18/Program.cs",
+        "src/VisionPluginContracts/Contracts.cs",
+        "tests/ManagedToolFailureMatrixChecks19/Program.cs",
+        "tests/ManagedToolFailureFixture19/Plugins.cs",
+        "tests/RegistryMetadataReentryChecks19/Program.cs"
       ],
       "units": [
         {
@@ -394,9 +400,9 @@
           "id": "A07.2",
           "criterion": "缺插件、版本冲突及刷新失败处理",
           "source": "partial",
-          "implementation": "partial",
+          "implementation": "done",
           "validation": "partial",
-          "limitation": "已有拒绝与缺目录子集，未有完整宿主刷新矩阵。",
+          "limitation": "第十九批当前合同main加载11类错误/身份冲突、sticky与成功前缀/刷新矩阵、未知插件与缺版本方案Load/选择/运行拒绝/SaveReload保opaque完整消费；47项host+5项metadata guard自审与独立复审通过。窄修Register原子发布顺序和一次capture/expected/metadata前重入准入，2参ABI保留。原Cs/native/跨线程/OOM/任意DLL副作用未知，不宣称兼容或沙盒。",
           "blockerIds": []
         },
         {
@@ -1370,10 +1376,13 @@
       "sourceAndOperationReports": [
         "docs/MF05-PROCEDURE-RUN-CALLCHAIN.md",
         "docs/MAIN-PENDING-REVIEW.md",
-        "docs/GROUP-LOOP-BOUNDARIES.md"
+        "docs/GROUP-LOOP-BOUNDARIES.md",
+        "docs/reverse/B-nested-composition-batch19.md",
+        "docs/reverse/BATCH19-20261019.md"
       ],
       "implementationArtifacts": [
-        "tests/VisionEditor.WpfChecks/Program.cs"
+        "tests/VisionEditor.WpfChecks/Program.cs",
+        "tests/NestedCompositionChecks19/Program.cs"
       ],
       "units": [
         {
@@ -1389,9 +1398,9 @@
           "id": "C08.2",
           "criterion": "嵌套错误、取消和历史释放组合",
           "source": "partial",
-          "implementation": "partial",
+          "implementation": "done",
           "validation": "partial",
-          "limitation": "局部用例存在，完整组合矩阵未完成。",
+          "limitation": "第十九批计划组合工具真实走生产Core/executor/owned scope/filehistory，深度1/2/3、throw/FailedResult/asyncDispose fault/cancel及恢复、编辑UndoRedo/SaveLoad/删除恢复/并发关闭与历史资源释放46项自审及独立复审通过。模块31/31和state6/6释放。Core组合不是MainWindow或原机差分；原SDK/厂商窗口C08.3开放。",
           "blockerIds": []
         },
         {
@@ -1473,11 +1482,14 @@
         "docs/reverse/D02-storage-boundary-batch4.md",
         "docs/reverse/D02-interruption-batch6.md",
         "docs/reverse/D-save-roundtrip-batch10.md",
-        "docs/reverse/A-save-failure-transaction-batch14.md"
+        "docs/reverse/A-save-failure-transaction-batch14.md",
+        "docs/reverse/C-asset-history-batch19.md",
+        "docs/reverse/BATCH19-20261019.md"
       ],
       "implementationArtifacts": [
         "src/VisionFramework/SolutionStore.cs",
-        "src/VisionEditor.Core/GraphEditorDocument.cs"
+        "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "tests/AssetHistoryScopeChecks19/Program.cs"
       ],
       "units": [
         {
@@ -1495,7 +1507,7 @@
           "source": "done",
           "implementation": "partial",
           "validation": "failed",
-          "limitation": "FCR-024真实插件SaveAs后Undo读取失败，不能算通过。",
+          "limitation": "FCR-024跨目录SaveAs后Undo路径失败仍未修复；第十九批新增公共stateful provider及实际main NPoint旧文档11/scope99/重Prepare99与真实Undo11→Save99，11项unsafe特征化复验。接口不保证纯历史序列化/重定位或scope回放，禁止反复PrepareSave/清scope/硬编码私有字段假关闭；validation failed保留，implementation partial不加分。",
           "blockerIds": [
             "FAIL-ASSET-HISTORY"
           ]
@@ -1864,7 +1876,7 @@
     "units": 96,
     "packages": 32,
     "domains": 23,
-    "baseline": "bd9ce6882fc5c47688e05bc5361dbe951ecbef01",
+    "baseline": "287ac42883ca538c594938fda16eef74f0a664a5",
     "layers": {
       "source": {
         "done": 52,
@@ -1878,14 +1890,14 @@
         }
       },
       "implementation": {
-        "done": 37,
+        "done": 39,
         "total": 96,
-        "percent": 38.5,
-        "remaining": 59,
+        "percent": 40.6,
+        "remaining": 57,
         "statuses": {
-          "done": 37,
+          "done": 39,
           "not_started": 29,
-          "partial": 28,
+          "partial": 26,
           "blocked": 2
         }
       },
@@ -1909,9 +1921,9 @@
     "allThreePercent": 29.2,
     "closedPackages": 0,
     "newProductTestsRun": 0,
-    "overallCompletionPercent": 38.54,
-    "overallDone": 37,
-    "overallRemaining": 59,
+    "overallCompletionPercent": 40.63,
+    "overallDone": 39,
+    "overallRemaining": 57,
     "overallPolicy": "implementation-self-review-v1",
     "meaning": "用户指定：只按实施完成并自审核的单元统计总进度；人工验收不参与，源码/验证及三层交集仅保留为证据维度"
   },
@@ -2856,10 +2868,11 @@
       "units": [
         "D02.2"
       ],
-      "reason": "实际插件跨目录另存后Undo解析错基目录",
-      "unblockCondition": "FCR-024纯重定位合同、用户选择交接后实现并复验原失败场景",
+      "reason": "跨目录Undo资产路径失败，以及实际main校准历史旧11/当前scope99导致Undo后Save写回99。",
+      "unblockCondition": "FCR-024版本绑定资产身份/纯历史序列化与重定位，加历史与运行scope一致回放；用户选择合同交付后复验路径/源删除/多层历史与非文件状态。",
       "evidence": [
-        "docs/reverse/D02-asset-history-batch3.md"
+        "docs/reverse/D02-asset-history-batch3.md",
+        "docs/reverse/C-asset-history-batch19.md"
       ]
     },
     {

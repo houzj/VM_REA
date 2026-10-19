@@ -1,0 +1,60 @@
+# D02.2 资产历史与当前运行状态的公共合同反例（第十九批C线）
+
+## 判定与本批交付
+
+**D02.2保持blocked，不用单个外部文件仍存在的成功例计完成。** 本批不重复FCR-024旧图像路径失败，新增可复验的状态污染反例：将历史节点交给当前公共PrepareSave，可能把未来校准scope的点值99写回历史旧值11。仅在Capture时调用也不能保证安全，因为主文档Undo与插件scope并未统一回放。
+
+交付 `tests/AssetHistoryScopeChecks19`，只新增测试及审计，不改插件实现、共享接口、GraphEditorDocument或tool-plugins。测试退出0意味着成功复验“预期不安全行为”，并非D02.2修复通过；expectedUnsafeBehaviorObserved明确写入summary。失败写failed.json并退出1，不留下未处理异常弹窗。
+
+## 原始源码的已证行为
+
+- `analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs` Export：在历史捕获分支选择TempFiles的.gro槽，调用SyncExportGroupModule，VmModuleDataInfo保存strPath；恢复再从载荷Import。原Module也有pData/nDataLen内存分支，不能统一认为均为文件路径。
+- `analysis/decompiled/VM.Core/VM.Core/VmSolution.cs` Export_Procedure：先明确设置`vmProcedure.UserData["CalibData"]=null`，再调用ExportProcess/等待回调并返回导出路径；不能将此null赋值描述为已保存校准内容。ImportProFile接收独立calibData，导入后交给新流程。内部文件如何编码资产及回调完整异常语义仍属原SDK未恢复边界。
+- `analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs` CreateNewSolution：没有旧SolutionPath时先Dispatcher调用SaveCalibUserData再Export并记录oldSolution路径；已有路径时直接借用路径。不应说每个root都持相同类型的完整不可变文件。
+- `SolutionUnRedoOperation.cs`通过TempPath比较避免清redo时删除新part仍用的同路径；它没有提供“给当前运行scope重做任意历史资产”的合同。
+
+这些说明原捕获/业务状态恢复与载荷关联，不能推导main独立JSON在Undo时反复运行当前PrepareSave等价。原代码不作为本次SDK运行授权；本批未构造原清TempFiles服务。
+
+## 当前公共消费链与新反例
+
+`GraphEditorDocument.Save`→宿主PrepareSave→`ToolPluginRegistry.PrepareSave`→每节点`IToolAssetPersistence.PrepareSave(node,base,catalog,scope.ForProcedure(id))`。接口没有纯重定位、历史状态版本或不可变资产身份保证；Registry还会重建已注册资产参与者的资源集合。
+
+`NPointPlugin.UpdateConfiguration`将参数复制进当前scope State.Points/Applied；`PrepareSave(...,scope)`在Applied非空时把State.Points写入返回Node参数。旧Node本身不需要被修改；用新返回Node替换历史文档已经足以改变历史值。此行为仅从当前main已有源码与public调用确认，不冒称原厂N点工具实现。
+
+测试固定三层反例：
+
+1. 自有合法stateful IToolAssetPersistence：首次准备11，当前状态变99，重新准备历史节点得99；三参数无scope重载同样不能单凭接口签名保证纯函数。
+2. 当前main真实NPointPlugin：public UpdateConfiguration/Snapshot/PrepareSave，旧Node11、未来scope99、重prepare旧Node99；不读取私有字段、不执行算法。
+3. 当前真实GraphEditorDocument：从自有JSON载入旧节点11，Rename→Undo恢复11，再Save走原公共Registry/当前scope，当前文档变99。它证明“当前live文档”不等于“当前scope状态已回放”。
+
+NPoint当前无scope重载会保留旧Node，但这只是该实际实现的有限事实；通用接口允许第一例，不能以跳过scope冒充所有资产/运行状态完整保存。
+
+## 动态边界审查
+
+测试在创建对象前设置自动相机发现禁用switch，且根本不构造MainWindow。NPoint构造只有托管描述符、数组和字典；GetState使用自有ModuleExecutionScope.State；UpdateConfiguration只同步点数组/Applied，Snapshot只Clone；PrepareSave只复制节点参数并读取该State。ModuleRegistry.Register存factory，不执行factory。没有CreateRuntime、ExecuteAsync、Export、NPointFile.Write、原SDK、设备、窗口或其他任务进程。
+
+所有JSON、日志和受控输出写新GUID审计目录。scope.Dispose只释放本fixture自有托管state。源码哈希见 `analysis/full-audit/batch19-20261019/C/source-hashes.json`，子线未构建，根线串行运行后补实际summary，不预填通过。
+
+## 精确解除条件
+
+- 需要可复验的、与历史版本绑定的资产身份/参数序列化与纯基目录重定位合同；它必须由资产语义的拥有者解释opaque私有路径，不能由Core猜参数名称或只保留sourceExists。
+- 需要历史恢复与实际运行scope状态的一致合同，或一个明确不读取当前scope的历史序列化入口；不能对旧文档直接采未来scope。必须覆盖多层Undo/Redo、SaveAs、源文件删除后嵌入重开，并校验资源字节与校准等非文件状态。
+- 现接口没有这些保证。本批不引入node origin新字段、不新增插件配置接口、不借用未交付代码、不自动要求插件项目实现；由用户决定后续合同交付。
+
+可选诊断只能明确拒绝不支持的历史资产操作，不能静默使用未来数据、丢历史、以重复PrepareSave当纯rebase，或以清除scope掩盖状态丢失。当前没有证据充分的通用main修复，故本线不为进度假造产品补丁。
+
+## 实际复验与最终边界
+
+根线实际运行退出0，子线已只读核对 `analysis/full-audit/batch19-20261019/C/asset-history-scope-d6808e40d5e447bdbc4e1d1bce72cbd7/summary.json`：passedCharacterization=11与checks数组11项一致；expectedUnsafeBehaviorObserved=true。实际NPoint oldDocument=11、futureScope=99、repreparedOld=99，实际GraphEditorDocument Undo恢复11后Save结果99。
+
+**退出0只表示新反例可靠复现，不是修复通过，不给D02.2增加完成计数。** 本批没有更改provider、历史恢复或scope回放，因此不声称消除错误。失败边界不仅是旧FCR-024的相对文件找不到，还包括重复准备历史时静默改变非文件状态。无scope重载对当前NPoint恰好保持旧值，不能满足通用公共接口纯度或完整资产语义。
+
+## Registry提交路径独立审查
+
+对根线当前ToolPluginRegistry变更只读审查：原2参数Register保留，转发新增expectedId/expectedVersion重载；manifest/descriptor局部捕获、identity核对在修改registry前；ModuleRegistry先Freeze/Validate再TryAdd，成功后才发布plugins，可避免模块校验失败却留下插件记录；id-pending在finally移除。没有更改插件实现或新建配置接口。
+
+审查曾向根线指出窄重入边界：原id-pending位置在Manifest/Descriptor getter之后，getter可先重入注册并发布。根线现已改为同registry同步注册bool准入：在任何外部getter之前设置registering=true，整个读取、expected身份检查和模块/插件发布都处于try/finally，异常及成功均复位；嵌套调用在读其metadata前被拒绝。实际模块发布后没有再读取plugin.Manifest/Descriptor，method-group委托的绑定也不执行runtime或dynamic描述函数；原两参数ABI仍保留。
+
+已只读核对 `analysis/full-audit/batch19-20261019/D/registry-reentry-de27681625c948c083c243606546df46/summary.json`：5/5、根线实际exit0；覆盖Manifest getter真实重入、外层唯一模块/插件提交、metadata抛错无ghost、getter失败后修复重试、expected身份失败后重试。原审查重入问题已在本固定同步合同内关闭。本检查不承诺跨线程安全或OOM等不可恢复故障的双字典事务，也不将任意执行插件代码当作安全沙盒。
+
+实际summary哈希、原/现源码与本报告最终审查快照见 `analysis/full-audit/batch19-20261019/C/final-review-hashes.json`；原source-hashes.json保留为本批初始身份材料。

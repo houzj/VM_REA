@@ -1,8 +1,8 @@
 # 框架逆向成果全面对账
 
-2026-10-19；冻结基线 `bd9ce6882fc5c47688e05bc5361dbe951ecbef01`。仅 main；tool-plugins 未访问、未计入。
+2026-10-19；冻结基线 `287ac42883ca538c594938fda16eef74f0a664a5`。仅 main；tool-plugins 未访问、未计入。
 
-**当前实施总进度：37/96 = 38.54%。**
+**当前实施总进度：39/96 = 40.63%。**
 
 用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
@@ -11,7 +11,7 @@
 | 层次 | 严格达成 | 进度 | 尚未达成 |
 |---|---:|---:|---:|
 | 源码 | 52/96 | **54.2%** | 44 |
-| 实现 | 37/96 | **38.5%** | 59 |
+| 实现 | 39/96 | **40.6%** | 57 |
 | 验证 | 29/96 | **30.2%** | 67 |
 
 ## 分母与计数规则
@@ -38,7 +38,7 @@
 | A04 | 节点手势、路由和视口 | 3 | 3 | 3 | 3 |
 | A05 | 菜单、工具栏及全局入口清点 | 1 | 1 | 1 | 1 |
 | A06 | 运行界面编辑与显示布局 | 1 | 0 | 0 | 0 |
-| A07 | 通用发现接入与缺插件体验 | 2 | 2 | 1 | 1 |
+| A07 | 通用发现接入与缺插件体验 | 2 | 3 | 1 | 1 |
 | A08 | 壳与交互全状态验收 | 1 | 1 | 1 | 1 |
 | B01 | 实际运行Tab与变量目标 | 3 | 0 | 0 | 0 |
 | B02 | Group身份、所有权和复制 | 2 | 2 | 2 | 2 |
@@ -55,7 +55,7 @@
 | C05 | 配置/调试会话与框架释放 | 2 | 2 | 1 | 1 |
 | C06 | 外部服务调度与故障隔离 | 0 | 0 | 0 | 0 |
 | C07 | 长稳、并发与异常恢复 | 0 | 0 | 0 | 0 |
-| C08 | 执行与历史组合验收 | 1 | 1 | 1 | 1 |
+| C08 | 执行与历史组合验收 | 1 | 2 | 1 | 1 |
 | D01 | sol单操作保存与native写入点 | 2 | 1 | 1 | 1 |
 | D02 | 独立存储与资源事务补齐 | 3 | 2 | 2 | 2 |
 | D03 | 原生容器与对象数据映射 | 0 | 0 | 0 | 0 |
@@ -167,14 +167,14 @@
 
 前置：A01、B07；完整包未因本表计分关闭。
 
-证据：[TOOL-DISCOVERY-METADATA.md](TOOL-DISCOVERY-METADATA.md)、[ROI-REAL-TOOL.md](ROI-REAL-TOOL.md)、[A07-managed-loader-partial-batch16.md](reverse/A07-managed-loader-partial-batch16.md)、[A-runtime-editor-batch18.md](reverse/A-runtime-editor-batch18.md)、[BATCH18-20261019.md](reverse/BATCH18-20261019.md)
+证据：[TOOL-DISCOVERY-METADATA.md](TOOL-DISCOVERY-METADATA.md)、[ROI-REAL-TOOL.md](ROI-REAL-TOOL.md)、[A07-managed-loader-partial-batch16.md](reverse/A07-managed-loader-partial-batch16.md)、[A-runtime-editor-batch18.md](reverse/A-runtime-editor-batch18.md)、[BATCH18-20261019.md](reverse/BATCH18-20261019.md)、[A-loader-failure-matrix-batch19.md](reverse/A-loader-failure-matrix-batch19.md)、[BATCH19-20261019.md](reverse/BATCH19-20261019.md)
 
-当前实现/工具位置：`src/VisionEditor/ToolDirectoryCatalog.cs`、`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ManagedToolPluginLoader.cs`、`tests/ManagedToolPluginChecks16/Program.cs`、`src/VisionEditor/ManagedToolCatalogLoadSession.cs`、`src/VisionEditor/ToolNavigation.cs`、`tests/ManagedToolCatalogHostChecks18/Program.cs`
+当前实现/工具位置：`src/VisionEditor/ToolDirectoryCatalog.cs`、`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ManagedToolPluginLoader.cs`、`tests/ManagedToolPluginChecks16/Program.cs`、`src/VisionEditor/ManagedToolCatalogLoadSession.cs`、`src/VisionEditor/ToolNavigation.cs`、`tests/ManagedToolCatalogHostChecks18/Program.cs`、`src/VisionPluginContracts/Contracts.cs`、`tests/ManagedToolFailureMatrixChecks19/Program.cs`、`tests/ManagedToolFailureFixture19/Plugins.cs`、`tests/RegistryMetadataReentryChecks19/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | A07.1 | 发现目录到真实ModuleRegistry的动态映射 | 达成 | 达成 | 部分 | 第十八批现tool-catalog可选当前合同Implementation引用→首次分类装载→真实双registry→palette/节点创建执行/保存重开完整接入，15项MainWindow自审及独立复审通过。显式刷新只清失败，成功实例不重注册；独立JSON/IVisionToolPlugin适配不是原Cs/Librarys.Config/IVmModule ABI兼容，原native未知分列。 |
-| A07.2 | 缺插件、版本冲突及刷新失败处理 | 部分 | 部分 | 部分 | 已有拒绝与缺目录子集，未有完整宿主刷新矩阵。 |
+| A07.2 | 缺插件、版本冲突及刷新失败处理 | 部分 | 达成 | 部分 | 第十九批当前合同main加载11类错误/身份冲突、sticky与成功前缀/刷新矩阵、未知插件与缺版本方案Load/选择/运行拒绝/SaveReload保opaque完整消费；47项host+5项metadata guard自审与独立复审通过。窄修Register原子发布顺序和一次capture/expected/metadata前重入准入，2参ABI保留。原Cs/native/跨线程/OOM/任意DLL副作用未知，不宣称兼容或沙盒。 |
 | A07.3 | 既有真实插件注册到根流程/Group消费 | 达成 | 达成 | 达成 | 仅main历史集成的图像源/二值等工具，不含tool-plugins在制。 |
 
 ### A08 壳与交互全状态验收
@@ -405,14 +405,14 @@
 
 前置：C02、C03、C04、C05、C06、C07、B08；完整包未因本表计分关闭。
 
-证据：[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)
+证据：[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[B-nested-composition-batch19.md](reverse/B-nested-composition-batch19.md)、[BATCH19-20261019.md](reverse/BATCH19-20261019.md)
 
-当前实现/工具位置：`tests/VisionEditor.WpfChecks/Program.cs`
+当前实现/工具位置：`tests/VisionEditor.WpfChecks/Program.cs`、`tests/NestedCompositionChecks19/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | C08.1 | 当前运行-编辑-撤销-保存重开组合 | 达成 | 达成 | 达成 | 只计已有独立WPF/执行组合记录。 |
-| C08.2 | 嵌套错误、取消和历史释放组合 | 部分 | 部分 | 部分 | 局部用例存在，完整组合矩阵未完成。 |
+| C08.2 | 嵌套错误、取消和历史释放组合 | 部分 | 达成 | 部分 | 第十九批计划组合工具真实走生产Core/executor/owned scope/filehistory，深度1/2/3、throw/FailedResult/asyncDispose fault/cancel及恢复、编辑UndoRedo/SaveLoad/删除恢复/并发关闭与历史资源释放46项自审及独立复审通过。模块31/31和state6/6释放。Core组合不是MainWindow或原机差分；原SDK/厂商窗口C08.3开放。 |
 | C08.3 | 原机执行/历史/资源的综合同状态验收 | 部分 | 未取得交付 | 阻塞 | 真实SDK/VM组合未验证。 |
 
 ### D01 sol单操作保存与native写入点
@@ -433,14 +433,14 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[SOLUTION-PERSISTENCE-BOUNDARY.md](SOLUTION-PERSISTENCE-BOUNDARY.md)、[D02-storage-batch2.md](reverse/D02-storage-batch2.md)、[D02-asset-history-batch3.md](reverse/D02-asset-history-batch3.md)、[D02-storage-boundary-batch4.md](reverse/D02-storage-boundary-batch4.md)、[D02-interruption-batch6.md](reverse/D02-interruption-batch6.md)、[D-save-roundtrip-batch10.md](reverse/D-save-roundtrip-batch10.md)、[A-save-failure-transaction-batch14.md](reverse/A-save-failure-transaction-batch14.md)
+证据：[SOLUTION-PERSISTENCE-BOUNDARY.md](SOLUTION-PERSISTENCE-BOUNDARY.md)、[D02-storage-batch2.md](reverse/D02-storage-batch2.md)、[D02-asset-history-batch3.md](reverse/D02-asset-history-batch3.md)、[D02-storage-boundary-batch4.md](reverse/D02-storage-boundary-batch4.md)、[D02-interruption-batch6.md](reverse/D02-interruption-batch6.md)、[D-save-roundtrip-batch10.md](reverse/D-save-roundtrip-batch10.md)、[A-save-failure-transaction-batch14.md](reverse/A-save-failure-transaction-batch14.md)、[C-asset-history-batch19.md](reverse/C-asset-history-batch19.md)、[BATCH19-20261019.md](reverse/BATCH19-20261019.md)
 
-当前实现/工具位置：`src/VisionFramework/SolutionStore.cs`、`src/VisionEditor.Core/GraphEditorDocument.cs`
+当前实现/工具位置：`src/VisionFramework/SolutionStore.cs`、`src/VisionEditor.Core/GraphEditorDocument.cs`、`tests/AssetHistoryScopeChecks19/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | D02.1 | 独立JSON结构/版本/大小/深度与拒绝 | 达成 | 达成 | 达成 | 原生格式不在本项；32MiB边界及编辑器状态已验。 第十批：独立保存按Load同一规则拒绝不透明JSON重复属性，9项通过并有23项存储/历史回归；FCR024私有资产仍开放。 |
-| D02.2 | 资产嵌入、跨目录和多层历史身份 | 达成 | 部分 | 失败 | FCR-024真实插件SaveAs后Undo读取失败，不能算通过。 |
+| D02.2 | 资产嵌入、跨目录和多层历史身份 | 达成 | 部分 | 失败 | FCR-024跨目录SaveAs后Undo路径失败仍未修复；第十九批新增公共stateful provider及实际main NPoint旧文档11/scope99/重Prepare99与真实Undo11→Save99，11项unsafe特征化复验。接口不保证纯历史序列化/重定位或scope回放，禁止反复PrepareSave/清scope/硬编码私有字段假关闭；validation failed保留，implementation partial不加分。 |
 | D02.3 | 独立写入失败事务与受控进程中断 | 达成 | 达成 | 达成 | 锁/失败及自有中断已验；不是断电/所有阶段保证。 第十四批持锁拒绝/PrepareSave异常等22项通过，限定为提交前事务及清理；Changed通知在提交后抛错不回滚。413秒长稳拒绝瞬时原因未知，未以既有测试冒充现场前后事务复验。 |
 
 ### D03 原生容器与对象数据映射
@@ -531,7 +531,7 @@
 
 | 编号 | 类型/涉及单元 | 解除条件 |
 |---|---|---|
-| FAIL-ASSET-HISTORY | 已复现产品失败：D02.2 | FCR-024纯重定位合同、用户选择交接后实现并复验原失败场景 |
+| FAIL-ASSET-HISTORY | 已复现产品失败：D02.2 | FCR-024版本绑定资产身份/纯历史序列化与重定位，加历史与运行scope一致回放；用户选择合同交付后复验路径/源删除/多层历史与非文件状态。 |
 | FAIL-SHELL-INPUT | 已记录操作失败：A08.2 | 修复默认输入路径并复跑，不以control-events-only代替；桌面矩阵单验 |
 | ORIGINAL-INSTANCE | 受控原实例/运行隔离：A01.3, A03.3, B01.3, B02.3, B03.3, C01.3, C03.2, C04.2, C04.3, C08.3 | 完成原日志受控装载/输出约束，专属SDK实例和被动观测后执行固定矩阵 |
 | NATIVE-FORMAT | 原生引擎/格式/样本缺证据：D01.3, D03.2, D03.3, D04.2, D04.3, D05.1, D05.2, D05.3 | 提供已配置授权native分析环境和自有单操作原方案/旧版样本，逐字段追读写后往返 |

@@ -259,3 +259,14 @@ main GraphEditorDocument已改为真实DocumentHistoryEngine的root/part旧新�
 - Payload：内部显示request代数+owner/procedure票据，不进入公开插件API；历史文件保存main自身文档JSON opaque bytes与独立lease，非原SDK二进制格式。GraphEditorDocument可选parent仅选择自有存储母目录，无字段持久化变更。
 - Lifecycle：provider调用前清旧frame、同步重入过时返回丢弃，Replace/Close物理解除main的两个scope事件。历史迁栈不删、淘汰/清redo/换方案/Dispose释放末lease；借用路径不删、失败保载荷/错误，显式复收；仅删除自有GUID新文件与空目录，不递归清TempFiles。默认64KiB阈值为独立策略。
 - Compatibility/acceptance：既有IVisionToolPlugin/IToolDisplayProvider及配置合同不变，已有小文档仍内存；原native回调/全显示工厂/SDK导出密码格式另项未知。结果20、store18、engine17、真实文档19与既有定向回归通过，见reverse/BATCH18-20261019.md。提交仅在main，不代表采用或通知插件交付。
+
+## FCR-029：main现有插件注册的身份与失败发布边界
+
+- Producer：main当前目录引用消费者；consumer：既有ToolPluginRegistry/ModuleRegistry与palette/方案校验。root唯一改本工作区Contracts.cs中的Register方法和ToolNavigation调用；不改插件参数模型、配置模板、执行会话或其他工作树。
+- Payload：保留Register(plugin,modules)原二参ABI；新增Register(plugin,modules,expectedId,expectedVersion)供显式引用消费者使用，不新增插件类型接口或配置字段。
+- Lifecycle：所有外部metadata读取前置同步重入guard并finally复位；一次capture Manifest/Descriptor→对照expected→既有ModuleRegistry冻结/发布→插件表发布。metadata/重复/Freeze失败不留自身半注册；成功后不再调用metadata getter。当前主机UI线程合同，不声称并发安全、OOM事务或不可信代码隔离。
+- Compatibility/evidence：现有二参调用保留且实际旧loader17/catalog15回归通过；新47项host矩阵与5项真实metadata回调通过，源顺序风险未冒称baseline复现。详见reverse/BATCH19-20261019.md。插件项目合流由用户选择，通知不代表采用。
+
+### FCR-024 第十九批新反例：历史文档与未来scope不一致
+
+纯托管公共API已实际复验11项：旧点11、当前scope99，重新准备旧Node和真实Undo后Save均得到99。无scope重载在当前NPoint保11不等于通用IToolAssetPersistence纯函数保证。不得对历史反复调用PrepareSave或清空scope丢状态，亦不加origin公共字段绕过。解除条件扩为版本绑定资产身份/无状态历史序列化/纯重定位以及scope随历史一致恢复；旧图片路径失败与本轮校准值污染都须复验，详见reverse/C-asset-history-batch19.md。未修改工具代码或另一工作树，未向插件线派工，本项仍未实现。
