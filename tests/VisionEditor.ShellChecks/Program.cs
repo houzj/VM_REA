@@ -15,8 +15,9 @@ using VisionFramework;
 static class Program
 {
 [STAThread]
-static void Main()
+static void Main(string[] args)
 {
+bool controlEventsOnly=args.Contains("--control-events-only",StringComparer.Ordinal);
 Directory.CreateDirectory("analysis/full-audit");
 var lockPreferencePath=Path.GetFullPath("analysis/full-audit/shell-lock-preferences.json");
 if(File.Exists(lockPreferencePath))File.Delete(lockPreferencePath);
@@ -34,21 +35,75 @@ typeof(MainWindow).Assembly.GetType("VisionEditor.OpenSolutionDirectoryPreferenc
 var saveDirectoryPath=Path.GetFullPath("analysis/full-audit/shell-save-directory.txt");
 if(File.Exists(saveDirectoryPath))File.Delete(saveDirectoryPath);
 typeof(MainWindow).Assembly.GetType("VisionEditor.SaveSolutionDirectoryPreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,saveDirectoryPath);
+var runningModePath=Path.GetFullPath("analysis/full-audit/shell-running-mode.json");
+if(File.Exists(runningModePath))File.Delete(runningModePath);
+typeof(MainWindow).Assembly.GetType("VisionEditor.ShellRunningModePreference")!.GetProperty("FilePath",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,runningModePath);
 var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
 var samplePicker=new FixedSamplePicker();
 var solutionPicker=new FixedSolutionPicker();
 var savePicker=new FixedSavePicker();
-var window=new MainWindow(samplePicker,solutionPicker,savePicker){ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
+var window=new MainWindow(samplePicker,solutionPicker,savePicker){ShowActivated=true,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Left=100,Top=100};
 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
 void Pump(){window.UpdateLayout();window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);}
 void Check(bool value,string description){if(!value)throw new Exception(description);Console.WriteLine("PASS: "+description);}
 T Find<T>(string name) where T:FrameworkElement=>window.FindName(name) as T??throw new Exception("Missing "+name);
 try
 {
- window.Show();Pump();
+ window.Show();window.Activate();window.Focus();Pump();
  var header=Find<Grid>("ShellHeader");var toolbar=Find<StackPanel>("ToolBar");var toolbarScroll=Find<ScrollViewer>("ToolBarScroll");
+ void CaptureToolbar(string fileName)
+ {
+  toolbar.UpdateLayout();var bitmap=new RenderTargetBitmap((int)Math.Ceiling(toolbar.ActualWidth),(int)Math.Ceiling(toolbar.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(toolbar);
+  var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using var output=File.Create(Path.Combine("analysis/full-audit",fileName));encoder.Save(output);
+ }
  var menu=Find<Menu>("MenuHost");
  Check(window.WindowState==WindowState.Normal,"Window starts normal");
+ var helpMenu=menu.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"帮助"));
+ var onlineHelp=helpMenu.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"帮助文档（在线）"));
+ var undoToolButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"撤销"));
+ var redoToolButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"重做"));
+ var historyDocument=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ bool IconIs(Button button,string suffix)=>button.Content is Image image&&image.Source?.ToString()?.EndsWith(suffix,StringComparison.OrdinalIgnoreCase)==true;
+ Check(!historyDocument.CanUndo&&!undoToolButton.IsEnabled&&IconIs(undoToolButton,"toolbar_ic_topbar_undo_disable.png"),"No available undo operation displays the source-mapped disabled undo icon");
+ Check(!historyDocument.CanRedo&&!redoToolButton.IsEnabled&&IconIs(redoToolButton,"toolbar_ic_topbar_redo_disable.png"),"No available redo operation displays the source-mapped disabled redo icon");
+ CaptureToolbar("shell-toolbar-history-disabled.png");
+ var historyProcedure=historyDocument.CurrentProcedureId;
+ var originalProcedureName=historyDocument.CurrentProcedure.Name;
+ var probeProcedureName=originalProcedureName+"_toolbar_history_probe";
+ historyDocument.RenameProcedure(historyProcedure,probeProcedureName);Pump();
+ Check(historyDocument.CanUndo&&undoToolButton.IsEnabled&&IconIs(undoToolButton,"toolbar_ic_topbar_undo_normal.png")&&!redoToolButton.IsEnabled&&IconIs(redoToolButton,"toolbar_ic_topbar_redo_disable.png"),"A real workflow edit enables undo and switches only the source-mapped undo icon");
+ CaptureToolbar("shell-toolbar-history-undo-enabled.png");
+ undoToolButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,undoToolButton));Pump();
+ Check(historyDocument.CurrentProcedure.Name==originalProcedureName&&!historyDocument.CanUndo&&historyDocument.CanRedo&&IconIs(undoToolButton,"toolbar_ic_topbar_undo_disable.png")&&IconIs(redoToolButton,"toolbar_ic_topbar_redo_normal.png"),"Toolbar Undo restores workflow state and changes both history icons");
+ redoToolButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,redoToolButton));Pump();
+ Check(historyDocument.CurrentProcedure.Name==probeProcedureName&&historyDocument.CanUndo&&!historyDocument.CanRedo&&IconIs(undoToolButton,"toolbar_ic_topbar_undo_normal.png")&&IconIs(redoToolButton,"toolbar_ic_topbar_redo_disable.png"),"Toolbar Redo reapplies workflow state and restores the matching enabled icon");
+ undoToolButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,undoToolButton));Pump();
+ Check(historyDocument.CurrentProcedure.Name==originalProcedureName&&!historyDocument.CanUndo&&historyDocument.CanRedo,"Undo/redo toolbar verification restores the original procedure name");
+ var onlineHelpTarget="";
+ typeof(MainWindow).GetField("onlineHelpLauncher",BindingFlags.NonPublic|BindingFlags.Instance)!.SetValue(window,new Action<string>(url=>onlineHelpTarget=url));
+ var helpDocument=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ var helpRevision=helpDocument.Revision;
+ onlineHelp.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,onlineHelp));Pump();
+ Check(onlineHelpTarget=="http://pinfodata.hikvision.com/analysisQR/showQR/4e994cf1"&&helpDocument.Revision==helpRevision,"Online Help menu routes the source-configured URL to the shell launcher without mutating the solution");
+ Check(((int)typeof(MainWindow).GetField("runningModeIndex",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!)==0,"Missing RunningMode configuration loads native default index 0");
+ var settingsMenu=menu.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"设置"));
+ var runPolicyItem=settingsMenu.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"运行策略"));
+ bool runModeWindowCaptured=false;
+ window.Dispatcher.BeginInvoke(new Action(()=>
+ {
+  var dialog=window.OwnedWindows.OfType<RunModeSettingsWindow>().Single();
+  var selector=(ComboBox)dialog.FindName("ModeSelector");selector.SelectedIndex=1;dialog.UpdateLayout();
+  var bitmap=new RenderTargetBitmap((int)Math.Ceiling(dialog.ActualWidth),(int)Math.Ceiling(dialog.ActualHeight),96,96,PixelFormats.Pbgra32);bitmap.Render(dialog);
+  var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using(var output=File.Create("analysis/full-audit/shell-running-mode-diagnostic.png"))encoder.Save(output);
+  runModeWindowCaptured=true;
+  ((Button)dialog.FindName("ApplyButton")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+ }),DispatcherPriority.Background);
+ runPolicyItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,runPolicyItem));Pump();
+ var runModeIndex=(int)typeof(MainWindow).GetField("runningModeIndex",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ var normalMode=(bool)typeof(MainWindow).GetField("shellIsNormalMode",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+ Check(runModeWindowCaptured&&runModeIndex==1&&!normalMode,"Settings > Run Policy opens the bound mode selector and Apply switches the shell to diagnostic mode");
+ var modeRead=typeof(MainWindow).Assembly.GetType("VisionEditor.ShellRunningModePreference")!.GetMethod("Read",BindingFlags.Static|BindingFlags.NonPublic)!;
+ Check(File.ReadAllText(runningModePath).Contains("\"RunningMode\":1")&&((int)modeRead.Invoke(null,null)!)==1,"Applying diagnostic mode persists RunningMode=1 in the independent shell preference");
  var procedureTabs=Find<TabControl>("ProcedureTabs");
  var fileMenu=(MenuItem)menu.Items[0];fileMenu.IsSubmenuOpen=true;Pump();
  Check(ReferenceEquals(FocusManager.GetFocusedElement(procedureTabs),fileMenu),"Opening a main menu records the menu as the procedure focus element");
@@ -164,16 +219,59 @@ try
  document.Save(recentSecond);
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
  var fileRoot=(MenuItem)menu.Items[0];var recentMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"最近打开"));
- fileRoot.IsSubmenuOpen=true;Pump();recentMenu.IsSubmenuOpen=true;Pump();
+ var menuSource=PresentationSource.FromVisual(window)??throw new Exception("Menu host has no presentation source");
+ void SendMenuKey(UIElement target,Key key)
+ {
+  var keyEvent=new KeyEventArgs(Keyboard.PrimaryDevice,menuSource,Environment.TickCount,key){RoutedEvent=Keyboard.KeyDownEvent,Source=target};
+  target.RaiseEvent(keyEvent);
+ }
+ Check(window.IsActive,$"WPF menu fixture window is visible and active (bounds={window.Left},{window.Top},{window.ActualWidth}x{window.ActualHeight})");
+ var menuFocus=Keyboard.Focus(menu);var fileFocus=Keyboard.Focus(fileRoot);
+ SendMenuKey(fileRoot,Key.Down);Pump();
+ var fileMenuOpenedByKeyboard=fileRoot.IsSubmenuOpen;
+ var fileMouseDown=false;
+ if(!fileRoot.IsSubmenuOpen)
+ {
+  var down=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.PreviewMouseLeftButtonDownEvent,Source=fileRoot};
+  fileRoot.RaiseEvent(down);var up=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.PreviewMouseLeftButtonUpEvent,Source=fileRoot};fileRoot.RaiseEvent(up);Pump();fileMouseDown=down.Handled;
+ }
+ var fileMenuOpened=fileRoot.IsSubmenuOpen;
+ var recentFocus=Keyboard.Focus(recentMenu);
+ SendMenuKey(recentMenu,Key.Right);Pump();
+ if(!recentMenu.IsSubmenuOpen)
+ {
+  var down=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.PreviewMouseLeftButtonDownEvent,Source=recentMenu};
+  recentMenu.RaiseEvent(down);var up=new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=UIElement.PreviewMouseLeftButtonUpEvent,Source=recentMenu};recentMenu.RaiseEvent(up);Pump();
+ }
+ var recentMenuOpened=recentMenu.IsSubmenuOpen;
+ if(controlEventsOnly)
+ {
+  Console.WriteLine("LIMITATION: control-event mode excludes popup input/render acceptance; remaining menu commands use actual WPF Click events.");
+ }
+ else Check(fileMenuOpened&&recentMenuOpened,$"WPF menu input opens File and Recent menus (file={fileRoot.IsSubmenuOpen}, recent={recentMenu.IsSubmenuOpen}, menuFocus={menuFocus?.GetType().Name}, fileFocus={fileFocus?.GetType().Name}, recentFocus={recentFocus?.GetType().Name}, focused={Keyboard.FocusedElement}, fileFocusable={fileRoot.Focusable}, fileLoaded={fileRoot.IsLoaded}, fileVisible={fileRoot.IsVisible}, recentFocusable={recentMenu.Focusable}, recentLoaded={recentMenu.IsLoaded}, recentVisible={recentMenu.IsVisible}, mouseDownHandled={fileMouseDown})");
+ // Popups are separate presentation sources; ApplicationIdle on the owner window
+ // does not guarantee the child popup has completed its own render/layout pass.
+ recentMenu.ApplyTemplate();
+ var recentPopup=recentMenu.Template.FindName("PART_Popup",recentMenu) as Popup;
+ var recentRenderDeadline=DateTime.UtcNow.AddSeconds(controlEventsOnly?0:2);
+ while(DateTime.UtcNow<recentRenderDeadline)
+ {
+  recentMenu.ApplyTemplate();recentMenu.UpdateLayout();
+  recentPopup=recentMenu.Template.FindName("PART_Popup",recentMenu) as Popup;
+  if(recentPopup?.Child is FrameworkElement renderedRecentPopup){renderedRecentPopup.UpdateLayout();recentPopup.UpdateLayout();}
+  window.Dispatcher.Invoke(()=>{},DispatcherPriority.Render);
+  if(recentPopup is {IsOpen:true}&&recentPopup.Child is FrameworkElement renderedPopup&&renderedPopup.ActualWidth>0&&renderedPopup.ActualHeight>0)break;
+ }
  var recentMenuCaptured=false;
- if(recentMenu.Template.FindName("PART_Popup",recentMenu) is Popup recentPopup&&recentPopup.Child is FrameworkElement recentContent&&recentContent.ActualWidth>0&&recentContent.ActualHeight>0)
+ if(recentPopup is {IsOpen:true}&&recentPopup.Child is FrameworkElement recentContent&&recentContent.ActualWidth>0&&recentContent.ActualHeight>0)
  {
   var recentBitmap=new RenderTargetBitmap((int)Math.Ceiling(recentContent.ActualWidth),(int)Math.Ceiling(recentContent.ActualHeight),96,96,PixelFormats.Pbgra32);
   recentBitmap.Render(recentContent);var recentPng=new PngBitmapEncoder();recentPng.Frames.Add(BitmapFrame.Create(recentBitmap));
   using var recentFile=File.Create("analysis/full-audit/shell-recent-menu.png");recentPng.Save(recentFile);
   recentMenuCaptured=true;
  }
- Check(recentMenuCaptured,"Recent submenu renders a reviewable test-only bitmap");
+ var recentPopupSize=recentPopup?.Child is FrameworkElement popupElement?$"{popupElement.ActualWidth}x{popupElement.ActualHeight}":"missing";
+ if(!controlEventsOnly)Check(recentMenuCaptured,$"Recent submenu renders a reviewable test-only bitmap (rootOpen={fileRoot.IsSubmenuOpen}, submenuOpen={recentMenu.IsSubmenuOpen}, popupOpen={recentPopup?.IsOpen}, popupSize={recentPopupSize})");
  Check(recentMenu.Items.Count==2&&Equals(((MenuItem)recentMenu.Items[0]).Tag,recentSecond)&&Equals(((MenuItem)recentMenu.Items[1]).Tag,recentFirst),"Save menu persists and orders recent solution paths");
  var earlier=(MenuItem)recentMenu.Items[1];
  Check(Equals(earlier.Header,Path.GetFileNameWithoutExtension(recentFirst))&&Equals(earlier.ToolTip,recentFirst),"Recent menu uses the source filename-without-extension while retaining the full path tooltip");
@@ -260,7 +358,7 @@ try
  Check(fileRoot.Items[fileRoot.Items.IndexOf(sampleMenu)-1] is Separator&&fileRoot.Items[fileRoot.Items.IndexOf(saveMenu)-1] is Separator,"Source separator flags appear before sample and save commands");
  Check(fileRoot.Items[fileRoot.Items.IndexOf(exitMenu)-1] is Separator,"File menu separates its native Exit command from solution commands");
  fileRoot.IsSubmenuOpen=true;Pump();
- Check(exitMenu.IsVisible&&exitMenu.ActualWidth>0&&exitMenu.ActualHeight>0,"File Exit appears as a laid-out WPF menu item in the opened menu");
+ if(!controlEventsOnly)Check(exitMenu.IsVisible&&exitMenu.ActualWidth>0&&exitMenu.ActualHeight>0,"File Exit appears as a laid-out WPF menu item in the opened menu");
  var filePopup=fileRoot.Template.FindName("PART_Popup",fileRoot) as Popup;
  if(filePopup?.Child is FrameworkElement popupContent&&popupContent.ActualWidth>0&&popupContent.ActualHeight>0)
  {
@@ -306,8 +404,18 @@ try
  Check(workarea.ActualWidth>465&&rightColumn.MaxWidth>=400&&leftColumn.ActualWidth>=59,
   "Expanded toolbox at minimum window width recalculates a nonnegative splitter cap");
  var closed=false;window.Closed+=(_,_)=>closed=true;
- exitMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,exitMenu));Pump();
- Check(closed&&!window.IsVisible,"File Exit invokes the same real WPF window close path as the titlebar");
+ var closeRunField=typeof(MainWindow).GetField("activeRun",BindingFlags.Instance|BindingFlags.NonPublic)!;
+ using(var closeRun=new CancellationTokenSource())
+ {
+  closeRunField.SetValue(window,closeRun);
+  window.Close();Pump();
+  Check(window.IsVisible&&closeRun.IsCancellationRequested&&!Find<DockPanel>("WindowContent").IsEnabled&&Find<TextBlock>("StatusText").Text=="正在停止流程并等待资源释放…","Closing during an owned workflow run cancels it, keeps the shell alive for cleanup, and blocks further shell interaction");
+  var closingImage=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);closingImage.Render(window);var closingPng=new PngBitmapEncoder();closingPng.Frames.Add(BitmapFrame.Create(closingImage));using(var file=File.Create("analysis/full-audit/shell-shutdown-wait.png"))closingPng.Save(file);
+  var releaseTimer=new System.Windows.Threading.DispatcherTimer{Interval=TimeSpan.FromMilliseconds(40)};
+  releaseTimer.Tick+=(_,_)=>{releaseTimer.Stop();closeRunField.SetValue(window,null);};releaseTimer.Start();
+  var closeDeadline=DateTime.UtcNow.AddSeconds(2);while(!closed&&DateTime.UtcNow<closeDeadline){Pump();Thread.Sleep(2);}
+  Check(closed&&!window.IsVisible,"Deferred main-window close resumes only after the owned run releases its lifecycle token");
+ }
  Console.WriteLine("Shell command and input checks passed.");
 }
 

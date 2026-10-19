@@ -6,6 +6,11 @@ public sealed record VmRouteResult(VmRouteStatus Status,IReadOnlyList<RoutePoint
 public static class VmOrthogonalRouter
 {
     private static readonly object Gate=new();
+    // DiagramPage retains one APoint[,] map and resets its per-search state through
+    // APoint.CurTimeEnableFlag. Keep the same lifecycle to avoid allocating a million
+    // APoint objects for every connection on the fixed 5000x5000 workflow canvas.
+    private static APoint[,]? cachedMap;
+    private static int cachedMapWidth,cachedMapHeight;
     public static VmRouteResult Route(RoutePort source,RoutePort target,IEnumerable<RouteRect> obstacles,double canvasWidth,double canvasHeight,int maxCells=250000)
     {
         var raw=obstacles.Append(source.Owner).Append(target.Owner).Distinct().ToArray();
@@ -18,7 +23,12 @@ public static class VmOrthogonalRouter
         var all=raw.Select(Inflated).ToList();var pair=new List<Rect>{Inflated(source.Owner),Inflated(target.Owner)};
         lock(Gate)
         {
-            var map=new APoint[width,height];for(int x=0;x<width;x++)for(int y=0;y<height;y++)map[x,y]=new APoint(x,y);
+            if(cachedMap is null||cachedMapWidth!=width||cachedMapHeight!=height)
+            {
+                cachedMap=new APoint[width,height];cachedMapWidth=width;cachedMapHeight=height;
+                for(int x=0;x<width;x++)for(int y=0;y<height;y++)cachedMap[x,y]=new APoint(x,y);
+            }
+            var map=cachedMap!;
             void Mark(List<Rect> walls)
             {
                 APoint.CurTimeEnableFlag=Guid.NewGuid().ToString();

@@ -84,6 +84,36 @@ internal static class Program
             doc.NewSolution();
             string source=doc.AddNode("vision.image-source","1.0.0",200,100);
             string target=doc.AddNode("vision.image-source","1.0.0",450,280);
+            // Native Connector.AttachedDiagramItem_PreviewMouseMove calls
+            // PathFinder.GetConnectionLine(start item, pointer in ItemsPage, port index)
+            // before HitTesting/SetNearestConnector. Exercise the local WPF gesture
+            // entry and its visible preview geometry for the same legal bottom-to-top
+            // port pair; this checks the canvas adapter as well as the router.
+            revision=doc.Revision;
+            Invoke("BeginConnection",source,3);
+            Invoke("AdvanceConnectionPreview",new Point(505,280),MouseButtonState.Pressed);Pump();
+            var preview=(System.Windows.Shapes.Path)typeof(MainWindow).GetField("connectionPreview",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            var firstPreview=preview;
+            var expectedPreview=VmOrthogonalRouter.Preview(new RoutePort(new RoutePoint(255,130),PortDirection.Down,new RouteRect(200,100,110,30)),new RoutePoint(505,280));
+            Check(preview.Data.ToString()==typeof(MainWindow).GetMethod("LineGeometry",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,[expectedPreview])!.ToString(),"connector drag preview draws the native GetConnectionLine route for bottom port 3 at ItemsPage point 505,280");
+            var previewTarget=typeof(MainWindow).GetField("connectionTarget",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window);
+            Check(previewTarget is ValueTuple<string,int> hit&&hit.Item1==target&&hit.Item2==1,"connector drag preview hit-tests the target top port without committing the link");
+            Check(doc.Revision==revision&&doc.CurrentProcedure.ExecutionLinks!.Count==0,"connector preview is transient and does not write workflow data");
+            Capture("canvas-connector-drag-preview.png");
+            Invoke("FinishConnection",new Point(505,280));Pump();
+            var connected=doc.CurrentProcedure.ExecutionLinks!.Single();
+            Check(doc.Revision==revision+1&&connected.FromNode==source&&connected.ToNode==target&&connected.SourceIndex==3&&connected.TargetIndex==1,"connector release commits the previewed bottom-to-top port pair as one document edit");
+            Check(typeof(MainWindow).GetField("connectionPreview",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window) is null,"connector release removes and clears its temporary adorner state");
+            doc.Undo();Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Count==0,"undo removes the committed connector drag link");
+            Invoke("BeginConnection",source,3);
+            Invoke("AdvanceConnectionPreview",new Point(505,280),MouseButtonState.Pressed);Pump();
+            var secondPreview=(System.Windows.Shapes.Path)typeof(MainWindow).GetField("connectionPreview",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(!ReferenceEquals(firstPreview,secondPreview)&&ReferenceEquals(secondPreview.Parent,window.FindName("GraphLayer")),"a second connector drag creates and attaches a fresh preview after first-drag cleanup");
+            Invoke("CancelCanvasGesture");Pump();
+
+            doc.NewSolution();
+            source=doc.AddNode("vision.image-source","1.0.0",200,100);
+            target=doc.AddNode("vision.image-source","1.0.0",450,280);
             doc.ConnectExecution(source,target,3,1);
             var link=doc.CurrentProcedure.ExecutionLinks!.Single();
             doc.SetExecutionPath(link,[new(255,130),new(255,205),new(505,205),new(505,280)]);Pump();
@@ -114,9 +144,9 @@ internal static class Program
             var mini=(Canvas)window.FindName("MiniMapCanvas");
             var region=(System.Windows.Shapes.Rectangle)window.FindName("MiniMapViewport");
             var scroll=(ScrollViewer)window.FindName("CanvasScrollViewer");
-            mini.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            mini.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.MouseDownEvent});Pump();
             Check((bool)typeof(MainWindow).GetField("eyeDragging",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!,"actual mini-map mouse-down routed event starts dragging");
-            mini.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonUpEvent});Pump();
+            mini.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.MouseUpEvent});Pump();
             Check(!(bool)typeof(MainWindow).GetField("eyeDragging",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!,"actual mini-map mouse-up routed event ends dragging");
             scroll.ScrollToHorizontalOffset(0);scroll.ScrollToVerticalOffset(0);Pump();
             var edge=new Point(186,149);
@@ -147,14 +177,14 @@ internal static class Program
             Check(focusX>0&&focusY>0,"wire focus scenario starts with nonzero canvas scroll offsets");
             string focusKey=focusSource+">"+focusTarget;
             var focusHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[focusKey];
-            focusHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            focusHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
             var handles=(List<System.Windows.Shapes.Rectangle>)typeof(MainWindow).GetField("wireHandles",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
             Check(focusHit.IsKeyboardFocused&&handles.Count>0,"actual wire mouse-down focuses the connection and exposes midpoint handles");
             Check(Math.Abs(scroll.HorizontalOffset-focusX)<.001&&Math.Abs(scroll.VerticalOffset-focusY)<.001,"focusing the connection does not auto-scroll the viewport");
             Capture("canvas-wire-focus-no-scroll.png");
             ((TabControl)window.FindName("ProcedureTabs")).Focus();Pump();
             Check(handles.Count==0,"connection lost focus removes midpoint handles");
-            focusHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            focusHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
             revision=doc.Revision;
             var delete=new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(window)!,0,Key.Delete){RoutedEvent=Keyboard.PreviewKeyDownEvent};
             window.RaiseEvent(delete);Pump();
@@ -231,7 +261,7 @@ internal static class Program
             var cornerArrow=((Dictionary<string,System.Windows.Shapes.Polygon>)typeof(MainWindow).GetField("wireArrows",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[cornerKey];
             Check(cornerHit.Data is not null&&cornerArrow.Points.Count==3,"lower-right 5000 canvas route renders interactive path and directed arrow beyond former 250k-cell cap");
             scroll.ScrollToHorizontalOffset(4200);scroll.ScrollToVerticalOffset(4150);Pump();
-            cornerHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            cornerHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
             Check((string?)typeof(MainWindow).GetField("selectedWire",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)==cornerKey,"lower-right connection remains hover/select hit-testable");
             Capture("canvas-corner-route-selected.png");
             revision=doc.Revision;
@@ -243,6 +273,22 @@ internal static class Program
             string cornerFile=Path.Combine(Path.GetTempPath(),"vision-canvas-corner-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(cornerFile);doc.Load(cornerFile);Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Single().ToNode==cornerTarget&&((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!).ContainsKey(cornerKey),"extreme route survives save/reopen and redraw");}
             finally {if(File.Exists(cornerFile))File.Delete(cornerFile);}
+
+            doc.NewSolution();
+            string routeSource=doc.AddNode("vision.image-source","1.0.0",200,100);
+            string routeTarget=doc.AddNode("vision.image-source","1.0.0",500,350);
+            doc.AddNode("vision.image-source","1.0.0",320,180);
+            doc.ConnectExecution(routeSource,routeTarget,3,1);Pump();
+            var routeSourceBox=new RouteRect(200,100,110,30);var routeTargetBox=new RouteRect(500,350,110,30);
+            var expectedRoute=VmOrthogonalRouter.Route(new(new(255,130),PortDirection.Down,routeSourceBox),new(new(555,350),PortDirection.Up,routeTargetBox),[new RouteRect(320,180,110,30)],5000,5000,1_100_000);
+            var routeGrid=(Array)typeof(VmOrthogonalRouter).GetField("cachedMap",BindingFlags.Static|BindingFlags.NonPublic)!.GetValue(null)!;
+            Check(routeGrid.GetLength(0)==1032&&routeGrid.GetLength(1)==1032,"actual canvas route retains one native 1032-by-1032 cached APoint grid");
+            var routeKey=routeSource+">"+routeTarget;
+            var routeHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[routeKey];
+            var expectedGeometry=new PathGeometry();var expectedFigure=new PathFigure{StartPoint=new(expectedRoute.Points[0].X,expectedRoute.Points[0].Y)};
+            foreach(var point in expectedRoute.Points.Skip(1))expectedFigure.Segments.Add(new LineSegment(new(point.X,point.Y),true));expectedGeometry.Figures.Add(expectedFigure);
+            Check(routeHit.Data.ToString()==expectedGeometry.ToString(),"real WPF edge display uses the native fixed 5000x5000 DiagramPage routing grid");
+            Capture("canvas-fixed-native-route-grid.png");
 
             doc.NewSolution();
             string stableSource=doc.AddNode("vision.image-source","1.0.0",100,100);
@@ -261,13 +307,21 @@ internal static class Program
             string originalPath=BeforePath();revision=doc.Revision;
             doc.MoveNode(movingObstacle,obstacleX,obstacleY);Pump();
             var sourceBox=new RouteRect(100,100,110,30);var targetBox=new RouteRect(500,350,110,30);
-            var wouldReroute=VmOrthogonalRouter.Route(new(new(155,130),PortDirection.Down,sourceBox),new(new(555,350),PortDirection.Up,targetBox),[new RouteRect(obstacleX,obstacleY,110,30)],1100,1100);
-            Check(wouldReroute.Points.Count>1&&!wouldReroute.Points.SequenceEqual(originalPoints),"moved obstacle intersects prior route and a fresh native routing call would choose a different geometry");
+            // Match the native DiagramPage's 1032x1032 map (1,065,024 cells);
+            // the router's general-purpose default budget is intentionally smaller.
+            var wouldReroute=VmOrthogonalRouter.Route(new(new(155,130),PortDirection.Down,sourceBox),new(new(555,350),PortDirection.Up,targetBox),[new RouteRect(obstacleX,obstacleY,110,30)],5000,5000,1_100_000);
+            bool intersectsLongest=longest.A.X==longest.B.X
+                ? longest.A.X>=obstacleX&&longest.A.X<=obstacleX+110&&Math.Max(Math.Min(longest.A.Y,longest.B.Y),obstacleY)<=Math.Min(Math.Max(longest.A.Y,longest.B.Y),obstacleY+30)
+                : longest.A.Y>=obstacleY&&longest.A.Y<=obstacleY+30&&Math.Max(Math.Min(longest.A.X,longest.B.X),obstacleX)<=Math.Min(Math.Max(longest.A.X,longest.B.X),obstacleX+110);
+            static string FormatRoute(IEnumerable<RoutePoint> points)=>string.Join(" -> ",points.Select(p=>$"({p.X:0.##},{p.Y:0.##})"));
+            Console.WriteLine($"DIAG obstacle={obstacleX:0.##},{obstacleY:0.##}..{obstacleX+110:0.##},{obstacleY+30:0.##}; longest=({longest.A.X:0.##},{longest.A.Y:0.##})->({longest.B.X:0.##},{longest.B.Y:0.##}), intersects={intersectsLongest}; oldRoute=[{FormatRoute(originalPoints)}]; newStatus={wouldReroute.Status}; newRoute=[{FormatRoute(wouldReroute.Points)}]");
+            Capture("canvas-obstacle-diagnostic-window.png");
+            Check(intersectsLongest&&wouldReroute.Points.Count>1&&!wouldReroute.Points.SequenceEqual(originalPoints),"moved obstacle intersects prior route and a fresh native routing call would choose a different geometry");
             Check(BeforePath()==originalPath&&doc.Revision==revision+1,"unrelated obstacle move preserves existing Connection path until its own endpoints change");
             var retainedArrow=((Dictionary<string,System.Windows.Shapes.Polygon>)typeof(MainWindow).GetField("wireArrows",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[stableKey];
             Check(retainedArrow.Points.Count==3,"retained route keeps its directed arrow");
             var retainedHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[stableKey];
-            retainedHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=UIElement.MouseLeftButtonDownEvent});Pump();
+            retainedHit.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.PreviewMouseDownEvent});Pump();
             Check((string?)typeof(MainWindow).GetField("selectedWire",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)==stableKey,"retained route remains selectable through real WPF hit path");
             Capture("canvas-obstacle-move-retains-route.png");
             doc.MoveNode(stableTarget,500,400);Pump();
@@ -277,6 +331,72 @@ internal static class Program
             string stableFile=Path.Combine(Path.GetTempPath(),"vision-canvas-obstacle-"+Guid.NewGuid().ToString("N")+".vmx.json");
             try {doc.Save(stableFile);doc.Load(stableFile);Pump();Check(doc.CurrentProcedure.ExecutionLinks!.Single().ToNode==stableTarget&&BeforePath().Length>0,"connection survives save/reopen and rebuilds route on solution replacement");}
             finally {if(File.Exists(stableFile))File.Delete(stableFile);}
+
+            // End-to-end overlap case also covered by VmRouting.Checks against the untouched AStar oracle.
+            // Native DiagramPage.GetAllRect includes every DiagramItem, while GetPath seeds both endpoints
+            // separately; retain that overlapping-node geometry through the actual WPF GraphLayer renderer.
+            doc.NewSolution();
+            string overlapSource=doc.AddNode("vision.image-source","1.0.0",180,150);
+            string overlapTarget=doc.AddNode("vision.image-source","1.0.0",220,160);
+            doc.AddNode("vision.image-source","1.0.0",210,145);
+            doc.ConnectExecution(overlapSource,overlapTarget,3,1);Pump();
+            var overlapSourceBox=new RouteRect(180,150,110,30);var overlapTargetBox=new RouteRect(220,160,110,30);
+            var overlapExpected=VmOrthogonalRouter.Route(new(new(235,180),PortDirection.Down,overlapSourceBox),new(new(275,160),PortDirection.Up,overlapTargetBox),[new RouteRect(210,145,110,30)],5000,5000,1_100_000);
+            string overlapKey=overlapSource+">"+overlapTarget;
+            var overlapHit=((Dictionary<string,System.Windows.Shapes.Path>)typeof(MainWindow).GetField("wireHitPaths",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!)[overlapKey];
+            var overlapGeometry=new PathGeometry();var overlapFigure=new PathFigure{StartPoint=new(overlapExpected.Points[0].X,overlapExpected.Points[0].Y)};
+            foreach(var point in overlapExpected.Points.Skip(1))overlapFigure.Segments.Add(new LineSegment(new(point.X,point.Y),true));overlapGeometry.Figures.Add(overlapFigure);
+            Check(overlapExpected.Points.Count>1&&overlapHit.Data.ToString()==overlapGeometry.ToString(),"actual WPF canvas renders the native-oracle-tested overlapping endpoint route");
+            Capture("canvas-overlapping-endpoint-route.png");
+
+            // Connection.Shape_Drop forwards the dragged DiagramItem.DataContext;
+            // VmConnectionDecorator.InsertModule therefore rewires the source item
+            // even when its drag effect was Copy. The ghost position is not committed.
+            doc.NewSolution();
+            string copySource=doc.AddNode("vision.image-source","1.0.0",100,100);
+            string copyTarget=doc.AddNode("vision.image-source","1.0.0",500,100);
+            string copyCandidate=doc.AddNode("vision.image-source","1.0.0",800,700);
+            doc.ConnectExecution(copySource,copyTarget,2,0);Pump();
+            selected.Clear();selected.Add(copyCandidate);
+            revision=doc.Revision;
+            Invoke("BeginNodeGesture",new Point(800,700),true);
+            Invoke("PreviewNodeMove",new Point(350,115));Pump();
+            var insertionWire=(ExecutionLinkDocument?)typeof(MainWindow).GetField("insertWire",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window);
+            Check(insertionWire is {FromNode:var from,ToNode:var to}&&from==copySource&&to==copyTarget,"Ctrl-copy drag over the rendered execution wire resolves the original insertion target");
+            Capture("canvas-wire-copy-insertion-preview.png");
+            Invoke("CommitNodeMove");Pump();
+            var copyInsertedEdges=doc.CurrentProcedure.ExecutionLinks!;
+            Check(doc.Revision==revision+1&&doc.CurrentProcedure.Nodes.Count==3&&doc.CurrentProcedure.Nodes.Single(n=>n.Id==copyCandidate).X==800&&copyInsertedEdges.Any(e=>e.FromNode==copySource&&e.ToNode==copyCandidate&&e.SourceIndex==2&&e.TargetIndex==0)&&copyInsertedEdges.Any(e=>e.FromNode==copyCandidate&&e.ToNode==copyTarget&&e.SourceIndex==2&&e.TargetIndex==0),"Ctrl-copy wire drop follows native InsertModule: rewires the existing module, preserves its position and both port indexes in one transaction");
+            doc.Undo();Pump();
+            Check(doc.CurrentProcedure.Nodes.Count==3&&doc.CurrentProcedure.Nodes.Single(n=>n.Id==copyCandidate).X==800&&doc.CurrentProcedure.ExecutionLinks!.Single().FromNode==copySource&&doc.CurrentProcedure.ExecutionLinks.Single().ToNode==copyTarget,"undo restores original node position and original wire after copy-effect insertion");
+            doc.Redo();Pump();
+            string copyInsertFile=Path.Combine(Path.GetTempPath(),"vision-canvas-copy-insert-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try {doc.Save(copyInsertFile);doc.Load(copyInsertFile);Pump();var reopened=doc.CurrentProcedure.ExecutionLinks!;Check(doc.CurrentProcedure.Nodes.Count==3&&doc.CurrentProcedure.Nodes.Single(n=>n.Id==copyCandidate).X==800&&reopened.Any(e=>e.FromNode==copySource&&e.ToNode==copyCandidate)&&reopened.Any(e=>e.FromNode==copyCandidate&&e.ToNode==copyTarget),"copy-effect insertion topology and original node position survive save/reopen");}
+            finally {if(File.Exists(copyInsertFile))File.Delete(copyInsertFile);}
+
+            // ItemsPage.GetDropItems clamps each ghost independently, while the
+            // native copy path anchors all clones at the first item's drop point.
+            doc.NewSolution();
+            string firstCopy=doc.AddNode("vision.image-source","1.0.0",4800,100);
+            string secondCopy=doc.AddNode("vision.image-source","1.0.0",100,250);Pump();
+            selected.Clear();selected.Add(firstCopy);selected.Add(secondCopy);
+            revision=doc.Revision;
+            Invoke("BeginNodeGesture",new Point(0,0),true);
+            Invoke("PreviewNodeMove",new Point(500,0));Pump();
+            var copyGhosts=(Dictionary<string,Canvas>)typeof(MainWindow).GetField("movingGhosts",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+            Check(Math.Abs(Canvas.GetLeft(copyGhosts[firstCopy])+10-4890)<.001&&Math.Abs(Canvas.GetLeft(copyGhosts[secondCopy])+10-600)<.001,"multi-copy preview clamps each source item at its own right-edge position");
+            Capture("canvas-multicopy-right-edge-preview-near.png");
+            scroll.ScrollToHorizontalOffset(4300);Pump();
+            Capture("canvas-multicopy-right-edge-preview-far.png");
+            Invoke("CommitNodeMove");Pump();
+            var edgeCopies=doc.CurrentProcedure.Nodes.Where(n=>n.Id!=firstCopy&&n.Id!=secondCopy).ToArray();
+            Check(edgeCopies.Length==2&&edgeCopies.Single(n=>Math.Abs(n.X-4890)<.001).Y==100&&edgeCopies.Single(n=>Math.Abs(n.X-190)<.001).Y==250&&doc.Revision==revision+1,"multi-copy uses first source item as native paste anchor and preserves original relative offset after per-item source clamp");
+            doc.Undo();Pump();
+            Check(doc.CurrentProcedure.Nodes.Count==2&&doc.CurrentProcedure.Nodes.Single(n=>n.Id==firstCopy).X==4800&&doc.CurrentProcedure.Nodes.Single(n=>n.Id==secondCopy).X==100,"undo removes both edge-copies and preserves original nodes");
+            doc.Redo();Pump();
+            string edgeCopyFile=Path.Combine(Path.GetTempPath(),"vision-canvas-edge-copy-"+Guid.NewGuid().ToString("N")+".vmx.json");
+            try{doc.Save(edgeCopyFile);doc.Load(edgeCopyFile);Pump();edgeCopies=doc.CurrentProcedure.Nodes.Where(n=>n.Id!=firstCopy&&n.Id!=secondCopy).ToArray();Check(edgeCopies.Length==2&&edgeCopies.Single(n=>Math.Abs(n.X-4890)<.001).Y==100&&edgeCopies.Single(n=>Math.Abs(n.X-190)<.001).Y==250,"first-item anchored multi-copy coordinates survive save/reopen");}
+            finally{if(File.Exists(edgeCopyFile))File.Delete(edgeCopyFile);}
         }
         finally {window.Close();application.Shutdown();}
     }

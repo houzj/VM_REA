@@ -49,6 +49,11 @@ foreach(var sd in Enum.GetValues<PortDirection>())foreach(var td in Enum.GetValu
  var actual=VmOrthogonalRouter.Route(source,target,walls,600,450);var expected=Oracle(source,target,walls,600,450);
  Check(actual.Points.SequenceEqual(expected.Select(p=>new RoutePoint(p.X,p.Y))),"all 16 endpoint direction combinations");
 }
+{
+ var source=Port(new(200,100,110,30),PortDirection.Down);var target=Port(new(500,350,110,30),PortDirection.Up);var walls=new[]{new RouteRect(320,180,110,30)};
+ var actual=VmOrthogonalRouter.Route(source,target,walls,5000,5000,1_100_000);var expected=Oracle(source,target,walls,5000,5000);
+ Check(actual.Points.SequenceEqual(expected.Select(p=>new RoutePoint(p.X,p.Y))),"fixed 5000x5000 DiagramPage map matches the untouched AStar/PathFinder pipeline");
+}
 using(var fs=File.OpenRead(@"D:\Program Files\VisionMaster4.4.0\Applications\myLibs\VMControls.WPF.dll"))
 using(var pe=new System.Reflection.PortableExecutable.PEReader(fs)){
  var md=System.Reflection.Metadata.PEReaderExtensions.GetMetadataReader(pe);

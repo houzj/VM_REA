@@ -228,3 +228,8 @@ At the user's request, the original checkout now develops framework and integrat
 - 新增 `MF05-RESULT-LIFECYCLE.md`：追踪原生 CreateNewSolution、方案 LoadBegin/LoadEnd 与 ModuleResultView 的模块源重绑定/数据缓存清理。原生显式清除命令是当前模块级 SDK 调用；方案级运行日志与底部耗时的全局清理没有托管证据，也没有真实 VM 操作差分。
 - 当前独立实现的 `HistoryGrid` 是方案运行摘要，粒度不同于原生模块历史。本轮没有为追求表面一致而擅自清空或重命名；需在真实 VM 对“运行后新建方案/加载另一方案”与“切换模块/模块历史清除”做对照，再确定 F-16 的 UI 行为。
 
+
+## 2026-10-19 三个 framework 工作树收尾
+
+按用户指令审查 framework-shell/canvas/group 的未提交增量；4755个源码/资源/审计文件已在 main 的 analysis/full-audit/framework-retirement-20261019 保全并逐文件SHA-256比对。合入Shell运行策略/帮助/关闭等待、画布路由与复制插线、Group数量配置及专项验证，保留main原有在制改动；tool-plugins不修改。精确基线、源码证据、测试和清理结果见 FRAMEWORK-WORKTREE-RETIREMENT.md。Shell默认键鼠弹层验收仍失败，显式控件事件模式不冒充桌面验收；原生撤销服务、候选资格、ABI及设备释放差分仍开放。
+

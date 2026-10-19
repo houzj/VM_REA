@@ -41,7 +41,7 @@ Each request identifies source evidence, caller, typed payload, lifecycle, compa
 
 ## FCR-006 — runtime categories, relations and declared complex editors (framework-originated)
 
-- WorkflowConfiguration.RunCategories is a separate ordered category list; WorkflowRunParameter.CategoryId and Relations use stable IDs and typed input/parameter targets. Null fields omitted for old JSON. Snapshot/copy/delete remap all related targets. Native default maximum32 recovered from ParamConfigDataBase (native config can override; independent default32 currently enforced).
+- WorkflowConfiguration.RunCategories is a separate ordered category list; WorkflowRunParameter.CategoryId and Relations use stable IDs and typed input/parameter targets. Null fields omitted for old JSON. Snapshot/copy/delete remap all related targets. Native default maximum32 and configurable app setting are represented by the independent reader documented in FCR-020; ConfigurationHelper lookup semantics remain unverified.
 - SetGroupRunParameterValue/Source and SetGroupRunComplexValue apply to all related targets in one validated edit. Incompatible types/editors, ranges and subscriptions fail atomically. Existing plugin implementations unchanged.
 - ParameterDescriptor.Editor optionally declares File/Folder/Enumeration/Range/Roi and exact field names/choices. Framework does not infer editors from names or parameter types. Plugin line must supply evidence-based metadata after integration; this file does not claim it has done so. Defaults preserve existing constructors.
 - Historical baseline before FCR-007: complex editors were independent functional adapters. FCR-007 replaces the ROI table with source-guided graphical editing and adds the dual-pane configurator; native SliderArrange, all ROI types, feature/model-training windows and real ROI-tool integration remain incomplete. Dedicated factory contract must be agreed with plugin line before integrating such editors; no plugin worktree changes made.
@@ -134,4 +134,32 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - Lifecycle：选中运行参数 → 框架定位第一个关联节点 → 插件工厂提供 `GetSupportDisplayForGroupData` 等价视图或通用视图 → 右侧更新 → 编辑经既有配置事务提交 → 取消/切换/关闭释放订阅和会话。选中类别时恢复 Group 本体装饰器；方案重开时不保存窗口焦点状态。
 - 兼容：工厂应可选；未接入的工具继续使用现有运行参数代理编辑，不复制插件配置模板到主线。旧方案的参数和订阅格式不因窗口接线改变。
 - 验收证据：原始 `GroupRunParam.cs:325–357` 的 `SelectedCommandExecute` 调用 `GetFirstParamRelationModule`、`GetSupportDisplayForGroupData`/`CommonParamDecorate`、`OnUpdateDecorateEvent`；`DynamicRunParamConfigControl.xaml:26–44` 的类别树和 `SelectedItemChanged`。待插件侧真实工具接入后，需逐项操作选中类别/普通参数/专属复杂参数、编辑后运行数据、撤销重做、保存重开与窗口关闭释放。当前主线只有显式“工具配置”按钮，不宣称右侧动态装饰器等价。
+
+## FCR-020：Group运行类别与代理数量配置源（框架线实现，独立XML读取）
+
+- 生产者：框架应用发布配置；消费者：`VisionFramework.WorkflowRunParameterLimit`、Group类别添加/代理选择器、`WorkflowRunParameters.Validate`。
+- Payload：应用级 `MaxRunParamsNum` 整数。当前重建读取应用目录下 `<FriendlyName>.config` 的 `appSettings/add[@key='MaxRunParamsNum']`；键缺失、配置不可读或不可解析时默认32。
+- Lifecycle：应用进程首次访问时惰性读取一次；类别和运行参数添加回调用该上限拒绝超限，配置校验阻止持久化/载入超过上限的方案。修改配置需重启应用。
+- 兼容：旧配置缺少该键时沿用32；方案格式不变。`ConfigurationHelper.GetConfig` 的真实路径/优先级/重载语义尚未证实，因此 XML 读取仅是有应用配置证据支撑的独立重建，不能标成对其实现源码的逐指令复刻。
+- 验收：原始 `ParamConfigDataBase.cs:85–102,489–496` 显示默认32并以 `ConfigurationHelper.GetConfig("MaxRunParamsNum")` 覆盖；安装配置 `VisionMaster.exe.config` 当前值32。专项 WPF 测试以应用配置覆写为2，实际点击添加组和代理后分别验证第三项被拒绝、保存重开和 Group 执行数据仍正确；同时验证非法配置回退32。
+
+## FCR-021：Group运行参数候选资格元数据（插件框架请求，未实现）
+
+- 生产者：插件侧工具描述符/参数模型与配置能力工厂。消费者：main 的 `GroupRunConfigurationWindow` 候选树；Group 自有代理、类别、关系持久化和执行消费继续由 main 维护。
+- Payload：节点与端口/参数身份、输入或参数种类、原生参数类型身份、`IGroupRunParam` 能力、`CustomVisibleA`、`GroupRunParamEnable`、`AccessMode`、`DisplayForGroupType`、本地化显示名，以及是否存在原生编辑器/Group 展示工厂。应允许能力缺失并明确标为未知，不可默认所有 descriptor 参数都合格。
+- Lifecycle：插件描述符物化 → 依照 VM 等价谓词和类别过滤/搜索生成候选 → 用户勾选并创建 Group 代理 → 保存关系 → 真实 Group 执行并把值传给对应工具。能力/可见性变化时，候选刷新且既存代理保持显式可诊断，不静默删除。
+- 兼容：元数据应可选/版本化；缺字段节点不得被主线伪装成已证实可运行参数。筛选需保留原生类型名和搜索范围，不能用托管 `DataKind` 推断插件原生参数类别。该请求不允许 main 复制插件配置模型或控件模板。
+- 原始证据：`analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl.UI.Data/RunParamPickDataExtern.cs::GetInsideRunParamTree` 与 `ExpendHolder` 的候选谓词要求 `IGroupRunParam`、`CustomVisibleA`、`GroupRunParamEnable`、`filterTypes.Contains(p.GetType().Name)`、`MultiLanguageDisplayNameA.Contains(searchWord)`，并只接受 `AccessMode.ToLower()=="rw"` 或非空 `DisplayForGroupType`；`RunParamPickData.cs::Init` 及 `GroupRunParamConfigData::AsyncLoadParams` 构建该列表。`DynamicRunParamConfigControl.Common/ParamTypeList.cs` 提供原生八类过滤。当前 `GroupRunConfigurationWindow.BuildTree` 遍历每个 descriptor 的全部 `Parameters` 和 `Inputs`，没有以上元数据，差异已由源码确认；具体真实插件候选结果尚未与 VM 同状态动态对照。
+- 验收：用至少一个原始源码已审计的真实插件，逐项验证隐藏、禁用、只读且无展示能力、按原生类型排除、搜索不匹配的参数不出现在列表；合格参数可被选择、写入关联、运行得到实际值；配置保存重开后保持；再与 VM 同状态候选树对照。没有真实插件证据时不得以测试模块关闭该项。
+
+## FCR-022：Group 配置对话框期间撤销记录抑制（框架 undo seam 请求，未实现）
+
+- 生产者：Group 配置器向框架 undo 服务请求一个可作用域释放的“禁止记录”事务；消费者：Group 配置编辑入口和通用 `IUnRedoService` 等价层（该接口由框架 seam 所有者实现，不能由本 Group 线复制另一套 undo 管理器）。
+- Payload：进入对话框前捕获 undo 状态并打开期间抑制逐字段历史记录；原生没有取消/回滚路径，窗口“确定”和普通标题栏关闭都保留已即时写入的配置。异常时 scope 必须 `finally` 解除 forbid 状态并幂等释放；这是重建安全性要求，原生方法未显示此保证。
+- Lifecycle：`ConfigCommandExecute` 准备配置数据 → `SetForbidRecord(true)` → `DialogHandler.Invoke` → `SetForbidRecord(false)` → 重载 `Collection`/`GroupCollection`、`GetParamUnit` 并恢复展开状态。`DynamicRunParamConfigWin.OnClosing` 对普通关闭强制设 `DialogResult=true`，加载进度期间 `_isCloseDialog=false` 才暂时阻止关闭。当前 WPF 每次 `GroupRunConfigurationWindow.Change` 调用保存委托，关闭不回滚；`SetWorkflowConfiguration` 对每个非空差异调用一次 `Edit`，逐次把整个方案快照压入 undo 栈，因此本地历史边界是每个写回事件，而非整个配置窗口。此静态差异需由统一 seam 收敛。
+- 兼容：既有普通画布操作撤销行为不变；scope 仅覆盖此次 Group 配置窗口，不能跨并发编辑器或残留到异常后续操作。方案数据格式不变。
+- 原始证据：`analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupRunParam.cs::ConfigCommandExecute` 在 `method.Invoke` 前后调用 `IUnRedoService.SetForbidRecord(true/false)`，忽略返回值，之后重新取集合、调用 `GetParamUnit` 并复原类别展开标志；`analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs::CreateLinkModule` 在 `CreatModuleByInfo` 前后也直接调用 `SetForbidRecord(true/false)`，同样没有 `try/finally`。`analysis/decompiled/VisionMaster.Exe.Audit/app.config` 把 `UnRedoServiceImplement` 配置为 `myLibs\VM.UnRedo.dll`；`VisionMaster/App.cs` 从应用基目录拼接该配置值，`Assembly.LoadFrom`，选择实现 `IUnRedoService` 的类型并注入 IOC。但该 DLL、接口声明及实现源码均不在当前 `analysis/decompiled` 树中，所以无法证明该服务内部是布尔开关、计数嵌套、线程/窗口作用域、栈清理或异常恢复；两个调用点只能证明显式 true/false 成对的源码形态，不能证明服务效果。
+- 本地对照：`src/VisionEditor/SubprogramCallHost.cs::CreateBoundGroupWindow` 的 Group 配置保存回调逐次调用 `doc.SetWorkflowConfiguration(Body().Id, configuration)`；`GroupRunConfigurationWindow.Change` 每次控件事件立即调用保存委托。`src/VisionEditor.Core/GraphEditorDocument.cs::SetWorkflowConfiguration` 做相等检查后进入 `Edit`；`Edit` 每次先 `undo.Push(Capture())`、清空 redo、替换完整文档并递增 Revision；`Undo/Restore` 恢复整个方案快照。故每个不同的配置写回单独生成撤销项。
+- 相关窗口证据：`DynamicRunParamConfigControl.xaml.cs::EditRunParam` 返回 `DynamicRunParamConfigWin.ShowDialog()`；`DynamicRunParamConfigWin.xaml` 设置 `CancelVisible="Collapsed"`；`DynamicRunParamConfigWin.OnClosing` 在非加载态强制设 `DialogResult=true`，加载中则 `e.Cancel=true`；共享 `ConfirmBaseWindow.CancelButton_Click` 设 false，但相应按钮不可见。`ParamConfigDataBase.AddGroupCommandExecute/DeleteAllParams` 直接更新 `Owner.UserData`/父集合，`RunParamConfigDecorate.Name` 调SDK修改参数名，说明配置不是确认时才整体提交。`ConfigCommandExecute` 没有检查 `method.Invoke` 返回值，也未用 `try/finally`，因此异常恢复保障未知。
+- 验收：隔离输出 `dotnet run --project tests/VisionEditor.GroupCategoryExpansionChecks/VisionEditor.GroupCategoryExpansionChecks.csproj -p:BuildInParallel=false -p:UseSharedCompilation=false` 退出码0，`PASS 30 Group category expansion checks`。真实 WPF 控件连续执行分类名编辑、候选复选框添加代理两次写回，再调用文档 Undo 两次/Redo 两次；每一步参数和分类状态均按单次写回边界变化，六项新增断言通过。截图 `analysis/full-audit/group-run-config-f15-confirm-close.png` 已目检；此为离屏真实 WPF 客户区，不是用户桌面或 VM 对照。此前还实际验证“确定”和关闭窗口保留即时变更、重开及 Group 输出有效。VM 服务行为仍需取得 `myLibs/VM.UnRedo.dll` 与接口/运行时证据后做同状态核验；取消/回滚不适用原生窗口，异常恢复继续标未知。
 

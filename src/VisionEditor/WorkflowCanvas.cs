@@ -113,7 +113,10 @@ public partial class MainWindow
                 if(automaticRoutes.TryGetValue(cacheKey,out var previous)&&previous.Source==source&&previous.Target==target)points=previous.Points;
                 else
                 {
-                    double routeWidth=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Right)+100)),routeHeight=Math.Min(DiagramPageSize,Math.Max(200,boxes.Values.Max(b=>b.Bottom)+100));
+                    // VM's DiagramPage constructor fixes Width/Height to DiagramPageWidth (5000).
+                    // GetPathMap allocates its AStar grid from those ActualWidth/ActualHeight values,
+                    // not from the current node bounds; preserve that map extent for every edge.
+                    double routeWidth=DiagramPageSize,routeHeight=DiagramPageSize;
                     // Connection.OnPositionChanged invalidates only its own endpoint/port changes.
                     // DiagramPage.GetPathMap is therefore rerun for those changes, not for an unrelated obstacle move.
                     points=VmOrthogonalRouter.Route(source,target,boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight,1_100_000).Points;
@@ -263,9 +266,24 @@ public partial class MainWindow
         if(!EditableCanvas||canvasGestureRevision!=doc.Revision){CancelCanvasGesture();return;}
         var positions=movingGhosts.ToDictionary(p=>p.Key,p=>(Canvas.GetLeft(p.Value)+10,Canvas.GetTop(p.Value)+10));
         if(positions.Count==1&&ActiveNodeHotPoint is {} hot)positions[positions.Keys.Single()]=(hot.X,hot.Y);
-        var fragment=nodeCopyDrag&&movingNodes is not null&&positions.Count>0?doc.CopyNodes(movingNodes.Keys):null;
+        // Connection.Shape_Drop passes the original DiagramItem.DataContext to
+        // VmConnectionDecorator.InsertModule even when DiagramItem started an OLE
+        // Copy drag. The VM rewires that existing module and does not paste a clone.
+        var copyInsertion=nodeCopyDrag&&positions.Count==1&&movingNodes is {Count:1}?insertWire:null;
+        string? copyInsertionNode=copyInsertion is null?null:movingNodes!.Keys.Single();
+        Point copyInsertionPosition=copyInsertionNode is null?default:movingNodes!.Values.Single();
+        var fragment=nodeCopyDrag&&copyInsertion is null&&movingNodes is not null&&positions.Count>0?doc.CopyNodes(movingNodes.Keys):null;
+        // ItemsPage.OnDrop clamps each dragged item but CopyItemsByDropCommand
+        // uses only the first drop item as PasteItemsCommandExecute's anchor.
+        // PasteNodes anchors its fragment at the minimum source coordinate, so
+        // translate the call point to make the fragment's first item land on the
+        // first dragged item's clamped preview location.
+        var copyPastePoint=fragment is {Nodes.Count:>0}&&positions.TryGetValue(fragment.Nodes[0].Id,out var firstDrop)
+            ?(firstDrop.Item1+fragment.Nodes.Min(n=>n.X)-fragment.Nodes[0].X,firstDrop.Item2+fragment.Nodes.Min(n=>n.Y)-fragment.Nodes[0].Y)
+            :(positions.Count>0?(positions.Values.Min(p=>p.Item1),positions.Values.Min(p=>p.Item2)):(0d,0d));
         var insertion=positions.Count==1&&!nodeCopyDrag?insertWire:null;
-        CancelNodeMove();Safe(()=>{if(fragment is not null){graphClipboard=fragment;graphClipboardSolution=doc.Document.Id;SelectPasted(doc.PasteNodes(fragment,positions.Values.Min(p=>p.Item1),positions.Values.Min(p=>p.Item2)));}
+        CancelNodeMove();Safe(()=>{if(copyInsertion is not null&&copyInsertionNode is not null){if(copyInsertion.FromNode==copyInsertionNode||copyInsertion.ToNode==copyInsertionNode)RenderGraph();else doc.InsertExecutionNode(copyInsertion,copyInsertionNode,copyInsertionPosition.X,copyInsertionPosition.Y);}
+        else if(fragment is not null){graphClipboard=fragment;graphClipboardSolution=doc.Document.Id;SelectPasted(doc.PasteNodes(fragment,copyPastePoint.Item1,copyPastePoint.Item2));}
         else if(insertion is not null){var position=positions.Single();doc.InsertExecutionNode(insertion,position.Key,position.Value.Item1,position.Value.Item2);}
         else if(positions.Count>0)doc.MoveNodes(positions);else RenderGraph();});
     }
@@ -436,7 +454,7 @@ public partial class MainWindow
     }
     void MiniMapDown(object sender,MouseButtonEventArgs e)
     {
-        BeginMiniMapDrag(e.GetPosition(MiniMapCanvas));e.Handled=true;
+        BeginMiniMapDrag(e.GetPosition(MiniMapCanvas));
     }
     void BeginMiniMapDrag(Point point)
     {
@@ -448,9 +466,9 @@ public partial class MainWindow
         if(!rect.Contains(point))NavigateMiniMap(requested);
         eyePointerStart=point;eyeRegionStart=requested;
     }
-    void MiniMapMove(object sender,MouseEventArgs e){if(!eyeDragging||e.LeftButton!=MouseButtonState.Pressed)return;var point=e.GetPosition(MiniMapCanvas);if(point==eyePointerStart)return;if(!MiniMapCanvas.IsMouseCaptured)MiniMapCanvas.CaptureMouse();MoveMiniMapDrag(point);e.Handled=true;}
+    void MiniMapMove(object sender,MouseEventArgs e){if(!eyeDragging||e.LeftButton!=MouseButtonState.Pressed)return;var point=e.GetPosition(MiniMapCanvas);if(point==eyePointerStart)return;if(!MiniMapCanvas.IsMouseCaptured)MiniMapCanvas.CaptureMouse();MoveMiniMapDrag(point);}
     void MoveMiniMapDrag(Point point){if(eyeDragging)NavigateMiniMap(eyeRegionStart+(point-eyePointerStart));}
-    void MiniMapUp(object sender,MouseButtonEventArgs e){eyeDragging=false;MiniMapCanvas.ReleaseMouseCapture();UpdateMiniMap();e.Handled=true;}
+    void MiniMapUp(object sender,MouseButtonEventArgs e){eyeDragging=false;MiniMapCanvas.ReleaseMouseCapture();UpdateMiniMap();}
     void MiniMapWheel(object sender,MouseWheelEventArgs e)
     {
         // ZoomArea.GridEagleEye_PreviewMouseWheel uses the same Shift policy as the main canvas,

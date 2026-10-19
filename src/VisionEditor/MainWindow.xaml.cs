@@ -39,15 +39,18 @@ public partial class MainWindow : Window
  sealed record ImageListEntry(string Path,string Name,BitmapSource? Preview,bool Selected,bool IsMarked);
  Popup? toolPopup; FrameworkElement? toolPopupAnchor; string activeToolCategory="all"; bool toolPopupPointerInside,toolDragStarted,toolboxExpanded,continuousRun;
  bool refreshingImageList,refreshingImageSelector,isLocked;
+ int runningModeIndex;
+ bool shellIsNormalMode=true;
  CancellationTokenSource? activeRun;
+ bool closeDrainPending,closeDrainComplete;
  Button? undoToolButton,redoToolButton,lockToolButton,continuousToolButton,stopToolButton;
  static readonly System.Windows.Media.Brush orange=new SolidColorBrush(Color.FromRgb(255,121,0));
  static readonly System.Windows.Media.Brush canvasBrush=new SolidColorBrush(Color.FromRgb(73,77,80));
- public MainWindow(){InitializeComponent();InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=>plugins.PrepareSave(document,baseDirectory,executionScope)};HistoryGrid.ItemsSource=history;Logo.Source=Asset("logo_vm.png");StatusIcon.Source=Asset("bottombar_run.png");ZoomIcon.Source=Asset("zoom_magnifier.png");Resources["WorkflowNgOff"]=Asset("workflow-ng-off.png");Resources["WorkflowNgOn"]=Asset("workflow-ng-on.png");Resources["ToolboxCategoryClosed"]=Asset("toolbox-category-closed.png");Resources["ToolboxCategoryOpen"]=Asset("toolbox-category-open.png");Resources["ToolboxExpandNormal"]=Asset("toolbox-expand-normal.png");Resources["ToolboxExpandHover"]=Asset("toolbox-expand-hover.png");BuildChrome();InitializeCanvasInput();ImageRunMode.Loaded+=(_,_)=>RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=>{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count>0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=>RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=>{if(DisplayTabs.SelectedIndex==0&&Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}
+ public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=>plugins.PrepareSave(document,baseDirectory,executionScope)};HistoryGrid.ItemsSource=history;Logo.Source=Asset("logo_vm.png");StatusIcon.Source=Asset("bottombar_run.png");ZoomIcon.Source=Asset("zoom_magnifier.png");Resources["WorkflowNgOff"]=Asset("workflow-ng-off.png");Resources["WorkflowNgOn"]=Asset("workflow-ng-on.png");Resources["ToolboxCategoryClosed"]=Asset("toolbox-category-closed.png");Resources["ToolboxCategoryOpen"]=Asset("toolbox-category-open.png");Resources["ToolboxExpandNormal"]=Asset("toolbox-expand-normal.png");Resources["ToolboxExpandHover"]=Asset("toolbox-expand-hover.png");BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=>RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=>{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count>0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=>RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=>{if(DisplayTabs.SelectedIndex==0&&Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}
 
  double scale=1,previewScale=1,panX,panY;
- void BuildChrome(){BuildFileMenu();Menu("设置",("所选模块参数",()=>OpenSelected()));Menu("工具",("撤销",UndoShell),("重做",RedoShell),("流程校验",()=>Validate()),("适应画布",()=>Fit()));Menu("系统",("模块目录",()=>ShowToolPicker("all")));Menu("帮助",("操作说明",()=>MessageBox.Show(this,"悬停左侧分类打开工具项，将已启用工具拖入画布；双击节点打开参数窗口；点击连接端口建立数据连接。")),("关于",ShowAbout));
-  Tool("toolbar_toolbarSave_normal.png","保存",()=>Save(false));Tool("toolbar_toolbarOpen_normal.png","打开方案",Open);undoToolButton=Tool("toolbar_ic_topbar_undo_normal.png","撤销",UndoShell);redoToolButton=Tool("toolbar_ic_topbar_redo_normal.png","重做",RedoShell);lockToolButton=Tool("toolbar_ic_topbar_lock_normal.png","锁定工作区",RequestWorkAreaLock);Sep();Tool("toolbar_ic_topbar_camera_normal.png","相机列表",()=>RefreshCameraProvider(true));Tool("toolbar_ic_全局变量_normal.png","全局变量（变量模型尚未接入）",null);Tool("toolbar_ic_通信管理_normal.png","通信管理（通信模块尚未接入）",null);Tool("toolbar_ic_topbar_全局触发_normal.png","全局触发（触发器尚未接入）",null);Tool("toolbar_ic_script_normal.png","脚本（脚本引擎尚未接入）",null);Sep();Tool("toolbar_toolbarStart_normal.png","运行流程",()=>{_=Run();});continuousToolButton=Tool("toolbar_toolbarRunRepeat_normal.png","连续运行",StartContinuous);stopToolButton=Tool("toolbar_toolBarStop_normal.png","停止",()=>activeRun?.Cancel());Tool("toolbar_ic_topbar_综合配置_normal.png","综合配置（系统配置尚未接入）",null);
+ void BuildChrome(){BuildFileMenu();Menu("设置",("所选模块参数",()=>OpenSelected()),("运行策略",OpenRunModeSettings));Menu("工具",("撤销",UndoShell),("重做",RedoShell),("流程校验",()=>Validate()),("适应画布",()=>Fit()));Menu("系统",("模块目录",()=>ShowToolPicker("all")));Menu("帮助",("操作说明",()=>MessageBox.Show(this,"悬停左侧分类打开工具项，将已启用工具拖入画布；双击节点打开参数窗口；点击连接端口建立数据连接。")),("帮助文档（在线）",OpenOnlineHelpDocument),("关于",ShowAbout));
+  Tool("toolbar_toolbarSave_normal.png","保存",()=>Save(false));Tool("toolbar_toolbarOpen_normal.png","打开方案",Open);undoToolButton=Tool("toolbar_ic_topbar_undo_normal.png","撤销",UndoShell);SetToolbarStateIcon(undoToolButton,"toolbar_ic_topbar_undo_normal.png","toolbar_ic_topbar_undo_disable.png");redoToolButton=Tool("toolbar_ic_topbar_redo_normal.png","重做",RedoShell);SetToolbarStateIcon(redoToolButton,"toolbar_ic_topbar_redo_normal.png","toolbar_ic_topbar_redo_disable.png");lockToolButton=Tool("toolbar_ic_topbar_lock_normal.png","锁定工作区",RequestWorkAreaLock);Sep();Tool("toolbar_ic_topbar_camera_normal.png","相机列表",()=>RefreshCameraProvider(true));Tool("toolbar_ic_全局变量_normal.png","全局变量（变量模型尚未接入）",null);Tool("toolbar_ic_通信管理_normal.png","通信管理（通信模块尚未接入）",null);Tool("toolbar_ic_topbar_全局触发_normal.png","全局触发（触发器尚未接入）",null);Tool("toolbar_ic_script_normal.png","脚本（脚本引擎尚未接入）",null);Sep();Tool("toolbar_toolbarStart_normal.png","运行流程",()=>{_=Run();});continuousToolButton=Tool("toolbar_toolbarRunRepeat_normal.png","连续运行",StartContinuous);stopToolButton=Tool("toolbar_toolBarStop_normal.png","停止",()=>activeRun?.Cancel());Tool("toolbar_ic_topbar_综合配置_normal.png","综合配置（系统配置尚未接入）",null);
   BuildRail();}
  void ToggleToolboxClick(object sender,RoutedEventArgs e)=>ToggleToolbox();
  void ToggleToolbox(){if(windowClosed||parameterEditorOpen||isLocked||workflowOverview)return;toolboxExpanded=!toolboxExpanded;toolPopup?.SetCurrentValue(Popup.IsOpenProperty,false);if(ToolRail.Parent is Grid host&&host.ColumnDefinitions.Count>0)host.ColumnDefinitions[0].Width=new GridLength(toolboxExpanded?230:53);ToggleToolboxButton.Tag=toolboxExpanded?"expanded":"folded";ToggleToolboxButton.ToolTip=toolboxExpanded?"折叠工具箱":"展开工具箱";BuildRail();}
@@ -59,6 +62,13 @@ public partial class MainWindow : Window
  readonly Dictionary<string,BitmapImage> assetCache=new(StringComparer.Ordinal);
  BitmapImage Asset(string name){if(assetCache.TryGetValue(name,out var cached))return cached;var root=System.IO.Path.Combine(AppContext.BaseDirectory,"ui-assets",name);var wpf=System.IO.Path.Combine(AppContext.BaseDirectory,"ui-assets","wpf",name);var uri=new Uri(System.IO.File.Exists(root)?root:wpf);var b=new BitmapImage();b.BeginInit();b.UriSource=uri;b.CacheOption=BitmapCacheOption.OnLoad;b.EndInit();b.Freeze();assetCache[name]=b;return b;}
  void Safe(Action a){try{a();}catch(Exception e){StatusText.Text=e.Message;}}
+ void SetToolbarStateIcon(Button button,string enabledAsset,string disabledAsset)
+ {
+  if(button.Content is not Image image)return;
+  void UpdateIcon()=>image.Source=Asset(button.IsEnabled?enabledAsset:disabledAsset);
+  button.IsEnabledChanged+=(_,_)=>UpdateIcon();
+  UpdateIcon();
+ }
  void InitializeImageSourceButtons(object sender,RoutedEventArgs e){SetImageButton(AddImageButton,"image-list-add.png","image-list-add-hover.png");SetImageButton(AddFolderButton,"image-list-folder.png","image-list-folder-hover.png");SetImageButton(RemoveImageButton,"image-list-clear.png","image-list-clear-hover.png");}
  void SetImageButton(Button button,string normal,string hover){var image=new Image{Source=Asset(normal),Width=34,Height=34,Stretch=Stretch.Uniform};button.Content=image;button.Template=PlainTemplate();button.MouseEnter+=(_,_)=>image.Source=Asset(hover);button.MouseLeave+=(_,_)=>image.Source=Asset(normal);}
  Button TabIcon(string asset,string tip,Action? action,bool enabled){var b=new Button{Width=24,Height=30,Padding=new Thickness(3),Margin=new Thickness(0),Background=Brushes.Transparent,BorderThickness=new Thickness(0),ToolTip=tip,IsEnabled=enabled,Content=new Image{Source=Asset(asset),Stretch=Stretch.None,Width=16,Height=16}};b.Template=PlainTemplate();if(action is not null)b.Click+=(_,_)=>Safe(action);return b;}
@@ -75,6 +85,26 @@ public partial class MainWindow : Window
    if(current is Button or MenuItem or System.Windows.Controls.TextBox or System.Windows.Controls.ComboBox or System.Windows.Controls.Primitives.ToggleButton || current==MenuHost || current==ToolBar || current==ToolBarScroll)return;
   if(e.ClickCount==2){MaximizeWindow(sender,e);e.Handled=true;}
   else if(WindowState==WindowState.Normal&&e.LeftButton==MouseButtonState.Pressed){DragMove();e.Handled=true;}
+ }
+ async void DrainWorkflowBeforeClose(object? sender,System.ComponentModel.CancelEventArgs e)
+ {
+  if(e.Cancel||closeDrainComplete||activeRun is null)return;
+  e.Cancel=true;
+  if(closeDrainPending)return;
+  closeDrainPending=true;
+  WindowContent.IsEnabled=false;
+  StatusText.Text="正在停止流程并等待资源释放…";
+  var closingRun=activeRun;
+  closingRun.Cancel();
+  try
+  {
+   while(ReferenceEquals(activeRun,closingRun))await Task.Delay(10);
+  }
+  finally
+  {
+   closeDrainComplete=true;
+   _=Dispatcher.BeginInvoke(new Action(Close));
+  }
  }
  void MinimizeWindow(object sender,RoutedEventArgs e)=>WindowState=WindowState.Minimized;
  void MaximizeWindow(object sender,RoutedEventArgs e)=>WindowState=WindowState==WindowState.Maximized?WindowState.Normal:WindowState.Maximized;

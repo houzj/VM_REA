@@ -204,6 +204,12 @@ public partial class MainWindow
   }
   pendingConnection=null;connectionTarget=null;
   CanvasViewport.ReleaseMouseCapture();
+  // Connector.ToolItemGrid_PreviewMouseUp removes the adorner and clears its
+  // path/context fields after every drag. RenderGraph clears the visual child
+  // collection during a successful commit, so clear this retained reference too;
+  // otherwise the next drag mistakes the detached preview for an active one and
+  // skips its first-move mouse capture.
+  if(connectionPreview is not null)GraphLayer.Children.Remove(connectionPreview);connectionPreview=null;
   if(source is {} from&&target is {} to&&EditableCanvas)Safe(()=>doc.ConnectExecution(from.Node,to.Node,from.Port,to.Port));
   RenderGraph();
  }

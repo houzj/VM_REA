@@ -22,6 +22,35 @@
 
 原始证据文件、SHA256见group-loop-boundary-sources.json。反编译C是分析器伪代码，不是厂商原始C++。静态控制流已确认，不等于运行过原生所有边界。
 
+## 2026-10-19：有符号步长、溢出与取消/异常清理审计
+
+### 逐项源码对照
+
+|边界|VM原始证据|当前main实现|审计判断|
+|---|---|---|---|
+|符号接受|`analysis/full-audit/group-native-audit/group-set-param-native.c::FUN_1800a3200` 的 `LoopStep` 分支调用 `atoi`，仅当结果为0返回 `0xe0000001`，其余 int32 写入 `this+0x234`|`GroupLoop.Parameters` 范围 int32；`GroupLoop.Read` 拒绝0，但保留非零负值|一致于可见的非零判定。超范围字符串 `atoi` 的实际结果不能由反编译 C 推断|
+|方向与边界|`group-run.c::CGroupNode::DoWork`：先以起止比较选择 `local_2e4 = LoopStep` 或 `-LoopStep`（314–319）；初始 `iVar15=start`，只有 `iVar15 < end` 才入循环（534–539），每轮末尾做 int32 `iVar15 = iVar15 + local_2e4` 后仍以同一 `< end` 判断（1007–1008）|`GroupLoop.Increment` 复用起止比较并把有符号步长提升到 `long`；`SolutionExecutor` 以 `[Start,End)` 条件迭代|方向选择与严格上界在可见控制流一致。负步长和 start>=end 造成不收敛/空范围的结论仅限该可见比较路径；native 运行态结果/状态码没有原机差分|
+|迭代状态/收尾|`local_2ec` 记录轮数；正常尾部汇总状态，释放 `local_2d0` 链表元素/容器，再解锁 `_Mtx_unlock` 并返回（group-run.c:1144–1185）|Group 每次调用新建 `GroupOutputAccumulator`；每轮成功才加入；失败结果不加入并终止；循环间隔取消由 `Task.Delay(token)` 抛取消|可证托管每次执行隔离累计器；可见 native 正常收尾清理容器和锁。不能据此证明 C++ 异常/硬件中断所有路径均走同一清理，也不能称托管取消回调等价|
+|32位溢出|伪代码末尾保留 `iVar15 + local_2e4` 的 int32 计算；反编译的 C++ 有符号溢出语义不可从该行确定，原机环绕/终止行为无运行证据|托管以 `long` 推进；进入轮体前遇到 int32 外索引就抛独立防护异常；超过10000轮也失败|这是刻意的防无限循环/避免托管溢出，不是native溢出复刻。上溢越过 end 会自然退出；下溢仍小于 end 时会触发保护错误|
+
+### 取消与异常数据路径
+
+本地 `SolutionExecutor.Execute.Call` 每个 Group 调用各自创建 `GroupOutputAccumulator`。内部图每轮由 `Execute(body.Id, ..., childToken, ...)` 执行；`GraphExecutor.RunAsync` 在节点调用结束后先检查取消令牌，之后才处理节点状态。Group 只对 `SessionStatus.Success` 调 `accumulator.Add`，失败状态立即停止迭代；父流程的 Group 节点在取消令牌已请求时记为 `Cancelled`，普通模块异常记为 `Failed`。间隔等待发生在成功轮后且受同一个 token 控制。该设计没有跨 invocation 的累加器字段，已完成部分留在局部 child result/诊断调用记录；根流程不把失败 Group 作为成功输出消费。内部节点超时的 native映射仍不清楚。
+
+为复核上述闭环，在 `tests/VisionFramework.GroupLoopChecks/Program.cs` 增加确定性场景：节点执行中同步触发父取消、第二轮抛出普通异常、失败后立即重新执行同一 Group。预期观测是取消/失败的根 `WorkflowOutputs` 没有成功 Group 输出，执行索引只包含已进入的轮次，下一 invocation 从空状态运行并得到新结果。首轮 `dotnet run --project tests/VisionFramework.GroupLoopChecks/VisionFramework.GroupLoopChecks.csproj --configuration MF04` 曾在测试工程创建 `bin/MF04/net10.0`、`obj/MF04/net10.0/refint/ref` 时收到 `MSB3191/MSB4018 UnauthorizedAccessException: Access denied`，未进入编译/断言。
+
+### 2026-10-19 隔离复验
+
+静态追查未发现窗口 Dispatcher、同步等待或无界信号等待。测试使用顶层 `await`；两处间隔仅为 100ms，并受 30ms timeout/cancellation token 取消。负步长场景在测试模块执行索引 `-3` 时同步调用 `CancellationTokenSource.Cancel()`；token 沿 Group child token、子流程链接 token 传入 `GraphExecutor`，取消后节点状态为 `Cancelled`，Group runner 对非 Success 状态立即停止。因此按本地代码路径预计有限结束。此前长时间未返回的具体原因因原始控制台会话 ID 未留存，无法事后证实。
+
+在 Canvas 释放唯一构建槽后，以 MF01 的临时根 `Directory.Build.props` 将每个项目 `obj/bin` 分流到 `analysis/full-audit/build-mf04/{obj,bin}/$(MSBuildProjectName)`，并排除旧/新 `obj/bin` 与隔离目录；`dotnet msbuild ... -getProperty` 确认绝对路径位于 framework-group worktree。单次运行 `dotnet run --project tests/VisionFramework.GroupLoopChecks/VisionFramework.GroupLoopChecks.csproj --configuration MF04 -p:BuildInParallel=false -p:UseSharedCompilation=false` 使用受监控的 session `7345`，控制台完整输出 `PASS 23 Group loop checks`，退出码 `0`。包含负步长同步取消、父流程 timeout/cancel、迭代中取消不发布局部成功输出、异常后失败及同一 Group 立即成功重跑并输出新值。该次结果确认本地 runner 用例通过；不证明与 VM native 异常/中断返回码等价。
+
+前一轮长时间进程已由协调者按用户授权结束；本轮仅通过 session `7345` 完成运行。根 props 和 `analysis/full-audit/build-mf04` 是本线本轮临时项，已在验证它们解析到当前 Group worktree 后清理。此前未能返回的原因仍未知，结论依据本轮完整控制台输出而非猜测。
+
+### 当前边界
+
+静态源对照暂未发现需要改动 `GroupLoop` / `SolutionExecutor` 的确定性错误：可见符号、步进和上界形式一致，`long` 与10000轮限制是明示的独立防护。仍未证实 VM 对 int32 溢出、无中断负步长、内部节点异常、线程取消/硬件 abort 的返回状态和结果释放语义；不得把这些行为猜成托管实现合同。此审计不改算法或native状态映射。构建及测试待 slot 后执行；证据不包含VM原机差分。
+
 ## 真实数据和界面复验
 
 - 使用实际BMP、阈值及连通域工具，LoopIndex订阅到实际阈值参数。步长50、范围20..200运行20/70/120/170四轮，累积结果逐项等于四次独立单轮结果，最终图像像素等于阈值170的实际图像处理输出。
