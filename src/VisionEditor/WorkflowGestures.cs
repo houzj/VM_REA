@@ -94,7 +94,7 @@ public partial class MainWindow
  }
  ContextMenu CanvasSelectionMenu(Point location)
  {
-  var menu=new ContextMenu();var paste=new MenuItem {Header="粘贴",InputGestureText="Ctrl+V",IsEnabled=EditableCanvas&&graphClipboard is not null&&graphClipboardSolution==doc.Document.Id};paste.Click+=(_,_)=>Safe(()=>PasteSelection(location));menu.Items.Add(paste);return menu;
+  var menu=new ContextMenu();var paste=new MenuItem {Header="粘贴",InputGestureText="Ctrl+V",IsEnabled=EditableCanvas&&graphClipboard is not null&&graphClipboardSolution==doc.Document.Id};paste.Click+=(_,_)=>Safe(()=>PasteSelection(location));menu.Items.Add(paste);AppendCatalogMenu(menu,location);return menu;
  }
  ContextMenu GroupSelectionMenu()
  {

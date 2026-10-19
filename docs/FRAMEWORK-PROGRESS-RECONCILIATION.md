@@ -2,7 +2,7 @@
 
 2026-10-19；冻结基线 `70b3b4297a798cc0f0f7c149aeaf49be1031be72`。仅 main；tool-plugins 未访问、未计入。
 
-**当前实施总进度：31/96 = 32.29%。**
+**当前实施总进度：32/96 = 33.33%。**
 
 用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
@@ -11,7 +11,7 @@
 | 层次 | 严格达成 | 进度 | 尚未达成 |
 |---|---:|---:|---:|
 | 源码 | 51/96 | **53.1%** | 45 |
-| 实现 | 31/96 | **32.3%** | 65 |
+| 实现 | 32/96 | **33.3%** | 64 |
 | 验证 | 29/96 | **30.2%** | 67 |
 
 ## 分母与计数规则
@@ -32,7 +32,7 @@
 
 | 包 | 范围 | 源码/3 | 实现/3 | 验证/3 | 三层同达成/3 |
 |---|---|---:|---:|---:|---:|
-| A01 | 工具加载与Group导入时序 | 3 | 1 | 1 | 1 |
+| A01 | 工具加载与Group导入时序 | 3 | 2 | 1 | 1 |
 | A02 | 主窗口状态与DPI | 2 | 2 | 2 | 2 |
 | A03 | 流程Tab与Group导航 | 3 | 3 | 2 | 2 |
 | A04 | 节点手势、路由和视口 | 3 | 3 | 3 | 3 |
@@ -83,14 +83,14 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[LOADER-ROUND2-20261019.md](LOADER-ROUND2-20261019.md)、[TOOL-DISCOVERY-METADATA.md](TOOL-DISCOVERY-METADATA.md)、[A01-loader-batch1.md](reverse/A01-loader-batch1.md)
+证据：[LOADER-ROUND2-20261019.md](LOADER-ROUND2-20261019.md)、[TOOL-DISCOVERY-METADATA.md](TOOL-DISCOVERY-METADATA.md)、[A01-loader-batch1.md](reverse/A01-loader-batch1.md)、[A01-palette-lifecycle-implementation-batch15.md](reverse/A01-palette-lifecycle-implementation-batch15.md)、[B-A01-loader-closure-review-batch15.md](reverse/B-A01-loader-closure-review-batch15.md)、[BATCH15-20261019.md](reverse/BATCH15-20261019.md)
 
-当前实现/工具位置：`src/VisionEditor/ToolDirectoryCatalog.cs`、`src/VisionEditor/ToolNavigation.cs`
+当前实现/工具位置：`src/VisionEditor/ToolDirectoryCatalog.cs`、`src/VisionEditor/ToolNavigation.cs`、`src/VisionEditor/ToolCatalogLoadSession.cs`、`tests/ToolCatalogLifecycleChecks15/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | A01.1 | 目录XML、分类优先级与惰性元数据读取 | 达成 | 达成 | 达成 | 只计元数据读取，不计工具DLL动态注册。 |
-| A01.2 | 原加载器首次/悬停/刷新及失败分支 | 达成 | 部分 | 部分 | 原UpdateLoad合成输入已验；真实WPF与原Group模型落地未验。 |
+| A01.2 | 原加载器首次/悬停/刷新及失败分支 | 达成 | 达成 | 部分 | 第十五批main实际metadata palette首次/hover/Expanded/画布菜单共用状态、初始化前置、失败sticky保留前缀、成功排序及显式Refresh新身份均完整实施，17项实际MainWindow控件自审核通过。载体为已映射ModuleId的独立JSON palette，错误提示为本地适配；原目录特殊anchor/global缓存及原厂WPF运行差分未验证。原Group导入回调A01.3、DLL到registry动态映射A07未借此关闭。 |
 | A01.3 | 原Group导入回调到模型落地 | 达成 | 未取得交付 | 阻塞 | CIL链可定位；原gro导入及实际回调未接入main。 |
 
 ### A02 主窗口状态与DPI
@@ -335,15 +335,15 @@
 
 前置：C02、D02；完整包未因本表计分关闭。
 
-证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C03-history-lifecycle-batch9.md](reverse/C03-history-lifecycle-batch9.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)
+证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C03-history-lifecycle-batch9.md](reverse/C03-history-lifecycle-batch9.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)、[C-result-history-implementation-batch15.md](reverse/C-result-history-implementation-batch15.md)
 
-当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ToolExecutionScope.cs`、`src/VisionEditor/FrameworkExecutionPreferences.cs`、`src/VisionEditor/FrameworkExecutionPolicy.cs`
+当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ToolExecutionScope.cs`、`src/VisionEditor/FrameworkExecutionPreferences.cs`、`src/VisionEditor/FrameworkExecutionPolicy.cs`、`src/VisionEditor.Core/FrameworkRunHistory.cs`、`src/VisionEditor/MainWindow.FrameworkResultHistory.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | C03.1 | 原结果视图切源、缓存与旧事件解绑 | 达成 | 部分 | 部分 | 主线有替换清理子集，原回调跨方案处置未全验。 |
 | C03.2 | 清结果有效配置到实际SDK消费 | 达成 | 部分 | 阻塞 | 原配置重载已明确；main未恢复同一条件控制。 第十一批：main启动配置到Begin显示消费已实施子集，保留session、隐藏旧view并在新结果解除；实际SDK/多消费者仍缺，实施partial。 |
-| C03.3 | 历史、底部耗时与全局结果缓存生命周期 | 部分 | 部分 | 部分 | 当前独立摘要粒度不同，原全局UI策略证据不足。 第九批：原历史/计时绑定及切源链新增；静态待通知cache跨实例保留，完整宿主与native缓存未闭合。 |
+| C03.3 | 历史、底部耗时与全局结果缓存生命周期 | 部分 | 部分 | 部分 | 当前独立摘要粒度不同，原全局UI策略证据不足。 第九批：原历史/计时绑定及切源链新增；静态待通知cache跨实例保留，完整宿主与native缓存未闭合。 第十五批真实RunCore采用最新500条独立流程摘要、稳定序号，实际selected节点耗时和算法不可用显示；本地方案替换清自身摘要。原500来自module日志，应用于流程摘要为明确独立适配，native全局缓存未知，整项仍partial。 |
 
 ### C04 撤销恢复与临时文件所有权
 
@@ -447,13 +447,13 @@
 
 前置：D01、B02、B05；完整包未因本表计分关闭。
 
-证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)、[D-container-evidence-batch11.md](reverse/D-container-evidence-batch11.md)
+证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)、[D-container-evidence-batch11.md](reverse/D-container-evidence-batch11.md)、[B-identity-semantic-map-batch15.md](reverse/B-identity-semantic-map-batch15.md)、[D-ui-zoom-mapping-batch15.md](reverse/D-ui-zoom-mapping-batch15.md)
 
-当前实现/工具位置：`src/SolutionInspector/ModuleFrame.cs`
+当前实现/工具位置：`src/SolutionInspector/ModuleFrame.cs`、`src/SolutionInspector/SemanticMap.cs`、`src/SolutionInspector/UiParameters.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| D03.1 | 原XML/UI关系、身份和字段映射 | 部分 | 未取得交付 | 未验证 | 原样本/托管线索存在，尚无完整语义映射。 |
+| D03.1 | 原XML/UI关系、身份和字段映射 | 部分 | 部分 | 未验证 | 原样本/托管线索存在，尚无完整语义映射。 第十五批检查器实际输出XML声明身份/显式所属/前后连线互证、UI候选关联与诊断；ProceZoomIndex按原键/UTF8终NUL与整数规则映射，保留raw和损坏状态。实际CircleFind只读输出成功，原八段Relation/native身份机制未知不假关。 |
 | D03.2 | mdata参数/模型/资源内部语义 | 未取得交付 | 未取得交付 | 阻塞 | 内部writer/reader及类型号未知。 第十一批：原容器检查器增加名称/键固定槽Base64保全，19项通过且样本hash不变；不是原格式写回或完整语义映射。 |
 | D03.3 | 原未知字段保持和对象图往返 | 未取得交付 | 未取得交付 | 阻塞 | 未实现原容器转换，不以猜测字段代替。 |
 

@@ -17,6 +17,8 @@ using DragDropEffects=System.Windows.DragDropEffects;
 using HorizontalAlignment=System.Windows.HorizontalAlignment;
 using Panel=System.Windows.Controls.Panel;
 using Point=System.Windows.Point;
+using MenuItem=System.Windows.Controls.MenuItem;
+using ContextMenu=System.Windows.Controls.ContextMenu;
 
 namespace VisionEditor;
 
@@ -26,10 +28,69 @@ public partial class MainWindow
     sealed record CatalogGroup(string Id,string Name,double Priority,string? Icon,string? HoverIcon,CatalogTool[] Items);
     sealed record CatalogFile(int Schema,CatalogGroup[] Groups);
     CatalogGroup[]? toolGroups;
+    string toolCatalogPath=Path.Combine(AppContext.BaseDirectory,"tool-catalog.json");
+    readonly Dictionary<string,ToolCategoryLoadState<CatalogTool>> toolCategoryLoads=new(StringComparer.Ordinal);
     Border? toolDragGhost;
     bool? toolRailOverview;
     bool EditableOverview=>workflowOverview&&!windowClosed&&!parameterEditorOpen&&!isLocked&&activeRun is null;
-    CatalogGroup[] ToolGroups => toolGroups??=JsonSerializer.Deserialize<CatalogFile>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"tool-catalog.json")))!.Groups;
+    CatalogGroup[] ToolGroups => toolGroups??=ReadToolGroupHeaders();
+
+    CatalogGroup[] ReadToolGroupHeaders()
+    {
+        using var json=JsonDocument.Parse(File.ReadAllText(toolCatalogPath));
+        return json.RootElement.GetProperty("Groups").EnumerateArray().Select(g=>new CatalogGroup(
+            g.GetProperty("Id").GetString()!,g.GetProperty("Name").GetString()!,g.GetProperty("Priority").GetDouble(),
+            g.TryGetProperty("Icon",out var icon)?icon.GetString():null,g.TryGetProperty("HoverIcon",out var hover)?hover.GetString():null,[])).OrderBy(g=>g.Priority).ToArray();
+    }
+    IEnumerable<CatalogTool> ReadCategoryTools(string id)
+    {
+        using var json=JsonDocument.Parse(File.ReadAllText(toolCatalogPath));
+        var group=json.RootElement.GetProperty("Groups").EnumerateArray().Single(g=>g.GetProperty("Id").GetString()==id);
+        foreach(var item in group.GetProperty("Items").EnumerateArray())
+            yield return item.Deserialize<CatalogTool>()??throw new InvalidDataException("Empty tool metadata.");
+    }
+    CatalogGroup? LoadToolCategory(CatalogGroup group)
+    {
+        if(!toolCategoryLoads.TryGetValue(group.Id,out var state))toolCategoryLoads[group.Id]=state=new();
+        try{state.EnsureLoaded(()=>ReadCategoryTools(group.Id));}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or InvalidOperationException)
+        {
+            StatusText.Text="工具分类加载失败："+error.Message;
+            return null; // First failure aborts opening; no automatic retry or silent recovery.
+        }
+        return group with{Items=(state.Failure is null?state.Items.OrderBy(t=>t.Priority):state.Items.AsEnumerable()).ToArray()};
+    }
+    void RefreshToolCatalog()
+    {
+        if(toolPopup is not null)toolPopup.IsOpen=false;
+        toolGroups=null;toolCategoryLoads.Clear();BuildRail();
+    }
+    ContextMenu ToolCatalogRefreshMenu()
+    {
+        var menu=new ContextMenu();var refresh=new MenuItem {Header="刷新工具目录"};
+        refresh.Click+=(_,_)=>Safe(RefreshToolCatalog);menu.Items.Add(refresh);return menu;
+    }
+    void AppendCatalogMenu(ContextMenu menu,Point location)
+    {
+        foreach(var group in ToolGroups)
+        {
+            var category=new MenuItem {Header=group.Name,Tag=group.Id};
+            category.Items.Add(new MenuItem {Header="加载工具分类",IsEnabled=false});
+            category.MouseEnter+=(_,_)=>
+            {
+                var loaded=LoadToolCategory(group);if(loaded is null)return;
+                category.Items.Clear();
+                foreach(var tool in loaded.Items)
+                {
+                    bool available=tool.ModuleId is not null&&modules.Descriptors.Any(d=>d.Id==tool.ModuleId);
+                    var item=new MenuItem {Header=tool.Name,Tag=tool.Id,IsEnabled=available&&EditableCanvas};
+                    item.Click+=(_,e)=>{e.Handled=true;Safe(()=>AddModuleAt(tool.ModuleId!,location.X,location.Y));};category.Items.Add(item);
+                }
+            };
+            menu.Items.Add(category);
+        }
+        var refresh=new MenuItem {Header="刷新工具目录"};refresh.Click+=(_,_)=>Safe(RefreshToolCatalog);menu.Items.Add(refresh);
+    }
 
     ImageSource? CatalogIcon(string? file) => string.IsNullOrEmpty(file)?null:Asset(file);
 
@@ -59,14 +120,15 @@ public partial class MainWindow
             {
                 var expander=new Expander { Header=group.Name, Width=230, Style=(Style)FindResource("ToolboxCategory") };
                 // Source groups tools by GroupName, preserving priority order within each group.
-                expander.Content=CreateToolGrid(group);
-                expander.Expanded+=(_,_)=>activeToolCategory=group.Id;
+                expander.ContextMenu=ToolCatalogRefreshMenu();
+                expander.Expanded+=(_,_)=>{activeToolCategory=group.Id;var loaded=LoadToolCategory(group);if(loaded is not null)expander.Content=CreateToolGrid(loaded);};
                 Rail.Children.Add(expander);
                 continue;
             }
             var icon=new Image { Source=CatalogIcon(group.Icon), Width=52, Height=50, Stretch=Stretch.Uniform };
             var button=new Button { Width=52, Height=50, Background=Brushes.Transparent, BorderThickness=new Thickness(0), ToolTip=group.Name, Content=icon, Tag=group.Id, Padding=new Thickness(0) };
             button.Style=(Style)FindResource("ToolboxCategoryButton");
+            button.ContextMenu=ToolCatalogRefreshMenu();
             button.MouseEnter+=(_,_)=> { icon.Source=CatalogIcon(group.HoverIcon??group.Icon);ShowToolPicker(group.Id,button); };
             button.MouseLeave+=(_,_)=>CloseToolPopupSoon();
             Rail.Children.Add(button);
@@ -126,6 +188,7 @@ public partial class MainWindow
     {
         if(toolboxExpanded||workflowOverview||!EditableCanvas)return;
         var group=ToolGroups.FirstOrDefault(g=>g.Id==category)??ToolGroups.First();
+        group=LoadToolCategory(group);if(group is null)return;
         if(toolPopup is {IsOpen:true}&&toolPopupAnchor==anchor)return;
         if(toolPopup is not null)toolPopup.IsOpen=false;
         activeToolCategory=group.Id;

@@ -318,3 +318,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第十四批：长稳失败与保存事务
 
 原PID54372长稳实际413.078秒失败于第二SaveAs的File.Move UnauthorizedAccessException，未足1800秒；7项原审计hash匹配，外部子进程退出码旧launcher未采，不虚报。四方向封存/复核/事务测试：新增保存持锁与PrepareSave/Changed阶段22项实际通过，现场瞬时根因仍未知，不归因权限/扫描器、不改产品盲重试。增强probe未来phase/HResult/目标前后hash，并加只等自有子进程的exit.json launcher；构建0警告0错误，launcher仅语法检查未执行，不重跑长稳。C07.1验证记failed、实施partial，FAIL-STABILITY-SAVEAS登记；总实施31/96=32.29%，本轮+0，剩余65。详见reverse/BATCH14-20261019.md及batch14审计，tool-plugins不动，不自动推送。
+
+## 2026-10-19 第十五批：A01.2实施完成
+
+基线f7709efea904063991ca87a8c71b68a3d4ae2614，四方向三子槽+root。A01.2实际palette首次/hover/Expanded/画布菜单同状态、失败sticky前缀、成功排序和显式Refresh新身份完整实施，17项实际MainWindow控件自审通过，计完成+1；JSON载体/原锚点差异明示，不关闭A01.3/A07。另落实500条有界流程摘要/稳定序号/真实selected模块耗时/算法不可用，以及原方案显式声明图和ProceZoomIndex只读解释；C03.3/D03.1原native未知仍partial。105项限定自审通过，Core首轮漏目录参数拒绝保留、正确参数后通过；既有CS8603保留。总实施32/96=33.33%，剩余64。证据reverse/BATCH15-20261019.md与batch15审计；长稳失败未重跑，tool-plugins未访问、不采用来信、不自动推送。

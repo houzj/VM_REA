@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
+using System.Globalization;
 
 static class UiParameters
 {
@@ -36,7 +37,8 @@ static class UiParameters
                 byte[] value = ReadPayload(ReadInt());
                 object? decoded = key == "Position" && value.Length == 16
                     ? new { x = BitConverter.Int64BitsToDouble(BinaryPrimitives.ReadInt64LittleEndian(value.AsSpan(0, 8))), y = BitConverter.Int64BitsToDouble(BinaryPrimitives.ReadInt64LittleEndian(value.AsSpan(8, 8))) }
-                    : key == "IsReady" && value.Length == 1 ? value[0] != 0 : null;
+                    : key == "IsReady" && value.Length == 1 ? value[0] != 0
+                    : key == "ProceZoomIndex" ? DecodeZoom(value) : null;
                 records.Add(new { key, bytes = value.Length, rawBase64 = Convert.ToBase64String(value), decoded });
             }
             return new { path = entry.FullName, status = offset == bytes.Length ? "parsed" : "partial-trailing-bytes", version, records, trailingBytes = bytes.Length - offset };
@@ -44,6 +46,26 @@ static class UiParameters
         catch (Exception ex) when (ex is InvalidDataException or DecoderFallbackException)
         {
             return new { path = entry.FullName, status = "unsupported", reason = ex.Message, rawBase64 = Convert.ToBase64String(bytes) };
+        }
+    }
+
+    static object DecodeZoom(byte[] value)
+    {
+        // VmModuleSetDecorator.ProceZoomIndex -> StringUtil.UTF8GetString:
+        // trim terminal NULs, then parse an integer. Never clamp to UI ticks or
+        // replace malformed persisted data with the decorator's missing-key default.
+        try
+        {
+            string text = new UTF8Encoding(false, true).GetString(value).TrimEnd('\0');
+            return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index)
+                ? new { status = "decoded-integer", text, index = (int?)index,
+                    interpretation = "Original property integer; 0..19 UI tick validity is separate." }
+                : new { status = "invalid-integer", text, index = (int?)null,
+                    interpretation = "Original getter parses rather than defaulting malformed bytes." };
+        }
+        catch (DecoderFallbackException)
+        {
+            return new { status = "invalid-utf8", interpretation = "Strict inspector decoding; original Encoding.UTF8 uses replacement fallback. Raw bytes preserved." };
         }
     }
 }

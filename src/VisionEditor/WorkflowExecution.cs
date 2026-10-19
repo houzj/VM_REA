@@ -33,8 +33,7 @@ public partial class MainWindow
 
    StoreWorkflowCallResults(procedureId,session);var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);RecordWorkflowRun(procedureId,elapsed);
    if(windowClosed)return false;
-   var name=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId)?.Name??procedureId;
-   history.Add(new{Seq=history.Count+1,Time=DateTime.Now.ToString("HH:mm:ss"),Data=name+" · "+session.Status});
+   RecordFrameworkRunHistory(procedureId,session);
    if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString("F2");StatusText.Text="流程完成："+session.Status+(session.OutputErrors.Count>0?" · "+string.Join("；",session.OutputErrors):"");StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?"bottombar_run.png":"bottombar_abnormal.png");RefreshRight();}
    if(workflowOverview)RenderWorkflowOverview();
    if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();

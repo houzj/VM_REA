@@ -30,6 +30,8 @@ try {
         declaredVersion = (string?)root.Element("SoftVersion")?.Element("Version")?.Attribute("CurrentVersion"),
         solutionName = (string?)root.Element("SolutionInfo")?.Element("Solution")?.Attribute("SolutionName"),
         modules, procedures, membership, connections, subscriptions,
+        semanticMap = SemanticMap.Build(root, archive.Entries.Where(e => e.FullName.Replace('\\', '/')
+            .StartsWith("SolutionFile/UiParamData/", StringComparison.Ordinal)).Select(e => e.FullName)),
         moduleFrames = archive.Entries.Where(e => e.FullName.Replace((char)92, (char)47) == "SolutionFile/MoudleFrame").Select(ModuleFrame.Inspect).ToArray(),
         uiParameters = archive.Entries.Where(e => e.FullName.Replace((char)92, (char)47).StartsWith("SolutionFile/UiParamData/")).Select(UiParameters.Inspect).ToArray(),
         entries = archive.Entries.Select(e => new { path = e.FullName, bytes = e.Length, compressedBytes = e.CompressedLength }).ToArray(),
