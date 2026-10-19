@@ -32,6 +32,30 @@ long cycles=0,assertions=0,saves=0;bool cancelled=false;
 Console.CancelKeyPress+=(_,e)=>{e.Cancel=true;cancelled=true;};
 var clock=Stopwatch.StartNew();var samples=new List<Sample>();double nextSample=0;
 string firstFile=Path.Combine(output,"workload.vmx.json"),secondFile=Path.Combine(output,"save-as","workload.vmx.json");
+string phase="initialization",targetPath="";
+object? saveBefore=null;
+object ObserveFile(string path){
+  try{return new{path,exists=File.Exists(path),attributes=File.Exists(path)?File.GetAttributes(path).ToString():null,
+    sha256=File.Exists(path)?Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))):null};}
+  catch(Exception e){return new{path,observationFailure=e.ToString(),hresult=$"0x{e.HResult:X8}"};}
+}
+void SaveMeasured(GraphEditorDocument doc,string path,string operation){
+  phase=operation;targetPath=path;
+  saveBefore=new{file=ObserveFile(path),doc.FilePath,doc.BaseDirectory,doc.IsDirty,doc.Revision,doc.CanUndo,doc.CanRedo,
+    documentSha256=Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(doc.Document)))};
+  try{doc.Save(path);saves++;}
+  catch(Exception e){
+    try{
+    File.WriteAllText(Path.Combine(output,"save-failure-context.json"),JsonSerializer.Serialize(new{
+      phase,targetPath,cycle=cycles,saves,exception=e.ToString(),hresult=$"0x{e.HResult:X8}",before=saveBefore,
+      after=new{file=ObserveFile(path),doc.FilePath,doc.BaseDirectory,doc.IsDirty,doc.Revision,doc.CanUndo,doc.CanRedo,
+        documentSha256=Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(doc.Document)))},
+      limitation="Observation is after SolutionStore finally cleanup; the original temporary path and instantaneous OS cause are not inferred."
+    },options));
+    }catch(Exception observationError){Console.Error.WriteLine("Save observation failed: "+observationError);}
+    throw;
+  }
+}
 var registry=new ModuleRegistry();WorkflowCalls.Register(registry);
 string? failure=null;
 void Require(bool value,string label){assertions++;if(!value)throw new InvalidOperationException(label+" at cycle "+cycles);}
@@ -48,6 +72,7 @@ void WriteStatus(bool finished){
 try{
   while(clock.Elapsed.TotalSeconds<duration&&!cancelled){
     if(clock.Elapsed.TotalSeconds>=nextSample){SampleNow();nextSample+=10;}
+    phase="document-edits";targetPath="";saveBefore=null;
     var doc=new GraphEditorDocument(registry);string root=doc.CurrentProcedureId;
     doc.RenameProcedure(root,"first");doc.RenameProcedure(root,"second");doc.Undo();Require(doc.CurrentProcedure.Name=="first","Undo restores old name");
     doc.Redo();Require(doc.CurrentProcedure.Name=="second","Redo restores new name");
@@ -57,15 +82,19 @@ try{
     doc.SelectProcedure(root);string node=doc.AddOwnedGroup(100,100);string group=doc.EnterOwnedGroup(node);doc.SetContainerZoomIndex(group,19-index);
     Require(doc.Document.Procedures.Single(p=>p.Id==root).CanvasZoomIndex==index&&doc.CurrentProcedure.CanvasZoomIndex==19-index,"Group viewport independence");
     if(cycles%32==0){
-      doc.Save(firstFile);saves++;var loaded=new GraphEditorDocument(registry);loaded.Load(firstFile);
+      SaveMeasured(doc,firstFile,"save-first");var loaded=new GraphEditorDocument(registry);phase="load-first";targetPath=firstFile;loaded.Load(firstFile);
       Require(loaded.Document.Procedures.Count==4,"Owned Group survives save and reload");
       Require(loaded.Document.Procedures.Single(p=>p.Id==root).CanvasZoomIndex==index,"Root viewport survives persistence");
       Require(loaded.Document.Procedures.Single(p=>p.Id==group).CanvasZoomIndex==19-index,"Group viewport survives persistence");
-      loaded.Save(secondFile);saves++;loaded.Load(secondFile);Require(!loaded.IsDirty&&loaded.Document.Procedures.Count==4,"SaveAs reload is clean");
+      SaveMeasured(loaded,secondFile,"save-as");phase="reload-save-as";loaded.Load(secondFile);Require(!loaded.IsDirty&&loaded.Document.Procedures.Count==4,"SaveAs reload is clean");
     }
     cycles++;Thread.Sleep(10);
   }
-}catch(Exception e){failure=e.ToString();File.WriteAllText(Path.Combine(output,"failure.txt"),failure);}
+}catch(Exception e){failure=e.ToString();
+  try{File.WriteAllText(Path.Combine(output,"failure.txt"),failure);
+  File.WriteAllText(Path.Combine(output,"failure-context.json"),JsonSerializer.Serialize(new{phase,targetPath,cycles,saves,
+    exception=e.ToString(),hresult=$"0x{e.HResult:X8}",innerHresult=e.InnerException is {} inner?$"0x{inner.HResult:X8}":null},options));
+  }catch(Exception observationError){Console.Error.WriteLine("Failure observation failed: "+observationError+"; original: "+failure);}}
 try{SampleNow();}catch(Exception e){failure=(failure??"")+Environment.NewLine+"Final sampling failed: "+e;File.WriteAllText(Path.Combine(output,"failure.txt"),failure);}
 clock.Stop();
 var measured=samples.Where(s=>s.ElapsedSeconds>=120).ToArray();

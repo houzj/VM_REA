@@ -1258,7 +1258,10 @@
         "docs/MF05-PROCESS-LIFETIME-AUDIT.md",
         "docs/GROUP-LOOP-BOUNDARIES.md",
         "docs/FRAMEWORK-WORKTREE-RETIREMENT.md",
-        "docs/reverse/C-stability-baseline-batch13.md"
+        "docs/reverse/C-stability-baseline-batch13.md",
+        "docs/reverse/B-stability-failure-review-batch14.md",
+        "docs/reverse/C-stability-save-failure-batch14.md",
+        "docs/reverse/BATCH14-20261019.md"
       ],
       "implementationArtifacts": [
         "tests/Check-ProcessExit.ps1",
@@ -1268,11 +1271,13 @@
         {
           "id": "C07.1",
           "criterion": "长稳负载/时长及内存线程句柄基线",
-          "source": "not_started",
+          "source": "partial",
           "implementation": "partial",
-          "validation": "not_started",
-          "limitation": "没有符合总计划定义的测量基线。 第十三批已交付真实main/Core固定1800秒负载与自身PID资源基线工具，已启动PID54372；足时summary及退出证据未取得，暂不计完成。无全宿主/SDK/并发长稳声明。",
-          "blockerIds": []
+          "validation": "failed",
+          "limitation": "已交付main/Core固定1800秒负载与自身资源采样工具。原PID54372在413.078秒、21216轮、1327次成功保存后于第二SaveAs的File.Move抛UnauthorizedAccessException；未足时且passed=false，不能计完成。原始7项哈希匹配，异常瞬间根因/HResult未记录；事后属性/ACL不能反推原因。第十四批仅增强未来失败取证和自有子进程退出码launcher，不自动重跑。原厂/全宿主/SDK长稳未覆盖。",
+          "blockerIds": [
+            "FAIL-STABILITY-SAVEAS"
+          ]
         },
         {
           "id": "C07.2",
@@ -1418,7 +1423,8 @@
         "docs/reverse/D02-asset-history-batch3.md",
         "docs/reverse/D02-storage-boundary-batch4.md",
         "docs/reverse/D02-interruption-batch6.md",
-        "docs/reverse/D-save-roundtrip-batch10.md"
+        "docs/reverse/D-save-roundtrip-batch10.md",
+        "docs/reverse/A-save-failure-transaction-batch14.md"
       ],
       "implementationArtifacts": [
         "src/VisionFramework/SolutionStore.cs",
@@ -1451,7 +1457,7 @@
           "source": "done",
           "implementation": "done",
           "validation": "done",
-          "limitation": "锁/失败及自有中断已验；不是断电/所有阶段保证。",
+          "limitation": "锁/失败及自有中断已验；不是断电/所有阶段保证。 第十四批持锁拒绝/PrepareSave异常等22项通过，限定为提交前事务及清理；Changed通知在提交后抛错不回滚。413秒长稳拒绝瞬时原因未知，未以既有测试冒充现场前后事务复验。",
           "blockerIds": []
         }
       ]
@@ -1814,8 +1820,8 @@
         "remaining": 45,
         "statuses": {
           "done": 51,
-          "partial": 37,
-          "not_started": 8
+          "partial": 38,
+          "not_started": 7
         }
       },
       "implementation": {
@@ -1840,8 +1846,8 @@
           "partial": 23,
           "blocked": 33,
           "unverified": 5,
-          "not_started": 4,
-          "failed": 2
+          "not_started": 3,
+          "failed": 3
         }
       }
     },
@@ -2935,6 +2941,21 @@
         "docs/reverse/C-history-suppression-batch10.md"
       ],
       "affectsImplementation": false
+    },
+    {
+      "id": "FAIL-STABILITY-SAVEAS",
+      "kind": "实际运行失败，未足时",
+      "units": [
+        "C07.1"
+      ],
+      "reason": "原自有30分钟负载在413秒SaveAs替换拒绝，缺失败瞬间HResult及占用信息，根因未定。",
+      "unblockCondition": "保留失败；先用有阶段/HResult/精确目标前后hash/事务/外部退出码的受控诊断明确拒绝条件；不盲改产品重试。新受控足时负载及采样/退出证据齐备后再审定，不能把短测或人工验收混进实施分母。",
+      "evidence": [
+        "docs/reverse/BATCH14-20261019.md",
+        "docs/reverse/B-stability-failure-review-batch14.md",
+        "docs/reverse/C-stability-save-failure-batch14.md"
+      ],
+      "affectsImplementation": true
     }
   ],
   "latestEvidenceBatch": {

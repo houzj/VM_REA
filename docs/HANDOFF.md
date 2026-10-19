@@ -314,3 +314,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第十三批：迁移实施与长稳在途
 
 基线b11594396061226f669f2bfe49d8378f0af27b21。四方向独立审查/实施：恢复A06真实关闭缓冲依赖，REA取得B05真实全局模块；不以假窗口/三标量替代。D新增纯托管运行界面XML迁移CLI，18项自审及真实CLI成功/拒覆盖通过，native分支仍未实施，D04.1 partial。C新增受控30分钟资源基线工具，UTC12:02:03自有PID54372已启动，固定GUID见framework-reverse-plan.json ownedRuns；最早北京时间20:32足时，summary/退出齐备前C07.1 partial不计完成。总实施31/96=32.29%，本轮暂+0；不是以人工验收挡分。所有失败/源代码/实际输出/哈希留batch13审计；tool-plugins不动，不自动推送。下一心跳先收取已有owned run，不重复启动。
+
+## 2026-10-19 第十四批：长稳失败与保存事务
+
+原PID54372长稳实际413.078秒失败于第二SaveAs的File.Move UnauthorizedAccessException，未足1800秒；7项原审计hash匹配，外部子进程退出码旧launcher未采，不虚报。四方向封存/复核/事务测试：新增保存持锁与PrepareSave/Changed阶段22项实际通过，现场瞬时根因仍未知，不归因权限/扫描器、不改产品盲重试。增强probe未来phase/HResult/目标前后hash，并加只等自有子进程的exit.json launcher；构建0警告0错误，launcher仅语法检查未执行，不重跑长稳。C07.1验证记failed、实施partial，FAIL-STABILITY-SAVEAS登记；总实施31/96=32.29%，本轮+0，剩余65。详见reverse/BATCH14-20261019.md及batch14审计，tool-plugins不动，不自动推送。

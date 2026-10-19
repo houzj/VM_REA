@@ -391,13 +391,13 @@
 
 前置：C03、C04、C05、C06；完整包未因本表计分关闭。
 
-证据：[MF05-PROCESS-LIFETIME-AUDIT.md](MF05-PROCESS-LIFETIME-AUDIT.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[C-stability-baseline-batch13.md](reverse/C-stability-baseline-batch13.md)
+证据：[MF05-PROCESS-LIFETIME-AUDIT.md](MF05-PROCESS-LIFETIME-AUDIT.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[C-stability-baseline-batch13.md](reverse/C-stability-baseline-batch13.md)、[B-stability-failure-review-batch14.md](reverse/B-stability-failure-review-batch14.md)、[C-stability-save-failure-batch14.md](reverse/C-stability-save-failure-batch14.md)、[BATCH14-20261019.md](reverse/BATCH14-20261019.md)
 
 当前实现/工具位置：`tests/Check-ProcessExit.ps1`、`tests/FrameworkStabilityProbe13/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| C07.1 | 长稳负载/时长及内存线程句柄基线 | 未取得交付 | 部分 | 未取得交付 | 没有符合总计划定义的测量基线。 第十三批已交付真实main/Core固定1800秒负载与自身PID资源基线工具，已启动PID54372；足时summary及退出证据未取得，暂不计完成。无全宿主/SDK/并发长稳声明。 |
+| C07.1 | 长稳负载/时长及内存线程句柄基线 | 部分 | 部分 | 失败 | 已交付main/Core固定1800秒负载与自身资源采样工具。原PID54372在413.078秒、21216轮、1327次成功保存后于第二SaveAs的File.Move抛UnauthorizedAccessException；未足时且passed=false，不能计完成。原始7项哈希匹配，异常瞬间根因/HResult未记录；事后属性/ACL不能反推原因。第十四批仅增强未来失败取证和自有子进程退出码launcher，不自动重跑。原厂/全宿主/SDK长稳未覆盖。 |
 | C07.2 | 持续并发运行与资源增长验收 | 部分 | 未取得交付 | 未取得交付 | 已知队列/线程源码不等于长稳运行证据。 |
 | C07.3 | 运行异常、失败后重启和关闭恢复 | 部分 | 部分 | 部分 | 已有局部恢复检查，未完成长稳并发故障矩阵。 |
 
@@ -433,7 +433,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[SOLUTION-PERSISTENCE-BOUNDARY.md](SOLUTION-PERSISTENCE-BOUNDARY.md)、[D02-storage-batch2.md](reverse/D02-storage-batch2.md)、[D02-asset-history-batch3.md](reverse/D02-asset-history-batch3.md)、[D02-storage-boundary-batch4.md](reverse/D02-storage-boundary-batch4.md)、[D02-interruption-batch6.md](reverse/D02-interruption-batch6.md)、[D-save-roundtrip-batch10.md](reverse/D-save-roundtrip-batch10.md)
+证据：[SOLUTION-PERSISTENCE-BOUNDARY.md](SOLUTION-PERSISTENCE-BOUNDARY.md)、[D02-storage-batch2.md](reverse/D02-storage-batch2.md)、[D02-asset-history-batch3.md](reverse/D02-asset-history-batch3.md)、[D02-storage-boundary-batch4.md](reverse/D02-storage-boundary-batch4.md)、[D02-interruption-batch6.md](reverse/D02-interruption-batch6.md)、[D-save-roundtrip-batch10.md](reverse/D-save-roundtrip-batch10.md)、[A-save-failure-transaction-batch14.md](reverse/A-save-failure-transaction-batch14.md)
 
 当前实现/工具位置：`src/VisionFramework/SolutionStore.cs`、`src/VisionEditor.Core/GraphEditorDocument.cs`
 
@@ -441,7 +441,7 @@
 |---|---|---|---|---|---|
 | D02.1 | 独立JSON结构/版本/大小/深度与拒绝 | 达成 | 达成 | 达成 | 原生格式不在本项；32MiB边界及编辑器状态已验。 第十批：独立保存按Load同一规则拒绝不透明JSON重复属性，9项通过并有23项存储/历史回归；FCR024私有资产仍开放。 |
 | D02.2 | 资产嵌入、跨目录和多层历史身份 | 达成 | 部分 | 失败 | FCR-024真实插件SaveAs后Undo读取失败，不能算通过。 |
-| D02.3 | 独立写入失败事务与受控进程中断 | 达成 | 达成 | 达成 | 锁/失败及自有中断已验；不是断电/所有阶段保证。 |
+| D02.3 | 独立写入失败事务与受控进程中断 | 达成 | 达成 | 达成 | 锁/失败及自有中断已验；不是断电/所有阶段保证。 第十四批持锁拒绝/PrepareSave异常等22项通过，限定为提交前事务及清理；Changed通知在提交后抛错不回滚。413秒长稳拒绝瞬时原因未知，未以既有测试冒充现场前后事务复验。 |
 
 ### D03 原生容器与对象数据映射
 
@@ -540,6 +540,7 @@
 | DEVICE-RELEASE | 真实设备/会话资源条件：C05.3, C06.3 | 提供可归属本任务的受控设备/会话和固定操作/退出矩阵，不默认操作连接设备 |
 | ACCEPTANCE-PREREQUISITES | 完整差分/部署前置未满足：A02.3, B08.3, D06.3, D08.3 | 完成相应运行/插件/native前置后按既定矩阵验收，保留失败 |
 | FRAMEWORK-UNDO | 实施已完成；原厂差分后置：C01.2 | 所有实施完成后另行安排原厂Group差分；完整载荷回放仍属C01.3，不能将本地快照适配称VM等价。 |
+| FAIL-STABILITY-SAVEAS | 实际运行失败，未足时：C07.1 | 保留失败；先用有阶段/HResult/精确目标前后hash/事务/外部退出码的受控诊断明确拒绝条件；不盲改产品重试。新受控足时负载及采样/退出证据齐备后再审定，不能把短测或人工验收混进实施分母。 |
 
 ## 复算与审计
 
