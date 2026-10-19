@@ -211,3 +211,7 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - Compatibility：能力应可选并明确诊断旧插件不支持的情形；不静默丢弃历史/资源，不猜改私有 JSON 或原生方案。未改共享 Contracts，也未改 tool-plugins。
 - Evidence：main 6a2cf54 的实际 ImageSourcePlugin/ToolPluginRegistry/GraphEditorDocument 链见 [D02 诊断](reverse/D02-asset-history-batch3.md) 与[独立审查](reverse/D02-asset-history-review-batch3.md)。真实失败 exit1/passed=false：原外部图像仍在时，跨目录 SaveAs 后 Undo 恢复旧相对路径且资源0，新基目录解析失败；Redo、离线嵌入重开通过。这是独立实现集成缺口，尚非原生 VM 行为规格。
 - Acceptance：保留当前失败样本；合同落地后对准备前/后、多层历史、跨目录另存、Undo/Redo、源文件存在及删除后重开分别核对身份和编码字节，并用实际模块执行核对图像结果。须验证校准等带运行状态准备器不会污染旧快照；原生方案/VM 差分独立验收，不能据本地测试关闭。
+
+### FCR-019 第四批装配证据补记（不改变共享接口）
+
+[B01-lazy-root-batch4](reverse/B01-lazy-root-batch4.md)补齐ModuleParam.Data缓存发布点、Owner/共享Params、InitLoad与XmlLoaded/Setter通知链。真实Owner为ISubjectModel时，InitLoad在AlgorithmTabRoot的loadXml try之外，proxy会加载/激活工具程序集；loadXml会改XML文件属性。16项原方法检查仅使用正常ModuleParam、Parent=null与任务自有XML，不是实际VM候选装配/绑定。实际定义Hik.Xml.BaseNode的程序集已通过REA身份确认是VM.Xml.dll，不能按反编译目录假定归属。仍不据此新增main插件配置模型；真实SDK订阅写入、全局变量确认/取消和生命周期仍待原源码/运行补证。既有FCR-024失败及交接边界不变。

@@ -268,3 +268,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 源码级总计划第三批
 
 基线6a2cf54，四方向分批使用三个并发子槽，第四位独立复核D02；本批全部子任务已完成，无产品修改、自动推送或tool-plugins操作。A03新增37方法CIL；B01原首次填充8组合成输入44检查通过；C02原配置写入17断言通过，纠正SaveConfig重载存储/缓存边界。D02实际插件PrepareSave/另存/Undo诊断exit1：旧相对路径在新基目录失效，Redo与离线嵌入重开正常；保留passed=false并登记FCR-024，未以有副作用PrepareSave批量改旧历史。报告与下一步见reverse/BATCH3-20261019.md及framework-reverse-plan.json；32包仍未完成，原生/桌面差分继续开放。
+
+## 2026-10-19 源码级总计划第四批
+
+基线8b7b2de，A03/B01/C02三子任务并行，C完成后D02独立复核，root串行验证整合。A03新增20方法CIL及5资源值保全（双名setter与原名恢复通知差别为静态结论，实际WPF未知）；B01原惰性根受控16项通过、30相关方法CIL，确认XML改属性与真实proxy装配副作用；C02原33方法CIL/EH，明确清叶字段、同步/队列顺序与关闭不等待边界。D02真实main32MiB输入/输出及拒绝事务22项通过并独立复核；不是原生格式验收，不覆盖FCR-024资产历史失败。无产品修改、自动推送或tool-plugins访问。报告reverse/BATCH4-20261019.md，台账保留四包开放与后续精确问题；原件/失败/输出及哈希在analysis/full-audit/batch4-20261019。
