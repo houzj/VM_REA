@@ -272,3 +272,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 源码级总计划第四批
 
 基线8b7b2de，A03/B01/C02三子任务并行，C完成后D02独立复核，root串行验证整合。A03新增20方法CIL及5资源值保全（双名setter与原名恢复通知差别为静态结论，实际WPF未知）；B01原惰性根受控16项通过、30相关方法CIL，确认XML改属性与真实proxy装配副作用；C02原33方法CIL/EH，明确清叶字段、同步/队列顺序与关闭不等待边界。D02真实main32MiB输入/输出及拒绝事务22项通过并独立复核；不是原生格式验收，不覆盖FCR-024资产历史失败。无产品修改、自动推送或tool-plugins访问。报告reverse/BATCH4-20261019.md，台账保留四包开放与后续精确问题；原件/失败/输出及哈希在analysis/full-audit/batch4-20261019。
+
+## 2026-10-19 第五批：退出门槛与进度指标
+
+基线e6bf62a，四线有限子项及独立复核收口。A03隔离blocked：日志独立HKLM选安装配置并watch；B01绑定写入、C01注册、D01保存回调静态done，运行未验证。整包0/32（本批+0），固定子项3静态完成/1阻塞，新明确隔离阻塞1/解除0，原方法运行0、产品修复0。原件/失败/CIL及哈希保存在analysis/full-audit/batch5-20261019；进度规则已写FRAMEWORK-REVERSE-PROGRESS.md与PARALLEL-WORK，阻塞或关闭切片不得无新条件重复派发。FCR-024失败仍开放，tool-plugins未访问、未自动采用来信、未推送。下一批按未满足退出条件选题，详见reverse/BATCH5-20261019.md和台账。

@@ -2,6 +2,8 @@
 
 主框架后续分组逆向由 [源码级总计划](FRAMEWORK-REVERSE-MASTER-PLAN.md) 与 [任务台账](framework-reverse-plan.json) 驱动：4条长期线、32个一级包覆盖F-01～F-23，按源码证据、依赖和完成门槛派发；动态发现的入口拆子任务，不凭产品意图补实现。历史章节不覆盖总计划中当前执行规则或双方所有权。
 
+用户于第五批新增进度要求：每批执行前固定有限子项和退出门槛，结束时按 [进度指标](FRAMEWORK-REVERSE-PROGRESS.md) 报告整包关闭数/32、本批子项关闭/阻塞、实际验证与下一批解除条件；方法数和测试数不得充当总完成率。已关闭静态子项不重复派发；阻塞项只有出现新的解除条件才重启，不用“继续补证”滚动代替收口。
+
 ## Workspaces
 - Framework/integration: original checkout, branch main.
 - Tool plugins: worktrees/tool-plugins, branch tool-plugins.
