@@ -51,4 +51,8 @@ main 起点为 `c5806f784c857de27328f870dfec6a75ed304401`，已有未提交修�
 
 整体 WPF 首轮通过451项后，在关闭测试超时：夹具人为注入 activeRun，却没有运行任务调用 FinishWorkflowRun。修正夹具，在 Dispatcher 显式完成该伪流程的正常收尾，默认产品关闭等待保持。第二轮完整456项通过、exit 0；含真实图像、Group执行、订阅、保存重开、流程与调试会话关闭。日志 validation-wpf.log / validation-wpf-final.log 均保留；仅将本次夹具增量纳入提交，main原有WPF测试修改不夹带。
 
-最终清理结果待提交后补记。
+## 最终清理结果
+
+集成提交：086299774d42e79b7e03bc47a95ea9d447f97e9d。删除前再次逐一核对4755份源文件和备份哈希、实际文件数、未提交状态与HEAD祖先关系，均通过；只读进程检查没有三个工作树的活动进程，目录内无reparse链接。随后git worktree remove --force仅移除三个命名工作树，保留原分支和本地备份。
+
+git worktree list最终只剩main和tool-plugins（后者HEAD仍为828428426e89dfbacece18e371d0d0126e1687da）；三个framework目录均不存在。没有终止任何进程，没有修改插件工作树，没有推送远程。main未提交文件清单与操作前逐项一致。本次提交只包含审查增量及必要夹具修正；main原有在制源码/文档/测试仍未提交。产品/测试/项目文件没有引用已删除工作树路径。
