@@ -16,6 +16,9 @@ public static class SolutionStore {
     public static SolutionWorkspace OpenWorkspace(string path)=>new(Load(path),Path.GetDirectoryName(Path.GetFullPath(path))!);
     public static void Save(string path,SolutionDocument solution) {
         ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException("Solution exceeds size limit.");
+        // Opaque plugin payloads can contain duplicate members. Reject the same
+        // serialized shape as Load before creating directories or replacing a file.
+        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);
         string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,"."+Path.GetFileName(full)+"."+Guid.NewGuid().ToString("N")+".tmp");
         try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}
     }

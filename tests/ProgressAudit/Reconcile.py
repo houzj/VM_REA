@@ -59,7 +59,7 @@ def main():
                "allThreePercent": round(complete / 96 * 100, 1),
                "closedPackages": sum(t["status"] == "closed" for t in plan["tasks"]),
                "newProductTestsRun": 0,
-               "overallCompletionPercent": round(done['implementation'] / 96 * 100, 1),
+               "overallCompletionPercent": round(done['implementation'] / 96 * 100, 2),
                "overallDone": done['implementation'],
                "overallRemaining": 96 - done['implementation'],
                "overallPolicy": "implementation-self-review-v1",

@@ -54,16 +54,28 @@ public partial class MainWindow
     void SelectWorkflow(string id)
     {
         if(!doc.Document.Procedures.Any(p=>p.Id==id))return;
+        RememberDisplayedWorkflow();
+        string displayedId=doc.Document.Procedures.Single(p=>p.Id==id).GroupOwner is null?ResolveDisplayedWorkflow(id):id;
         ResetEditingGesture();ClearToolGhost();
         if(toolPopup is not null)toolPopup.IsOpen=false;
         selected=null;selectedNodes.Clear();selectedWire=null;
-        if(doc.CurrentProcedureId!=id)doc.SelectProcedure(id);else {RenderGraph();RefreshRight();}
+        if(doc.CurrentProcedureId!=displayedId)doc.SelectProcedure(displayedId);else {RenderGraph();RefreshRight();}
+    }
+    void SelectWorkflowNode(string procedureId,NodeDocument node)
+    {
+        SelectWorkflow(procedureId);
+        // A node from the overview belongs to its declared root canvas, even
+        // when that tab has a remembered Group display.
+        if(doc.CurrentProcedureId!=procedureId)doc.SelectProcedure(procedureId);
+        selected=node.Id;selectedNodes.Clear();selectedNodes.Add(node.Id);
+        RefreshAll();NavigateToWorkflowNode(node);
     }
 
     // ProcedureConfigControl.TopTabItemStyle: config, variables, status, name, run buttons.
     void RefreshAll()
     {
         if (!IsInitialized || doc is null || windowClosed) return;
+        RememberDisplayedWorkflow();
         workflowConfigurationWindow?.SetExecutionState(activeRun is not null,runningProcedureId==configurationProcedureId,isLocked);
         if(toolRailOverview!=workflowOverview)
         {
@@ -95,7 +107,7 @@ public partial class MainWindow
         foreach (var procedure in doc.Document.Procedures.Where(p=>p.GroupOwner is null))
         {
             bool active = procedure.Id == doc.RootProcedureId(doc.CurrentProcedureId);
-            var displayed=active?doc.CurrentProcedure:procedure;bool ready = GraphValidator.Validate(displayed, modules).IsValid;
+            var displayed=active?doc.CurrentProcedure:doc.Document.Procedures.Single(p=>p.Id==ResolveDisplayedWorkflow(procedure.Id));bool ready = GraphValidator.Validate(displayed, modules).IsValid;
             var tab=ProcedureTabs.Items.OfType<TabItem>().FirstOrDefault(t=>(string)t.Tag==procedure.Id);
             if(tab is null){tab=new TabItem {Tag=procedure.Id};ProcedureTabs.Items.Insert(tabIndex,tab);}
             else if(ProcedureTabs.Items.IndexOf(tab)!=tabIndex){ProcedureTabs.Items.Remove(tab);ProcedureTabs.Items.Insert(tabIndex,tab);}
@@ -214,7 +226,7 @@ public partial class MainWindow
             foreach(var node in procedure.Nodes)
             {
                 var leaf=new TreeViewItem {Header=node.Name,Tag=node.Id,Style=(Style)FindResource("WorkflowTreeItem")};
-                leaf.PreviewMouseLeftButtonDown+=(_,e)=> {workflowListPopup!.IsOpen=false;workflowOverview=false;SelectWorkflow(procedure.Id);selected=node.Id;selectedNodes.Clear();selectedNodes.Add(node.Id);RefreshAll();NavigateToWorkflowNode(node);e.Handled=true;};
+                leaf.PreviewMouseLeftButtonDown+=(_,e)=> {workflowListPopup!.IsOpen=false;workflowOverview=false;SelectWorkflowNode(procedure.Id,node);e.Handled=true;};
                 // Bubble selection to the leaf, rather than swallowing it in the parent preview event.
                 item.Items.Add(leaf);
             }

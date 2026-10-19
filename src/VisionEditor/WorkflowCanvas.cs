@@ -62,6 +62,7 @@ public partial class MainWindow
         GraphLayer.Background=OriginalCanvasGrid();
         doc.SolutionReplaced+=()=>
         {
+            ClearDisplayedWorkflows();
             automaticRoutes.Clear();
             canvasViews.Clear();canvasProcedure=null;
             // Procedure IDs may recur in another solution; overview rendering also

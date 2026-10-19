@@ -177,6 +177,8 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 
 ## FCR-022：Group 配置对话框期间撤销记录抑制（框架 undo seam 请求，未实现）
 
+2026-10-19 第十批实施更新（优先于下面历史实现状态）：main现已交付`GraphEditorDocument.ExecuteConfigurationEdit`及真实`SubprogramCallHost`消费。modal窗口多次即时写回合并一条惰性文档历史，modeless每动作单独root；布尔嵌套非计数器，finally复位为独立加固。29项main实际检查和产品构建通过，按用户实施自审核口径计C01.2完成。此为main快照适配，不是原SDK root/part载荷等价；C01.3、跨项目插件seam采用及原厂差分仍开放，不自动合流。详见[第十批实施](reverse/C-history-suppression-batch10.md)。
+
 计划C01首批运行增量：未修改原厂UnRedoService在自有BaseDirectory/TempFiles与合成动作下通过13项断言，实测空栈抑制无后效、当前root布尔标志、旧根禁止不阻新根；Update前先置完成，Update异常被吞后根留undo，第二次Undo跳过重采仍执行。详见 [C01运行证据](reverse/C01-undo-batch1.md)。该运行不是实际Group/SDK参数，仍不能把main整方案快照替换为简单抑制开关；真实Group注册链保持开放。
 
 第二轮数据流证据：ModifyConfig根内按模块去重，首次合法注册时求旧参数，Undo前才采新参数；普通模块内存载荷、Group/流程临时文件、方案路径引用须分别建模。Group配置通过UserData到part Register的静态可达性已闭合，抑制记录不阻止SDK写入。RecoverCallBack定位于密码取消，不能泛化为失败事务回滚。详见 [撤销第二轮](UNDO-ROUND2-20261019.md)；本轮未据此改动main快照模型。

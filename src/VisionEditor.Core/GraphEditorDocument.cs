@@ -8,7 +8,9 @@ public sealed partial class GraphEditorDocument
     readonly ModuleRegistry registry;
     SolutionDocument document = null!;
     readonly Stack<Snapshot> undo = new(), redo = new();
-    sealed record Snapshot(SolutionDocument Document, string ProcedureId, string BaseDirectory);
+    sealed record Snapshot(SolutionDocument Document, string ProcedureId, string BaseDirectory) {
+        public bool ForbidBuild { get; set; }
+    }
     public GraphEditorDocument(ModuleRegistry registry) { this.registry = registry; NewSolution(); }
     public SolutionDocument Document => Copy(document);
     public string SolutionId=>document.Id;
@@ -245,7 +247,7 @@ public sealed partial class GraphEditorDocument
     NodeDocument Node(string id)=>CurrentProcedure.Nodes.SingleOrDefault(n=>n.Id==id)??throw new KeyNotFoundException(id);
     void ChangeNode(string id,Func<NodeDocument,NodeDocument> action) { _=Node(id); ChangeProcedure(p=>p with {Nodes=p.Nodes.Select(n=>n.Id==id?action(n):n).ToArray()}); }
     void ChangeProcedure(Func<ProcedureDocument,ProcedureDocument> action)=>Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==CurrentProcedureId?action(p):p).ToArray()});
-    void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document)))))); SolutionStore.ValidateStructure(next); undo.Push(Capture());redo.Clear();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??"";IsDirty=true;Revision++;Changed?.Invoke(); }
+    void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document)))))); SolutionStore.ValidateStructure(next); RecordEditHistory();redo.Clear();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??"";IsDirty=true;Revision++;Changed?.Invoke(); }
     Snapshot Capture()=>new(Copy(document),CurrentProcedureId,BaseDirectory);
     void Restore(Stack<Snapshot> source,Stack<Snapshot> destination) { if(source.Count==0)return; var s=source.Peek();var next=Rebase(s.Document,s.BaseDirectory,BaseDirectory);destination.Push(Capture());source.Pop();document=next;CurrentProcedureId=s.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke(); }
     static void Position(double x,double y) { if(!double.IsFinite(x)||!double.IsFinite(y))throw new ArgumentOutOfRangeException(nameof(x)); }

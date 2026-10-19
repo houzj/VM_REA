@@ -2,7 +2,7 @@
 
 2026-10-19；冻结基线 `70b3b4297a798cc0f0f7c149aeaf49be1031be72`。仅 main；tool-plugins 未访问、未计入。
 
-**当前实施总进度：29/96 = 30.2%。**
+**当前实施总进度：30/96 = 31.25%。**
 
 用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
@@ -11,7 +11,7 @@
 | 层次 | 严格达成 | 进度 | 尚未达成 |
 |---|---:|---:|---:|
 | 源码 | 51/96 | **53.1%** | 45 |
-| 实现 | 29/96 | **30.2%** | 67 |
+| 实现 | 30/96 | **31.2%** | 66 |
 | 验证 | 29/96 | **30.2%** | 67 |
 
 ## 分母与计数规则
@@ -48,7 +48,7 @@
 | B06 | Group配置、ROI和结果消费边界 | 3 | 1 | 1 | 1 |
 | B07 | 插件交接合同与真实消费 | 2 | 1 | 1 | 1 |
 | B08 | 模型与Group组合验收 | 1 | 1 | 1 | 1 |
-| C01 | 撤销root/part实际捕获 | 3 | 0 | 0 | 0 |
+| C01 | 撤销root/part实际捕获 | 3 | 1 | 0 | 0 |
 | C02 | 单次/连续/停止调度与参数准备 | 3 | 1 | 1 | 1 |
 | C03 | 结果历史与方案替换生命周期 | 2 | 0 | 0 | 0 |
 | C04 | 撤销恢复与临时文件所有权 | 2 | 0 | 0 | 0 |
@@ -111,7 +111,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[A03-tabs-batch2.md](reverse/A03-tabs-batch2.md)、[A03-canvas-replacement-fix.md](reverse/A03-canvas-replacement-fix.md)、[A03-binding-batch4.md](reverse/A03-binding-batch4.md)、[A03-process-isolation-batch6.md](reverse/A03-process-isolation-batch6.md)、[A03-owned-logger-batch7.md](reverse/A03-owned-logger-batch7.md)、[A03-config-error-batch8.md](reverse/A03-config-error-batch8.md)
+证据：[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[A03-tabs-batch2.md](reverse/A03-tabs-batch2.md)、[A03-canvas-replacement-fix.md](reverse/A03-canvas-replacement-fix.md)、[A03-binding-batch4.md](reverse/A03-binding-batch4.md)、[A03-process-isolation-batch6.md](reverse/A03-process-isolation-batch6.md)、[A03-owned-logger-batch7.md](reverse/A03-owned-logger-batch7.md)、[A03-config-error-batch8.md](reverse/A03-config-error-batch8.md)、[A-canvas-implementation-batch10.md](reverse/A-canvas-implementation-batch10.md)
 
 当前实现/工具位置：`src/VisionEditor/WorkflowTabs.cs`、`src/VisionEditor/GroupCanvasNavigation.cs`、`src/VisionEditor/WorkflowCanvas.cs`
 
@@ -119,7 +119,7 @@
 |---|---|---|---|---|---|
 | A03.1 | 流程增删复制切换和Tab归属 | 达成 | 达成 | 达成 | 当前独立文档行为已实现并操作验证。 |
 | A03.2 | 嵌套Group进入/返回和显示模型归属 | 达成 | 达成 | 达成 | 当前Group导航已验；不计所有原厂视觉状态。 |
-| A03.3 | 每显示容器缩放持久化及非活动Tab历史 | 达成 | 部分 | 阻塞 | 原CIL/资源已追；main仍为会话视口，原绑定反馈受隔离条件限制。 第七批：原日志配置读取阶段失败；最终子进程退出码未知，finally日志缺失。受控核验发现自有键残留，根线仅清理该精确GUID键并确认不存在。装饰器/SDK运行仍未获证。 第八批：静态定位配置错误产生/吞没链；旧运行未保留内层异常，原因不可判定，不再运行。 |
+| A03.3 | 每显示容器缩放持久化及非活动Tab历史 | 达成 | 部分 | 阻塞 | 原CIL/资源已追；main仍为会话视口，原绑定反馈受隔离条件限制。 第七批：原日志配置读取阶段失败；最终子进程退出码未知，finally日志缺失。受控核验发现自有键残留，根线仅清理该精确GUID键并确认不存在。装饰器/SDK运行仍未获证。 第八批：静态定位配置错误产生/吞没链；旧运行未保留内层异常，原因不可判定，不再运行。 第十批：本批修复每Tab显示Group记忆、删除/换方案回退及overview节点显式所属root导航，12项通过；原已done单元不重复计分，缩放持久化仍未实施。 |
 
 ### A04 节点手势、路由和视口
 
@@ -265,13 +265,13 @@
 
 前置：B01、B04、C01；完整包未因本表计分关闭。
 
-证据：[GROUP-NATIVE-EDITORS.md](GROUP-NATIVE-EDITORS.md)、[GROUP-ADVANCED-RUNTIME.md](GROUP-ADVANCED-RUNTIME.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)
+证据：[GROUP-NATIVE-EDITORS.md](GROUP-NATIVE-EDITORS.md)、[GROUP-ADVANCED-RUNTIME.md](GROUP-ADVANCED-RUNTIME.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B-group-candidates-batch10.md](reverse/B-group-candidates-batch10.md)
 
 当前实现/工具位置：`src/VisionEditor/GroupRunConfigurationWindow.cs`、`src/VisionEditor/GroupRunCategories.cs`、`src/VisionEditor/GroupDisplayControls.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| B06.1 | Group候选资格、类别和代理多目标同步 | 达成 | 部分 | 部分 | 类别/同步已做；FCR-021资格元数据未全消费。 |
+| B06.1 | Group候选资格、类别和代理多目标同步 | 达成 | 部分 | 部分 | 类别/同步已做；FCR-021资格元数据未全消费。 第十批：Group搜索限定参数名且区分大小写、重复叶事件幂等，12项通过；资格元数据缺口仍未交付。 |
 | B06.2 | 原ROI/专用参数模板及写回消费 | 达成 | 部分 | 部分 | 独立ROI子集可运行，FCR-018完整模板/实际原插件仍缺。 |
 | B06.3 | 当前Group显示关联、样式及结果数据消费 | 达成 | 达成 | 达成 | 计有证的已实现关联/结果，不计原生全部显示工具。 |
 
@@ -307,14 +307,14 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[UNDO-ROUND2-20261019.md](UNDO-ROUND2-20261019.md)、[C01-undo-batch1.md](reverse/C01-undo-batch1.md)、[C01-registration-batch5.md](reverse/C01-registration-batch5.md)
+证据：[UNDO-ROUND2-20261019.md](UNDO-ROUND2-20261019.md)、[C01-undo-batch1.md](reverse/C01-undo-batch1.md)、[C01-registration-batch5.md](reverse/C01-registration-batch5.md)、[C-history-suppression-batch10.md](reverse/C-history-suppression-batch10.md)
 
-当前实现/工具位置：`src/VisionEditor.Core/GraphEditorDocument.cs`
+当前实现/工具位置：`src/VisionEditor.Core/GraphEditorDocument.cs`、`src/VisionEditor.Core/GraphEditorDocument.History.cs`、`src/VisionEditor/SubprogramCallHost.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | C01.1 | root/part、旧新值与普通动作撤销 | 达成 | 部分 | 部分 | 原合成服务13项已验；main为独立文档快照。 |
-| C01.2 | Group配置期禁止记录及异常复位合同 | 达成 | 未取得交付 | 阻塞 | 原root布尔语义已知；FCR-022统一seam未实现。 |
+| C01.2 | Group配置期禁止记录及异常复位合同 | 达成 | 达成 | 部分 | main文档配置历史seam与真实Group modal/modeless写回已接入，布尔嵌套/异常finally独立适配，29项通过；不是原SDK载荷回放。 原厂/人工差分后置，不参与实施计分。 |
 | C01.3 | 真实Group参数采集与SDK Undo/Redo | 达成 | 未取得交付 | 阻塞 | 静态注册链闭合，实际原Group/专属TempFiles未观测。 |
 
 ### C02 单次/连续/停止调度与参数准备
@@ -433,13 +433,13 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[SOLUTION-PERSISTENCE-BOUNDARY.md](SOLUTION-PERSISTENCE-BOUNDARY.md)、[D02-storage-batch2.md](reverse/D02-storage-batch2.md)、[D02-asset-history-batch3.md](reverse/D02-asset-history-batch3.md)、[D02-storage-boundary-batch4.md](reverse/D02-storage-boundary-batch4.md)、[D02-interruption-batch6.md](reverse/D02-interruption-batch6.md)
+证据：[SOLUTION-PERSISTENCE-BOUNDARY.md](SOLUTION-PERSISTENCE-BOUNDARY.md)、[D02-storage-batch2.md](reverse/D02-storage-batch2.md)、[D02-asset-history-batch3.md](reverse/D02-asset-history-batch3.md)、[D02-storage-boundary-batch4.md](reverse/D02-storage-boundary-batch4.md)、[D02-interruption-batch6.md](reverse/D02-interruption-batch6.md)、[D-save-roundtrip-batch10.md](reverse/D-save-roundtrip-batch10.md)
 
 当前实现/工具位置：`src/VisionFramework/SolutionStore.cs`、`src/VisionEditor.Core/GraphEditorDocument.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| D02.1 | 独立JSON结构/版本/大小/深度与拒绝 | 达成 | 达成 | 达成 | 原生格式不在本项；32MiB边界及编辑器状态已验。 |
+| D02.1 | 独立JSON结构/版本/大小/深度与拒绝 | 达成 | 达成 | 达成 | 原生格式不在本项；32MiB边界及编辑器状态已验。 第十批：独立保存按Load同一规则拒绝不透明JSON重复属性，9项通过并有23项存储/历史回归；FCR024私有资产仍开放。 |
 | D02.2 | 资产嵌入、跨目录和多层历史身份 | 达成 | 部分 | 失败 | FCR-024真实插件SaveAs后Undo读取失败，不能算通过。 |
 | D02.3 | 独立写入失败事务与受控进程中断 | 达成 | 达成 | 达成 | 锁/失败及自有中断已验；不是断电/所有阶段保证。 |
 
@@ -539,7 +539,7 @@
 | MISSING-CAPABILITY | 尚未交付的产品能力：A05.3, A06.3, B05.2, B05.3, C06.1, C06.2 | 原源码和数据流补齐后在所属项目实现，不以占位窗口/改名JSON代替 |
 | DEVICE-RELEASE | 真实设备/会话资源条件：C05.3, C06.3 | 提供可归属本任务的受控设备/会话和固定操作/退出矩阵，不默认操作连接设备 |
 | ACCEPTANCE-PREREQUISITES | 完整差分/部署前置未满足：A02.3, B08.3, D06.3, D08.3 | 完成相应运行/插件/native前置后按既定矩阵验收，保留失败 |
-| FRAMEWORK-UNDO | main自身尚未实现的统一撤销能力：C01.2 | 由main实现统一历史seam并核对真实Group捕获/回放；不能把main职责转嫁给插件项目或仅等待用户交接 |
+| FRAMEWORK-UNDO | 实施已完成；原厂差分后置：C01.2 | 所有实施完成后另行安排原厂Group差分；完整载荷回放仍属C01.3，不能将本地快照适配称VM等价。 |
 
 ## 复算与审计
 
