@@ -1,5 +1,9 @@
 # Integration handoff
 
+## 2026-10-19 — 建立驱动分组逆向的源码级总计划
+
+新增 [FRAMEWORK-REVERSE-MASTER-PLAN.md](FRAMEWORK-REVERSE-MASTER-PLAN.md) 与 [framework-reverse-plan.json](framework-reverse-plan.json)：4条长期线、32个一级工作包覆盖现有23领域，明确依赖、原始入口、取证操作、完成标准、共享文件和运行资源锁。源码/REA优先，反编译歧义核对CIL/汇编，截图和产品意图不能补规格；未知和独立实现分列。下一批明确为A01/B01/C01/D01，但本次只制定计划，未启动任务或修改tool-plugins。台账planned表示新任务待执行，不重置历史实现和验收；验收JSON/近期报告的历史差异由D08对账。
+
 ## 2026-10-19 — 第二轮四方向独立取证
 
 - 工具加载：闭合悬停/展开/右键共享缓存、扫描失败残留和Group回调到模型/装饰器的时序，见 [LOADER-ROUND2-20261019.md](LOADER-ROUND2-20261019.md)。主宿主动态发现仍未接入。

@@ -1,5 +1,7 @@
 # 框架逆向与验收清单
 
+执行路线见 [框架层源码级逆向总计划](FRAMEWORK-REVERSE-MASTER-PLAN.md) 和 [分组任务台账](framework-reverse-plan.json)。本页记录能力及验收事实；总计划记录待做范围、分组、依赖、证据与退出条件，两者不能互相替代。
+
 更新：2026-10-19。以framework-acceptance.json作为逐项状态源，HTML见[验收表](framework-acceptance.html)。
 
 跨项目任务分配与文件锁现以[节点插件/框架边界](PLUGIN-FRAMEWORK-BOUNDARY.md)、[双项目独立清单](TWO-PROJECT-WORKLISTS.md)和[开发基线](TWO-PROJECT-BASELINE.md)为准。用户分别管控两项目：主线负责与工具无关的画布、Group、流程、方案、工具发现和按指令最终集成；插件线负责具体工具及其所需的公共节点配置/调试/显示框架。交叉文件每项只设一个提交所有者。插件线当前有未提交共享改动，本表下述能力仅统计已合入 main 的子集，不把另一工作树在制实现算进来。
