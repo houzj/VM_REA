@@ -140,6 +140,8 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 
 ## FCR-019：参数目标的原生可见/可订阅能力（请求，未实现）
 
+计划B01首批运行增量：未修改原厂parser在合成owner/最小XML下通过13项检查，确认LinkItem在原集合位置生成独立克隆，CustomVisible=false/SubscribeVisible=false项仍可进入GetRunParamsTree根候选，空DisplayName被排除且不按名称去重。安装ImageSource副本仅注册common节点、业务回调关闭，23/25项和空RunTree不能外推真实VM。原件hash不变，详见 [B01运行证据](reverse/B01-tab-batch1.md)。这没有关闭RunParamsSelectData后续过滤、真实Params.Data或插件合同。
+
 第二轮装配证据：已找到VM.Xml的BaseNode反编译及原始程序集身份；XML名称经public字段反射、TypeTable和集合钩子装配，不可直接把原始Items当最终候选。GroupLinkItem/LinkItem可替换展开集合；合同应消费装配后的稳定候选快照，仍不自动将Tab_Basic Params改成Tab_Run Params。详见 [运行Tab第二轮](VARIABLE-TAB-ROUND2-20261019.md)。
 
 2026-10-19四方向复核补充（以下新结论优先于本节旧生命周期假设）：原始选择窗首次全部类型创建模块缓存，切换类型只投影缓存；插件会话元数据刷新和新开窗口快照须分开，活窗口即时刷新尚未验证。Payload还需原始DisplayType、ComType、动态/Between展开身份，ISubInfo和SubscribeVisible分别表示。原树消失的旧选择无独立补回路径，“保留并诊断”只能是独立兼容策略。参数目标与ModuleInputSelectData的输入目标是两种来源，不能合并为CanBind。详见 [四方向复核](PARALLEL-RECONSTRUCTION-20261019.md)。
@@ -172,6 +174,8 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 验收：用至少一个原始源码已审计的真实插件，逐项验证隐藏、禁用、只读且无展示能力、按原生类型排除、搜索不匹配的参数不出现在列表；合格参数可被选择、写入关联、运行得到实际值；配置保存重开后保持；再与 VM 同状态候选树对照。没有真实插件证据时不得以测试模块关闭该项。
 
 ## FCR-022：Group 配置对话框期间撤销记录抑制（框架 undo seam 请求，未实现）
+
+计划C01首批运行增量：未修改原厂UnRedoService在自有BaseDirectory/TempFiles与合成动作下通过13项断言，实测空栈抑制无后效、当前root布尔标志、旧根禁止不阻新根；Update前先置完成，Update异常被吞后根留undo，第二次Undo跳过重采仍执行。详见 [C01运行证据](reverse/C01-undo-batch1.md)。该运行不是实际Group/SDK参数，仍不能把main整方案快照替换为简单抑制开关；真实Group注册链保持开放。
 
 第二轮数据流证据：ModifyConfig根内按模块去重，首次合法注册时求旧参数，Undo前才采新参数；普通模块内存载荷、Group/流程临时文件、方案路径引用须分别建模。Group配置通过UserData到part Register的静态可达性已闭合，抑制记录不阻止SDK写入。RecoverCallBack定位于密码取消，不能泛化为失败事务回滚。详见 [撤销第二轮](UNDO-ROUND2-20261019.md)；本轮未据此改动main快照模型。
 

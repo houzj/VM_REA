@@ -1,5 +1,9 @@
 # Integration handoff
 
+## 2026-10-19 — 按总计划启动A01/B01/C01/D01第一批
+
+详见 [第一批执行记录](reverse/BATCH1-20261019.md)。原ToolBoxData.UpdateLoad隔离17断言/10观察、原parser合成owner13检查、原UnRedoService合成动作13断言均通过，原件及实际依赖哈希保全；失败日志未删除。D01确认保存回调及五参数/PF结构体ABI边界，保存导出坐标已固定，但当前REA native引擎未配置，writer函数体/单操作原机保存仍开放。更新任务台账与FCR-019/022的证据，不关闭完整包、不改产品或tool-plugins。新探针均在tests，本轮无产品构建或真实VM桌面差分，不将43断言当框架等价验收。
+
 ## 2026-10-19 — 建立驱动分组逆向的源码级总计划
 
 新增 [FRAMEWORK-REVERSE-MASTER-PLAN.md](FRAMEWORK-REVERSE-MASTER-PLAN.md) 与 [framework-reverse-plan.json](framework-reverse-plan.json)：4条长期线、32个一级工作包覆盖现有23领域，明确依赖、原始入口、取证操作、完成标准、共享文件和运行资源锁。源码/REA优先，反编译歧义核对CIL/汇编，截图和产品意图不能补规格；未知和独立实现分列。下一批明确为A01/B01/C01/D01，但本次只制定计划，未启动任务或修改tool-plugins。台账planned表示新任务待执行，不重置历史实现和验收；验收JSON/近期报告的历史差异由D08对账。
