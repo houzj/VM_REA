@@ -3,13 +3,34 @@ using VisionFramework;
 namespace VisionEditor.Core;
 
 /// <summary>UI-independent graph edits, history, persistence and connection invariants.</summary>
-public sealed partial class GraphEditorDocument
+public sealed partial class GraphEditorDocument : IDisposable
 {
     readonly ModuleRegistry registry;
     SolutionDocument document = null!;
-    readonly DocumentHistoryEngine<Snapshot> history = new();
-    sealed record Snapshot(SolutionDocument Document, string ProcedureId, string BaseDirectory);
-    public GraphEditorDocument(ModuleRegistry registry) { this.registry = registry; NewSolution(); }
+    readonly DocumentHistoryEngine<Snapshot> history = new(snapshot=>snapshot?.Dispose());
+    readonly string? historyPayloadParentDirectory;
+    HistoryPayloadStore? historyPayloadStore;
+    bool disposed;
+    readonly List<Exception> historyCleanupErrors = new();
+    sealed record Snapshot(SolutionDocument? MemoryDocument, string ProcedureId, string BaseDirectory,
+        [property:System.Text.Json.Serialization.JsonIgnore] HistoryPayloadLease? Payload = null) : IDisposable
+    {
+        public SolutionDocument Document => MemoryDocument ?? JsonSerializer.Deserialize<SolutionDocument>(Payload!.ReadBytes())
+            ?? throw new InvalidDataException("Invalid owned history document payload.");
+        public void Dispose() => Payload?.Dispose();
+    }
+    public GraphEditorDocument(ModuleRegistry registry, string? historyPayloadParentDirectory=null)
+    { this.registry = registry; this.historyPayloadParentDirectory=historyPayloadParentDirectory; NewSolution(); }
+    public IReadOnlyList<Exception> HistoryReleaseErrors => history.ReleaseErrors.Concat(historyCleanupErrors).ToArray();
+    public IReadOnlyList<HistoryPayloadWriteFailure> HistoryPayloadWriteFailures => historyPayloadStore?.WriteFailures??[];
+    public string? HistoryPayloadDirectory => historyPayloadStore?.DirectoryPath;
+    public void RetryHistoryPayloadRelease() => history.ReleaseRetainedPayloads();
+    public void Dispose()
+    {
+        if(disposed)return;
+        disposed=true;history.Dispose();
+        try{historyPayloadStore?.Dispose();}catch(Exception error){historyCleanupErrors.Add(error);} // Preserve cleanup evidence without interrupting host scope shutdown.
+    }
     public SolutionDocument Document => Copy(document);
     public string SolutionId=>document.Id;
     public bool HasCurrentProcedure => document.Procedures.Count>0;
@@ -47,7 +68,7 @@ public sealed partial class GraphEditorDocument
     // Work on an isolated draft so a multi-field callback either commits once or leaves no edit.
     public void EditProcedure(string id,Action<GraphEditorDocument> change) {
         _=Procedure(id);ArgumentNullException.ThrowIfNull(change);
-        var draft=new GraphEditorDocument(registry){document=Copy(document),CurrentProcedureId=id,BaseDirectory=BaseDirectory,FilePath=FilePath};
+        using var draft=new GraphEditorDocument(registry){document=Copy(document),CurrentProcedureId=id,BaseDirectory=BaseDirectory,FilePath=FilePath};
         long revision=draft.Revision;change(draft);
         if(draft.Revision!=revision)Edit(_=>draft.document);
     }
@@ -255,7 +276,15 @@ public sealed partial class GraphEditorDocument
     void ChangeNode(string id,Func<NodeDocument,NodeDocument> action) { _=Node(id); ChangeProcedure(p=>p with {Nodes=p.Nodes.Select(n=>n.Id==id?action(n):n).ToArray()}); }
     void ChangeProcedure(Func<ProcedureDocument,ProcedureDocument> action)=>Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==CurrentProcedureId?action(p):p).ToArray()});
     void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document)))))); SolutionStore.ValidateStructure(next); RecordEditHistory();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??"";IsDirty=true;Revision++;Changed?.Invoke(); }
-    Snapshot Capture()=>new(Copy(document),CurrentProcedureId,BaseDirectory);
+    Snapshot Capture()=>CaptureSnapshot(Copy(document),CurrentProcedureId,BaseDirectory);
+    Snapshot CaptureSnapshot(SolutionDocument value,string procedure,string directory)
+    {
+        ObjectDisposedException.ThrowIf(disposed,this);
+        var bytes=JsonSerializer.SerializeToUtf8Bytes(value);
+        if(historyPayloadParentDirectory is null && bytes.Length<64*1024)return new(value,procedure,directory);
+        historyPayloadStore??=new(historyPayloadParentDirectory??Path.Combine(Path.GetTempPath(),"VisionEditor-History"));
+        return new(null,procedure,directory,historyPayloadStore.CreateFile(bytes));
+    }
     void RestoreSnapshot(Snapshot snapshot) {
         var next=Rebase(snapshot.Document,snapshot.BaseDirectory,BaseDirectory);
         document=next;CurrentProcedureId=snapshot.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke();
@@ -265,8 +294,9 @@ public sealed partial class GraphEditorDocument
         // between replays without altering the action's structural old/new data.
         if(snapshot is null)return snapshot!; // Preserve an original failed-completion payload; do not invent one.
         var zoom=document.Procedures.ToDictionary(p=>p.Id,p=>p.CanvasZoomIndex,StringComparer.Ordinal);
-        return snapshot with{Document=snapshot.Document with{Procedures=snapshot.Document.Procedures.Select(p=>
-            zoom.TryGetValue(p.Id,out var index)?p with{CanvasZoomIndex=index}:p).ToArray()}};
+        var saved=snapshot.Document;
+        return CaptureSnapshot(saved with{Procedures=saved.Procedures.Select(p=>
+            zoom.TryGetValue(p.Id,out var index)?p with{CanvasZoomIndex=index}:p).ToArray()},snapshot.ProcedureId,snapshot.BaseDirectory);
     }
     static void Position(double x,double y) { if(!double.IsFinite(x)||!double.IsFinite(y))throw new ArgumentOutOfRangeException(nameof(x)); }
     static void RequireName(string name) { if(string.IsNullOrWhiteSpace(name))throw new ArgumentException("Name is required."); }

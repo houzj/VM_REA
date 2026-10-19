@@ -79,7 +79,7 @@ public partial class MainWindow
  }
  protected override void OnClosed(EventArgs e)
  {
-  executionOwnerEpoch.Close();
+  executionOwnerEpoch.Close();DetachExecutionScope();doc.Dispose();
   windowClosed=true;
   CloseToolConfiguration();
   executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);

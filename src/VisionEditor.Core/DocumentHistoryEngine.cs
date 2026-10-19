@@ -1,9 +1,15 @@
 namespace VisionEditor.Core;
 
 /// <summary>Source-guided managed root/part history. Payload T belongs to its host, not the VM SDK.</summary>
-public sealed class DocumentHistoryEngine<T>
+public sealed class DocumentHistoryEngine<T> : IDisposable
 {
     readonly List<DocumentHistoryRoot<T>> undo = new(), redo = new();
+    readonly Action<T>? releasePayload;
+    readonly List<DocumentHistoryRoot<T>> retainedReleaseFailures = new();
+    readonly List<Exception> releaseErrors = new();
+    public DocumentHistoryEngine(Action<T>? releasePayload = null) { this.releasePayload = releasePayload; }
+    public IReadOnlyList<Exception> ReleaseErrors => releaseErrors.AsReadOnly();
+    public int RetainedReleaseFailureCount => retainedReleaseFailures.Count;
     int replayDepth;
     int lazyLoadingDepth;
     uint capacity = 15;
@@ -21,8 +27,8 @@ public sealed class DocumentHistoryEngine<T>
         {
             capacity = value;
             if ((ulong)undo.Count + (ulong)redo.Count <= capacity) return;
-            redo.Clear();
-            while ((ulong)undo.Count > capacity) undo.RemoveAt(0);
+            ReleaseStack(redo);
+            Trim(undo);
         }
     }
 
@@ -58,8 +64,8 @@ public sealed class DocumentHistoryEngine<T>
         if (IsReplaying || lazyLoadingDepth > 0 || root is null || root.ForbidBuild || (canRegister is not null && !canRegister(root, key))) return false;
         T oldValue = capture();
         // BuildPart invalidates redo only after a new part passed registration.
-        redo.Clear();
-        root.Add(new(key, priority, oldValue, capture, restore));
+        ReleaseStack(redo);
+        root.Add(new(key, priority, oldValue, capture, restore, releasePayload));
         return true;
     }
 
@@ -68,8 +74,8 @@ public sealed class DocumentHistoryEngine<T>
 
     public void Clear()
     {
-        undo.Clear();
-        redo.Clear();
+        ReleaseStack(undo);
+        ReleaseStack(redo);
         LastError = null;
     }
 
@@ -113,8 +119,28 @@ public sealed class DocumentHistoryEngine<T>
 
     void Trim(List<DocumentHistoryRoot<T>> stack)
     {
-        while ((ulong)stack.Count > capacity) stack.RemoveAt(0);
+        while ((ulong)stack.Count > capacity)
+        {
+            var root = stack[0]; stack.RemoveAt(0); ReleaseRoot(root);
+        }
     }
+    void ReleaseStack(List<DocumentHistoryRoot<T>> stack)
+    {
+        var roots = stack.ToArray(); stack.Clear();
+        foreach (var root in roots) ReleaseRoot(root);
+    }
+    void ReleaseRoot(DocumentHistoryRoot<T> root)
+    {
+        try { root.Release(); }
+        catch (Exception error) { releaseErrors.Add(error); retainedReleaseFailures.Add(root); }
+    }
+    // Explicit cleanup retry retains failed payload ownership; no silent filesystem retry loop.
+    public void ReleaseRetainedPayloads()
+    {
+        var roots = retainedReleaseFailures.ToArray(); retainedReleaseFailures.Clear();
+        foreach (var root in roots) ReleaseRoot(root);
+    }
+    public void Dispose() => Clear();
 }
 
 public sealed class DocumentHistoryRoot<T>
@@ -125,15 +151,25 @@ public sealed class DocumentHistoryRoot<T>
     public bool ForbidBuild { get; internal set; }
     public IReadOnlyList<DocumentHistoryPart<T>> Parts { get; }
     internal void Add(DocumentHistoryPart<T> part) => parts.Add(part);
+    internal void Release()
+    {
+        List<Exception>? errors = null;
+        foreach (var part in parts)
+            try { part.Release(); } catch (Exception error) { (errors ??= new()).Add(error); }
+        if (errors is not null) throw new AggregateException("History root payload release failed; ownership retained.",errors);
+    }
 }
 
 public sealed class DocumentHistoryPart<T>
 {
     readonly Func<T> capture;
     readonly Action<T> restore;
+    readonly Action<T>? release;
+    readonly List<T> retainedValues = new();
+    bool oldReleased, newReleased, hasNewValue;
     T newValue = default!;
-    internal DocumentHistoryPart(string key, int priority, T oldValue, Func<T> capture, Action<T> restore)
-    { Key = key; Priority = priority; OldValue = oldValue; this.capture = capture; this.restore = restore; }
+    internal DocumentHistoryPart(string key, int priority, T oldValue, Func<T> capture, Action<T> restore, Action<T>? release)
+    { Key = key; Priority = priority; OldValue = oldValue; this.capture = capture; this.restore = restore; this.release = release; }
     public string Key { get; }
     public int Priority { get; }
     public T OldValue { get; private set; }
@@ -143,19 +179,41 @@ public sealed class DocumentHistoryPart<T>
     public void AdaptOldValue(Func<T, T> adapt)
     {
         ArgumentNullException.ThrowIfNull(adapt);
-        OldValue = adapt(OldValue);
+        var previous = OldValue; var next = adapt(previous);
+        if (ReferenceEquals(previous,next)) return;
+        OldValue = next;
+        ReleaseReplaced(previous);
     }
     /// <summary>Explicit host view-only adaptation; it never recaptures an action's new structure.</summary>
     public void AdaptNewValue(Func<T, T> adapt)
     {
         ArgumentNullException.ThrowIfNull(adapt);
         if (!IsDataComplete) throw new InvalidOperationException("The new payload has not been completed.");
-        newValue = adapt(newValue);
+        var previous = newValue; var next = adapt(previous);
+        if (ReferenceEquals(previous,next)) return;
+        newValue = next;
+        ReleaseReplaced(previous);
     }
     internal void CompleteNewValue()
     {
         IsDataComplete = true; // Source sets this before Update, including when capture throws.
         newValue = capture();
+        hasNewValue = true;
+    }
+    void ReleaseReplaced(T value)
+    {
+        if (release is null) return;
+        try { release(value); } catch { retainedValues.Add(value); throw; }
+    }
+    internal void Release()
+    {
+        if (release is null) return;
+        List<Exception>? errors = null;
+        if (!oldReleased) try { release(OldValue); oldReleased = true; } catch (Exception e) { (errors ??= new()).Add(e); }
+        if (hasNewValue && !newReleased) try { release(newValue); newReleased = true; } catch (Exception e) { (errors ??= new()).Add(e); }
+        foreach (var value in retainedValues.ToArray())
+            try { release(value); retainedValues.Remove(value); } catch (Exception e) { (errors ??= new()).Add(e); }
+        if (errors is not null) throw new AggregateException(errors);
     }
     internal void Undo() => restore(OldValue);
     internal void Redo() => restore(newValue);

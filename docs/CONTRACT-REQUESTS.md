@@ -245,3 +245,17 @@ main GraphEditorDocument已改为真实DocumentHistoryEngine的root/part旧新�
 - Lifecycle：Replace先Invalidate并清旧owner缓存/计数；await完成与modal返回核对；OnClosed Close永久拒绝旧发布。workflow/debug保留等待，配置采用失效+真实lease退出后释放；不承诺设备线程已停。旧configuration finally不得修改新计数。
 - Compatibility：外部ToolEditorContext与插件API不变；旧失效读回调空、写/服务回调拒绝。GraphEditorDocument配置scope内部代际不持久化。测试专用AppContext switch仅禁自动相机发现，默认产品行为不变。
 - Evidence/acceptance：原ModuleResultView过时请求/Decorator.DeInit/InnerDispose链、真实MainWindow同ID修前污染与修后隔离、配置close及真实lease释放、B独立复审，见reverse/BATCH17-20261019.md。原SDK和插件私有窗口另项未知；未来插件合流由用户选择，不表示向插件线派工或采用其改动。
+
+### FCR-026 第十八批当前分类消费者落地
+
+- Producer：main现有tool-catalog通用发现；consumer：既有ToolPluginRegistry/ModuleRegistry及palette/节点创建。root唯一改ToolNavigation，新session为A所有者；不改MainWindow启动、注册工厂或公开插件配置合同，不操作另一工作树。
+- Payload：现有CatalogTool可选Implementation复用ManagedToolPluginReference绝对AssemblyPath/type/hash/id/version，非参数模板或新manifest。既有无字段目录照常读取。
+- Lifecycle：首次分类才load→预查当前双registry同ID→既有Register；成功引用保留到宿主结束，不刷新卸载；失败sticky并记录阶段原异常，显式Refresh只清失败。现UI线程同步消费者，不承诺跨线程装载或旧public Register事务语义。
+- Compatibility/evidence：当前公开合同适配不是原Cs/Librarys.Config/IVmModule兼容，后者D06和后续交付仍未知。实际host15项通过及源链见reverse/A-runtime-editor-batch18.md。A07.1当前消费者闭合，A07.2完整冲突矩阵仍部分；插件合流仍由用户选择。
+
+## FCR-028：main结果pull消费者与历史opaque载荷生命周期
+
+- Producer/consumer：main结果显示宿主→既有三个presenter；main GraphEditorDocument→DocumentHistoryEngine和HistoryPayloadStore。root唯一现ToolDisplays/ToolExecutionScope/WorkflowExecution及Core接入，B/C各自独占测试和新store；不复制插件配置/会话/算法框架。
+- Payload：内部显示request代数+owner/procedure票据，不进入公开插件API；历史文件保存main自身文档JSON opaque bytes与独立lease，非原SDK二进制格式。GraphEditorDocument可选parent仅选择自有存储母目录，无字段持久化变更。
+- Lifecycle：provider调用前清旧frame、同步重入过时返回丢弃，Replace/Close物理解除main的两个scope事件。历史迁栈不删、淘汰/清redo/换方案/Dispose释放末lease；借用路径不删、失败保载荷/错误，显式复收；仅删除自有GUID新文件与空目录，不递归清TempFiles。默认64KiB阈值为独立策略。
+- Compatibility/acceptance：既有IVisionToolPlugin/IToolDisplayProvider及配置合同不变，已有小文档仍内存；原native回调/全显示工厂/SDK导出密码格式另项未知。结果20、store18、engine17、真实文档19与既有定向回归通过，见reverse/BATCH18-20261019.md。提交仅在main，不代表采用或通知插件交付。

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "auditDate": "2026-10-19",
-  "baseline": "a8ebfc31022660f1273557eeaccd1d356ac87cd3",
+  "baseline": "bd9ce6882fc5c47688e05bc5361dbe951ecbef01",
   "scope": "main框架；不访问tool-plugins，来信和未合流内容均不计入",
   "denominatorVersion": "plan-units-v1",
   "denominatorPolicy": "总计划32包，每包固定3个具名验收单元；源码/实现/验证均96项，三层独立等权计数，不给partial折半；不是工时估算或原厂所有函数覆盖率。新增范围须版本化记录分母变更。",
@@ -19,7 +19,7 @@
     "failed": "存在明确失败/反例，计0"
   },
   "nativeParityNote": "96项验证达成率只反映声明范围的操作/交付证据；所有完整包原厂等价仍未验收，不作为本次三层进度的替代。",
-  "validationFreshness": "历史验证仍保留原基线；第十二批f53aa7b基线上Core29与实际main WPF29项本地自审核通过，导航回归独立留日志；原厂/人工差分未运行。A03.3实施关闭，验证层仍保留原机未知。",
+  "validationFreshness": "第十八批214项限定本地自审核通过，详见本批报告；历史原机失败/未知继续保留，未执行SDK或交互桌面验收。",
   "packages": [
     {
       "taskId": "A01",
@@ -367,22 +367,27 @@
       "sourceAndOperationReports": [
         "docs/TOOL-DISCOVERY-METADATA.md",
         "docs/ROI-REAL-TOOL.md",
-        "docs/reverse/A07-managed-loader-partial-batch16.md"
+        "docs/reverse/A07-managed-loader-partial-batch16.md",
+        "docs/reverse/A-runtime-editor-batch18.md",
+        "docs/reverse/BATCH18-20261019.md"
       ],
       "implementationArtifacts": [
         "src/VisionEditor/ToolDirectoryCatalog.cs",
         "src/VisionEditor/MainWindow.xaml.cs",
         "src/VisionEditor/ManagedToolPluginLoader.cs",
-        "tests/ManagedToolPluginChecks16/Program.cs"
+        "tests/ManagedToolPluginChecks16/Program.cs",
+        "src/VisionEditor/ManagedToolCatalogLoadSession.cs",
+        "src/VisionEditor/ToolNavigation.cs",
+        "tests/ManagedToolCatalogHostChecks18/Program.cs"
       ],
       "units": [
         {
           "id": "A07.1",
           "criterion": "发现目录到真实ModuleRegistry的动态映射",
           "source": "done",
-          "implementation": "partial",
+          "implementation": "done",
           "validation": "partial",
-          "limitation": "ToolDirectoryCatalog仅元数据，尚未接主工具箱动态注册。 第十六批明确托管程序集/type/hash引用的当前合同预检与加载API已实现，17项自有fixture真实registry/节点/存读/编辑器工厂检查通过；启动和目录发现注册入口协调锁仍保留，未接入主窗口，整单元仍partial。",
+          "limitation": "第十八批现tool-catalog可选当前合同Implementation引用→首次分类装载→真实双registry→palette/节点创建执行/保存重开完整接入，15项MainWindow自审及独立复审通过。显式刷新只清失败，成功实例不重注册；独立JSON/IVisionToolPlugin适配不是原Cs/Librarys.Config/IVmModule ABI兼容，原native未知分列。",
           "blockerIds": []
         },
         {
@@ -1057,7 +1062,9 @@
         "docs/reverse/C03-history-lifecycle-batch9.md",
         "docs/reverse/C-execution-policy-batch11.md",
         "docs/reverse/C-result-history-implementation-batch15.md",
-        "docs/reverse/BATCH17-20261019.md"
+        "docs/reverse/BATCH17-20261019.md",
+        "docs/reverse/B-result-view-closure-batch18.md",
+        "docs/reverse/BATCH18-20261019.md"
       ],
       "implementationArtifacts": [
         "src/VisionEditor/MainWindow.xaml.cs",
@@ -1065,16 +1072,18 @@
         "src/VisionEditor/FrameworkExecutionPreferences.cs",
         "src/VisionEditor/FrameworkExecutionPolicy.cs",
         "src/VisionEditor.Core/FrameworkRunHistory.cs",
-        "src/VisionEditor/MainWindow.FrameworkResultHistory.cs"
+        "src/VisionEditor/MainWindow.FrameworkResultHistory.cs",
+        "src/VisionEditor/ToolDisplays.cs",
+        "tests/ResultViewLifecycleChecks18/Program.cs"
       ],
       "units": [
         {
           "id": "C03.1",
           "criterion": "原结果视图切源、缓存与旧事件解绑",
           "source": "done",
-          "implementation": "partial",
+          "implementation": "done",
           "validation": "partial",
-          "limitation": "主线有替换清理子集，原回调跨方案处置未全验。",
+          "limitation": "第十八批main实际pull展示先清旧frame，provider异常本地诊断，request代数+owner/procedure隔离同步重入旧返回；Replace/Close物理Detach旧scope事件。修前18项反例保全，修后20项实际host自审及独立复审通过；原native输出过滤/回调/全显示工厂差分未知，非原弱事件网复制。",
           "blockerIds": []
         },
         {
@@ -1114,10 +1123,17 @@
       "sourceAndOperationReports": [
         "docs/UNDO-ROUND2-20261019.md",
         "docs/reverse/C01-registration-batch5.md",
-        "docs/reverse/C01-undo-batch1.md"
+        "docs/reverse/C01-undo-batch1.md",
+        "docs/reverse/C-history-payload-batch18.md",
+        "docs/reverse/BATCH18-20261019.md"
       ],
       "implementationArtifacts": [
-        "src/VisionEditor.Core/GraphEditorDocument.cs"
+        "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "src/VisionEditor.Core/HistoryPayloadStore.cs",
+        "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+        "tests/HistoryPayloadChecks18/Program.cs",
+        "tests/HistoryPayloadEngineChecks18/Program.cs",
+        "tests/HistoryPayloadHostChecks18/Program.cs"
       ],
       "units": [
         {
@@ -1133,9 +1149,9 @@
           "id": "C04.2",
           "criterion": "原TempFiles载荷所有权、淘汰和释放",
           "source": "done",
-          "implementation": "not_started",
-          "validation": "blocked",
-          "limitation": "原内存/文件分支已知，实际文件生命周期未验。",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十八批真实history root/part接opaque载荷lease，默认大文档文件化、迁栈不删、容量/清redo/NewLoad/Dispose释放；共享末lease/借用不删/锁删失败保root显式复收/partial write/marker失配保全。store18+engine17+实际文档19自审及独立复审通过；64KiB/独立JSON/安全自有GUID为本地适配，原SDK载荷格式与业务恢复仍C04.1/D01/C04.3开放。",
           "blockerIds": [
             "ORIGINAL-INSTANCE"
           ]
@@ -1848,7 +1864,7 @@
     "units": 96,
     "packages": 32,
     "domains": 23,
-    "baseline": "a8ebfc31022660f1273557eeaccd1d356ac87cd3",
+    "baseline": "bd9ce6882fc5c47688e05bc5361dbe951ecbef01",
     "layers": {
       "source": {
         "done": 52,
@@ -1862,14 +1878,14 @@
         }
       },
       "implementation": {
-        "done": 34,
+        "done": 37,
         "total": 96,
-        "percent": 35.4,
-        "remaining": 62,
+        "percent": 38.5,
+        "remaining": 59,
         "statuses": {
-          "done": 34,
-          "not_started": 30,
-          "partial": 30,
+          "done": 37,
+          "not_started": 29,
+          "partial": 28,
           "blocked": 2
         }
       },
@@ -1880,8 +1896,8 @@
         "remaining": 67,
         "statuses": {
           "done": 29,
-          "partial": 23,
-          "blocked": 33,
+          "partial": 24,
+          "blocked": 32,
           "unverified": 5,
           "not_started": 3,
           "failed": 3
@@ -1893,9 +1909,9 @@
     "allThreePercent": 29.2,
     "closedPackages": 0,
     "newProductTestsRun": 0,
-    "overallCompletionPercent": 35.42,
-    "overallDone": 34,
-    "overallRemaining": 62,
+    "overallCompletionPercent": 38.54,
+    "overallDone": 37,
+    "overallRemaining": 59,
     "overallPolicy": "implementation-self-review-v1",
     "meaning": "用户指定：只按实施完成并自审核的单元统计总进度；人工验收不参与，源码/验证及三层交集仅保留为证据维度"
   },

@@ -330,3 +330,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第十七批：C05.2实施完成
 
 基线a8ebfc31022660f1273557eeaccd1d356ac87cd3。真实MainWindow修前复现同ID重载旧run污染结果/历史及旧配置关闭后发布；现epoch/scope代际接入workflow/continuous/Group/debug/config及modal/服务回调，配置计数和历史scope跨Load隔离。93项具名断言+实际host修前修后对照通过；主关闭等待workflow/debug，配置采取立即失效与lease延迟释放，不冒充原SDK/真实插件窗口。A完整菜单可执行对账53/43/15保全但27入口仍缺，A05.1/C03.1仍partial。C05.2 main支持域实施done，人工验收后置，C05.3未知。总实施34/96=35.42%，本批+1，剩62。详见reverse/BATCH17-20261019.md、FCR-027及batch17失败/哈希；tool-plugins未访问、不自动推送。
+
+## 2026-10-19 第十八批：A07.1/C03.1/C04.2实施完成
+
+基线bd9ce6882fc5c47688e05bc5361dbe951ecbef01。四方向三子槽+root串行整合，优先3个未完成单元：现catalog显式当前合同引用首次分类→真实双registry→palette/节点执行/存读；结果视图先清旧值及request代数/owner拒旧返回，并物理Detach旧scope事件；历史真实opaque文件载荷接root/part，淘汰/清redo/换方案/关闭按lease释放，锁删失败和marker失配保全。214项最终具名自审核exit0，负对照及初始编译/调用失败不删不累加；已知CS8603保留。A06无新DesignSurface不重派旧阻塞；原CS ABI、SDK格式/设备/native事件差分仍未知。总实施37/96=38.54%，本批+3，剩59。报告reverse/BATCH18-20261019.md及batch18审计，tool-plugins未读未改、不采用来信、不推送。

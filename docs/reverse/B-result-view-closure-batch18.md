@@ -1,0 +1,45 @@
+# 第十八批 B：C03.1 结果换源完整实施审查与真实消费者fixture
+
+固定单元为“原结果视图切源、缓存与旧事件解绑”。复用原ModuleResultView/ModuleDisplayDecorator同版本源码与前批身份；没有执行原SDK/设备，没有改tool-plugins或另造插件会话。根线独占ToolDisplays/执行scope共享文件，本线新增独占 `tests/ResultViewLifecycleChecks18`；本线不构建。
+
+## 原链与main替代边界
+
+`analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs::ModuleSourceChanged` 首次延迟Dispatcher回调在执行前检查捕获newValue仍为当前ModuleSource，后续直接DoSourceChanged。后者Dispose旧decorator→ClearDataStore→新decorator.Init→绑定结果/本地图像DataContext→UpdateModuleView。原流程没有全面try/finally，因此不能凭产品更安全的错误清理声称原异常分支等价。
+
+`VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs::DeInit` 解模块结果、参数reload、祖先流程workstatus、前置模块集合、shape刷新、dynamic mapping、显示对象ValueChanged/filter、输入RelatedIO、动态Inputs集合，停timer并清renderDataCenter。Dispose再清对象列表/参数/DecorateSource。完整具体事件已列在batch17 B-result-owner-review；不是只清画面像素。
+
+main当前使用IToolDisplayProvider.LastDisplay拉取快照与三个presenter.Show，不曾注册上述原装饰器事件网，因此对应释放是清image/text/record/columns/items/选中结果timing、保留正确node/scope身份，而非复制原native订阅。17批owner隔离已交付，本批只复用并验证结果消费者，不重复修done C05.2。
+
+## 本轮发现及必须根线实施的缺口
+
+`RefreshToolDisplay`原读取provider.LastDisplay在清presenter之前。A已显示→B provider抛异常时，三个Show均没执行，旧A的frame/record/result columns保留，导致当前选择与旧输出错配。已交根线修为先清全部呈现器/隐藏旧视图，再读provider；异常给本地诊断，不能默默继续显示A或冒称原factory错误行为。
+
+此外AttachExecutionScope两强事件lambda在旧scopeDispose后没有物理解除；closing阻发与owner guard虽防写回，外部持有旧scope时其delegate仍可强持MainWindow。C03.1中“旧事件解绑”应明确处理main实际注册的事件，建议保存delegate并在Replace/OnClosed解绑，排队中旧Dispatcher回调仍靠owner隔离。本线已及时通知root，不自行修改共享文件。
+
+## 实际fixture及有限退出门槛
+
+新fixture设置DisableAutomaticCameraDiscovery后创建真实MainWindow，注册任务自有无设备IToolDisplayProvider，算法Execute一律抛以防误执行；直接给main已有results注入具名快照，调用真实RefreshRight。覆盖A→B的text/record/result columns、B耗时、无provider/无selection清理、B抛错不留A、随后有效A恢复。`observe-unfixed`模式必须观察旧A残留和真实异常，修后模式必须清空。
+
+保存自有方案并同IDLoad，旧scope提前RequestRefresh进入Dispatcher队列，再泵消息验证旧回调不向当前provider索取frame；新结果缓存/显示/历史计数/耗时清空。真实doc.DeleteNode通过RetainExecutionNodes释放自有source state一次，之后refresh不复活。仅测试自己的managed/WPF消费者，不运行原厂、不当作交互桌面。
+
+fixture是实际main拉取式消费者而非复制实现或只测Show(null)。所有输出进自有GUID目录，修前与修后分开保留。构建/运行与最终摘要由根线串行执行，本报告初稿不预报通过；新增物理事件解绑若实施，需根线补旧scope backing-event为空断言并保留修前差异。
+
+根线首轮构建因另线ToolNavigation新session类尚未列入编译项而失败，修前fixture尚未运行，失败产物由根线保留。随后在根线确认无构建时，本线补齐并冻结fixture：先真正RecordFrameworkRunHistory一条、断言非空1，Load后断言0；旧scope的两条main事件与实际Close后当前scope事件，observe-unfixed要求仍有物理订阅，修后要求均null。之后不再编辑该测试以免串行构建竞争。本片没有把编译失败写成任何运行结论。
+
+C03.1可关闭main实施的条件：这些实际换源/同ID重载/错误恢复/旧事件解除全部落地并自审核，原事件清单各项明确为“main无此订阅/现有替代”，不能把原native未知一概拖为人工验收阻塞。原SDK数据存储/native回调、全部原厂显示对象工厂和厂商窗口差分留validation部分未验，不扩大成已完成原生等价。
+
+## 同步provider重入补充
+
+根线已取得真实observe-unfixed18项记录 `result-view-265d57c79fcf41db97cba075329875f2`，包含旧帧残留和旧scope强事件仍在，随后修为读provider前清空、异常本地诊断及Replace/Close物理解绑。进一步源码复审发现LastDisplay虽同步，属于外部provider代码，可以泵Dispatcher或回调触发Load/再次RefreshRight；外层旧return仍可能覆盖内层新刷新。owner+procedure/source检查覆盖换方案，递增view request版本还必须覆盖同owner同node重入，catch旧异常也不应覆盖新状态。
+
+在根线确认无WPF构建并授权后，本线仅扩充既有fixture的非observe分支：第一例provider先捕旧text，回调实际doc.Load同文件后返回旧frame，要求新方案展示仍空；第二例provider先捕旧text，回调同node递归Select并生成新frame，再外层返回旧frame，要求新frame/record胜出。回调先清BeforeReturn避免无限递归。observe跳过新例，保持原修前18项可重跑。文件再次冻结并通知根线，未构建，不预报新增两项通过。
+
+## 最终只读终审与关闭结论
+
+已读取最终 `ToolDisplays.cs`：每次刷新先++请求代数，捕获owner/procedure；先清三个presenter和旧visibility，再调用LastDisplay。正常返回和catch都检查请求代数/owner/procedure仍当前，过时结果及过时异常直接返回，保留递归刷新或新方案的视图。本地catch写明确“结果显示失败”诊断，不假称原异常分支等价。`ToolExecutionScope`保存两事件delegate，Attach前/Replace前/OnClosed均Detach并清引用；排队Dispatcher回调仍有scope身份检查。
+
+已实际读取修后 `analysis/full-audit/batch18-20261019/B/result-view-9fe2b3f925bb46e6ae3d7c13c4da84a8/summary.json`：observe=false、passed20、providerFaultPropagated=false，两个同步重入场景均通过；源切换、错误恢复、真实history1→0、sameIDLoad、旧排队refresh、Replace/Close双事件物理解绑、节点state单次释放均在实际摘要中逐项确认。根线报告该运行exit0；本线未重跑，构建/退出证据以根线日志保留。修前18项旧帧残留与强事件证据继续保留，不被修后结果覆盖。
+
+**C03.1 在 main 拉取式显示支持域的 implementation 可以记 done。** 本次交付覆盖完整当前消费者换源/缓存/事件解除及重入防覆盖，自审核通过，不依赖人工验收后置。不是只补报告或只测Show(null)，也没有把旧C05.2再次计分。
+
+validation 保持 partial：未观测原native缓存/输出过滤器、SDK结果回调解除、厂商完整显示对象工厂和原窗口差分。原源事件表对应main已说明为无该订阅的pull适配或当前scope事件解除；上述未知不虚报原生等价，也不新增为main实施阻塞。本线最终只读复审未发现该既定支持域尚缺的必须修复项，未改产品/构建/启动测试。

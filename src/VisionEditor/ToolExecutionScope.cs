@@ -9,14 +9,22 @@ public partial class MainWindow {
  int activeConfigurationRuns;
  readonly Dictionary<string,int> configurationRunsByProcedure=new();
  readonly Dictionary<string,Dictionary<string,NodeRunRecord>> configurationResults=new(StringComparer.Ordinal);
+ ModuleExecutionScope? subscribedExecutionScope;
+ Action<ModuleNodeRequest>? scopeRefreshHandler,scopeRunHandler;
+ void DetachExecutionScope(){
+  if(subscribedExecutionScope is {} old){if(scopeRefreshHandler is not null)old.ProcedureRefreshRequested-=scopeRefreshHandler;if(scopeRunHandler is not null)old.ProcedureRunRequested-=scopeRunHandler;}
+  subscribedExecutionScope=null;scopeRefreshHandler=null;scopeRunHandler=null;
+ }
  void AttachExecutionScope(){
+  DetachExecutionScope();
   if(!AppContext.TryGetSwitch("VisionEditor.DisableAutomaticCameraDiscovery",out bool disabled)||!disabled)
    RefreshCameraProvider(false);
   var owner=executionScope;
-  executionScope.ProcedureRefreshRequested+=request=>Dispatcher.BeginInvoke(()=>{if(!windowClosed&&ReferenceEquals(executionScope,owner)&&request.ScopeId==owner.Id&&request.ProcedureId==doc.CurrentProcedureId)RefreshRight();});
-  executionScope.ProcedureRunRequested+=request=>Dispatcher.BeginInvoke(()=>{if(windowClosed||activeRun is not null||!ReferenceEquals(executionScope,owner)||request.ScopeId!=owner.Id)return;var procedure=doc.Document.Procedures.FirstOrDefault(p=>p.Id==request.ProcedureId&&p.Nodes.Any(n=>n.Id==request.NodeId));if(procedure is not null)_=RunProcedure(procedure.Id);});
+  scopeRefreshHandler=request=>Dispatcher.BeginInvoke(()=>{if(!windowClosed&&ReferenceEquals(executionScope,owner)&&request.ScopeId==owner.Id&&request.ProcedureId==doc.CurrentProcedureId)RefreshRight();});
+  scopeRunHandler=request=>Dispatcher.BeginInvoke(()=>{if(windowClosed||activeRun is not null||!ReferenceEquals(executionScope,owner)||request.ScopeId!=owner.Id)return;var procedure=doc.Document.Procedures.FirstOrDefault(p=>p.Id==request.ProcedureId&&p.Nodes.Any(n=>n.Id==request.NodeId));if(procedure is not null)_=RunProcedure(procedure.Id);});
+  subscribedExecutionScope=owner;owner.ProcedureRefreshRequested+=scopeRefreshHandler;owner.ProcedureRunRequested+=scopeRunHandler;
  }
- void ReplaceExecutionScope(){executionOwnerEpoch.Invalidate();activeConfigurationRuns=0;configurationRunsByProcedure.Clear();debugSolution=null;toolDebugRecords.Clear();toolDebugInvalid.Clear();CloseToolConfiguration();activeRun?.Cancel();configurationResults.Clear();workflowSessions.Clear();results.Clear();executionScope.Dispose();executionScope=new();AttachExecutionScope();}
+ void ReplaceExecutionScope(){executionOwnerEpoch.Invalidate();DetachExecutionScope();activeConfigurationRuns=0;configurationRunsByProcedure.Clear();debugSolution=null;toolDebugRecords.Clear();toolDebugInvalid.Clear();CloseToolConfiguration();activeRun?.Cancel();configurationResults.Clear();workflowSessions.Clear();results.Clear();executionScope.Dispose();executionScope=new();AttachExecutionScope();}
  void RetainExecutionNodes()=>executionScope.RetainProcedureNodes(doc.Document.Procedures.SelectMany(p=>p.Nodes.Select(n=>(p.Id,n.ModuleId,n.Id))));
  ToolEditorContext ConnectToolEditorServices(ToolEditorContext context,string node){
   string procedure=doc.CurrentProcedureId,solution=doc.SolutionId;

@@ -24,11 +24,12 @@ namespace VisionEditor;
 
 public partial class MainWindow
 {
-    sealed record CatalogTool(string Id,string Name,double Priority,string DisplayType,string? Icon,string? ModuleId);
+    sealed record CatalogTool(string Id,string Name,double Priority,string DisplayType,string? Icon,string? ModuleId,ManagedToolPluginReference? Implementation=null);
     sealed record CatalogGroup(string Id,string Name,double Priority,string? Icon,string? HoverIcon,CatalogTool[] Items);
     sealed record CatalogFile(int Schema,CatalogGroup[] Groups);
     CatalogGroup[]? toolGroups;
     string toolCatalogPath=Path.Combine(AppContext.BaseDirectory,"tool-catalog.json");
+    readonly ManagedToolCatalogLoadSession managedToolLoads=new();
     readonly Dictionary<string,ToolCategoryLoadState<CatalogTool>> toolCategoryLoads=new(StringComparer.Ordinal);
     Border? toolDragGhost;
     bool? toolRailOverview;
@@ -47,7 +48,20 @@ public partial class MainWindow
         using var json=JsonDocument.Parse(File.ReadAllText(toolCatalogPath));
         var group=json.RootElement.GetProperty("Groups").EnumerateArray().Single(g=>g.GetProperty("Id").GetString()==id);
         foreach(var item in group.GetProperty("Items").EnumerateArray())
-            yield return item.Deserialize<CatalogTool>()??throw new InvalidDataException("Empty tool metadata.");
+        {
+            var tool=item.Deserialize<CatalogTool>()??throw new InvalidDataException("Empty tool metadata.");
+            if(tool.Implementation is {} reference)
+            {
+                if(tool.ModuleId!=reference.ModuleId)throw new InvalidDataException("Catalog module identity differs from selected implementation.");
+                managedToolLoads.EnsureLoaded(reference,loaded=>
+                {
+                    if(plugins.Find(reference.ModuleId) is not null||modules.Descriptors.Any(d=>d.Id==reference.ModuleId))
+                        throw new InvalidOperationException("Catalog plugin identity is already registered; refresh cannot replace a live module.");
+                    plugins.Register(loaded.Plugin,modules);
+                });
+            }
+            yield return tool;
+        }
     }
     CatalogGroup? LoadToolCategory(CatalogGroup group)
     {
@@ -63,7 +77,7 @@ public partial class MainWindow
     void RefreshToolCatalog()
     {
         if(toolPopup is not null)toolPopup.IsOpen=false;
-        toolGroups=null;toolCategoryLoads.Clear();BuildRail();
+        toolGroups=null;toolCategoryLoads.Clear();managedToolLoads.ClearFailures();BuildRail();
     }
     ContextMenu ToolCatalogRefreshMenu()
     {
