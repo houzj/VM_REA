@@ -276,3 +276,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第五批：退出门槛与进度指标
 
 基线e6bf62a，四线有限子项及独立复核收口。A03隔离blocked：日志独立HKLM选安装配置并watch；B01绑定写入、C01注册、D01保存回调静态done，运行未验证。整包0/32（本批+0），固定子项3静态完成/1阻塞，新明确隔离阻塞1/解除0，原方法运行0、产品修复0。原件/失败/CIL及哈希保存在analysis/full-audit/batch5-20261019；进度规则已写FRAMEWORK-REVERSE-PROGRESS.md与PARALLEL-WORK，阻塞或关闭切片不得无新条件重复派发。FCR-024失败仍开放，tool-plugins未访问、未自动采用来信、未推送。下一批按未满足退出条件选题，详见reverse/BATCH5-20261019.md和台账。
+
+## 2026-10-19 第六批：隔离新前置与受控操作
+
+基线48a0760，固定A03/B02/C02/D02四子项并第四位独立复核。自有子进程RegOverridePredefKey映射成功、宿主观察值不变且自有键清理；原logger装载/watch/output仍未跑。B02提前源码预审静态4/4，不绕过B01/A01依赖；C02原清值叶方法合成对象4案例32断言通过；D02自有保存子进程中断4断言及只读独立复核通过。总任务0/32=0%，本批整包+0，子项3done/1blocked；解除映射前置1，完整运行隔离未解除，产品修复0，原机差分0。审计含所有脚本/API失败，目录analysis/full-audit/batch6-20261019，报告reverse/BATCH6-20261019.md。tool-plugins未访问、不采用来信、不推送；后续只按新条件推进剩余门槛。
