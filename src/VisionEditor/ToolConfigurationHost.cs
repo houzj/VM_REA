@@ -21,16 +21,16 @@ public partial class MainWindow {
   if(parameterEditorOpen&&toolConfigurationWindows?.Current is null)return;
   var plugin=plugins.Find(node.ModuleId);
   if(plugin is not (IToolConfigurationProvider or IWpfToolEditorFactory)){System.Windows.MessageBox.Show(this,"该节点的配置模型尚未接入。","模块参数");return;}
-  string solution=doc.SolutionId;
+  string solution=doc.SolutionId;var owner=CaptureExecutionOwner();
   var identity=new ToolConfigurationIdentity(solution,procedure.Id,id);
   ConfigurationWindows().Open(identity,()=>{
    var ownerDirectory=doc.BaseDirectory;configurationBaseDirectory=ownerDirectory;bool active=true;
    void Apply(Dictionary<string,JsonElement> values){
-    if(!active||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||!StringComparer.OrdinalIgnoreCase.Equals(ownerDirectory,doc.BaseDirectory))throw new InvalidOperationException("当前模块不可编辑。");
+    if(!IsCurrentExecutionOwner(owner)||!active||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||!StringComparer.OrdinalIgnoreCase.Equals(ownerDirectory,doc.BaseDirectory))throw new InvalidOperationException("当前模块不可编辑。");
     if(!doc.Document.Procedures.Any(p=>p.Id==procedure.Id&&p.Nodes.Any(n=>n.Id==id)))throw new InvalidOperationException("模块已移除。");
     doc.SetProcedureNodeParameters(procedure.Id,id,values);
    }
-   var context=new ToolEditorContext(node,ownerDirectory,Apply,_=>throw new NotSupportedException("配置执行服务尚未连接。"),procedure.Nodes.ToList().FindIndex(n=>n.Id==id)){ConfigurationActive=()=>active};
+   var context=new ToolEditorContext(node,ownerDirectory,Apply,_=>throw new NotSupportedException("配置执行服务尚未连接。"),procedure.Nodes.ToList().FindIndex(n=>n.Id==id)){ConfigurationActive=()=>active&&IsCurrentExecutionOwner(owner)};
    context=ConnectToolEditorServices(context,id);
    ResetEditingGesture();
    // Transitional adapter: window factories will be replaced by the source-derived

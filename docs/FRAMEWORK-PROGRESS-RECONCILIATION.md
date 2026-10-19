@@ -1,8 +1,8 @@
 # 框架逆向成果全面对账
 
-2026-10-19；冻结基线 `70b3b4297a798cc0f0f7c149aeaf49be1031be72`。仅 main；tool-plugins 未访问、未计入。
+2026-10-19；冻结基线 `a8ebfc31022660f1273557eeaccd1d356ac87cd3`。仅 main；tool-plugins 未访问、未计入。
 
-**当前实施总进度：33/96 = 34.38%。**
+**当前实施总进度：34/96 = 35.42%。**
 
 用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
@@ -10,8 +10,8 @@
 
 | 层次 | 严格达成 | 进度 | 尚未达成 |
 |---|---:|---:|---:|
-| 源码 | 51/96 | **53.1%** | 45 |
-| 实现 | 33/96 | **34.4%** | 63 |
+| 源码 | 52/96 | **54.2%** | 44 |
+| 实现 | 34/96 | **35.4%** | 62 |
 | 验证 | 29/96 | **30.2%** | 67 |
 
 ## 分母与计数规则
@@ -22,7 +22,7 @@
 
 实现包括当前main的明确独立重构及计划要求的可执行逆向辅助工具，不能直接称VM等价。验证为有证据的已列操作范围；有已知反例则记失败。原方法合成输入、离屏WPF、原机差分分别保留边界。
 
-历史验证未在本次重新执行；最近产品源码改动为6a2cf54的画布方案替换，后续批次主要是报告与探针。旧的framework-acceptance.json基线较旧，以专题报告和后续失败更正，不覆盖旧记录。
+历史验证保留各自基线；最新批次产品交付与实际自审核见framework-reverse-plan.json的activeBatch及对应专题报告。旧framework-acceptance.json不能代替当前批次证据，失败记录不被后续通过覆盖。
 
 该分母是总计划的交付单元，不是原程序所有入口/函数的穷举，也不是工时预测。未来发现新范围须升级分母版本并保留前后差异，不能临时拆小已完成项抬高进度。
 
@@ -52,7 +52,7 @@
 | C02 | 单次/连续/停止调度与参数准备 | 3 | 1 | 1 | 1 |
 | C03 | 结果历史与方案替换生命周期 | 2 | 0 | 0 | 0 |
 | C04 | 撤销恢复与临时文件所有权 | 2 | 0 | 0 | 0 |
-| C05 | 配置/调试会话与框架释放 | 1 | 1 | 1 | 1 |
+| C05 | 配置/调试会话与框架释放 | 2 | 2 | 1 | 1 |
 | C06 | 外部服务调度与故障隔离 | 0 | 0 | 0 | 0 |
 | C07 | 长稳、并发与异常恢复 | 0 | 0 | 0 | 0 |
 | C08 | 执行与历史组合验收 | 1 | 1 | 1 | 1 |
@@ -139,9 +139,9 @@
 
 前置：A02；完整包未因本表计分关闭。
 
-证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A-shell-implementation-batch11.md](reverse/A-shell-implementation-batch11.md)
+证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A-shell-implementation-batch11.md](reverse/A-shell-implementation-batch11.md)、[BATCH17-20261019.md](reverse/BATCH17-20261019.md)、[A05-full-menu-map-batch17.md](reverse/A05-full-menu-map-batch17.md)、[A05-entry-reconciliation-batch17.md](reverse/A05-entry-reconciliation-batch17.md)
 
-当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/MainWindow.ShellHelp.cs`、`src/VisionEditor/MainWindow.ShellRunMode.cs`
+当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/MainWindow.ShellHelp.cs`、`src/VisionEditor/MainWindow.ShellRunMode.cs`、`tests/MenuEntryInventory17/Reconcile.py`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
@@ -335,7 +335,7 @@
 
 前置：C02、D02；完整包未因本表计分关闭。
 
-证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C03-history-lifecycle-batch9.md](reverse/C03-history-lifecycle-batch9.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)、[C-result-history-implementation-batch15.md](reverse/C-result-history-implementation-batch15.md)
+证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C03-history-lifecycle-batch9.md](reverse/C03-history-lifecycle-batch9.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)、[C-result-history-implementation-batch15.md](reverse/C-result-history-implementation-batch15.md)、[BATCH17-20261019.md](reverse/BATCH17-20261019.md)
 
 当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ToolExecutionScope.cs`、`src/VisionEditor/FrameworkExecutionPreferences.cs`、`src/VisionEditor/FrameworkExecutionPolicy.cs`、`src/VisionEditor.Core/FrameworkRunHistory.cs`、`src/VisionEditor/MainWindow.FrameworkResultHistory.cs`
 
@@ -363,14 +363,14 @@
 
 前置：C02、B07；完整包未因本表计分关闭。
 
-证据：[DEBUG-SESSION-CONTRACT.md](DEBUG-SESSION-CONTRACT.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)
+证据：[DEBUG-SESSION-CONTRACT.md](DEBUG-SESSION-CONTRACT.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[BATCH17-20261019.md](reverse/BATCH17-20261019.md)、[B-owner-fix-followup-review-batch17.md](reverse/B-owner-fix-followup-review-batch17.md)、[C-execution-owner-implementation-batch17.md](reverse/C-execution-owner-implementation-batch17.md)、[B-result-owner-review-batch17.md](reverse/B-result-owner-review-batch17.md)
 
-当前实现/工具位置：`src/VisionEditor/ToolEditorHost.cs`、`src/VisionFramework/ToolDebugSession.cs`
+当前实现/工具位置：`src/VisionEditor/ToolEditorHost.cs`、`src/VisionFramework/ToolDebugSession.cs`、`src/VisionEditor.Core/ExecutionOwnerEpoch.cs`、`src/VisionEditor/MainWindow.FrameworkExecutionOwnership.cs`、`tests/ConfigurationCloseOwnerChecks17/Program.cs`、`tests/ExecutionOwnerLifecycleChecks17/Program.cs`、`tests/WorkflowOwnerHostChecks17/Program.cs`、`tests/ConfigurationHistoryGenerationChecks17/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | C05.1 | 普通节点调试单次/连续/停止/关闭等待 | 达成 | 达成 | 达成 | 历史集成会话子集已验证，不含所有真实设备。 |
-| C05.2 | 换方案/配置并发关闭与回调解除 | 部分 | 部分 | 部分 | 有当前关闭等待子集，真实插件会话换源矩阵不足。 |
+| C05.2 | 换方案/配置并发关闭与回调解除 | 达成 | 达成 | 部分 | 第十七批原换源/DeInit链及main真实owner代际、配置关闭/换方案与同ID重载隔离、计数/finally、modal/服务回调、自有lease延迟单次释放均实施并自审核；93项具名断言及修前/修后实际host对照通过。main配置关闭采取立即失效+lease释放，非等待所有配置任务。真实插件私有窗/native矩阵未验证，另C05.3保留。 |
 | C05.3 | 原SDK/设备取消、回调和资源释放 | 部分 | 未取得交付 | 阻塞 | 依赖真实可归属实例和已交付会话。 |
 
 ### C06 外部服务调度与故障隔离

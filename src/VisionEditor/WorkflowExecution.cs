@@ -26,10 +26,16 @@ public partial class MainWindow
  async Task<bool> RunCore(string procedureId,CancellationToken token)
  {
   EnsureToolDebugSolution();
+  var owner=CaptureExecutionOwner();
+  var ownerScope=executionScope;
+  var workspace=new SolutionWorkspace(doc.Document,doc.BaseDirectory);
   try
   {
    BeginWorkflowResults(procedureId);if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
-   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};var session=await new SolutionExecutor(modules).RunAsync(new SolutionWorkspace(doc.Document,doc.BaseDirectory),procedureId,cancellationToken:token,scope:executionScope,control:control);if(control.StopRequested)continuousRun=false;
+   if(!IsCurrentExecutionOwner(owner))return false;
+   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};var session=await new SolutionExecutor(modules).RunAsync(workspace,procedureId,cancellationToken:token,scope:ownerScope,control:control);
+   if(!IsCurrentExecutionOwner(owner))return false;
+   if(control.StopRequested)continuousRun=false;
 
    StoreWorkflowCallResults(procedureId,session);var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);RecordWorkflowRun(procedureId,elapsed);
    if(windowClosed)return false;
@@ -39,8 +45,8 @@ public partial class MainWindow
    if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
    return session.Status==SessionStatus.Success&&session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.Skipped);
   }
-  catch(OperationCanceledException){if(!windowClosed)StatusText.Text="运行已停止";}
-  catch(Exception e){if(!windowClosed)StatusText.Text="运行失败："+e.Message;}
+  catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))StatusText.Text="运行已停止";}
+  catch(Exception e){if(IsCurrentExecutionOwner(owner))StatusText.Text="运行失败："+e.Message;}
   return false;
  }
  void ClearWorkflowCallResults(string procedure){var seen=new HashSet<string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);ClearToolDebugResults(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}
@@ -61,9 +67,10 @@ public partial class MainWindow
  void StartProcedureLoop(string id){if(activeRun is not null){activeRun.Cancel();return;}if(!doc.HasCurrentProcedure||doc.RootProcedureId(doc.CurrentProcedureId)!=id)SelectWorkflow(id);StartContinuous();}
  async Task ContinuousRun(string procedureId,CancellationTokenSource owner)
  {
-  try{while(!owner.IsCancellationRequested&&continuousRun){bool ok=await RunCore(procedureId,owner.Token);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){if(!windowClosed)StatusText.Text="流程 NG，已停止连续运行";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}
-  catch(OperationCanceledException){if(!windowClosed)StatusText.Text="连续运行已停止";}
-  catch(Exception error){if(!windowClosed)StatusText.Text="连续运行失败："+error.Message;}
+  var stamp=CaptureExecutionOwner();
+  try{while(!owner.IsCancellationRequested&&continuousRun&&IsCurrentExecutionOwner(stamp)){bool ok=await RunCore(procedureId,owner.Token);if(!IsCurrentExecutionOwner(stamp))break;var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){StatusText.Text="流程 NG，已停止连续运行";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}
+  catch(OperationCanceledException){if(IsCurrentExecutionOwner(stamp))StatusText.Text="连续运行已停止";}
+  catch(Exception error){if(IsCurrentExecutionOwner(stamp))StatusText.Text="连续运行失败："+error.Message;}
   finally{FinishWorkflowRun(owner);}
  }
  void FinishWorkflowRun(CancellationTokenSource owner)
@@ -72,6 +79,7 @@ public partial class MainWindow
  }
  protected override void OnClosed(EventArgs e)
  {
+  executionOwnerEpoch.Close();
   windowClosed=true;
   CloseToolConfiguration();
   executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);

@@ -237,3 +237,11 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 ### FCR-022 第十六批main普通root/part实施
 
 main GraphEditorDocument已改为真实DocumentHistoryEngine的root/part旧新载荷、首次Undo补new、predicate/forbid/replay/lazy准入和排序，不再走交换Snapshot栈。既有ExecuteConfigurationEdit布尔范围API不变；默认保留15根，异常保留LastHistoryError而不造事务回滚。main payload仍是自身不可变文档与BaseDirectory，CanvasZoomIndex在回放间的合并为明确独立视图适配。公开SDK Group/模块采集、TempFiles二进制载荷和RecoverStack另项仍缺，不能由普通root/part自审核推成native payload已实现。插件项目未被改动或调度。
+
+## FCR-027：main执行与配置回调归属代际
+
+- Producer：main既有workflow/Group/debug/config宿主；consumer：同一main的结果、运行历史、配置回调与scope资源。root唯一改已有宿主，不修改公开插件Contracts/Session/注册框架，不操作tool-plugins。
+- Payload：内部ExecutionOwnerStamp含host epoch、generation、solutionId、scope引用；不进入方案或插件参数，不创建第二配置框架。
+- Lifecycle：Replace先Invalidate并清旧owner缓存/计数；await完成与modal返回核对；OnClosed Close永久拒绝旧发布。workflow/debug保留等待，配置采用失效+真实lease退出后释放；不承诺设备线程已停。旧configuration finally不得修改新计数。
+- Compatibility：外部ToolEditorContext与插件API不变；旧失效读回调空、写/服务回调拒绝。GraphEditorDocument配置scope内部代际不持久化。测试专用AppContext switch仅禁自动相机发现，默认产品行为不变。
+- Evidence/acceptance：原ModuleResultView过时请求/Decorator.DeInit/InnerDispose链、真实MainWindow同ID修前污染与修后隔离、配置close及真实lease释放、B独立复审，见reverse/BATCH17-20261019.md。原SDK和插件私有窗口另项未知；未来插件合流由用户选择，不表示向插件线派工或采用其改动。

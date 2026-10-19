@@ -2,13 +2,14 @@ namespace VisionEditor.Core;
 
 public sealed partial class GraphEditorDocument
 {
-    sealed class ConfigurationHistory(string solutionId)
+    sealed class ConfigurationHistory(long generation)
     {
-        public string SolutionId { get; } = solutionId;
+        public long Generation { get; } = generation;
         public bool NeedsRoot { get; set; } = true;
         public bool ForbidBuild { get; set; } = true;
     }
     ConfigurationHistory? configurationHistory;
+    long solutionGeneration;
 
     /// <summary>
     /// Runs immediate configuration writes under one document history root.
@@ -25,8 +26,8 @@ public sealed partial class GraphEditorDocument
     {
         ArgumentNullException.ThrowIfNull(change);
         var previous = configurationHistory;
-        var session = previous is not null && previous.SolutionId == SolutionId
-            ? previous : new ConfigurationHistory(SolutionId);
+        var session = previous is not null && previous.Generation == solutionGeneration
+            ? previous : new ConfigurationHistory(solutionGeneration);
         configurationHistory = session;
         session.ForbidBuild = true;
         if (!session.NeedsRoot) SetHistoryRecordingForbidden(true);
@@ -34,9 +35,9 @@ public sealed partial class GraphEditorDocument
         finally
         {
             session.ForbidBuild = false;
-            if (session.SolutionId == SolutionId && !session.NeedsRoot)
+            if (session.Generation == solutionGeneration && !session.NeedsRoot)
                 SetHistoryRecordingForbidden(false);
-            configurationHistory = previous;
+            if(session.Generation == solutionGeneration) configurationHistory = previous;
         }
     }
 
@@ -48,7 +49,7 @@ public sealed partial class GraphEditorDocument
 
     void RecordEditHistory()
     {
-        if (configurationHistory is { NeedsRoot: true } session && session.SolutionId == SolutionId)
+        if (configurationHistory is { NeedsRoot: true } session && session.Generation == solutionGeneration)
         {
             BeginDocumentHistoryRoot();
             session.NeedsRoot = false;

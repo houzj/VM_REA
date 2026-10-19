@@ -326,3 +326,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第十六批：C01.1实施完成
 
 基线258490780a0a31fe3b1a0a7df99c16e16d319358。真实DocumentHistoryEngine root/part旧新值、首次Undo补new、predicate/forbid/replay/lazy准入、原priority/CopyModule排序与异常迁栈实施，并将GraphEditorDocument旧Snapshot栈真正替换；配置布尔scope保留，缩放回放间仅合并视图为独立适配。355项限定自审核全部exit0，既有CS8603保留，C01.1计done。原SDK/TempFiles/Recover仍各项未完成。A当前合同托管loader有实际fixture注册/执行/存读但startup锁未接，A07.1仍partial并登记FCR-026；B候选/gvar缺真实能力不猜造。总实施33/96=34.38%，本批+1，剩余63。原长稳失败未重跑，tool-plugins未读未改，不采用来信、不自动推送。报告reverse/BATCH16-20261019.md和batch16审计保全完整源/失败/未知/hash。
+
+## 2026-10-19 第十七批：C05.2实施完成
+
+基线a8ebfc31022660f1273557eeaccd1d356ac87cd3。真实MainWindow修前复现同ID重载旧run污染结果/历史及旧配置关闭后发布；现epoch/scope代际接入workflow/continuous/Group/debug/config及modal/服务回调，配置计数和历史scope跨Load隔离。93项具名断言+实际host修前修后对照通过；主关闭等待workflow/debug，配置采取立即失效与lease延迟释放，不冒充原SDK/真实插件窗口。A完整菜单可执行对账53/43/15保全但27入口仍缺，A05.1/C03.1仍partial。C05.2 main支持域实施done，人工验收后置，C05.3未知。总实施34/96=35.42%，本批+1，剩62。详见reverse/BATCH17-20261019.md、FCR-027及batch17失败/哈希；tool-plugins未访问、不自动推送。

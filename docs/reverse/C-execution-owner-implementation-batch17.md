@@ -1,0 +1,54 @@
+# C05.2 主框架异步完成归属隔离（第十七批C线）
+
+## 原始依据与独立策略
+
+原事件解绑依据沿用 `docs/reverse/C03-history-lifecycle-batch9.md` 和 `docs/DEBUG-SESSION-CONTRACT.md`：方案实例替换切换新旧PropertyChanged订阅；模块显示decorator释放时解除异步结果、流程状态、参数/输入/显示对象弱事件并停止RecordTimer；配置窗口关闭关闭连续标志、释放参数树。它们证明各具体入口的解绑，不证明原SDK按主机方案代际隔离所有晚到回调。
+
+原静态 `_waitDoneProcedureCache` 在已见 set_Instance/ResetInstance 未清；循环用当时instance.AllModules按ID查找。因此本批不能声称“原厂必定拒绝同ID复用旧完成”。本次epoch是明确的**独立main安全适配**，不作为原SDK行为描述。
+
+## 修前实际风险
+
+RunCore持旧doc/scope发起await，返回后立即StoreWorkflowCallResults和RecordWorkflowRun，再检查windowClosed。缺少方案实例或scope代际判断；Load同一文件复用solution/procedure/node ID时，字符串身份不足阻止旧session/history写入新图。异常路径也可能把旧操作的状态写到新界面。
+
+配置RunConfiguredTool已有scope引用、solution、node版本检查，但ConnectToolEditorServices只在调用前检查ConfigurationActive；同方案关闭旧配置、另开新配置期间，晚到旧结果仍可能写入configurationResults。ToolEditorHost另一路调试context在await后仅比较solution ID，也需根线统一补归属。
+
+## 实施与共享锁
+
+子线独占 `src/VisionEditor.Core/ExecutionOwnerEpoch.cs`：Capture返回包含本gate身份、单调generation、solutionId和scope对象引用的不可伪造普通票据；IsCurrent同时校验四者和closed；Invalidate在替换前失效旧generation，Close拒绝所有后续完成。没有启动、附加或终止进程，没有设备操作。
+
+根线唯一修改WorkflowExecution、ToolExecutionScope、ToolEditorHost、MainWindow及配置窗口入口：
+
+1. 每次await前捕获当前ticket和原scope；替换首先Invalidate，关闭首先Close；不可等旧window真正Closed才失效。
+2. await后的控制标志、存结果、摘要、耗时、界面刷新、异常状态及continuous loop继续执行均先核对归属；旧finally只能清自己owner，不能清新操作。
+3. 配置context的Alive包含原ConfigurationActive与捕获ticket；RunConfiguredTool发起及返回/异常消费均核对该Alive，避免同方案旧配置晚到。
+4. 原窗口关闭等待会话清理合同继续保留；epoch不代替取消/等待/解绑，不改变C05.3设备或SDK释放。
+
+## 固定完整关闭门槛
+
+C05.2的main托管范围须同时满足：同ID重载旧RunCore完成不写新结果/历史/状态；关闭配置旧完成不写新配置缓存；当前合法新context仍能执行发布；替换和关闭的旧调试context也被拒绝；既有配置关闭等待及取消回归保持通过。根线集成、实际修前复现和修后自审核齐备后，才能判定该有限主机单元实施完成；不能仅凭helper单测关闭。
+
+原SDK回调/设备清理、原静态全局缓存与全插件私有窗口仍保留C05.3或其所属未完成项，不将它们误写为已恢复，也不改变分母。
+
+## 测试与运行边界
+
+`tests/ExecutionOwnerChecks17`：真实TaskCompletionSource挂起后Invalidate同身份、scope/host替换、关闭/default/新代际准入。
+
+`tests/WorkflowOwnerHostChecks17`：实际MainWindow、RunCore、ConnectToolEditorServices/RunConfiguredTool和自有TCS慢模块。首次`observe-unfixed`模式要求实际观察两类旧结果污染；修后默认模式要求两者隔离且新context可正常发布。Load同一自有方案文件确保三层ID复用，日志同时记fixture成立条件。模块仅受控托管await，不调用vendorSDK。
+
+该WPF测试在构造MainWindow前显式设置 `VisionEditor.DisableAutomaticCameraDiscovery=true`，要求根线已有隔离入口生效；否则不运行。此举仅隔离测试的自动发现，不能把普通宿主原设备策略改变为本测试规格。没有原厂SDK、其他任务进程或交互桌面人工验收。
+
+根线已回报修前实际两例：staleSession=true、staleHistory=1、staleConfiguration=true，原summary由根线封存；本子线不改写原修前产物。具体路径和哈希由根线整合报告给出，不能用此回报冒称修后通过。
+
+新增独立 `tests/ExecutionOwnerLifecycleChecks17`，不修改已冻结的两份fixture：实际debug context先产生结果，同IDLoad后检查旧缓存清理及旧Apply/Run拒绝、新context仍可执行；自有ModuleExecutionScope服务在pending lease释放前不Dispose、随后只Dispose一次；实际自有MainWindow.Close等待受控执行及异步Dispose两个门。取消插件配置Close只用明确owner模型（物理active保持true但ticket失效），并非原插件窗口UI验收。测试首部同样设置自动相机发现隔离开关。
+
+子线未构建，新增fixture等待根线串行编译执行。既有修前fixture保持冻结；本报告不宣称新增测试或修后回归已通过，不先行加分。
+
+## 追加的代际与关闭回归
+
+根线首轮Lifecycle在前6项通过后，旧已拒绝调试Task在DisposeAsync中按ToolDebugSession既有语义重抛该旧InvalidOperationException；失败退出由根线保留。只调整fixture捕获已明确期望的旧guard fault，新增说明断言，没有改产品会话语义。
+
+`tests/ConfigurationHistoryGenerationChecks17`为纯Core真实文档回归：ExecuteConfigurationEdit期间Load同文件复用ID，新代际inner配置仍合并；旧outer finally及异常不能恢复旧session或泄漏ForbidBuild；NewSolution同样隔离。它测试根线新增solutionGeneration隔离，不以字符串SolutionId代替实例代际。
+
+`tests/ConfigurationCloseOwnerChecks17`为独立追加WPF项目，不改已冻结修前fixture：旧配置pending时同IDLoad后，新代际计数归零；新配置pending计1，旧finally返回不得减成0，新配置自己的finally才能归零；同时旧结果不发布、新结果正常发布。第二阶段真实MainWindow.Close在配置仍pending时完成所有权失效，scope持有的自有IDisposable服务直到pending lease退出才释放一次；旧完成不发布。明确设计是安全失效与lease延迟释放，不声称关闭等待所有配置await，关闭后也不把失效计数当作新代际活动数量。
+
+以上新增项目均由根线构建执行，本子线只实施和静态检查。最终是否完整关闭C05.2必须由根线按上述固定门槛与真实产物判断，不为了进度数字省略失败或插件窗口模型的适用限制。

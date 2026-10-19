@@ -28,12 +28,12 @@ public sealed partial class GraphEditorDocument
     public void NewSolution(bool createProcedure=true) {
         document = new(SolutionStore.CurrentVersion, Guid.NewGuid().ToString("N"), "New solution", createProcedure?[new("main", "Main", [], [], [])]:[], []);
         CurrentProcedureId = createProcedure?"main":""; BaseDirectory = Path.GetFullPath(Environment.CurrentDirectory); FilePath = null;
-        history.Clear(); IsDirty = true; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
+        solutionGeneration++;configurationHistory=null;history.Clear(); IsDirty = true; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Load(string path) {
         string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);
         document = Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()}); CurrentProcedureId = loaded.Procedures.FirstOrDefault()?.Id??"";
-        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; history.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
+        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; solutionGeneration++;configurationHistory=null;history.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
     }
     public void Save(string path) {
         string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;
