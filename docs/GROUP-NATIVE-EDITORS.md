@@ -36,6 +36,16 @@
 
 下一步的实质依赖是插件线提供一个经过原始源码审计的ROI工具、明确ROI类型/坐标/图像来源及专属编辑协议；请求见CONTRACT-REQUESTS.md FCR-007。不能通过新增测试模块宣称已完成这一步。
 
+## 原生 Group 页签和订阅弹层补充证据（2026-10-18）
+
+VM 截图新增确认“显示设置”页采用“图像显示”标题、参数名称/类型/关联关系/累积显示列、行尾删除，以及“输出图”类型选择和加号；关联按钮打开锚定在按钮下方的来源树，而不是居中的选择器。补充的“运行参数”截图显示 `ROISelecter` 专属运行视图：输出掩膜开关、ROI区域类型单选与 ROI 图形选项。
+
+原始代码链已确认：`DynamicIOConfigControl.xaml` 将关联列绑定 `ButtonSelecter_sub`；`paramusercontroldatatemplate.xaml` 定义 180×180 `SubTreeView`、链条按钮和窗口选择按钮；`DynamicIO.FilterSelecter` 配置 `GetFrontFilterTreeOperation`、`SetFilterSourceOperation` 与 `GetSelectedFilterOperation`；来源树双击叶项后才提交。Group 普通输入/输出/显示行现使用按钮锚定的树形 Popup，根节点显示源模块名，端口路径按树分段，叶双击写回实际接口关系，“解除订阅”叶清除关系；弹层还提供扩展窗口入口。显示页已按截图恢复表头、固定列和图像/圆/Components类型添加行。
+
+本批实际 WPF 弹层检查输出 `analysis/full-audit/group-subscription-popup.png`，验证了 180×180 树、`连通域 > Components > Area`、`连通域 > CentroidPoint > CentroidX`、完整路径写回以及解除订阅。这个控件检查通过不代表真实 Group 页运行闭环已重跑；较早的全量 WPF 检查仍在局部变量目标选择的既有用例处失败（目标树未找到 `StitchStartHeight`），因此没有据此报告整套通过。
+
+运行页尚有实质差异：源 `ROISelecter` 声明 `IGroupRunParam.DisplayForGroupType = RoiConfigControl`，`DynamicNameValueItemOfGroup` 模板用 `ParamUserControl` 的 `ExternDisplayType` 渲染此专用编辑器，`DynamicParamsTabControl` 将其返回的装饰对象送入 ROI 视图。当前 main 的运行参数页只有通用代理字段和订阅，尚未复刻此原生专属显示类型/选择状态/绘图回写链，也未接入真实 ROISelecter 工具。它保持未完成，不因截图布局或模拟控件而标为通过。
+
 ## 本轮最终验证
 
 - 330项实际WPF检查：双栏操作、类型/文本筛选、选类别后新增、两个真实图像源的批量勾选/32项截止/整模块取消、类别与参数管理、清空是/否及文档结果、图形绘制/移动/半径/顶点/复制/校验与保存、真实图像源InitialSN→SNCode/Width。
@@ -46,6 +56,27 @@
 - 已查看生成的双栏与ROI客户区图；未做真实VM画面/运行差分。24份原始源码/资源定义文件哈希、21份复制PNG的源/目标/哈希已保存。截图辅助仍全部在tests。
 - NU1900：缓存的NuGet漏洞源不可达警告；没有代码编译错误。
 
+## 源码级调用与数据链复核：Group 运行参数 ROISelecter（2026-10-18）
+
+为避免将同名模板当成一个控件，本轮逐项核实了这些原始调用链：
+
+1. `analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/ROISelecter.cs` 显式实现 `IGroupRunParam.DisplayForGroupType => "RoiConfigControl"`。`analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml` 的 `RoiConfigControl` 模板把当前参数对象绑定到 `RoiSelectControl`，图像宽高由参数宿主传入，`CanUpdateROI` 以 `OneWayToSource` 绑定回 `IROISelecter`；它没有另外储存一份 ROI 数据。
+2. `analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl.XmlData.Extern/DynamicExtern.cs::GetSupportDisplayForGroupData` 对 `ROISelecter` 返回 `ROISelecterForGroupDecorate`。`analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.DateForDisplayInGroup/ROISelecterForGroupDecorate.cs` 声明支持 `ROISelecter_GroupControl`；`DynamicObjectConfigControl/datatemplate/paramusercontroldatatemplate.xaml` 将该 key 映射到 `ModuleROIConfigControl`。故 `RoiConfigControl`（参数模板）与 `ROISelecter_GroupControl`（Group 装饰视图）是不同路由。
+3. `DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupRunParam.cs::SelectedCommandExecute` 先调用 `Owner.GetFirstParamRelationModule(dynamicItem.NameA)` 定位关联模块；随后对 `IGroupRunParam` 调用 `GetSupportDisplayForGroupData()`，无专属结果时才创建 `CommonParamDecorate`，最终触发 `OnUpdateDecorateEvent`。`DynamicObjectConfigControl/DynamicObjectConfigControl/DynamicParamsTabControl.xaml.cs::AlgorithmTabRoot` 订阅事件并替换 `ImageDecorate`。行模板将 `CloneSource` 与 `IGroupRunParam.DisplayForGroupType` 交给 `ParamUserControl.ExternDisplayType`。这是源码确认的绑定/命令链，不是从截图推断。
+4. `ROISelecterForGroupDecorate.InitSource` 把 `IsStateForDrawROI` 设为 false 并调用 `SelectNone`；其 `ROIList` 直接转发 `DecorateSource.ROIList`。`ImageSource` 懒加载 `ModuleSource` 的 IMAGE 输入关系。选中、删除、粘贴及能力查询分别转发到 `IROISelecter.DoRoiSelect/DoRoiDeleted/DoRoiPaste/CanDeleted/CanCopy`；可见状态命令按状态选中或清空旧 ROI。`ROISelecter.UpdateROI` 仅在 `CustomVisible && CanUpdateROI` 时读工具参数缓冲，按 ROI 类型更新现有模型。`IGroupRunParamWithMultiParams.GetAllData/SetAllData` 另用 `ROIDataStore` 携带参数字节、图像尺寸和可选序号；这不是普通单值写回。
+5. `DynamicObjectConfigControl/DynamicObjectConfigControl/ModuleROIConfigControl.xaml` 是 Group 装饰模板，声明 1150×600：左栏为 ROI 选择与运行控制，右侧 `RenderControlBase` 绑定 `ModuleSource`、原始 ROI 集合、选择/删除/复制/粘贴及尺寸事件。`Apps.XmlUI/Apps.XmlUI.ParamTabControl.DisplayForGroupControl/ROIConfigControl.xaml` 则声明 1000×600、左 380px、右侧 `ImageViewBox` 与缩放/1:1/全屏按钮。两份源码对应不同路由，不能拼作一套外观规格。
+6. `ROISelecterForGroupDecorate.RoiCopyCommandExecute` 的原始方法体为空；但 `VMBaseControls/ImageViewBox.xaml.cs::CanCopyRoi/CopyRoi` 已确认 `RoiCopyCommand` 只作 `CanExecute` 能力门控，真正复制由图像控件 `IROIClone.Clone()` 并保存私有粘贴对象完成；`PasteROI` 再将对象加入 ROI 列表并调用 `RoiPasteCommand`。因此不能把代理的空 execute 补成第二次复制，也不能把“execute 空”误判成整个复制功能无效。
+
+边界结论：Group 运行参数装饰器及 ROI 参数模板属于插件面向工具的公共 UI/模板能力，已由 FCR-018 登记为插件线生产、主框架消费。main 保持 Group 参数选择、运行代理、执行和数据事务责任，不在主线再建第二套插件编辑器。主线 `GroupComplexEditor`/`GroupRoiEditor` 是 `ParameterEditorDefinition` 的独立托管实现，不能充当原生 ROISelecter 的替身，也未证明会写回 VM 的 `CurValueA` 二进制协议。接通需要真实 ROI 插件先声明 ROI 种类、数量、坐标空间、图像来源、多字段/序号、应用/取消和运行会话。
+
+仍未确认：装饰器首次展示的精确触发动作；Group SelfRun 各轮 ROI 参数字节刷新顺序；派生 ROISelecter 在模式/最大数量/隐藏时的具体差异。这些未用独立实现或截图外观代替原生证据。
+
+### 本轮本地复验记录
+
+- `dotnet build tests/VisionEditor.WpfChecks/VisionEditor.WpfChecks.csproj --disable-build-servers -v:q -m:1`：成功，0警告、0错误。
+- `dotnet run --project tests/VisionEditor.WpfChecks/VisionEditor.WpfChecks.csproj --no-build -- --native-subscription-popup`：6项通过；实际 WPF Popup 打开、180×180 尺寸、Components/Area 与 CentroidPoint/CentroidX 路径、叶双击提交、解除订阅均验证。截图 `analysis/full-audit/group-subscription-popup.png` 已打开目检，显示树和扩展入口。
+- 同一 WPF 项目的全量运行在既有局部变量引用目标用例失败：第239项“Local variable reference position lists actual consumer”之后，在 `tests/VisionEditor.WpfChecks/Program.cs:506` 查找 `StitchStartHeight` 时找不到目标并退出，尚未运行到后面的 Group 测试。故本轮不能把全量 Group UI/运行检查记为通过；此失败也不作为 ROI 源码行为证据。
+- 本轮只更新源码证据、合同和长期逆向规范，没有改动产品程序集或另一工作树。真实 ROISelecter 插件未在当前主线，原生 VM 差分仍未执行。
 ## 2026-10-19 F-15 运行配置候选树/撤销作用域源码核对
 
 本批只有源级差异登记，没有改运行代码。反编译调用链为：`DynamicRunParamConfigControl.xaml.cs::EditRunParam` 对 `GroupRunParamConfigData` 调用 `AsyncLoadParams()` 后打开对话框；`GroupRunParamConfigData::AsyncLoadParams` 异步创建 `RunParamPickData`，并用 `ExpendHolder`/`EnumEntrysA` 生成候选；`RunParamPickDataExtern.cs::GetInsideRunParamTree` 逐项应用资格谓词；原生参数类型类别来自 `DynamicRunParamConfigControl.Common/ParamTypeList.cs`。具体谓词及逐字段合同记在 [FCR-021](CONTRACT-REQUESTS.md#fcr-021-group运行参数候选资格元数据插件框架请求未实现)。

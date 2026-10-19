@@ -233,3 +233,9 @@ At the user's request, the original checkout now develops framework and integrat
 
 按用户指令审查 framework-shell/canvas/group 的未提交增量；4755个源码/资源/审计文件已在 main 的 analysis/full-audit/framework-retirement-20261019 保全并逐文件SHA-256比对。合入Shell运行策略/帮助/关闭等待、画布路由与复制插线、Group数量配置及专项验证，保留main原有在制改动；tool-plugins不修改。精确基线、源码证据、测试和清理结果见 FRAMEWORK-WORKTREE-RETIREMENT.md。Shell默认键鼠弹层验收仍失败，显式控件事件模式不冒充桌面验收；原生撤销服务、候选资格、ABI及设备释放差分仍开放。
 
+
+## 2026-10-19 main剩余在制审查
+
+配置修复提交2d6ddd8：审查Group IO/订阅/显示、局部变量及既有WPF夹具；修复输出多选空候选、显示删除漏接事件和搜索提示占用数据；排除pointset→Point数组、POLYGON→Region、无共享状态的独立订阅窗及禁用运行区候选。原始22份在制文件及674份既有审计证据保全在analysis/full-audit/main-pending-review-20261019，含补丁、SHA-256、失败记录和新验证日志。tool-plugins不修改。
+
+新增20项实际WPF审查、6项订阅弹层、完整456项WPF、71项执行及93项调用检查均exit0；截图和方案保存在tests产生的审计目录。构建0错误，既有nullable/装箱警告保留。MF-05保存回调顺序及取消/异常复位说明已按源码修订；FCR-019撤回仅凭CustomVisible判断局部变量目标隐藏的旧推断，改按Tab_Run Params/ISubInfo/SubscribeVisible调用链待验收。安装ImageSource XML默认StitchEnable=True，非本地False默认；不得混称。完整采纳/排除及源路径见MAIN-PENDING-REVIEW.md，未知native/ABI/设备/真实桌面差分继续开放。

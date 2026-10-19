@@ -138,7 +138,9 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 待插件线提供可消费工厂时，验收需用真实 ROISelecter 工具验证：类别/普通/专属参数切换，精确关联模块和 IMAGE 来源，ROI 选择/添加/更新/删除/粘贴及复制能力门控，多字段参数和序号写回，SelfRun 前后数据、取消/撤销、关闭释放。完整调用链和本轮验证结果见 `GROUP-NATIVE-EDITORS.md`。
 - 当前主线只有显式“工具配置”按钮，不宣称右侧动态装饰器等价。未完成的插件侧能力应由插件项目在其边界内实现；主线只消费已审查并集成的合同，不复制插件模板。
 
-## FCR-019：参数目标的原生可见/可订阅能力（请求，未实现；2026-10-19修订）
+## FCR-019：参数目标的原生可见/可订阅能力（请求，未实现）
+
+2026-10-19修订：撤回仅凭CustomVisible推断局部变量目标隐藏的验收要求，保留本节标题及引用锚点。
 
 - 生产方：插件项目的公共参数描述符与各工具动态参数配置；消费者：主框架工作流局部变量“目标输出”树及 Group 运行参数代理树。
 - 证据：随包 `Module(sp)/x64/Collection/ImageSourceModule/ImageSourceModuleAlgorithmTab.xml` 将StitchStartHeight/StitchHeight标为CustomVisible=False，StitchEnable=True触发VisibleOperation；该XML的CurValue/DefaultValue为True，只有Tab_Basic Params。不能由本地False状态推定原机默认值或有效订阅候选。
