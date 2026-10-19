@@ -9,40 +9,69 @@ namespace VisionEditor;
 
 internal static class RecentSolutionStore
 {
-    internal static string FilePath { get; set; } = Path.Combine(
+    static string filePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "VisionEditor", "recent-solutions.json");
+    static Entry[]? entries;
+
+    internal static string FilePath
+    {
+        get => filePath;
+        set
+        {
+            if (string.Equals(filePath, value, StringComparison.Ordinal)) return;
+            filePath = value;
+            entries = null;
+        }
+    }
 
     internal sealed record Entry(string Path, DateTime LastTime);
 
     internal static IReadOnlyList<Entry> Read()
     {
-        try
+        if (entries is null)
         {
-            if (!File.Exists(FilePath)) return [];
-            return (JsonSerializer.Deserialize<Entry[]>(File.ReadAllText(FilePath)) ?? [])
-                .Where(entry => DateTime.Now - entry.LastTime < TimeSpan.FromDays(100))
-                .OrderByDescending(entry => entry.LastTime).ToArray();
+            try
+            {
+                entries = File.Exists(FilePath)
+                    ? JsonSerializer.Deserialize<Entry[]>(File.ReadAllText(FilePath)) ?? [] : [];
+            }
+            catch (JsonException) { return []; }
+            catch (IOException) { return []; }
+            catch (UnauthorizedAccessException) { return []; }
         }
-        catch (JsonException) { return []; }
-        catch (IOException) { return []; }
+        // SolutionItemInfo.GeTimeSpan uses Duration, including future timestamps.
+        var now = DateTime.Now;
+        entries = entries.Where(entry => (now - entry.LastTime).Duration().Days <= 99)
+            .OrderByDescending(entry => entry.LastTime).ToArray();
+        return entries;
     }
 
     internal static void Update(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return;
         var full = System.IO.Path.GetFullPath(path);
-        var entries = Read().Where(entry => !string.Equals(entry.Path, full, StringComparison.OrdinalIgnoreCase))
+        entries = Read().Where(entry => !string.Equals(entry.Path, full, StringComparison.OrdinalIgnoreCase))
             .Prepend(new Entry(full, DateTime.Now)).Take(6).ToArray();
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(FilePath)!);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(entries));
+        Persist();
     }
 
     internal static void Remove(string path)
     {
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(FilePath)!);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(Read()
-            .Where(entry => !string.Equals(entry.Path, path, StringComparison.OrdinalIgnoreCase))));
+        entries = Read().Where(entry => !string.Equals(entry.Path, path, StringComparison.OrdinalIgnoreCase)).ToArray();
+        Persist();
+    }
+
+    static void Persist()
+    {
+        // ProjectManager publishes its in-memory recent list even if SaveRecentlySolutions fails.
+        try
+        {
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(FilePath)!);
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(entries));
+        }
+        catch (IOException ex) { System.Diagnostics.Trace.TraceWarning("Save recent solutions: " + ex.Message); }
+        catch (UnauthorizedAccessException ex) { System.Diagnostics.Trace.TraceWarning("Save recent solutions: " + ex.Message); }
     }
 }
 

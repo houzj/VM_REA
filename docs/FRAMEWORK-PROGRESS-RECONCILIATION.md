@@ -139,14 +139,14 @@
 
 前置：A02；完整包未因本表计分关闭。
 
-证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)
+证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A-shell-implementation-batch11.md](reverse/A-shell-implementation-batch11.md)
 
 当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/MainWindow.ShellHelp.cs`、`src/VisionEditor/MainWindow.ShellRunMode.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | A05.1 | 完整菜单/工具栏/快捷键入口清点 | 部分 | 部分 | 未验证 | 已有多个入口专题；尚非全部入口逐项覆盖。 |
-| A05.2 | 常规文件、帮助、路径与运行策略命令数据链 | 达成 | 达成 | 达成 | 当前已交付命令及控件事件；原生后端/完整键鼠不纳入本单元达成。 |
+| A05.2 | 常规文件、帮助、路径与运行策略命令数据链 | 达成 | 达成 | 达成 | 当前已交付命令及控件事件；原生后端/完整键鼠不纳入本单元达成。 第十一批：最近偏好写失败后实际方案保存成功，内存与菜单继续更新，16项通过；既有A05.2不重复计分。 |
 | A05.3 | 全局变量、通信、触发、脚本等专用服务 | 部分 | 未取得交付 | 阻塞 | 原入口部分已定位，main不具备完整模块/会话/后端。 |
 
 ### A06 运行界面编辑与显示布局
@@ -209,14 +209,14 @@
 
 前置：B01、A01；完整包未因本表计分关闭。
 
-证据：[GROUP-RELATION-IDENTITY.md](GROUP-RELATION-IDENTITY.md)、[B02-identity-preflight-batch6.md](reverse/B02-identity-preflight-batch6.md)、[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)
+证据：[GROUP-RELATION-IDENTITY.md](GROUP-RELATION-IDENTITY.md)、[B02-identity-preflight-batch6.md](reverse/B02-identity-preflight-batch6.md)、[WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md](WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[B-group-implementation-batch11.md](reverse/B-group-implementation-batch11.md)
 
 当前实现/工具位置：`src/VisionFramework/OwnedGroups.cs`、`src/VisionEditor.Core/GraphEditorDocument.Groups.cs`、`src/VisionEditor.Core/GraphEditorDocument.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | B02.1 | main Group内部图创建、Parent及所属关系 | 达成 | 达成 | 达成 | 独立OwnedGroups合同已验，不把它当原生GUID分配。 |
-| B02.2 | main实时源复制、内部图和代理引用重映射 | 达成 | 达成 | 达成 | 已有真实图像Group复制/撤销/重开；跨原生容器另列。 |
+| B02.2 | main实时源复制、内部图和代理引用重映射 | 达成 | 达成 | 达成 | 已有真实图像Group复制/撤销/重开；跨原生容器另列。 第十一批：只删除索引输出时仅解除IndexSource，保留数组Source和既有Index，23项通过；既有B02.2不重复计分。 |
 | B02.3 | 原gro导入ID/GUID及原生复制持久化 | 部分 | 未取得交付 | 阻塞 | 托管预审已完，native GUID分配与真实六场景未验。 |
 
 ### B03 Group循环、中断与每轮生命周期
@@ -321,7 +321,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[MF05-CONTINUOUS-RUN-CALLCHAIN.md](MF05-CONTINUOUS-RUN-CALLCHAIN.md)、[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C02-clear-leaf-batch6.md](reverse/C02-clear-leaf-batch6.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[C02-value-consumer-batch7.md](reverse/C02-value-consumer-batch7.md)、[C02-begin-isolation-batch8.md](reverse/C02-begin-isolation-batch8.md)
+证据：[MF05-CONTINUOUS-RUN-CALLCHAIN.md](MF05-CONTINUOUS-RUN-CALLCHAIN.md)、[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C02-clear-leaf-batch6.md](reverse/C02-clear-leaf-batch6.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[C02-value-consumer-batch7.md](reverse/C02-value-consumer-batch7.md)、[C02-begin-isolation-batch8.md](reverse/C02-begin-isolation-batch8.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)
 
 当前实现/工具位置：`src/VisionEditor/WorkflowExecution.cs`、`src/VisionFramework/GraphExecutor.cs`
 
@@ -329,20 +329,20 @@
 |---|---|---|---|---|---|
 | C02.1 | 当前单次/连续/停止及失败状态执行 | 达成 | 达成 | 达成 | 独立执行器实际验证，非native调度器复刻。 |
 | C02.2 | 原参数准备、等待与超时边界消费 | 达成 | 部分 | 部分 | 原叶等待可运行，但当前取消/超时策略与SDK不同。 |
-| C02.3 | 清结果配置、回调队列及消费者状态 | 达成 | 部分 | 部分 | 原清值叶32项通过；真实Begin到消费者仍未闭合。 第七批：原Value getter受控5例35断言通过：清_value后可从merge列表或已注册RelateIO恢复；合成图不替代真实Begin/SDK/桌面。 第八批：真实Begin前置静态初始化/实例/后台线程/SDK副作用已审查，运行硬前提尚未满足，未重复合成getter。 |
+| C02.3 | 清结果配置、回调队列及消费者状态 | 达成 | 部分 | 部分 | 原清值叶32项通过；真实Begin到消费者仍未闭合。 第七批：原Value getter受控5例35断言通过：清_value后可从merge列表或已注册RelateIO恢复；合成图不替代真实Begin/SDK/桌面。 第八批：真实Begin前置静态初始化/实例/后台线程/SDK副作用已审查，运行硬前提尚未满足，未重复合成getter。 第十一批：自有启动cfg快照接入真实RunCore的Begin视图策略，配置24及宿主12项通过；不是SDK清叶或所有消费者等价。 |
 
 ### C03 结果历史与方案替换生命周期
 
 前置：C02、D02；完整包未因本表计分关闭。
 
-证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C03-history-lifecycle-batch9.md](reverse/C03-history-lifecycle-batch9.md)
+证据：[MF05-RESULT-LIFECYCLE.md](MF05-RESULT-LIFECYCLE.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C03-history-lifecycle-batch9.md](reverse/C03-history-lifecycle-batch9.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)
 
-当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ToolExecutionScope.cs`
+当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/ToolExecutionScope.cs`、`src/VisionEditor/FrameworkExecutionPreferences.cs`、`src/VisionEditor/FrameworkExecutionPolicy.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | C03.1 | 原结果视图切源、缓存与旧事件解绑 | 达成 | 部分 | 部分 | 主线有替换清理子集，原回调跨方案处置未全验。 |
-| C03.2 | 清结果有效配置到实际SDK消费 | 达成 | 未取得交付 | 阻塞 | 原配置重载已明确；main未恢复同一条件控制。 |
+| C03.2 | 清结果有效配置到实际SDK消费 | 达成 | 部分 | 阻塞 | 原配置重载已明确；main未恢复同一条件控制。 第十一批：main启动配置到Begin显示消费已实施子集，保留session、隐藏旧view并在新结果解除；实际SDK/多消费者仍缺，实施partial。 |
 | C03.3 | 历史、底部耗时与全局结果缓存生命周期 | 部分 | 部分 | 部分 | 当前独立摘要粒度不同，原全局UI策略证据不足。 第九批：原历史/计时绑定及切源链新增；静态待通知cache跨实例保留，完整宿主与native缓存未闭合。 |
 
 ### C04 撤销恢复与临时文件所有权
@@ -447,14 +447,14 @@
 
 前置：D01、B02、B05；完整包未因本表计分关闭。
 
-证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)
+证据：[SOL-ROUND2-20261019.md](SOL-ROUND2-20261019.md)、[D-container-evidence-batch11.md](reverse/D-container-evidence-batch11.md)
 
-当前实现/工具位置：未取得对应产品实现证据
+当前实现/工具位置：`src/SolutionInspector/ModuleFrame.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | D03.1 | 原XML/UI关系、身份和字段映射 | 部分 | 未取得交付 | 未验证 | 原样本/托管线索存在，尚无完整语义映射。 |
-| D03.2 | mdata参数/模型/资源内部语义 | 未取得交付 | 未取得交付 | 阻塞 | 内部writer/reader及类型号未知。 |
+| D03.2 | mdata参数/模型/资源内部语义 | 未取得交付 | 未取得交付 | 阻塞 | 内部writer/reader及类型号未知。 第十一批：原容器检查器增加名称/键固定槽Base64保全，19项通过且样本hash不变；不是原格式写回或完整语义映射。 |
 | D03.3 | 原未知字段保持和对象图往返 | 未取得交付 | 未取得交付 | 阻塞 | 未实现原容器转换，不以猜测字段代替。 |
 
 ### D04 版本、密码和迁移

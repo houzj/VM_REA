@@ -1,0 +1,62 @@
+using System.Text.Json;
+using VisionEditor.Core;
+using VisionFramework;
+
+int checks=0;
+void Check(bool value,string name){if(!value)throw new Exception(name);Console.WriteLine("PASS "+name);checks++;}
+var registry=new ModuleRegistry();WorkflowCalls.Register(registry);
+var d=new GraphEditorDocument(registry);
+var root=d.CurrentProcedureId;
+var outer=d.AddOwnedGroup(100,100);var body=d.EnterOwnedGroup(outer);
+var inner=d.AddOwnedGroup(150,150);var nested=d.EnterOwnedGroup(inner);
+d.SelectProcedure(body);
+d.SetWorkflowConfiguration(body,d.CurrentProcedure.Configuration with{Inputs=[new("input","before",DataKind.Integer)]});
+d.SelectProcedure(root);
+d.SetSubprogramInput(outer,"before",new(WorkflowSourceKind.IntegerConstant,"5"));
+ProcedureDocument P(string id)=>d.Document.Procedures.Single(p=>p.Id==id);
+NodeDocument N(string id)=>P(root).Nodes.Single(n=>n.Id==id);
+var originalFragment=d.CopyNodes([outer]);
+d.SetWorkflowConfiguration(body,P(body).Configuration with{Inputs=[new("input","after",DataKind.Integer)]});
+Check(N(outer).Call!.Inputs.Single().Name=="after","Input rename preserves call signature identity");
+Check(P(root).Configuration.Subscriptions.Single().Target=="after","Input rename updates actual parent subscription");
+var pasted=d.PasteNodes(originalFragment,300,300).Single();
+var clonedBody=N(pasted).Call!.ProcedureId;
+Check(clonedBody!=body,"Live clipboard creates independent owned body");
+Check(N(pasted).Call!.Inputs.Single().Name=="after","Live clipboard resolves latest source instead of stale snapshot");
+Check(P(clonedBody).GroupOwner==new GroupOwnership(root,pasted),"Copied body owner points to copied node");
+var clonedInner=P(clonedBody).Nodes.Single();var clonedNested=clonedInner.Call!.ProcedureId;
+Check(clonedInner.Id!=inner&&clonedNested!=nested,"Nested Group node and body IDs are remapped");
+Check(P(clonedNested).GroupOwner==new GroupOwnership(clonedBody,clonedInner.Id),"Nested ownership points to copied parent");
+Check(P(root).Configuration.Subscriptions.Single(s=>s.NodeId==pasted).Target=="after","Copy retains renamed parent input subscription");
+OwnedGroups.Validate(d.Document);Check(true,"All original and copied ownership contracts validate");
+d.DeleteNodes([pasted]);
+Check(!d.Document.Procedures.Any(p=>p.Id==clonedBody||p.Id==clonedNested),"Delete prunes copied body and every nested owned descendant");
+Check(d.Document.Procedures.Any(p=>p.Id==body)&&d.Document.Procedures.Any(p=>p.Id==nested),"Deleting copy preserves both source body levels");
+Check(P(root).Configuration.Subscriptions.All(s=>s.NodeId!=pasted),"Deleting copied Group removes its parent subscriptions");
+d.Undo();Check(P(clonedNested).GroupOwner!.ProcedureId==clonedBody,"Undo restores copied ownership graph");
+d.Redo();Check(!d.Document.Procedures.Any(p=>p.Id==clonedNested),"Redo prunes copied graph again");
+d.SetWorkflowConfiguration(body,P(body).Configuration with{Inputs=[]});
+Check(N(outer).Call!.Inputs.Count==0&&P(root).Configuration.Subscriptions.Count==0,"Input removal clears parent signature and subscriber together");
+var before=JsonSerializer.Serialize(d.Document);var revision=d.Revision;var undo=d.CanUndo;var redo=d.CanRedo;
+try{d.ConfigureOwnedGroupInputs(outer,[new("x","bad",DataKind.Text)],new Dictionary<string,WorkflowValueReference?>{{"x",new(WorkflowSourceKind.IntegerConstant,"3")}});throw new Exception("Expected type mismatch");}
+catch(InvalidOperationException e) when(e.Message=="Group输入类型不匹配。"){}
+Check(JsonSerializer.Serialize(d.Document)==before&&d.Revision==revision,"Rejected input type leaves entire solution and revision unchanged");
+Check(d.CanUndo==undo&&d.CanRedo==redo,"Rejected input type preserves history stack availability");
+d.SelectProcedure(nested);var third=d.AddOwnedGroup(100,100);var thirdBody=d.EnterOwnedGroup(third);
+Check(!d.CanAddOwnedGroup,"Third Group level disables further owned insertion");
+before=JsonSerializer.Serialize(d.Document);revision=d.Revision;
+try{d.AddOwnedGroup(100,100);throw new Exception("Expected depth rejection");}catch(InvalidOperationException e) when(e.Message=="Group 最多嵌套三层。"){}
+Check(JsonSerializer.Serialize(d.Document)==before&&d.Revision==revision,"Fourth-level rejection preserves solution and revision");
+d.SelectProcedure(root);
+d.SetWorkflowConfiguration(body,P(body).Configuration with{Outputs=[new("index-output","indexBefore",DataKind.Integer)]});
+var consumer=d.AddOwnedGroup(450,450,executionPredecessor:outer);var consumerBody=d.EnterOwnedGroup(consumer);
+d.SetWorkflowConfiguration(consumerBody,P(consumerBody).Configuration with{Outputs=[new("array-output","array",DataKind.Integer,Accumulate:true)]});
+d.SelectProcedure(root);
+d.SetGroupBreak(consumer,true,1,1,new(new(false,new(WorkflowSourceKind.NodeOutput,consumer,"array"),Index:2,Self:true){IndexSource=new(WorkflowSourceKind.NodeOutput,outer,"indexBefore")},new(Constant:JsonSerializer.SerializeToElement(0))));
+d.SetWorkflowConfiguration(body,P(body).Configuration with{Outputs=[new("index-output","indexAfter",DataKind.Integer)]});
+Check(N(consumer).GroupBreak!.Left!.IndexSource!.Port=="indexAfter","Output rename propagates actual GroupBreak index subscriber by interface identity");
+Check(N(consumer).GroupBreak!.Left!.Source!.Id==consumer,"Index rename preserves independent self-array operand identity");
+d.SetWorkflowConfiguration(body,P(body).Configuration with{Outputs=[]});
+Check(N(consumer).GroupBreak!.Left is {IndexSource:null,Index:2,Source:{}} remaining&&remaining.Source.Id==consumer,"Removed index output clears only index binding and preserves array source and literal fallback index");
+d.Undo();Check(N(consumer).GroupBreak!.Left!.IndexSource!.Port=="indexAfter","Undo restores removed index relation with renamed identity");
+Console.WriteLine($"PASS {checks} Group ownership and propagation implementation checks; no original native or desktop parity claimed");

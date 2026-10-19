@@ -25,6 +25,18 @@ Check("frame oversized length",()=>Status(Join(Ints(5,1),Name("test"),Ints(100))
 Check("frame negative length",()=>Status(Join(Ints(5,1),Name("test"),Ints(-1)),"unsupported"));
 Check("frame exact consumption",()=>{ var j=Inspect(Join(Ints(5,1),Name("test"),Ints(3),new byte[]{1,2,3})); Require(j.GetProperty("status").GetString()=="parsed-container"); Require(j.GetProperty("trailingBytes").GetInt32()==0); Require(j.GetProperty("records")[0].GetProperty("bytes").GetInt32()==3); });
 Check("frame detects tail",()=>Status(Join(Ints(5,0),new byte[]{0}),"partial-container"));
+Check("frame preserves full UTF16 name slot",()=>{
+    var slot=Name("a\0b");var j=Inspect(Join(Ints(5,1),slot,Ints(0)));
+    Require(Convert.FromBase64String(j.GetProperty("records")[0].GetProperty("nameSlotBase64").GetString()!).SequenceEqual(slot));
+});
+Check("frame preserves full parameter key slot",()=>{
+    byte[] key=new byte[256];Encoding.UTF8.GetBytes("Gain").CopyTo(key,0);
+    byte[] payload=Join(Ints(1),key,Ints(0),new byte[1024]);
+    var j=Inspect(Join(Ints(5,1),Name("x.mdata"),Ints(payload.Length),payload));
+    var item=j.GetProperty("records")[0].GetProperty("parameters").GetProperty("items")[0];
+    Require(item.GetProperty("key").GetString()=="Gain");
+    Require(Convert.FromBase64String(item.GetProperty("keySlotBase64").GetString()!).SequenceEqual(key));
+});
 Check("ui unknown version",()=>Status(Ints(0x66553322,2,0),"unsupported",true));
 Check("ui truncated header",()=>Status(Ints(0x66553322,1),"unsupported",true));
 Check("ui huge count",()=>Status(Ints(0x66553322,1,10001),"unsupported",true));

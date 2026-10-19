@@ -44,6 +44,7 @@ public partial class MainWindow
 
     void InitializeCanvasInput()
     {
+        InitializeFrameworkExecutionPolicy();
         GraphLayer.Focusable=true;
         CanvasViewport.PreviewMouseDown+=CanvasPointerDown;
         CanvasViewport.MouseMove+=CanvasPointerMove;

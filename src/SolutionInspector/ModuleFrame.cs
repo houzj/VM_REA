@@ -21,11 +21,12 @@ static class ModuleFrame
             for (int i=0; i<count; i++)
             {
                 int start = offset;
-                string name = new UnicodeEncoding(false,false,true).GetString(Read(256)).TrimEnd('\0');
+                byte[] nameSlot = Read(256);
+                string name = new UnicodeEncoding(false,false,true).GetString(nameSlot).TrimEnd('\0');
                 var payload = Read(ReadInt());
                 object? parameters = null;
                 if (name.EndsWith(".mdata",StringComparison.Ordinal)) parameters = InspectParameters(payload);
-                records.Add(new { name, offset = start, bytes = payload.Length, sha256 = Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant(), parameters });
+                records.Add(new { name, nameSlotBase64 = Convert.ToBase64String(nameSlot), offset = start, bytes = payload.Length, sha256 = Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant(), parameters });
             }
             return new { status = offset == bytes.Length ? "parsed-container" : "partial-container", version, count, records, trailingBytes = bytes.Length-offset, limitations = new[] { "Observed version 5 container layout; sample-bound inference, not an official format specification.", "Parameter labels and zero-tag text values are observations. Tag semantics and trailing parameter payloads remain unknown.", "Bindings, runtime policies, ROI and embedded resources are not executed or reconstructed." } };
         }
@@ -46,7 +47,7 @@ static class ModuleFrame
                 int tag = BinaryPrimitives.ReadInt32BigEndian(payload.AsSpan(at+256,4));
                 var raw = payload.AsSpan(at+260,1024);
                 string? text = tag == 0 ? new UTF8Encoding(false,true).GetString(raw).TrimEnd('\0') : null;
-                items.Add(new { key, tag, text, rawBase64 = Convert.ToBase64String(raw) });
+                items.Add(new { key, keySlotBase64 = Convert.ToBase64String(payload,at,256), tag, text, rawBase64 = Convert.ToBase64String(raw) });
             }
             int tail=4+count*1284;
             return new { status = "parsed-fixed-table", count, items, unknownTailBytes = payload.Length-tail, unknownTailBase64 = Convert.ToBase64String(payload.AsSpan(tail)) };

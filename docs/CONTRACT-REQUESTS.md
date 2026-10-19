@@ -175,7 +175,7 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 原始证据：`analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl.UI.Data/RunParamPickDataExtern.cs::GetInsideRunParamTree` 与 `ExpendHolder` 的候选谓词要求 `IGroupRunParam`、`CustomVisibleA`、`GroupRunParamEnable`、`filterTypes.Contains(p.GetType().Name)`、`MultiLanguageDisplayNameA.Contains(searchWord)`，并只接受 `AccessMode.ToLower()=="rw"` 或非空 `DisplayForGroupType`；`RunParamPickData.cs::Init` 及 `GroupRunParamConfigData::AsyncLoadParams` 构建该列表。`DynamicRunParamConfigControl.Common/ParamTypeList.cs` 提供原生八类过滤。当前 `GroupRunConfigurationWindow.BuildTree` 遍历每个 descriptor 的全部 `Parameters` 和 `Inputs`，没有以上元数据，差异已由源码确认；具体真实插件候选结果尚未与 VM 同状态动态对照。
 - 验收：用至少一个原始源码已审计的真实插件，逐项验证隐藏、禁用、只读且无展示能力、按原生类型排除、搜索不匹配的参数不出现在列表；合格参数可被选择、写入关联、运行得到实际值；配置保存重开后保持；再与 VM 同状态候选树对照。没有真实插件证据时不得以测试模块关闭该项。
 
-## FCR-022：Group 配置对话框期间撤销记录抑制（框架 undo seam 请求，未实现）
+## FCR-022：Group 配置对话框期间撤销记录抑制（main文档seam已实施，SDK回放开放）
 
 2026-10-19 第十批实施更新（优先于下面历史实现状态）：main现已交付`GraphEditorDocument.ExecuteConfigurationEdit`及真实`SubprogramCallHost`消费。modal窗口多次即时写回合并一条惰性文档历史，modeless每动作单独root；布尔嵌套非计数器，finally复位为独立加固。29项main实际检查和产品构建通过，按用户实施自审核口径计C01.2完成。此为main快照适配，不是原SDK root/part载荷等价；C01.3、跨项目插件seam采用及原厂差分仍开放，不自动合流。详见[第十批实施](reverse/C-history-suppression-batch10.md)。
 
