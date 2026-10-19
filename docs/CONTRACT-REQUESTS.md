@@ -140,6 +140,8 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 
 ## FCR-019：参数目标的原生可见/可订阅能力（请求，未实现）
 
+2026-10-19四方向复核补充（以下新结论优先于本节旧生命周期假设）：原始选择窗首次全部类型创建模块缓存，切换类型只投影缓存；插件会话元数据刷新和新开窗口快照须分开，活窗口即时刷新尚未验证。Payload还需原始DisplayType、ComType、动态/Between展开身份，ISubInfo和SubscribeVisible分别表示。原树消失的旧选择无独立补回路径，“保留并诊断”只能是独立兼容策略。参数目标与ModuleInputSelectData的输入目标是两种来源，不能合并为CanBind。详见 [四方向复核](PARALLEL-RECONSTRUCTION-20261019.md)。
+
 2026-10-19修订：撤回仅凭CustomVisible推断局部变量目标隐藏的验收要求，保留本节标题及引用锚点。
 
 - 生产方：插件项目的公共参数描述符与各工具动态参数配置；消费者：主框架工作流局部变量“目标输出”树及 Group 运行参数代理树。
@@ -168,6 +170,8 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 - 验收：用至少一个原始源码已审计的真实插件，逐项验证隐藏、禁用、只读且无展示能力、按原生类型排除、搜索不匹配的参数不出现在列表；合格参数可被选择、写入关联、运行得到实际值；配置保存重开后保持；再与 VM 同状态候选树对照。没有真实插件证据时不得以测试模块关闭该项。
 
 ## FCR-022：Group 配置对话框期间撤销记录抑制（框架 undo seam 请求，未实现）
+
+2026-10-19证据状态更正（优先于下文历史记录）：已取得安装目录myLibs/VM.UnRedo.dll并核对CIL。SetForbidRecord对空undo栈无效，否则设置栈顶IRootParam.ForbidBuild；Register仅在part分支检查此标志，IsNeedExport也受其影响。它不是全局或计数开关，scope/finally/窗口隔离是独立安全设计，不能以跳过本地快照压栈表示原生等价。服务构造会清理TempFiles，本轮未实例化。历史“DLL缺失”已被本轮静态证据取代，Group运行态/异常差分仍开放。详见 [四方向复核](PARALLEL-RECONSTRUCTION-20261019.md)。
 
 - 生产者：Group 配置器向框架 undo 服务请求一个可作用域释放的“禁止记录”事务；消费者：Group 配置编辑入口和通用 `IUnRedoService` 等价层（该接口由框架 seam 所有者实现，不能由本 Group 线复制另一套 undo 管理器）。
 - Payload：进入对话框前捕获 undo 状态并打开期间抑制逐字段历史记录；原生没有取消/回滚路径，窗口“确定”和普通标题栏关闭都保留已即时写入的配置。异常时 scope 必须 `finally` 解除 forbid 状态并幂等释放；这是重建安全性要求，原生方法未显示此保证。

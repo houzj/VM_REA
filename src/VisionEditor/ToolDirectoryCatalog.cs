@@ -118,14 +118,15 @@ public static class ToolDirectoryCatalog
     {
         if (string.IsNullOrEmpty(strategy) || string.IsNullOrEmpty(metadata.PriorityStrategyInfo))
             return metadata.Priority;
+        var priority = metadata.Priority;
         foreach (var part in metadata.PriorityStrategyInfo.Split(';'))
         {
             var pair = part.Split(':', 2);
             if (pair.Length == 2 && pair[0] == strategy &&
                 double.TryParse(pair[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var value) &&
-                double.IsFinite(value)) return value;
+                double.IsFinite(value)) priority = value;
         }
-        return metadata.Priority;
+        return priority;
     }
 
     static string[] EnumerateDirectories(string path, List<ToolCatalogDiagnostic> diagnostics)

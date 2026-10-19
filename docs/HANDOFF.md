@@ -1,5 +1,9 @@
 # Integration handoff
 
+## 2026-10-19 — 四方向只读并行复核与最小修复
+
+四个独立方向完成工具发现、VM.UnRedo CIL、真实sol容器、变量目标Tab审查，完整结论与边界见 [PARALLEL-RECONSTRUCTION-20261019.md](PARALLEL-RECONSTRUCTION-20261019.md)。修正目录策略最后匹配覆盖；11项检查通过。新增测试专用只读样本检查器，递归发现8个样本、98个UI条目完整消费、原件哈希不变。更新FCR-019/022，保留本地CIL和JSON证据。没有执行厂商服务、没有实现原生sol导入器或撤销栈，没有修改tool-plugins；本地通过不代表VM等价。
+
 ## 2026-10-18 — 第二批 MF-01 / MF-02 / MF-04 / MF-05 合并验收
 
 - MF-01：菜单与工具栏撤销/重做统一遵守原始 `TitleMenueItemData` 的参数窗口开启禁用条件。实际 WPF 专项验证四入口保护，关闭窗口后对真实节点名撤销/重做；原生警告弹窗视觉未复刻。见 `MF01-SHELL-HISTORY.md`。

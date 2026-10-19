@@ -22,7 +22,7 @@ try
     Put(directory, "Collection/SaveImage/ToolItemInfo.xml", Xml("SaveImage", "2"));
     Put(directory, "Collection/Invalid/ToolItemInfo.xml", "<wrong/>");
     Put(directory, "Collection/Entity/ToolItemInfo.xml", "<!DOCTYPE ToolBoxItemData [<!ENTITY value 'bad'>]><ToolBoxItemData><name>&value;</name></ToolBoxItemData>");
-    Put(directory, "Calibration/ToolGroup.xml", Xml("Calibration", "3", "<priorityStrategyInfo>General:0.5</priorityStrategyInfo>"));
+    Put(directory, "Calibration/ToolGroup.xml", Xml("Calibration", "3", "<priorityStrategyInfo>General:0.5;Other:40;General:1.5</priorityStrategyInfo>"));
     Put(directory, "UserTools/ToolGroup.xml", Xml("UserTools", "4"));
     Put(directory, "UserTools/MyGroup/ToolItemInfo.xml", Xml("MyGroup", "1"));
     Put(directory, "Global/ProcedureModule/ToolItemInfo.xml", Xml("ProcedureModule", "1"));
@@ -32,6 +32,10 @@ try
     var initial = ToolDirectoryCatalog.Discover(directory, "General");
     Require(initial.Diagnostics.Count == 0, "Deferred categories should not parse their tools before expansion.");
     Require(initial.Groups.Where(g => !g.IsGlobal).First().DirectoryName == "Calibration", "Strategy priority must affect category ordering.");
+    Require(initial.Groups.Single(g => g.DirectoryName == "Calibration").Priority == 1.5,
+        "Repeated matching strategy entries must use the last value, as ToolBoxData.ChangePriorityByInfo does.");
+    Require(ToolDirectoryCatalog.Discover(directory, "Missing").Groups.Single(g => g.DirectoryName == "Calibration").Priority == 3,
+        "An unmatched strategy must preserve the metadata priority.");
     Require(initial.Groups.Single(g => g.DirectoryName == "Collection").IsDeferred, "Ordinary category should defer tools.");
     Require(initial.Groups.Single(g => g.DirectoryName == "UserTools").Tools.Single().DirectoryName == "MyGroup", "User tools should load immediately.");
     Require(initial.Groups.Single(g => g.IsGlobal).Tools.Count == 2, "Global tools must use the source allowlist.");
@@ -44,7 +48,7 @@ try
     Require(ToolDirectoryCatalog.Expand(expanded, "Collection").Diagnostics.Count == 2, "Repeated expansion must not duplicate diagnostics.");
     Require(ToolDirectoryCatalog.Discover(Path.Combine(directory, "missing")).Diagnostics.Count == 1, "Missing module directory should produce a diagnostic.");
 
-    Console.WriteLine("Tool directory catalog: 9 behavior checks passed.");
+    Console.WriteLine("Tool directory catalog: 11 behavior checks passed.");
     if (args.Length > 0)
     {
         var installed = ToolDirectoryCatalog.Discover(args[0], "General");
