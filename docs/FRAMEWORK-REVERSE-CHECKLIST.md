@@ -8,6 +8,8 @@
 
 当前23个领域均有未关闭范围；已完成子集不代表完整原生等价。窗口事件、截图目检、桌面输入及原生差分分别记录。
 
+计划第二批配置证据更正：C02已找到VM.Utility.ConfigurationHelper.GetConfigValue，通过ApplicationName拼接相对CWD的.cfg并缓存XML；安装VisionMaster.cfg当前IsClearLastExecuteResult/CurValue为0，原helper复制配置及等待叶20断言通过。下表旧“有效默认/入口未找到”由此缩小为实际运行进程CWD/读取值及编辑入口仍未验，不能继续称helper实现缺失。main无条件清结果差异仍在，见 [C02第二批](reverse/C02-scheduling-batch2.md)。
+
 2026-10-19第二轮增量：工具加载缓存/Group回调时序见 [加载报告](LOADER-ROUND2-20261019.md)，撤销root/part捕获和恢复载荷见 [撤销报告](UNDO-ROUND2-20261019.md)，8个原厂sol的122条外层记录见 [持久化报告](SOL-ROUND2-20261019.md)。VM.UnRedo.dll已取得并完成静态追踪，下表旧“未逆出”只剩实际运行/完整历史界面等未关闭部分；不再表示程序集缺失。FCR-019的准确谓词是运行Tab、DisplayName、动态展开和订阅类型条件，非统一SubscribeVisible过滤。以上均不关闭原机差分或插件集成状态。
 
 |编号|领域|已完成子集|未完成及原生差异|本轮结论|

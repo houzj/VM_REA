@@ -140,6 +140,8 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 
 ## FCR-019：参数目标的原生可见/可订阅能力（请求，未实现）
 
+计划B01第二批：原RunParamsSelectData缓存命中/分型/确认成功路径在合成缓存及经CIL核验的ID-only模块壳下通过20谓词。切换类型复用节点、重设ParentTree，不重算首次占用/资格；成功先Clear旧选择列表再替换，旧别名变空。调用方弹窗前已重建旧绑定快照，取消不能表述为完全无副作用。首次真实模块填充、拒绝消息窗和SDK绑定未运行，详见 [选择器第二批](reverse/B01-selection-batch2.md)。合同继续消费真实元数据快照，不把合成缓存当实际模块树。
+
 计划B01首批运行增量：未修改原厂parser在合成owner/最小XML下通过13项检查，确认LinkItem在原集合位置生成独立克隆，CustomVisible=false/SubscribeVisible=false项仍可进入GetRunParamsTree根候选，空DisplayName被排除且不按名称去重。安装ImageSource副本仅注册common节点、业务回调关闭，23/25项和空RunTree不能外推真实VM。原件hash不变，详见 [B01运行证据](reverse/B01-tab-batch1.md)。这没有关闭RunParamsSelectData后续过滤、真实Params.Data或插件合同。
 
 第二轮装配证据：已找到VM.Xml的BaseNode反编译及原始程序集身份；XML名称经public字段反射、TypeTable和集合钩子装配，不可直接把原始Items当最终候选。GroupLinkItem/LinkItem可替换展开集合；合同应消费装配后的稳定候选快照，仍不自动将Tab_Basic Params改成Tab_Run Params。详见 [运行Tab第二轮](VARIABLE-TAB-ROUND2-20261019.md)。

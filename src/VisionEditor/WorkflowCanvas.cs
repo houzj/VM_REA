@@ -60,7 +60,14 @@ public partial class MainWindow
         MiniMapPreview.Fill=new VisualBrush {Visual=GraphLayer}; // ZoomArea.RectEagleEye.Fill = new VisualBrush(cp).
         MiniMapPanel.Effect=new System.Windows.Media.Effects.DropShadowEffect {Opacity=.45,ShadowDepth=2,BlurRadius=8,Color=Colors.Black};
         GraphLayer.Background=OriginalCanvasGrid();
-        doc.SolutionReplaced+=()=>automaticRoutes.Clear();
+        doc.SolutionReplaced+=()=>
+        {
+            automaticRoutes.Clear();
+            canvasViews.Clear();canvasProcedure=null;
+            // Procedure IDs may recur in another solution; overview rendering also
+            // bypasses the normal per-procedure viewport switch.
+            scale=1;panX=panY=0;
+        };
         CanvasScrollViewer.ScrollChanged+=(_,_)=> {if(!syncingViewport){panX=-CanvasScrollViewer.HorizontalOffset;panY=-CanvasScrollViewer.VerticalOffset;UpdateMiniMap();}};
     }
 
