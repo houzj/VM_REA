@@ -25,6 +25,8 @@
 
 第十四轮新增 [四工具显示链](20261020-pass14-b-four-display.md)、[旋转标定图/失败显示链](20261020-pass14-c-display-chain.md) 及[标定加载文件按钮父类 CIL→写参/可选运行](20261020-pass14-readcalib-parent-cil-bridge.md)；根线独立复跑见[第十四轮复核](20261020-pass14-root-review.md)。原版同条件失败呈现、动态端口回调/Group 订阅及旋转图像四叶合同仍有限未闭；未因当前探针通过而将整个 J 门改为完成。
 
+第十五轮接续 [N 点失败显示](20261020-pass15-npoint-display.md)、[平移旋转 owned Group 失败显示](20261020-pass15-translation-display-chain.md) 与[标定加载动态叶历史入口](20261020-pass15-readcalib-dynamic-history-boundary.md)，根线复跑及程序化 ClearRevision 边界裁决见[第十五轮复核](20261020-pass15-root-review.md)。正常清空按钮与单独写入 ClearRevision 不能混作同一用户路径；原厂失败显示和文件刷新间接回调继续标未证。
+
 ## 当前基线和待闭边
 
 - 当前 WPF 主窗 `MainWindow.xaml.cs` 注册了十个插件类型；工作区 `tool-catalog.json` 的标定分类也有十个非空 ID。不过 `HEAD` 目录仅有其中八个，N图像标定和相机映射两项目录映射是用户已有未提交改动，**暂不作为提交基线完成证据**；主线只读核其现状，不覆盖该文件。
