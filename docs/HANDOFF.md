@@ -1,3 +1,7 @@
+## 2026-10-20 main 联合审核第四轮：输入源实连显示、原生 SDK 与卡顿分段
+
+主线按原 `GetSelectedCombinationOperation/SetCombinationSourceOperation` 与当前 `Connections/Subscriptions` 链修正共享配置宿主的来源标签，真实 ImageSource→ImageBuffer 配置窗、断连、重连、保存重开、订阅与 Undo 共 7 项通过。原版二值化包装层虚表/ABI 和算法 ID `0x25a` 已复核，五模式核心库全量分析发生 Java heap OOM，失败日志与 88 个原始导出保留；不得称五模式已恢复。自有离屏真实图像流程复现打开二值化配置窗阻塞 UI 3.94–5.95 秒，根线 64² 重测 4.87 秒；用户长期卡死仍缺 UI 栈。完整证据和未解条件见[第四轮根线自审](joint-audit/20261020-pass4-root-review.md)。框架具名单元仍 **41/96=42.71%**，本轮未增加整单元；`tool-plugins` 未动，人工验收另列。
+
 ## 2026-10-20 main 联合审核第三轮：原生边界、Group 真执行与 UI 大帧
 
 三子线独立交付原版二值化包装层 12 函数 C/汇编、owned Group 的 ImageSource→Buffer→Binary→父流程 Binary 五次实际执行、4096² 图像的真实离屏 WPF 正常/取消/关闭检查；主线修复旧进度回调跨运行/跨方案写动态输出并完成根线复测。原五模式像素算法与格式门仍在下游 SDK，用户空闲卡死缺 UI 线程栈，均不得称已解决。证据、SHA、验证和待解条件见[第三轮根线复核](joint-audit/20261020-pass3-root-review.md)。框架实施 **41/96=42.71%**，本轮未新增闭合单元；`tool-plugins` 未动，未推送。
