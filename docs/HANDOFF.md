@@ -349,3 +349,6 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-20 第二十二批：A/B/D阻塞复核与C队列独立实现
 
 基线403d8e4af09dca4ebc9bc4f971b1b3cb41cb4c40。A06在FrontendEdit原BAML偏移0x1929遇当前解析器未支持记录，B06五个关键文件哈希与上一批一致，D01.3仍缺native writer/reader及最小保存差分。C02从原VmSolution重取双缓冲/10000容量/顺序/关闭不drain源码证据；独立`FrameworkCallbackQueue<T>`和15/15自审通过，并保留修前MainWindow无回调入口观察，但尚未接入main真实消费者，C02.3继续partial。故本批实施+0，总实施40/96=41.67%，剩56。完整报告docs/reverse/BATCH22-20261020.md及batch22-20261020审计；tool-plugins未访问、不修改、不自动推送。
+## 2026-10-20 第二十三轮：四线未闭合门槛复核
+
+基线a6aac9d。A01.3仍缺.gro解码、native ImportGroup回调消费者和模型落地入口；B01.1/1.2仍缺FCR-019/FCR-021 producer交付；C03.3仅确认main managed历史/耗时/结果缓存隔离，原VmInterfaceManager缓存所有权及跨实例通知未知；D03.1保留外层XML/UI映射，但native Relation语义、owner转换、订阅写回及sol往返未知。本轮实施+0，总实施40/96=41.67%，剩56。报告docs/reverse/BATCH23-20261020.md及batch23审计；tool-plugins未访问、不修改、不自动推送。
