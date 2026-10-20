@@ -1,8 +1,8 @@
 # 框架逆向成果全面对账
 
-2026-10-19；冻结基线 `287ac42883ca538c594938fda16eef74f0a664a5`。仅 main；tool-plugins 未访问、未计入。
+2026-10-20；冻结基线 `3996ad1732929823755957de5537b1460ab3b8e0`。仅 main；tool-plugins 未访问、未计入。
 
-**当前实施总进度：39/96 = 40.63%。**
+**当前实施总进度：40/96 = 41.67%。**
 
 用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。
 
@@ -11,7 +11,7 @@
 | 层次 | 严格达成 | 进度 | 尚未达成 |
 |---|---:|---:|---:|
 | 源码 | 52/96 | **54.2%** | 44 |
-| 实现 | 39/96 | **40.6%** | 57 |
+| 实现 | 40/96 | **41.7%** | 56 |
 | 验证 | 29/96 | **30.2%** | 67 |
 
 ## 分母与计数规则
@@ -42,7 +42,7 @@
 | A08 | 壳与交互全状态验收 | 1 | 1 | 1 | 1 |
 | B01 | 实际运行Tab与变量目标 | 3 | 0 | 0 | 0 |
 | B02 | Group身份、所有权和复制 | 2 | 2 | 2 | 2 |
-| B03 | Group循环、中断与每轮生命周期 | 2 | 2 | 2 | 2 |
+| B03 | Group循环、中断与每轮生命周期 | 2 | 3 | 2 | 2 |
 | B04 | 原生类型、复合叶及累积 | 2 | 2 | 2 | 2 |
 | B05 | 流程IO、局部/全局变量与gvar | 1 | 1 | 1 | 1 |
 | B06 | Group配置、ROI和结果消费边界 | 3 | 1 | 1 | 1 |
@@ -139,13 +139,13 @@
 
 前置：A02；完整包未因本表计分关闭。
 
-证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A-shell-implementation-batch11.md](reverse/A-shell-implementation-batch11.md)、[BATCH17-20261019.md](reverse/BATCH17-20261019.md)、[A05-full-menu-map-batch17.md](reverse/A05-full-menu-map-batch17.md)、[A05-entry-reconciliation-batch17.md](reverse/A05-entry-reconciliation-batch17.md)
+证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A-shell-implementation-batch11.md](reverse/A-shell-implementation-batch11.md)、[BATCH17-20261019.md](reverse/BATCH17-20261019.md)、[A05-full-menu-map-batch17.md](reverse/A05-full-menu-map-batch17.md)、[A05-entry-reconciliation-batch17.md](reverse/A05-entry-reconciliation-batch17.md)、[A-entry-closure-batch20.md](reverse/A-entry-closure-batch20.md)、[BATCH20-20261020.md](reverse/BATCH20-20261020.md)
 
-当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/MainWindow.ShellHelp.cs`、`src/VisionEditor/MainWindow.ShellRunMode.cs`、`tests/MenuEntryInventory17/Reconcile.py`
+当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/MainWindow.ShellHelp.cs`、`src/VisionEditor/MainWindow.ShellRunMode.cs`、`tests/MenuEntryInventory17/Reconcile.py`、`tests/EntryClosureChecks20/ReadBaml.py`、`tests/EntryClosureChecks20/ResolveStandardBindings.ps1`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
-| A05.1 | 完整菜单/工具栏/快捷键入口清点 | 部分 | 部分 | 未验证 | 已有多个入口专题；尚非全部入口逐项覆盖。 |
+| A05.1 | 完整菜单/工具栏/快捷键入口清点 | 部分 | 部分 | 未验证 | 第二十批原BAML11条DiagramItem绑定及Connection Delete取证，7条Gesture/Key冲突以原记录顺序和标准WPF回放解决；全局路由/全程序集入口穷尽尚缺，保留partial，服务实施A05.3另列。 |
 | A05.2 | 常规文件、帮助、路径与运行策略命令数据链 | 达成 | 达成 | 达成 | 当前已交付命令及控件事件；原生后端/完整键鼠不纳入本单元达成。 第十一批：最近偏好写失败后实际方案保存成功，内存与菜单继续更新，16项通过；既有A05.2不重复计分。 |
 | A05.3 | 全局变量、通信、触发、脚本等专用服务 | 部分 | 未取得交付 | 阻塞 | 原入口部分已定位，main不具备完整模块/会话/后端。 |
 
@@ -223,15 +223,15 @@
 
 前置：B02、C02；完整包未因本表计分关闭。
 
-证据：[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[GROUP-ADVANCED-RUNTIME.md](GROUP-ADVANCED-RUNTIME.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)
+证据：[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[GROUP-ADVANCED-RUNTIME.md](GROUP-ADVANCED-RUNTIME.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[B-round-lifecycle-batch20.md](reverse/B-round-lifecycle-batch20.md)、[BATCH20-20261020.md](reverse/BATCH20-20261020.md)
 
-当前实现/工具位置：`src/VisionFramework/GroupLoop.cs`、`src/VisionFramework/GroupBreak.cs`
+当前实现/工具位置：`src/VisionFramework/GroupLoop.cs`、`src/VisionFramework/GroupBreak.cs`、`tests/GroupRoundLifecycleChecks20/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | B03.1 | LoopStep、范围与零值拒绝的当前重建 | 达成 | 达成 | 达成 | 有native算术证据；long/上限为明确独立安全策略。 |
 | B03.2 | 中断比较、动态索引及执行前准备 | 达成 | 达成 | 达成 | 当前支持的类型/索引合同已验，非全原生参数编辑器。 |
-| B03.3 | 每轮真实实例、回调与异常取消生命周期 | 部分 | 部分 | 阻塞 | 本地有隔离子集，原生每轮状态与设备路径未验。 |
+| B03.3 | 每轮真实实例、回调与异常取消生命周期 | 部分 | 达成 | 部分 | 第二十批实际main深度1/2/3每轮独立factory、scope状态/回调、异步释放先后、单轮/零轮/负步取消、第三轮故障和恢复完整57项自审核。原native FUN_1800a7190对象语义及SDK回调/设备释放仍未知，源码partial/原厂验证后置，不声称VM等价。 |
 
 ### B04 原生类型、复合叶及累积
 
@@ -391,15 +391,15 @@
 
 前置：C03、C04、C05、C06；完整包未因本表计分关闭。
 
-证据：[MF05-PROCESS-LIFETIME-AUDIT.md](MF05-PROCESS-LIFETIME-AUDIT.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[C-stability-baseline-batch13.md](reverse/C-stability-baseline-batch13.md)、[B-stability-failure-review-batch14.md](reverse/B-stability-failure-review-batch14.md)、[C-stability-save-failure-batch14.md](reverse/C-stability-save-failure-batch14.md)、[BATCH14-20261019.md](reverse/BATCH14-20261019.md)
+证据：[MF05-PROCESS-LIFETIME-AUDIT.md](MF05-PROCESS-LIFETIME-AUDIT.md)、[GROUP-LOOP-BOUNDARIES.md](GROUP-LOOP-BOUNDARIES.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[C-stability-baseline-batch13.md](reverse/C-stability-baseline-batch13.md)、[B-stability-failure-review-batch14.md](reverse/B-stability-failure-review-batch14.md)、[C-stability-save-failure-batch14.md](reverse/C-stability-save-failure-batch14.md)、[BATCH14-20261019.md](reverse/BATCH14-20261019.md)、[C-host-recovery-batch20.md](reverse/C-host-recovery-batch20.md)、[BATCH20-20261020.md](reverse/BATCH20-20261020.md)
 
-当前实现/工具位置：`tests/Check-ProcessExit.ps1`、`tests/FrameworkStabilityProbe13/Program.cs`
+当前实现/工具位置：`tests/Check-ProcessExit.ps1`、`tests/FrameworkStabilityProbe13/Program.cs`、`tests/HostRecoveryChecks20/Program.cs`、`tests/ScopeCleanupFailureChecks20/Program.cs`、`src/VisionFramework/ModuleExecutionScope.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
 | C07.1 | 长稳负载/时长及内存线程句柄基线 | 部分 | 部分 | 失败 | 已交付main/Core固定1800秒负载与自身资源采样工具。原PID54372在413.078秒、21216轮、1327次成功保存后于第二SaveAs的File.Move抛UnauthorizedAccessException；未足时且passed=false，不能计完成。原始7项哈希匹配，异常瞬间根因/HResult未记录；事后属性/ACL不能反推原因。第十四批仅增强未来失败取证和自有子进程退出码launcher，不自动重跑。原厂/全宿主/SDK长稳未覆盖。 |
 | C07.2 | 持续并发运行与资源增长验收 | 部分 | 未取得交付 | 未取得交付 | 已知队列/线程源码不等于长稳运行证据。 |
-| C07.3 | 运行异常、失败后重启和关闭恢复 | 部分 | 部分 | 部分 | 已有局部恢复检查，未完成长稳并发故障矩阵。 |
+| C07.3 | 运行异常、失败后重启和关闭恢复 | 部分 | 部分 | 部分 | 第二十批实际MainWindow有限故障/连续运行/重启/关闭矩阵89项与scope释放异常隔离8项通过，配置关闭回归16项通过；尚未完成长稳并发故障矩阵，保留partial，不以短测替代C07.1失败。 |
 
 ### C08 执行与历史组合验收
 
@@ -548,4 +548,4 @@
 
 脚本验证32包/23域/96单元、状态、分母、报告/代码引用，复算百分比与交集，保留证据哈希和摘要。它不从关键词自动判定完成，不运行产品，不访问其他工作树。
 
-本次证据快照、排除旧计分口径的原因和检查结果位于 `analysis/full-audit/progress-reconciliation-20261019/`。不存在以当前审计时间冒充历史运行时间的记录。
+本次证据快照、排除旧计分口径的原因和检查结果位于 `analysis/full-audit/progress-reconciliation-20261020/`。不存在以当前审计时间冒充历史运行时间的记录。

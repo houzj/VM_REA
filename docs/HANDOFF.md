@@ -338,3 +338,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-19 第十九批：A07.2/C08.2实施完成
 
 基线287ac42883ca538c594938fda16eef74f0a664a5。root窄修既有Registry：metadata前重入guard、一次capture/expected核对、Module先Freeze/发布再plugin发布，二参API保留；host完整11类加载故障、未知插件/缺版本方案消费47项及metadata5项通过。新增生产Core深度1/2/3嵌套故障/cancel/恢复/历史文件与scope释放组合工具46项通过，原厂窗口/ABI差分仍未知。含旧loader17/catalog15最终回归共130项正向/拒绝自审核，另11项实际校准Undo旧11→Save未来scope99反例独列，D02.2仍failed/partial，不把反例成功当修复。原长稳失败不重跑，初轮fixture warnings与旧摘要保留，最终仅既有CS8603。总实施39/96=40.63%，本批+2，剩57。详见reverse/BATCH19-20261019.md/FCR029/FCR024更新及batch19审计；tool-plugins未访问、不采用来信、不推送。
+
+## 2026-10-20 第二十批：B03.3实施完成与scope终止异常隔离
+
+基线3996ad1732929823755957de5537b1460ab3b8e0。三子线并行取证/工具，root串行共享修复与验证；B03.3实际main每轮factory/持久state/回调/asyncDispose栅栏及故障cancel恢复57项完整自审，实施done、原native生命周期未知另列。scope终止路径修前实际复验首项Dispose跳过后续资源与cancel callback外抛，修后逐资源隔离、诊断保留、无自动重试与lease延迟保持，FCR-030。实际MainWindow有限恢复89、scope8、配置关闭16，加Group57共170项最终正向自审exit0；修前8单列不计修复，A标准WPF11项只作绑定歧义证据。A05.1全入口穷尽/C07.3长并发仍partial，D02.2合同阻塞及C07.1旧长稳失败保留不重跑。总实施40/96=41.67%，本批+1，剩56；人工验收后置，既有CS8603保留。详见reverse/BATCH20-20261020.md和batch20-20261020审计。tool-plugins未访问，不自动推送。

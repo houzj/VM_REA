@@ -270,3 +270,11 @@ main GraphEditorDocument已改为真实DocumentHistoryEngine的root/part旧新�
 ### FCR-024 第十九批新反例：历史文档与未来scope不一致
 
 纯托管公共API已实际复验11项：旧点11、当前scope99，重新准备旧Node和真实Undo后Save均得到99。无scope重载在当前NPoint保11不等于通用IToolAssetPersistence纯函数保证。不得对历史反复调用PrepareSave或清空scope丢状态，亦不加origin公共字段绕过。解除条件扩为版本绑定资产身份/无状态历史序列化/纯重定位以及scope随历史一致恢复；旧图片路径失败与本轮校准值污染都须复验，详见reverse/C-asset-history-batch19.md。未修改工具代码或另一工作树，未向插件线派工，本项仍未实现。
+
+## FCR-030：main终止scope释放失败诊断
+
+- Producer：main既有VisionFramework.ModuleExecutionScope；consumer：主窗关闭/方案替换和拥有scope的诊断工具。root唯一修改本工作区该类，不修改插件配置、工具代码或tool-plugins。
+- Payload：新增只读CleanupFailures快照及ModuleScopeCleanupFailure(Phase,ResourceType,Exception Error)，Phase为cancel/resource/token。诊断非方案数据；原异常只保内存，工具选择文本输出。
+- Lifecycle：取消回调异常记录后仍等待最后lease；逐项尝试owned资源释放，最后尝试取消源Dispose。失败对象/异常保留至scope回收，无自动重试，不宣称失败资源已成功释放。borrowed view Dispose仍不关root。
+- Compatibility：保留既有签名，新增可选诊断。终止Dispose从单项异常传播改为记录，原先依靠catch获取释放故障的消费者应读取CleanupFailures；RegisterService替换/RemoveNode/RetainProcedureNodes即时Dispose仍可能抛，不扩大承诺。局限为main独立加固，非原VM异常策略。
+- Evidence/acceptance：修前8项实证显示首项失败跳过后续资源/token及取消回调传播；修后8项确认逐项尝试、诊断、一次释放与lease门保持。实际主窗恢复89项、配置close16项及Group最终57项通过，详见reverse/C-host-recovery-batch20.md和reverse/BATCH20-20261020.md。长稳/设备/native未知另列，插件合流由用户选择。

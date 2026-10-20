@@ -5,6 +5,7 @@ Statuses are reviewed judgments in JSON, never inferred from keyword counts.
 """
 import collections
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
 import csv
 import hashlib
 import json
@@ -12,7 +13,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DOC = ROOT / "docs"
-AUDIT = ROOT / "analysis/full-audit/progress-reconciliation-20261019"
 STAGES = ("source", "implementation", "validation")
 LABELS = {"source": "源码", "implementation": "实现", "validation": "验证"}
 STATUS = {"done": "达成", "partial": "部分", "blocked": "阻塞",
@@ -20,8 +20,10 @@ STATUS = {"done": "达成", "partial": "部分", "blocked": "阻塞",
 
 
 def main():
-    AUDIT.mkdir(parents=True, exist_ok=True)
     data = json.loads((DOC / "framework-progress-audit.json").read_text(encoding="utf-8"))
+    audit_day = date.fromisoformat(data["auditDate"])
+    audit = ROOT / "analysis/full-audit" / ("progress-reconciliation-" + audit_day.strftime("%Y%m%d"))
+    audit.mkdir(parents=True, exist_ok=True)
     plan = json.loads((DOC / "framework-reverse-plan.json").read_text(encoding="utf-8"))
     packages = data["packages"]
     assert len(packages) == 32
@@ -72,7 +74,7 @@ def main():
     (DOC / "framework-progress-audit.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    lines = ["# 框架逆向成果全面对账", "", f"2026-10-19；冻结基线 `{data['baseline']}`。仅 main；tool-plugins 未访问、未计入。", "",
+    lines = ["# 框架逆向成果全面对账", "", f"{audit_day.isoformat()}；冻结基线 `{data['baseline']}`。仅 main；tool-plugins 未访问、未计入。", "",
              f"**当前实施总进度：{done['implementation']}/96 = {summary['overallCompletionPercent']}%。**", "",
              "用户最新要求：实施完成并经自审核即计完成；人工验收安排在所有实施完成之后，不作为进度门槛。以下源码/验证状态及历史三层交集只保留审计用途，不参与总进度计算。", "",
              "这是本次逐项证据对账的结果，不是重跑测试后的原机等价结论。以前0/32只统计新计划的整包最终关闭，未回填早已合入main的子集成果；因此它不能代表当前整体逆向进度。此次修正统计，不将历史成果说成本轮新增。", "",
@@ -118,7 +120,7 @@ def main():
     lines += ["", "## 复算与审计", "",
               "源数据：[framework-progress-audit.json](framework-progress-audit.json)。命令：`python tests/ProgressAudit/Reconcile.py`（本机使用明确的bundled Python路径）。", "",
               "脚本验证32包/23域/96单元、状态、分母、报告/代码引用，复算百分比与交集，保留证据哈希和摘要。它不从关键词自动判定完成，不运行产品，不访问其他工作树。", "",
-              "本次证据快照、排除旧计分口径的原因和检查结果位于 `analysis/full-audit/progress-reconciliation-20261019/`。不存在以当前审计时间冒充历史运行时间的记录。"]
+              f"本次证据快照、排除旧计分口径的原因和检查结果位于 `{audit.relative_to(ROOT).as_posix()}/`。不存在以当前审计时间冒充历史运行时间的记录。"]
     (DOC / "FRAMEWORK-PROGRESS-RECONCILIATION.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     refs = sorted({x for p in packages for x in p["sourceAndOperationReports"] + p["implementationArtifacts"]})
@@ -132,9 +134,9 @@ def main():
         snippets = [{"line": i, "text": line[:320]} for i, line in enumerate(text.splitlines(), 1)
                     if any(term in line for term in ("analysis/decompiled", "::", "通过", "exit", "失败", "未实现", "未知"))][:6]
         snapshots.append({"path": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "excerpts": snippets})
-    (AUDIT / "evidence-index.json").write_text(json.dumps(snapshots, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    (AUDIT / "audit-checks.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    with (AUDIT / "remaining-units.csv").open("w", newline="", encoding="utf-8-sig") as f:
+    (audit / "evidence-index.json").write_text(json.dumps(snapshots, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (audit / "audit-checks.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with (audit / "remaining-units.csv").open("w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
         writer.writerow(["unit", "criterion", *STAGES, "remaining_or_boundary"])
         for u in units:

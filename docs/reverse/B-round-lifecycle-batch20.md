@@ -1,0 +1,44 @@
+# 第二十批 B：B03.3 每轮实例、回调与异常取消生命周期
+
+2026-10-20；基线3996ad1。固定单元为“每轮真实实例、回调与异常取消生命周期”，不重复计B03.1/2范围/比较语义、C08嵌套历史组合或已完成owner/UI单元。新增独占可复验工具 `tests/GroupRoundLifecycleChecks20`，本线只改新测试与报告，不构建、不调用SDK/设备/原厂类、不碰tool-plugins。
+
+## 原始链与独立策略
+
+原 `analysis/full-audit/group-native-audit/group-run.c::CGroupNode::DoWork` 在每轮写当前索引(param+0x224)、调用FUN_1800a7190与后续执行/状态路径；初始和末尾采用index<end、可见int32推进；正常收尾清local_2d0链表与元素并_Mtx_unlock。`group-set-param-native.c` 的LoopStep setter只拒零。精确位置/原件身份与有符号/溢出限制见 `docs/GROUP-LOOP-BOUNDARIES.md`。不能把未知callee直接命名“new IModule”，也不能凭正常尾部证明所有C++异常/硬件中断均安全清理。
+
+原 `analysis/decompiled/VM.Core/VM.Core/VmModule.cs::OnModuleResultCallBack/OnAsyncModuleResultCallBackArrived` 分发原结果事件；真实SDK回调线程、原每轮实例对象和设备释放未在本片运行。原流程Run→SyncExecuteOnce→IMVS_ExecuteOnce_V30的异常/等待链见MF05。源码原native未闭处继续标未知，不以合成managed回调冒充原厂。
+
+main已存在真正可验证消费者：SolutionExecutor每轮await Execute(body)，仅Success加入独立Accumulator、非Success终止；GraphExecutor每个普通节点通过registry.Create取得实例，await Execute后在finally await IAsyncDisposable或Dispose，再判断取消/timeout/error与发布结果。factory实例每轮新建、scope.State跨轮保留是当前main独立资源策略，并非声称原native实例工厂完全相同。ModuleExecutionScope提供当前procedure/module/node状态键及真实RequestRefresh事件；root progress在GraphExecutor完成嵌套await后发布。
+
+## 完整有限矩阵与判断门槛
+
+|范围|实际验证|
+|---|---|
+|支持深度1/2/3|正步1/3/5三轮，每轮不同工厂ID，始终最多一活实例，全部异步Dispose完成后下一factory才创建|
+|回调|每轮真实ModuleExecutionScope.RequestRefresh到自有订阅消费者，ScopeId/procedure/node准确；root Running→Success在最后清理之后|
+|单轮/零轮/负步|disabled保存负步仅index0一次；descending空范围不造实例；ascending负步0/-1/-2以实际第三轮Cancel停止并清理|
+|第3轮错误|throw、Failed返回、DisposeAsync异常、实际managed刷新消费者异常四种；无第4factory，已启动者各dispose一次，下一invocation重新成功|
+|清理顺序|第一轮Dispose实际卡在自有TCS；完成前没有下一factory/callback，释放后全部轮次严格串行|
+|中途取消|第二轮Execute等待时Cancel，及第二轮Dispose等待时Cancel；当前清理必须完成，无下一轮；Execute取消后再完整成功|
+|scope关闭|最深第二轮等待时关闭scope，状态因lease存活；关闭后新请求被抑制，释放当前轮后无后续轮，末lease才释放一次state|
+|owner状态|同一owner跨轮/跨invocation只一持久state而非复用runtime；两scope使用同一方案/流程/节点ID，状态身份独立、关闭第一不释放第二|
+
+工具实际引用产品模块工厂/执行器/scope，不复制循环执行实现。每实例进入Execute/回调/Dispose-start/end与root progress入trace，工厂统计重叠；两种实际暂停而非定时猜测。回调消费者明确是任务自己的managed宿主，不原SDK/UI。scope ID同时保证所有权，仍不宣称native回调解注册。
+
+顶层catch保存failed.json并exit1，每个pending最多15秒，输出自有GUID目录；没有自动重试、清审计或结束别的进程。矩阵针对每轮工厂/回调/cleanup栅栏，是当前B03.3所缺操作级证据；已交付范围/断路和C08各组合测试不再累加为新完成单元。
+
+当前仅完成工具源码自审，根线尚未提供运行结果，不能先写通过。若实跑暴露必要产品缺口，交根线唯一共享修复并保留失败。具名单元的implementation最终关闭需要真实工具全矩阵通过与自审核，native ABI/设备/原回调仍单列validation未知，不把人工验收后置当实施缺项。初始证据哈希在 `analysis/full-audit/batch20-20261020/B/initial-hashes.json`。
+
+## 首轮真实结果独立审查
+
+已逐项读取 `analysis/full-audit/batch20-20261020/B/group-rounds-89c1b1a1c8b5450eb3c8c8c2ad8297a3/summary.json`：passed57、57个具名且互不重复检查；3个正步深度与throw/failed-result/dispose/callback四类故障trace保留。真实暂停的Execute/Dispose门槛、无提前下一实例、每轮回调身份、负步Cancel、相同文档ID跨scope状态隔离均在实测结果中。根线报告exit0，本线没有重跑。
+
+与B03.3固定criterion核对：当前main支持域的每轮工厂实例、managed回调、异步cleanup先后、异常取消及下一invocation恢复已由真实消费者完整检查，不是把同一旧循环单元加几条相似断言计分。主线目前没有证实“所有原SDK/native实例已等价”，因此source的native未恢复和validation仍须明确partial/未知，而非把测试模块称原厂运行。
+
+**B03.3在当前main支持域具名实施可记done的条件已由此首轮工具结果满足。** 根线另有scope关闭异常加固正在集成，其取消消费者抛错、资源Dispose抛错属于独立宿主清理策略；最终应在该共享修复版本上再跑同一57项保持通过后确认本批最终交付。两次运行不能累加成114项。此前首轮产物保留，最终新产物尚未取得前不预报。
+
+## 最终交付确认
+
+现已只读核对根线最终串行复跑 `analysis/full-audit/batch20-20261020/B/group-rounds-8365013a31814cd1a73d2b2e3ae1e3d7/summary.json`：passed57、checks57、distinct57、7组观察trace。根线报告exit0；这是scope关闭异常加固后的最终产品版本，首轮结果保留作审计，不累加，最终唯一计数为57项。
+
+**最终结论：B03.3 当前main支持域 implementation=done。** 每轮真实managed工厂与状态所有权、实际请求回调、异步清理栅栏及错误/取消后恢复均完整交付并独立自审核；未发现该有限单元的剩余实施缺口。validation保持partial，原native每轮实例、设备及SDK回调未知继续单列，不冒称原厂已跑，不关B03父包或其他未知ABI。没有为了计分另造产品补丁；本线最终仅报告/审计收尾，未构建或修改共享产品。最终哈希索引 `analysis/full-audit/batch20-20261020/B/final-closure-hashes.json`。
