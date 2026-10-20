@@ -1,0 +1,63 @@
+using System.Text.Json;
+using VisionCore;
+using VisionEditor.Core;
+using VisionFramework;
+using VisionPluginContracts;
+using VisionPlugins.Calibration;
+using VisionPlugins.ImageSource;
+
+var output = Path.GetFullPath("analysis/joint-audit/pass11-cal-coordinate-roi");
+Directory.CreateDirectory(output);
+var registry = new ModuleRegistry();
+var tools = new ToolPluginRegistry();
+var image = new ImageSourcePlugin();
+var coordinate = new CoordinateModulePlugin();
+tools.Register(image, registry);
+tools.Register(coordinate, registry);
+var imageValues = image.Descriptor.Parameters.ToDictionary(p => p.Name, p => p.DefaultValue!.Value.Clone());
+imageValues["ImageSourceType"] = JsonSerializer.SerializeToElement(3);
+imageValues["StitchEnable"] = JsonSerializer.SerializeToElement(false);
+var coordinateValues = coordinate.Descriptor.Parameters.ToDictionary(p => p.Name, p => p.DefaultValue!.Value.Clone());
+coordinateValues["CordinateCreate"] = JsonSerializer.SerializeToElement(0);
+using var graph = new GraphEditorDocument(registry);
+var imageId = graph.AddNode(image.Manifest.Id, image.Manifest.Version, 0, 0, imageValues);
+var coordinateId = graph.AddNode(coordinate.Manifest.Id, coordinate.Manifest.Version, 200, 0, coordinateValues);
+graph.Connect(imageId, "Image", coordinateId, "InputImage");
+var roi = new RoiDocument("normalized-origin", RoiKind.Coordinate, .25, .5, AngleDegrees: 90, CoordinateSpace: RoiCoordinateSpace.Normalized);
+graph.SetProcedureToolConfigurationRoiGroup(graph.CurrentProcedureId, coordinateId, "RoiType", coordinateValues, [roi]);
+void Check(bool value, string reason) { if (!value) throw new Exception(reason); Console.WriteLine("PASS " + reason); }
+using var scope = new ModuleExecutionScope();
+async Task<NodeRunRecord> Run(GraphEditorDocument editor, ModuleExecutionScope runScope, int width, int height)
+{
+    image.SubmitImage(runScope.ForProcedure(editor.CurrentProcedureId), imageId, new GrayImage(width, height, new byte[width * height]));
+    var session = await new SolutionExecutor(registry).RunAsync(new(editor.Document, editor.BaseDirectory), "main", scope: runScope);
+    var nodes = session.Nodes.ToDictionary(n => n.NodeId);
+    Check(nodes[imageId].Status == NodeRunStatus.Success, "upstream image source executes " + width + "x" + height);
+    Console.WriteLine($"coord {width}x{height}: {nodes[coordinateId].Status}/0x{nodes[coordinateId].NativeErrorCode:x8}, status={nodes[coordinateId].Outputs.GetValueOrDefault("ModuStatus")?.As<long>()}, x={nodes[coordinateId].Outputs.GetValueOrDefault("CoordinateOriPointX")?.As<double>()}");
+    return nodes[coordinateId];
+}
+var first = await Run(graph, scope, 100, 80);
+Check(first.Status == NodeRunStatus.Success && first.Outputs["CoordinateOriPointX"].As<double>() == 25 && first.Outputs["CoordinateOriPointY"].As<double>() == 40, "normalized ROI reaches Draw as image-pixel origin 25,40");
+var matrix = first.Outputs["CorCalibMatrix"].As<IReadOnlyList<double>>();
+Check(Math.Abs(matrix[0]) < 1e-6 && matrix[1] == 1 && matrix[2] == -40 && matrix[3] == -1 && matrix[5] == 25, "original Draw quarter-turn matrix uses degree angle and source sign order");
+var firstFrame = coordinate.LastDisplay(graph.CurrentProcedure.Nodes.Single(n => n.Id == coordinateId), graph.BaseDirectory, scope.ForProcedure(graph.CurrentProcedureId));
+Check(firstFrame?.Image?.Width == 100 && firstFrame.Image.Height == 80 && firstFrame.Graphics.Any(g => g.Name == "Coordinate System"), "display bridges upstream image and coordinate six-leaf graphic");
+var second = await Run(graph, scope, 200, 80);
+Check(second.Outputs["CoordinateOriPointX"].As<double>() == 50 && second.Outputs["CoordinateOriPointY"].As<double>() == 40, "same normalized ROI follows new upstream image width");
+var secondFrame = coordinate.LastDisplay(graph.CurrentProcedure.Nodes.Single(n => n.Id == coordinateId), graph.BaseDirectory, scope.ForProcedure(graph.CurrentProcedureId));
+Check(secondFrame?.Image?.Width == 200 && secondFrame.Graphics.Single(g => g.Name == "Coordinate System").Points.Single().X == 50, "display origin follows refreshed image source");
+graph.SetProcedureToolConfigurationRoiGroup(graph.CurrentProcedureId, coordinateId, "RoiType", coordinateValues, []);
+var missing = await Run(graph, scope, 200, 80);
+Check(missing.Status == NodeRunStatus.Success && missing.Outputs["ModuStatus"].As<long>() == 1 && missing.Outputs["CoordinateOriPointX"].As<double>() == 50 && missing.Outputs["CorCalibMatrix"].As<IReadOnlyList<double>>().SequenceEqual(second.Outputs["CorCalibMatrix"].As<IReadOnlyList<double>>()), "missing ROI after warm state publishes retained pose/matrix on timing-success path");
+graph.Undo();
+Check(graph.CurrentProcedure.Nodes.Single(n => n.Id == coordinateId).RoiGroups!["RoiType"].Single().CoordinateSpace == RoiCoordinateSpace.Normalized, "Undo restores normalized ROI record");
+var restored = await Run(graph, scope, 100, 80);
+Check(restored.Outputs["CoordinateOriPointX"].As<double>() == 25, "Undo restores Draw sampling behavior");
+var solution = Path.Combine(output, "coordinate-normalized-roi.vmx.json");
+graph.Save(solution);
+using var reopened = new GraphEditorDocument(registry);
+reopened.Load(solution);
+using var reopenedScope = new ModuleExecutionScope();
+var replay = await Run(reopened, reopenedScope, 100, 80);
+Check(replay.Status == NodeRunStatus.Success && replay.Outputs["CoordinateOriPointX"].As<double>() == 25, "saved and reopened ROI/image graph executes from clean scope");
+Console.WriteLine("CalibrationCoordinateRoiChain.Checks: normalized-image Draw, display, retained failure state, undo and reopen passed");

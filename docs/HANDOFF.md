@@ -1,3 +1,7 @@
+## 2026-10-20 main 联合审核第十一轮：标定状态、ROI 与真实主窗成本
+
+限定标定十工具，N图像真实图第九空白帧失败→下一帧新批次→恢复 XML→owned Group/坐标系→保存重开 26/26；坐标系真实图 Draw/ROI 的图像尺寸、暖态缺 ROI 保旧、Undo/重开完成独立复跑；N 点实际 MainWindow 按钮开点表 4/12/32 行分别触发 20/60/160 次文档 Revision/Changed，单格各 +1，补强 FCR-033。原厂 ROI 坐标空间、同图 SDK 数值/失败码、N 点原机同机时延和长期卡死线程栈仍明确未知。完整根线自审见[第十一轮报告](joint-audit/20261020-pass11-root-review.md)及[十工具去重索引](joint-audit/20261020-calibration-only-joint-audit.md)。无产品修复、`tool-plugins` 未动、未推送；框架实施 **41/96 = 42.71%**，联合审核尚未全部闭合，人工验收单列。
+
 ## 2026-10-20 main 联合审核第十轮：限定标定十工具的特有载荷
 
 本轮根线实跑映射标定双 IMAGE→XML→标定加载/Group/坐标系，首跑/删文件重开后均成功；原源码 `Process/GetInputImage/ProcessAlg` 与当前双图数据流分开审。标定板 SDK 36B `.iwcal` 的 9-float 写入与旋转标定读取/消费字段按原函数对上，真实图连续三帧及缺文件恢复 20/20，根线独立复跑。N 点真实点编辑器同构回调四行开窗 20 次完整图文档变更，单格 +1；撤销、重做、保存重开、求解/加载成功；原 setter 逐叶仍保留，当前整图历史/刷新放大追加到既有 FCR-033，未改产品。完整证据/失败/未证范围见[第十轮根线自审](joint-audit/20261020-pass10-root-review.md)和[十工具索引](joint-audit/20261020-calibration-only-joint-audit.md)。当前联合审核未逐项闭合十工具所有 J01–J12；框架实施仍 **41/96=42.71%**，人工验收独立，`tool-plugins` 未改、未推送。

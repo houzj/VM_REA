@@ -45,4 +45,7 @@
 | 平移旋转点数组→Group→坐标系 POINT | [第九轮坐标系点链](20261020-pass9-coordinate-point-chain.md) `OutImagePointX/Y` 经 Group 到 `SrcPointX/Y`，首跑/保存重开两次实际 Success | 原厂同构图、坐标系 Draw/缺项异常/显示分支及数值逐位差分 |
 | 映射标定双 IMAGE→XML→标定加载/Group/坐标系 | [第十轮双图模式](20261020-pass10-map-image-chain.md) 两个真实图像源的原 SDK 夹具各 168 角点，首跑/重开后新 XML 均被九项矩阵消费者读入 | 双 ROI、教学、原厂同构图及数值逐位差分 |
 | 标定板 `.iwcal`→旋转标定 | [第十轮板到旋转](20261020-pass10-board-rotate-chain.md) 原 SDK 导出与原模块 loader 对齐 9 float；真实图 3 帧连续采样、空白失败与同 scope 恢复 20/20 | 原厂桌面同构图、设备/任意板型/旋转数值全域 |
-| N 点单格编辑→参数历史→XML/标定加载 | [第十轮编辑链](20261020-pass10-npoint-edit-chain.md) 真实控件和同构回调四行开窗 20 次整节点图编辑，单格 +1；Undo/Redo、保存重开、求解/加载均成功；既有性能合同 FCR-033 追加证据 | 原版历史/刷新次数、实际 MainWindow 单格交互和同机时延、长期未响应根因 |
+| N 点单格编辑→参数历史→XML/标定加载 | [第十轮编辑链](20261020-pass10-npoint-edit-chain.md) 真实控件和同构回调四行开窗 20 次整节点图编辑，单格 +1；Undo/Redo、保存重开、求解/加载均成功；既有性能合同 FCR-033 追加证据 | 原版历史/刷新次数、实际 MainWindow/原机同条件时延、长期未响应根因 |
+| N 图像失败批次→恢复 XML→owned Group→坐标系 | [第十一轮批次状态链](20261020-pass11-nimage-state-chain.md) 真图八帧后第九空白帧失败、owned 数=9/无 XML，显式导出失败；下一帧重置并完成九帧，新 XML 经 Group 给坐标系，保存重开后消费再跑 26/26 | 原厂同图失败码和数值、只 Clear 未 Run 的旧 SDK 结果、未完会话跨重开 |
+| 坐标系 Draw ROI→图像/显示→撤销/重开 | [第十一轮 ROI 链](20261020-pass11-coordinate-roi-chain.md) 真图 100×80→200×80 使当前 Normalized ROI 像素原点 25→50；缺 ROI 暖态保旧、Undo/保存重开复验 | 原厂 ROI 序列化坐标空间与原机图执行；当前 Normalized 缩放仅是宿主适配 |
+| N 点真实主窗打开/编辑点表 | [第十一轮 MainWindow 探针](20261020-pass11-npoint-mainwindow-cost.md) 4/12/32 行实际按钮开窗分别产生 20/60/160 次文档 Revision/Changed，单格各 +1；FCR-033 追加证据 | 原版同机时延、字段写失败/重复打开副作用、长期未响应线程栈 |
