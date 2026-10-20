@@ -22,7 +22,6 @@
 ## 当前基线和待闭边
 
 - 当前 WPF 主窗 `MainWindow.xaml.cs` 注册了十个插件类型；工作区 `tool-catalog.json` 的标定分类也有十个非空 ID。不过 `HEAD` 目录仅有其中八个，N图像标定和相机映射两项目录映射是用户已有未提交改动，**暂不作为提交基线完成证据**；主线只读核其现状，不覆盖该文件。
-- 原版 `VMControls.Data.ToolBoxData`、`VMControls.WPF.Base.ToolItemGrid`、`VM.Core.VmModuleSet.CreatModuleByInfo/CreateModuleToolRe` 提供工具箱到原模块实例的源码入口；具体十模块身份、资源和分支须逐一对上安装版文件 SHA。本地对应 `ToolNavigation.ReadCategoryTools/LoadToolCategory/CreateCatalogTile`、`MainWindow` 注册和 `GraphEditorDocument.AddNode`。下一步以真实主窗/目录/注册表核十项身份与新增节点，作为 J01/J02 的**一次共享宿主证据**。
 - 原版 `VMControls.Data.ToolBoxData`、`VMControls.WPF.Base.ToolItemGrid`、`VM.Core.VmModuleSet.CreatModuleByInfo/CreateModuleToolRe` 提供工具箱到原模块实例的源码入口；十项 `ToolItemInfo`/主 XML/原生与 Cs 载体的静态身份已在[原件身份报告](20261020-pass6-calibration-original-identity.md)逐项核对，SDK 动态实例 ID 尚未核。本地对应 `ToolNavigation.ReadCategoryTools/LoadToolCategory/CreateCatalogTile`、`MainWindow` 注册和 `GraphEditorDocument.AddNode`；真实主窗/目录/注册表十项探针见下表，作为 J01/J02 的**一次共享宿主证据**。
 - 结果链优先做一个真实标定生产者→同分类结果消费者→父流程/Group→保存重开闭环，再按不同载荷族补特有反例。历史插件 10/10 自审仅证明各自限定实施范围，**不能直接代替本次跨框架联合审核**。
 - 框架实施指标仍为 `41/96=42.71%`，与本次十工具审核对象数分开；人工验收不进分子。未获证据的边不因测试绿色、报告数量或目录映射存在而关闭。
@@ -35,3 +34,4 @@
 | 共同目录→注册→工厂→新增图节点 | [真实 WPF 宿主十项探针](20261020-pass6-calibration-catalog-host.md) 全部通过；仅作为十工具共享的当前 J01/J02 边 | 原安装版各 `ToolItemInfo` 身份逐件、实际用户拖放与配置窗 |
 | N点独有点表初始化/单格编辑 | [原 setter 与当前 Apply 成本](20261020-pass6-npoint-ui.md) 有原体、真实图文档计数及 4/9/32 点负载 | 原版/当前同机时延、初始化失败副作用、真实宿主历史/重开、长期卡死根因 |
 | N点→XML→标定加载→Group→坐标系矩阵 | [标定结果实际链](20261020-pass6-calibration-result-chain.md) 首跑和保存重开均成功；原始模块体支持文件 float[9] 路径，直接 `CalibData` 连接被拒 | 原厂同构整图运行、失败/短矩阵/其他生产者、坐标系全部分支 |
+| Group 矩阵输出→坐标系输入的连接历史 | [第七轮撤销/重做探针](20261020-pass7-calibration-history-chain.md) 断开、撤销、重做、再撤销后四次实际执行（含保存重开）通过 | 原版同构整图、参数叶订阅历史、多层 Group 和动态端口历史 |
