@@ -1,0 +1,16 @@
+# 第五轮根线自审：按架构链路聚合图像工具与 Group
+
+日期：2026-10-20。主线 `1e53473100ccbe7b1e0055e62df4d42a4b8a7b5d` 上的本轮增量；产品代码未改，`tool-plugins` 未动。审核范围按[架构链路分组](20261020-architecture-chain-groups.md)收束为共享边一次和各工具独有分支。18 个目录工具加 Group 各有一个归属；本轮深审 A 图像链、D 的 Group 交接和共享配置/窗口接缝，不把这些路径分别重复计作每个工具的完成。
+
+## 已确认的新代码级边
+
+1. 原 `VM.Core.dll` 的 `VmModule.GetFrontIOWithLeafItemsByName("IMAGE")` 由前置模块、明示变量与 Parent 取可订阅/可见的 IMAGE 候选，不以像素格式叶筛。原 `Group.xml` 的 `GetFrontParamItemsOperation → GetSelectedCombinationOperation → SetCombinationSourceOperation` 在选择时写 `RelateIO/RelateIndex`；底部确定资源绑定为关闭窗。当前共享 `WorkflowSources` 可枚举流程内所有兼容节点输出，`EditToolInput` 只排当前节点；真实 A→B、C 独立图的四项探针已证它列 A 和非前驱 C，插件侧类型化候选桥只列 A，提交 C→B 则由 `GraphValidator` 报 `DataExecutionOrder` 且保留旧连接。公共链只在[配置接缝报告](20261020-pass5-binary-ui-contract.md)核一次；Binary 专属资源链接和按钮事件单列。该报告 SHA-256 `9FE1F446B5782593700704472D7B9BAC44D79DF863121E1A34AC3F0C9A3B2673`；[候选范围探针](20261020-pass5-candidate-scope-probe.md) SHA-256 `04177B30AA12F33B907B84EE6240CA2EF626F916A075067681AB4435F7B35680`，日志 SHA-256 `1BA8DBF1AD50740919F206463619BD2059ADCD212E74CD41B56B7230E771FB88`。未追完原普通参数 Setter→SDK/save，故不宣称按钮时序完全等价。
+2. 原 `IMVSBinaryModu.xml`（SHA-256 `30C47A31236E4EA48F6C30DA4FCBA33B03E17B5C3CD470C0A89C2247470DBB86`）的 `OutMask` 为非强制、禁止自动订阅。新导出的 `VM.Core.VmProcedure` CIL（SHA-256 `8BFAB5216AC4DF8D35E670256940448E2EB19DDE7FC026C73B86DB6655DBE4CE`）显示 `SetIoParams → GetGroupIoList → ProcessManager.SetGroupIO`，Group IO SDK 结构没有 `IsForce` 字段；因此不能仅凭模块 XML 断言原版 Group 缺少 Mask 时的运行状态。当前真实 owned Group 的 ImageSource→Binary→父流程 Binary 七态已验证：RGB 经普通 Image 实值导致 `InputTypeMismatch`；RGB 经已打开 Mono8 输出可成功；可选 Mask 暴露为 Group 输出却缺席时，当前 Group 整体 `SubprogramFailed`，即使普通图像输出存在，父流程普通消费者仍跳过。见[Group 图像类型报告](20261020-pass5-group-image-type.md)与测试 `tests/FrameworkImageTypeGroup.Checks/`；最终日志 SHA-256 `50E1118B24C03C295687D8969EFB63E2186A7F5B8F724063103A417EB8F20300`。这仅证明当前七态，原版 Group 的同一分支仍开放。
+3. 原 `MVDImageBinaryCpp.dll` 创建算法 ID `0x25a`，用 `RCX=handle, EDX=0x25a, R8=&input, R9=&output` 调 `MVD_Algorithm_Process`；本轮定点导出追到 `MVD_Algorithm.dll` 虚表、`Process` 分派、参数写入和析构。受控 SDK 对同一 20×16 夹具表明实际 Mono8 在 1/2/3/8/4 五模式均成功，实际 RGB24 在五模式均返回 `MVALG_STS_ERR_IMG_FORMAT=0x10000007`；这与原 IMAGE 候选可见并存，不支持无据自动转灰。五模式像素核心 `0x180d54d40` 函数体仍缺，不能宣称算法符合。详见[Binary 核心报告](20261020-pass5-binary-core.md) SHA-256 `2450D341FE7BB003B4FE4319ECDB7C79DF38B63A52F315702596BA73882AE526`，CSV SHA-256 `55CBAD3C3DEAA4C6A59AB4BE263F9B1AC02CB1FE51448FBD4FDDB6431876A79D`。
+4. 自有离屏真实 ImageSource→Binary 宿主 64² 样本打开配置窗同步耗时 8060 ms，`Loaded` 在约 7971 ms，后续 `Changed/RefreshAll` 约 89 ms；简化 ROI/空窗对照把大段停顿定位到同步 Show/首轮布局接缝，但跨进程波动和缺 UI 栈不能进一步归因，更不能说明用户所述空闲后长期卡死。见[Show 分段报告](20261020-pass5-ui-show.md) SHA-256 `06F671807F063399924A55C4F7EEB81876E2B42416B88817E567F363BD5271FB` 与 `tests/WorkflowShowPhase.Checks/`。
+
+## 本轮自审和后续唯一工作项
+
+- `dotnet run --project tests/FrameworkImageTypeGroup.Checks/FrameworkImageTypeGroup.Checks.csproj -c Release`：最终七态均通过；初次测试重复 Connect 的错误已在测试中改为先 Disconnect，失败日志保留。`WorkflowShowPhase.Checks` 六个受控模式均正常退出且保留慢 Show 事实。测试和原始报告分别列 SHA；这不是原厂桌面或人工验收。
+- A 线继续只补二值化五模式像素核心、Mask/ROI 格式门和各图像生产者特有帧时序；B/C/D 线按分组文档复用共享边、逐工具只补特异参数/算法/异常。前驱候选偏差已由独立代码探针复验；由主框架所有者基于 Group/变量例外实施，不能在 Binary 插件内另造筛选器。
+- 当前无新增完整框架实施单元，权威实施进度仍 **41/96 = 42.71%**；本轮代码审核切片、SDK 成功或测试通过均不加分。人工/设备验收单列。未推送，未改 `tool-plugins` 工作树。

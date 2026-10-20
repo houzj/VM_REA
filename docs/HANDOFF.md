@@ -1,3 +1,7 @@
+## 2026-10-20 main 联合审核第五轮：架构链路聚合、Binary 原生入口与 Group 真值
+
+用户把本轮目标收束为已接入工具和相关主框架的**代码级**联合审核，先链路再逐工具 UI/后台/算法；按 [18 工具＋Group 架构分组](joint-audit/20261020-architecture-chain-groups.md)实现唯一归属和共享边一次审核。`HEAD` 目录为 16 工具＋Group；工作区另外两项目录映射未提交，未称已交付。第五轮原生定点追到 Binary 算法 ID `0x25a` 的创建、参数、处理、析构入口；同版 SDK 的实际 Mono8 五模式均运行成功，RGB24 五模式均格式拒绝，像素核心仍缺。真实 ImageSource→Binary→Group→父流程消费者七态显示可选 Mask 缺席会使当前 Group 整体失败；原版 Group 缺席语义尚无 SDK 运行证据。共享配置链和 A→B/C 独立真实图四项探针证主框架通用候选列非前驱 C，类型化桥只列 A，提交 C 被验证器拒绝且旧连线保留。自有离屏 Show 分段证打开配置窗有数秒 UI 同步停顿，不能归因为用户空闲卡死。证据和有限边界见[第五轮根线自审](joint-audit/20261020-pass5-root-review.md)。框架实施仍 **41/96=42.71%**，本轮无新增整单元；人工验收另列，`tool-plugins` 未动、未推送。
+
 ## 2026-10-20 main 联合审核第四轮：输入源实连显示、原生 SDK 与卡顿分段
 
 主线按原 `GetSelectedCombinationOperation/SetCombinationSourceOperation` 与当前 `Connections/Subscriptions` 链修正共享配置宿主的来源标签，真实 ImageSource→ImageBuffer 配置窗、断连、重连、保存重开、订阅与 Undo 共 7 项通过。原版二值化包装层虚表/ABI 和算法 ID `0x25a` 已复核，五模式核心库全量分析发生 Java heap OOM，失败日志与 88 个原始导出保留；不得称五模式已恢复。自有离屏真实图像流程复现打开二值化配置窗阻塞 UI 3.94–5.95 秒，根线 64² 重测 4.87 秒；用户长期卡死仍缺 UI 栈。完整证据和未解条件见[第四轮根线自审](joint-audit/20261020-pass4-root-review.md)。框架具名单元仍 **41/96=42.71%**，本轮未增加整单元；`tool-plugins` 未动，人工验收另列。
