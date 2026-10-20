@@ -51,3 +51,5 @@
 | N 图像失败批次→恢复 XML→owned Group→坐标系 | [第十一轮批次状态链](20261020-pass11-nimage-state-chain.md) 真图八帧后第九空白帧失败、owned 数=9/无 XML，显式导出失败；下一帧重置并完成九帧，新 XML 经 Group 给坐标系，保存重开后消费再跑 26/26 | 原厂同图失败码和数值、只 Clear 未 Run 的旧 SDK 结果、未完会话跨重开 |
 | 坐标系 Draw ROI→图像/显示→撤销/重开 | [第十一轮 ROI 链](20261020-pass11-coordinate-roi-chain.md) 真图 100×80→200×80 使当前 Normalized ROI 像素原点 25→50；缺 ROI 暖态保旧、Undo/保存重开复验 | 原厂 ROI 序列化坐标空间与原机图执行；当前 Normalized 缩放仅是宿主适配 |
 | N 点真实主窗打开/编辑点表 | [第十一轮 MainWindow 探针](20261020-pass11-npoint-mainwindow-cost.md) 4/12/32 行实际按钮开窗分别产生 20/60/160 次文档 Revision/Changed，单格各 +1；FCR-033 追加证据 | 原版同机时延、字段写失败/重复打开副作用、长期未响应线程栈 |
+| 标定板/畸变成功→失败→切选的实际显示 | [第十二轮显示链](20261020-pass12-board-distortion-display.md) 主窗 11/11：板 NoMatch 清旧点图形，畸变坏导出失败保留两层旧图/170 图形但更新记录，切到源节点均清显示；FCR-034 登记风险 | 原厂同图失败显示的 `GetDisplayList`/可见层，不能仅凭当前状态判缺陷 |
+| 标定加载动态叶改名/改型→Group/坐标系 | [第十二轮动态 schema 链](20261020-pass12-readcalib-schema.md) 原 FloatList 成功；刷新为新名或同名 int 后旧 Group 选择明确失败、坐标系跳过，重开不静默迁移；恢复原名/类型后同 scope 与重开均成功 | 原厂文件刷新到 SDK IO 通知/托管对象复用或重建/Group 订阅的精确调用链 |

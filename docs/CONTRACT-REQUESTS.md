@@ -566,3 +566,11 @@ PointAlias构造追加可选presentation状态，旧调用仍可编译。实际M
 第十轮追加：`tests/CalibrationNPointEditChain.Checks` 以真实点编辑器和与产品相同的回调算法写真实图文档，实测四行初始化 20 次 `Apply/Changed/revision`、单格 +1，Undo/Redo、保存重开、N 点求解→XML→标定加载通过。主窗口源码的 `doc.Changed→RefreshAll→GraphValidator/RenderGraph/RefreshRight` 将逐次文档变更放大为逐次图刷新；这是调用链证据，不是已经实测的用户桌面耗时或长期未响应根因。原版 `NPointList.Init/PointList` setter 逐叶写，native `SetParam @0x3e560` 分派五字段；不能简单删去初始化 setter。详细证据和动态 `CreateCalibTime` XML 哈希界限见 `docs/joint-audit/20261020-pass10-npoint-edit-chain.md`。若后续采用窄批次/刷新合并合同，仍需保留每叶成功/失败与顺序，其他工具退回原 Apply；本条继续保持待用户选择，未实施跨项目代码。
 
 第十一轮补充真实 `MainWindow` 按钮路径：`tests/CalibrationNPointMainWindowCost.Checks` 在实际配置窗口内打开 4/12/32 行点表，测得图文档 `Revision/Changed` 分别 +20/+60/+160，改单格各 +1；最终 exit 0，离屏模态调用样本为 851.7/1948.3/3463.2 ms。当前同步调用放大已不依赖同构回调推断，证据见 `docs/joint-audit/20261020-pass11-npoint-mainwindow-cost.md`，日志 SHA-256 `85D8940022B6495D9A5899C067F272A6B1291F471B2DA51D40E8D60FA9D3AAF6`。这不是原厂同机差分或用户长期卡死根因，插件/主框架合同仍待跨项目裁定。
+
+## FCR-034 — 畸变标定失败轮的显示快照归属（2026-10-20，待原版同条件证据）
+
+生产者：`DistortionCalibrationPlugin` 的同节点执行 scope、`LastDisplay` 图像层/图形与失败状态。消费者：main 的 `NodeRunRecord`、`RefreshToolDisplay` 和图像/记录/结果列表 presenter。载荷为原图、`PostCorrectionImage` 对应显示层 `PostCorrectionImageData`、170 个图形及 `ModuStatus/ModuRunTime`；框架公开的失败轮输出可以为空，插件 owned display 仍可能持有上一成功轮的图。
+
+第十二轮真实离屏 MainWindow 图先成功、再改自动导出扩展名为 `.bad` 导致该节点 `Failed`：当前显示仍有两图层和 170 图形，失败记录文本已更新；切换到图像源节点后 presenter 图/记录/列表清空。标定板的空白 `NoMatch` 则保持本轮输入图、清掉旧检测点图形。原 `IMVSImageCalibModuDisplay.xml` 将校正图映射为 `PostCorrectionImageData`，原 `ProcessOutput` 可非原子发布；但未证同一导出失败后原厂是否保留旧图。证据、原件哈希和运行日志见 `docs/joint-audit/20261020-pass12-board-distortion-display.md`；根线独立复跑日志 SHA-256 `0DA4B51325A5A0AFFBEFA6FB8629F5D858F18FAECCA2E4C29A5CBA4E56AF16B2`。
+
+生命周期和兼容裁决：不得只因 `NodeRunRecord.Failed` 就在 main 清所有插件显示，也不得把 retained 图形无证据称为原厂行为。需要原版同输入“成功→自动导出失败→切节点”的 `ProcessOutput/GetDisplayList` 结果与可见选层，再由插件显示快照所有者决定保留、标注旧轮或清除的具体条件；main 只按约定显示该快照和当前运行状态。接受证据应含同节点连续两轮、切选、切方案、关闭、重开和失败后再成功的实际 WPF 显示/释放回归。此条仅登记跨项目合同风险，不修改 `tool-plugins` 在制文件或擅自修复。
