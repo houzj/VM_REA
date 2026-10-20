@@ -1,3 +1,7 @@
+## 2026-10-20 main 标定联合审核第十七轮：原始调用图与方法失效复核
+
+当前目标仍限标定十工具 UI/后台/算法及框架必要交接。原 ReadCalib `FilePath` 已从控件追到 `ModuleParam→IMVS_SetParamValue` 和原生 `SetParam→LoadFile`，`VmModule.Outputs` 懒读另证；已加载输出通知/Group 自动迁移的 SDK 中间 caller 待定点反编译，不能据缺口提前结项。真实 owned Group 13/13 加根线独立复跑证文件改名后旧订阅不迁移，warm 坐标系可用旧矩阵令 Group Success、cold 则失败，显式重绑的 Undo/Redo/重开通过，FCR-037 登记。标定板真实主窗删除/撤销/方案替换 scoped 回收 6/6，原版 SDK CloseOneModule 同构仍未测。证据和哈希见 [第十七轮根线复核](joint-audit/20261020-pass17-root-review.md)，已有反编译仍发生偏差的责任与方法修正见[插件项目候选交接](joint-audit/CALIBRATION-PLUGIN-REVERSE-LESSONS-HANDOFF.md)。没有产品修复、未推送、`tool-plugins` 不动；框架实施仍 **41/96=42.71%**，历史插件实施自审 10/10 与本次联合审核分列，人工验收不计。
+
 ## 2026-10-20 main 联合审核第十六轮：标定三项显示交接与旧记录风险
 
 N 图像真实图待完成→第九空白失败→新批次恢复→切选，根线独立复跑 10/10；相机映射四对点数组→九列文本结果→长度失配失败→修正/切选，根线主窗 7/7；标定加载有效/畸形/无输出/改名/恢复→owned Group/Data Record，根线独立复跑 12/12。三线原资源/原 `Process` 与当前显示代码分开核；ReadCalib 当前 NaN 有限值失败后 `LastDisplay` 仍回上轮 `Module Status:1`，已登 FCR-036，原厂 NaN/失败显示不推断。详情与哈希见[第十六轮根线复核](joint-audit/20261020-pass16-root-review.md)。无产品改动、不推送，`tool-plugins` 不动；框架实施仍 **41/96=42.71%**，插件历史自审10/10单列。

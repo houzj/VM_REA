@@ -1,0 +1,9 @@
+# 第十七轮根线复核：标定加载动态叶、Group 与标定板生命周期
+
+本轮仅覆盖标定分类十工具的必要共享/特有边，没有扩到二值化或其他工具。三条线各用独占审计路径；`tool-plugins` 在制文件只读。主线先核原件/当前源码，再独立复跑 Group 探针和标定板真实主窗生命周期探针。所有结论均是**具名有限边**，不是十工具 J01–J12 整体关闭。
+
+1. [FilePath→原生 LoadFile 和输出懒读](20261020-pass17-readcalib-native-callback.md) 报告 SHA-256 `F363E0BA77ABB5499DFD6494DA8EC08BDB8AE8A5987F25CB16E7E383648F350D`。主线复核 `ModuleParam.cs`、`ModuleManager.cs` 与原生 `SetParam @0xd120` 原体 SHA 均与报告一致。已追到 `IMVS_SetParamValue` P/Invoke 和原生 setter 两端，但 SDK 派发/已加载输出通知的中间 caller 尚未取回；这是明确的逆向任务，不把缺口当作原版不会刷新或已达等价。
+2. [标定加载动态叶→owned Group 订阅历史](20261020-pass17-readcalib-group-history.md) 报告 SHA-256 `88FAE594E391E4F8E2F921FE8E9F936A5E19FD452D1FA00B1FD384BF5F69AB9C`。根线在相同探针源码上独立 `dotnet run --project analysis/joint-audit/pass17-readcalib-group-history/probe.csproj -c Release --no-restore`，exit 0、13/13，日志 SHA-256 `DFF3EDFC5E492CB6183A70F8EF4E92E8AB706CD2963CDD000908A86A7C10236F`。原文件旧订阅成功；改名后运行时只发 `NewMatrix`，文档仍指 `OldMatrix`，warm 坐标系 `ModuStatus=0` 且 Group 仍给旧九项，cold 则 `NativeUninitializedMatrix/SubprogramFailed`；显式 rebind 后 Undo/Redo/保存重开均通过。历史前四轮失败日志保留，见专报。暖态 Success 不是新数据交接成功，原厂同条件迁移政策未证；已登 FCR-037。
+3. [标定板当前宿主状态归属](20261020-pass17-calibration-lifecycle.md) 报告 SHA-256 `EAB6CE55566C7420F618956B0DA6BE5600E72316DB724FFEA9AD822C6C04D3A5`。真实 `MainWindow` 中板节点 `DeleteNode→Undo→NewSolution`，可计数的 scoped `IDisposable` 状态释放/重建 6/6，独立复跑日志 SHA-256 `381720C16C846FD5EB7C45ABFC27E9A41D5808ABD7B962A222DBA037C7669132`。原 `VmModule.Dispose` 的 IO/关系/SDK 关闭链另据原体确认；本探针不运行原厂关闭，也不证明用户长期未响应已解决。
+
+本轮暴露的**方法问题**不是“拿不到源码所以只能猜”，而是之前把可追的源码按工具孤立分析、先以局部绿灯完成实施自审，没有把原始调用图和跨界消费者作为先决门槛。已建立[跨项目源码调用图底图](CALIBRATION-CROSS-PROJECT-SOURCE-GRAPH.md)及给插件所有者的[方法修正与逐例交接](CALIBRATION-PLUGIN-REVERSE-LESSONS-HANDOFF.md)，仍由用户决定何时采用；缺失的 SDK callback 必须继续定点取回。主框架实现 **41/96=42.71%**，未因只读审核与探针增加实施分子；历史标定工具实施自审 10/10 单列，严格联合审核尚未整体关闭。人工验收不计进度，本轮未推送。

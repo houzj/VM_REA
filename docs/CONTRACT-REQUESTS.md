@@ -590,3 +590,9 @@ PointAlias构造追加可选presentation状态，旧调用仍可编译。实际M
 第十六轮真实 owned Group 探针从合法九项矩阵，经畸形刷新保留、合法空输出状态0、动态叶改名和恢复后，读取含 `NaN` 的 XML：当前 loader 报 `INVALID_CALIBRATION_NUMBER`、Group `SubprogramFailed`，但 `LastDisplay.RecordText` 仍为上轮 `Module Status:1`。原 Runtime 的有限值错误早退没有更新 `LastOutputs`，main 失败记录仍允许拉 LastDisplay；这是**当前缓存/显示归属差异**，不等于原版应清空或显示某个特定文本。原源码、当前方法、完整 12 项探针及日志见 `docs/joint-audit/20261020-pass16-readcalib-display-chain.md`。
 
 生命周期与兼容：同节点合法→畸形→无输出→改名→恢复→非有限拒绝→再次恢复，另核切节点、切方案、Group、重开和取消时的快照 owner。插件侧决定失败轮显示是否用本轮错误 DTO、无帧或保留并标注旧帧，main 只呈现有明确轮次/状态的快照；如公共显示合同需扩展 owner/epoch，单一共享写入者先提接口并由用户决定合流。不得无原版证据把所有失败帧一律清空；此项只登记，不修改 `tool-plugins` 在制文件。
+
+## FCR-037 — 标定加载动态叶身份与旧订阅暖态消费（2026-10-20，待原始回调与跨项目裁决）
+
+生产者是 `ReadCalibFilePlugin.Runtime` 从文件发布的 `UpdatedDescriptor` 和动态 `NodeOutput`；消费者是 main 的 `GraphExecutor/WorkflowSubscriptions`、坐标系 `CalibMatrix` deferred numeric 读取及 owned Group 出口。载荷必须同时区分文档持久化 `OutputSchema/WorkflowSubscription.Source.Port`、**本轮**运行时 descriptor、缓存矩阵所属轮次与 Group 导出状态。第十七轮真实 Group 探针将文件 `OldMatrix` 改为 `NewMatrix` 而保留旧订阅：warm 坐标系/Group 仍 Success，坐标系 `ModuStatus=0`、Group 输出旧九项；cold 坐标系 `NativeUninitializedMatrix`、Group Failed。显式同步更新 schema+订阅后，Undo/Redo 单历史根及保存重开 fresh scope 正常。报告 `docs/joint-audit/20261020-pass17-readcalib-group-history.md`，根线独立复跑日志 SHA-256 `DFF3EDFC5E492CB6183A70F8EF4E92E8AB706CD2963CDD000908A86A7C10236F`。
+
+原厂 `FilePath` 写入、原生 `LoadFile`、`VmModule.Outputs` 懒读和手动 `DynamicVmIO` 改名历史是各自已证边；文件刷新通知已载入输出及 Group 旧订阅实际迁移尚待定点取回，见 `docs/joint-audit/20261020-pass17-readcalib-native-callback.md`。不能把当前 warm 旧值说成原版缺陷，也不能把 Success 当作新叶已被消费。主框架若采纳“动态叶消失时停止旧订阅”的**独立安全一致性政策**，应在本轮运行 descriptor 上校验端口存在/类型后再允许 deferred fallback；插件侧提供可区分轮次和身份的结果契约。必须兼容旧方案的明确错误与手工重绑，覆盖 warm/cold、改名/改型、Undo/Redo、重开、Group 和失败恢复。两个所有者先用原始 callback 证据及该探针裁决合同，由用户决定合流点；本条仅登记，没有修改 `tool-plugins`。

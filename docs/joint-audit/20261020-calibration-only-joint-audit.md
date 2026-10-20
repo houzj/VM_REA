@@ -29,6 +29,8 @@
 
 第十六轮补 [N 图像待完成/空白失败/新批次显示](20261020-pass16-nimage-display-recovery.md)、[标定加载文件刷新/动态 Group/状态记录](20261020-pass16-readcalib-display-chain.md) 与[相机映射文本结果/数组失配/恢复](20261020-pass16-camera-mapping-display.md)；根线复验和原版/当前分界见[第十六轮复核](20261020-pass16-root-review.md)。ReadCalib 当前有限值失败回灌上一轮成功记录登 FCR-036；原版 NaN/失败画面未推定。十工具具名当前显示边已有覆盖，但严格 J01–J12 全链仍未关。
 
+第十七轮追到[标定加载 FilePath 托管写入→原生 LoadFile 与动态输出懒读边界](20261020-pass17-readcalib-native-callback.md)；SDK 通知已加载输出和 Group 迁移的中间回调尚无原始证据。[动态叶改名后的真实 Group 订阅历史](20261020-pass17-readcalib-group-history.md)揭示 warm 旧矩阵继续输出、cold 安全失败，显式重绑后 Undo/Redo/重开闭合；[标定板主窗删除/撤销/方案替换生命周期](20261020-pass17-calibration-lifecycle.md)实测 scoped 状态回收 6/6。根线独立复核见[第十七轮复核](20261020-pass17-root-review.md)。这些只关闭具名边，不代表原厂 callback、CloseOneModule 等价或卡死根因；针对“已有反编译仍偏航”的[逆向设计教训/插件交接](CALIBRATION-PLUGIN-REVERSE-LESSONS-HANDOFF.md)已立档。
+
 ## 当前基线和待闭边
 
 - 当前 WPF 主窗 `MainWindow.xaml.cs` 注册了十个插件类型；工作区 `tool-catalog.json` 的标定分类也有十个非空 ID。不过 `HEAD` 目录仅有其中八个，N图像标定和相机映射两项目录映射是用户已有未提交改动，**暂不作为提交基线完成证据**；主线只读核其现状，不覆盖该文件。
