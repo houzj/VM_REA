@@ -201,7 +201,7 @@ public sealed partial class ImageSourcePlugin:IVisionToolPlugin,IToolImageListPr
    }
   }
   static VisionCore.GrayImage ConvertMono(VisionCore.RgbImage image){
-   byte[] pixels=new byte[image.Width*image.Height];var source=image.Pixels;for(int i=0;i<pixels.Length;i++)pixels[i]=(byte)((76*source[i*3]+150*source[i*3+1]+30*source[i*3+2])>>8);return new VisionCore.GrayImage(image.Width,image.Height,pixels);
+   return VisionCore.ImageColorConversion.ToMono8(image);
   }
   static ModuleResult Failed(string code,string message)=>new(ModuleStatus.Failed,new Dictionary<string,PortValue>{["ModuStatus"]=PortValue.Integer(0)},code,message){NativeErrorCode=code switch{"NoImage"=>0xe0000203,"SdkImageNotSubmitted"=>0xe000000f,"CameraNotBound"=>0xe0000309,"StitchGeometryInvalid"=>0xe0000502,_=>(uint?)null}};
  }

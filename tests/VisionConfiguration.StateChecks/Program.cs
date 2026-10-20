@@ -104,6 +104,14 @@ foreach(bool throws in new[]{false,true}) {
  Check(rejectedState.Diagnostics.Any(x=>x.Code=="SubscriptionClearFailed")&&rejectedState.Diagnostics.Any(x=>x.Code=="OperationError"),"failed/throwing clear is diagnosed; throws="+throws);
  rejectedState.SetProgrammatic(rejectedNode,"CustomVisible","True");Check(rejectedNode.Visible&&rejectedNode.SubscriptionBinding==rejectedBinding&&rejectedNode.Value=="3","reshow after rejected clear retains binding and prior value; throws="+throws);
 }
+var compositeDefinition=ToolConfigurationDefinition.Parse("<AlgorithmTabRoot><Tabs><Tab Name='Basic'><Items><PointPair Name='Data1'><ObjectPoint><DropOpenSetter><OperationName>GetFrontCombinationTreeOperation</OperationName><OperationParams>POINT</OperationParams></DropOpenSetter><Triggers><Trigger><Property>CurValue</Property><Setters><Setter><OperationName>SetCombinationSourceOperation</OperationName><OperationParams>ObjectPointInput1</OperationParams></Setter></Setters></Trigger></Triggers></ObjectPoint></PointPair><PointPair Name='Data2'><ObjectPoint><DropOpenSetter><OperationName>GetFrontCombinationTreeOperation</OperationName><OperationParams>POINT</OperationParams></DropOpenSetter><Triggers><Trigger><Property>CurValue</Property><Setters><Setter><OperationName>SetCombinationSourceOperation</OperationName><OperationParams>ObjectPointInput2</OperationParams></Setter></Setters></Trigger></Triggers></ObjectPoint></PointPair></Items></Tab></Tabs></AlgorithmTabRoot>");
+var compositeState=new ToolConfigurationState(compositeDefinition);var pair1=compositeState.Find("Data1")!;var pair2=compositeState.Find("Data2")!;
+var member1=compositeState.GetNode(pair1.Element.Children.Single())??throw new Exception("Missing first composite member");var member2=compositeState.GetNode(pair2.Element.Children.Single())??throw new Exception("Missing second composite member");
+Check(!ReferenceEquals(member1,member2),"same-tag unnamed composite members have independent element identity");
+Check(member1!.Name is null&&member2!.Name is null&&member1.Parent==pair1&&member2.Parent==pair2,"composite members preserve source names and local parents");
+Check(member1.DisplayType=="ButtonSelecter"&&member2.DisplayType=="ButtonSelecter","PointPair field CLR declarations select source ButtonSelecter template");
+Check(ConfigurationSubscriptionValidation.FromElement(member1.Element)!.Destination.Name=="ObjectPointInput1"&&ConfigurationSubscriptionValidation.FromElement(member2.Element)!.Destination.Name=="ObjectPointInput2","composite subscription destination follows each original operation rather than unnamed caption");
+compositeState.SetProgrammatic(member1,"CurValue","first");Check(member2.Value=="","composite value changes cannot overwrite same-tag sibling member");
 Check(events>0,"events raised");Console.WriteLine($"VisionConfiguration.StateChecks: {checks} checks passed");
 
 sealed class NImagePhysicalVisibility:IToolConfigurationRule {

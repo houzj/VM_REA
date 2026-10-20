@@ -60,6 +60,22 @@ static class Program {
   var commands=ToolConfigurationDefinition.Parse("<AlgorithmTabRoot><BottomExcuteButtons>"+string.Concat(new[]{"ClearCalibPoint","ContinuousSelfExcuteModule","StopSelfExcuteModule"}.Select((x,i)=>"<BottomCommand Name='C"+i+"'><CommandSetter><OperationName>ExcuteMethodOperation</OperationName><OperationParams>"+x+"</OperationParams></CommandSetter></BottomCommand>"))+"</BottomExcuteButtons></AlgorithmTabRoot>");
   var cmdState=new ToolConfigurationState(commands,dispatch);foreach(var node in cmdState.Nodes)cmdState.Invoke(node);
   Check(dispatch.Calls.TakeLast(3).Select(x=>x.Kind).SequenceEqual(new[]{ConfigurationOperationKind.ClearCalibrationPoints,ConfigurationOperationKind.RunContinuous,ConfigurationOperationKind.StopContinuous}),"source-confirmed bottom method kinds");
+  var imageDefinition=ToolConfigurationDefinition.Parse("<AlgorithmTabRoot><Tabs><Tab Name='Basic'><Items><EnumerationG Name='ImageSource'><AccessMode>RO</AccessMode><DropOpenSetter><OperationName>GetFrontParamItemsOperation</OperationName><OperationParams>IMAGE</OperationParams></DropOpenSetter><Triggers><Trigger><Property>CurValue</Property><Setters><Setter><OperationName>SetCombinationSourceOperation</OperationName><OperationParams>InputImage</OperationParams></Setter></Setters></Trigger></Triggers></EnumerationG></Items></Tab></Tabs></AlgorithmTabRoot>");
+  var imageState=new ToolConfigurationState(imageDefinition);var imageNode=imageState.Find("ImageSource")!;var imageQuery=ConfigurationSubscriptionValidation.FromElement(imageNode.Element)!;
+  Check(imageQuery.Destination.Domain==ConfigurationSubscriptionDomain.Combination&&imageQuery.Destination.Name=="InputImage"&&imageQuery.NativeTypes.Single()=="IMAGE","EnumerationG source operation queries typed IMAGE combination");
+  var imageBinding=new ConfigurationSubscriptionBinding(new ConfigurationOutputReference("flow","image-node","image-port","IMAGE"),ConfigurationSubscriptionIndex.All);
+  var imageLeaf=new ConfigurationSubscriptionTreeNode("image","same caption",binding:imageBinding);var imageService=new Service([imageLeaf,empty]);
+  var imageFactories=new ToolConfigurationControlRegistry();ToolConfigurationSubscriptionControls.Register(imageFactories,imageService);var wrapper=new ToolConfigurationControlRegistry();ComboBox? imageCombo=null;
+  wrapper.Register("EnumerationG",context=>{imageFactories.TryCreate("EnumerationG",context,out var control);imageCombo=((Grid)control!).Children.OfType<ComboBox>().Single();return control!;});
+  using(var imageView=new ToolConfigurationView(imageState,wrapper)){
+   var imageWindow=new Window{Content=imageView,ShowInTaskbar=false,ShowActivated=false,Left=-30000,Top=-30000};imageWindow.Show();imageWindow.UpdateLayout();
+   Check(imageCombo!.IsEnabled,"source RO EnumerationG remains selectable through combination binding");imageCombo.IsDropDownOpen=true;
+   imageCombo.SelectedItem=imageCombo.Items.OfType<ComboBoxItem>().Single(item=>item.Tag==imageLeaf);
+   Check(imageService.Last==imageBinding&&imageNode.SubscriptionBinding==imageBinding,"image dropdown selection preserves typed source identity");
+   imageService.Fail=true;imageCombo.SelectedItem=imageCombo.Items.OfType<ComboBoxItem>().Single(item=>item.Tag==empty);
+   Check(imageNode.SubscriptionBinding==imageBinding,"rejected image dropdown unbind retains accepted source");imageService.Fail=false;
+   imageCombo.SelectedItem=imageCombo.Items.OfType<ComboBoxItem>().Single(item=>item.Tag==empty);Check(imageNode.SubscriptionBinding is null,"image dropdown supports explicit unbind");imageCombo.IsDropDownOpen=false;imageWindow.Close();
+  }
   selector.Close();ps.Close();app.Shutdown();Console.WriteLine($"VisionConfiguration.SubscriptionChecks: {checks} checks passed");
  }
  sealed class Service(IReadOnlyList<ConfigurationSubscriptionTreeNode> roots):IToolConfigurationSubscriptionService {

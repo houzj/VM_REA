@@ -1,0 +1,25 @@
+2026-10-20 根线已复核路径重开项并通过实施自审；完整计数已纳入6/10=60%。新增审计见TRANSLATION-NPOINT-PATH-FINAL-REVIEW.md；原数值/宿主编译基线与有限边界保留，人工验收独立。
+
+# N点标定完整实施退出自审
+
+2026-10-19。当前活动UI范围的源码逆向、实施与自审已完成，交根线审核计数；人工验收独立，未执行设备/新原厂运行。源码/资源确认、独立兼容和未验证原生边界如下分别列明，不因回归通过宣称全面数值parity。
+
+原模块F8E07023A816C55FF07906E8889F45B93658F59CE88F040AD2204A70922F4839，算法wrapper74B65DAACB1FC0B48ABE39EC0603DC4FC6E70C0A910680787AB318FDC7D0FA17。原资源身份在n-point-calibration-artifacts.json；已复用原48控件/17operation/5显示对象清单、Process3c2f0、GetProcessInput3b150、364b0/36690读源helper、ProcessOutput3d230、WriteXmlData3f990以及原23状态/27XML/404求解fixture，不重新取全DLL或无边界扩依赖。
+
+| 必需活动链 | 实施结论与本轮证据 |
+|---|---|
+| XML三页/控件/Operation | 原资源provider/common window、点表自定义工厂、物理参数显隐、文件和页脚路由均接公共模型；Configuration53通过；Host32真实三页未解析模板0。旧独立窗口截图不作宿主闭合凭据 |
+| Algorithm Reset | 修复全Descriptor atomic reset真实缺口。嵌入原Algorithm.xml 6项默认；原18个ISubInfo含EditButton_Calib:Integer按资源序清模式，persisted权威与effective读回。非名单点表/数量/文件/显示保留，拒绝写非原子/通知正确，Reset36通过 |
+| POINT/完整数组/模式 | Image Point与Physical Point同XY叶本源、POINT数组投影、X数值数组覆盖保Y、模式往返/JSON身份。实际Graph完整两点采样，Image17+Physical18通过。旧direct POINT fallback为独立兼容，叶优先，不冒作原模块组合IO语义 |
+| 数值读源/状态 | 六路Count原序、先原Count比较再32上限、必需图像错误传播、可选坐标/角度零缓冲和回退；完整/manual不读取采样。教学三物理首项失败即返，三图像容错。scope优先→callback→直接typed输入；Numeric12通过，实际空payload0314与显式Error0Count0成功分开 |
+| 教学字符串 | 原3c2f0两次GetString(index0,512)固定序，第二status/两Count门及C串比较；两口opt-in TextArray首项，UTF8含nul容量、失败Count0、scope优先。Text43包含实际TextArray Graph与字节边界通过 |
+| 计算/旋转轴/输出 | NPointSolver现有源码流程保持，三freedom/三weight/三camera模型、原float逆矩阵/归一化、旋转中心与错误状态映射复用。当前Plugin5817重放23原状态适用发布域和27XML，完整/未满字段差异、angle buffer保留、节点/会话隔离均保留。既有共享404例/365矩阵/11284字段零未预期失败未因本轮未变数学而重跑；804病态/并列观察不说成失败或全部bit同 |
+| 点表/采样/清空 | 原32行5可写列/保留第6图像角度、分批/平移旋转边界、蛇形生成、手动重算、导入导出和删除规则均已有实现。实际宿主打开12行、立即写文档，工厂未Show精确493x399；显示后仅校核0.5devicepixel布局取整。原Clear按钮服务另有Configuration53覆盖；Host以实际clear consumer+文档清零验证失败/恢复，未冒称点击带原生通知的Clear按钮 |
+| 文件 | 原WriteXmlData CalibInfo/两点列表/角度/哨兵/方向及教学条件，27XML语义对照；自动刷新原忽略写失败，显式保存走原服务/通知/历史。私有平台.sol/远程FTP作为平台边界，不扩到全部平台编码 |
+| 显示/保存重开 | 原5对象与旋转轴真实Presenter path/marker/tooltip、record/list消费；ShowText正常Content标量，X/Y All数组位置取首项。根线共享DisplayArray46已通过；本轮Host真实self数组绑定不建算法边、style颜色、整方案重开仍还原点行和源身份 |
+| 生命周期 | 实际MainWindow注册→workflow→三页/点表modal→关闭session disposal→重开→清空退化失败隐藏旧path/axis→恢复成功→再次关闭，Host32通过；scope数据与PrepareSave保存原点表语义复用Plugin5817 |
+
+最终7项目全部exit0：Reset36、Numeric12、Text43、Alias35、Host32、Plugin5817、Configuration53。记录analysis/n-point-calibration/final-validation/final-validation.json；最终435项源码/测试快照SHA82A789C3305AEE17AE459671630D88AC4AE4C83EB94C953B76D8DD9055E2197C。生产源码整批无变，只有Host DPI诊断/声明尺寸断言及Plugin受控zeroCount协议注入的测试修正，旧失败日志与修前快照保留。首次Host构建既有MainWindow83两CS8603及测试CS8602，测试标注后最后重建无新警告。
+
+严格剩余必需实施成员：当前未发现。明确边界：每index数值reader对不可变Graph快照承担托管批运输，不宣称等同native BatchGetFloat可变指针/部分写入副作用；原合成输出callback写失败无字典输出的逐回调等价，不能借此声称完整原生ABI。近奇异/并列条件保留既有数值观察，不把独立实施与parity混为一谈。scope恶意协议、设备、任意native指针和原厂桌面像素验收不扩大为无限完成前置。未改共享数值核或其他工具，未提交推送。
+

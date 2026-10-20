@@ -26,20 +26,28 @@ public static class NImageBoardRecognition
   var lattice=NImageBoardDetector.FindLattice(image,cancellationToken,boardType is 6 or 8?1:2,filterStatus);return lattice==null?null:Recognize(image,boardType,lattice,cancellationToken);
  }
  public static NImageDetectedBoard? FindProjective(GrayImage image,int boardType,CancellationToken cancellationToken=default,int filterStatus=1){if(boardType is not (6 or 7 or 8 or 9))throw new ArgumentOutOfRangeException(nameof(boardType));var lattice=NImageProjectiveLattice.Find(image,boardType is 6 or 8?1:2,cancellationToken,filterStatus);return lattice==null?null:Recognize(image,boardType,lattice,cancellationToken);}
+ /// <summary>
+ /// Continues the existing independent recognition phase from a caller-projected lattice.
+ /// Points and code quadrilaterals must use the supplied source image coordinate system;
+ /// this entry does not crop, reorder, refine, or apply an ROI to the lattice.
+ /// </summary>
+ public static NImageDetectedBoard? RecognizeLattice(GrayImage source,int boardType,NImageLattice sourceCoordinateLattice,CancellationToken cancellationToken=default){
+  ArgumentNullException.ThrowIfNull(source);ArgumentNullException.ThrowIfNull(sourceCoordinateLattice);
+  if(boardType is not (6 or 7 or 8 or 9))throw new ArgumentOutOfRangeException(nameof(boardType));
+  cancellationToken.ThrowIfCancellationRequested();
+  return Recognize(source,boardType,sourceCoordinateLattice,cancellationToken);
+ }
  static NImageDetectedBoard? Recognize(GrayImage image,int boardType,NImageLattice lattice,CancellationToken cancellationToken){var tags=new List<NImageDetectedTag>();
   foreach(var quad in lattice.CodeQuadrilaterals){cancellationToken.ThrowIfCancellationRequested();var rings=NImageFiducials.Find(image,quad);if(rings==null||!NImageCodeDecoder.TryDecode(image,rings,out var code)||code.Orientation!=0)continue;var identity=NImageBoardIdentity.FromDecodedBytes(code.Bytes.ToArray(),boardType);if(identity.GridPitch<=0||!float.IsFinite(identity.GridPitch))continue;tags.Add(new(identity,quad,rings));}
   if(tags.Count==0)return null;
   var gridFit=NPointSolver.Solve(lattice.Points.Select(p=>new NPointPair(p.X,p.Y,p.Column,p.Row)).ToArray(),[],new(1,1));if(gridFit.ErrorCode!=0)return null;
   (int Column,int Row) Nearest(Point2 point){var index=NPointSolver.Transform(gridFit.Matrix,point.X,point.Y);return ((int)Math.Round(index.X),(int)Math.Round(index.Y));}
   var first=tags[0];int anchorX=Nearest(first.Opening[0]).Column,anchorY=Nearest(first.Opening[0]).Row;
-  foreach(var tag in tags){if(tag.Identity.GridPitch!=first.Identity.GridPitch)return null;var expected=first.Identity.WorldIndex(Nearest(tag.Opening[0]).Column,Nearest(tag.Opening[0]).Row,anchorX,anchorY,1);if(expected!=(tag.Identity.OriginX,tag.Identity.OriginY))return null;}
+  // Native 813ca0 selects only the first successful payload; later identities never veto it.
+  // Decoded opening geometry remains an independent candidate-mask approximation until native 873de0 is restored.
   var points=lattice.Points.Where(p=>!tags.Any(tag=>Inside(tag.Opening,p.X,p.Y,Math.Min(lattice.PitchX,lattice.PitchY)*.15))).Select(p=>{var index=first.Identity.WorldIndex(p.Column,p.Row,anchorX,anchorY,1);return new NImageBoardPoint(index.X,index.Y,p.X,p.Y);}).OrderBy(p=>p.IndexY).ThenBy(p=>p.IndexX).ToArray();
-  return new(first.Identity.GridPitch,Array.AsReadOnly(points),tags.AsReadOnly());
+  return new(first.Identity.GridPitch,Array.AsReadOnly(points),Array.AsReadOnly(new[]{first}));
  }
  static bool Inside(IReadOnlyList<Point2> quad,double x,double y,double margin){for(int i=0;i<4;i++){var a=quad[i];var b=quad[(i+1)%4];double dx=b.X-a.X,dy=b.Y-a.Y;if((dx*(y-a.Y)-dy*(x-a.X))/Math.Sqrt(dx*dx+dy*dy)<=margin)return false;}return true;}
 
 }
-
-
-
-

@@ -1,0 +1,72 @@
+{
+  "scope": "N点标定专属点表及叶控件；公共顶层窗口/文件保存服务由root接线",
+  "evidence_type": "原厂反编译源码、原厂XAML与PNG；托管独立WPF事件检查，不代表原厂桌面像素等价",
+  "sources": [
+    {
+      "path": "analysis\\full-audit\\n-point-calibration\\managed\\control\\Apps.XmlParser.ParamTab\\EditButton_Calib.cs",
+      "sha256": "fc61d0531dcb51fe5965774bae23a742c56ffd57b41b49916a09b2a69f43ed49"
+    },
+    {
+      "path": "analysis\\full-audit\\n-point-calibration\\managed\\control\\IMVSNPointCalibModuControl\\NPointList.xaml.cs",
+      "sha256": "b972d12af77b27dc3a19e00629c77f3bed58d3fd7a266dd0aa28050a281b5a46"
+    },
+    {
+      "path": "analysis\\full-audit\\n-point-calibration\\managed\\control\\IMVSNPointCalibModuControl\\PointList.cs",
+      "sha256": "a396060c73dbf56b1a7fb7849a4bcd17fe5cbc3d04ad8356f68d4b3b1c9b3813"
+    },
+    {
+      "path": "analysis\\full-audit\\n-point-calibration\\managed\\control\\IMVSNPointCalibModuControl\\NPointList.xaml",
+      "sha256": "92945ce0d5ed92f98f12187a0eb92f1673516760b894f0cd52f89fc2c7341d79"
+    },
+    {
+      "path": "analysis\\full-audit\\n-point-calibration\\managed\\control\\datatemplate\\paramusercontroldatatemplate.xaml",
+      "sha256": "311dbd704dec6c197d49dc1188ded04df131125e8753c69cc3520363cde2387b"
+    },
+    {
+      "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\Apps.XmlParser.CapabilityAudit\\Apps.XmlParser.ParamTab\\OpenFileForCalibDialog.cs",
+      "sha256": "16b255c28c1cc21e57ffc162e349c5cc77a4b3f0cbf3f206bdedc97e796d8ee4"
+    },
+    {
+      "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\Apps.XmlUI\\styles\\paramusercontroldatatemplate.xaml",
+      "sha256": "96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63"
+    },
+    {
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\Module(sp)\\x64\\Calibration\\IMVSNPointCalibModu\\IMVSNPointCalibModuAlgorithmTab.xml",
+      "sha256": "a3e49f17109e49d6c26775bdb2fe956df0af1db1fbcbf5a111dbc2ba6a749435"
+    }
+  ],
+  "source_confirmed": [
+    "EditButton_Calib继承Integer，32px编辑按钮与Integer_Sub组合",
+    "点表DialogWidth493；NPointList.Loaded将原XML高度700覆盖成399",
+    "Init读取平移点数+旋转点数，GetFloatParamValue f3后逐格setter立即写回原SDK；无确认前暂存",
+    "PointList单格写失败保留原文本；确认仅关闭",
+    "点表6列：ID、ImagePointX/Y、WorldPointX/Y、DeltaAngle；列头与行高30；编辑长度10/10/15/15/10",
+    "源DataGrid完整模板：88%点表、12%外置删除按钮；总行数4隐藏删除",
+    "删除先从UI列表移除，再DeletePointByIndex；失败不重编号；成功刷新点数后重编号",
+    "导入CRLF/空格、最多现有行数、每行先MathHelper.IsNumber验证再逐格写入；后行无效保留前行SDK副作用，显示列表不替换",
+    "清空先原生Clear，然后成功提示并逐格赋0.000",
+    "OpenFileForCalibDialog提供普通文本+文件图标以及typed订阅双模式；选文件操作由宿主回调执行"
+  ],
+  "implementation": [
+    "NPointConfigurationControls只注册EditButton_Calib/OpenFileForCalibDialog，不拥有公共配置Window",
+    "NPointConfigurationPointEditor使用回调写单格/删除/清空/选择导入导出；源DataGrid Style和BaseImage_ButtonStyle以资源恢复",
+    "原厂7枚edit/delete/path PNG逐字节复制；source URI仅改为本程序集",
+    "NPointFile现有真实导入导出格式复用；原生SDK调用由托管回调实现"
+  ],
+  "remaining": [
+    "宿主按原XML创建点表弹层并连接真实State/插件执行由root负责",
+    "OpenFileForCalibDialog父目录/扩展名、文件选择CheckFileExists=false、通知+PreExecuteRun及目录历史路由由root负责",
+    "NPointFile数值验证采用InvariantCulture与finite保护，原厂PointListText为当前文化float.TryParse；非中文/英文小数点文化未声明等价",
+    "未在原厂桌面做像素对比，原厂OpenDialog窗口chrome尚需公共宿主复原",
+    "无设备测试",
+    "专属点表列标题当前中文，English本地化及原厂OpenDialog chrome由后续公共宿主闭合"
+  ],
+  "verification": {
+    "project": "tests/NPoint.ConfigurationControlChecks/NPoint.ConfigurationControlChecks.csproj",
+    "result": "25项独立控件/WPF可视树检查通过；构建0警告0错误（包含最终源样式/滚轮/footer）",
+    "screenshots": [
+      "analysis/full-audit/n-point-configuration-controls/point-editor-source-derived.png",
+      "analysis/full-audit/n-point-configuration-controls/point-editor-twelve-source-derived.png"
+    ]
+  }
+}

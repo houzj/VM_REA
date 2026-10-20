@@ -1,0 +1,11 @@
+using VisionFramework;
+namespace VisionPluginContracts;
+public sealed record ConfigurationSubscriptionChange(ConfigurationSubscriptionDestination Destination,ConfigurationSubscriptionBinding? Binding);
+public sealed record ConfigurationSubscriptionDocumentChange(ConfigurationSubscriptionDestination Destination,WorkflowValueReference? Source);
+public sealed record ConfigurationSubscriptionBatchResult(ConfigurationSubscriptionStatus Status,string? Diagnostic=null);
+public interface IToolConfigurationSubscriptionBatchService:IToolConfigurationSubscriptionService {
+ ConfigurationSubscriptionBatchResult BindMany(IReadOnlyList<ConfigurationSubscriptionChange> changes);
+}
+public sealed record ToolPointInputAlias(string Combination,string X,string Y);
+public interface IToolPointInputAliasProvider {IReadOnlyList<ToolPointInputAlias> PointInputAliases{get;}}
+public sealed record ConfigurationPointTupleReference(ConfigurationSubscriptionBinding? X,ConfigurationSubscriptionBinding? Y):ConfigurationSubscriptionReference;

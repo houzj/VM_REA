@@ -1,3 +1,4 @@
+using VisionPluginContracts;
 namespace VisionPlugins.Calibration;
 
 public sealed record RotateCalibrationStep(uint ErrorCode, IReadOnlyDictionary<string, double> Outputs);
@@ -21,25 +22,26 @@ public sealed class RotateCalibrationSession
     }
     public void Restore(IReadOnlyList<float> matrix, bool loaded, string path)
     { for (int i = 0; i < Math.Min(9, matrix.Count); i++) Matrix[i] = matrix[i]; Loaded = loaded; FilePath = path; }
-    public RotateCalibrationStep Run(IReadOnlyDictionary<string, IReadOnlyList<double>> inputs, bool reverseOutput)
+    // Compatibility adapter for the archived synthetic-host fixtures. Production calls
+    // the typed overload below; absent protocol here retains the fixture host's E031c.
+    public RotateCalibrationStep Run(IReadOnlyDictionary<string,IReadOnlyList<double>> inputs,bool reverseOutput) =>
+        Run(name=>inputs.TryGetValue(name,out var values)?new(0,values.Count,values.Count>0?values[0]:0):new(0xe000031c,0,0),
+            name=>inputs.TryGetValue(name,out var values)?new(0,values.Count,values.Count>0?unchecked((int)values[0]):0):new(0xe000031c,0,0),reverseOutput);
+    public RotateCalibrationStep Run(Func<string,ToolNumericInputReadResult> floating,Func<string,ToolIntegerInputReadResult> integer,bool reverseOutput)
     {
-        var output = new Dictionary<string, double>();
-        RotateCalibrationStep Failure(uint code, bool status = false)
-        { samples.Clear(); if (status) output["ModuStatus"] = 0; return new(code, output); }
-        bool First(string name, out double value)
-        { value = 0; if (!inputs.TryGetValue(name, out var array) || array.Count == 0) return false; value = array[0]; return true; }
-        if (First("RefreshSignal", out var refresh) && (int)refresh != 0) Load(FilePath);
-        if (!Loaded) return Failure(0xe0000008);
-        bool hasCount = First("RotNum", out var rawCount); int count = (int)rawCount;
-        if (hasCount && count is >= 3 and <= 16) Total = count;
-        if (count is < 3 or > 16) return Failure(0xe0000001);
-        int next = samples.Count + 1; Remaining = Total - next;
-        if (Remaining < 0) return Failure(0xe0000001);
-        uint missing = 0xe000031c;
-        if (!First("ImagePointX", out var x)) return Failure(inputs.ContainsKey("ImagePointX") ? 0 : missing, true);
-        if (!First("ImagePointY", out var y)) return Failure(inputs.ContainsKey("ImagePointY") ? 0 : missing, true);
-        if (!First("WorldRotateAngle", out var angle)) return Failure(inputs.ContainsKey("WorldRotateAngle") ? 0 : missing, true);
-        samples.Add(new((float)x, (float)y, (next - 1) * (float)angle));
+        var output = new Dictionary<string,double>();
+        RotateCalibrationStep Failure(uint code,bool status=false){samples.Clear();if(status)output["ModuStatus"]=0;return new(code,output);}
+        // 376b0: Refresh is always first. Failure explicitly resets its local value to 0.
+        var refresh=integer("RefreshSignal");if(refresh.ErrorCode==0&&refresh.Count>0&&refresh.Value!=0)Load(FilePath);
+        if(!Loaded)return Failure(0xe0000008);
+        var countRead=integer("RotNum");int count=countRead.ErrorCode==0&&countRead.Count>0?countRead.Value:0;
+        if(countRead.ErrorCode==0&&countRead.Count>0&&count is >=3 and <=16)Total=count;
+        if(count is <3 or >16)return Failure(0xe0000001);
+        int next=samples.Count+1;Remaining=Total-next;if(Remaining<0)return Failure(0xe0000001);
+        var x=floating("ImagePointX");if(x.ErrorCode!=0||x.Count<=0)return Failure(x.ErrorCode,true);
+        var y=floating("ImagePointY");if(y.ErrorCode!=0||y.Count<=0)return Failure(y.ErrorCode,true);
+        var angle=floating("WorldRotateAngle");if(angle.ErrorCode!=0||angle.Count<=0)return Failure(angle.ErrorCode,true);
+        samples.Add(new((float)x.Value,(float)y.Value,(next-1)*(float)angle.Value));
         RotateCalibrationResult? result = null;
         if (samples.Count == Total)
         {

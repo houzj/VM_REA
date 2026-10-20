@@ -1,0 +1,23 @@
+# 畸变ImageSource初始化有界重开
+
+2026-10-20。产品src冻结、root/C占managed；本轮仅候选/tests/docs，未构建。之前整工具通过证据保留，不用下拉控件另行可用掩盖Initialize Unsupported。
+
+原DistortionAlgorithmTab.xml ImageSource为EnumerationG：Initers先EnumEntrys GetFrontParamItemsOperation(IMAGE)，再CurValue GetSelectedCombinationOperation(InputImage)；CurValue触发SetCombinationSourceOperation(InputImage)。原GetFrontParamItemsOperation.Operate获取NameValueItem→AlgorithmTabRoot.Owner VmModule→GetFrontIOWithLeafItemsByName(IMAGE)→SetPropertyValueByNameNotrigger(EnumEntrysA,list)。VmModule.cs:4049组合前驱输出、Parent输入以及Global/Local来源，最终CanSubscribeA&&Visible筛选并给ModulePathName字符串。此为现合同提供者边界，不在工具内重写平台枚举。
+
+当前DistortionCalibrationConfiguration缺EnumerateInputs处理，State.Initialize确切操作被adapter判Unhandled；共享EnumerationG.DropDownOpened直接查询service使控件打开时可用，不能补偿源初始化操作失败。候选仅补与Board同样的query→Enumerate→status/Error分支，不做平行订阅框架、不改ROI/算法/共享。
+
+候选image-enumerate.patch SHA E4564D579DC37527C0216866AC5CFC0EDAC207AEB069761303A87A4685F73D0B，git apply --check退出0；路径analysis/distortion-calibration/image-source-reopen。独立tests/DistortionCalibration.ImageSourceChecks/Program.cs SHA25734C86E64138A3C72A4E830613C6B66BFD78FC4679E87982555FA7BB76B30A，真实production provider初始化先IMAGE查询、实际EnumerationG dropdown再查询并选择typed InputImage，检查state无Unsupported及算法参数不被写。记录式subscription服务只证明工具消费者请求/呈现/选择，不冒充原Global/Local完整provider过滤。
+
+根线审落且统一freeze后最短验证：dotnet build tests/DistortionCalibration.ImageSourceChecks/DistortionCalibration.ImageSourceChecks.csproj --artifacts-path .a/distimg；dotnet .a/distimg/bin/DistortionCalibration.ImageSourceChecks/debug/DistortionCalibration.ImageSourceChecks.dll。尚未执行，不提前通过/恢复计数，无需重跑未变数值大套。
+
+## 2026-10-20 中间运行与必要纠正
+
+本线第一批build0warning/error、run9退出0，原日志build.log/run.log保留。但根线再审原SetPropertyValueByNameNotrigger(EnumEntrysA,list)确认只查询并丢弃tree仍不够；9不能作为整工具闭合证据。已交还managed给root共享短窗，D暂停等待。测试新增dropdown打开前实际ComboBox已有typed IMAGE选项断言，Program SHA175E58400590241F0F53E8F192E8BBE17B71165C6729BC11FFDC3417A2062C42；待typed tree存储/初建填充落盘后复跑。不得把后续结果覆盖首批日志。
+
+## 最终typed树实施与验证（2026-10-20）
+
+根线补齐ConfigurationOperationResult.SubscriptionTree、State保存readonly roots及EnumerationG初建填树；畸变dispatcher现在返回tree。实际第二批build-2/run-2均exit0，0warning/error，11项通过：Initialize先枚举、typed IMAGE destination、无Unsupported、State持树、控件初建即有typed选项、dropdown刷新、真实选择回写InputImage身份/呈现且不写参数。共享StateChecks构建0warning/error，1692项exit0，未放宽断言。首批9项仅中间，原日志保留。
+
+最终精确source/runtime/log manifest位于analysis/distortion-calibration/image-source-reopen/final-manifest.json SHA D111A0BB3C4D30069667A573067FA3DB7EE1769EEBE8D26E2E2619E415D76877；实际Contracts+Distortion Portable PDB共68源compiled-source-manifest.json SHA10FFFBF47B8C7EB766BC45B6C7199F4C8DF5E1257A2822FC91FFC5B9ECCEF1D2。其后仅docs/analysis归档，无产品变动。manifest生成末尾打印计数命令曾误写text=导致shell exit1，文件已写完并复读68；这不是build/run失败，真实测试日志不受影响。
+
+恢复建议：本轮确认的ImageSource初始化Unhandled及丢弃EnumEntrys两实际缺口均已实施并验证，原三页/ROI/识别/Reset/文件/显示/生命周期完整自审证据继续复用，不重跑未变数值大套。在原已审核范围基础，当前未发现阻止整工具实施完成的新增具体活动缺口，可交root恢复计审；记录式服务验证工具消费者，前驱/Global/Local/Parent筛选仍是公共provider边界，不冒称完整原平台等价。人工验收与全局百分比由root独立记录，本线不改计数。

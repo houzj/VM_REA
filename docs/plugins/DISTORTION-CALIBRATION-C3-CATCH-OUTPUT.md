@@ -1,0 +1,49 @@
+# 畸变 C3：模块catch、错误码与最终发布门控
+
+2026-10-19有限源码切片。原module SHA256=0A6BAC886F1AA1CCC41433EF9D35FC1091B3D43354DE5794563454D8BBA03BCB。专属ExportDistortionModuleExceptionScopes.py仅读取PE字节，严格匹配20550/20820/20b70及三个pdata结束边界；未加载目标DLL。系统python是不可用的WindowsApps占位，实际使用已配置bundled Python，无安装。16handler和六续点均通过私有只读Ghidra取得原指令；未执行原厂或修改产品。
+
+## EH元数据与真实try范围
+
+| 主函数 | pdata begin..end-exclusive | try状态 | 实际主体范围 | handler(int/uint/SDK/...) |
+|---|---|---|---|---|
+| Process | 20550..2081f | 1..1 | 206ce GetBasicParam到2074a，含中心setter | 28386 / 28407 / 28488 / 28535 |
+| ProcessAlg | 20820..20b70 | 0..0 | 2088d检查/创建工具、SetInput、ROI，直到209b3 SDK Run返回后209b7 | 285b0 / 2862b / 286a6 / 2874d |
+| ProcessAlg | 同上 | 2..3 | 20a52 GetResult、路径判断、自动Export到20b04，含局部字符串清理state3 | 287e7 / 28862 / 288dd / 2898a |
+| ProcessOutput | 20b70..21326 | 0..3 | 20c4c成功结果取回及后续发布/清理 | 28a24 / 28a9f / 28b1a / 28bc7 |
+
+第一ProcessAlg范围不是“只创建”，第二范围也不包含SDK Run。ProcessOutput先写ModuStatus和runtime的部分在try0前，不能宣称所有发布异常都被下面四catch捕获。原记录含FuncInfo/IPtoState/HandlerType原始words与type descriptor；.H是int，.I是unsigned int，SDK descriptor为.?AVIMVDException@VisionDesigner@@，省略号type指针0。
+
+## catch编码与续点
+
+各组int/uint读取捕获对象原32bits，SDK异常经对象vtable+10取错误码（日志可能另经+20取描述），catch-all统一E00000FF。错误不是按本线猜测映射成常见枚举。handler只写父frame的错误局部并返回续点；续点才决定是否运行、设置成功标志及返回。
+
+| 组 | 错误局部 | typed续点 | catch-all续点 | 后续关键边 |
+|---|---|---|---|---|
+| Process中心 | frame+b8 | 2074c | 20782 | typed在2076a TEST EBX，非0→207a7；0→2076e继续ProcessAlg。catch-all207a0无条件→207a7 |
+| ProcessAlg创建/输入/ROI/Run | frame+40 | 209b9 | 209d3 | 读取为R14D，日志后20a2f计时；20a44非0→20a49 success=0→20b12；0→20a52 GetResult |
+| ProcessAlg结果/自动保存 | frame+40 | 20b06 | 20b06 | 载入R14D，进入20b12共同状态尾部；异常发生前success局部尚未置1 |
+| ProcessOutput结果发布 | frame+40 | 212ec | 212ec | 载入EBX→EAX，直接返回捕获码，不自动撤销已发布字段 |
+
+因此不能说“捕获必定失败”：如果异常对象本身携带0码，前两组typed续点有明确0码分支；第二ProcessAlg范围catch虽返回码可0，success仍0。零码异常没有本轮运行验证，仅按分支保留，不改成假定非零。
+
+## 三份状态与Process返回
+
+Process有效入口先把this+15d90清0，BASIC_MODU_OUTPUT三字段初0。ProcessAlg在正常GetResult非null并且可选自动保存返回后，20afc才把局部success置1。共同尾部20b12读取该success，20b19比较==1得到this+15d90；20b2b写BASIC+4错误码R14D，20b35写BASIC+8时间，20b3b写BASIC+0 success，20b3e返回R14D。此前主函数伪码末尾return0只覆盖正常路径，不能覆盖catch续点。
+
+Process调用ProcessAlg后2077e以EAX保存到EBX。207ba调用ProcessOutput，但其返回EAX没有覆盖EBX；20807最终返回EBX。所以ProcessOutput在本组catch中返回非0，未必改变最外层Process返回值。此点不是自动修复或host接受合同，仅为该模块原指令事实。
+
+Process输入null直接E0000001且不走发布；输入ready回调非1则E0000503，中心X/Y输入解析异常路径返回E0000314，之后仍到207a7发布。中心GetBasicParam为null的原E0000309走typed catch，非0时跳过ProcessAlg。框架对模块返回码的后续处理不在本模块三个函数之内，不凭一般流程推断。
+
+## ProcessOutput发布顺序与失败边界
+
+1. SDK工具槽null直接E0000008。
+2. 工具存在时，20c1f先发布ModuStatus（this+15d90）；setter返回非0则ProcessOutput立即返回该码。成功后20c38调用VM_M_SetModuleRuntimeInfo，使用BASIC+8时间；这两段在本函数try0之前。
+3. 20c3e若BASIC+0为0，直接返回0，不读取GetResult、不发布估计/定位/图像/逐点误差。此函数没有在这里逐个清空旧值；不能据“本次不发布”断言框架结果缓存保留或清空。
+4. BASIC+0非0才在20c4c进入受保护结果分支：取GetResult/HomoEstInfo，发布EstimationError；按评估使能与OutputPostCorrectionEnable选择普通/校正定位，发布坐标/点数；再按评估分支发布校正图像、EvaluationError、舍入的CalibPointError及CalibPointStatus。无评估分支发布与success相应的状态数组。详细数组顺序沿既有ProcessOutput及21330源码。
+5. 中途setter返回错误或四catch返回错误，没有观察到回滚先前已发布的ModuStatus/EstimationError等。若ProcessAlg成功而后段发布失败，成功标志可能已经发布1，Process最外层返回仍取前面的EBX；不能将结果发布视为原子事务。
+
+自动Export异常属于第二ProcessAlg try，跳过success=1；即使SDK刚刚完成拟合且内部GetResult有效，模块BASIC success仍0，ProcessOutput会只走状态/时间分支。直接SDK Export是否还能取到该新矩阵是另一个对象门，见FILE-SAVE报告，不能用它替代模块成功结果。
+
+## 完成边界与后续
+
+本轮补齐三个目标主函数的16 catch和六continue所列路径，并记录不受本组EH覆盖的status/runtime发布段；没有证明handler内部再次抛出、外层框架catch、调度失败/并发、所有setter设备/宿主路径。没有原厂异常注入运行，静态检查不等于成功/失败/恢复全运行覆盖。S0–S7整卡计数仍沿保守阶段审计，不因这一个catch切片自动增加。

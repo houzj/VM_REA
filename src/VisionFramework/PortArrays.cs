@@ -5,6 +5,9 @@ public enum ValueCardinality { Scalar, Array }
 public static class PortTypes
 {
  public static bool Valid(DataKind kind,ValueCardinality cardinality)=>Enum.IsDefined(kind)&&Enum.IsDefined(cardinality)&&(cardinality==ValueCardinality.Scalar||kind is DataKind.Integer or DataKind.Number or DataKind.Text or DataKind.Circle or DataKind.Point or DataKind.Fixture);
+ public static bool DeferredReadAccepts(PortDescriptor target,DataKind source)=>
+  target.SupportsDeferredTextRead&&source==DataKind.Text||target.SupportsDeferredIntegerRead&&source==DataKind.Integer||target.SupportsDeferredNumericRead&&source is DataKind.Number or DataKind.NumberArray;
+ public static bool AcceptsInput(PortDescriptor target,DataKind kind,ValueCardinality cardinality)=>DeferredReadAccepts(target,kind)||target.Cardinality==cardinality&&DataKinds.CanFlow(kind,target);
  public static bool Matches(PortDescriptor port,PortValue? value)=>value is not null&&port.Kind==value.Kind&&port.Cardinality==value.Cardinality;
 }
 public sealed partial class PortValue

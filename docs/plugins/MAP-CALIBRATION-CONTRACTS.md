@@ -1,0 +1,35 @@
+# 映射标定配套公共能力
+
+Producer公共ROI/普通配置与显示宿主，Consumer映射标定。原XML声明两个图像选择器ImageSource_0/1分别绑定InputImage1/2，两个ROISelecter RoiType_0/1均FullScreenEnable、SelectType=Single、ROISelection=Box、IsListenResultView=true；前者IsCurROI=false，后者true。主XML分别声明InputROI1和InputROI2（各自Center/Width/Height/Angle叶）。
+
+需要以原ConfigurationElement身份区分ROI集合、选中对象、撤销/持久化键和对应图像通道；编辑其中一组不能覆盖另一组。现有单Node.Rois/单Box会话不足。生命周期随Solution/Procedure/Node及配置Session，活动图像改变应呈现匹配ROI，恢复配置需保留两组。公共API由根线统一补，工具不另存私有ROI或另造窗口。
+
+验收至少包括两张不同尺寸图、两组不同矩形、切换前后不串组、保存恢复、Undo/Redo、分别映射原InputROI1/2真实运行输入。图像/原生ROI调用转换和原厂持久化格式仍须继续取证，不先声明等价。
+
+原托管实现进一步确认：Apps.XmlParser.ParamTab/ROISelecter.cs约1462行IGetROI.SetRoiList执行NormalizeReversParse、SetImageSize，再写GetModuleTagInfo()[ComName]并SetRoiSeq；GetRoiList约1478行用同ComName取字节后ParseRoiProtocol。故两个声明名RoiType_0/1本身就是独立原厂存储键，IsCurROI不是唯一身份。尚未把其原始二进制ROI协议当成本项目文档格式。
+
+2026-10-18 公共双 ROI 已提供并接入：NodeDocument.RoiGroups[原声明名]、ModuleExecutionContext.RoiGroups；ToolConfigurationRoiControls.Register 以 RoiType_0→InputImage1、RoiType_1→InputImage2 映射选择图。配置窗口实际创建两组独立公共会话，172项检查包含两个来源请求及普通三页无未知模板；公共宿主27项持久化/Undo检查由根线负责。当前工具图像运行核未完成，不能把会话接通当成原生ROI运行等价。
+
+共享固定拟合核需求：Producer 公共标定数值核，Consumer 映射标定/N图像/畸变。建议输入 IReadOnlyList<(float ImageX,float ImageY,float WorldX,float WorldY)>、int HomoFreedom、int WeightFun、float WeightFactor；输出 uint ErrorCode 与 float[9] Matrix。语义必须是原厂7ff3c0实际返回（已完成7fd4e0的逆矩阵与inv33乘，但h33可能0.99999994），不执行公共NPoint.Solve的小样本四点选择，不生成工具专属误差/比例。生命周期为纯数值调用，无缓存、文件或宿主状态。调用方按其原生wrapper构造World：Map为整数ID×解码GridPitch；畸变实采为1，不能以Map的10/1000强制共享。Map在7d3e90分别拟合来源和目标两板，再完整float求target逆×source，最后真实h33除法；文件模式7d4f20则h33加epsilon，二者不可合并为同一后处理。
+
+验收应包含共享核对原厂实际固定输入/输出float位的回放，以及Map官方SDK三模型×板型7/9的矩阵/尺度/MapError/投影点。现有12例SDK与完整168点/ID载荷已落地；HIK7公共检测存在约0.46像素的首点Y差，HIK9公共检测返回null而SDK接受，根线负责统一识别核调查。工具没有复制或放宽共享内核。
+
+文件输入叶使用既有ConfigurationFiles.Select/Remember服务，无需新文件弹窗契约。工具内OpenFileDialog控件暂只完成功能接线，视觉布局未取得原厂桌面对照。原厂DoOpenFile虽XML声明IsMultiselect=true，实际local未设置Multiselect、remote只取FileNames[0]；不得据XML开启多文件执行。
+
+调用参数补证：core7d3e90约167-173行构造opts={0,param15[0],param15[1],50,0x38d1b717,param15[2]}，0x38d1b717是float1e-4。上游7fb4a0将WeightFactor整数（params+0xa4）乘DAT18162b60c后传入；原PE常量cdcccc3d=0.1f，UI20→native2.0f。两次拟合相同参数，HomoFreedom/WeightFun不改写。初版FitNativePoints现由公共所有者提供，但WeightFun1未实现、真实trace仍有差分；映射产品不能据接口可调用解除图像模式限制。
+
+入口区分的新运行证据：Map无论WeightFun1/2/3均直接调用7ff3c0；畸变7ed0c0的Weight1另走8345e0。不能在共享FitNativePoints内部仅按WeightFun值选择8345e0，必须拆FitNativePoints(7ff3c0)与FitNativeLeastSquaresPoints(8345e0)两个明确入口，Map只消费前者。旧公共Weight1消费错误入口的Map诊断不等于8345e0算法自身失败，也不抵消畸变线252例8345e0对照。W1+W3共24个Map主拟合的16128个float输入已和SDK点/物理ID×pitch逐字段确认零差异，迭代参数筛选50（排除检测器内部20）。
+
+## 2026-10-18 生产拟合核回归
+公共 FitNativePoints 恢复 7fcf60→7fd4e0 往返后，映射标定三个权重、三个模型、HIK7/9 共18组最终矩阵162/162个float字段逐位相同。此结论限定原厂点对作为输入；实际图像识别仍有共享坐标与HIK9差异。输入图像原厂SDK与WPF解码共2,000,000像素零差，报告 analysis/map-calibration/image-input/comparison.json。实际插件18组另在 image-execution-current 跑完整差分，不提前验收。
+公共矩形mask已由VisionCore提供并接入。无ROI时保留五个原厂flat数组各两项零，ROI组合独立安全投影为空Region，不放宽输入ROI合法性。
+
+2026-10-18 普通OpenFileDialog公共叶已提供并接入，IToolConfigurationFileService仍负责单选/历史；Map专属文件加载失败顺序未改。SaveFileDialog通过原厂DisplayType=Command复用公共模板。181项实际普通配置窗口检查通过。
+
+## 本轮最终接线与验证（2026-10-18）
+
+共享FitNativePoints已恢复正确7ff3c0入口与往返顺序，本工具实际图像入口现消费新增NImageSourceLatticeAdapter。主干宿主接口没有新增：仍使用普通配置、双RoiGroups、文件服务、PointAlias和Display契约；未修改其他工作树、共享契约或注册文件。
+
+前述HIK9拒绝/0.46像素/Weight1未支持记录均是历史差异。当前20次实际插件运行（默认过滤18组，关闭过滤2组）对原厂SDK点/矩阵/比例/尺度/误差严格逐位通过；来源是原始图像的产品Runtime，并非注入原厂点绕过识别。四板型84个ROI裁图的源grid共15862点严格位同。实际普通Process XML与Runtime自动保存文件除生成时间外1790字节一致。共享API、纯算法载荷、无新增持久化、兼容入口及未验证域详见RECOGNITION-IMPACT。
+
+保留的边界是独立Opening提案/解码/锚定、旧projective/rotated兼容fallback、源候选90000容量以上/任意分配器上下文、原厂桌面视觉，以及通用POINT索引/原生ROI二进制协议。它们没有通过静态Unsupported掩盖；当前真实主路径已可运行，但不能把fixture数值通过视为所有图像与原厂UI完全等价。

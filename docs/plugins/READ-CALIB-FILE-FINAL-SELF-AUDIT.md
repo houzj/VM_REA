@@ -1,0 +1,24 @@
+# 标定加载实施自审核
+
+2026-10-19。本工具消费者与当前插件框架支持域的完整退出审查，待根线最终计分；人工验收独立记录。本文件覆盖此前 IMPLEMENTATION-EXIT 的历史候选状态，测试通过不代表任意原厂 API/ABI 全域等价。
+
+| 活动域 | 源与实施结论 | 实际自动证据 |
+|---|---|---|
+| RL01 配置/命令 | 原AlgorithmTab模板、十输入订阅、文件选择、只读参数面板；Continuous/Stop/Execute/Confirm走公共宿主 | Configuration48；Input真实MainWindow配置Execute |
+| RL02 立即加载/失败状态 | d120返回ab50状态；E201旧数据、E17替换数据不提交路径、E207部分数据及新路径提交分别实现。失败保尝试值、旧baseline，重新输入旧值重试；picker强制重试单列 | Input84中的21文件失败/生命周期断言，Configuration48，公共State1692 |
+| RL03 XML解析 | ab50清旧顺序、FloatList/三坐标/姿态数组、字符串、原数值转换边界均复用具体源及原受控差分 | Plugin846复放32执行情景；保留原float32位与整数比较 |
+| RL04 九pose | c520九次GetFloat index0，成功count>0覆盖本轮，失败保文件值；真实数组绑定和索引可达 | Input的九口顺序、scope优先、Graph/Debug/Host、空/缺叶/失败/count分支 |
+| RL05 Refresh | 独立GetInt index0读取；原成功仅判value非零，不串float转换 | typed Integer scalar/array Graph/Debug、selected刷新清缓存 |
+| RL06 Extra | c100逐次count控制；float失败才GetInt；既有index覆盖、超尾append一项、保旧尾；GetString按UTF8字节容量重试 | Input Extra记录式相位、9项保7尾、int真实数组kind、511→602字符串、Graph/Debug |
+| RL07 动态输出 | 当前Data构建UpdatedDescriptor，Extra实际输出kind同步；Graph向宿主发动态描述，旧名/旧型下游阻断 | Plugin DynamicExecution删除/改名/改型/事件和匹配下游；真实Host发布结果 |
+| RL08 保存恢复 | cf10 FileData由开关控制，DynamicIn/Out独立；本产品CachedFileData JSON承载源XML | Plugin保存开/关、源文件删除、cache-only refresh；Input E207保存新scope恢复 |
+| RL09 显示 | 原只启用DataRecord，ModuStatus按文件输出集合非空；图像/文本/结果列表隐藏 | Plugin记录文本与开关、LastDisplay稳定快照；真实宿主scope显示 |
+| RL10 缓存/释放 | 同scope配置重开保native部分状态，新scope用保存内容恢复；无常驻文件流或native句柄；RemoveNode/Dispose应终止状态可用域 | Input84：reopen/coldrestore、RemoveNode外改重建、Dispose后拒绝State全部通过 |
+| RL11 Reset/ROI | 原活动Tab/Bottom无Reset/ROI；不从默认参数XML或同名API虚构命令 | 资源完整审查；本工具不新增此入口 |
+| RL12 提供者与支持域 | Float/Integer/Text仅显式opt-in，scope typed服务优先，原默认严格。完整普通NodeOutput读取失败Count0；同名跨类型动态IO由正常allIO名字门阻断 | CameraIndex259、WorkflowSubscription58、ConfigurationExecution14、FrameworkExecution68、Debug30 |
+
+RL01..12当前选定消费者支持域的源码、实施、自动验证与自审均已闭合；没有据源码已知而未声明的正常工具UI活动分支。最终Input84/Config48/State1692全部退出0，根线审核最终manifest后决定计完整工具数。
+
+独立实现边界：托管集合/JSON不复刻native heap地址；非法/非有限数值安全拒绝不冒充native错误码；宿主Apply拒绝恢复旧快照是本产品事务选择，区别于原模块加载错误的部分提交；相对路径使用本产品BaseDirectory。任意XML/额外元数据强行制造同名多typed channel无法由单PortValue表示，明确拒绝；正常DynamicIO allIO重名门已证明，不宣称任意底层API同名冲突等价。FTP/Global/Local/父Group的提供者语义由接口提供方定义，工具不伪造远程服务。
+
+本轮原SetParam“未定义返回”旧结论已撤销，机器指令和身份见 `analysis/read-calib-file/proposals/file-failure/README.md`。typed与RL02候选均已由根线审后应用；RL02实际生产SHA见该候选manifest。真实日志与SHA统一归档 `analysis/b-next/verification-manifest.json`，其中首次失败日志保留，不伪装成通过。

@@ -1,0 +1,14 @@
+#include <windows.h>
+#include <cstdio>
+#include <vector>
+#include "MapCalibCpp.h"
+#include "MVDCore.h"
+using namespace VisionDesigner;using namespace VisionDesigner::MapCalib;
+int main(int argc,char**argv){if(argc!=3)return 2;SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX);setvbuf(stdout,nullptr,_IONBF,0);SetDllDirectoryA(argv[1]);auto dll=LoadLibraryA("MVDMapCalibCpp.dll");if(!dll)return 3;auto create=(int(__stdcall*)(IMapCalibTool**))GetProcAddress(dll,"CreateMapCalibToolInstance");auto destroy=(int(__stdcall*)(IMapCalibTool*))GetProcAddress(dll,"DestroyMapCalibToolInstance");
+float a[9]={2,0,10,0,3,-5,0,0,1},b[9]={4,0,-2,0,6,7,0,0,1};
+for(int mode=0;mode<72;mode++){IMapCalibTool*t=nullptr;int code=create(&t);printf("{\"case\":%d,\"create\":%u",mode,(unsigned)code);if(code){printf("}\n");continue;}if(mode==0){auto vt=*(void***)t;fprintf(stderr,"wrapper:");for(int i=0;i<11;i++)fprintf(stderr," %llx",(unsigned long long)((char*)vt[i]-(char*)dll));fprintf(stderr,"\n");}try{if(mode==0){unsigned n=0;try{t->SaveConfiguration(nullptr,0,&n);}catch(...){}if(n){std::vector<unsigned char> cfg(n);t->SaveConfiguration(cfg.data(),n,&n);char path[1024];sprintf_s(path,"%s/default-config.xml",argv[2]);FILE*f=nullptr;fopen_s(&f,path,"wb");if(f){fwrite(cfg.data(),1,n,f);fclose(f);}}}t->GetBasicParam()->SetMapCalibMode((MVD_MAP_CALIB_MODE)(mode==0?1:2));auto p=t->GetBasicParam()->GetTwoFileMapBasicParam();if(mode>=2&&mode<=3){p->SetSourceCalibFileData(a);p->SetTargetCalibFileData(mode==2?a:b);}if(mode>=4&&mode<8){char path[1024];sprintf_s(path,"%s/result-2.xml",argv[2]);p->SetSourceCalibFile(path);sprintf_s(path,"%s/result-3.xml",argv[2]);if(mode==4)p->SetTargetCalibFile(path);else{float z[9]={0};p->SetTargetCalibFileData(mode==5?z:b);if(mode==6)p->SetSourceCalibFileData(z);if(mode==7){a[6]=0.01f;a[7]=-0.02f;p->SetSourceCalibFileData(a);}}}if(mode==1){p->SetSourceCalibFile("not-existing.iwcal");p->SetTargetCalibFile("not-existing.iwcal");}if(mode>=8){for(int j=0;j<9;j++){a[j]=((mode*(j+3)*17)%29-14)/16.f;b[j]=((mode*(j+7)*11)%31-15)/16.f;}a[0]+=2;a[4]+=2;a[8]=1;b[0]+=2;b[4]+=2;b[8]=1;if(mode%11==0)for(float &f:b)f=0;p->SetSourceCalibFileData(a);p->SetTargetCalibFileData(b);printf(",\"source\":[");for(int j=0;j<9;j++)printf("%s%.9g",j?",":"",a[j]);printf("],\"target\":[");for(int j=0;j<9;j++)printf("%s%.9g",j?",":"",b[j]);printf("]");}t->Run();auto r=t->GetResult();float h[9];r->GetHomoMatrix(h);printf(",\"matrix\":[");for(int i=0;i<9;i++)printf("%s%.9g",i?",":"",h[i]);printf("],\"ratio\":[%.9g,%.9g]",r->GetXRatio(),r->GetYRatio());char path[1024];sprintf_s(path,"%s/result-%d.xml",argv[2],mode);t->ExportCalibFile(path);}catch(const IMVDException&e){printf(",\"exception\":%u",(unsigned)e.GetErrorCode());}catch(...){printf(",\"unknown\":true");}printf("}\n");destroy(t);}fflush(stdout);TerminateProcess(GetCurrentProcess(),0);}
+
+
+
+
+

@@ -11,6 +11,7 @@ using Button = System.Windows.Controls.Button;
 using ComboBox = System.Windows.Controls.ComboBox;
 using RadioButton = System.Windows.Controls.RadioButton;
 using TextBox = System.Windows.Controls.TextBox;
+using Label = System.Windows.Controls.Label;
 using Orientation = System.Windows.Controls.Orientation;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
 using Brushes = System.Windows.Media.Brushes;
@@ -27,11 +28,24 @@ public static class ToolConfigurationStandardControls
         Func<ConfigurationExecutionVisualState>? executionState = null, string language = "Chinese", IToolConfigurationSubscriptionService? subscriptions = null)
     {
         var text=localize??(s=>s);
+        registry.Register("HeadBar",c=>{
+            var panel=new StackPanel{Height=30,Orientation=Orientation.Horizontal,Margin=new Thickness(12,0,0,0)};
+            var entries=c.Element.Children.FirstOrDefault(e=>e.Tag=="EnumEntrys")?.Children;
+            if(entries is not null)foreach(var entry in entries){
+                string Field(string key)=>entry.Children.FirstOrDefault(e=>e.Tag==key)?.Text??"";
+                double.TryParse(Field("Width"),NumberStyles.Float,CultureInfo.InvariantCulture,out var width);
+                panel.Children.Add(new Label{Content=text(Field("DisplayName")),Width=width,FontSize=14,
+                    VerticalContentAlignment=VerticalAlignment.Center,HorizontalContentAlignment=HorizontalAlignment.Left});
+            }
+            return panel;
+        });
         registry.Register("Boolean",c=>Boolean(c,text));
         registry.Register("Integer",c=>Numeric(c,text,false,subscriptions));
         registry.Register("Float",c=>Numeric(c,text,true,subscriptions));
+        registry.Register("IntegerBettween",c=>IntegerRange(c,text,subscriptions));
         registry.Register("Enumeration",c=>Enumeration(c,text));
         registry.Register("RadioSelecter",c=>Radios(c,text,language));
+        registry.Register("RadioSelecter3",c=>Radios(c,text,language,5));
         registry.Register("String",c=>String(c,text,subscriptions));
         registry.Register("Command",c=>InlineCommand(c,text));
         registry.Register("Button_ResetAlgoParams",c=>Reset(c,text));
@@ -57,19 +71,33 @@ public static class ToolConfigurationStandardControls
         c.OnRefresh(()=>{updating=true;toggle.IsChecked=bool.TryParse(c.Node.Value,out var b)&&b;toggle.IsEnabled=Writable(c);updating=false;});return row;
     }
     static bool Writable(ToolConfigurationControlContext c)=>c.Node.Enabled&&((c.Node.Get("AccessMode")??"").Contains('W',StringComparison.OrdinalIgnoreCase)||(c.Node.Get("AccessMode")??"").Contains('O',StringComparison.OrdinalIgnoreCase));
-    static FrameworkElement Numeric(ToolConfigurationControlContext c,Func<string,string> text,bool floating,IToolConfigurationSubscriptionService? subscriptions)
+    static FrameworkElement IntegerRange(ToolConfigurationControlContext c,Func<string,string> text,IToolConfigurationSubscriptionService? subscriptions)
     {
-        var spinner=new ConfigurationNumericSpinner(floating);
+        // ParamUserControlDataTemplate.IntegerBettween_Sub owns two actual Integer members.
+        // Keep each member's operations and subscription identity; never write the composite name.
+        var members=c.Element.Children.FirstOrDefault(x=>x.Tag=="Integers")?.Children.Where(x=>x.Tag=="Integer").Take(2).ToArray()??[];
+        if(members.Length!=2)throw new NotSupportedException("IntegerBettween requires two source Integer members.");
+        var left=c.CreateChild(members[0]);var right=c.CreateChild(members[1]);
+        var editor=new Grid();editor.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});editor.ColumnDefinitions.Add(new(){Width=new GridLength(20)});editor.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});
+        var l=Numeric(left,text,false,subscriptions,false,()=>double.NegativeInfinity,()=>Number(right.Node.Value,255));
+        var r=Numeric(right,text,false,subscriptions,false,()=>Number(left.Node.Value,0),()=>double.PositiveInfinity);
+        editor.Children.Add(l);Grid.SetColumn(r,2);editor.Children.Add(r);
+        var dash=new TextBlock{Text="—",Foreground=new SolidColorBrush(Color.FromRgb(206,204,203)),VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center};Grid.SetColumn(dash,1);editor.Children.Add(dash);
+        return Row(c,editor,text);
+    }
+    static FrameworkElement Numeric(ToolConfigurationControlContext c,Func<string,string> text,bool floating,IToolConfigurationSubscriptionService? subscriptions,bool labelled=true,Func<double>? lower=null,Func<double>? upper=null)
+    {
+        var spinner=new ConfigurationNumericSpinner(floating){Tag=c.Node};
         spinner.ValueCommitted+=value=>{c.State.CommitUser(c.Node,value);spinner.SetText(c.Node.Value);};
         var editor=new Grid();editor.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});editor.ColumnDefinitions.Add(new(){Width=GridLength.Auto});editor.Children.Add(spinner);
-        var row=Row(c,editor,text);
+        var row=Row(c,editor,text,labelled?89:0);
         var mode=new ToggleButton{Style=(Style)row.FindResource("ConfigurationEditLinkButton")};Grid.SetColumn(mode,1);editor.Children.Add(mode);
         ToolConfigurationSubscriptionSelector? selector=subscriptions==null?null:ToolConfigurationSubscriptionControls.CreateInline(c,subscriptions,true,text);
         if(selector!=null)editor.Children.Add(selector);
         var warning=new TextBlock{Text="未支持控件: ButtonSelecter_sub",Foreground=Brushes.DarkRed,VerticalAlignment=VerticalAlignment.Center,
             Tag=new ConfigurationControlLimitation("UnsupportedSubscription","ButtonSelecter_sub","Subscribed numeric leaf requires the shared subscription selector."),Visibility=Visibility.Collapsed};
         c.OnRefresh(()=>{
-            spinner.Minimum=Number(c.Node.Get("MinValue"),0);spinner.Maximum=Number(c.Node.Get("MaxValue"),0);
+            spinner.Minimum=Math.Max(Number(c.Node.Get("MinValue"),0),lower?.Invoke()??double.NegativeInfinity);spinner.Maximum=Math.Min(Number(c.Node.Get("MaxValue"),0),upper?.Invoke()??double.PositiveInfinity);
             spinner.Increment=Number(c.Node.Get("IncValue"),1);spinner.DecimalDigits=(int)Number(c.Node.Get("DecimalDigits"),2);
             spinner.NeedSlider=!floating||!bool.TryParse(c.Node.Get("NeedSlider"),out var need)||need;
             spinner.SetText(c.Node.Value);spinner.IsReadOnly=!Writable(c);
@@ -94,14 +122,14 @@ public static class ToolConfigurationStandardControls
         combo.DropDownOpened+=(_,_)=>c.State.OpenChoices(c.Node);
         c.OnRefresh(()=>{updating=true;combo.ItemsSource=c.Node.Choices.Select(x=>new DisplayChoice(text(x.CaptionKey),x.Value)).ToArray();combo.SelectedValue=c.Node.Value;combo.IsEnabled=Writable(c);combo.ToolTip=combo.Text;updating=false;});return row;
     }
-    static FrameworkElement Radios(ToolConfigurationControlContext c,Func<string,string> text,string language)
+    static FrameworkElement Radios(ToolConfigurationControlContext c,Func<string,string> text,string language,int maximum=2)
     {
         var panel=new WrapPanel{VerticalAlignment=VerticalAlignment.Center};var row=Row(c,panel,text,language=="English"?165:89);bool updating=false;
         var group=Guid.NewGuid().ToString("N");
         c.OnRefresh(()=>{
             updating=true;panel.Children.Clear();
             // Original RadioSelecter explicitly renders EnumEntrys[0] and [1], not an arbitrary enum grid.
-            foreach(var choice in c.Node.Choices.Take(2)){
+            foreach(var choice in c.Node.Choices.Take(maximum)){
                 var radio=new RadioButton{Content=text(choice.CaptionKey),FontWeight=FontWeights.Normal,GroupName=group,Margin=new Thickness(2,0,0,0),Focusable=true,Style=(Style)row.FindResource("ConfigurationRadio"),IsChecked=c.Node.Value==choice.Value,IsEnabled=Writable(c)};
                 radio.Checked+=(_,_)=>{if(!updating)c.State.CommitUser(c.Node,choice.Value);};panel.Children.Add(radio);
             }updating=false;

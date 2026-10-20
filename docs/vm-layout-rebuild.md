@@ -8,4 +8,4 @@
 
 当前限制：五个内置模块；只支持独立 vmx.json 编辑；类型化数据连接保留原型语义，尚未实现原 VM 独立执行序与数据订阅的全部规则。参数窗口的完整分区、图像缩放工具、原始模块树、ROI 编辑、运行模式和全部工具栏功能仍待重建。历史目前按流程运行追加概览，不是原 VM 的完整模块结果记录结构。未加载原 VM 程序集作为运行依赖。窗口系统边框仍与原 VM 的自定义窗口不同。
 
-入口：Start-Flow-Editor.cmd；程序 dist/VisionEditor/VisionEditor.exe。
+入口：`Start-Flow-Editor.cmd`。该入口先把当前工作树的 `src/VisionEditor/VisionEditor.csproj` Release 构建到唯一的 `analysis/manual-acceptance/flow-<GUID>/build` 目录，再启动其中的 `bin/VisionEditor/release/VisionEditor.exe`；不再引用已移除的 `dist/VisionEditor-WpfCompoundLeaf` 产物。

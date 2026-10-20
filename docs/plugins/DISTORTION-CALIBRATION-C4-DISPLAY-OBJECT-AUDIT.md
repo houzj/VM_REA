@@ -1,0 +1,42 @@
+# C4 八显示对象：原厂发布、样式与当前产品差异
+
+2026-10-19。原Display.xml八对象全列；不将资源存在当行为完成。完整工具仍0/10，人工验收独立不阻挡完成。本片已实施确定性失败状态修复并自审通过，不再停在源码报告。
+
+## 发布与清理共同门控
+
+原CIMVSImageCalibModu::Process开头把模块ModuStatus成员清0；ProcessOutput先发布本轮ModuStatus及runtime，BASIC success=0时跳过后续结果。输出setter失败可能只发布前缀，catch/Process不回滚已发布字段。它并没有证明框架每轮缓存是否清旧结果；跨轮旧字段保留策略必须与最新状态分开。原ModuleResultView主动重绘清ShapeList，再依IsDisplay及对象类别取当前值绘制；不同executeCount/IsClearLastExecuteResult影响取值。不能把native未发布当“恒保留”或“恒清空”。
+
+产品原Fail仅更新Diagnostic并返回runtime，未改显示snapshot，导致已有成功后失败仍显示ModuStatus1/绿状态；首次有图失败无snapshot。已修DistortionCalibrationPlugin：有效图在算法处理前捕获为InImage；Fail发布ModuStatus0/runtime并仅覆盖snapshot这两字段，保留其它未发布旧字段。返回ModuleResult不虚构旧动态输出。此为明确局部缓存选择，不宣称已复制原平台跨轮缓存全部语义。
+
+## 逐对象表
+
+| 原对象 | 原字段生产者/分支 | 必要呈现属性 | 当前产品/差异 |
+|---|---|---|---|
+| InImage / image | 主XML输入图像组合的InImage/Width/Height/PixelFormat；框架输入投影，非畸变ProcessOutput自造图 | 默认true、opacity1；图像选择与IsDisplay分开 | LastDisplay输入snapshot InImage→ToolDisplayImageLayers；本轮修首次/新失败捕获有效输入。图像内存同址/原ABI不在此冒充 |
+| Display Post-Correction Image / image | ProcessOutput eval开启才GetCorrectImage并发布四字段；SDK结果为空走异常；失败success0跳过 | 默认false、opacity1；明确对象名与PostCorrectionImageData映射 | Plugin evaluate分支输出PostCorrectionImage；LastDisplay显式alias到PostCorrectionImageData，图层独立可见性已有回归。eval开关后旧字段清理未有平台逐轮原证，产品成功snapshot替换会移除本轮未输出字段，列边界 |
+| Display Calibration Point / point | ProcessOutputForCalibPoints@21330先count后X/Y逐点；位置依raw/correct locate分支；eval关闭状态全为BASIC状态，开启逐误差状态 | 默认显示；每点按Status[i]选OK绿/NG红、opacity/linewidth；Tips与Num | Plugin PointOutputs和原6模型回放逐字段一致；共享Build此前统一首status颜色，根线已实施ToolDisplayPoint.Color与marker消费（根线负责共享验证）；path连线色不改 |
+| Show Evaluation Error Text / text | X/Y来自同定位点；CalibPointError仅eval分支发布，逐点状态同上；无eval不伪造error数组 | 默认显示、FontSize10、位置映射；Status按当前index；字体桥6..72 | DistortionCalibrationDisplay.BuildNamedTexts消费坐标/errors/status、FontSize用户数据；C4-DISPLAY-FONT已取保存恢复和原呈现。正常等长输出域可验；短/非法外部数组及原字体回退/屏幕纵横比并非全复制 |
+| Show Text / text | ModuStatus本轮先发；EstimationError只有success1后发布；失败无新error估计值 | 默认true，模板ModuleStatus:{0}EstimationError:{1}，状态色，font10/坐标0 | 原TextDisplayGroup暴露Content/OK/NG/font/opacity，产品legacy DisplaySettings桥与帧实际消费正确。ToolDisplayObjectStore该名字的另一路Visible/style不消费到legacy帧，属API/恢复语义差异，不把当前已工作的组控件报坏；失败状态本轮已修 |
+| ROI / rect | 主XMLDetectCenter/Width/Height/Angle来自公共ROI处理；本片已有本模块字节parser/本地归一化→像素记录；其公共结果字段发布体不是ProcessOutput的point函数 | 默认显示、OK蓝/NG红、width2、highLight=false；Status映射ModuStatus | Plugin从Crop.Output发布Detect字段/ROI，公共Graphics构造rect且按本轮status上色。明确实施缺口：Crop对非零Angle直接拒绝，而原Box保留角；下一步追SDK消费者并复用现有旋转mask栅格能力 |
+| Data Record / datarecord | 无独立算法端口；Object从ModuStatus/EstimationError构造Content；失败结果状态另有GetRecordContent错误诊断分支 | 默认true；记录内容与图像overlay分开 | ToolDisplayService.RecordText正常模板/失败Diagnostic，RecordPresenter消费。record累计策略/原native callback完整样式并未证明。named-store Visible另一路不消费，当前AlgorithmTab无直接该checkbox，低优先级API差异 |
+| Result List / datalist | 无独立算法端口；Colume固定EstimationError，Num1由显示列表消费者形成表格 | 默认true，一列；结果值与字段有效性分开 | ToolDisplayService.ResultColumns/ResultListPresenter输出一行一列。named-store Visible不消费；需宿主自审列值随新失败状态/新执行的更新，不能用旧成功测试替代 |
+
+## 可修复项、所有权与最小验证
+
+D-FAIL（专属，已修）：文件DistortionCalibrationPlugin.cs，触发成功→任何handled失败或首次有效图失败。修本轮status/runtime/current image，不凭空清原生未发布字段。测试PluginChecks新增成功→失败与首次有图失败，验证NG状态/current InImage/无虚构首次点；旧snapshot字段保留单独断言。三组针对条件及旧6/6原fixture模型回放通过。
+
+D-POINT-COLOR（共享，根线实施）：ToolDisplayGraphics.Build/ToolDisplayPoint和ToolDisplayPresenter。原Object.SetBaseProperty按index读取Status；callback GetValueByType以及主动VmIO.GetValue的非空短数组越界均回首项，scalar/单项广播，空/转换失败为默认0→NG。应逐marker消费可选Color，不拆path连线。根线已落码，验证由根线串行执行。
+
+D-NAMED-LEGACY（共享请求，非本轮扩大）：若通过ToolDisplayObjectStore.Write("Show Text"/"Data Record"/"Result List",Visible=false)并保存恢复，LastDisplay只消费ToolDisplayService.Read(DisplaySettings)，Frame.TextVisible/RecordVisible/ResultListVisible仍取definition常量。最小修复可在工具显式投影named visibility，保留当前legacy Content/color/font/opacity权威；不要静默把所有工具切到新协议。当前原AlgorithmTab并不暴露这3个named-visible编辑器，不将该API路径当用户当前组控件必坏。
+
+D-ROTATED-ROI（专属，下一实际实施）：Crop目前以尚无证据拒绝abs(angle)>.0001；原Box有Angle。应取本工具SDK实际shape消费者/裁剪和坐标回投后复用RectangleRoiMaskRasterizer等现成公共能力，不能仅放宽检查后继续轴对齐裁剪。
+
+可以进入当前支持域整工具自审；本轮显示验证前唯一共享前置是根线marker颜色合入和自审。不能诚实称畸变整工具只剩它：旋转ROI是明确未实施能力，历史prefix兼容选择与必要模式/失败/保存方案自审仍单列。它们不阻挡确定性工作继续，人工验收不作完成前置。
+
+## 验证和证据
+
+原native体复用ghidra/module/180020b70.c、180021330.c及c3-catch-source Process/ProcessOutput真实EH；样式与逐index颜色源码为Apps.XmlParser Object.SetBaseProperty/GetValueByType、VM.Core.VmIO.GetValue；用户组资源来自原Module(sp)/Group.xml。每份源及产品修复哈希在display-object-audit.json。
+
+构建槽经根线授权。沙箱两次CSC CS2012拒绝写独立VisionData.dll，升级审批后以独立failure-checks-approved artifacts执行PluginChecks退出0：成功→失败/首次失败通过，原6/6 Board7/9×model1/2/3的19float、raw/corrected定位、双evaluation、rounded error/status逐字段相同。原stdout/命令/退出码及修改文件哈希在failure-display-validation.json。未执行原厂或设备，git diff --check专属修改通过；根线共享修改不纳入本线测试通过声明。
+
+2026-10-19 补充：旋转Box真实识别实施缺口已按 C4-ROTATED-ROI 修复并通过151专项与原6模型回归；不新增原厂运行或声称全域等价。

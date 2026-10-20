@@ -8,7 +8,7 @@ group_path=installed/'Module(sp)/Group.xml'
 groups={n.get('Name'):n for n in ET.parse(group_path).getroot().iter('GroupInfoItem')}
 keys={'Language','Lang_Help','Lang_Err','Lang_InfoTips','Lang_ClearImageSuc','Lang_ClearImageErr','Lang_ClearCalibPointSuc','Lang_ClearCalibPointErr','Lang_PlzLoopStop','Param not Complete'}
 keys.update('Lang_FilePathEptErr Lang_FilePathFmtErr Lang_FilePathLenErr Lang_FilePathErr Lang_FilePathCharErr Lang_FileRdOnly Lang_DrOpenSuc Lang_DrOpenFail 收起 Lang_Unwarp Lang_FirstImage'.split())
-keys.update('Open Lang_SetSuc Lang_FileOpenFail Lang_SysErr'.split())
+keys.update('Open Lang_SetSuc Lang_FileOpenFail Lang_SysErr Lang_SaveSuccess Lang_FileSaveFail Lang_FilePathTooLong Lang_Import Lang_Export'.split())
 keys.update('TransNum RotNum PixelPrecision CalibType ImagePointLst WorldPointLst CalibMatrix SnapImage SnapWorld TeachWorld CalibErrStatus TransError RotError TransWorldError RotWorldError PixelPrecisionX PixelPrecisionY CreateCalibTime Lang_Sure Lang_ResetAlgoParamTips Lang_ResetAlgoParamSuccess Lang_UnSupportAlgoParamReset'.split())
 def visit(node,chain=()):
     if node.tag=='GroupLinkItem':

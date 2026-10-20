@@ -1,9 +1,10 @@
 using System.Collections.ObjectModel;
+using VisionFramework;
 using System.Globalization;
 
 namespace VisionPluginContracts;
 
-public enum ConfigurationSubscriptionDomain { InputIo, Combination, Parameter }
+public enum ConfigurationSubscriptionDomain { InputIo, Combination, Parameter, Display }
 public enum ConfigurationSubscriptionStatus { Available, Unsupported, Failed }
 public enum ConfigurationSubscriptionIndexKind { All, Literal, Reference }
 /// <summary>Identity is never recovered by parsing the localized caption or displayed subscription text.</summary>
@@ -15,10 +16,12 @@ public sealed record ConfigurationConstantReference(string NativeType,string Lit
 public sealed record ConfigurationSubscriptionIndex {
  public ConfigurationSubscriptionIndexKind Kind {get;}
  public int? Literal {get;}
+ public string? LiteralText {get;init;}
  public ConfigurationSubscriptionReference? Reference {get;}
  private ConfigurationSubscriptionIndex(ConfigurationSubscriptionIndexKind kind,int? literal=null,ConfigurationSubscriptionReference? reference=null){Kind=kind;Literal=literal;Reference=reference;}
  public static ConfigurationSubscriptionIndex All {get;}=new(ConfigurationSubscriptionIndexKind.All);
- public static ConfigurationSubscriptionIndex At(int index){if(index<0)throw new ArgumentOutOfRangeException(nameof(index));return new(ConfigurationSubscriptionIndexKind.Literal,index);}
+ public static ConfigurationSubscriptionIndex At(int index)=>At(index.ToString(CultureInfo.InvariantCulture));
+ public static ConfigurationSubscriptionIndex At(string literal)=>new(ConfigurationSubscriptionIndexKind.Literal,WorkflowArrayIndex.ParseLiteral(literal)){LiteralText=literal};
  public static ConfigurationSubscriptionIndex From(ConfigurationSubscriptionReference reference) {
   ArgumentNullException.ThrowIfNull(reference);
   if(reference is ConfigurationConstantReference)throw new ArgumentException("Use At for a constant index.",nameof(reference));
@@ -50,7 +53,7 @@ public sealed class ConfigurationSubscriptionTreeNode {
 }
 public sealed record ConfigurationSubscriptionTreeResult(ConfigurationSubscriptionStatus Status,IReadOnlyList<ConfigurationSubscriptionTreeNode> Roots,string? Diagnostic=null,IReadOnlyList<string>? UnsupportedCapabilities=null);
 /// <summary>DisplayText is service-produced presentation only. Binding remains the authority.</summary>
-public sealed record ConfigurationSubscriptionBindingResult(ConfigurationSubscriptionStatus Status,ConfigurationSubscriptionBinding? Binding,string? DisplayText=null,string? Diagnostic=null);
+public sealed record ConfigurationSubscriptionBindingResult(ConfigurationSubscriptionStatus Status,ConfigurationSubscriptionBinding? Binding,string? DisplayText=null,string? Diagnostic=null){public bool ReadOnly{get;init;}}
 public interface IToolConfigurationSubscriptionService {
  ConfigurationSubscriptionTreeResult Enumerate(ConfigurationSubscriptionQuery query);
  ConfigurationSubscriptionBindingResult Read(ConfigurationSubscriptionDestination destination);
@@ -59,7 +62,7 @@ public interface IToolConfigurationSubscriptionService {
 public static class ConfigurationSubscriptionValidation {
  public static string NativeType(ConfigurationSubscriptionReference reference)=>reference switch {
   ConfigurationOutputReference x=>x.NativeType,ConfigurationGlobalReference x=>x.NativeType,
-  ConfigurationExternalReference x=>x.NativeType,ConfigurationConstantReference x=>x.NativeType,_=>""};
+  ConfigurationExternalReference x=>x.NativeType,ConfigurationConstantReference x=>x.NativeType,ConfigurationPointTupleReference=>"POINT",_=>""};
  public static string? Check(ConfigurationSubscriptionQuery query,ConfigurationSubscriptionBinding binding) {
   ArgumentNullException.ThrowIfNull(query);ArgumentNullException.ThrowIfNull(binding);
   string nativeType=NativeType(binding.Reference);
@@ -91,18 +94,21 @@ public static class ConfigurationSubscriptionValidation {
  public static ConfigurationSubscriptionQuery? FromElement(ConfigurationElement element,ConfigurationSubscriptionDomain? domain=null) {
   string? F(ConfigurationElement e,string key)=>e.Children.FirstOrDefault(c=>c.Tag==key)?.Text??e.Attributes.GetValueOrDefault(key);
   var drop=element.Children.FirstOrDefault(x=>x.Tag=="DropOpenSetter");
+  // Some original EnumerationG declarations initialize this list once instead of a DropOpenSetter.
+  if(drop is null&&element.Tag=="EnumerationG")drop=element.Children.FirstOrDefault(x=>x.Tag=="Initers")?.Children.FirstOrDefault(x=>F(x,"OperationName")=="GetFrontParamItemsOperation");
   if(domain==ConfigurationSubscriptionDomain.Parameter) {
-   string type=F(element,"ComType")??element.Tag switch {"Integer"=>"int","Float"=>"float","Boolean"=>"int","String"=>"string",_=>""};
+   string type=F(element,"ComType")??element.Tag switch {"Integer"=>"int","Float"=>"float","Boolean"=>"int","String" or "OpenFileForCalibDialog"=>"string",_=>""};
    return new(new(ConfigurationSubscriptionDomain.Parameter,(element.Name??"")+(F(element,"ComTailName")??""),type),Array.AsReadOnly(type.Split(';',StringSplitOptions.RemoveEmptyEntries)));
   }
   if(drop==null)return null;
-  var op=F(drop,"OperationName");if(op is not "GetFrontFilterTreeOperation" and not "GetFrontCombinationTreeOperation")return null;
-  var selectedDomain=op=="GetFrontCombinationTreeOperation"?ConfigurationSubscriptionDomain.Combination:ConfigurationSubscriptionDomain.InputIo;
+  var op=F(drop,"OperationName");if(op is not "GetFrontFilterTreeOperation" and not "GetFrontCombinationTreeOperation" and not "GetFrontAndSelfFilterTreeOperation" and not "GetFrontParamItemsOperation")return null;
+  var selectedDomain=op=="GetFrontAndSelfFilterTreeOperation"?ConfigurationSubscriptionDomain.Display:op=="GetFrontCombinationTreeOperation"?ConfigurationSubscriptionDomain.Combination:ConfigurationSubscriptionDomain.InputIo;
   var types=(F(drop,"OperationParams")??"").Split(';',StringSplitOptions.RemoveEmptyEntries);
   var sets=element.Children.Where(x=>x.Tag=="Triggers").SelectMany(x=>x.Children).SelectMany(x=>x.Children.Where(c=>c.Tag=="Setters")).SelectMany(x=>x.Children);
-  var setter=sets.FirstOrDefault(x=>F(x,"OperationName") is "SetFilterSourceOperation" or "SetCombinationSourceOperation");
+  var setter=sets.FirstOrDefault(x=>F(x,"OperationName") is "SetResultIOToModuleOperation" or "SetFilterSourceOperation" or "SetCombinationSourceOperation");
   var destination=setter==null?null:F(setter,"OperationParams")?.Split(';').FirstOrDefault();
   if(string.IsNullOrEmpty(destination))return null;
-  return new(new(selectedDomain,destination,string.Join(';',types)),Array.AsReadOnly(types));
+  if(op=="GetFrontParamItemsOperation"&&F(setter!,"OperationName")=="SetCombinationSourceOperation")selectedDomain=ConfigurationSubscriptionDomain.Combination;
+  return new(new(selectedDomain,destination,string.Join(';',types)),Array.AsReadOnly(types),IncludeSelf:selectedDomain==ConfigurationSubscriptionDomain.Display);
  }
 }

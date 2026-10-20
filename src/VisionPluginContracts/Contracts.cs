@@ -5,13 +5,30 @@ namespace VisionPluginContracts;
 public sealed record ToolManifest(string Id,string Version,string Name,string Category,string Icon);
 public enum ToolEditorMode { Desktop, SdkEmbedded }
 public sealed record ToolEditorContext(NodeDocument Node,string BaseDirectory,Action<Dictionary<string,JsonElement>> Apply,Func<Dictionary<string,JsonElement>,Task<NodeRunRecord>> Run,int? DisplayIndex=null){
+ public Func<IReadOnlyDictionary<string,JsonElement>?>? ReadEffectiveParameters{get;init;} public IToolConfigurationRoiService? ConfigurationRois{get;init;}
  public IToolDebugSession? Session{get;init;}public Func<string,PortValue?>? PreviewInput{get;init;}public Func<VisionCore.GrayImage?>? PreviewImage{get;init;}public Action<IReadOnlyDictionary<string,RoiDisplayStyle>>? ApplyDisplayStyles{get;init;}public Func<string,string>? InputLabel{get;init;}public Action<string>? ClearInput{get;init;}public Action<string,System.Windows.Window>? EditInput{get;init;}public Action<Dictionary<string,JsonElement>,IReadOnlyList<RoiDocument>,IReadOnlyCollection<string>>? ApplyConfigurationChange{get;init;}public Action<Dictionary<string,JsonElement>,IReadOnlyList<RoiDocument>>? ApplyConfiguration{get;init;}
- public IToolConfigurationFolderService? ConfigurationFolders{get;init;}public IToolConfigurationPresentationService? ConfigurationPresentation{get;init;}public IToolConfigurationFileService? ConfigurationFiles{get;init;}public IToolConfigurationNotificationService? ConfigurationNotifications{get;init;}public Func<ConfigurationExecutionHostStatus>? ConfigurationExecutionStatus{get;init;}public Func<bool>? ConfigurationActive{get;init;}public ModuleExecutionScope? Scope{get;init;}public Func<ResourceCatalog>? Resources{get;init;}public IToolConfigurationSubscriptionService? ConfigurationSubscriptions{get;init;}public ToolEditorMode Mode{get;init;}public Func<System.Windows.Window,string,bool,DataKind,string?>? PickSubscription{get;init;}public Func<string,bool,string?>? SubscriptionLabel{get;init;}public Func<string,int?>? InputInteger{get;init;}public Action<string,int?>? SetInputInteger{get;init;}public Func<string,double?>? InputNumber{get;init;}public Action<string,double?>? SetInputNumber{get;init;}public Func<string,IReadOnlyList<double>?>? InputNumbers{get;init;}public Action<string,IReadOnlyList<double>?>? SetInputNumbers{get;init;}public Func<string,string?>? InputText{get;init;}public Action<string,string?>? SetInputText{get;init;}public Func<IReadOnlyList<CameraInfo>>? Cameras{get;init;}public Action? ConfigureCameras{get;init;}public Action? ConfigureLights{get;init;}
+ public IToolConfigurationFolderService? ConfigurationFolders{get;init;}public IToolConfigurationPresentationService? ConfigurationPresentation{get;init;}public IToolConfigurationFileService? ConfigurationFiles{get;init;}public IToolConfigurationSaveFileService? ConfigurationSaveFiles{get;init;}public IToolConfigurationConfirmationService? ConfigurationConfirmations{get;init;}public Action<Dictionary<string,JsonElement>>? ResetConfigurationParameters{get;init;}public IToolConfigurationNotificationService? ConfigurationNotifications{get;init;}public Func<ConfigurationExecutionHostStatus>? ConfigurationExecutionStatus{get;init;}public Func<bool>? ConfigurationActive{get;init;}public ModuleExecutionScope? Scope{get;init;}public Func<ResourceCatalog>? Resources{get;init;}public IToolConfigurationSubscriptionService? ConfigurationSubscriptions{get;init;}public ToolEditorMode Mode{get;init;}public bool IsRemoteMode{get;init;}public Func<System.Windows.Window,string,bool,DataKind,string?>? PickSubscription{get;init;}public Func<string,bool,string?>? SubscriptionLabel{get;init;}public Func<string,int?>? InputInteger{get;init;}public Action<string,int?>? SetInputInteger{get;init;}public Func<string,double?>? InputNumber{get;init;}public Action<string,double?>? SetInputNumber{get;init;}public Func<string,IReadOnlyList<double>?>? InputNumbers{get;init;}public Action<string,IReadOnlyList<double>?>? SetInputNumbers{get;init;}public Func<string,string?>? InputText{get;init;}public Action<string,string?>? SetInputText{get;init;}public Func<IReadOnlyList<CameraInfo>>? Cameras{get;init;}public Action? ConfigureCameras{get;init;}public Action? ConfigureLights{get;init;}
 };
 
 public interface IVisionToolPlugin {ToolManifest Manifest{get;}ModuleDescriptor Descriptor{get;}IModule CreateRuntime();Form CreateEditor(ToolEditorContext context);void Reset(string nodeId);}
 /// <summary>Pure node-specific input/output description from persisted parameters; no file I/O or runtime mutation.</summary>
 public interface IToolNodeDescriptorProvider {ModuleDescriptor DescribeNode(NodeDocument node);}
+/// <summary>Pure parameter rewrite for a committed execution-edge edit. Loading and undo do not synthesize this event.</summary>
+public interface IToolExecutionTopologyProvider {
+ NodeDocument ApplyExecutionTopologyChange(NodeDocument node,IReadOnlyList<ExecutionSuccessor> previous,IReadOnlyList<ExecutionSuccessor> current);
+}
+/// <summary>Pure parameter rewrite for a copied node after new identities and copied edges are known.</summary>
+public interface IToolNodeCopyProvider {
+ NodeDocument PrepareCopiedNode(NodeDocument source,NodeDocument copy,IReadOnlyDictionary<string,string> nodeMap,IReadOnlyList<ExecutionSuccessor> copiedSuccessors);
+}
+/// <summary>Optional live-source copy path for tools whose original paste copies runtime module parameters.</summary>
+public interface IToolScopedNodeCopyProvider:IToolNodeCopyProvider {
+ NodeDocument PrepareCopiedNode(NodeDocument source,NodeDocument copy,IReadOnlyDictionary<string,string> nodeMap,IReadOnlyList<ExecutionSuccessor> copiedSuccessors,ModuleExecutionScope? sourceScope);
+}
+/// <summary>Pure parameter restoration after a real file load; not a Save or Undo event.</summary>
+public interface IToolNodeRestoreProvider {
+ NodeDocument PrepareRestoredNode(NodeDocument node);
+}
 public sealed class ToolPluginRegistry {
  readonly Dictionary<string,IVisionToolPlugin> plugins=new();
  public IEnumerable<IVisionToolPlugin> Plugins=>plugins.Values;
@@ -33,6 +50,16 @@ public sealed class ToolPluginRegistry {
  }
 
  public IVisionToolPlugin? Find(string id)=>plugins.GetValueOrDefault(id);
+ public SolutionDocument PrepareLoad(SolutionDocument loaded,string baseDirectory){
+  ArgumentNullException.ThrowIfNull(loaded);ArgumentException.ThrowIfNullOrWhiteSpace(baseDirectory);
+  return loaded with{Procedures=loaded.Procedures.Select(procedure=>procedure with{Nodes=procedure.Nodes.Select(node=>{
+   if(Find(node.ModuleId) is not IToolNodeRestoreProvider provider)return node;
+   var restored=provider.PrepareRestoredNode(node)??throw new InvalidDataException("Tool restore returned a null node.");
+   if(restored.Id!=node.Id||restored.ModuleId!=node.ModuleId||restored.ModuleVersion!=node.ModuleVersion)
+    throw new InvalidDataException("Tool restore changed node identity.");
+   return restored;
+  }).ToArray()}).ToArray()};
+ }
  public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory)=>PrepareSave(document,baseDirectory,null);
  public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){
   var catalog=new ResourceCatalog(baseDirectory,document.Resources);var resources=document.Resources.Where(r=>!plugins.Values.Any(p=>p is IToolAssetPersistence&&r.Id.StartsWith("plugin:"+p.Manifest.Id+":",StringComparison.Ordinal))).ToDictionary(r=>r.Id,StringComparer.Ordinal);

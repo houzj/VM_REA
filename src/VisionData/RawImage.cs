@@ -21,7 +21,7 @@ public static class ImagePreview {
   if(image is GrayImage or RgbImage)return image;
   long pixels=(long)image.Width*image.Height;int format=(int)image.Format;
   if(pixels>int.MaxValue)return null;
-  if(format is 1 or 0x01080001&&image.Pixels.Length>=pixels)return new GrayImage(image.Width,image.Height,image.Pixels[..(int)pixels]);
+  if(format is 1 or 0x01000000 or 0x01080001&&image.Pixels.Length>=pixels)return new GrayImage(image.Width,image.Height,image.Pixels[..(int)pixels]);
   if(pixels>int.MaxValue/3||image.Pixels.Length<pixels*3)return null;
   if(format is 2 or 201 or 0x02180014)return new RgbImage(image.Width,image.Height,image.Pixels[..((int)pixels*3)]);
   if(format is not (3 or 200 or 0x02180021))return null;

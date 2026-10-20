@@ -1,0 +1,15 @@
+# 标定板订阅矩形的两遍读取与调用者门
+
+2026-10-19，A3根线复核现有当前模块C体及汇编。原模块SHA256为bd62ee940a2e299c0c47e41909e64ca78c09d7717e7cefc629dbfb9e21105c1d。此处关闭此前“伪代码局部地址比较不可信”的有限ABI疑点，不把它当作已接入产品。
+
+证据为analysis/calibration-board/module-reuse-8aa8ab2827e845cfb7a46633618fdc48/output/18001dae0.c及同名.asm，调用者为module-base-entry-1bffc682a8764f43a7d5c9fcf32e56d9/output/180010db0.c及.asm。均复用本工作树既有只读Ghidra导出，不冒充本次REA新证据或运行轨迹。
+
+1dae0先将输出vector的end复位到begin，并将输出分类置0。依次读取roicenterx、roicentery、roiwidth、roiheight、roiangle，均请求index0。1dbd5..1dbeb明确R9指向float槽，栈第五参数指向Count槽；1dbf1把Count取入ESI。随后把原float槽改写成状态标志：成功1，e000031c为2，e000031b为3，其他0。因此伪代码中看似覆盖输入值的操作实际是第一遍探测，不应当作真正矩形坐标。
+
+第一遍五项都是3时，1dea0..1dec8写分类1并返回成功：调用者可继续查询别种ROI或本地存储。否则要求前四项标志均为1（1decd..1dee9）；**此处没有要求角度标志为1**。五项Count取无符号最小值，再限制最多64（1deef..1df20）。Count为0跳过第二遍，但仍返回成功和分类2。不能凭“角度可缺省”而把角度Count从最小值计算删除，或将空vector改成本地fallback。
+
+第二遍仍按X、Y、Width、Height、Angle顺序读当前index，R9分别指向真正的五float记录，栈第五参数仍为Count。每次调用重新清Count，所读Count不再参与循环长度。五项标志中任意为2均失败e0000001；角度非成功则写0，再追加五float（1e1d4..1e203）。这里并非“任一读错立即退出”，前四项标志为0或3的第二遍路径也没有同样拒绝门。角度先经过原常量范围与周期修正，再进行这些标志判断；常量数值本片未另取PE字节，不猜作任意角度归一化公式。第五实参为0时只读一个矩形，否则按第一遍截断的数量继续（1e208..1e216）。
+
+GetProcessInput10db0在普通模式this+28==0调用此helper，分类2时选择订阅矩形，即使vector为空也不改选本地矩形；随后ProcessFix的空ROI门仍可能拒绝。分类1才继续扇环helper，未得到订阅类型时再消费规范化本地记录。非0模式是另一条mask路径，不从这段推导。
+
+产品当前CalibrationBoardPlugin仅声明InputImage及图形ROI编辑，没有对应五个订阅数值叶；因此这条链仍是明确的接入/接口工作，不以本地Box和mask测试通过替代。还需定位原ROISelecter到订阅叶的实际UI入口和当前typed Region生产者，确定参数、来源与生命周期后实施；不能盲目新增五个普通公开端口或套用其他工具的ROI编号。本片没有修改其他工作树、运行原厂/设备或重做已有最终输出样本。

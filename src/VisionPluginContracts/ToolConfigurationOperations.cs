@@ -33,9 +33,16 @@ public sealed class ToolConfigurationParameterAdapter : IToolConfigurationDispat
    if(request.Kind==ConfigurationOperationKind.PersistUserValue){if(writeUser is null)return new(false);writeUser(userKey,request.Value??"");return new(true,request.Value);}
    if(request.Kind is not (ConfigurationOperationKind.ReadParameter or ConfigurationOperationKind.WriteParameter))return new(false);
    var spec=descriptor.Parameters.SingleOrDefault(p=>p.Name==name);if(spec is null)return new(false);
+   if(request.Kind==ConfigurationOperationKind.ReadParameter){var values=read();var value=values.TryGetValue(name,out var current)?current:spec.DefaultValue;return value is {} found?new(true,Text(found)):new(true,Error:"Missing parameter: "+name);}
+   return WriteParameter(name,request.Value??"");
+  }catch(Exception error)when(error is ArgumentException or InvalidOperationException or System.IO.IOException or UnauthorizedAccessException or OverflowException){return new(true,Error:error.Message);}
+ }
+ // Backend Algorithm.xml defaults can include parameters with no editor node.
+ public ConfigurationOperationResult WriteParameter(string name,string value){
+  try{
+   var spec=descriptor.Parameters.SingleOrDefault(p=>p.Name==name);if(spec is null)return new(false);
    var values=read();
-   if(request.Kind==ConfigurationOperationKind.ReadParameter){var value=values.TryGetValue(name,out var current)?current:spec.DefaultValue;return value is {} found?new(true,Text(found)):new(true,Error:"Missing parameter: "+name);}
-   if(!TryValue(spec.Kind,request.Value??"",out var parsed)||!GraphValidator.ValidParameter(spec,parsed))return new(true,Error:"Parameter is outside its declared type/range: "+name);
+   if(!TryValue(spec.Kind,value,out var parsed)||!GraphValidator.ValidParameter(spec,parsed))return new(true,Error:"Parameter is outside its declared type/range: "+name);
    var updated=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());updated[name]=parsed;apply(updated);
    var after=read();
    if(!after.TryGetValue(name,out var applied)||!GraphValidator.ValidParameter(spec,applied))return new(true,Error:"Parameter readback is missing or invalid: "+name);

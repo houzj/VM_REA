@@ -51,6 +51,13 @@ foreach(var sample in new[]{PortValue.NumberArray([1.5,2.5]),PortValue.TextArray
  var id="test.shape."+checks.Count;var descriptor=new ModuleDescriptor(id,"1",id,[],[Vector("v",sample.Kind)],[]);registry.Register(descriptor,()=>new FunctionModule(descriptor,_=>new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"v",sample}})));
  var run=await new GraphExecutor(registry).RunAsync(new(id,id,[Node("v",id)],[],[]),".");Check(run.Status==SessionStatus.Success&&ReferenceEquals(run.Nodes[0].Outputs["v"],sample),"validated runtime output "+sample.Kind+" "+checks.Count);
 }
+var zeroFixture=new FixtureValue(new(1,2,3,0,1),new(4,5,6,1,0));
+Check(PortValue.Fixture(zeroFixture).As<FixtureValue>().Reference.ScaleX==0,"native zero-scale pose survives scalar transport");
+var zeroFixtures=PortValue.FixtureArray([zeroFixture]);
+Check(zeroFixtures.Element(0).As<FixtureValue>().Run.ScaleY==0&&PortValue.JoinArray(DataKind.Fixture,[zeroFixtures,zeroFixtures]).Element(1).As<FixtureValue>().Reference.ScaleX==0,"zero-scale pose survives array element and join transport");
+Reject(()=>zeroFixture.Transform(new(0,0)),"affine inverse consumer explicitly rejects transported zero scale");
+Reject(()=>PortValue.Fixture(new(new(ScaleX:-1),new())),"negative scale rejected at transport boundary");
+Reject(()=>PortValue.Fixture(new(new(ScaleY:double.NaN),new())),"nonfinite scale rejected at independent managed transport boundary");
 var blobs=PortValue.Components([new(6,2,3,4,4,3,3.5),new(4,9,8,10,9,9.5,8.5)]);
 var leaves=CompoundOutputFields.Project(blobs);
 Check(leaves["BlobNum"].As<long>()==2&&leaves["TotalArea"].As<double>()==10,"Blob count and total area map actual component values");

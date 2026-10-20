@@ -30,7 +30,10 @@ public partial class MainWindow {
   EmptyImage.Visibility=Preview.Source is null?Visibility.Visible:Visibility.Collapsed;
   var provider=node is null?null:plugins.Find(node.ModuleId) as IToolDisplayProvider;
   ToolDisplayFrame? frame=null;
-  try{if(provider is not null&&node is not null&&results.ContainsKey(node.Id))frame=provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId));}
+  try{
+   if(provider is not null&&node is not null&&results.ContainsKey(node.Id))frame=provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId));
+   if(frame is not null&&node is not null)frame=ToolConfigurationDisplaySubscriptions.ApplyPositions(frame,node,doc.CurrentProcedureId,(source,port)=>results.GetValueOrDefault(source)?.Outputs.GetValueOrDefault(port));
+  }
   catch(Exception error){if(!Current())return;StatusText.Text="结果显示失败："+error.Message;} // Independent host diagnostic; not native exception parity.
   if(!Current())return;
   toolRecordTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;

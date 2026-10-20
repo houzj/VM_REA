@@ -117,6 +117,18 @@ try{configurationDoc.SetWorkflowConfiguration(configurationCopy,validConfig with
 Check(configurationDoc.Revision==configRevision,"invalid variable value leaves document and undo history unchanged");
 try{configurationDoc.SetWorkflowConfiguration(configurationCopy,validConfig with{Outputs=[new("wrong","wrong",DataKind.Integer,configurationDoc.CurrentProcedure.Nodes[0].Id,"Out")]});throw new Exception("Wrong interface source kind accepted");}catch(InvalidDataException){count++;}
 string configurationFile=Path.Combine(Path.GetTempPath(),"workflow-config-"+Guid.NewGuid().ToString("N")+".json");try{configurationDoc.Save(configurationFile);var loadedConfiguration=new GraphEditorDocument(registry);loadedConfiguration.Load(configurationFile);Check(loadedConfiguration.Document.Procedures.Single(p=>p.Id==configurationCopy).Configuration.Variables.Single().Value=="12","local variables and configuration survive save/reload");}finally{File.Delete(configurationFile);}
+var resetDoc=new GraphEditorDocument(registry);var resetId=resetDoc.AddNode("number","1",0,0,new(){["Value"]=JsonSerializer.SerializeToElement("accepted")});
+var resetInput=resetDoc.AddNode("pipe","1",100,0);
+resetDoc.SetWorkflowConfiguration(resetDoc.CurrentProcedureId,new WorkflowConfiguration{Subscriptions=[new(resetId,"Value",true,new(WorkflowSourceKind.TextConstant,"\"bound\"")),new(resetInput,"In",false,new(WorkflowSourceKind.NumberConstant,"3"))]});
+long resetRevision=resetDoc.Revision;
+resetDoc.ResetProcedureNodeParameters(resetDoc.CurrentProcedureId,resetId,new(){["Value"]=JsonSerializer.SerializeToElement("default")});
+Check(resetDoc.Revision==resetRevision+1&&resetDoc.CurrentProcedure.Nodes.Single(n=>n.Id==resetId).Parameters["Value"].GetString()=="default","plugin reset is one document transaction");
+Check(resetDoc.CurrentProcedure.Configuration.Subscriptions.Count==1&&!resetDoc.CurrentProcedure.Configuration.Subscriptions[0].IsParameter,"reset removes parameter subscriptions and preserves input bindings");
+resetDoc.Undo();Check(resetDoc.CurrentProcedure.Configuration.Subscriptions.Count==2,"one undo restores removed parameter subscription");Check(resetDoc.CurrentProcedure.Nodes.Single(n=>n.Id==resetId).Parameters["Value"].GetString()=="accepted","one undo restores pre-reset parameter values");
+resetDoc.Redo();Check(resetDoc.CurrentProcedure.Nodes.Single(n=>n.Id==resetId).Parameters["Value"].GetString()=="default","redo restores accepted reset");
+resetRevision=resetDoc.Revision;
+try{resetDoc.ResetProcedureNodeParameters(resetDoc.CurrentProcedureId,resetId,new(){["Value"]=JsonSerializer.SerializeToElement(123)});throw new Exception("Invalid reset accepted");}catch(ArgumentException){count++;}
+Check(resetDoc.Revision==resetRevision&&resetDoc.CurrentProcedure.Nodes.Single(n=>n.Id==resetId).Parameters["Value"].GetString()=="default","invalid reset leaves document and undo history untouched");
 Console.WriteLine($"PASS {count} editor semantic checks");
 
 

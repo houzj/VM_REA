@@ -6,30 +6,42 @@ using VisionFramework;
 namespace VisionPluginContracts;
 
 /// <summary>Host-neutral, explicitly limited bridge. It never resolves identity from captions and never runs an algorithm.</summary>
-public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationSubscriptionService {
+public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationSubscriptionBatchService {
  readonly Func<ProcedureDocument> getProcedure;readonly ModuleRegistry registry;readonly string targetNodeId;readonly string procedureId;
  readonly Action<ConfigurationSubscriptionDestination,WorkflowValueReference?> apply;
+ readonly Action<IReadOnlyList<ConfigurationSubscriptionDocumentChange>>? applyBatch;
  public static IReadOnlyList<string> UnsupportedCapabilities {get;}=Array.AsReadOnly(new[]{
-  "GlobalVariables","LocalVariables","WorkflowInputs","ParentContainerInputs","ArrayIndex",
+  "GlobalVariables","LocalVariables","WorkflowInputs","ParentContainerInputs","NonNumericArrayIndex",
   "NativeCanSubscribeMetadata","NativeVisibilityMetadata","NativePrivateMetadata","NativeTimestampMetadata","NativeFieldHierarchy","NativeNumericWidth"});
  public WorkflowConfigurationSubscriptionService(Func<ProcedureDocument> getProcedure,ModuleRegistry registry,string targetNodeId,
-  Action<ConfigurationSubscriptionDestination,WorkflowValueReference?> apply) {
+  Action<ConfigurationSubscriptionDestination,WorkflowValueReference?> apply,Action<IReadOnlyList<ConfigurationSubscriptionDocumentChange>>? applyBatch=null) {
   this.getProcedure=getProcedure??throw new ArgumentNullException(nameof(getProcedure));this.registry=registry??throw new ArgumentNullException(nameof(registry));
   ArgumentException.ThrowIfNullOrEmpty(targetNodeId);this.targetNodeId=targetNodeId;this.apply=apply??throw new ArgumentNullException(nameof(apply));
-  procedureId=(getProcedure()??throw new InvalidDataException("No current procedure.")).Id;
+  procedureId=(getProcedure()??throw new InvalidDataException("No current procedure.")).Id;this.applyBatch=applyBatch;
+ }
+ public ConfigurationSubscriptionBatchResult BindMany(IReadOnlyList<ConfigurationSubscriptionChange> changes){
+  try{
+   if(applyBatch is null)throw Unsupported("Host has no batch input binding transaction.");
+   var p=Snapshot();var encoded=new List<ConfigurationSubscriptionDocumentChange>();
+   if(changes.Select(c=>(c.Destination.Domain,c.Destination.Name)).Distinct().Count()!=changes.Count)throw new InvalidDataException("Duplicate binding destination.");
+   foreach(var change in changes){var destination=change.Destination;if(destination.Domain==ConfigurationSubscriptionDomain.Parameter||destination.Domain==ConfigurationSubscriptionDomain.Display)throw Unsupported("Only input bindings participate in this batch.");var spec=Target(p,destination);WorkflowValueReference? source=null;
+    if(change.Binding is {} binding){var query=new ConfigurationSubscriptionQuery(destination,destination.NativeType.Split(';',StringSplitOptions.RemoveEmptyEntries));if(ConfigurationSubscriptionValidation.Check(query,binding) is {} error)throw new InvalidDataException(error);source=EncodeBinding(p,destination,spec,binding);}encoded.Add(new(destination,source));
+   }
+   applyBatch(encoded.AsReadOnly());var after=Snapshot();foreach(var change in encoded)if(Stored(after,change.Destination)!=change.Source)throw new InvalidDataException("Batch host did not persist the requested bindings.");return new(ConfigurationSubscriptionStatus.Available,changes.Select(change=>IndexWarning(change.Binding)).FirstOrDefault(w=>w is not null));
+  }catch(BridgeException error){return new(error.Status,error.Message);}catch(Exception error){return new(ConfigurationSubscriptionStatus.Failed,error.Message);}
  }
  public ConfigurationSubscriptionTreeResult Enumerate(ConfigurationSubscriptionQuery query) {
   try {
    ArgumentNullException.ThrowIfNull(query);var p=Snapshot();var destination=Target(p,query.Destination);
    if(query.IncludeSelf||query.IncludeInside)throw Unsupported("Self/internal module enumeration is outside this root-flow bridge.");
-   if(query.IndexOnly)throw Unsupported("Array index reference enumeration is not represented by WorkflowValueReference.");
+   if(query.IndexOnly)RequireIndexTarget(destination);
    var ancestors=Ancestors(p);var roots=new List<ConfigurationSubscriptionTreeNode>();
    foreach(var node in p.Nodes.Where(n=>ancestors.Contains(n.Id)&&n.Enabled)) {
     var descriptor=registry.GetDescriptor(node);var leaves=new List<ConfigurationSubscriptionTreeNode>();
-    foreach(var port in descriptor.Outputs) {
-     var native=NativeType(port.Kind);if(native==null||!CanFlow(port.Kind,destination)||!PermittedNative(query.Destination,native))continue;
+    foreach(var port in descriptor.Outputs.Where(output=>output.CanSubscribe)) {
+     var native=NativeType(port.Kind);if(query.IndexOnly?port.Kind!=DataKind.Integer:native==null||!CanFlow(port,destination)||!PermittedNative(query.Destination,native))continue;
      if(query.NativeTypes.Count>0&&!query.NativeTypes.Contains(native,StringComparer.Ordinal))continue;
-     var reference=new ConfigurationOutputReference(p.Id,node.Id,port.Name,native);
+     var reference=new ConfigurationOutputReference(p.Id,node.Id,port.Name,native!);
      leaves.Add(new(Id("port",p.Id,node.Id,port.Name),port.Name,binding:new(reference,ConfigurationSubscriptionIndex.All),
       metadata:new ConfigurationSubscriptionPortMetadata()));
     }
@@ -50,16 +62,16 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
   try {
    var p=Snapshot();var target=Target(p,destination);WorkflowValueReference? reference=null;
    if(binding!=null) {
-    if(binding.Index.Kind!=ConfigurationSubscriptionIndexKind.All)throw Unsupported("Literal/reference array indices are not represented by WorkflowValueReference.");
+
     var query=new ConfigurationSubscriptionQuery(destination,Array.AsReadOnly(destination.NativeType.Split(';',StringSplitOptions.RemoveEmptyEntries)));
     if(ConfigurationSubscriptionValidation.Check(query,binding) is {} error)throw new InvalidDataException(error);
-    reference=Encode(p,destination,target,binding.Reference);
+    reference=EncodeBinding(p,destination,target,binding);
    }
    apply(destination,reference);
    var after=Snapshot();if(after.Id!=p.Id)throw new InvalidDataException("Current procedure changed during subscription apply.");
    var persisted=Stored(after,destination);
    if(persisted!=reference)throw new InvalidDataException("Host apply did not persist the requested typed binding.");
-   return Decode(after,destination,Target(after,destination),persisted);
+   return Decode(after,destination,Target(after,destination),persisted) with{Diagnostic=IndexWarning(binding)};
   }catch(BridgeException e){return new(e.Status,null,Diagnostic:e.Message);}
    catch(Exception e){return new(ConfigurationSubscriptionStatus.Failed,null,Diagnostic:e.Message);}
  }
@@ -80,7 +92,7 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
   }else {
    var ports=d.Inputs.Where(x=>x.Name==destination.Name).ToArray();if(ports.Length!=1)throw Unsupported("Destination input is not uniquely declared: "+destination.Name);
    result=new(ports[0].Kind,ports[0],null);
-   if(destination.Domain==ConfigurationSubscriptionDomain.Combination&&!DataKinds.IsImage(result.Kind)&&result.Kind!=DataKind.Circle)throw Unsupported("This framework type does not represent the requested native combination exactly.");
+   if(destination.Domain==ConfigurationSubscriptionDomain.Combination&&!DataKinds.IsImage(result.Kind)&&result.Kind!=DataKind.Circle&&result.Kind!=DataKind.Point)throw Unsupported("This framework type does not represent the requested native combination exactly.");
   }
   var native=NativeType(result.Kind);if(native==null)throw Unsupported("No confirmed native type mapping for destination "+result.Kind);
   if(!PermittedNative(destination,native))throw Unsupported("Declared framework destination cannot represent native filter "+destination.NativeType);
@@ -88,8 +100,9 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
  }
  static string? NativeType(DataKind kind)=>kind switch {
   DataKind.Integer=>"int",DataKind.Number or DataKind.NumberArray=>"float",DataKind.Text=>"string",
-  DataKind.GrayImage or DataKind.RgbImage or DataKind.Image=>"IMAGE",DataKind.Circle=>"CIRCLE",_=>null};
+  DataKind.GrayImage or DataKind.RgbImage or DataKind.Image=>"IMAGE",DataKind.Circle=>"CIRCLE",DataKind.Point=>"POINT",_=>null};
  static bool PermittedNative(ConfigurationSubscriptionDestination destination,string native)=>string.IsNullOrEmpty(destination.NativeType)||destination.NativeType.Split(';').Contains(native,StringComparer.Ordinal);
+ static bool CanFlow(PortDescriptor source,TargetSpec target)=>target.Port is {} port?PortTypes.AcceptsInput(port,source.Kind,source.Cardinality):source.Cardinality==ValueCardinality.Scalar&&CanFlow(source.Kind,target);
  static bool CanFlow(DataKind source,TargetSpec target)=>target.Port is {} port?DataKinds.CanFlow(source,port):DataKinds.CanFlow(source,target.Kind);
  HashSet<string> Ancestors(ProcedureDocument p) {
   if(p.ExecutionLinks==null)throw Unsupported("Explicit ExecutionLinks are required; node order and data connections cannot substitute for native predecessors.");
@@ -117,8 +130,9 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
     if(output.NodeId==targetNodeId||!Ancestors(p).Contains(output.NodeId))throw new InvalidDataException("Output source is not an execution predecessor.");
     var node=p.Nodes.SingleOrDefault(n=>n.Id==output.NodeId)??throw new InvalidDataException("Missing source node.");if(!node.Enabled)throw new InvalidDataException("Disabled source cannot supply an execution value.");
     var ports=registry.GetDescriptor(node).Outputs.Where(x=>x.Name==output.PortId).ToArray();if(ports.Length!=1)throw new InvalidDataException("Source output is missing or ambiguous.");
+    if(!ports[0].CanSubscribe)throw Unsupported("Source output does not permit subscription.");
     var native=NativeType(ports[0].Kind);if(native==null||native!=output.NativeType)throw Unsupported("Output native type is not represented by the declared framework port.");
-    if(!PermittedNative(destination,native)||!CanFlow(ports[0].Kind,target))throw new InvalidDataException("Source and destination types do not match.");
+    if(!PermittedNative(destination,native)||!CanFlow(ports[0],target))throw new InvalidDataException("Source and destination types do not match.");
     return new(WorkflowSourceKind.NodeOutput,node.Id,ports[0].Name);
    case ConfigurationConstantReference constant:
     if(destination.Domain==ConfigurationSubscriptionDomain.Combination)throw Unsupported("Scalar constants cannot represent a native combination.");
@@ -137,9 +151,37 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
    default:throw Unsupported("Global/local variable, external and other reference kinds are not represented by this bridge.");
   }
  }
+ static string? IndexWarning(ConfigurationSubscriptionBinding? binding)=>binding?.Index.Kind==ConfigurationSubscriptionIndexKind.Literal&&binding.Index.LiteralText?.Contains('.')==true?"订阅失败":null;
+ static void RequireIndexTarget(TargetSpec target){if(target.Port is null||!(target.Port.SupportsDeferredNumericRead||target.Port.SupportsDeferredIntegerRead||target.Port.SupportsDeferredTextRead)||target.Kind is not(DataKind.Integer or DataKind.Number or DataKind.NumberArray or DataKind.Text))throw Unsupported("Only opted-in numeric input indices are supported.");}
+ WorkflowValueReference EncodeBinding(ProcedureDocument p,ConfigurationSubscriptionDestination destination,TargetSpec target,ConfigurationSubscriptionBinding binding){
+  var source=Encode(p,destination,target,binding.Reference);if(binding.Index.Kind==ConfigurationSubscriptionIndexKind.All)return source;
+  RequireIndexTarget(target);if(source.Kind!=WorkflowSourceKind.NodeOutput)throw Unsupported("Only output references can be indexed.");
+  if(IndexWarning(binding) is not null)return source;
+  WorkflowArrayIndex index=binding.Index.Kind switch{
+   ConfigurationSubscriptionIndexKind.Literal=>new(binding.Index.LiteralText??binding.Index.Literal!.Value.ToString(CultureInfo.InvariantCulture)),
+   ConfigurationSubscriptionIndexKind.Reference=>new(IndexSource:EncodeIndexSource(p,binding.Index.Reference!)),
+   _=>throw new InvalidDataException("Unknown index kind.")};index.Validate();return source with{ArrayIndex=index};
+ }
+ WorkflowValueReference EncodeIndexSource(ProcedureDocument p,ConfigurationSubscriptionReference reference){
+  if(reference is not ConfigurationOutputReference output||output.NativeType!="int"||output.ProcedureId!=p.Id)throw Unsupported("Index requires a same-procedure integer output.");
+  if(!Ancestors(p).Contains(output.NodeId))throw new InvalidDataException("Index source must precede consumer.");
+  var node=p.Nodes.Single(n=>n.Id==output.NodeId);if(!node.Enabled)throw new InvalidDataException("Disabled index source.");
+  var port=registry.GetDescriptor(node).Outputs.Single(o=>o.Name==output.PortId);if(port.Kind!=DataKind.Integer)throw new InvalidDataException("Index source must be integer.");
+  return new(WorkflowSourceKind.NodeOutput,node.Id,port.Name);
+ }
+ ConfigurationSubscriptionIndex DecodeIndex(ProcedureDocument p,TargetSpec target,WorkflowArrayIndex? index){
+  if(index is null)return ConfigurationSubscriptionIndex.All;RequireIndexTarget(target);index.Validate();
+  if(index.LiteralText is {} literal)return ConfigurationSubscriptionIndex.At(literal);
+  var source=index.IndexSource!;if(source.Kind!=WorkflowSourceKind.NodeOutput||source.ArrayIndex is not null)throw Unsupported("Stored index source is unsupported.");
+  var reference=new ConfigurationOutputReference(p.Id,source.Id,source.Port!,"int");_=EncodeIndexSource(p,reference);return ConfigurationSubscriptionIndex.From(reference);
+ }
+ public static string IndexCaption(ConfigurationSubscriptionIndex index,ProcedureDocument p)=>index.Kind switch{
+  ConfigurationSubscriptionIndexKind.All=>"[]",ConfigurationSubscriptionIndexKind.Literal=>"["+(index.LiteralText??index.Literal?.ToString(CultureInfo.InvariantCulture))+"]",
+  ConfigurationSubscriptionIndexKind.Reference when index.Reference is ConfigurationOutputReference output=>"["+p.Nodes.Single(n=>n.Id==output.NodeId).Name+"."+output.PortId+"]",_=>throw new InvalidDataException("Unknown index presentation.")};
  static WorkflowValueReference Number(double number){if(!double.IsFinite(number))throw Unsupported("Framework numeric values require finite numbers; native Infinity is not represented.");return new(WorkflowSourceKind.NumberConstant,JsonSerializer.Serialize(number));}
  ConfigurationSubscriptionBindingResult Decode(ProcedureDocument p,ConfigurationSubscriptionDestination destination,TargetSpec target,WorkflowValueReference? source) {
   if(source==null)return new(ConfigurationSubscriptionStatus.Available,null,"");
+  var index=DecodeIndex(p,target,source.ArrayIndex);source=source with{ArrayIndex=null};
   if(source.Kind is WorkflowSourceKind.IntegerConstant or WorkflowSourceKind.NumberConstant or WorkflowSourceKind.TextConstant) {
    if(source.Port!=null)throw new InvalidDataException("Scalar constant has an unexpected port identity.");
    if(!CanFlow(WorkflowSubscriptions.SourceType(p,registry,source),target))throw new InvalidDataException("Stored constant and destination types do not match.");
@@ -151,7 +193,7 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
     var node=p.Nodes.SingleOrDefault(n=>n.Id==source.Id)??throw new InvalidDataException("Stored binding source node is missing.");
     var output=registry.GetDescriptor(node).Outputs.SingleOrDefault(x=>x.Name==source.Port)??throw new InvalidDataException("Stored binding source port is missing.");
     reference=new ConfigurationOutputReference(p.Id,node.Id,output.Name,NativeType(output.Kind)??throw Unsupported("Stored output type is unsupported."));
-    _=Encode(p,destination,target,reference);presentation=node.Name+"."+output.Name+"[]";break;
+    _=Encode(p,destination,target,reference);presentation=node.Name+"."+output.Name+IndexCaption(index,p);break;
    case WorkflowSourceKind.IntegerConstant:
     reference=new ConfigurationConstantReference("int",int.Parse(source.Id,NumberStyles.Integer,CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture));presentation=((ConfigurationConstantReference)reference).Literal;
     _=Encode(p,destination,target,reference);break;
@@ -163,7 +205,7 @@ public sealed class WorkflowConfigurationSubscriptionService:IToolConfigurationS
     _=Encode(p,destination,target,reference);break;
    default:throw Unsupported("Stored workflow/local/global/index/array-constant reference cannot be represented by this supported subset.");
   }
-  return new(ConfigurationSubscriptionStatus.Available,new(reference,ConfigurationSubscriptionIndex.All),presentation);
+  return new(ConfigurationSubscriptionStatus.Available,new(reference,index),presentation);
  }
  static string Id(string prefix,params string[] fields)=>prefix+":"+JsonSerializer.Serialize(fields);
  static BridgeException Unsupported(string message)=>new(ConfigurationSubscriptionStatus.Unsupported,message);

@@ -1,0 +1,109 @@
+# 快速匹配：第一轮独立原件与入口盘点
+
+2026-10-20；只读静态证据，无目标执行、原厂运行、托管构建、产品/共享框架修改或人工验收。三个匹配器分别建档，下面的UI继承不等同算法相同。
+
+## 身份与配置
+
+- 原目录：`D:\Program Files\VisionMaster4.4.0\Applications\Module(sp)\x64\Location\IMVSFastFeatureMatchModu`。
+- 原符号ModuleName / ctor(object)传入模块标识：`IMVSFastFeatureMatchModu`；本工具Cs IL可核。实例数值ID经VmModule.ID读取，是运行实例身份，本轮未执行，未将程序集Guid或GuidTemp冒固定ModuleId。
+- 当前产品：tool-catalog.json对应`IMVSFastFeatureMatchModu`条目ModuleId=null；无对应已注册plugin/runtime/provider。不是实现完成工具。
+- 原模板入口：`FastFeaturepatMatchConfigPanalData`（节点名以xml-members.json实际索引为准）；Tab为 Tab_Basic Params, Tab_Feature Template, Tab_Run Params, ResultShow。
+- 原配置/算法默认/Tab/Display/Cs.xml/ToolItemInfo.xml六XML的全部成员索引见xml-members.json；Librarys.Config的依赖内容保持原件。
+
+| 原件 | SHA256 |
+|---|---|
+| IMVSFastFeatureMatchModu.dll | FBDF234152E221DB89D5E8FD0AC962C437EC742ABFBAD5CBE8211558C4A4F3AF |
+| IMVSFastFeatureMatchModu.xml | F23548D831273B14F8A8BFA2466F66C9AC2B512C6E804232A98F653000365D24 |
+| IMVSFastFeatureMatchModuAlgorithm.xml | 2051F8AEC00E9299A1233E09DC11B4F813D26C9552A1342C378C9B48404534D0 |
+| IMVSFastFeatureMatchModuAlgorithmTab.xml | 122B713FB0298999EFFEE72ED812471EA1684B0B5408C0F0A2EBB91EC20AA32C |
+| IMVSFastFeatureMatchModuControl.dll | 7446B769F31FFD7EAFD9BFF0F35D052BEA14303348DFE5E5A94BDA9EBA160014 |
+| IMVSFastFeatureMatchModuCs.dll | 7139D13E81F41D5A7194C333C7968D16F74DD915417D1C8418DEDE123162C88D |
+| IMVSFastFeatureMatchModuCs.xml | 04356141AB48B864D1235DCB369E4CBC72F4C263186AC55EDB0E49B1B552C1C1 |
+| IMVSFastFeatureMatchModuDisplay.xml | F92B0F5F57492350ABF2BBC40B3FE0FA27B595B9D53DB583226DC4A4C13A40F8 |
+| Librarys.Config | 23BC117A2F75DED133D7293CE0ED0B61A6D04F6ACB3EEBF931683C710A8D5A3A |
+| ToolItemInfo.xml | 7E3575CA31766D56953D9B9AEC702CB14437D0BAA9EFD2A3A914619737E58286 |
+
+算法SDK导入是独立身份：
+- `D:\Program Files\VisionMaster4.4.0\MVDAlgorithmSDK\Runtime\x64\MVDFastFeaturePatMatchCpp.dll` SHA256 `04edca3a7d5f100983e0aaadb31f58149ae06bee31939831f77f5634b3de63d7`；仅PE导入/导出，不代表其方法体已还原。
+
+## 源码已确认的托管运行/结果/模板链
+
+- 本工具ctor(object)调用VmModule::.ctor(object, 模块字符串)，再由ID构造本工具Param。
+- 本工具Run→ServerSDKManager.mModuleManager.SyncSelfRun(ID,true)。get_ModuResult每次new本工具Result→QueryModuleOneResult(ID,true)，HasValue时SetModuleResult(...,ModuResultMemType)，再返回本工具Result。这是已导出IL的实际调用链，不是猜测原生Process细节。
+- Param构造中的ParamItem/Read/Write与具体key、Result构造全部属性/字段保存在本工具Cs.il及managed-method-index.json；本轮未逐参数语义闭合。
+
+| 具体方法体 | IL文件/行 | RVA |
+|---|---|---|
+| VM.ModuleControl.FeaturepatMatchDialogDataBase Apps.XmlParser.ParamTab.FastFeaturepatMatchConfigPanalData::GetModelData() | IMVSFastFeatureMatchModuControl.il:324 | 0x21D8 |
+| IMVSFastFeatureMatchModuCs.FastFeatureMatchResult IMVSFastFeatureMatchModuCs.IMVSFastFeatureMatchModuTool::get_ModuResult() | IMVSFastFeatureMatchModuCs.il:2078 | 0x2F70 |
+| System.Void IMVSFastFeatureMatchModuCs.IMVSFastFeatureMatchModuTool::Run() | IMVSFastFeatureMatchModuCs.il:2143 | 0x2FF3 |
+| System.Byte[] IMVSFastFeatureMatchModuCs.IMVSFastFeatureMatchModuTool::GetModel() | IMVSFastFeatureMatchModuCs.il:2166 | 0x3010 |
+| System.Void IMVSFastFeatureMatchModuCs.IMVSFastFeatureMatchModuTool::ImportModel(System.Object) | IMVSFastFeatureMatchModuCs.il:2355 | 0x3218 |
+| System.Void IMVSFastFeatureMatchModuCs.IMVSFastFeatureMatchModuTool::ImportModelData(System.String[]) | IMVSFastFeatureMatchModuCs.il:2636 | 0x34F8 |
+| System.Void IMVSFastFeatureMatchModuCs.IMVSFastFeatureMatchModuTool::ClearModelData() | IMVSFastFeatureMatchModuCs.il:2812 | 0x3694 |
+
+- HP和Fast本工具ClearModelData实际发ServerSDKAPI.IMVS_SetParamValue(handle,ID,"ClearCandidate","")并检查返回值；不是释放整个tool/session。Contour Cs未声明同名方法，不能用HP方法冒充本工具API。
+- Contour.Control的Pyramid配置/对话数据/对话UI与Fast.Control对应类型实际继承HP.Control；HP配置再继承FeatureMatchCommonControl，HP对话Data继承VM.ModuleControl.FeaturepatMatchDialogDataBase，UI继承FeatureMatchCommonControl的UIBase。具体派生类型独立，不能将HP训练/运行算法移作其它两个。
+- HPFeaturepatMatchDialogUI.Owner_Closing IL43CC：DataContext非null时移除MatchCommand handler；这只是一个已确认解绑，不能声称所有ROI/窗口释放已闭合。Contour/Fast能继承哪些路径及各自覆盖需要按类型继续核。
+
+## 原生运行、结果、保存和释放入口（导出定位；方法体仍缺）
+
+以下RVA来自本工具原件PE导出表；是精确下一步取体地址，尚未证明这些符号之间的真实call顺序。
+
+| 导出符号 | RVA |
+|---|---|---|
+| ??0CIMVSFastFeatureMatchModu@@QEAA@XZ | 0x20ea0 |
+| ??1CIMVSFastFeatureMatchModu@@UEAA@XZ | 0x21020 |
+| ??_7CIMVSFastFeatureMatchModu@@6B@ | 0x35e18 |
+| ?ClearMatchResult@CIMVSFastFeatureMatchModu@@AEAAXXZ | 0x212c0 |
+| ?CreateToolInstance@CIMVSFastFeatureMatchModu@@AEAAHXZ | 0x215d0 |
+| ?DeInit@CIMVSFastFeatureMatchModu@@AEAAXXZ | 0x21780 |
+| ?DeleteModuBuf@CIMVSFastFeatureMatchModu@@AEAAXXZ | 0x217f0 |
+| ?GetCurResultMaxScore@CIMVSFastFeatureMatchModu@@AEAAMPEAVIFastFeaturePatMatchResult@FastFeaturePatMatch@VisionDesigner@@@Z | 0x218b0 |
+| ?GetOutlinePoints@CIMVSFastFeatureMatchModu@@AEAAHXZ | 0x219c0 |
+| ?GetParam@CIMVSFastFeatureMatchModu@@UEAAHPEBDPEADHPEAH@Z | 0x21e80 |
+| ?GetResult@CIMVSFastFeatureMatchModu@@AEAAHPEAUFEATURE_MATCH_MODU_OUTPUT@@@Z | 0x22c80 |
+| ?Init@CIMVSFastFeatureMatchModu@@QEAAHXZ | 0x23180 |
+| ?LimitJudge@CIMVSFastFeatureMatchModu@@AEAAHPEAUFEATURE_MATCH_MODU_OUTPUT@@@Z | 0x23350 |
+| ?LoadModuleData@CIMVSFastFeatureMatchModu@@UEAAHPEBULOAD_MODULE_DATA_PARAM@@@Z | 0x23840 |
+| ?NewResultScoreIsHigh@CIMVSFastFeatureMatchModu@@AEAA_NPEAUFEATURE_MATCH_MODU_OUTPUT@@PEAVIFastFeaturePatMatchResult@FastFeaturePatMatch@VisionDesigner@@@Z | 0x23d50 |
+| ?Process@CIMVSFastFeatureMatchModu@@UEAAHPEAX0PEAU_MVDSDK_BASE_MODU_INPUT@CVmAlgModuleBase@@@Z | 0x23ef0 |
+| ?ProcessAlg@CIMVSFastFeatureMatchModu@@AEAAHPEAU_MVDSDK_BASE_MODU_INPUT@CVmAlgModuleBase@@PEAUFEATURE_MATCH_MODU_OUTPUT@@@Z | 0x24320 |
+| ?ProcessOutput4AllPatterns@CIMVSFastFeatureMatchModu@@AEAAHPEAU_MVDSDK_BASE_MODU_INPUT@CVmAlgModuleBase@@PEAUFEATURE_MATCH_MODU_OUTPUT@@QEBX@Z | 0x24670 |
+| ?ProcessOutput@CIMVSFastFeatureMatchModu@@AEAAHPEAU_MVDSDK_BASE_MODU_INPUT@CVmAlgModuleBase@@PEAUFEATURE_MATCH_MODU_OUTPUT@@QEBX@Z | 0x25320 |
+| ?ResetMember@CIMVSFastFeatureMatchModu@@AEAAXXZ | 0x25ff0 |
+| ?SaveModuleData@CIMVSFastFeatureMatchModu@@UEAAHPEAUSAVE_MODULE_DATA_PARAM@@@Z | 0x260d0 |
+| ?SetInputImage@CIMVSFastFeatureMatchModu@@AEAAHPEAVIMvdImage@VisionDesigner@@@Z | 0x26400 |
+| ?SetMask@CIMVSFastFeatureMatchModu@@AEAAHAEAV?$vector@PEAVIMvdShape@VisionDesigner@@V?$allocator@PEAVIMvdShape@VisionDesigner@@@std@@@std@@@Z | 0x26430 |
+| ?SetMaskImage@CIMVSFastFeatureMatchModu@@AEAAHPEAVIMvdImage@VisionDesigner@@_N@Z | 0x264a0 |
+| ?SetMultiThread@CIMVSFastFeatureMatchModu@@AEAAHXZ | 0x264f0 |
+| ?SetParam@CIMVSFastFeatureMatchModu@@UEAAHPEBD0H@Z | 0x26690 |
+| ?SetROI@CIMVSFastFeatureMatchModu@@AEAAHPEAVIMvdShape@VisionDesigner@@@Z | 0x273f0 |
+| ?SetRunParam@CIMVSFastFeatureMatchModu@@AEAAHPEBD0@Z | 0x27420 |
+| ?UpdateMatchResult@CIMVSFastFeatureMatchModu@@AEAAHW4_MATCH_RES_SORT_TYPE_E@@_N@Z | 0x27450 |
+| CreateModule | 0x28670 |
+| DestroyModule | 0x28750 |
+
+## 显示资源与消费者边界
+
+原Display对象：InImage, Feature Match Contour Points, Feature Match Result, ROI, Feature Match Points, Fixtured Point, Unfixtured Point, Show Text, Data Record, Data Record, Result List, ExternROI, OutputMask。
+具体Object.Type/Features/Source/状态/数量等保留原XML索引。原生ProcessOutput/UpdateMatchResult/GetResult生成这些字段的分支尚未取体，公共显示消费者也未按新匹配器完成适配；不能用现标定显示通过推定支持轮廓轮廓点/模板/结果集合。Fast首图对象实际叫InImage，另两者叫InputImage，此差异保留。
+
+## 精确缺口及后续最短取证
+
+1. 本工具原生CreateModule→构造/Init→CreateToolInstance及Process→ProcessAlg→GetResult→ProcessOutput实际方法体、callee、catch/成功失败清理门。导出不是源码体；当前算法/运行未闭合。
+2. 本工具SetParam/SetRunParam→各参数/输入/模型创建/匹配/排序/阈值/坐标与掩膜SDK消费者；不能仅凭ParamItem范围实现算法。
+3. 本工具LoadModuleData/SaveModuleData→model/solution用户数据、模板编辑/导入导出及训练生命周期；GetModel/ImportModel IL已取得，具体二进制格式/原生SDK管理仍须逐链。
+4. 本工具DestroyModule/DeInit/DeleteModuBuf/ClearMatchResult与SDK所有者、结果内存、模板及ROI/window关闭订阅的真正释放链；已导出OwnClosing不等于闭合所有释放。
+5. UI BAML/共享FeatureMatchCommonControl、VM.ModuleControl实际模板生命周期所需源体仍待定向补；普通原件共享哈希待消费到具体体时锁定，当前不以同名依赖替代证据。
+
+## 取证状态/失败
+
+- REA evidence `ev_89efe71aa256da2e89f4fde022b39d3de6d369e42554bab54ef37a0aaab30e45`，Cs SHA与原件一致；managed provider coverage=partial，因此不宣称完整托管还原。raw IL为installed dotnet-ildasm0.12.2.0只读导出，可逐方法核。
+- 最初ILDASM要求已缺的.NET3；仅对子进程设置DOTNET_ROLL_FORWARD=Major后被动导出成功，未安装/升级运行时。Python商店别名不可用，改用已配置Codex bundled Python成功，无环境修改。
+- 首次尝试把完整REA图写入单条Windows命令超过CreateProcess长度限制，未写成功；改存精确REA摘要+完整本地IL，完整metadata不冒称已留盘。
+- 分工具原件SHA/IL/方法索引/PE导出与SDK身份均已生成；源码恢复/实施/差分/宿主/人工验收均未完成。
+
+## 已有Control源码复用补记
+
+发现原只读目录`D:\MyWork\REA逆向测试\analysis\full-audit\renderer-gap-projects\IMVSFastFeatureMatchModuControl`，已索引13个CS/XAML的路径与SHA到reusable-managed-source-index.json。因此前述第5项应收窄：不是所有Control源码不存在，而是尚未按本轮具体caller核完原件绑定、共享base消费者和生命周期。优先复用这些文件并对照当前IL，避免再次全量反编译。Contour当前IL两处CreatePatE明确动态调用CreateDipolePyramid；不能因其继承HP DialogUI就用HP创建算法代替。Fast/HP的具体动态创建分派继续独立核。

@@ -5,7 +5,7 @@ using System.Windows;
 namespace VisionPluginContracts;
 
 public enum ConfigurationFileStatus { Selected, Cancelled, Unsupported, Failed }
-public sealed record ConfigurationFileRequest(string ModuleKey,string CurrentPath,string Filter,string Title,bool Multiselect=false,bool Remote=false);
+public sealed record ConfigurationFileRequest(string ModuleKey,string CurrentPath,string Filter,string Title,bool Multiselect=false,bool Remote=false,bool CheckFileExists=true,bool CheckPathExists=true);
 public sealed record ConfigurationFileSelection(ConfigurationFileStatus Status,IReadOnlyList<string> Paths,string? Diagnostic=null);
 public sealed record ConfigurationFileHistoryResult(bool Success,string? Directory=null,string? Diagnostic=null);
 public interface IToolConfigurationFileService {
@@ -39,15 +39,15 @@ public sealed class WpfConfigurationFileService:IToolConfigurationFileService {
    var initial=stored.Directory??"";
    if(File.Exists(request.CurrentPath))initial=Path.GetDirectoryName(Path.GetFullPath(request.CurrentPath))??initial;
    if(!Directory.Exists(initial))initial="";
-   var result=picker(owner,new(initial,request.Filter,request.Title,request.Multiselect));
-   if(result.Status==ConfigurationFileStatus.Selected&&(result.Paths.Count==0||!request.Multiselect&&result.Paths.Count!=1||result.Paths.Any(p=>!File.Exists(p))))return new(ConfigurationFileStatus.Failed,[],"Picker did not return existing files.");
+   var result=picker(owner,new(initial,request.Filter,request.Title,request.Multiselect,request.CheckFileExists,request.CheckPathExists));
+   if(result.Status==ConfigurationFileStatus.Selected&&(result.Paths.Count==0||!request.Multiselect&&result.Paths.Count!=1||result.Paths.Any(p=>request.CheckFileExists&&!File.Exists(p)||request.CheckPathExists&&!Directory.Exists(Path.GetDirectoryName(Path.GetFullPath(p))))))return new(ConfigurationFileStatus.Failed,[],"Picker did not return existing files.");
    return result;
   }catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException){return new(ConfigurationFileStatus.Failed,[],error.Message);}
  }
  public ConfigurationFileHistoryResult Remember(string moduleKey,string selectedFile)=>history.Remember(moduleKey,selectedFile);
  static ConfigurationFileSelection Pick(Window? owner,ConfigurationFilePickerOptions options){var picker=new Microsoft.Win32.OpenFileDialog{InitialDirectory=options.InitialDirectory,Filter=options.Filter,Title=options.Title,Multiselect=options.Multiselect,CheckFileExists=options.CheckFileExists,CheckPathExists=options.CheckPathExists};bool selected=owner is null?picker.ShowDialog()==true:picker.ShowDialog(owner)==true;return selected?new(ConfigurationFileStatus.Selected,picker.FileNames):new(ConfigurationFileStatus.Cancelled,[]);}
 }
-public enum ConfigurationNotificationKind { Information, Success, Error }
+public enum ConfigurationNotificationKind { Information, Success, Error, Warning }
 public enum ConfigurationNotificationStatus { Displayed, Suppressed, Failed }
 public sealed record ConfigurationNotification(ConfigurationNotificationKind Kind,string Message,string Caption="",ToolEditorMode Mode=ToolEditorMode.Desktop);
 public sealed record ConfigurationNotificationResult(ConfigurationNotificationStatus Status,string? Diagnostic=null);
@@ -57,5 +57,5 @@ public sealed class WpfConfigurationNotificationService:IToolConfigurationNotifi
  readonly Action<Window?,ConfigurationNotification> show;
  public WpfConfigurationNotificationService(Action<Window?,ConfigurationNotification>? presenter=null){show=presenter??Show;}
  public ConfigurationNotificationResult Notify(Window? owner,ConfigurationNotification notification){if(notification.Mode==ToolEditorMode.SdkEmbedded)return new(ConfigurationNotificationStatus.Suppressed);try{var dispatcher=owner?.Dispatcher??System.Windows.Application.Current?.Dispatcher;if(dispatcher is not null&&!dispatcher.CheckAccess())dispatcher.Invoke(()=>show(owner,notification));else show(owner,notification);return new(ConfigurationNotificationStatus.Displayed);}catch(Exception error)when(error is InvalidOperationException or ArgumentException){return new(ConfigurationNotificationStatus.Failed,error.Message);}}
- static void Show(Window? owner,ConfigurationNotification notification){var icon=notification.Kind==ConfigurationNotificationKind.Error?MessageBoxImage.Error:MessageBoxImage.Information;if(owner is null)System.Windows.MessageBox.Show(notification.Message,notification.Caption,MessageBoxButton.OK,icon);else System.Windows.MessageBox.Show(owner,notification.Message,notification.Caption,MessageBoxButton.OK,icon);}
+ static void Show(Window? owner,ConfigurationNotification notification){var icon=notification.Kind==ConfigurationNotificationKind.Error?MessageBoxImage.Error:notification.Kind==ConfigurationNotificationKind.Warning?MessageBoxImage.Warning:MessageBoxImage.Information;if(owner is null)System.Windows.MessageBox.Show(notification.Message,notification.Caption,MessageBoxButton.OK,icon);else System.Windows.MessageBox.Show(owner,notification.Message,notification.Caption,MessageBoxButton.OK,icon);}
 }

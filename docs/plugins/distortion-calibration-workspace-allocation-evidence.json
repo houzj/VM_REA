@@ -1,0 +1,32 @@
+{
+  "authority": "Owned-process replay against the installed original MVD Image Calibration SDK; no devices or platform initialization",
+  "probe": "tests/DistortionCalibration.NativeProbe/trace-workspace-writer-probe.cpp",
+  "probeSha256": "3D29DB6F837477986FB9215D7559A376457B65559D4EA5CF730B60458CE53E3A",
+  "hookSha256": "42A9570727DD0239A30393CEC045D217FCD69245F54402101B081741044173A2",
+  "trace": "analysis/distortion-calibration/e2e-workspace-writer/writer-trace.jsonl",
+  "traceSha256": "03E58759CE64F5484F4C5352F829A9062FE3D1EE3B980A88938834CC5FDD7C24",
+  "sourceLifecycle": "The probe creates an IImageCalibTool inside each board/model/warp iteration and destroys it before the next iteration.",
+  "runtimeObservation": {
+    "mainEntryCount": 12,
+    "uniqueWorkspaceBaseCount": 1,
+    "workspaceBase": "0x000001D81D63F100",
+    "innerWorkspaceBaseByBoardPointCount": {
+      "99": "0x000001D81D640280",
+      "80": "0x000001D81D63FD80",
+      "77": "0x000001D81D63FD80"
+    },
+    "firstPrefixBits": "0x00000000",
+    "laterPrefixBitsObserved": ["0xbf060312", "0xbf060312", "0xbf060312", "0xbf060312", "0xbf060312", "0xbf1e8ccb", "0xbf1e8ccb", "0x3b1dcc53", "0x3483f07b", "0x39c6af7a", "0x3400ff02"]
+  },
+  "confirmed": [
+    "Within this controlled SDK probe, a newly created tool instance can receive the same native workspace address as the previous instance.",
+    "The n-dependent median-sort prefix at that address begins zero in the first case and contains prior nonzero data in later cases.",
+    "The undefined prefix therefore depends on SDK-process allocation reuse in this probe; a per-tool-instance state object alone does not model it."
+  ],
+  "unknown": [
+    "Whether the VisionMaster production host uses the same allocator, arena, or workspace lifetime.",
+    "Whether any production initialization or intervening calls clear or overwrite this prefix before fitting.",
+    "A portable deterministic default for the original uninitialized bytes."
+  ],
+  "scope": "This evidence narrows the lifecycle boundary for captured SDK fixtures; it does not establish production-host parity or justify hardcoding the captured prefix."
+}

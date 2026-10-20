@@ -27,5 +27,6 @@ rejected=false;
 try { Algorithms.FitCircle(new[]{new Point2(2,2),new Point2(2,2),new Point2(2,2)}); } catch(ArgumentException) { rejected=true; }
 Check(rejected,"Coincident set rejected");
 RadialChecks.Run(Check);
-Console.WriteLine($"All {checks} semantic checks passed. Independent baseline; vendor equivalence unverified.");
+RectangleRoiMaskChecks.Run(Check);
+Console.WriteLine($"All {checks} semantic checks passed. Rectangle ROI rasterization matches all 64 original mask fixtures; other VisionCore behaviors remain independent baselines.");
 

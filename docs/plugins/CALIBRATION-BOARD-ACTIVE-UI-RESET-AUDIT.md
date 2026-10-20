@@ -1,0 +1,15 @@
+# 标定板有效资源、重置与ROI入口自审
+
+2026-10-19。本记录是实施自审的证据表，不是完整工具完成声明。当前总实施进度1/10=10%，人工验收单列。
+
+`analysis/calibration-board/a4-source/active-ui-inventory.json`按实际GroupLinkItem展开，仅引用TextDisplayGroup、BottomCommandGroup；XML注释排除后40控件、11操作种类、9显示对象。Groups.xml包含InheritWayGroup及ROIBOX/五float订阅模板，但本工具AlgorithmTab未引用这些组。不能把资源文件存在推成当前界面可达。实际ROISelecter明确Single、Box、FullScreenEnable=True。
+
+当前安装Apps.XmlParser.dll SHA256 `78EC7AE1E5ADEFFF29197099C7109B153A3F75D092B7C3E9DC253D8C1B25A8D1`已用ILSpy11.1.0.9782静态导出ROISelecter到`analysis/calibration-board/a4-source/current-roi-selector/Apps.XmlParser.ParamTab.ROISelecter.decompiled.cs`，没有加载目标。新导出与父目录CapabilityAudit旧源码SHA256完全相同：`B96735A3A474F02B9F6D3767E340BED4DC6E0FFD4C8C123547540B08665BC3C8`。
+
+其SetValue先NormalizeReversParse，字节与PreValue不同时更新CurValueA、可选SetImageSize，再SetParamUnit、SetRoiSeq、PreExecuteRun。SetParamUnit要求AccessMode含w；SetBinaryData通过IUserBytesData[ComName]写协议，不写roicenterx等五float订阅。IGetROI.SetRoiList同样规范化后写moduleTagInfo[ComName]，GetRoiList读取该字节并ParseRoiProtocol。另SDK RoiManager.SetInheritRoi(RectBox)才明确先ROIAreaType=0、再InputItem(INPUT_TYPE_BOX,五名字).SetInputValue。该额外SDK接口与当前普通ROI控件入口必须区分；五叶reader源码已恢复，但产品尚未提供该SDK接口，不得称已实现该额外入口。
+
+原ResetRunParamBind遍历ValueBase/ISubInfo，再ResetParam按Algorithm.xml逐项SetParam。公共`ToolConfigurationAlgorithmReset`据此保留部分成功，继续后续项，报告最后失败；不调用整字典atomic reset或运行。实际标定板Algorithm.xml仅16有效项，CalibPathName、RefreshFileEnable及注释中的旧默认项不在其中。重置要解绑订阅模式，但保留这些非名单值、ROI、显示、执行缓存。订阅清除后的effective参数在持久化模式前重新读取，避免把旧值写回宿主。
+
+根线已接入标定板公共helper并新增`tests/CalibrationBoard.ResetChecks`，包含取消、persisted-only订阅模式、非名单保留、宿主中途拒绝后继续与通知。此处落笔时尚未构建，不计通过。C畸变已复用同一helper，避免各工具再写公共框架。
+
+已取得生产6/7/8/9裁剪12例、掩膜4例、完整Board插件4例全部逐位一致；见MAP-CALIBRATION-R04-CELL-PRODUCTION-VALIDATION.md及其manifest。此结果不覆盖新Reset代码，不扩大为所有CPU、所有精修分支的位等价。下一断点为Reset专项、ShowText数组位置与full-reader Count修复回归，再汇总最终产品基线和A整工具自审。

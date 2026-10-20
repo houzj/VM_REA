@@ -12,7 +12,7 @@ public partial class MainWindow
   if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||!doc.Document.Procedures.Any(p=>p.Id==id))throw new InvalidOperationException("当前流程配置不可编辑。");
   doc.SetWorkflowConfiguration(id,value);
  }
- IEnumerable<WorkflowSourceOption> WorkflowSources(string id,DataKind? kind)=>ConfigurationProcedure(id).Nodes.SelectMany(n=>modules.GetDescriptor(n).Outputs.Where(p=>!kind.HasValue||DataKinds.CanFlow(p.Kind,kind.Value)).Select(p=>new WorkflowSourceOption(n.Id,p.Name,p.Kind,n.Name+"."+WorkflowPresentation.Output(n.ModuleId,p.Name)){Cardinality=p.Cardinality}));
+ IEnumerable<WorkflowSourceOption> WorkflowSources(string id,DataKind? kind)=>ConfigurationProcedure(id).Nodes.SelectMany(n=>modules.GetDescriptor(n).Outputs.Where(p=>p.CanSubscribe&&(!kind.HasValue||DataKinds.CanFlow(p.Kind,kind.Value))).Select(p=>new WorkflowSourceOption(n.Id,p.Name,p.Kind,n.Name+"."+WorkflowPresentation.Output(n.ModuleId,p.Name)){Cardinality=p.Cardinality}));
  PortValue? WorkflowOutput(string id,string node,string port)=>workflowSessions.TryGetValue(id,out var session)?session.Nodes.FirstOrDefault(n=>n.NodeId==node)?.Outputs.GetValueOrDefault(port):null;
  WorkflowConfigurationWindow CreateWorkflowConfigurationWindow(string id)
  {

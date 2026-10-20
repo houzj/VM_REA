@@ -1,0 +1,31 @@
+# C4 ROI Single/Box/FullScreen 首个源码切片
+
+2026-10-19。仅源码/资源及被动元数据，不改产品，不执行原厂，不计整卡S1–S7。根线批准C4 S0后专属阶段审计为6/32=18.75%，全局百分比由根线维护。
+
+## 实际配置与设置路径
+
+原 AlgorithmTab（跟踪资源与原件哈希相同）RoiType 是 Apps.XmlParser.ParamTab.ROISelecter，配置 AccessMode=RW、FullScreenEnable=True、SelectType=Single、ROISelection=Box；不存在本节点叫SingleBox的字段。Init→InitMap：单一SelectType不填按类型映射；并注册自身PropertyChanged处理可见性。
+
+Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:854实例化RoiSelectControl。其 Apps.XmlUI.ParamTabControl/RoiSelectControl.xaml:23 全屏ToggleButton以RoiType.FullScreen为CommandParameter，绑定ValueChangedCommand、TwoWay FullScreenA；:35 Box按钮以RoiType.Box分派并TwoWay绑定BoxA；:101全屏按钮由FullScreenEnableA控制可见性。
+
+ROISelecter.ValueChangedCmdExecute先取消同根其他选择器选择；非custom调用DoRadioButton；FullScreen进入SelectFullScreen→ClearRoi（NormalizeROIList.Clear）→StopDrawROI（SelectNone、IsStateForDrawROI=false）→SetValue。非全屏受RoiMaxNum限制，普通Box设置DrawROIType和IsStateForDrawROI，供绘制消费者使用。
+
+SetValue受AccessMode包含w门控，默认先更新图标；NormalizeReversParse生成字节，仅PreValue为空或SequenceEqual不同时保存PreValue/CurValueA，按needSetImageSize写尺寸，调用SetParamUnit、SetRoiSeq、PreExecuteRun。SetParamUnit再检查写权限，SetBinaryData→InnerSetValue→((IUserBytesData)ParamsSource)[ComName]=value；捕获错误置SetParamErro返回-1，权限拒绝-2，成功0。不能由SelectFullScreen方法本身推断其线协议字节；NormalizeReversParse全屏编码留下一切片。
+
+绘制后NormalizeRoiAdd→InitRoi→ClearOldROI→AddLabel→SetValue。本配置Single且类型映射为空，ClearOldROI在新对象索引>0时删除新对象之前的全部ROI；不是简单保留每种形状各一个。InitRoi在写权限下把DataChangedCommand绑定RoiParamChange→SetValue；ROIValueChangedCommand走SetValue(false)。
+
+## ROIDataStore 与同名操作的真实边界
+
+IGroupRunParamWithMultiParams.GetAllData构造ROIDataStore，复制ParamsSource[ComName]字节及当前图像宽高，IsDisplaySeq时取序列。SetAllData仅接受该具体类型，needSetImageSize时InnerSetImageSize，再InnerSetValue；需要序列时InnerSetRoiSeq。它直接写存储，方法本身不调用SetValue/GetParamUnit/PreExecuteRun。Clear方法体为空。不能把该组参数恢复操作当点击全屏路径。
+
+SetROIDataOperation.Operate接受Integer数量，在模块Params的RoiType节点创建固定尺寸矩形并强转ROISelecter_Fix.InitROI，再加NormalizeROIList；本工具XML没有引用该操作，且实际节点是普通ROISelecter，故不采用它解释本工具设置。GetROIDataOperation则写IUserStringData的Integer.ComName并对TargetObj为ROISelecter调用GetParamUnit；也没有本工具引用证据。两操作有源码和当前IL身份，未强接进调用链。
+
+## 已取得解绑体与未闭合消费者
+
+ROISelecterHolder.OnROIListChanged：旧集合RemoveHandler，并从ROIListOfHikImageView删除旧项；新集合AddAllROI并AddHandler。OnROIListOfHikImageViewChanged同样移除旧监听、注册新监听；集合回调由两个static标志抑制相互递归。此是实际holder换源清理体，但尚未证明当前RoiSelectControl模板/真实宿主使用该holder。ModuleResultView.OnROISelectersChanged源体为空，当前IL索引可查；不能凭字段roiHolders推导有效订阅链。RoiSelectControl.xaml.cs仅定义三个依赖属性和InitializeComponent，没有显式Loaded/Unloaded或Dispose解绑体。ROISelecter.Init自身PropertyChanged订阅的最终释放者尚未确认。
+
+因此本切片已取得具体按钮→设置方法、组参数快照旁路与候选holder解绑体；实际模板绘制对象绑定/旧ROI DataChangedCommand释放/窗口关闭消费者尚未闭合，下一步应追ROIStackControl和真实图像控件绑定，不把同名类替代。
+
+## 证据与验证
+
+现有C4身份索引中的Apps.XmlParser/VMControls版本不变。新增 `analysis/distortion-calibration/c4-source/managed/roi-selected-metadata.json` 由 `tests/DistortionCalibration.NativeProbe/InspectC4RoiMetadata.ps1` 被动PEReader生成，VMControls560方法、Apps.XmlParser345方法（新增ROIDataStore及两操作），保留token/RVA/原IL哈希/调用锚点。本轮复用原反编译源码，当前元数据仅作身份和调用校核，没有声称重新反编译全部分支。模板原件与Apps.XmlUI身份索引另见roi-source-index.json。C3外层错误/状态消费者仍单列开放。

@@ -1,0 +1,35 @@
+# Map显示/Region/Detect成员有限核对
+
+本切片遵守主线src冻结，只在analysis准备候选与专属测试。REA provider不可用，复用既有同hash原体，唯一私有Ghidra定向新增体在d4-module-output、d4-image-member-ctor；均readOnly/noanalysis/exit0，不写原件，不运行新图样本。
+
+## 已可实施：原显示资源未消费
+
+Display.xml中的InImage.Image明确映射InImage2；三组point分别映射CornersCur/Obj/ProPointX/Y、对应count和ModuStatus。产品LastDisplay此前只ToolDisplayService.Build文本/表格，未调用Graphics/ImageLayers，因此配置图元开关与真实点显示未进入frame。
+
+候选仅增加InImage2目标图alias，使用MapCalibrationMetadata.DisplayObjects与公共ToolDisplayGraphics/ToolDisplayImageLayers；ImageVisible=false避免基本图层与资源图层重复，不改变Result/Target/InputType门或缓存。CalibOriPoint*无producer时公共映射不会生成coordinate；不造轴。候选proposals/map-display/map-display-resource.patch，SHA7919ac47654fd5c60cafcbfc93847adf525af5ac643033f0729267f081471058，普通git apply --check通过；专属DisplayChecks未构建，待主线放行。测试覆盖真实资源映射/颜色/图元与图像开关，不冒充原桌面视觉。
+
+## Detect框的确切成员
+
+ProcessOutput220b0两次读取this+1695c/16960/16964/16968/1696c，side stride0x128。新增ctor1f190确认image-member数组起this+168b8、两成员、ctor6f80、stride0x128；image指针为member+0x10。6f80明确将member+a4/+a8/+ac/+b0/+b4置0，对应输出五字段。前一次选取7480不是该构造器而是另一释放函数，未以它冒充初始化证据。
+
+GetInputImage203d0及其helper1c740只读取图像/尺寸/格式并写IMvdImage/pose/pending，未读取Roi1/2标量；RoiFix22f40按raw RoiType normalized数据写IMvdShape setter，不写上述Detect成员；Process尾10d10只按登记的自定义IO转发输入到输出，不赋值该成员块。ProcessAlg设置image/shape和SDK运行，ProcessOutput消费字段。
+
+故产品Solve把RoiDocument几何直接当Boxes/Detect*没有由这条链证明，不能据configured ROI与五字段名字相似宣称来源相同。已有原受控无画框输出五数组两项0与ctor证据一致；正常配置ROI下writer/外部输入结构填充尚未闭合，本切片不擅自改成总0或总ROI。候选实现必须区分检测使用ROI和输出元数据producer。
+
+## InputROI1/2声明与运行接缝
+
+安装原XML InputROI1/2为ROIBOX组合，分别有Roi1/2CenterX/Y、Width/Height/Angle五float叶。AlgorithmTab的RoiType_0/1是独立ROISelecter，normalize后SetParam，IsCurROI不同不改变两组独立身份。已查ROISelecter.SetRoiList→NormalizeReversParse→SetParamUnit路径，属于配置/交互载荷，不是Region原生ABI。
+
+当前产品Descriptor声明Region端口，Runtime.Group只读取RoiGroups/Rois，直接Inputs[InputROI1/2]确实未消费。Region是本项目RoiRegionValue传输结构，原XML标量组合与其没有一对一原生优先级证据。可落实的独立adapter应明确：直接Region输入只在无冲突的配置全图/同几何时投影到该侧，冲突应显式报告而非假装原顺序。此接口设计选择需与共享宿主契约一起审，不冒充原订阅优先级，也不把normal FullImage当raw失败空vector。
+
+## 失败/等待frame门
+
+Process21690无新帧提前返，不到ProcessOutput；半帧仅写ModuStatus1/CalibStatus0；配对Image失败经ProcessOutput写0/0；Teach成功可能复用SDK缓存。原VM托管结果包装已确认“当回调到达时清/写/default-null”，但无callback时历史值策略仍由未见Platform决定。
+
+当前Map.LastDisplay由session.Result/Target形成缓存成功frame；session.Result只在配对求解后替换/清除，pending/wait不会清它。因此不能以所谓安全策略主动每轮清frame并宣称原厂行为。本候选保留原门，只修资源消费；需要新的本项目snapshot合同或原Platform提交证据才改变等待/失败时机。
+
+新增原体入口为1f190、1c740、10d10、6f80；原模块SHA658d63e2c4e2378e7eb1776d27b966990c0d0e01e29ca57ed82fe9acc740fde8。源码报告与候选没有通过测试就算整工具完成的含义。
+
+## 2026-10-19 定点更新
+
+正常非零ROI writer补证已完成：见MAP-CALIBRATION-REGION-DETECT-CANDIDATE.md及d4-detect-box-oracle/provenance.json。三轮SetParam/Process均成功，非零ROI确实使点数168变154，但Detect成员及五字段输出仍全0。此前“正常配置ROI writer尚未闭合”已由此有限正常路径补证收敛；未外推全部外部API。已准备成功Boxes两项0的专属候选，不再用配置几何制造Detect框；当前src冻结，候选未应用。

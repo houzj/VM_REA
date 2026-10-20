@@ -8,6 +8,7 @@ using Color=System.Windows.Media.Color;
 using Grid=System.Windows.Controls.Grid;
 using TextBox=System.Windows.Controls.TextBox;
 using TreeView=System.Windows.Controls.TreeView;
+using ComboBox=System.Windows.Controls.ComboBox;
 using Image=System.Windows.Controls.Image;
 using Brushes=System.Windows.Media.Brushes;
 using HorizontalAlignment=System.Windows.HorizontalAlignment;
@@ -17,6 +18,7 @@ namespace VisionPluginContracts;
 public static class ToolConfigurationSubscriptionControls {
  public static void Register(ToolConfigurationControlRegistry registry,IToolConfigurationSubscriptionService? service,Func<string,string>? localize=null,string language="Chinese") {
   var text=localize??(x=>x);
+  registry.Register("EnumerationG",c=>ImageEnumeration(c,service,text,language));
   registry.Register("ButtonSelecter",c=>{
    var selector=CreateInline(c,service,false,text);
    var row=new Grid{Height=32};row.ColumnDefinitions.Add(new(){Width=new GridLength(language=="English"?120:89)});row.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});
@@ -24,10 +26,38 @@ public static class ToolConfigurationSubscriptionControls {
    row.Children.Add(label);Grid.SetColumn(selector,1);row.Children.Add(selector);c.OnRefresh(()=>{label.Text=text(c.Node.CaptionKey);label.ToolTip=text(c.Node.Get("Description")??c.Node.CaptionKey);});return row;
   });
  }
+ static FrameworkElement ImageEnumeration(ToolConfigurationControlContext c,IToolConfigurationSubscriptionService? service,Func<string,string> text,string language){
+  var row=new Grid{Height=32};row.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/VisionPluginContracts;component/Resources/ConfigurationControls.xaml",UriKind.Relative)});
+  row.ColumnDefinitions.Add(new(){Width=new GridLength(language=="English"?120:89)});row.ColumnDefinitions.Add(new());
+  row.Children.Add(new TextBlock{Text=text(c.Node.CaptionKey),FontSize=14,Foreground=Brushes.Gray,VerticalAlignment=VerticalAlignment.Center});
+  var combo=new ComboBox{Style=(Style)row.FindResource("ConfigurationEnumeration")};Grid.SetColumn(combo,1);row.Children.Add(combo);
+  var query=ConfigurationSubscriptionValidation.FromElement(c.Element);bool updating=false;ConfigurationSubscriptionTreeResult? loadedTree=null;
+  static IEnumerable<ConfigurationSubscriptionTreeNode> Leaves(IEnumerable<ConfigurationSubscriptionTreeNode> roots)=>roots.SelectMany(n=>n.Children.Count==0?[n]:Leaves(n.Children));
+  void Refresh(bool enumerate){
+   updating=true;try{
+    var current=query is null||service is null?null:service.Read(query.Destination);
+    if(c.Node.SubscriptionTree is {} initial&&!ReferenceEquals(initial,loadedTree)){
+     combo.Items.Clear();foreach(var leaf in Leaves(initial.Roots).Where(n=>n.IsSelectable))combo.Items.Add(new ComboBoxItem{Content=text(leaf.CaptionKey),Tag=leaf});loadedTree=initial;
+    }
+    if(enumerate&&query is not null&&service is not null){var result=service.Enumerate(query);combo.Items.Clear();if(result.Status==ConfigurationSubscriptionStatus.Available)foreach(var leaf in Leaves(result.Roots).Where(n=>n.IsSelectable))combo.Items.Add(new ComboBoxItem{Content=text(leaf.CaptionKey),Tag=leaf});else combo.ToolTip=result.Diagnostic;}
+    foreach(var placeholder in combo.Items.OfType<ComboBoxItem>().Where(item=>item.Tag is null).ToArray())combo.Items.Remove(placeholder);
+    combo.SelectedItem=combo.Items.OfType<ComboBoxItem>().FirstOrDefault(item=>item.Tag is ConfigurationSubscriptionTreeNode leaf&&(current?.Binding is {} binding?leaf.Binding==binding:leaf.IsUnbind));
+    if(combo.SelectedItem is null&&current?.DisplayText is {} label){var selected=new ComboBoxItem{Content=label,IsEnabled=false};combo.Items.Add(selected);combo.SelectedItem=selected;}
+    combo.IsEnabled=c.Node.Enabled&&query is not null&&service is not null;
+    if(query is null||service is null)combo.ToolTip="未支持：图像候选订阅服务未提供";
+   }finally{updating=false;}
+  }
+  combo.DropDownOpened+=(_,_)=>Refresh(true);
+  combo.SelectionChanged+=(_,_)=>{if(updating||query is null||service is null||combo.SelectedItem is not ComboBoxItem{Tag:ConfigurationSubscriptionTreeNode leaf})return;
+   if(leaf.Binding is {} binding&&ConfigurationSubscriptionValidation.Check(query,binding) is {} error){combo.ToolTip=error;Refresh(false);return;}
+   var result=service.Bind(query.Destination,leaf.IsUnbind?null:leaf.Binding);if(result.Status==ConfigurationSubscriptionStatus.Available)c.State.ApplySubscription(c.Node,result);else combo.ToolTip=result.Diagnostic;Refresh(false);
+  };
+  c.OnRefresh(()=>Refresh(false));Refresh(false);return row;
+ }
  /// <summary>Embeds the same source-confirmed selector composition inside subscribed numeric controls.</summary>
- public static ToolConfigurationSubscriptionSelector CreateInline(ToolConfigurationControlContext context,IToolConfigurationSubscriptionService? service,bool parameter=false,Func<string,string>? localize=null) {
+ public static ToolConfigurationSubscriptionSelector CreateInline(ToolConfigurationControlContext context,IToolConfigurationSubscriptionService? service,bool parameter=false,Func<string,string>? localize=null,Action<string>? warning=null) {
   var query=ConfigurationSubscriptionValidation.FromElement(context.Element,parameter?ConfigurationSubscriptionDomain.Parameter:null);
-  var selector=new ToolConfigurationSubscriptionSelector(context.State,context.Node,query,service,localize);
+  var selector=new ToolConfigurationSubscriptionSelector(context.State,context.Node,query,service,localize,warning);
   context.OnRefresh(selector.Refresh);return selector;
  }
 }
@@ -35,7 +65,7 @@ public static class ToolConfigurationSubscriptionControls {
 /// <summary>Independent DeleteTextBox/link popup/tree reconstruction. Leaf identities are typed objects, not displayed text.</summary>
 public sealed class ToolConfigurationSubscriptionSelector:Grid {
  readonly ToolConfigurationState state;readonly ConfigurationNodeState node;readonly ConfigurationSubscriptionQuery? query;
- readonly IToolConfigurationSubscriptionService? service;readonly Func<string,string> localize;
+ readonly IToolConfigurationSubscriptionService? service;readonly Func<string,string> localize;readonly Action<string>? warning;
  readonly TextBox value=new(){Height=28,VerticalContentAlignment=VerticalAlignment.Center,FontSize=14,FontWeight=FontWeights.Normal,BorderThickness=new Thickness(1),Foreground=Brushes.Gray};
  readonly ToggleButton toggle=new(){Width=32,Height=28,Background=Brushes.Transparent,BorderThickness=new Thickness(0)};
  readonly Popup popup=new(){Placement=PlacementMode.Bottom,HorizontalOffset=-150,StaysOpen=false,AllowsTransparency=true};
@@ -44,8 +74,8 @@ public sealed class ToolConfigurationSubscriptionSelector:Grid {
  public TreeView Tree {get;}=new(){Width=180,Height=180,FontWeight=FontWeights.Normal,BorderThickness=new Thickness(0),Background=Brushes.Transparent,FontSize=14};
  public ConfigurationSubscriptionBinding? SelectedBinding=>node.SubscriptionBinding;
  public string? Diagnostic {get;private set;}
- public ToolConfigurationSubscriptionSelector(ToolConfigurationState state,ConfigurationNodeState node,ConfigurationSubscriptionQuery? query,IToolConfigurationSubscriptionService? service,Func<string,string>? localize=null) {
-  this.state=state;this.node=node;this.query=query;this.service=service;this.localize=localize??(x=>x);
+ public ToolConfigurationSubscriptionSelector(ToolConfigurationState state,ConfigurationNodeState node,ConfigurationSubscriptionQuery? query,IToolConfigurationSubscriptionService? service,Func<string,string>? localize=null,Action<string>? warning=null) {
+  this.state=state;this.node=node;this.query=query;this.service=service;this.localize=localize??(x=>x);this.warning=warning;
   Height=32;ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});ColumnDefinitions.Add(new(){Width=new GridLength(32)});
   Children.Add(value);SetColumn(toggle,1);Children.Add(toggle);
   var images=new[]{"normal","click","disable"}.ToDictionary(x=>x,x=>new BitmapImage(new Uri("pack://application:,,,/VisionPluginContracts;component/Resources/subscription_link_"+x+".png")));
@@ -69,7 +99,7 @@ public sealed class ToolConfigurationSubscriptionSelector:Grid {
   Unloaded+=(_,_)=>Close();Refresh();Read();
  }
  void Fail(string operation,string diagnostic){Diagnostic=diagnostic;message.Text=diagnostic;value.ToolTip=diagnostic;state.ReportSubscriptionDiagnostic(node,operation,diagnostic);}
- public void Refresh(){value.IsReadOnly=bool.TryParse(node.Get("ReadOnly"),out var readOnly)&&readOnly;value.Text=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter?node.Get("Subscription")??"":node.Value;value.ToolTip=Diagnostic??value.Text;IsEnabled=node.Enabled;toggle.Visibility=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter&&!node.SubscribeVisible?Visibility.Collapsed:Visibility.Visible;}
+ public void Refresh(){value.IsReadOnly=(bool.TryParse(node.Get("ReadOnly"),out var readOnly)&&readOnly)||(bool.TryParse(node.Get("BindingReadOnly"),out var bindingReadOnly)&&bindingReadOnly);value.Text=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter?node.Get("Subscription")??"":node.Value;value.ToolTip=Diagnostic??value.Text;IsEnabled=node.Enabled;toggle.Visibility=query?.Destination.Domain==ConfigurationSubscriptionDomain.Parameter&&!node.SubscribeVisible?Visibility.Collapsed:Visibility.Visible;}
  public void Close(){popup.IsOpen=false;toggle.IsChecked=false;choosingIndex=false;}
  public void Read() {
   if(query==null){Fail("Read","Unsupported source-declared subscription query.");return;}
@@ -115,6 +145,7 @@ public sealed class ToolConfigurationSubscriptionSelector:Grid {
   try {
    var result=service.Bind(query.Destination,binding);
    if(!state.ApplySubscription(node,result,query.Destination.Domain==ConfigurationSubscriptionDomain.Parameter)){Fail("Bind",result.Diagnostic??"Subscription binding failed.");Refresh();return false;}
+   if(result.Diagnostic is {} diagnostic){string text=localize(diagnostic);Fail("Index",text);warning?.Invoke(text);Refresh();popup.IsOpen=false;return false;}
    Diagnostic=null;message.Text="";Refresh();popup.IsOpen=false;return true;
   }catch(Exception e){Fail("Bind",e.Message);Refresh();return false;}
  }
@@ -140,7 +171,7 @@ public sealed class ToolConfigurationSubscriptionSelector:Grid {
    if(literal[..newOpen]!=expectedPrefix){Fail("Index","A displayed source caption cannot replace reference identity.");Refresh();return false;}
    string index=literal[(newOpen+1)..^1];
    if(index.Length==0)return SetIndex(ConfigurationSubscriptionIndex.All);
-   if(int.TryParse(index,out var position)&&position>=0)return SetIndex(ConfigurationSubscriptionIndex.At(position));
+   try{return SetIndex(ConfigurationSubscriptionIndex.At(index));}catch(Exception error)when(error is FormatException or OverflowException){/* Preserve existing index and report an invalid edit below. */}
    Fail("Index","Select an integer index reference from the tree.");Refresh();return false;
   }
   // Text input is accepted only as a typed literal. It is never parsed as a module/global/index identity.

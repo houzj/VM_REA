@@ -5,7 +5,7 @@ int checks=0;void Check(bool ok,string name){checks++;if(!ok)throw new InvalidOp
 using var document=JsonDocument.Parse(File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(),"docs/plugins/configuration-template-catalog-evidence.json")));
 var evidence=document.RootElement;
 Check(evidence.GetProperty("scope").GetProperty("primaryToolCount").GetInt32()==8,"Eight primary tools");
-Check(evidence.GetProperty("scope").GetProperty("supplementalToolCount").GetInt32()==1,"Supplemental highest-priority NImage");
+Check(evidence.GetProperty("scope").GetProperty("supplementalToolCount").GetInt32()==4,"Supplemental NImage, IfModule, BranchString and Fixture tools");
 int instances=0;
 foreach(var module in evidence.GetProperty("coverage").EnumerateArray())foreach(var node in module.GetProperty("controls").EnumerateArray()){
  var expected=node.GetProperty("resolution");var actual=ConfigurationTemplateCatalog.Resolve(node.GetProperty("nodeType").GetString()!);
@@ -13,7 +13,7 @@ foreach(var module in evidence.GetProperty("coverage").EnumerateArray())foreach(
  Check(actual.TemplateKey==expected.GetProperty("templateKey").GetString(),"Expanded XML original template key");
  Check(!actual.IndependentRendererVerified,"Pure metadata is not renderer parity");instances++;
 }
-Check(instances==267,"All expanded module/linked-group instances accounted for");
+Check(instances==evidence.GetProperty("scope").GetProperty("expandedControlInstances").GetInt32(),"All expanded module/linked-group instances accounted for");
 foreach(var type in evidence.GetProperty("typeRules").EnumerateObject()){
  var expected=type.Value;var actual=ConfigurationTemplateCatalog.Resolve(type.Name);string? key=expected.GetProperty("defaultTemplateKey").ValueKind==JsonValueKind.Null?null:expected.GetProperty("defaultTemplateKey").GetString();
  Check(actual.EffectiveDisplayType==key,"Default/derived source property rule "+type.Name);
@@ -24,6 +24,9 @@ foreach(string name in new[]{"UnknownToolField","Number","NumberArray","GrayImag
 Check(ConfigurationTemplateCatalog.Resolve("SaveFileDialog").TemplateKey=="Command","Source-confirmed SaveFileDialog alias");
 Check(ConfigurationTemplateCatalog.Resolve("OpenFolderDialog").TemplateKey=="OpenFileDialog","Source-confirmed folder alias");
 Check(ConfigurationTemplateCatalog.Resolve("EnumerationLightForLight").TemplateKey=="EnumerationLight","Source-confirmed light alias");
+Check(ConfigurationTemplateCatalog.Resolve("PyramidFeaturepatMatchConfigPanalData").TemplateKey=="FeaturepatMatchConfigPanalData","Contour BaseType.Name selects HP template");
+Check(ConfigurationTemplateCatalog.Resolve("ButtonSelecter_RangeConF").ResourceUris.Any(p=>p.Contains("IfModuleControl",StringComparison.Ordinal)),"IfModule condition bridge original template");
+Check(ConfigurationTemplateCatalog.Resolve("ListParamStr").ResourceUris.Any(p=>p.Contains("BranchStringCpmLControl",StringComparison.Ordinal)),"BranchString original list template");
 Check(ConfigurationTemplateCatalog.Resolve("BooleanTips").ResourceUris.Any(p=>p.Contains("BooleanTipsDataTemplate.xaml",StringComparison.OrdinalIgnoreCase)),"Relative merged extension dictionary traced");
 Check(ConfigurationTemplateCatalog.Resolve("Integer","").Support==ConfigurationTemplateSupport.Unsupported,"Empty explicit override does not use node default");
 Check(ConfigurationTemplateCatalog.Resolve("Integer","integer").Support==ConfigurationTemplateSupport.Unsupported,"Original key lookup is case-sensitive");

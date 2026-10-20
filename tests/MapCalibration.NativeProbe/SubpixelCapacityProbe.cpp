@@ -1,0 +1,6 @@
+#include <windows.h>
+#include <cstdio>
+#include <vector>
+#include <cstdint>
+std::vector<unsigned char> Read(const char*path){FILE*f=fopen(path,"rb");if(!f)return{};fseek(f,0,SEEK_END);long n=ftell(f);fseek(f,0,SEEK_SET);std::vector<unsigned char>b(n);fread(b.data(),1,n,f);fclose(f);return b;}
+int main(int argc,char**argv){if(argc!=4)return 2;setvbuf(stdout,nullptr,_IONBF,0);SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX);SetDllDirectoryA(argv[1]);auto wrapper=LoadLibraryA("MVDMapCalibCpp.dll");auto core=GetModuleHandleA("MVD_Algorithm.dll");if(!wrapper||!core)return 3;auto image=Read(argv[2]),input=Read(argv[3]);if(image.size()!=1000000||input.size()%28||input.empty())return 4;using Refine=void(__fastcall*)(void*,int,uint64_t,int,void*,int*,void*);auto refine=(Refine)((unsigned char*)core+0x8b6f30);for(int capacity:{90000,1000,72000,71800,73000}){auto points=input;std::vector<unsigned char>scratch(16*1024*1024);int count=(int)input.size()/28;refine(image.data(),1000,((uint64_t)1000<<32)|1000,capacity,points.data(),&count,scratch.data());char file[100];sprintf_s(file,"capacity-%d.bin",capacity);FILE*f=fopen(file,"wb");if(f){fwrite(points.data(),28,count,f);fclose(f);}printf("{\"capacity\":%d,\"inputCount\":%zu,\"outputCount\":%d}\n",capacity,input.size()/28,count);}fflush(stdout);TerminateProcess(GetCurrentProcess(),0);}

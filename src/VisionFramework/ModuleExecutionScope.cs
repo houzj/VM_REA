@@ -5,7 +5,7 @@ public sealed record ModuleNodeRequest(Guid ScopeId,string ProcedureId,string No
 public sealed record ModuleScopeCleanupFailure(string Phase,string ResourceType,Exception Error);
 
 /// <summary>Owns persistent node state and services for one opened solution.</summary>
-public sealed class ModuleExecutionScope:IDisposable {
+public sealed partial class ModuleExecutionScope:IDisposable {
  readonly object gate=new();
  readonly Dictionary<(string Procedure,string Module,string Node),object> states=new();
  readonly ModuleExecutionScope? owner;
@@ -38,20 +38,21 @@ public sealed class ModuleExecutionScope:IDisposable {
  public void RequestRun(string node){var root=Root;if(root.closing)return;root.ProcedureRunRequested?.Invoke(new(root.Id,ProcedureId,node));if(ProcedureId.Length==0)root.RunRequested?.Invoke(node);}
  public void RequestRefresh(string node){var root=Root;if(root.closing)return;root.ProcedureRefreshRequested?.Invoke(new(root.Id,ProcedureId,node));if(ProcedureId.Length==0)root.RefreshRequested?.Invoke(node);}
  public IDisposable Enter(){if(owner is not null)return owner.Enter();lock(gate){ObjectDisposedException.ThrowIf(closing,this);leases++;return new Lease(this);}}
- public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}
+ public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){root.effectiveParameters.Remove((ProcedureId,module,node));if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}
  public void RetainNodes(IEnumerable<(string Module,string Node)> current){var keep=current.Select(k=>(ProcedureId,k.Module,k.Node));RetainProcedureNodes(keep,ProcedureId);}
  public void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current)=>RetainProcedureNodes(current,null);
- void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current,string? only){var root=Root;var keep=current.ToHashSet();(string Procedure,string Module,string Node)[] removed;lock(root.gate)removed=root.states.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray();foreach(var key in removed){if(key.Procedure.Length==0)root.RemoveNode(key.Module,key.Node);else root.ForProcedure(key.Procedure).RemoveNode(key.Module,key.Node);}}
+ void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current,string? only){var root=Root;var keep=current.ToHashSet();lock(root.gate){foreach(var key in root.effectiveParameters.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray())root.effectiveParameters.Remove(key);}(string Procedure,string Module,string Node)[] removed;lock(root.gate)removed=root.states.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray();foreach(var key in removed){if(key.Procedure.Length==0)root.RemoveNode(key.Module,key.Node);else root.ForProcedure(key.Procedure).RemoveNode(key.Module,key.Node);}}
  public void Dispose(){if(owner is not null)return;lock(gate){if(closing)return;closing=true;}try{stopping.Cancel();}catch(Exception error){RecordCleanupFailure("cancel",stopping,error);}finally{bool release;lock(gate){cancellationComplete=true;release=TryRelease();}if(release)Release();}}
  bool TryRelease(){if(!closing||!cancellationComplete||leases!=0||releaseStarted)return false;releaseStarted=true;return true;}
  void Exit(){bool release;lock(gate){leases--;release=TryRelease();}if(release)Release();}
- void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure("resource",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure("token",stopping,error);}}
+ void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure("resource",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure("token",stopping,error);}}
  sealed class Lease(ModuleExecutionScope scope):IDisposable {ModuleExecutionScope? owner=scope;public void Dispose()=>Interlocked.Exchange(ref owner,null)?.Exit();}
 }
 
 public sealed class ModuleRunControl {
  int stopped;
  public ExecutionMode Mode {get;init;}
+ public Func<string,IReadOnlyDictionary<string,System.Text.Json.JsonElement>?>? ParameterSeed{get;init;}
  public bool StopRequested=>Volatile.Read(ref stopped)!=0;
  public void RequestStop()=>Interlocked.Exchange(ref stopped,1);
 }

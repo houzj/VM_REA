@@ -23,6 +23,14 @@ public sealed class ToolConfigurationControlContext
     public Func<Window?> Owner { get; }
     public Window? OwnerWindow => Owner();
     public void OnRefresh(Action action) => refresh.Add(action);
+    /// <summary>Preserves the identity and lifetime of a source-declared composite member.</summary>
+    public ToolConfigurationControlContext CreateChild(ConfigurationElement element)
+    {
+        bool descendant=false;for(var parent=element.Parent;parent is not null;parent=parent.Parent)if(ReferenceEquals(parent,Element)){descendant=true;break;}
+        if(!descendant)throw new ArgumentException("Element is not a member of this composite control.",nameof(element));
+        var node=State.GetNode(element)??throw new NotSupportedException("The source member has no registered configuration state.");
+        var child=new ToolConfigurationControlContext(State,node,Owner);OnRefresh(child.Refresh);return child;
+    }
     internal void Refresh() { foreach(var action in refresh)action(); }
 }
 
@@ -99,7 +107,8 @@ public sealed class ToolConfigurationView : UserControl, IDisposable
     }
     void BuildChildren(ConfigurationElement element,Panel panel)
     {
-        foreach(var child in element.Children)
+        var orderedControls=new Dictionary<ConfigurationElement,FrameworkElement>();
+        foreach(var child in state.GetChildren(element))
         {
             if(child.Tag is "Categorys" or "Items") {BuildChildren(child,panel);continue;}
             if(state.GetNode(child)?.IsCategory==true)
@@ -111,8 +120,13 @@ public sealed class ToolConfigurationView : UserControl, IDisposable
                 if(node!=null)shellRefresh.Add(()=>title.Visibility=(node.Get("DisplayType")??node.DisplayType)=="CategoryNoHead"?Visibility.Collapsed:Visibility.Visible);
                 BuildChildren(child,group);panel.Children.Add(group);if(node!=null)bindings.Add((node,group,null));else Missing(child);
             }
-            else if(state.GetNode(child)!=null){var control=Create(child);if(GetUseItemMargin(control))control.Margin=ChildMargin;panel.Children.Add(control);}
+            else if(state.GetNode(child)!=null){var control=Create(child);if(GetUseItemMargin(control))control.Margin=ChildMargin;panel.Children.Add(control);orderedControls[child]=control;}
         }
+        if(orderedControls.Count>1)shellRefresh.Add(()=>{
+            var ordered=state.GetChildren(element).Where(orderedControls.ContainsKey).Select(e=>orderedControls[e]).ToArray();
+            var slots=panel.Children.Cast<UIElement>().Select((control,index)=>(control,index)).Where(p=>orderedControls.Values.Contains(p.control)).Select(p=>p.index).ToArray();
+            for(int i=0;i<ordered.Length;i++)if(!ReferenceEquals(panel.Children[slots[i]],ordered[i])){panel.Children.Remove(ordered[i]);panel.Children.Insert(slots[i],ordered[i]);}
+        });
     }
     FrameworkElement Create(ConfigurationElement element)
     {

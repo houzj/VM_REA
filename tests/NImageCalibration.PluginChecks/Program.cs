@@ -1,5 +1,14 @@
 using VisionCore;
 using VisionPlugins.Calibration;
+try{
+if(args.Contains("--configuration-only")){try{Console.WriteLine($"NImage production model checks passed: {NImageConfigurationChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
+if(args.Contains("--matrix-fix-only")){Console.WriteLine($"NImage MatrixFix original SDK checks passed: {NImageMatrixFixChecks.Run()}");return;}
+if(args.Contains("--batch-solve-only")){try{Console.WriteLine($"NImage batch numerical checks passed: {NImageBatchSolveChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
+if(args.Contains("--file-only")){try{Console.WriteLine($"NImage file checks passed: {NImageFileChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
+if(args.Contains("--complete-rotation-only")){try{Console.WriteLine($"NImage complete rotation checks passed: {NImageRotationCompletenessChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
+if(args.Contains("--output-metrics-only")){try{Console.WriteLine($"NImage output metrics checks passed: {NImageOutputMetricsChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
+if(args.Contains("--board-fit-only")){try{Console.WriteLine($"NImage board fit diagnostic checks passed: {NImageBoardFitChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
+if(args.Contains("--module-only")){try{Console.WriteLine($"NImage production module checks passed: {NImageModuleChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
 if(args.Contains("--generated-only")){Console.WriteLine($"Generated checks passed: {NImageGeneratedBoardChecks.Run(args.Contains("--export-rotated-fixtures"))}");return;}
 if(args.Contains("--filter-only")){Console.WriteLine($"Filter checks: {NImageFilterChecks.Run()}");return;}
 int checks=0;
@@ -22,9 +31,11 @@ checks+=NImageFileChecks.Run();
 checks+=NImageDetectorChecks.Run();
 checks+=NImageIdentityChecks.Run();
 checks+=NImageParserChecks.Run();checks+=NImageRuntimeChecks.Run();checks+=NImageFilterChecks.Run();checks+=NImageGeneratedBoardChecks.Run();
-Console.WriteLine($"NImageCalibration checks passed: {checks}. Coded-board solver remains incomplete and is not registered as a complete tool.");
+Console.WriteLine($"NImageCalibration checks passed: {checks}. Original subset evidence and independent implementation verified; tests do not establish complete native parity.");
 
 
 
 
 
+
+}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}

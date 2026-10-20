@@ -32,6 +32,7 @@ public partial class MainWindow
   uint count=previous==uint.MaxValue?uint.MaxValue:previous+1;
   workflowExecuteCounts[procedureId]=count;
   if(!frameworkExecutionPreferences.ShouldClearAtBegin(count,1))return;
+  ClearLiveDynamicDescriptors(procedureId);
   void Mark(string id)
   {
    if(!clearedWorkflowResultViews.Add(id))return;
@@ -39,6 +40,6 @@ public partial class MainWindow
    if(procedure is not null)foreach(var node in procedure.Nodes.Where(n=>n.Call is not null))Mark(node.Call!.ProcedureId);
   }
   Mark(procedureId);
-  if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){results.Clear();RefreshRight();}
+  if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){results.Clear();RefreshRight();RenderGraph();}
  }
 }

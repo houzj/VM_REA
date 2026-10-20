@@ -1,0 +1,15 @@
+# Show Text正常活动位置数组有限共享请求
+
+2026-10-19。N点整工具自审发现跨工具共享缺口；只写analysis候选与N点专属tests，产品src未改/未构建。根线apply所有共享变更。旧文档scalar-only是当时独立安全支持域，不是原厂禁止数组的事实。
+
+原GetFrontAndSelfFilterTreeOperation.Operate调用GetFrontFilterTree(predicate=true,Output,ExtraParams,IncludeSelf:true,IncludeInside:true,NeedNull:false,IsGlobal:false)；VmModuleExtern.GetOutputTreeNode:1120只type/CanSubscribe/Visible/timestamp，无IsArray/Count禁限；SetResultIOToModuleOperation:262直接RelateIO/RelateIndex并让ShowText Feature.SetMapping(dynamicIO)。普通树可选self.OutImagePointX、WorldPointY数组，属于实际活动UI域。
+
+必须保留数量覆盖分支：Object.GetValueList:620先取first-nonfixed count，但FillValueList:566-587对type==text覆盖为Content值数量（callback ValueStore[Content].Length；direct Feature.GetValueCount）。SetShapeProperty:666/667按最终shape index读PositionX/Y；GetValueByType:1025非空短array越界回首项，空/转换异常默认0。不能据PositionX数组数量多画text。当前正常默认ShowText Content都映射scalar输出，因此单shape index0读取All位置数组；本候选只补这个有证范围。
+
+原资源/当前输出核对：N点ModuStatus/CalibStatus/CalibErrStatus/CalibCurIndex/CalibTotalNum均scalar；N图像CalibStatus/四error/两center/CurNum/TotalNum均scalar；板EstimationError/PixelPrecision；相机映射CalibStatus/ScaleX/ScaleY；畸变ModuStatus/EstimationError；映射六标定/scale/count/error诸字段均scalar。上述6原Display.xml列表写入manifest。另三个现生产定义：TranslationPlugin的ModuStatus/CalibStatus/TransWorldError/RotWorldError/CalibCurIndex/CalibTotalNum，RotateCalibrationPlugin的状态/中心/error/remainCount，ReadCalibFilePlugin的ModuStatus均scalar（Read默认TextVisible=false）。第10“坐标系”尚无相同生产ShowText provider，不伪造其闭合结论；当前可检查9个生产定义未发现默认Content数组。若用户把Content引用改成数组，多text仍需独立Feature解析/实例数量实施，不能本次首项适配称全域完成。
+
+candidate.diff仅修改两块：Native允许NumberArray以及Number/Integer的Array cardinality输出；ApplyPositions接受legacy Numbers、typed NumberArray、typed IntegerArray并取首项，空/缺失/不匹配仍diagnostic+0。StoredBinding维持procedure/node/port/nativeType原source身份和All语义，不增加算法edges。Scalar/constant/只读/删除/跨流程保护保持；Global、insideGroup、WorkflowInputs、动态index不扩。
+
+专属DisplayArrayChecks准备同时枚举scalar/legacyfloatarray/typedfloatarray/intarray，绑定后JSON sourceidentity读回，首项/空/missing/不加算法边界，并保留旧保护。实际NPointCalibration.HostChecks准备真实MainWindow手动9+3既有fixture、point-table弹窗写入、path+RotAxisPoint真实Presenter、record/list、closeDispose、self.OutImagePointX/WorldPointY数组位置绑定、整方案save/load再run及clear失败恢复。未构建，不提前写通过。
+
+根线apply候选后请同步旧tests/VisionConfiguration.DisplaySubscriptionChecks三个历史断言：leaves4→8（原descriptor四numeric×2来源），A/Batch从拒绝改成Available；不要保留与新原证冲突的旧测试。此请求不改共享NPointSolver或数值fixture。

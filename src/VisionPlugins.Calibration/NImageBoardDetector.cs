@@ -2,7 +2,7 @@ using VisionCore;
 namespace VisionPlugins.Calibration;
 
 public readonly record struct NImageLatticePoint(int Column,int Row,double X,double Y,double Contrast);
-public sealed record NImageLattice(double PitchX,double PitchY,IReadOnlyList<NImageLatticePoint> Points,IReadOnlyList<IReadOnlyList<Point2>> CodeQuadrilaterals);
+public sealed record NImageLattice(double PitchX,double PitchY,IReadOnlyList<NImageLatticePoint> Points,IReadOnlyList<IReadOnlyList<Point2>> CodeQuadrilaterals){public NImageSourceGridContext? SourceGrid{get;init;}}
 
 /// <summary>Independent checker-lattice candidate phase. Decoded HIK identifiers are a separate required phase.</summary>
 public static class NImageBoardDetector
@@ -35,8 +35,3 @@ public static class NImageBoardDetector
  static int Nearest(IReadOnlyList<double> values,double value){int best=0;for(int i=1;i<values.Count;i++)if(Math.Abs(values[i]-value)<Math.Abs(values[best]-value))best=i;return best;}
  static Point2 Refine(GrayImage image,int x,int y,int radius){double xx=0,xy=0,yy=0,bx=0,by=0;for(int j=y-radius;j<=y+radius;j++)for(int i=x-radius;i<=x+radius;i++){double gx=image[i+1,j]-image[i-1,j],gy=image[i,j+1]-image[i,j-1],weight=Math.Exp(-((i-x)*(i-x)+(j-y)*(j-y))/(double)(radius*radius));xx+=weight*gx*gx;xy+=weight*gx*gy;yy+=weight*gy*gy;bx+=weight*(gx*gx*i+gx*gy*j);by+=weight*(gx*gy*i+gy*gy*j);}double determinant=xx*yy-xy*xy;if(determinant<=1e-12)return new(x,y);double rx=(yy*bx-xy*by)/determinant,ry=(xx*by-xy*bx)/determinant;return Math.Abs(rx-x)<=radius&&Math.Abs(ry-y)<=radius?new(rx,ry):new(x,y);}
 }
-
-
-
-
-
