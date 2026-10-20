@@ -1,0 +1,26 @@
+# 第九轮：畸变标定 IMAGE/ROI→执行/文件/下游图像链
+
+2026-10-20。仅标定十工具的联合代码审核；本轮没有修改产品或 `tool-plugins`。原厂静态源与资源是合同证据；当前图探针只证明此构建和这一张受控图的行为，不代替原厂桌面或所有算法板型差分。已审的共同参数窗、菜单目录和点表不重复计数。
+
+## 原厂入口、写入及发布
+
+| 边界 | 精确原件证据 | 确认的行为 |
+|---|---|---|
+| IMAGE 候选/绑定 | `IMVSImageCalibModuAlgorithmTab.xml` 的 `EnumerationG Name="ImageSource"`：`GetFrontParamItemsOperation(IMAGE)` 初始化 `EnumEntrys`，`GetSelectedCombinationOperation(InputImage)` 初始化当前值，`SetCombinationSourceOperation(InputImage)` 处理选择；`IMVSImageCalibModu.xml` 的 `Combination Name="InputImage" Style="IMAGE"` | 候选来自前级 IMAGE 组合，选择写向本工具 `InputImage`；不能用截图固定字符串或只列单一上游端口。 |
+| ROI | 同一 AlgorithmTab 的 `ROISelecter Name="RoiType"`：RW、FullScreenEnable、SelectType=Single、ROISelection=Box；原 `Apps.XmlParser.ParamTab.ROISelecter` 的 `SetValue→NormalizeReversParse→SetParamUnit→IUserBytesData[ComName]`，详见既有 `DISTORTION-CALIBRATION-C4-ROI-BINDING.md` | ROI 选择/绘制改变字节参数并触发运行；`CIMVSImageCalibModu::ProcessAlg` `0x180020820` 先 SetInputImage，再遍历非空 ROI 并调用 SDK vtable+0x20，然后 +0x68 Run。具体 UI 对象解绑仍按既有报告列未知。 |
+| 执行和自动文件 | `Process` `0x180020550` → `ProcessAlg` `0x180020820`；Run 后 SDK vtable+0x40 GetResult。路径在 this+0x15da1，refresh 在 +0x15da0。仅当路径非空且不存在或 refresh 打开才 vtable+0x70 Export；`SetParam` `0x180021560` 的 `SaveCalibPath` 是显式立即 Export、`CalibPathName` 只准备/缓存路径。 | 自动导出和用户显式另存是两条路径，不能以一个“保存”开关代替。原 SDK 文件为 19×float/76 字节；具体字段见既有 `DISTORTION-CALIBRATION-C3-FILE-SAVE.md`。 |
+| 输出/失败 | `ProcessOutput` `0x180020b70` 先写 `ModuStatus`、运行时间，再按成功和评估分支写结果。评估开时 `FUN_18001ed60` 发布 `PostCorrectionImageData` 及 Width/Height/PixelFormat，`0x180021330` 发布点数组。`IMVSImageCalibModu.xml` 把四个 filter 组合成 `PostCorrectionImage` `Style="IMAGE"`；Display.xml 以 `PostCorrectionImageData` 映射图像层。 | `PostCorrectionImage` 是原厂组合端口名，`PostCorrectionImageData` 是其成员和显示映射名；二者不是冲突或两个独立图。原 ProcessAlg 的自动 Export 异常在结果成功标志设置前捕获；ProcessOutput 不会原子回滚已发布字段，详见既有 `DISTORTION-CALIBRATION-C3-CATCH-OUTPUT.md`。 |
+
+原模块 `IMVSImageCalibModu.dll` SHA256 `0A6BAC886F1AA1CCC41433EF9D35FC1091B3D43354DE5794563454D8BBA03BCB`。原厂资源目录 `D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSImageCalibModu/`：`IMVSImageCalibModuAlgorithmTab.xml` `E7199E70B3D4DE810610F95FE70A8FF3462DF8DD2310800B003E794C07826E6C`，`IMVSImageCalibModuAlgorithm.xml` `3465AC282043EA3BAF5ABBB56C9C8488B1494A97209613CB8C24C1DA0BE2764E`，`IMVSImageCalibModu.xml` `05DC2A50457CBF63AD387092A0DFC77D52E0B892C192B1C7830C624B6BC98EAA`，`IMVSImageCalibModuDisplay.xml` `B63F5BD17DAEBFE62D004BC963D58FB74CC86CC8CF113644271F86F27CDFF7E7`。
+
+反编译副本（只读）：`worktrees/tool-plugins/analysis/distortion-calibration/c3-file-source/module/output/180020820.c` SHA `FAC1066530212010D447525AF330A7E7E3F671A80A296A4556B0DD4428A16D1B`，`c3-catch-source/module/output/180020550.c` `22CE253D61E9362C8E449BF020A6680FBAD3663544DEA0145BECFDA5754F00AC`，`c3-catch-source/module/output/180020b70.c` `3D2DE773B84065274F16A94340B2B3FC0E812B2E50EB97763EBEF7E7E402D0DB`，`c3-file-source/module/output/180021560.c` `B18A2DF2090B905FD3FC3A0B92D729C682843460AEE0DEECDD7C18B3CFC99D05`，`ghidra/module/180021330.c` `A1B72E71FCDA17183D234E4C236CD58ABBF3DA33F60CF24DD601DD757ED0539F`。对关键分支可复查同目录 `180020820-asm.tsv` SHA `75B7A53C2C3BBE5CA01454B9E1277BFDC505C1C02E34D04079E8DCEFF16426D6` 与 `180020b70-asm.tsv` SHA `B387128F7442F4D5BB650207561881FA8365DB2FC9905AF51667555B12192C83`。本轮复核既存原始导出，未重新启动原厂进程或改其安装目录。
+
+## 当前框架与工具链核对
+
+`GraphEditorDocument.BindInput` 保留 ImageSource `Image`→Distortion `InputImage` 以及 Distortion `PostCorrectionImage`→NImage `InputImage`；`GraphValidator` 用端口种类校验，`GraphExecutor` 按 execution links 排序并把前级 `PortValue.Image` 交给下游。当前 `DistortionCalibrationPlugin.Runtime.ExecuteAsync` 先校验 `InputImage`/Mono8、中心和 ROI，再识别板、拟合、评估并生成 `PostCorrectionImage`；路径非空时 `DistortionCalibrationFileLifecycle.WriteAutomatic`，成功后缓存 ArtifactSession。失败调用 `Fail` 记录本轮错误，ArtifactSession 保留上一成功矩阵；图执行失败使后继节点跳过。`LastDisplay` 将输出 `PostCorrectionImage` 别名映射为资源的 `PostCorrectionImageData`，但现有显示帧只选 `InImage` 为基础图；原厂双图显示显隐/切换与当前 presenter 的精确同等性仍是单独未证范围，不能凭本探针宣布 UI 等同。
+
+实际命令：`dotnet run --project tests/CalibrationDistortionChain.Checks/CalibrationDistortionChain.Checks.csproj -c Release -- analysis/joint-audit/pass9-cal-distortion/probe`。最终退出 0，11/11 断言：原 SDK 1000×1000 Board7 Mono8 fixture（SHA `86E175CD993F9737380690A60F7BADA49935196691CA4509C93FF0066FADCC40`）通过真实 MainWindow 的 ImageSource→Distortion，得到 1000×1000 `PostCorrectionImage`、76 字节 `.iccal`；它再作为 NImage 输入，第 1 帧 `CurNum=1`；解决方案保存/重开保留该端口绑定。将自动路径改成 `.bad`，畸变结果为 Failed、消息含 `0x8010000e`，NImage 被跳过，原 `.iccal` 的 SHA 不变；恢复 `.iccal` 后畸变再次成功。自动路径错误时 `NodeRunRecord.Outputs` 在当前图层为空，故图层断言按状态/错误/后继调度，而没有把插件内部 Fail 字典误当图公开输出。最终日志与 summary 在 `analysis/joint-audit/pass9-cal-distortion/`。
+
+保留失败审计：首次构建共享 `CameraMapping/obj/Release` DLL 被另一构建占用 CS2012；随后本测试缺 `System.IO`/`VisionCore` 引用，第一次 fixture 路径误指 main 分析目录，第一次错误分支断言误把插件内部 `ModuStatus` 当成图层失败输出。对应 `first-build-failure.txt`、`compile-failure.log`、`fixture-path-failure.log`、`invalid-extension-first-failure.log`、`invalid-extension-output-boundary.log` 均保留，最终测试按真实图层边界修正。没有干预他任务进程。
+
+未证：原厂完整桌面的同一三节点图运行、所有板型/颜色格式/ROI 下数值同位、原厂 IMAGE 候选的实际 UI 排序与文字、原厂双图显示切换、文件 I/O 注入下 SDK `fwrite/fflush/fclose` 未检查返回值的实际结果，以及下游多帧的最终 NImage 矩阵。上述不得由本轮 11 项成功外推。工具算法的既有受控 SDK 差分见 `docs/plugins/DISTORTION-CALIBRATION.md`；本轮只补联合链，不重复宣称全部 parity。

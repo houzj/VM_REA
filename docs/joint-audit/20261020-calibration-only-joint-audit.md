@@ -40,3 +40,6 @@
 | 平移旋转标定→XML→标定加载→Group→坐标系 | [第八轮第二生产者结果链](20261020-pass8-translation-result-chain.md) 首跑和保存重开均成功；文件/Group/坐标系九项矩阵；独立 `CalibData` 直连拒绝 | 原厂同构整图、组合标定/示教/失败文件、原生数值逐位差分 |
 | 双相机映射→映射标定文件模式→标定加载→Group→坐标系 | [第八轮双文件结果链](20261020-pass8-camera-map-chain.md) 两份 36B 文件→XML→九项矩阵首跑、删产物后保存重开均成功；错误文件格式与直接矩阵端口均被排除 | 映射标定图像/ROI 模式、原版同构整图及本夹具逐项原生数值差分 |
 | N图像 XML 与标定板 Gray8 两条独立生产者链 | [第八轮图像生产者](20261020-pass8-nimage-board-chain.md) 九帧真实主窗 N图像 XML→标定加载→坐标系；板 Gray8→99 点/36B `.iwcal`；跨格式拒绝有证 | 原版同构整图、N图像其余算法分支、板其他板型/ROI/失败后状态及两链 Group 组合 |
+| 畸变修正图→N图像第 1 帧 | [第九轮畸变链](20261020-pass9-distortion-chain.md) 真实主窗 1000×1000 图像源→畸变 `PostCorrectionImage`→N图像，76B `.iccal`、保存重开及错误路径恢复 11/11 | 原厂同构图、ROI/全部板型和数值、双图显示、N图像最终矩阵 |
+| 相机映射文件→旋转标定连续采样 | [第九轮旋转链](20261020-pass9-rotate-consumer-chain.md) 实际 `.iwcal` 同图 3 轮 `remainCount=2/1/0`，丢文件失败且同 scope 恢复；三个既有 XML 生产物只做读取兼容 | 原厂同构整图、数值逐位差分、XML 三生产者本轮同图重跑及旋转结果后继 |
+| 平移旋转点数组→Group→坐标系 POINT | [第九轮坐标系点链](20261020-pass9-coordinate-point-chain.md) `OutImagePointX/Y` 经 Group 到 `SrcPointX/Y`，首跑/保存重开两次实际 Success | 原厂同构图、坐标系 Draw/缺项异常/显示分支及数值逐位差分 |
