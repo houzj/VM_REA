@@ -37,12 +37,22 @@ public partial class MainWindow
    if(!IsCurrentExecutionOwner(owner))return false;
    if(control.StopRequested)continuousRun=false;
 
-   StoreWorkflowCallResults(procedureId,session);var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);RecordWorkflowRun(procedureId,elapsed);
-   if(windowClosed)return false;
-   RecordFrameworkRunHistory(procedureId,session);
-   if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString("F2");StatusText.Text="流程完成："+session.Status+(session.OutputErrors.Count>0?" · "+string.Join("；",session.OutputErrors):"");StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?"bottombar_run.png":"bottombar_abnormal.png");RefreshRight();}
-   if(workflowOverview)RenderWorkflowOverview();
-   if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
+   var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);
+   // VmSolution's ModuleResult callback commits state synchronously and then
+   // publishes the same result to its double-buffer callback queue.  The
+   // managed host uses the same seam; the queue's default CacheEnabled=false
+   // preserves the existing synchronous presentation path.
+   WorkflowCallbacks.PublishModuleResult(
+    () => {
+      if(!IsCurrentExecutionOwner(owner))return;
+      if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString("F2");StatusText.Text="流程完成："+session.Status+(session.OutputErrors.Count>0?" · "+string.Join("；",session.OutputErrors):"");StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?"bottombar_run.png":"bottombar_abnormal.png");RefreshRight();}
+      if(workflowOverview)RenderWorkflowOverview();
+      if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
+    },
+    () => {
+      StoreWorkflowCallResults(procedureId,session);RecordWorkflowRun(procedureId,elapsed);
+      if(!windowClosed)RecordFrameworkRunHistory(procedureId,session);
+    });
    return session.Status==SessionStatus.Success&&session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.Skipped);
   }
   catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))StatusText.Text="运行已停止";}
@@ -81,6 +91,7 @@ public partial class MainWindow
  {
   executionOwnerEpoch.Close();DetachExecutionScope();doc.Dispose();
   windowClosed=true;
+  workflowCallbacks?.Close();
   CloseToolConfiguration();
   executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
  }
