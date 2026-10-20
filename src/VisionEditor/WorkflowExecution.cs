@@ -33,7 +33,9 @@ public partial class MainWindow
   {
    BeginWorkflowResults(procedureId);if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
    if(!IsCurrentExecutionOwner(owner))return false;
-   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};var session=await new SolutionExecutor(modules).RunAsync(workspace,procedureId,progress:CreateExecutionProgress(procedureId),cancellationToken:token,scope:ownerScope,control:control);
+   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};
+   var progress=CreateExecutionProgress(procedureId); // Capture the UI dispatcher before the graph moves to a worker.
+   var session=await Task.Run(()=>new SolutionExecutor(modules).RunAsync(workspace,procedureId,progress:progress,cancellationToken:token,scope:ownerScope,control:control),token);
    if(!IsCurrentExecutionOwner(owner))return false;
    if(control.StopRequested)continuousRun=false;
 
