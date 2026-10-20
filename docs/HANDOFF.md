@@ -1,3 +1,7 @@
+## 2026-10-20 main 联合审核第十三轮：标定创建链、文件控件与坐标系终端
+
+当前目标仅是标定十工具的框架→工具 UI/后台/算法→结果代码链，其他工具留待下一目标；ImageSource/Group 只核必要交接。原工具箱 `ToolBoxData→ToolItemGrid→ItemsPage→DecoratorBase→AddNewItem→VmModule.CreateToModuleSet→SyncAddOneModule` 共用源码边已追到 SDK 请求。REA/CIL 证标定板虽然 `ToolItemInfo.name=CalibBoardCalib`，普通构造实际传 `IMVSCalibBoardCalibModu`。原标定加载文件控件的 override 仅经基类写参/可选运行并 `ReadData(false)` 刷显示，没有直达 `InitDynamicIO`，原文件刷新后的间接动态端口通知仍未知。坐标系正常/暖保留/冷安全拒绝结果→owned Group/同轮显示在真实图 10/10，根线独立复跑 exit0。源码、测试、SHA、未证边见[第十三轮根线复核](joint-audit/20261020-pass13-root-review.md)。本轮无产品代码改动、未推送；`tool-plugins` 不动；框架实施仍 **41/96=42.71%**，历史工具实施自审 10/10 单列。
+
 ## 2026-10-20 main 联合审核第十二轮：标定显示和动态输出身份
 
 根线独立复跑板/畸变实际 MainWindow 成功→失败→切选 11/11：板 NoMatch 清旧标定点，畸变失败后保留上一轮两图层/170 图形而失败记录更新，切源节点均清显示；原厂同条件显示未知，FCR-034 只登记合同风险。标定加载的成功 XML 动态叶改名/改型→owned Group→坐标系真图：旧 Group 选择明确失败，下游跳过、保存重开不迁移；原名/类型恢复后成功。原 `DynamicVmIO` UI 改名路径不能冒充原文件刷新路径。完整源/探针/哈希/失败见[第十二轮根线自审](joint-audit/20261020-pass12-root-review.md)。无产品或 `tool-plugins` 在制代码修改、未推送；框架实施 **41/96=42.71%**，人工验收独立。

@@ -21,6 +21,8 @@
 
 第十一轮已把十工具映射到完整的 120 个 J 门：见 [B 六工具矩阵](20261020-calibration-b-six-j-matrix.md)、[C 四工具矩阵](20261020-calibration-c-four-j-matrix.md)和[根线停止重复裁决](20261020-calibration-j-matrix-root-review.md)。各格只关闭具名证据边，原厂运行态与用户长期无响应等共同缺口只计一次，不用新报告重复增加进度。
 
+第十三轮又闭合了一个共用原始创建代码路径及两个工具特有结果/事件边：[工具箱拖放→SDK 请求](20261020-pass13-calibration-create-call-chain.md)、[标定加载文件控件的动态输出歧义](20261020-pass13-readcalib-filepicker-dynamic-io.md)、[坐标系终端输出→Group/显示](20261020-pass13-coordinate-terminal.md)。这些是代码级具名边的新增证据，不代表十工具 J01–J12 全部门槛都已关闭。
+
 ## 当前基线和待闭边
 
 - 当前 WPF 主窗 `MainWindow.xaml.cs` 注册了十个插件类型；工作区 `tool-catalog.json` 的标定分类也有十个非空 ID。不过 `HEAD` 目录仅有其中八个，N图像标定和相机映射两项目录映射是用户已有未提交改动，**暂不作为提交基线完成证据**；主线只读核其现状，不覆盖该文件。
