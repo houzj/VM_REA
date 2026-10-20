@@ -1,4 +1,5 @@
 using VisionFramework;
+using VisionEditor.Core;
 
 namespace VisionEditor;
 
@@ -14,8 +15,9 @@ public partial class MainWindow
 
     void ClearLiveDynamicDescriptors(string procedureId)=>liveDynamicDescriptors.Remove(procedureId);
 
-    IProgress<ExecutionEvent> CreateExecutionProgress(string procedureId)=>new Progress<ExecutionEvent>(executionEvent=>
+    IProgress<ExecutionEvent> CreateExecutionProgress(string procedureId, ExecutionOwnerStamp owner, uint runSequence)=>new Progress<ExecutionEvent>(executionEvent=>
     {
+        if(!IsCurrentExecutionOwner(owner)||workflowExecuteCounts.GetValueOrDefault(procedureId)!=runSequence)return;
         if(executionEvent.UpdatedDescriptor is not {SupportsDynamicOutputs:true} descriptor)return;
         if(!liveDynamicDescriptors.TryGetValue(procedureId,out var descriptors))liveDynamicDescriptors[procedureId]=descriptors=new(StringComparer.Ordinal);
         descriptors[executionEvent.NodeId]=descriptor;

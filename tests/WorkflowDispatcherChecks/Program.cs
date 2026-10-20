@@ -49,6 +49,36 @@ static class Program
             PumpUntil(() => run.IsCompleted);
             run.GetAwaiter().GetResult();
             Console.WriteLine("PASS workflow completed and returned ownership after the worker was released.");
+
+            var owner = typeof(MainWindow).GetMethod("CaptureExecutionOwner", Private)!.Invoke(window, null)!;
+            var begin = typeof(MainWindow).GetMethod("BeginWorkflowResults", Private)!;
+            var clear = typeof(MainWindow).GetMethod("ClearLiveDynamicDescriptors", Private)!;
+            var create = typeof(MainWindow).GetMethod("CreateExecutionProgress", Private)!;
+            var counts = (Dictionary<string, uint>)typeof(MainWindow).GetField("workflowExecuteCounts", Private)!.GetValue(window)!;
+            var live = (Dictionary<string, Dictionary<string, ModuleDescriptor>>)typeof(MainWindow).GetField("liveDynamicDescriptors", Private)!.GetValue(window)!;
+            var procedureId = document.CurrentProcedureId;
+            var dynamicDescriptor = descriptor with { SupportsDynamicOutputs = true };
+            void Report(IProgress<ExecutionEvent> progress) => progress.Report(new("controlled", NodeRunStatus.Running) { UpdatedDescriptor = dynamicDescriptor });
+            begin.Invoke(window, [procedureId]);
+            var first = (IProgress<ExecutionEvent>)create.Invoke(window, [procedureId, owner, counts[procedureId]])!;
+            Report(first);
+            PumpUntil(() => live.ContainsKey(procedureId));
+            Console.WriteLine("PASS current-run dynamic output progress reaches the UI.");
+
+            begin.Invoke(window, [procedureId]);
+            clear.Invoke(window, [procedureId]);
+            Report(first);
+            PumpSteps(8);
+            if (live.ContainsKey(procedureId)) throw new Exception("A previous run repopulated dynamic outputs after the next run began.");
+            Console.WriteLine("PASS delayed previous-run progress cannot repopulate the next run.");
+
+            var second = (IProgress<ExecutionEvent>)create.Invoke(window, [procedureId, owner, counts[procedureId]])!;
+            document.NewSolution(); // The new solution deliberately reuses the procedure id "main".
+            clear.Invoke(window, [procedureId]);
+            Report(second);
+            PumpSteps(8);
+            if (live.ContainsKey(procedureId)) throw new Exception("An old solution wrote dynamic outputs into its replacement.");
+            Console.WriteLine("PASS delayed old-solution progress cannot write into a replacement with the same procedure id.");
             window.Close();
             app.Shutdown();
             return 0;
@@ -75,6 +105,16 @@ static class Program
             Dispatcher.PushFrame(frame);
         }
         if (!condition()) throw new TimeoutException("The controlled UI operation did not settle.");
+    }
+
+    static void PumpSteps(int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            var frame = new DispatcherFrame();
+            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => frame.Continue = false));
+            Dispatcher.PushFrame(frame);
+        }
     }
 }
 
