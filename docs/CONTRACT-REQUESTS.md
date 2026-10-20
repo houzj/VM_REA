@@ -582,3 +582,11 @@ PointAlias构造追加可选presentation状态，旧调用仍可编译。实际M
 载荷与生命周期：应逐项核组合 IMAGE 与四叶的源身份、宽高、格式、断开/重连、无图运行、失败后本轮图/旧数值清理、Group/保存重开及取消释放。第十四轮源码及真实图探针见 `docs/joint-audit/20261020-pass14-c-display-chain.md`；根线 9/9 证当前真图首轮、非法 `RotNum=2` 失败、同 scope 恢复与未运行节点快照隔离。原 `Process 0x376b0` 未见读取图，故 `IsForce=true` 只能证**声明/绑定合同差异**，不能据此断言原算法无图拒绝或当前运算数值错误。原版无图条件的上游 validator/SDK 路径仍需原指令或受控原机证据。
 
 责任：插件项目持有工具 Descriptor、配置/显示适配及复合输入契约，main 仅按已确认的端口类型/必需性执行连线与调度；如需跨项目改公共复合端口合同，先由用户选择合流点。兼容需保留现有方案中聚合 `InputImage` 连接或明确迁移路径，验收以真实 ImageSource→Rotate 的连线/执行/显示/Group/重开正负例及原同条件差分为准。此项仅登记，未修改 `tool-plugins` 在制文件或建立第二套插件配置框架。
+
+## FCR-036 — 标定加载有限值失败后的记录快照归属（2026-10-20，待插件所有者核证）
+
+生产者：`ReadCalibFilePlugin.Runtime.ExecuteAsync` 的文件解析、有限值安全拒绝和 `State.LastOutputs`；消费者：`ReadCalibFilePlugin.LastDisplay` 的 Data Record 以及 main `RefreshToolDisplay` 在失败 `NodeRunRecord` 下仍询问的插件显示帧。载荷需携带本轮状态、动态输出 schema/值、错误码与快照所属运行轮次；不能让上一轮的 `ModuStatus=1` 被误读成本轮成功。原 `ReadCalibFileModuDisplay.xml` 仅声明 `Data Record` 从 `ModuStatus` 取值，原 native NaN 和失败后 WPF 记录值尚未取证。
+
+第十六轮真实 owned Group 探针从合法九项矩阵，经畸形刷新保留、合法空输出状态0、动态叶改名和恢复后，读取含 `NaN` 的 XML：当前 loader 报 `INVALID_CALIBRATION_NUMBER`、Group `SubprogramFailed`，但 `LastDisplay.RecordText` 仍为上轮 `Module Status:1`。原 Runtime 的有限值错误早退没有更新 `LastOutputs`，main 失败记录仍允许拉 LastDisplay；这是**当前缓存/显示归属差异**，不等于原版应清空或显示某个特定文本。原源码、当前方法、完整 12 项探针及日志见 `docs/joint-audit/20261020-pass16-readcalib-display-chain.md`。
+
+生命周期与兼容：同节点合法→畸形→无输出→改名→恢复→非有限拒绝→再次恢复，另核切节点、切方案、Group、重开和取消时的快照 owner。插件侧决定失败轮显示是否用本轮错误 DTO、无帧或保留并标注旧帧，main 只呈现有明确轮次/状态的快照；如公共显示合同需扩展 owner/epoch，单一共享写入者先提接口并由用户决定合流。不得无原版证据把所有失败帧一律清空；此项只登记，不修改 `tool-plugins` 在制文件。

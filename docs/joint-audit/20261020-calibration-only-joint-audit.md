@@ -27,6 +27,8 @@
 
 第十五轮接续 [N 点失败显示](20261020-pass15-npoint-display.md)、[平移旋转 owned Group 失败显示](20261020-pass15-translation-display-chain.md) 与[标定加载动态叶历史入口](20261020-pass15-readcalib-dynamic-history-boundary.md)，根线复跑及程序化 ClearRevision 边界裁决见[第十五轮复核](20261020-pass15-root-review.md)。正常清空按钮与单独写入 ClearRevision 不能混作同一用户路径；原厂失败显示和文件刷新间接回调继续标未证。
 
+第十六轮补 [N 图像待完成/空白失败/新批次显示](20261020-pass16-nimage-display-recovery.md)、[标定加载文件刷新/动态 Group/状态记录](20261020-pass16-readcalib-display-chain.md) 与[相机映射文本结果/数组失配/恢复](20261020-pass16-camera-mapping-display.md)；根线复验和原版/当前分界见[第十六轮复核](20261020-pass16-root-review.md)。ReadCalib 当前有限值失败回灌上一轮成功记录登 FCR-036；原版 NaN/失败画面未推定。十工具具名当前显示边已有覆盖，但严格 J01–J12 全链仍未关。
+
 ## 当前基线和待闭边
 
 - 当前 WPF 主窗 `MainWindow.xaml.cs` 注册了十个插件类型；工作区 `tool-catalog.json` 的标定分类也有十个非空 ID。不过 `HEAD` 目录仅有其中八个，N图像标定和相机映射两项目录映射是用户已有未提交改动，**暂不作为提交基线完成证据**；主线只读核其现状，不覆盖该文件。
