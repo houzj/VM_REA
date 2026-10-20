@@ -1,0 +1,15 @@
+#include <windows.h>
+#include <cstdio>
+#include "MapCalibCpp.h"
+#include "MVDCore.h"
+// Uses only owned-process breakpoints; original module files and foreign processes are untouched.
+#include "trace-grid-expansion-owned.h"
+using namespace VisionDesigner;using namespace VisionDesigner::MapCalib;
+int main(int argc,char**argv){if(argc!=4)return 2;setvbuf(stdout,nullptr,_IONBF,0);SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX);SetDllDirectoryA(argv[1]);auto dll=LoadLibraryA("MVDMapCalibCpp.dll"),images=LoadLibraryA("MVDImageCpp.dll");if(!dll||!images)return 3;auto create=(int(__stdcall*)(IMapCalibTool**))GetProcAddress(dll,"CreateMapCalibToolInstance");auto destroy=(int(__stdcall*)(IMapCalibTool*))GetProcAddress(dll,"DestroyMapCalibToolInstance");auto ic=(int(__stdcall*)(IMvdImage**))GetProcAddress(images,"CreateImageInstance");auto id=(int(__stdcall*)(IMvdImage*))GetProcAddress(images,"DestroyImageInstance");
+for(int model:{1})for(int board:{7,9}){IMapCalibTool*t=nullptr;create(&t);IMvdImage*a=nullptr,*b=nullptr;ic(&a);ic(&b);printf("{\"model\":%d,\"board\":%d",model,board);try{a->InitImage(argv[2],MVD_PIXEL_MONO_08);b->InitImage(argv[3],MVD_PIXEL_MONO_08);auto p=t->GetBasicParam();p->SetMapCalibMode((MVD_MAP_CALIB_MODE)1);auto pair=p->GetTwoImageMapBasicParam();pair->SetCalibBoardType((MVD_CALIBBOARD_TYPE)board);pair->SetSourceImage(a);pair->SetTargetImage(b);char v[8];sprintf_s(v,"%d",model);t->SetRunParam("HomoFreedom",v);g_board=board;g_model=model;InstallFitTrace();t->Run();auto r=t->GetResult();float h[9];r->GetHomoMatrix(h);auto e=r->GetTwoImageModeExtraInfo();printf(",\"matrix\":[");for(int i=0;i<9;i++)printf("%s%.9g",i?",":"",h[i]);printf("],\"ratio\":[%.9g,%.9g],\"status\":[%d,%d],\"scale\":[%.9g,%.9g],\"error\":%.9g,\"counts\":[%d,%d,%d]",r->GetXRatio(),r->GetYRatio(),e->GetSourceImageCalibStatus(),e->GetTargetImageCalibStatus(),e->GetSourceImageScale(),e->GetTargetImageScale(),e->GetMapError(),e->GetSourceImagePoints()->GetPointNum(),e->GetTargetImagePoints()->GetPointNum(),e->GetProjectionPoints()->GetPointNum());auto points=[&](const char*name,ICalibPointsInfo*info){printf(",\"%s\":[",name);auto pixels=info->GetImageCoordinates();auto world=info->GetWorldCoordinates();for(int k=0;k<info->GetPointNum();k++)printf("%s[%.9g,%.9g,%d,%d]",k?",":"",pixels[k].fX,pixels[k].fY,world[k].nX,world[k].nY);printf("]");};points("source",e->GetSourceImagePoints());points("target",e->GetTargetImagePoints());points("projection",e->GetProjectionPoints());}catch(const IMVDException&e){printf(",\"exception\":%u",(unsigned)e.GetErrorCode());}printf("}\n");id(a);id(b);destroy(t);}fflush(stdout);TerminateProcess(GetCurrentProcess(),0);}
+
+
+
+
+
+

@@ -1,0 +1,733 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AlgorithmTabRoot>
+  <Tabs>
+    <Tab Name="Tab_Basic Params">
+      <Categorys>
+        <Category Name="Tab_Image Input" CanTriggerRun = "TRUE">
+          <Items>
+            <EnumerationG Name="ImageSource">
+              <Description>Input Source</Description>
+              <DisplayName>Input Source</DisplayName>
+              <AccessMode>RO</AccessMode>
+              <Triggers>
+                <Trigger>
+                  <Property>CurValue</Property>
+                  <Setters>
+                    <Setter>
+                      <OperationName>SetCombinationSourceOperation</OperationName>
+                      <OperationParams>InputImage</OperationParams>
+                    </Setter>
+                  </Setters>
+                </Trigger>
+              </Triggers>
+              <Initers>
+                <Setter>
+                  <TargetName>EnumEntrys</TargetName>
+                  <OperationName>GetFrontParamItemsOperation</OperationName>
+                  <OperationParams>IMAGE</OperationParams>
+                </Setter>
+                <Setter>
+                  <TargetName>CurValue</TargetName>
+                  <OperationName>GetSelectedCombinationOperation</OperationName>
+                  <OperationParams>InputImage</OperationParams>
+                </Setter>
+              </Initers>
+            </EnumerationG>
+            <ROISelecter Name="RoiType">
+              <Description>Shape</Description>
+              <DisplayName>Shape</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CustomVisible>True</CustomVisible>
+              <!--是否全屏True/False-->
+              <FullScreenEnable>True</FullScreenEnable>
+              <SelectType>Single</SelectType>
+              <!--ROI的可选类型（根据实际情况选择）-->
+              <ROISelection>Box</ROISelection>
+            </ROISelecter>
+          </Items>
+        </Category>
+        <Category Name="Tab_Align File" CanTriggerRun = "TRUE">
+          <Items>
+            <!-- 			<OpenFileDialog Name="SaveCalibPathName" NameSpace="Standard">
+              <Description>Calibration File Load Path</Description>
+              <DisplayName>Set Calibration File Path</DisplayName>
+              <Visibility>Beginner</Visibility>
+              <AccessMode>RW</AccessMode>
+              <CurValue>cmd</CurValue>
+              <DefaultValue>cmd</DefaultValue>
+              <FileOption>
+                <IsMultiselect>false</IsMultiselect>
+                <FilterName>%.iccal|*.iccal%</FilterName>
+              </FileOption>
+            </OpenFileDialog> -->
+            <OpenFileForCalibDialog Name="CalibPathName">
+              <Description>Set Calibration File Path</Description>
+              <DisplayName>Set Calibration File Path</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CustomVisible>True</CustomVisible>
+              <CurValue></CurValue>
+              <DefaultValue></DefaultValue>
+              <FileOption>
+                <IsMultiselect>false</IsMultiselect>
+                <FilterName>%.iwcal|*.iwcal%</FilterName>
+              </FileOption>
+            </OpenFileForCalibDialog>
+            <Boolean Name="RefreshFileEnable">
+              <CurValue>False</CurValue>
+              <DefaultValue>False</DefaultValue>
+              <Description>RefreshFileEnable</Description>
+              <DisplayName>RefreshFileEnable</DisplayName>
+              <AccessMode>RW</AccessMode>
+            </Boolean>
+          </Items>
+        </Category>
+      </Categorys>
+    </Tab>
+    <Tab Name="Tab_Run Params">
+      <Categorys>
+        <Category Name="Tab_Calib Params" CanTriggerRun = "TRUE">
+          <Items>
+            <Float Name="OriginX">
+              <Description>Origin(X)</Description>
+              <DisplayName>Origin(X)</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CurValue>0.0</CurValue>
+              <DefaultValue>0.0</DefaultValue>
+              <MinValue>-1000.0</MinValue>
+              <MaxValue>1000.0</MaxValue>
+              <!-- <SubscribeVisible>False</SubscribeVisible> -->
+            </Float>
+            <Float Name="OriginY">
+              <Description>Origin(Y)</Description>
+              <DisplayName>Origin(Y)</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CurValue>0.0</CurValue>
+              <DefaultValue>0.0</DefaultValue>
+              <MinValue>-1000.0</MinValue>
+              <MaxValue>1000.0</MaxValue>
+              <!-- <SubscribeVisible>False</SubscribeVisible> -->
+            </Float>
+            <Float Name="RotationAngle">
+              <Description>Angle(Pos Value for Clock-wise)</Description>
+              <DisplayName>RotateAngle</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CurValue>0.0</CurValue>
+              <DefaultValue>0.0</DefaultValue>
+              <MinValue>-180.0</MinValue>
+              <MaxValue>180.0</MaxValue>
+              <!-- <SubscribeVisible>False</SubscribeVisible> -->
+            </Float>
+            <Enumeration Name="CoordinateMode">
+              <Description>Coordinate System Mode</Description>
+              <DisplayName>Coordinate System Mode</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CurValue>0x1</CurValue>
+              <DefaultValue>0x1</DefaultValue>
+              <EnumEntrys>
+                <EnumEntry Name="CoordinateModeLeft">
+                  <Description>Left-Handed Coordinate System</Description>
+                  <DisplayName>Left-Handed Coordinate System</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x1</Value>
+                </EnumEntry>
+                <EnumEntry Name="CoordinateModeRight">
+                  <Description>Right-Handed Coordinate System</Description>
+                  <DisplayName>Right-Handed Coordinate System</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x2</Value>
+                </EnumEntry>
+              </EnumEntrys>
+            </Enumeration>
+            <Float Name="PhysicalSize">
+              <Description>Physical Size</Description>
+              <DisplayName>Physical Size</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CurValue>1.0</CurValue>
+              <DefaultValue>1.0</DefaultValue>
+              <MinValue>0.01</MinValue>
+              <MaxValue>1000.0</MaxValue>
+              <IncValue>1</IncValue>
+              <SubscribeVisible>False</SubscribeVisible>
+            </Float>
+            <Enumeration Name="CalibBoardType">
+              <Description>Calibration Board Type</Description>
+              <DisplayName>Calibration Board Type</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CurValue>0x1</CurValue>
+              <DefaultValue>0x1</DefaultValue>
+              <Triggers>
+                <Trigger>
+                  <Property>CurValue</Property>
+                  <Value>1</Value>
+                  <Setters>
+                    <Setter>
+                      <TargetName>Circularity</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>EdgeThresh</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>CircleBoardCircleMode</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    
+                    <Setter>
+                      <TargetName>FilterStatus</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+<!--                     <Setter>
+                      <TargetName>SubpixelWinAuto</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter> -->
+                  </Setters>
+                </Trigger>
+                <Trigger>
+                  <Property>CurValue</Property>
+                  <Value>2</Value>
+                  <Setters>
+                    <Setter>
+                      <TargetName>Circularity</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>EdgeThresh</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>CircleBoardCircleMode</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  
+                    <Setter>
+                      <TargetName>FilterStatus</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+ <!--                    <Setter>
+                      <TargetName>SubpixelWinAuto</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter> -->
+                  </Setters>
+                </Trigger>
+                <Trigger>
+                  <Property>CurValue</Property>
+                  <Value>7</Value>
+                  <Setters>
+                    <Setter>
+                      <TargetName>Circularity</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>EdgeThresh</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>CircleBoardCircleMode</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                   
+                    <Setter>
+                      <TargetName>FilterStatus</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                 <!--    <Setter>
+                      <TargetName>SubpixelWinAuto</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter> -->
+                  </Setters>
+                </Trigger>
+                <Trigger>
+                  <Property>CurValue</Property>
+                  <Value>6</Value>
+                  <Setters>
+                    <Setter>
+                      <TargetName>Circularity</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>EdgeThresh</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>CircleBoardCircleMode</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+              
+                    <Setter>
+                      <TargetName>FilterStatus</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  <!--   <Setter>
+                      <TargetName>SubpixelWinAuto</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter> -->
+                  </Setters>
+                </Trigger>
+				<Trigger>
+                  <Property>CurValue</Property>
+                  <Value>9</Value>
+                  <Setters>
+                    <Setter>
+                      <TargetName>Circularity</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>EdgeThresh</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>CircleBoardCircleMode</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+             
+                    <Setter>
+                      <TargetName>FilterStatus</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  </Setters>
+                </Trigger>
+				<Trigger>
+                  <Property>CurValue</Property>
+                  <Value>8</Value>
+                  <Setters>
+                    <Setter>
+                      <TargetName>Circularity</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>EdgeThresh</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+                    <Setter>
+                      <TargetName>CircleBoardCircleMode</TargetName>
+                      <OperationName>HiddenOperation</OperationName>
+                    </Setter>
+
+                    <Setter>
+                      <TargetName>FilterStatus</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  </Setters>
+                </Trigger>
+              </Triggers>
+              <EnumEntrys>
+                <EnumEntry Name="TypeChecker">
+                  <Description>Checkboard Calibration Board</Description>
+                  <DisplayName>Checkboard Calibration Board</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x1</Value>
+                </EnumEntry>
+                <EnumEntry Name="TypeCircle">
+                  <Description>Round Calibration Board</Description>
+                  <DisplayName>Round Calibration Board</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x2</Value>
+                </EnumEntry>
+                <EnumEntry Name="TypeHKI">
+                  <Description>Hikvision I Calibration Board</Description>
+                  <DisplayName>RunParam_Hikvision_I Calibration Board</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x7</Value>
+                </EnumEntry>
+                <EnumEntry Name="TypeHKII">
+                  <Description>Hikvision II Calibration Board</Description>
+                  <DisplayName>RunParam_Hikvision_II Calibration Board</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x6</Value>
+                </EnumEntry>
+				<EnumEntry Name="TypeHKIV2">
+                  <Description>RunParam_Hikvision_IV2 Calibration Board</Description>
+                  <DisplayName>RunParam_Hikvision_IV2 Calibration Board</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x9</Value>
+                </EnumEntry>
+				<EnumEntry Name="TypeHKIIV2">
+                  <Description>RunParam_Hikvision_IIV2 Calibration Board</Description>
+                  <DisplayName>RunParam_Hikvision_IIV2 Calibration Board</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x8</Value>
+                </EnumEntry>
+              </EnumEntrys>
+            </Enumeration>
+            <SaveFileDialog Name="SaveCalibPath">
+              <Description>Create Calibration File Path</Description>
+              <DisplayName>Create Calibration File</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <CustomVisible>False</CustomVisible>
+              <CurValue>cmd</CurValue>
+              <DefaultValue>cmd</DefaultValue>
+              <SaveType>CalibPath</SaveType>
+              <FileOption>
+                <IsMultiselect>false</IsMultiselect>
+                <FilterName>.iwcal|*.iwcal</FilterName>
+              </FileOption>
+            </SaveFileDialog>
+          </Items>
+        </Category>
+        <Category Name="Tab_Run Params" CanTriggerRun = "TRUE">
+          <Items>
+            <Enumeration Name="HomoFreedom">
+              <Description>Degree of Freedom</Description>
+              <DisplayName>RunParam_DOF</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <AlgorithmIndex>0x0001</AlgorithmIndex>
+              <CurValue>0x2</CurValue>
+              <DefaultValue>0x1</DefaultValue>
+              <EnumEntrys>
+                <EnumEntry Name="Perspective">
+                  <Description>Projective Transformation</Description>
+                  <DisplayName>RunParam_Scale、Rotation、Aspect Ratio、Tilt、Translation and Transmission</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x1</Value>
+                </EnumEntry>
+                <EnumEntry Name="Affine">
+                  <Description>Affine Transformation</Description>
+                  <DisplayName>RunParam_Scale、Rotation、Aspect Ratio、Tilt and Translation</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x2</Value>
+                </EnumEntry>
+                <EnumEntry Name="Similarity">
+                  <Description>Affine Transformation</Description>
+                  <DisplayName>RunParam_Scale、Rotation and Translation</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x3</Value>
+                </EnumEntry>
+              </EnumEntrys>
+            </Enumeration>
+            <Integer Name="GrayContrast" IsAbandon="True">
+              <Description>黑白模块灰度对比度最小值</Description>
+              <DisplayName>RunParam_Grayscale Contrast</DisplayName>
+              <AccessMode>O</AccessMode>
+              <AlgorithmIndex>0x204</AlgorithmIndex>
+              <CurValue>15</CurValue>
+              <DefaultValue>15</DefaultValue>
+              <MinValue>1</MinValue>
+              <MaxValue>255</MaxValue>
+              <IncValue>1</IncValue>
+              <SubscribeVisible>False</SubscribeVisible>
+			  <CustomVisible>False</CustomVisible>
+            </Integer>
+            <Enumeration Name="FilterStatus">
+              <Description>Median Filtering State</Description>
+              <DisplayName>Median Filtering State</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <AlgorithmIndex>0x0206</AlgorithmIndex>
+              <CurValue>0x1</CurValue>
+              <DefaultValue>0x1</DefaultValue>
+              <EnumEntrys>
+                <EnumEntry Name="FilterStateTure">
+                  <Description>Execution Filtering</Description>
+                  <DisplayName>Execution Filtering</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x1</Value>
+                </EnumEntry>
+                <EnumEntry Name="FilterStateFalse">
+                  <Description>No Filter</Description>
+                  <DisplayName>No Filter</DisplayName>
+                  <Value>0x2</Value>
+                  <IsImplemented>0x1</IsImplemented>
+                </EnumEntry>
+              </EnumEntrys>
+            </Enumeration>
+            <Enumeration Name="SubpixelWinAuto" IsAbandon="True">
+              <Description>亚像素窗口大小</Description>
+              <DisplayName>RunParam_Sub-pixel window</DisplayName>
+              <AccessMode>O</AccessMode>
+              <AlgorithmIndex>0x0205</AlgorithmIndex>
+              <CurValue>0x1</CurValue>
+              <DefaultValue>0x1</DefaultValue>
+              <CustomVisible>False</CustomVisible>
+              <Triggers>
+                <MultiTrigger>
+                  <Conditions>
+                    <Condition>
+                      <Property>CurValue</Property>
+                      <Value>2</Value>
+                    </Condition>
+                    <Condition>
+                      <Property>CustomVisible</Property>
+                      <Value>True</Value>
+                    </Condition>
+                  </Conditions>
+                  <Setters>
+                    <Setter>
+                      <TargetName>SubPixelWindowSize</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  </Setters>
+                </MultiTrigger>
+              </Triggers>
+              <EnumEntrys>
+                <EnumEntry Name="SubpixelWinSizeAuto">
+                  <Description>FitSize</Description>
+                  <DisplayName>FitSize</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x1</Value>
+                </EnumEntry>
+                <EnumEntry Name="SubpixelWinSizeUser">
+                  <Description>Set</Description>
+                  <DisplayName>Set</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x2</Value>
+                </EnumEntry>
+              </EnumEntrys>
+            </Enumeration>
+            <Integer Name="SubPixelWindowSize" IsAbandon="True">
+              <Description>亚像素窗口大小设置值</Description>
+              <DisplayName>设置窗口大小</DisplayName>
+              <AccessMode>O</AccessMode>
+              <AlgorithmIndex>0x0205</AlgorithmIndex>
+              <CurValue>30</CurValue>
+              <CustomVisible>False</CustomVisible>
+              <DefaultValue>30</DefaultValue>
+              <MinValue>3</MinValue>
+              <MaxValue>150</MaxValue>
+              <IncValue>1</IncValue>
+              <SubscribeVisible>False</SubscribeVisible>
+            </Integer>
+            <Integer Name="Circularity">
+              <Description>Mark Points Roundness</Description>
+              <DisplayName>RunParam_Dot Circularity</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <AlgorithmIndex>0x0301</AlgorithmIndex>
+              <CurValue>50</CurValue>
+              <DefaultValue>50</DefaultValue>
+              <MinValue>20</MinValue>
+              <MaxValue>100</MaxValue>
+              <IncValue>1</IncValue>
+              <SubscribeVisible>False</SubscribeVisible>
+            </Integer>
+            <IntegerBettween Name="EdgeThresh">
+              <Description>RunParam_Edge Threshold</Description>
+              <DisplayName>RunParam_Edge Threshold</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <AlgorithmIndex>0x0001</AlgorithmIndex>
+              <DefaultValue>20</DefaultValue>
+              <MinValue>0x00</MinValue>
+              <MaxValue>0xFF</MaxValue>
+              <IncValue>0x1</IncValue>
+              <SubscribeVisible>False</SubscribeVisible>
+              <Integers>
+                <Integer Name="EdgeThreshLow">
+                  <Description>Sub Pixel Edge Lower Threshold</Description>
+                  <DisplayName>Edge Low Threshold</DisplayName>
+                  <AccessMode>RW</AccessMode>
+                  <AlgorithmIndex>0x0302</AlgorithmIndex>
+                  <CurValue>20</CurValue>
+                  <DefaultValue>20</DefaultValue>
+                  <MinValue>0x00</MinValue>
+                  <MaxValue>0xFF</MaxValue>
+                  <IncValue>0x1</IncValue>
+                </Integer>
+                <Integer Name="EdgeThreshHigh">
+                  <Description>Sub Pixel Edge Upper Threshold</Description>
+                  <DisplayName>Edge High Threshold</DisplayName>
+                  <AccessMode>RW</AccessMode>
+                  <AlgorithmIndex>0x0303</AlgorithmIndex>
+                  <CurValue>40</CurValue>
+                  <DefaultValue>40</DefaultValue>
+                  <MinValue>0x00</MinValue>
+                  <MaxValue>0xFF</MaxValue>
+                  <IncValue>0x1</IncValue>
+                </Integer>
+              </Integers>
+            </IntegerBettween>
+            <Enumeration Name="CircleBoardCircleMode">
+              <Description>圆点标定板圆点类型</Description>
+              <DisplayName>圆点类型</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <AlgorithmIndex>000C</AlgorithmIndex>
+              <CurValue>0x1</CurValue>
+              <DefaultValue>0x1</DefaultValue>
+              <EnumEntrys>
+                <EnumEntry Name="CircleModeBlack">
+                  <Description>白底黑圆</Description>
+                  <DisplayName>白底黑圆</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x1</Value>
+                </EnumEntry>
+                <EnumEntry Name="CircleModeWhite">
+                  <Description>黑底白圆</Description>
+                  <DisplayName>黑底白圆</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x2</Value>
+                </EnumEntry>
+              </EnumEntrys>
+            </Enumeration>
+            <Expand>
+              <CurValue>False</CurValue>
+              <Triggers>
+                <Trigger>
+                  <Property>CurValue</Property>
+                  <Value>True</Value>
+                  <Setters>
+                    <Setter>
+                      <TargetName>CalibBoardWeightFun</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  </Setters>
+                </Trigger>
+              </Triggers>
+            </Expand>
+            <!--高级参数-->
+            <Enumeration Name="CalibBoardWeightFun">
+              <Description>Weighting Function</Description>
+              <DisplayName>Weighting Function</DisplayName>
+              <AccessMode>RW</AccessMode>
+              <AlgorithmIndex>0x0002</AlgorithmIndex>
+              <CurValue>2</CurValue>
+              <DefaultValue>2</DefaultValue>
+              <CustomVisible>False</CustomVisible>
+              <Triggers>
+                <MultiTrigger>
+                  <Conditions>
+                    <Condition>
+                      <Property>CurValue</Property>
+                      <Value>2</Value>
+                    </Condition>
+                    <Condition>
+                      <Property>CustomVisible</Property>
+                      <Value>True</Value>
+                    </Condition>
+                  </Conditions>
+                  <Setters>
+                    <Setter>
+                      <TargetName>WeightFactor</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  </Setters>
+                </MultiTrigger>
+                <MultiTrigger>
+                  <Conditions>
+                    <Condition>
+                      <Property>CurValue</Property>
+                      <Value>3</Value>
+                    </Condition>
+                    <Condition>
+                      <Property>CustomVisible</Property>
+                      <Value>True</Value>
+                    </Condition>
+                  </Conditions>
+                  <Setters>
+                    <Setter>
+                      <TargetName>WeightFactor</TargetName>
+                      <OperationName>VisibleOperation</OperationName>
+                    </Setter>
+                  </Setters>
+                </MultiTrigger>
+              </Triggers>
+              <EnumEntrys>
+                <EnumEntry Name="LeastSqure">
+                  <Description>Least Squares</Description>
+                  <DisplayName>Least Squares</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x1</Value>
+                </EnumEntry>
+                <EnumEntry Name="Huber">
+                  <Description>Huber</Description>
+                  <DisplayName>Huber</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x2</Value>
+                </EnumEntry>
+                <EnumEntry Name="Tukey">
+                  <Description>Tukey</Description>
+                  <DisplayName>Tukey</DisplayName>
+                  <IsImplemented>0x1</IsImplemented>
+                  <Value>0x3</Value>
+                </EnumEntry>
+              </EnumEntrys>
+            </Enumeration>
+            <Integer Name="WeightFactor">
+              <Description>Weighting Function Clipping Factor Coefficient</Description>
+              <DisplayName>RunParam_Weighting Coefficient</DisplayName>
+              <AccessMode>Rw</AccessMode>
+              <AlgorithmIndex>0x0003</AlgorithmIndex>
+              <CurValue>20</CurValue>
+              <DefaultValue>20</DefaultValue>
+              <MinValue>1</MinValue>
+              <MaxValue>200</MaxValue>
+              <IncValue>1</IncValue>
+              <CustomVisible>False</CustomVisible>
+              <SubscribeVisible>False</SubscribeVisible>
+            </Integer>
+            <Integer Name="DistThreshold">
+              <Description>Dis Thre</Description>
+              <DisplayName>Dis Thre</DisplayName>
+              <AccessMode>Rw</AccessMode>
+              <AlgorithmIndex>0x0004</AlgorithmIndex>
+              <CurValue>30</CurValue>
+              <DefaultValue>30</DefaultValue>
+              <MinValue>1</MinValue>
+              <MaxValue>100</MaxValue>
+              <IncValue>1</IncValue>
+              <CustomVisible>False</CustomVisible>
+            </Integer>
+            <Integer Name="SampleRatio">
+              <Description>Sampling Rate</Description>
+              <DisplayName>Sampling Rate</DisplayName>
+              <AccessMode>Rw</AccessMode>
+              <AlgorithmIndex>0x0005</AlgorithmIndex>
+              <CurValue>60</CurValue>
+              <DefaultValue>60</DefaultValue>
+              <MinValue>1</MinValue>
+              <MaxValue>100</MaxValue>
+              <IncValue>1</IncValue>
+              <CustomVisible>False</CustomVisible>
+            </Integer>
+          </Items>
+        </Category>
+      </Categorys>
+    </Tab>
+    <Tab Name="ResultShow">
+      <Categorys>
+        <Category Name="Tab_Image Display">
+          <Items>
+            <ImageViewConfig Name="CalibPoint">
+              <Description>Calibration Point</Description>
+              <DisplayName>Calibration Point</DisplayName>
+              <AccessMode>O</AccessMode>
+              <BrigdgeSetter>
+                <TargetName>BridgeObj</TargetName>
+                <OperationName>GetDisplayObjectOperation</OperationName>
+                <OperationParams>Display Calibration Point</OperationParams>
+              </BrigdgeSetter>
+            </ImageViewConfig>
+            <ImageViewConfig Name="CalibOrignPoint">
+              <Description>Calibration Origin</Description>
+              <DisplayName>Calibration Origin</DisplayName>
+              <AccessMode>O</AccessMode>
+              <BrigdgeSetter>
+                <TargetName>BridgeObj</TargetName>
+                <OperationName>GetDisplayObjectOperation</OperationName>
+                <OperationParams>Display Original Calibration Point</OperationParams>
+              </BrigdgeSetter>
+            </ImageViewConfig>
+          </Items>
+        </Category>
+        <GroupLinkItem Name="TextDisplayGroup">
+          <LinkName>TextDisplayGroup</LinkName>
+        </GroupLinkItem>
+      </Categorys>
+    </Tab>
+  </Tabs>
+  <BottomExcuteButtonsLeft>
+    <Button_ResetAlgoParams Name="Button_ResetAlgoParams">
+      <AccessMode>O</AccessMode>
+    </Button_ResetAlgoParams>
+  </BottomExcuteButtonsLeft>
+  <BottomExcuteButtons>
+    <BottomCommand Name="SaveFile">
+      <Description>Create Calibration File</Description>
+      <DisplayName>Create Calibration File</DisplayName>
+      <AccessMode>O</AccessMode>
+      <CommandSetter>
+        <OperationName>ExcuteMethodOperation</OperationName>
+        <OperationParams>SaveCalibPath</OperationParams>
+      </CommandSetter>
+    </BottomCommand>
+    <GroupLinkItem Name="BottomCommandGroup">
+      <LinkName>BottomCommandGroup</LinkName>
+    </GroupLinkItem>
+  </BottomExcuteButtons>
+</AlgorithmTabRoot>

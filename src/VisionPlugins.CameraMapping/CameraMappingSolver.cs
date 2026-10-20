@@ -38,6 +38,16 @@ public static class CameraMappingSolver {
   var normalized=points.Select(p=>new CameraMappingPair(((float)p.ObjectX-mx)*ss,((float)p.ObjectY-my)*ss,((float)p.TargetX-mu)*st,((float)p.TargetY-mv)*st)).ToArray();
   var weights=Enumerable.Repeat(1d,points.Length).ToArray();var h=FitLinear(normalized,freedom,weights,true,false);if(h is null)return null;
   h=h.Select(v=>(double)(float)v).ToArray();
+  // Original 7fcf60 publishes a denormalized float matrix; 7fd4e0 then
+  // normalizes that rounded matrix again before its first residual pass.
+  // Omitting this roundtrip changes the weights even when the initial fit matches.
+  double[] sourceNormalize=[ss,0,-ss*mx,0,ss,-ss*my,0,0,1],targetNormalize=[st,0,-st*mu,0,st,-st*mv,0,0,1];
+  var sourceInverse=TransformInverse(sourceNormalize);var targetInverse=TransformInverse(targetNormalize);if(sourceInverse is null||targetInverse is null)return null;
+  var denormalized=NormalizeFloat(Multiply(Multiply(targetInverse,h),sourceNormalize));
+  h=NormalizeFloat(Multiply(Multiply(targetNormalize,denormalized),sourceInverse));
+  if(h[8]==0)return h;
+  // 7fd4e0 passes the eight free coefficients to 7fec40, whose ninth slot is 1.
+  h[8]=1;
   // The source's four-point perspective path forces the unweighted fit.
   if(points.Length==4&&freedom==1)weight=1;
   const float epsilon=1.1920928955078125e-7f;
@@ -48,7 +58,18 @@ public static class CameraMappingSolver {
    var next=FitLinear(normalized,freedom,weights,true,true);if(next is null)break;next=next.Select(v=>(double)(float)v).ToArray();
    int[] free=freedom==1?[0,1,2,3,4,5,6,7]:freedom==2?[0,1,2,3,4,5]:[0,1,2,5];float square=0;for(int i=0;i<free.Length;i+=2){float a=(float)h[free[i]]-(float)next[free[i]],b=(float)h[free[i+1]]-(float)next[free[i+1]];square+=a*a+b*b;}h=next;if(MathF.Sqrt(square)<1e-4f)break;
   }
-  var targetInverse=CameraMappingLinearAlgebra.Inverse([st,0,-st*mu,0,st,-st*mv,0,0,1]);if(targetInverse is null)return null;h=Multiply(Multiply(targetInverse,h),[ss,0,-ss*mx,0,ss,-ss*my,0,0,1]);double denominator=h[8];return h.Select(v=>(double)((float)v/(float)denominator)).ToArray();
+  return NormalizeFloat(Multiply(Multiply(targetInverse,h),sourceNormalize));
+  static double[] NormalizeFloat(double[] matrix){
+   // Original constants at 18162b698/69c and DIVSS followed by MULPS/MULSS.
+   if(MathF.Abs((float)matrix[8])<1.1920928955078125e-7f)return new double[9];
+   float reciprocal=1f/(float)matrix[8];return matrix.Select(v=>(double)((float)v*reciprocal)).ToArray();
+  }
+  static double[]? TransformInverse(double[] matrix){
+   // Both normalization matrices have diagonal scale and a fixed bottom row.
+   // The original explicit inverse rejects determinants below double epsilon.
+   float determinant=(float)matrix[0]*(float)matrix[4]*(float)matrix[8];
+   return Math.Abs((double)determinant)<2.220446049250313e-16?null:CameraMappingLinearAlgebra.Inverse(matrix);
+  }
  }
  static double[]? Inverse(double[] h){double d=h[0]*(h[4]*h[8]-h[5]*h[7])-h[1]*(h[3]*h[8]-h[5]*h[6])+h[2]*(h[3]*h[7]-h[4]*h[6]);if(Math.Abs(d)<1e-15)return null;return new[]{h[4]*h[8]-h[5]*h[7],h[2]*h[7]-h[1]*h[8],h[1]*h[5]-h[2]*h[4],h[5]*h[6]-h[3]*h[8],h[0]*h[8]-h[2]*h[6],h[2]*h[3]-h[0]*h[5],h[3]*h[7]-h[4]*h[6],h[1]*h[6]-h[0]*h[7],h[0]*h[4]-h[1]*h[3]}.Select(v=>(double)(float)(v/d)).ToArray();}
  static double[] Multiply(double[] a,double[] b)=>Enumerable.Range(0,9).Select(i=>{float sum=0;for(int k=0;k<3;k++)sum+=(float)a[i/3*3+k]*(float)b[k*3+i%3];return(double)sum;}).ToArray();

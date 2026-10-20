@@ -1,5 +1,7 @@
 # 相机映射原厂解析器缺失操作与索引证据
 
+2026-10-19更新：本文保留早期managed/platform入口探针的历史。后续具体Frame源码已闭合0基/错误Count/成功索引Count1；typed root-flow All/constant/dynamic已实施并运行Index206。当前证据和真实活动UI剩余见`CAMERA-MAPPING-IMPLEMENTATION-EXIT.md`；GetBindIndex dot门纠正见`CAMERA-MAPPING-ARRAY-INDEX-LITERAL-GATE.md`。不再沿用下文旧“当前Unsupported/原生索引未知”作为最新结论。
+
 ## 缺失组合必填操作
 
 安装版类型清单只有 `SetFilterForcePropertyOperation`，没有 `SetCombinationForcePropertyOperation`。原厂 `OperationManager.CreatInstanceBySetter` 只在 ActivatorWrap.TypeTable 存在类型时创建实例；缺失类型且 IgnoreUnknown=true 时不赋 Operation，false 时抛出 `...is unKnown`。`AlgorithmTabRoot` 构造使用 `loadXml(path, ignoreUnknown:true)`；`Trigger.Init` 在此阶段创建Setter；`Setter.Operate` 仅在Operation非null时调用。因此相机映射XML的16处缺失组合操作实际被忽略，不代表有一套必填属性投影待实现。

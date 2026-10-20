@@ -15,7 +15,7 @@
 | 缺少输入 | Process开头清有效标记，输入缺失后没有可保存结果 | 原厂显式Save返回0xe0000018；产品失效保存资格并清显示 |
 | 清理与复位 | ResetMember清标记/点缓冲/路径；配置ResetAlgoParams是独立公共宿主动作，不能擅自等同析构ResetMember | 实际配置确认复位参数并恢复两组固定点通过；作用域销毁释放工具状态，不清别的流程 |
 
-原厂导出文件：`module.iwcal.perspective.iwcal`、`module.iwcal.recalculated-affine.iwcal`、`module.iwcal.refresh.iwcal`、`module.iwcal.after-io-failure.iwcal`。原厂SetParam/Process结果均在 `analysis/camera-mapping/native/module-results.jsonl`。109项生产WPF/Graph检查和118组SDK差分通过；仍不证明完整原生平台订阅或桌面像素一致。
+原厂导出文件：`module.iwcal.perspective.iwcal`、`module.iwcal.recalculated-affine.iwcal`、`module.iwcal.refresh.iwcal`、`module.iwcal.after-io-failure.iwcal`。原厂SetParam/Process结果均在 `analysis/camera-mapping/native/module-results.jsonl`。相机专属生产WPF/Graph检查更新为110项；既有118组SDK差分通过；仍不证明完整原生平台订阅或桌面像素一致。
 
 2026-10-18补证：官方受控模块one-pair-other-group-absent返回0x80100005；no-active-groups返回0xe00000ff；active但所有叶都缺失返回0xe0000309。产品按整组0点与部分数量错误分别处理，不把模块输入失败都报成求解器点数错误。
 

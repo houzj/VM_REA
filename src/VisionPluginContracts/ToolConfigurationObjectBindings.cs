@@ -10,7 +10,9 @@ public sealed record ConfigurationObjectRoute(string ObjectName,string? FeatureN
         var setter=node.Element.Children.FirstOrDefault(e=>e.Tag=="BrigdgeSetter");
         string? Read(string key)=>setter?.Children.FirstOrDefault(e=>e.Tag==key)?.Text;
         var args=(Read("OperationParams")??"").Split(';');var property=node.Get("PropertyName");
-        if(args[0]!="Show Text")return null;
+        // Named text FontSize is the same original feature bridge. Other object
+        // routes stay unchanged unless an explicit source-aware service resolves it.
+        if(args[0]!="Show Text"&&(args[0].Length==0||Read("OperationName")!="GetDisplayObjectFeatureOperation"||args.Length!=2||args[1]!="FontSize"||node.Element.Tag!="FloatConfig"||property!="Value"))return null;
         if(Read("OperationName")=="GetDisplayObjectFeatureOperation"&&args.Length==2&&property=="Value")return args[1] switch {
             "Content" when node.Element.Tag=="StringConfig"=>new(args[0],args[1],ConfigurationObjectProperty.Content),
             "FontSize" when node.Element.Tag=="FloatConfig"=>new(args[0],args[1],ConfigurationObjectProperty.FontSize),_=>null};

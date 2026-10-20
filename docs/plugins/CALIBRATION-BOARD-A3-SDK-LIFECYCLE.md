@@ -1,0 +1,121 @@
+# A3首切片：SDK ROI所有权、结果有效性与文件导出门控
+
+2026-10-19，S1/S2源码切片，不新增原厂运行或修改产品状态策略。原SDK SHA256=`0a65d7a9e84a3ec6f662b4f05daa5a88351690ae4fbecd1748427c13c56fa308`。原件头文件为安装目录`MVDAlgorithmSDK/Includes/Algorithms/CalibBoardCalibCpp.h`及`Common/VisionDesigner/MVDShapeCpp.h`。
+
+## 具体方法与字段
+
+只读PE脚本`tests/CalibrationBoard.NativeProbe/ExportSdkLifecycleVtable.py`验证SDK身份，依Create@103a装载的vtable RVA7b38和原厂头文件顺序，输出20个槽位。原始记录`analysis/calibration-board/a3-lifecycle/sdk-vtable.json`，没有加载/执行DLL。缺失8体由`BoardSdkLifecycleAudit.java`/`RunSdkLifecycleAudit.ps1`定向取得，原始C/asm在`sdk-lifecycle-a0bfc843caa84d41913e6a5c95cebc89/output/`。REA provider配置限制沿用既有记录；本轮来源是自有Ghidra静态导出，不伪造REA Evidence ID。
+
+| SDK接口/槽 | 实际入口 | 已确认字段与顺序 |
+|---|---|---|
+| SetInputImage / +10 | 2470 | 先写this+8，再保留RDX、把RCX换为预处理对象this+18后尾跳其+10；不能推断丢了图像参数 |
+| GetROI / +18 | 2480 | 返回this+10 |
+| SetROI / +20 | 2490→3df0 | 与当前内部指针相等直接返回；非null检查类型5/10及IsValid；清预处理列表中ROI标志项；Clone新shape，释放旧内部shape，再登记新ROI并置dirty this+20=1；null则释放旧shape回全图 |
+| GetBasicParam / +28 | 2690 | 返回this+30；不是结果getter |
+| GetResult / +30 | 26a0 | this+50非0才返回this+38，否则null，原指令26a0..26ad明确 |
+| ClearMasks / +40 | 26e0 | 只移除预处理列表中非ROI标志项，每次移除置dirty；不等同SetROI(null) |
+| Run / +78 | 2ad0 | 入口先清this+50=0、runtime this+60=0；输入/预处理/算法失败抛异常，完整成功复制结果后才置this+50=1 |
+| ExportCalibFile / +80 | 3720 | 检查path非null、this+38结果对象和其+18子对象非null；没有读取this+50有效标志，也没有调用GetResult |
+| Get/SetRegionImage / +88/+90 | 28f0/2900 | 单独读写this+48，不能当作SetROI别名 |
+
+3df0经shape虚槽+88调用Clone，原厂Rectangle/AnnularSector头文件声明深拷贝。5940是DestroyShapeInstance的导入跳板，其伪代码自调用外观不是算法递归；实际外部destroy的完整内部行为未在本切片恢复。SetROI验证失败发生在替换内部ROI之前，不能把所有错误都理解成“已清ROI”。
+
+## 跨运行生命周期的区别
+
+成功Run创建或更新this+38持有的结果，然后开放GetResult。下一次Run入口仅关闭有效门；源码没有在该入口释放结果对象。若新Run在成功出口前失败，GetResult返回null，但内部旧对象仍可能存在。因此“本次运行无有效结果”与“最后成功矩阵内存已清除”是两个问题。
+
+文件导出直接读持有的旧结果对象，而不检查GetResult门。这是源码确认的接口门控差异；本切片没有新运行证明每种算法失败后的矩阵内容和文件副作用，不能把条件检查直接外推成所有失败场景都能导出。当前产品失败输出替换与独立保留矩阵的做法分别对照，暂不根据猜测修改。
+
+模块ProcessOutput@20630先发布ModuStatus/runtime，再按输入ROI有效标志发布Detect五字段；只有BASIC_OUTPUT成功标志才取SDK结果并发布标定输出。模块ProcessAlg@20240伪代码存在丢实参和恒false伪影，ROI传递/异常处理必须继续看具体调用点汇编，不能拿这些伪影写生命周期规格。
+
+## 后续精确缺口
+
+继续追原厂预处理工具ROI/mask标志的类型与尺寸/裁剪转换、clone后的本地坐标及模块输入shape数组实际ABI；核SetRegionImage覆盖ROI路径；跟踪各失败点的持有矩阵/导出文件行为及C++异常回滚。本切片仅关闭上述接口字段/有效门控问题，不关闭原生ROI字节ABI、所有形状或任意失败行为。
+
+## A3第二切片：模块调用点原指令（2026-10-19）
+
+定向重新导出原模块ProcessAlg@20240/ProcessOutput@20630的C及完整函数汇编，成功输出到`analysis/calibration-board/module-lifecycle-ad3485f09ee441d5a7586a1e460307e6/output`，自有作业退出0。首次Windows PowerShell调用因UTF8路径解码失败、第二次因stderr被当异常失败，均不计成功；本次在当前PowerShell执行独立新目录完成。
+
+20240实际入口保存input=RSI、this=RBX。20361..20365从input+20数组按8字节取shape到RDX；非null跳203b7，RCX重装SDK、203c1调用vtable+20，期间RDX未被覆盖。因此SetROI确有第二实参，不能据伪代码无参外观解释成清ROI。null项仅日志并继续。循环结束203c9..203d3调用ClearMasks；20401..20413另从input+38数组取mask到RDX调用AddMask+38，然后20425调用Run+78。
+
+该具体ProcessAlg函数在ROI数组为空或所有项null时没有SetROI(null)，也没有循环前清ROI；多非null项依次替换SDK内部克隆，若都成功则最后一项持有。这里仅关闭模块函数内指令顺序，**不宣称上游实际会送空数组、跨轮必保留旧ROI或所有异常的最终状态**：仍需追输入生产者与异常处理器，不能直接修改产品回空行为。ClearMasks与SetROI不同的既有SDK证据在此得到实际调用点关联。
+
+20425 Run为void虚调用，随后没有把EAX赋给R15D；R15D在正常已建SDK路径自入口保持0，创建SDK分支则取Create返回值。2043f/204f5测试R15D并不等于测试Run返回码，不能把伪代码false分支还原为一个臆造算法返回值。异常处理落点尚未完整追，Run正常返回后2050e调用GetResult并测null才决定本地成功标志。此切片没有新增原厂运行、产品补丁或人工验收结论。
+
+## A3第三切片：原模块异常元数据与catch状态门（2026-10-19）
+
+原模块SHA256 `bd62ee940a2e299c0c47e41909e64ca78c09d7717e7cefc629dbfb9e21105c1d`。新`ExportModuleExceptionScopes.py`只读PE的.pdata/xdata及MSVC FuncInfo（magic19930522），导出`analysis/calibration-board/a3-lifecycle/module-exception-scopes.json`，含原始字段、IP/state、handler及返回续接处原字节；不加载模块。原函数新增Process@1ff90与8个catch的C/asm在`module-lifecycle-2656c67b216e44008904ccf750ed98b2/output`，私有Ghidra作业退出0。自动分析局部DemangledVariable警告不作为取证成功依据；11个目标体/汇编实际存在。
+
+ProcessAlg有两组try：第一组state0覆盖202b0..20429（包含输入、ROI/mask与Run），handler273f0/2746b/274e6/2758d；第二组state3..4覆盖20504..205bf（GetResult/路径/导出），handler2763d/276b8/27733/277e0。两组类型分别是.H、.I、.?AVIMVDException@VisionDesigner@@与null类型catch-all，对应int、unsigned int、异常对象和其余异常。int/uint将捕获值写父帧+40；IMVDException通过虚槽+10取code写同槽；catch-all写e00000ff。对象description仅用于日志，不改变最终code来源。
+
+原函数常规body列表遗漏续接小块，不能因伪代码忽略catch就断言恒0。第一组三种返回2042b，catch-all返回2044a；两处原字节都含`44 8b 7c 24 40`，即恢复R15D=[RSP+40]。第二组返回205c1，同样恢复R15D。最终205e8把R15D写BASIC_OUTPUT+4，205fb复制R15D到EAX返回。第一组非零error跳过GetResult，把本地成功标志置0；第二组异常发生前可能已置本地成功1，catch未将其一律清零，不能将失败的BasicOutput字段都假定0。外层Process@1ff90将ProcessAlg返回值赋EDI、非0分支直接返回，只有返回0才到20135调用ProcessOutput。因此第二组异常时内部成功标志与本次发布输出门控不同，不得以内部标志1推断本轮对外发布成功。没有新增异常运行或文件副作用证明。
+
+附带发现原厂安装包携带VM431开发模板`Applications/Tools/AlgorithmXMLGenerator/project/VM431/AlgorithmModuleCplus/AlgorithmModule/common/src/VmAlgModuBase.{h,cpp}`。头文件声明与input+10图像、+20 ROI向量、+38屏蔽向量布局一致；模板ProcessFix第940行clear、矩形分支push、1234行拒绝empty，可作为上游追踪线索。**模板版本标签VM431不能证明当前4.4模块编译自该文件**，本切片未把模板empty检查当4.4运行合同，也未据此关闭空ROI可达性。下一断点应匹配实际基类/ProcessFix二进制与模板、确认空ROI门与所有权释放，再决定是否需要最小运行补证。
+
+## A3第四切片：实际构造、Init与基类定位（2026-10-19）
+
+模块仍为同一BD62EE94...105c1d原件。`module-base-entry-4bd931a2577545c8bd89496ddf4b982e/output`新增1ef80/1fe30 C与asm，自有静态导出退出0。1ef89在RCX仍为this时调用本模块8e60，随后1ef8e/95写派生vtable=18002c430；原PE前13槽已记录进module-exception-scopes.json，其中+8=12b60、+38=1ff90、+40=10db0、+60=17040。此为实际当前二进制入口，模板只帮助命名，不代替成员恢复。
+
+被动PE导入显示ModuleFrame.dll的导入是CAbstractUserModule及VM_M_*接口，没有凭模板猜一个不存在证据的外部CVmAlgModuleBase DLL。实际基类构造位于模块内8e60；Process二参数候选12b60、GetProcessInput候选10db0、ResetDefaultParam候选17040是下一定向取体目标，模板名称仍须由具体callee核准。
+
+构造中清SDK指针+15d98、模块成功+15d90、刷新标志+15da0和路径+15da1起0x30c字节。Init先VM_M_GetModuleId；失败直接返回该code且不进入后续清字段。成功才清模块标志/路径，若SDK指针非0就复用，不在此销毁或清其ROI/持有结果。若0，以RCX=&this+15d98调用Create；失败抛出捕获整型异常供上层处理。之后调用派生虚槽+60（实际17040）；1ff17保存code、非0仅日志，1ff70显式XOR EAX,EAX，当前Init在GetModuleId成功且Create未抛出的正常路径返回0。因此不能假设默认参数加载失败必由Init返回非0。此结论仅上述正常返回路径，Init自身异常处理器未在本切片展开。
+
+源模板哈希：VmAlgModuBase.cpp=7449126E20EA08E49593E68C91106E66E04E70762865818B447D7F431D1E4682；h=301A5536237F7B7D04A4D82AE255EB31799F0D54EFFB6AC6B77EDE765B5A5451。其VM431版本仍不是当前4.4的构建身份声明。没有产品修改、重新测试或人工验收；不以构造字段清零外推运行失败策略。
+
+## A3第五切片：4.4实际基类Process与默认参数应用（2026-10-19）
+
+`module-base-entry-1bffc682a8764f43a7d5c9fcf32e56d9/output`实际取得8e60/12b60/10db0/17040四体与asm，自有导出退出0。12b60的日志确认CVmAlgModuleBase::Process，不再只按VM431模板命名。反编译void是假象：12d61明确EAX=EBX后经cookie/恢复返回。
+
+12b60先构造两个局部输入对象，经虚槽+40（10db0）取原始输入；仅取值返回0且三个状态字段均非0才继续。12c2b调用实际ProcessFix=12d90，失败跳到OutputExtra=126f0；成功调用Base ProcessOutput=15fe0，非0只日志，仍调用派生虚槽+38（1ff90）并以其返回code更新EBX。最后调OutputExtra，局部四个vector按容器指针释放，再析构原始输入；这些容器释放不能等同释放每个shape，所有权继续追。由此关闭当前实际上游主干顺序，但ProcessFix空ROI门尚未取体，不把模板检查搬作已证。
+
+17040日志确认ResetDefaultParam。先VM_M_GetCreateModuleCause，cause==2跳过默认参数列表应用；否则分配0x58484字节列表并清零，调用VM_M_GetDefaultConfigByFile；成功且count>0按原序遍历每个0x584字节记录。1717a..171a4实际将记录value指针传R8、计算其strlen到R9、记录name传RDX，调用派生SetParam虚槽+18。171a7直接递增索引，**不检查每项SetParam的EAX**，最终17202 EAX=EBP为列表获取层保存code。因此不能将单项默认设置失败当作ResetDefaultParam必失败，更不能当作事务回滚。文件路径生成及每参数副作用仍待具体叶体，未据此改产品或运行确认。
+
+## A3第六切片：实际ProcessFix的空ROI阻断条件（2026-10-19）
+
+本轮取到12d90及输入构造9000 C/asm，`module-base-entry-452fff234c4743128da7f62810fc43fc/output`，独立作业退出0，模块哈希沿用BD62EE94...105C1D。9000将新局部对象四个vector的begin/end/cap置0；并清三个输入状态、图像指针等字段，不能把SDK持有ROI与本轮输入容器混同。
+
+12d90实际日志确认ProcessFix。12ff3恢复this到R14，1300d比较this+28与ESI（前面已确认ESI=0）：相等走普通shape转换，否则跳15bf6另一模式。普通路径13017/1b将输出ROI vector.end设为begin；矩形/扇环等转换后，14527..14534再次比较output+20(begin)/+28(end)，不等才继续；相等经145db令EAX=e0000511并到15f1c返回。上游12b60在12c30..34保存该code，非0跳12cb1 OutputExtra，**不调用派生1ff90或ProcessAlg**。
+
+因此，先前“ProcessAlg未对空数组SetROI(null)”只描述局部函数：在当前已恢复的普通模式this+28==0调用链，空ROI会在上游报e0000511并阻断算法，而不是自然传空进入SetROI循环。此处由当前4.4原指令确认，不再仅依赖VM431模板。仍未证明this+28其他模式、输入错误到最终显示的全部发布/清理行为，不能将此推为任意模式均拒空；mode字段初始/所有写入与15bf6后续是下一断点。
+
+仅恢复该条件门，不修改产品“不选ROI”的语义，不新增原厂空ROI运行、清SDK历史矩阵或标记人工验收。实际ROI转换的边界、shape setter和位置修正仍需按后续分支展开；C/asm函数体已取不等于所有1700行均已追清。
+
+## A3第七切片：普通ROI模式的构造初值（2026-10-19）
+
+实际8e60调用的17320已取C/asm，目录`module-base-entry-1e069c197311421883d88022ecf78a4a/output`，自有会话94429退出0。17341先XOR EDI,EDI，17343把RCX从this加f8，1734a写[RCX-d0]=EDI，净地址为this+28=0；这是当前4.4二进制的模式初值，不只源模板的常量。故新建对象在该字段未被其他setter改写前走普通ROI模式的空vector拒绝门。没有证明后续默认配置/保存恢复永不修改它，所有写入仍须继续取证。
+
+17320还清矩形/扇环/其他shape指针数组等成员；此函数是构造/reset成员初始化，没有在该体free shape，不能因为把指针清0就称资源释放。SDK持有的ROI Clone与基类这些缓存shape数组的所有者仍需析构/DeInit实际调用链另查。另一模式15bf6会构造第二图像对象、将其作为mask写入输入，完整模式setter和mask消费者仍开放。此切片无新运行或产品改动，不抬高A3整阶段。
+
+## A3第八切片：模式setter及实际shape释放链（2026-10-19）
+
+新取17900/1efe0/1f560在`module-base-entry-3373b8d128654c51920933d4cbaf59db/output`；为复用后续缺体保留本线独占Ghidra数据库。新`RunModuleAddressAudit.ps1`只允许本工作树analysis/calibration-board下、无锁的项目，以readOnly/noanalysis打开，Java先验证数据库原模块SHA=BD62EE94...105C1D再导出现有函数，不保存数据库改动。已实际成功导出9320/8ef0及b3a0，分别在`module-reuse-4a26cc1e4b2542028987a26c77a064c0`、`module-reuse-b3a101b7242540e4a36c6f1c99d35dfc`，receipt保留project/目标/退出0，不再重复全量导入。这是私有Ghidra证据，不伪造REA ID。
+
+17900确为基类SetParam实际callee。17e69..17e90匹配ROIAreaType后，R8=&this+28、RDX="%d"、RCX=原value调用sscanf_s；随后直接跳公共正常返回，没有范围检查或检查解析返回值。因此可改模式字段；不能以构造0推断配置恢复后永远0。原厂AlgorithmTab只声明RoiType的Single/Box/FullScreenEnable，不据此否认隐藏ROIAreaType setter。
+
+派生DeInit1f560只在SDK指针+15d98非0时以RCX=该指针调用DestroyCalibBoardCalibToolInstance，随后清SDK指针、成功/刷新/路径；没有调用基类shape缓存释放。派生析构1efe0做同样步骤后，以this尾跳9320基类析构。9320先转基类vtable并调用b3a0，再释放+15d78容器中的元素/容器，析构+38的ROI数据，最终转CAbstractUserModule析构。单调用DeInit与销毁整个模块不是同一生命周期。
+
+b3a0按非null依次Destroy预处理mask对象+20、两个位置修正对象+10/+18、图像对象+11d8/+11e0；再遍历三组各64指针（+11e8/+13e8/+15e8），另64指针+17e8，以及1000指针+19e8，逐个DestroyShapeInstance后写0。原指令b493/b49b、b4c0/b4c8确认将指针值传RCX而非只清字段。最后operator_delete两块+11b8/+11c8并清对应size。由此基类缓存shape的实际销毁入口已定位；SDK内部Clone的销毁与MVDShape外部实现仍是另一层，不能将该循环代替其证明。
+
+8ef0构造基础ROI数据：先空vector，再压入中心0.5/0.5、宽高1/1、角0的初始矩形记录并令type=1；这是存储初值，归一化到图尺寸的实际转换仍需GetProcessInput/后续分支逐式追踪。此切片不修改产品、未运行原厂析构探针或真实宿主重验。下一断点：ROIAreaType非0的mask消费者与shape坐标缩放/位置修正表达式；模块析构调用何时由框架触发仍开放。
+
+## A3第九切片：规范化矩形与订阅ROI分支（2026-10-19）
+
+复用实际GetProcessInput@10db0，补取1dae0矩形订阅helper与1d2c0扇环helper，目录`module-reuse-8aa8ab2827e845cfb7a46633618fdc48/output`，身份严格匹配原模块，readOnly/noanalysis作业退出0。原厂AlgorithmTab实际RoiType为Single/Box/FullScreenEnable，不能据此把底层所有ROI类型都当成当前可配置项。
+
+普通模式GetProcessInput先尝试订阅ROI：1dae0按roicenterx/roicentery/roiwidth/roiheight/roiangle调用VM_M_GetFloat；全部未提供状态会与实际订阅值路径分开，调用者依据返回类型选择订阅矩形、扇环或本地存储。helper伪码含不可能的局部地址比较及unreachable警告，数组长度/缺角度分支不在本切片直接按伪码写规格，仍需专门核ABI/指令。
+
+本地矩形fallback的坐标式已由当前原指令确认：storedCx*W、storedCy*H、storedWidth*W、storedHeight*H，angle原float直接复制。1123f..1124c把输入整型W/H分别转float；11272/11285/11298/112a8四次MULSS，112b1/112b6搬角度，112c6将五float追加输出ROI数组。每条本地记录stride0x28，输出实际矩形是五float、stride0x14。该段不对cx/cy改成W−1/H−1，也没有在这四个乘法之间做整数舍入或裁边。SDK后续裁边/合法性仍在另一层，不能因此声称任意超界矩形均被接受。
+
+构造8ef0默认center=.5/.5、width/height=1、angle0经此fallback形成(W/2,H/2,W,H,0)，而非将规范化1映射到W−1/H−1。底层订阅ROI直接读取的空间与本地规范化存储分开，不能把同一缩放无条件再施加给订阅值。本切片未完整闭合订阅缺字段、位置修正和mask模式，未改产品或新增原厂运行。
+
+## A3第十切片：RoiType字节到本地记录的实际解析器（2026-10-19）
+
+实际SetParam17900的RoiType分支传bytes/length及&this+38进入0a0c0，当前已在保留私有工程定向取得完整C/asm，目录`module-reuse-0eb61977c2484b8eb792c7a003fb898f/output`，原模块身份沿BD62EE94...105C1D，作业退出0。C文件SHA93A7BE83DA6D56263DE96B42709E4C9B542AAAFCD83A3EF101EA2C7036BD0614。
+
+协议不是IMvdShape指针ABI：逐对象读首byte类型、次byte字段，然后按类型拷贝payload。case1消费2字节，构造center=.5/.5,width/height=1,angle0的本地扩展矩形；case2累计长度需至少0x16，从bytes+2复制0x14五float，次byte写扩展记录+0x14字段，随后以记录追加器入本地矩形列表。a25e..a283明确加20、长度比较、扩展字段写和memcpy。Win-x64本地字节拷贝没有大小端重排，不能将22字节线载荷当40字节扩展记录或SDK vtable对象。
+
+源模板VmAlgModuTypes.h命名扩展字段为nVersion，记录另有4个reserved uint；当前原指令确认其位置/赋值，模板仅辅助命名，不替代4.4构建身份。case3消费0x1a并拷贝24字节扇环数据，完整扇环/多类型语义仍分开推进。
+
+循环计数最多64对象；解析终止和最后提交分支允许保留已解析前缀的若干路径，不能推导“所有剩余字节必须精确消耗”或所有截断都清旧值。本片仅关闭全屏/矩形长度与原始写入，异常/全部类型/Fixture修正不扩大声明。畸变线已收到只读路径，必须在自身模块匹配parser，不跨DLL套用RVA。
+
+与第九切片共同连接：全屏记录→本地规范化矩形→GetProcessInput乘W/H→ProcessFix shape setter/clone，仍保留订阅ROI和非0 mask模式的不同路径。无产品修改、原厂运行或手验结论。

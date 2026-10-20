@@ -34,6 +34,7 @@ public partial class MainWindow {
    }
    var context=new ToolEditorContext(node,ownerDirectory,Apply,_=>throw new NotSupportedException("配置执行服务尚未连接。"),procedure.Nodes.ToList().FindIndex(n=>n.Id==id)){ConfigurationActive=()=>active};
    context=ConnectToolEditorServices(context,id);
+   context=ConnectConfigurationRoi(context,procedure.Id,id,solution);
    ResetEditingGesture();
    // Transitional adapter: window factories will be replaced by the source-derived
    // configuration-model provider. Central lifecycle already matches ordinary modules.

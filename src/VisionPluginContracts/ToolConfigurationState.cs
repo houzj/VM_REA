@@ -8,7 +8,7 @@ public enum ConfigurationChangeKind { Initialization, Programmatic, UserCommit, 
 public enum ConfigurationOperationKind {
  Unknown, ReadParameter, WriteParameter, PersistUserValue, ReadInputBinding, WriteInputBinding,
  EnumerateInputs, ReadParameterBinding, WriteParameterBinding, ClearParameterBinding,
- Run, SaveCalibration, Clear, Close, ResetParameters, OpenFile, SaveFile, Custom, RunContinuous, StopContinuous, ClearCalibrationPoints, ReadUserValue
+ Run, SaveCalibration, Clear, Close, ResetParameters, OpenFile, SaveFile, Custom, RunContinuous, StopContinuous, ClearCalibrationPoints, ReadUserValue, RefreshRoiVisibility
 }
 public sealed record ConfigurationOperationRequest(ConfigurationOperationKind Kind, string OriginalName,
  ConfigurationNodeState Source, ConfigurationNodeState? Target, IReadOnlyList<string> Parameters,
@@ -18,7 +18,10 @@ public sealed record ConfigurationOperationRequest(ConfigurationOperationKind Ki
 }
 public sealed record ConfigurationChoice(string CaptionKey,string Value);
 public sealed record ConfigurationOperationResult(bool Handled, string? Value = null, string? Error = null,
- IReadOnlyList<ConfigurationChoice>? Choices = null);
+ IReadOnlyList<ConfigurationChoice>? Choices = null) {
+ public bool KeepAttemptedValueOnError {get;init;}
+ public ConfigurationSubscriptionTreeResult? SubscriptionTree {get;init;}
+}
 public interface IToolConfigurationDispatcher {
  ConfigurationOperationResult Dispatch(ConfigurationOperationRequest request);
 }
@@ -57,6 +60,7 @@ public sealed class ConfigurationNodeState {
   IsInteger32&&property is "CurValue" or "DefaultValue" or "MinValue" or "MaxValue" or "IncValue" ||
   (Enum32Types.Contains(Element.Tag)||Radio32Types.Contains(Element.Tag))&&property is "CurValue" or "DefaultValue"?ParseInt32(value):value;
  public ConfigurationSubscriptionBinding? SubscriptionBinding {get;internal set;}
+ public ConfigurationSubscriptionTreeResult? SubscriptionTree {get;internal set;}
  public IReadOnlyList<ConfigurationChoice> Choices {get;internal set;}=Array.Empty<ConfigurationChoice>();
  public ConfigurationElement Element {get;}
  public string? Name=>Element.Name??Get("Name");
@@ -100,6 +104,7 @@ public sealed class ToolConfigurationState {
  readonly Dictionary<ConfigurationElement,bool> originalVisibility=[];
  readonly List<ConfigurationDiagnostic> diagnostics=[];
  readonly Dictionary<ConfigurationNodeState,string> committedValues=[];
+ readonly HashSet<ConfigurationNodeState> retainedFailedWrites=[];
  readonly IToolConfigurationDispatcher? dispatcher;
  int depth; int subscriptionWriteDepth; bool initializing; ConfigurationNodeState? pendingRun;
  public ToolConfigurationDefinition Definition {get;}
@@ -108,6 +113,9 @@ public sealed class ToolConfigurationState {
  public IReadOnlyList<string> UnsupportedOperations=>diagnostics.Where(x=>x.Code=="UnsupportedOperation").Select(x=>x.Operation).Distinct().ToArray();
  public bool ExecutionEnabled {get;set;}
  public bool IsBusy {get;set;}
+ public Func<ConfigurationOperationRequest,ConfigurationOperationResult?>? ParameterWriteValidator {get;set;}
+ public Action<ConfigurationOperationRequest,ConfigurationOperationResult>? ParameterWriteCompleted {get;set;}
+ public bool IsRejectedParameterWrite(ConfigurationNodeState node)=>retainedFailedWrites.Contains(node);
  public event Action? Changed;
  public ToolConfigurationState(ToolConfigurationDefinition definition, IToolConfigurationDispatcher? dispatcher=null) {
   Definition=definition??throw new ArgumentNullException(nameof(definition));this.dispatcher=dispatcher;
@@ -115,7 +123,7 @@ public sealed class ToolConfigurationState {
   foreach(var node in Nodes)committedValues[node]=node.Value;
  }
  void Walk(ConfigurationElement e) {
-  if(e.Tag is "Category" or "CategoryNoHead" or "Tab" || e.Parent?.Tag is "Items" or "BottomExcuteButtons" or "BottomExcuteButtonsLeft" or "ExternParamsList" || IsPointPairSelector(e))
+  if(e.Tag is "Category" or "CategoryNoHead" or "Tab" || e.Parent?.Tag is "Items" or "BottomExcuteButtons" or "BottomExcuteButtonsLeft" or "ExternParamsList" || IsPointPairSelector(e) || e.Tag=="Integer"&&e.Parent?.Tag=="Integers"&&e.Parent.Parent?.Tag=="IntegerBettween")
    byElement[e]=new(this,e);
   foreach(var c in e.Children)Walk(c);
  }
@@ -146,7 +154,7 @@ public sealed class ToolConfigurationState {
  static string? Field(ConfigurationElement e,string key)=>e.Children.FirstOrDefault(x=>x.Tag==key)?.Text??e.Attributes.GetValueOrDefault(key);
  static IEnumerable<ConfigurationElement> Section(ConfigurationElement e,string section)=>e.Children.FirstOrDefault(x=>x.Tag==section)?.Children??[];
  public void Initialize() {
-  initializing=true; depth++;
+  retainedFailedWrites.Clear();initializing=true; depth++;
   try {
    foreach(var n in Nodes) {
     if((n.Get("AccessMode")??"").Contains('R',StringComparison.OrdinalIgnoreCase)&&n.Element.Tag is not "Tab" and not "Category") {
@@ -175,14 +183,18 @@ public sealed class ToolConfigurationState {
  public bool RefreshParameter(ConfigurationNodeState node) {
   var result=Dispatch(new(ConfigurationOperationKind.ReadParameter,"ReadParameter",node,null,[],ConfigurationChangeKind.Programmatic));
   if(!result.Handled||result.Error is not null||result.Value is null)return false;
-  Change(node,"CurValue",result.Value,ConfigurationChangeKind.Programmatic);committedValues[node]=node.Value;return true;
+  Change(node,"CurValue",result.Value,ConfigurationChangeKind.Programmatic);committedValues[node]=node.Value;retainedFailedWrites.Remove(node);return true;
  }
  public void CommitUser(string name,string value,bool forceWrite=false)=>CommitUser(Find(name)??throw new KeyNotFoundException(name),value,forceWrite);
  public void CommitUser(ConfigurationNodeState node,string value,bool forceWrite=false) {
   if(!node.Enabled){Diagnose("DisabledCommit","CommitUser",node,"Parameter is disabled.");return;}
   if(node.Element.Tag=="Expand"){Change(node,"CurValue",value,ConfigurationChangeKind.UserCommit);committedValues[node]=node.Value;return;}
   var declaredAccess=node.Get("AccessMode")??"";
-  if(!declaredAccess.Contains('W',StringComparison.OrdinalIgnoreCase)&&!declaredAccess.Contains('O',StringComparison.OrdinalIgnoreCase)){Diagnose("ReadOnlyCommit","CommitUser",node,"Parameter is read-only.");return;}
+  // Source RadioSelecter nodes without a readable/writable AccessMode are saved
+  // in IUserStringData (AlgorithmTabRoot.Initialize reads Param.<name>).
+  // They remain user-editable even though they are not module parameters.
+  bool userDataRadio=node.Element.Tag=="RadioSelecter"&&!declaredAccess.Contains('R',StringComparison.OrdinalIgnoreCase)&&!declaredAccess.Contains('W',StringComparison.OrdinalIgnoreCase)&&!declaredAccess.Contains('O',StringComparison.OrdinalIgnoreCase);
+  if(!declaredAccess.Contains('W',StringComparison.OrdinalIgnoreCase)&&!declaredAccess.Contains('O',StringComparison.OrdinalIgnoreCase)&&!userDataRadio){Diagnose("ReadOnlyCommit","CommitUser",node,"Parameter is read-only.");return;}
   if(node.Element.Tag=="String"&&!node.Bool("IsSub",false)&&int.TryParse(node.Get("MaxLen"),out var maxBytes)&&maxBytes>0&&Encoding.UTF8.GetByteCount(value)>maxBytes){Diagnose("InvalidValue","String.CurValueA",node,"UTF-8 value exceeds MaxLen bytes.");return;}
   if(node.IsInteger32||node.Element.Tag=="Float") {
    if(!double.TryParse(value,NumberStyles.Float,CultureInfo.InvariantCulture,out var number)||!double.IsFinite(number)||node.IsInteger32&&!int.TryParse(value,NumberStyles.Integer,CultureInfo.InvariantCulture,out _)) {Diagnose("InvalidValue","CommitUser",node,"A finite numeric value is required.");return;}
@@ -190,16 +202,19 @@ public sealed class ToolConfigurationState {
   }
   depth++;
   try {
+   var priorDisplay=node.Value;
    Change(node,"CurValue",value,ConfigurationChangeKind.UserCommit);
-   if(!forceWrite&&committedValues.GetValueOrDefault(node)==node.Value)return;
+   if(!forceWrite&&(retainedFailedWrites.Contains(node)?priorDisplay==node.Value:committedValues.GetValueOrDefault(node)==node.Value))return;
    var access=node.Get("AccessMode")??"";
    bool writable=access.Contains('W',StringComparison.OrdinalIgnoreCase);
    var kind=writable?ConfigurationOperationKind.WriteParameter:ConfigurationOperationKind.PersistUserValue;
    var result=Dispatch(new(kind,kind.ToString(),node,null,kind==ConfigurationOperationKind.PersistUserValue?["Param."+(node.Name??"")+(node.Get("ComTailName")??"")]:[],ConfigurationChangeKind.UserCommit,node.Value));
    if(!result.Handled||result.Error!=null) {
-    if(writable)Change(node,"CurValue",committedValues[node],ConfigurationChangeKind.Programmatic);
+    if(writable&&result.Handled&&result.Error is not null&&result.KeepAttemptedValueOnError)retainedFailedWrites.Add(node);
+    else {retainedFailedWrites.Remove(node);if(writable)Change(node,"CurValue",committedValues[node],ConfigurationChangeKind.Programmatic);}
     return;
    }
+   retainedFailedWrites.Remove(node);
    // A typed adapter may return an accepted value. Keep the model and its
    // committed baseline consistent with that explicit host result.
    if(result.Value is not null&&result.Value!=node.Value)Change(node,"CurValue",result.Value,ConfigurationChangeKind.Programmatic);
@@ -254,7 +269,7 @@ public sealed class ToolConfigurationState {
     if(cleared.Handled&&cleared.Error==null) {
      n.Assign("Subscription","");n.SubscriptionBinding=null;
      var read=Dispatch(new(ConfigurationOperationKind.ReadParameter,"ReadParameter",n,null,[],kind));
-     if(read.Handled&&read.Error==null&&read.Value!=null){Change(n,"CurValue",read.Value,kind);committedValues[n]=n.Value;}
+     if(read.Handled&&read.Error==null&&read.Value!=null){Change(n,"CurValue",read.Value,kind);committedValues[n]=n.Value;retainedFailedWrites.Remove(n);}
     }else Diagnose("SubscriptionClearFailed","ClearParameterBinding",n,"Binding identity was retained because the host did not confirm removal.");
    }
    Trigger(n,property,kind);
@@ -333,12 +348,19 @@ public sealed class ToolConfigurationState {
     if(opKind==ConfigurationOperationKind.WriteInputBinding&&source.SubscriptionBinding==null&&!string.IsNullOrEmpty(source.Value)){Diagnose("MissingTypedReference",operation,source,"Display text cannot supply binding identity.");break;}
     var result=Dispatch(new(opKind,operation,source,target,Array.AsReadOnly(args),kind,source.Value){TargetName=Field(setter,"TargetName"),SubscriptionBinding=source.SubscriptionBinding});
     if(result.Handled&&result.Choices!=null)(target??source).Choices=Array.AsReadOnly(result.Choices.ToArray());
+    if(result.Handled&&result.Error is null&&result.SubscriptionTree is {} tree){
+     var treeError=ConfigurationSubscriptionValidation.CheckTree(tree);
+     if(tree.Status!=ConfigurationSubscriptionStatus.Available||treeError is not null)
+      Diagnose("InvalidSubscriptionTree",operation,source,tree.Diagnostic??treeError??tree.Status.ToString());
+     else (target??source).SubscriptionTree=tree with{Roots=Array.AsReadOnly(tree.Roots.ToArray())};
+    }
     if(result.Handled&&result.Value!=null)Change(target??source,"CurValue",result.Value,kind);
     break;
   }
   if(Field(setter,"PropertyName") is {} property&&target!=null)Change(target,property,Field(setter,"Value")??"",kind);
  }
  static ConfigurationOperationKind Kind(string name,string[] args)=>name switch {
+  "RoiDisplayOperation"=>ConfigurationOperationKind.RefreshRoiVisibility,
   "GetSelectedDisplayFilterOperation" or "GetSelectedCombinationOperation" or "GetSelectedFilterOperation"=>ConfigurationOperationKind.ReadInputBinding,
   "SetResultIOToModuleOperation" or "SetCombinationSourceOperation" or "SetFilterSourceOperation"=>ConfigurationOperationKind.WriteInputBinding,
   "GetFrontAndSelfFilterTreeOperation" or "GetFrontParamItemsOperation" or "GetFrontCombinationTreeOperation" or "GetFrontFilterTreeOperation"=>ConfigurationOperationKind.EnumerateInputs,
@@ -356,7 +378,7 @@ public sealed class ToolConfigurationState {
 
   if(r.Kind==ConfigurationOperationKind.Unknown){Diagnose("UnsupportedOperation",r.OriginalName,r.Source,"Unrecognized operation or method; no reflection performed.");return new(false);}
   ConfigurationOperationResult result;
-  try {result=dispatcher?.Dispatch(r)??new(false);}
+  try {result=(r.Kind==ConfigurationOperationKind.WriteParameter?ParameterWriteValidator?.Invoke(r):null)??dispatcher?.Dispatch(r)??new(false);if(r.Kind==ConfigurationOperationKind.WriteParameter)ParameterWriteCompleted?.Invoke(r,result);}
   catch(Exception error) {
    var message=error.GetType().Name+": "+error.Message;
    Diagnose("OperationError",r.OriginalName,r.Source,message);

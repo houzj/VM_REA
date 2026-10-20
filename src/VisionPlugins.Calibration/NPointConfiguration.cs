@@ -32,20 +32,22 @@ public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplay
   ConfigurationExecutionHostStatus Host()=>context.ConfigurationExecutionStatus?.Invoke()??new(false,false,false,false,false);
   var confirmations=context.ConfigurationConfirmations??new WpfConfigurationConfirmationService();
   var execution=new ToolConfigurationExecution(()=>context.Run(values.ToDictionary(p=>p.Key,p=>p.Value.Clone())),()=>Host().SolutionBusy,()=>Host().Ready&&Host().RunEnabled,()=>Host().Loading,()=>Host().ProcedureBusy);
-  Dictionary<string,string> User()=>JsonSerializer.Deserialize<Dictionary<string,string>>(values["ConfigurationUserData"].GetString()??"{}")??[];
-  var adapter=new ToolConfigurationParameterAdapter(Descriptor,()=>values,Apply,key=>User().GetValueOrDefault(key),(key,value)=>{var user=User();user[key]=value;var next=new Dictionary<string,JsonElement>(values){["ConfigurationUserData"]=JsonSerializer.SerializeToElement(JsonSerializer.Serialize(user))};Apply(next);});
+  void SyncValues(){if(context.ReadEffectiveParameters?.Invoke() is {} effective)foreach(var pair in effective)if(values.ContainsKey(pair.Key))values[pair.Key]=pair.Value.Clone();}
+  Dictionary<string,JsonElement> ReadValues(){SyncValues();return values;}
+  Dictionary<string,string> User()=>JsonSerializer.Deserialize<Dictionary<string,string>>(ReadValues()["ConfigurationUserData"].GetString()??"{}")??[];
+  var adapter=new ToolConfigurationParameterAdapter(Descriptor,ReadValues,Apply,key=>User().GetValueOrDefault(key),(key,value)=>{var user=User();user[key]=value;var next=new Dictionary<string,JsonElement>(values){["ConfigurationUserData"]=JsonSerializer.SerializeToElement(JsonSerializer.Serialize(user))};Apply(next);});
   void Refresh(){if(state?.Find("CalibPathName") is {} path)state.RefreshParameter(path);}
   void SaveCalibration(){
    var result=saveFiles.SelectSave(owner(),new(Id,values["CalibPathName"].GetString()??"",".xml|*.xml",text("Create Calibration File"),".xml"));
    if(result.Status==ConfigurationFileStatus.Cancelled)return;
    if(result.Status!=ConfigurationFileStatus.Selected){Notify(result.Diagnostic??result.Status.ToString(),true);return;}
    try{
-    string path=result.Paths.Single();if(path.Length>=260)throw new InvalidDataException(text("Lang_FilePathTooLong"));
+    string path=result.Paths.Single();if(ToolConfigurationCalibrationPathPolicy.ValidateSelectedSave(state!,path,text) is {} error){Notify(error,true);return;}
     // IUserStringData[SaveCalibPath] invokes module export; it is not a UI CurValue write.
     Export(Current(),path);var user=User();user["SaveCalibPath"]=path;
     var next=new Dictionary<string,JsonElement>(values){["CalibPathName"]=JsonSerializer.SerializeToElement(path),["ConfigurationUserData"]=JsonSerializer.SerializeToElement(JsonSerializer.Serialize(user))};Apply(next);Refresh();
     var remembered=saveFiles.Remember(Id,path);if(!remembered.Success)state?.ReportDiagnostic(new("FileHistory","Remember",null,remembered.Diagnostic??"History failed."));Notify(text("Lang_SaveSuccess"));
-   }catch(Exception error)when(error is IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException){Notify(error.Message,true);}
+   }catch(Exception error)when(error is InvalidDataException or IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException){Notify(error.Message,true);}
   }
   bool ClearPoints(){try{
    var next=new Dictionary<string,JsonElement>(values);for(int i=0;i<32;i++)foreach(var key in PointKeys)next[key+i]=JsonSerializer.SerializeToElement(0d);next["ClearRevision"]=JsonSerializer.SerializeToElement(checked(values["ClearRevision"].GetInt32()+1));Apply(next);Clear(Current());Notify(text("Lang_ClearCalibPointSuc"));return true;
@@ -64,10 +66,6 @@ public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplay
    if(request.Kind==ConfigurationOperationKind.ReadParameter){
     var name=(request.Source.Name??"")+(request.Source.Get("ComTailName")??"");if(!Descriptor.Parameters.Any(p=>p.Name==name))return new(true,request.Source.Value);
    }
-   if(request.Kind==ConfigurationOperationKind.WriteParameter&&request.Source.Name=="CalibPathName"){
-    var path=request.Value??"";if(path.Length>0&&(!Path.GetExtension(path).Equals(".xml",StringComparison.OrdinalIgnoreCase)||!Directory.Exists(Path.GetDirectoryName(Path.GetFullPath(path,context.BaseDirectory)))))return new(true,Error:"Calibration path must have .xml extension and an existing parent directory.");
-    var result=adapter.Dispatch(request);if(result.Error is null)Notify(text("Lang_SetSuc"));return result;
-   }
    if(request.Kind is ConfigurationOperationKind.SaveCalibration or ConfigurationOperationKind.SaveFile){SaveCalibration();return new(true);}
    if(request.Kind==ConfigurationOperationKind.ClearCalibrationPoints)return new(true,Error:ClearPoints()?null:"Clear points was not accepted.");
    if(request.Kind==ConfigurationOperationKind.Run){if(Host().Loading||Host().SolutionBusy||!Host().Ready||!Host().RunEnabled)return new(true,Error:"Configuration execution is not ready.");_=execution.RunOnceAsync();return new(true);}
@@ -76,12 +74,12 @@ public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplay
    if(request.Kind==ConfigurationOperationKind.Close){session?.RequestClose();return new(true);}
    if(request.Kind==ConfigurationOperationKind.ResetParameters){
     if(!confirmations.Confirm(owner(),new(text("Lang_Sure"),text("Lang_ResetAlgoParamTips")+"?")))return new(true);
-    if(context.ResetConfigurationParameters is null)return new(true,Error:"Atomic parameter reset service is unavailable.");
-    var next=new Dictionary<string,JsonElement>(values);foreach(var p in Descriptor.Parameters.Where(p=>p.Name!="ConfigurationUserData"&&p.Name!=ToolDisplayService.SettingsParameter&&p.Name!=ToolConfigurationDisplaySubscriptions.ParameterName&&p.Name!=ToolDisplayObjectStore.ParameterName&&p.Name!="ClearRevision"))next[p.Name]=p.DefaultValue!.Value.Clone();context.ResetConfigurationParameters(next.ToDictionary(p=>p.Key,p=>p.Value.Clone()));values=next;UpdateConfiguration(Current(),values);foreach(var node in state!.Nodes)if(node.Name is {} name&&next.TryGetValue(name,out var value))state.RefreshParameter(node);Notify(text("Lang_ResetAlgoParamSuccess"));return new(true);
+    var result=ToolConfigurationAlgorithmReset.Execute(Descriptor,state!,adapter,context.ConfigurationSubscriptions,Resource("NPointAlgorithm.xml"),SyncValues);
+    Notify(result.Error??text("Lang_ResetAlgoParamSuccess"),result.Error is not null);return result;
    }
    return adapter.Dispatch(request);
   });
-  state=new(definition,dispatch){ExecutionEnabled=Host().RunEnabled};state.RegisterRule("HidePhysicInfoOperation",new NPointPhysicalVisibilityRule());
+  state=new(definition,dispatch){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,"N点标定");state.RegisterRule("HidePhysicInfoOperation",new NPointPhysicalVisibilityRule());
   var controls=new ToolConfigurationControlRegistry();ToolConfigurationStandardControls.Register(controls,text,()=>new(execution.IsContinuous,Host().ProcedureBusy,Host().RunEnabled),language,context.ConfigurationSubscriptions);ToolConfigurationSubscriptionControls.Register(controls,context.ConfigurationSubscriptions,text,language);
   var objects=new ToolDisplayConfigurationObjectService(()=>ToolDisplayService.Read(values,DisplayDefinition),settings=>{var next=new Dictionary<string,JsonElement>(values){[ToolDisplayService.SettingsParameter]=ToolDisplayService.Serialize(settings)};Apply(next);return true;},Refresh);
   ToolConfigurationObjectControls.Register(controls,objects,text,colorPicker:(initial,selected)=>{
@@ -101,7 +99,7 @@ public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplay
    editor.CreateWindow(owner()).ShowDialog();
   },control=>{
    owner=control.Owner;var selected=files.Select(owner(),new(Id,control.Node.Value,".xml|*.xml",text("Set Calibration File Path"),CheckFileExists:false));
-   if(selected.Status==ConfigurationFileStatus.Selected){state.CommitUser(control.Node,selected.Paths.Single(),true);if(state.Find("CalibPathName")!.Value==selected.Paths.Single())files.Remember(Id,selected.Paths.Single());}
+   if(selected.Status==ConfigurationFileStatus.Selected){state.CommitUser(control.Node,selected.Paths.Single(),true);files.Remember(Id,selected.Paths.Single());}
    else if(selected.Status!=ConfigurationFileStatus.Cancelled)Notify(selected.Diagnostic??selected.Status.ToString(),true);
   },text,context.ConfigurationSubscriptions);
   long revision=0;void Changed(){state.IsBusy=execution.IsRunning;state.SetProgrammatic("CalibPathName","ExecutionRevision",(++revision).ToString(CultureInfo.InvariantCulture));}

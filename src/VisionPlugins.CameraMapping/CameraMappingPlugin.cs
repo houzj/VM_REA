@@ -14,7 +14,7 @@ public sealed partial class CameraMappingPlugin:IVisionToolPlugin,IToolConfigura
  static IReadOnlyList<ToolDisplayObjectDefinition> LoadDisplayObjects(){using var stream=typeof(CameraMappingPlugin).Assembly.GetManifestResourceStream("VisionPlugins.CameraMapping.Resources.CameraMappingDisplay.xml")??throw new InvalidDataException("Missing camera mapping display declaration.");using var reader=new StreamReader(stream);return ToolDisplayObjectDefinition.Parse(reader.ReadToEnd());}
  public ToolDisplayDefinition DisplayDefinition{get;}=new("CalibStatus:{0}, xOrientRate:{1}, yOrientRate:{2}",["CalibStatus","ScaleX","ScaleY"],["CalibStatus","ScaleX","ScaleY","TranslateX","TranslateY","Rotate","Scale","Skew","Aspect"]);
  public ModuleDescriptor Descriptor{get;}=new(Id,"1.0.0","相机映射",Inputs(),new[]{new PortDescriptor("CalibStatus",DataKind.Integer,false),new("ModuRunTime",DataKind.Number,false)}.Concat(new[]{"ScaleX","ScaleY","TranslateX","TranslateY","Rotate","Scale","Skew","Aspect"}.Select(x=>new PortDescriptor(x,DataKind.Number,false))).ToArray(),Parameters());
- static PortDescriptor[] Inputs()=>Enumerable.Range(1,8).SelectMany(i=>new[]{"Target","Object"}.SelectMany(s=>new[]{new PortDescriptor(PointInputName(s,i),DataKind.Point,false),new(s+"PointX"+i,DataKind.NumberArray,false,AcceptInteger:true),new(s+"PointY"+i,DataKind.NumberArray,false,AcceptInteger:true)})).ToArray();
+ static PortDescriptor[] Inputs()=>Enumerable.Range(1,8).SelectMany(i=>new[]{"Target","Object"}.SelectMany(s=>new[]{new PortDescriptor(PointInputName(s,i),DataKind.Point,false),new(s+"PointX"+i,DataKind.NumberArray,false,AcceptInteger:true){SupportsDeferredNumericRead=true},new(s+"PointY"+i,DataKind.NumberArray,false,AcceptInteger:true){SupportsDeferredNumericRead=true}})).ToArray();
  static ParameterDescriptor[] Parameters()=>new[]{new ParameterDescriptor("HomoFreedom",ParameterKind.Integer,true,J(1),1,3),new("WeightFun",ParameterKind.Integer,true,J(3),1,3),new("WeightFactor",ParameterKind.Integer,true,J(20),1,200),new("CalibPathName",ParameterKind.Text,true,J("")),new("RefreshFileEnable",ParameterKind.Boolean,true,J(false)),new("ConfigurationUserData",ParameterKind.Text,true,J("{}")),new(ToolDisplayService.SettingsParameter,ParameterKind.Text,true,J("")),new(ToolConfigurationDisplaySubscriptions.ParameterName,ParameterKind.Text,true,J("{}")),new(ToolDisplayObjectStore.ParameterName,ParameterKind.Text,true,J("{}"))}.Concat(Enumerable.Range(1,8).Select(i=>new ParameterDescriptor("Data"+i,ParameterKind.Text,true,J("Data"+i+(i<=2?"#1":"#0"))))).ToArray();
  static JsonElement J<T>(T value)=>JsonSerializer.SerializeToElement(value);
  sealed class State {public readonly object Gate=new();public bool CalibrationValid;public string File="";public double[]? Matrix;public CameraMappingPair[]? Points;public IReadOnlyDictionary<string,PortValue>? Inputs,Outputs;}
@@ -28,29 +28,12 @@ public sealed partial class CameraMappingPlugin:IVisionToolPlugin,IToolConfigura
  sealed class Runtime(CameraMappingPlugin owner):IModule {
   public ModuleDescriptor Descriptor=>owner.Descriptor;
   public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext c,CancellationToken cancellationToken){cancellationToken.ThrowIfCancellationRequested();var watch=Stopwatch.StartNew();var state=owner.Get(c.NodeId,c.BaseDirectory,c.Scope);lock(state.Gate){state.CalibrationValid=false;state.Inputs=null;state.Outputs=null;try{
-   var points=new List<CameraMappingPair>();bool anyActive=false;
-   for(int i=1;i<=8;i++){
-    if(!c.Parameters["Data"+i].GetString()!.EndsWith("#1",StringComparison.Ordinal))continue;anyActive=true;
-    var objects=Read("Object",i);var targets=Read("Target",i);
-    if(objects.Count!=targets.Count)return Fail(0xe0000001,"对象点与目标点数量不一致。");
-    for(int j=0;j<objects.Count;j++)points.Add(new(objects[j].X,objects[j].Y,targets[j].X,targets[j].Y));
-   }
-   if(!anyActive)return Fail(0xe00000ff,"没有活动图像点组。");
-   // Original GetProcessInput grows its point cache but does not shrink it.
-   // ProcessAlg uses the current count; explicit ProcessCalibMatrix uses cache capacity.
-   if(state.Points is null||state.Points.Length<points.Count)state.Points=points.ToArray();else points.CopyTo(state.Points);
-   if(points.Count==0)return Fail(0xe0000309,"没有可用标定输入。");
+   var inputError=CameraMappingInputReader.Read(c,ref state.Points,out var points);if(inputError!=0)return Fail(inputError,"相机映射输入读取失败。");
    var solved=CameraMappingSolver.Solve(points,c.Integer("HomoFreedom"),c.Integer("WeightFun"),c.Integer("WeightFactor"));if(!solved.Success)return Fail(solved.ErrorCode,"相机映射求解失败。");
-   string path=c.Text("CalibPathName");var h=solved.Matrix;var inv=CameraMappingLinearAlgebra.Inverse(h);if(inv is null||inv[8]==0)return Fail(0x1000010f,"映射矩阵不能转换为标定参数。");float normalization=(float)inv[8];inv=inv.Select(v=>(double)((float)v/normalization)).ToArray();state.Matrix=h;state.CalibrationValid=true;if(path.Length>0&&c.Boolean("RefreshFileEnable")){CameraMappingFile.Write(c.ResolvePath(path),h);state.File=c.ResolvePath(path);}
+   string path=c.Text("CalibPathName");var h=solved.Matrix;var inv=CameraMappingMatrixToParamInverse.Inverse(h);if(inv is null||inv[8]==0)return Fail(0x1000010f,"映射矩阵不能转换为标定参数。");float reciprocal=1f/(float)inv[8];inv=inv.Select(v=>(double)((float)v*reciprocal)).ToArray();state.Matrix=h;state.CalibrationValid=true;if(path.Length>0&&c.Boolean("RefreshFileEnable")){CameraMappingFile.Write(c.ResolvePath(path),h);state.File=c.ResolvePath(path);}
    const float epsilon=1.1920928955078125e-7f;float theta=MathF.Atan2((float)inv[3],(float)inv[0]);float scale=(float)inv[0]/(MathF.Cos(theta)+epsilon);float skew=MathF.Atan2(-(float)inv[1],(float)inv[4])-theta;if(skew< -MathF.PI)skew+=2*MathF.PI;if(skew>MathF.PI)skew-=2*MathF.PI;
    var output=new Dictionary<string,PortValue>{["CalibStatus"]=PortValue.Integer(1),["ScaleX"]=PortValue.Number(solved.RatioX),["ScaleY"]=PortValue.Number(solved.RatioY),["TranslateX"]=PortValue.Number(inv[2]),["TranslateY"]=PortValue.Number(inv[5]),["Rotate"]=PortValue.Number(theta),["Scale"]=PortValue.Number(scale),["Skew"]=PortValue.Number(skew),["Aspect"]=PortValue.Number(-(float)inv[1]/(MathF.Sin(theta+skew)*scale+epsilon)),["ModuRunTime"]=PortValue.Number(watch.Elapsed.TotalMilliseconds)};
    state.Inputs=c.Inputs;state.Outputs=output;return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,output){NativeErrorCode=0});
-   IReadOnlyList<Point2> Read(string side,int index){
-    var baseline=c.Inputs.TryGetValue(PointInputName(side,index),out var combined)?combined.Elements().Select(p=>p.As<Point2>()).ToArray():null;
-    // Independent compatibility boundary while shared native combination aliases are being reconstructed.
-    var x=c.Inputs.ContainsKey(side+"PointX"+index)||baseline is null?Numbers(side+"PointX"+index):baseline.Select(p=>p.X).ToArray();
-    var y=c.Inputs.ContainsKey(side+"PointY"+index)||baseline is null?Numbers(side+"PointY"+index):baseline.Select(p=>p.Y).ToArray();if(x.Count!=y.Count)throw new InvalidDataException("X/Y 点数量不一致。");return x.Zip(y,(a,b)=>new Point2((float)a,(float)b)).ToArray();}
-   IReadOnlyList<double> Numbers(string name)=>c.Inputs.TryGetValue(name,out var p)?p.Kind==DataKind.NumberArray?p.As<IReadOnlyList<double>>():p.Kind==DataKind.Number?[p.As<double>()]:throw new InvalidDataException("点坐标类型错误。"):Array.Empty<double>();
   }catch(Exception e)when(e is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException){return Fail(0xe0000001,e.Message);}}}
   static ValueTask<ModuleResult> Fail(uint code,string message)=>ValueTask.FromResult(new ModuleResult(ModuleStatus.Failed,new Dictionary<string,PortValue>(),"0x"+code.ToString("x8"),message){NativeErrorCode=code});
  }

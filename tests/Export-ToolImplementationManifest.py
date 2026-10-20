@@ -11,7 +11,7 @@ import subprocess
 root = Path(__file__).resolve().parents[1]
 host = root / 'src/VisionEditor/MainWindow.xaml.cs'
 host_text = host.read_text(encoding='utf-8-sig')
-classes = re.findall(r'plugins\.Register\(new (\w+)\(\),modules\)', host_text)
+classes = re.findall(r'plugins\.Register\(new ([\w.]+)\(\),modules\)', host_text)
 catalog_path = root / 'src/VisionEditor/tool-catalog.json'
 catalog = json.loads(catalog_path.read_text(encoding='utf-8-sig'))
 items = {i['ModuleId']: (g, i) for g in catalog['Groups'] for i in g['Items'] if i.get('ModuleId')}
@@ -20,7 +20,8 @@ def evidence(path):
     return {'path': path.relative_to(root).as_posix(), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
 
 records = []
-for name in classes:
+for qualified_name in classes:
+    name = qualified_name.rsplit('.', 1)[-1]
     files = [p for p in (root / 'src').glob('VisionPlugins.*/*.cs') if re.search(r'\bclass\s+' + name + r'\b', p.read_text(encoding='utf-8-sig'))]
     manifest_sources = [(p, re.search(r'ToolManifest\s+Manifest\s*\{\s*get;\s*\}\s*=\s*new\(\s*(Id|"[^"]+")\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"', p.read_text(encoding='utf-8-sig'))) for p in files]
     manifest_sources = [(p, m) for p, m in manifest_sources if m]
@@ -30,8 +31,21 @@ for name in classes:
     text = path.read_text(encoding='utf-8-sig')
     identity = manifest[1].strip('"')
     if identity == 'Id':
-        identity = re.search(r'const string Id\s*=\s*"([^"]+)"', text)[1]
-    group, item = items[identity]
+        declaration = re.search(r'const\s+string\s+Id\s*=\s*([^;]+);', text)[1].strip()
+        if declaration.startswith('"'):
+            identity = declaration.strip('"')
+        else:
+            owner, member = declaration.rsplit('.', 1)
+            owners = [p for p in path.parent.glob('*.cs') if re.search(r'\bclass\s+' + re.escape(owner) + r'\b', p.read_text(encoding='utf-8-sig'))]
+            constants = [m[1] for p in owners if (m := re.search(r'const\s+string\s+' + re.escape(member) + r'\s*=\s*"([^"]+)"', p.read_text(encoding='utf-8-sig')))]
+            if len(constants) != 1:
+                raise ValueError('Unresolved source constant: ' + declaration)
+            identity = constants[0]
+    matches = [(g, i) for g in catalog['Groups'] for i in g['Items']
+               if i.get('ModuleId') == identity or (i['Name'] == manifest[3] and i['Icon'] == manifest[5])]
+    if len(matches) != 1:
+        raise ValueError('Expected one catalog item for ' + identity)
+    group, item = matches[0]
     combined = '\n'.join(p.read_text(encoding='utf-8-sig') for p in files)
     namespace = re.search(r'namespace\s+([\w.]+);', text)[1]
     models = [p for p in files if 'IToolConfigurationProvider' in p.read_text(encoding='utf-8-sig')]
@@ -53,7 +67,7 @@ payload = {
     'workingTreeChangesIncluded': True, 'host': evidence(host), 'catalog': evidence(catalog_path),
     'plugins': records,
     'boundaries': ['main owns discovery and final integration; no second scanner is implemented here.',
-                   'N-image algorithm components are not a registered/closed plugin.',
+                   'Registration metadata does not establish complete algorithm, native desktop or manual-acceptance coverage.',
                    'Source hashes identify in-progress files; no delivery commit exists until manual acceptance.'],
 }
 target = root / 'docs/plugins/tool-implementation-manifest.json'

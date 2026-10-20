@@ -1,0 +1,14 @@
+namespace VisionPlugins.BranchString;
+public static class BranchStringTable {
+ // GetParam/host canonical storage. Empty text is meaningful here: topology
+ // creates an in-memory empty string without passing through the native setter.
+ public static IReadOnlyList<BranchStringRow> ReadCanonical(string? text){var rows=new List<BranchStringRow>();if(string.IsNullOrEmpty(text))return rows.AsReadOnly();foreach(var part in text.Split('$',StringSplitOptions.RemoveEmptyEntries)){var fields=part.Split('#');if(fields.Length<3)throw new FormatException("Invalid canonical BranchString row.");rows.Add(new(fields[0],fields[1],Integer(fields[2])));}return rows.AsReadOnly();}
+ // Native 18970 uses strtok for BOTH levels, so an empty middle field shifts
+ // its flag into text. Do not replace this with the UI parser above.
+ public static IReadOnlyList<BranchStringRow> ApplySetter(string? text){var rows=new List<BranchStringRow>();if(string.IsNullOrEmpty(text))return rows.AsReadOnly();text=text.Split('\0')[0];foreach(var part in text.Split('$',StringSplitOptions.RemoveEmptyEntries)){var fields=part.Split('#',StringSplitOptions.RemoveEmptyEntries);if(fields.Length==0)continue;rows.Add(new(fields[0],fields.Length>1?fields[1]:"",fields.Length>2?Integer(fields[2]):0));}return rows.AsReadOnly();}
+ public static string Serialize(IEnumerable<BranchStringRow> rows)=>string.Concat(rows.Select(r=>r.NodeId+"#"+r.Text+"#"+r.DebugFlag.ToString(System.Globalization.CultureInfo.InvariantCulture)+"$"));
+ static int Integer(string text)=>int.TryParse(text,System.Globalization.NumberStyles.Integer,System.Globalization.CultureInfo.InvariantCulture,out int value)?value:0;
+ public static IReadOnlyList<BranchStringRow> Topology(IReadOnlyList<BranchStringRow> rows,IReadOnlyList<BranchStringSuccessor> previous,IReadOnlyList<BranchStringSuccessor> current){if(previous.Select(n=>n.NodeId).SequenceEqual(current.Select(n=>n.NodeId)))return rows;if(current.Count>32&&current.Count>previous.Count)throw new InvalidOperationException("Branch String supports at most 32 outgoing connections.");var eligible=current.Where(n=>n.NumericId is not int id||id<10000||unchecked((uint)(id-21000))<1000).ToArray();var result=rows.Where(r=>eligible.Any(n=>n.NodeId==r.NodeId)).ToList();foreach(var next in eligible)if(!result.Any(r=>r.NodeId==next.NodeId))result.Add(new(next.NodeId,"",0));return result.AsReadOnly();}
+ public static string? CopyRows(string? text,IReadOnlyDictionary<string,string> map){if(string.IsNullOrEmpty(text))return null;var parts=text.Split('$');var result=new System.Text.StringBuilder();for(int i=0;i<parts.Length-1;i++){var fields=parts[i].Split('#');if(fields.Length<3)throw new FormatException("Invalid source BranchString copy row.");if(map.TryGetValue(fields[0],out string? id))result.Append(id).Append('#').Append(fields[1]).Append('#').Append(fields[2]).Append('$');}return result.Length==0?null:result.ToString();}
+}
+

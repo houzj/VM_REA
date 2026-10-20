@@ -4,7 +4,7 @@
 
 > 最新双项目边界见 [职责与任务配套表](../PLUGIN-DEVELOPMENT-BOUNDARY.md)：本线独占工具及其必需节点框架；主项目负责工具无关的主界面/流程/画布/Group/生命周期与最终集成，由用户自行管控。每个启用的插件任务必须补“原厂证据 + 公共框架 PF 能力 + 主框架接口/单一交叉文件提交所有者 + 实际产品验收”四栏；当前在制工具对应关系已在配套表登记。下方162项是声明清单，未启动项不因表格存在而算任务已配齐或已实现。
 
-当前四条独立工具开发线：N点标定（主控）、N图像标定、标定板标定、相机映射。不是单个工具的四个子任务；各线工具专属文件独立，公共框架变动统一协调。
+当前四条独立工具开发线（2026-10-18）：标定板标定、相机映射、畸变标定、映射标定（主控同时统一公共框架）。标定板和相机映射优先闭合，坐标系最后；不是单个工具的四个子任务。N点/N图像的本轮公共显示、点绑定与生产接线已获用户手动验收并提交推送 5128b37fb5fe576a49acabd8fe4259219750533c；已有数值及原生边界继续保留，不因阶段验收宣称完整等价。
 
 机器可读完整声明、二进制身份、依赖声明和证据索引见 [inventory.json](inventory.json)。P0 图像源先完成；2026-10-17按用户要求将标定类10个工具提升至P1，优先于尚未开始的输出图像；P2 暂未开始，不表示已确定最终实施顺序。涉及流程和全局资源的插件先与框架线明确归属。
 
@@ -29,13 +29,13 @@
 |P2|Calculation|SinglePointMapAlignModu|单点映射对位|2/10/8|ButtonSelecter, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
 |P2|Calculation|SinglePointRectifyModu|单点纠偏|4/9/10|Boolean, ButtonSelecter, Command, Enumeration, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
 |P1|Calibration|IMVSNPointCalibModu|N点标定|6/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Expand, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog, String|代码范围已实现：原厂源码/资源、103条导出方法/23状态场景/33次文件调用与27XML、10组UI规则和点表取证；独立求解/状态/UI/共享接口，22程序32088检查；数值等优/病态与单组Huber差异、桌面/WinForms截图边界见N-POINT-CALIBRATION.md，不宣称全部原生等价|
-|P1|Calibration|IMVSNImageCalibModu|N图像标定|3/5/33|Boolean, ButtonSelecter, Command, Enumeration, EnumerationG, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|生产接线与验收准备：原厂三页XML、HIK编码板真实像素识别、9图168公共角点、RGB/Mono及17帧生产63项、文件/标量229项；共用配置/点别名/显示已接入实际宿主；完整float逆已消除三旋转文件微差（9/9文件、81/81板矩阵float位一致，229项原厂输出/文件行为），待手动验收|
+|P1|Calibration|IMVSNImageCalibModu|N图像标定|3/5/33|Boolean, ButtonSelecter, Command, Enumeration, EnumerationG, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|生产接线与验收准备：原厂三页XML、HIK编码板真实像素识别、9图168公共角点、RGB/Mono及17帧生产63项、文件/标量229项；共用配置/点别名/显示已接入实际宿主；完整float逆已消除三旋转文件微差（9/9文件、81/81板矩阵float位一致，229项原厂输出/文件行为），本轮人工验收通过并提交5128b37，数值/原生边界仍保留|
 |P1|Calibration|IMVSCalibBoardCalibModu|标定板标定|16/1/16|Boolean, Enumeration, EnumerationG, Expand, Float, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, ROISelecter, SaveFileDialog|并行实现与取证：原厂SDK/模块状态、文件、公共对象显示2162检查；原厂80点共享求解失败已修复；外置ROI会话、圆点低对比及亚像素差异仍开放|
-|P1|Calibration|IMVSCameraMapModu|相机映射|7/16/10|AddButton_PointPair, Boolean, Enumeration, Integer, OpenFileForCalibDialog, PointPair, RadioSelecter, SaveFileDialog|并行实现与取证：原厂数值118案例、公共PointPair/组合叶绑定/文件与模式63检查，官方parser已证缺失force操作被忽略；native索引边界与实际宿主验收仍开放|
-|P1|Calibration|IMVSImageCalibModu|畸变标定|15/2/10|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, Float, FloatConfig, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, RadioSelecter, ROISelecter, SaveFileDialog|声明已清点；语义与运行待逆向|
-|P1|Calibration|IMVSMapCalibModu|映射标定|6/9/17|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, ImageViewConfig, Integer, OpenFileDialog, OpenFileForCalibDialog, RadioSelecter, RadioSelecterEx2, ROISelecter, SaveFileDialog, String|声明已清点；语义与运行待逆向|
-|P1|Calibration|ReadCalibFileModu|标定加载|2/10/12|Boolean, ButtonSelecter, OpenFileDialog4ReadFile, ReadFileConfigData|声明已清点；语义与运行待逆向|
-|P1|Calibration|RotateCalibModu|旋转标定|1/5/7|Boolean, ButtonSelecter, OpenFileForCalibDialog, RadioSelecter|声明已清点；语义与运行待逆向|
+|P1|Calibration|IMVSCameraMapModu|相机映射|7/16/10|AddButton_PointPair, Boolean, Enumeration, Integer, OpenFileForCalibDialog, PointPair, RadioSelecter, SaveFileDialog|本轮闭合：109项专属检查、118组SDK差分、23项真实宿主检查及CMD桌面人工验收通过；提交8284284已推送origin/tool-plugins并通知主框架。原生索引/完整原厂桌面逐像素边界见CAMERA-MAPPING.md|
+|P1|Calibration|IMVSImageCalibModu|畸变标定|15/2/10|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, Float, FloatConfig, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, RadioSelecter, ROISelecter, SaveFileDialog|独立专线在制：原厂默认初始化链、19float文件及24 SDK场景；给定原矩阵的12组约230万像素逐位一致；真实拟合/误差/多对象显示仍开放，见DISTORTION-CALIBRATION.md|
+|P1|Calibration|IMVSMapCalibModu|映射标定|6/9/17|Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, ImageViewConfig, Integer, OpenFileDialog, OpenFileForCalibDialog, RadioSelecter, RadioSelecterEx2, ROISelecter, SaveFileDialog, String|独立专线在制：双图/双ROI原厂声明、模块缓存/状态与8例SDK文件矩阵方向已取证；独立实现和公共双ROI分组待完成，见MAP-CALIBRATION.md|
+|P1|Calibration|ReadCalibFileModu|标定加载|2/10/12|Boolean, ButtonSelecter, OpenFileDialog4ReadFile, ReadFileConfigData|源码/资源、原厂受控运行、文件与缓存生命周期、动态结果端口、额外IO、配置窗口及独立运行实现已完成；复核回归825插件检查、48配置检查通过。真实原厂桌面验收/主框架集成待安排；真实远程FTP后端未验证。详见 READ-CALIB-FILE.md|
+|P1|Calibration|RotateCalibModu|旋转标定|1/5/7|Boolean, ButtonSelecter, OpenFileForCalibDialog, RadioSelecter|源码/资源及算法、状态、文件生命周期审计已完成；独立实现复核 1,250 项通过，用户曾验收模板化UI。本轮补充证据见 ROTATE-CALIBRATION-SOURCE-AUDIT.md；真实SDK Init、原厂桌面对照、主流程/Group验收及原生持久化ABI仍未验证|
 |P1|Calibration|TranslationCalibModu|平移旋转标定|8/6/28|Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog|代码范围已实现：48原厂场景/26文件尝试24XML/12原厂UI规则和点表，专属7447检查、实际WPF267检查；独立组合补偿/示教/文件副作用，数值/桌面边界见TRANSLATION-CALIBRATION.md|
 |P1|Calibration|CoordinateModule|坐标系|2/4/6|ButtonSelecter, RadioSelecterEx2, RadioSelecterEx3, ROISelecter|声明已清点；语义与运行待逆向|
 |P2|ColorProcessing|IMVSColorExtractModu|颜色抽取|4/4/7|Boolean, ColorExtractList, FloatBettween, GroupLinkItem, ImageViewConfig, ROISelecter|声明已清点；语义与运行待逆向|

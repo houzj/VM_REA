@@ -1,5 +1,6 @@
-﻿using VisionCore;
+using VisionCore;
 using VisionPlugins.Calibration;
+try{
 if(args.Contains("--configuration-only")){try{Console.WriteLine($"NImage production model checks passed: {NImageConfigurationChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
 if(args.Contains("--matrix-fix-only")){Console.WriteLine($"NImage MatrixFix original SDK checks passed: {NImageMatrixFixChecks.Run()}");return;}
 if(args.Contains("--batch-solve-only")){try{Console.WriteLine($"NImage batch numerical checks passed: {NImageBatchSolveChecks.Run()}");}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}return;}
@@ -36,3 +37,5 @@ Console.WriteLine($"NImageCalibration checks passed: {checks}. Original subset e
 
 
 
+
+}catch(Exception error){Console.Error.WriteLine(error);Environment.ExitCode=1;}

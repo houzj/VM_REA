@@ -10,6 +10,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using VisionEditor;
 using VisionEditor.Core;
+using VisionCore;
+using VisionPluginContracts;
 
 static class Program
 {
@@ -45,6 +47,35 @@ static class Program
         {
             window.Show(); Pump();
             Check(window.IsLoaded,"Actual WPF window loads");
+            var layerImage=new GrayImage(2,2,[0,64,128,255]);
+            var layeredPresenter=new ToolDisplayImagePresenter();
+            var layeredFrame=new ToolDisplayFrame(layerImage,"","#ffffff",10,1,0,0,"",[])
+            {
+                ImageVisible=false,
+                ImageLayers=[new("InImage",layerImage,true,1),new("Corrected",layerImage,false,.5)]
+            };
+            layeredPresenter.Show(layeredFrame);
+            var layeredScene=(Grid)((Viewbox)layeredPresenter.Content).Child;
+            var projectedImages=layeredScene.Children.OfType<Image>().Where(item=>item.Tag is string tag&&tag.StartsWith("DisplayImage:",StringComparison.Ordinal)).ToArray();
+            Check(projectedImages.Length==1&&Equals(projectedImages[0].Tag,"DisplayImage:InImage")&&projectedImages[0].Visibility==Visibility.Visible&&projectedImages[0].Source is BitmapSource,"Actual WPF presenter displays one selected source image object and respects default visibility");
+            layeredPresenter.Show(layeredFrame with{ImageLayers=[new("InImage",layerImage,true,1),new("Corrected",layerImage,true,.5)],SelectedImageName="Corrected"});
+            projectedImages=layeredScene.Children.OfType<Image>().Where(item=>item.Tag is string tag&&tag.StartsWith("DisplayImage:",StringComparison.Ordinal)).ToArray();
+            Check(projectedImages.Length==1&&Equals(projectedImages[0].Tag,"DisplayImage:Corrected")&&projectedImages[0].Visibility==Visibility.Visible&&Math.Abs(projectedImages[0].Opacity-.5)<.001,"Actual WPF presenter switches the single image object and refreshes opacity without retaining stale content");
+            var composition=layeredFrame with
+            {
+                SelectedImageName="Base",BackgroundImageName="Base",
+                CheckedImageNames=["OverlayA","OverlayB","OverlayC","Ignored"],
+                ImageLayers=[new("Base",layerImage,true,1),new("OverlayA",layerImage,false,1),new("OverlayB",layerImage,false,1),new("OverlayC",layerImage,false,1),new("Ignored",layerImage,false,1)]
+            };
+            layeredPresenter.Show(composition);
+            var overlays=layeredScene.Children.OfType<Image>().Where(item=>item.Tag is string tag&&tag.StartsWith("DisplayOverlay:",StringComparison.Ordinal)).ToArray();
+            Check(overlays.Length==3&&overlays.All(item=>item.Visibility==Visibility.Visible)&&
+                Math.Abs(overlays[0].Opacity-191d/255)<.001&&Math.Abs(overlays[1].Opacity-127d/255)<.001&&Math.Abs(overlays[2].Opacity-63d/255)<.001&&
+                System.Windows.Controls.Panel.GetZIndex(overlays[0])==100&&System.Windows.Controls.Panel.GetZIndex(overlays[2])==102,
+                "Actual WPF image composition uses the source three-overlay alpha and Z-index slots over a selected background image");
+            layeredPresenter.Show(composition with{BackgroundImageName=null});
+            overlays=layeredScene.Children.OfType<Image>().Where(item=>item.Tag is string tag&&tag.StartsWith("DisplayOverlay:",StringComparison.Ordinal)).ToArray();
+            Check(overlays.Length==3&&overlays.All(item=>item.Visibility==Visibility.Collapsed),"Checked image layers stay hidden unless their selected base is marked as background");
             var chrome=System.Windows.Shell.WindowChrome.GetWindowChrome(window);
             Check(chrome is not null&&chrome.GlassFrameThickness==new Thickness(0)&&chrome.NonClientFrameEdges==System.Windows.Shell.NonClientFrameEdges.None&&chrome.CaptionHeight==0,"Recovered window chrome removes native caption while retaining custom title controls");
             int nativeTopInset=NativeWindowFrame.MeasureTopInset(window,Path.GetFullPath("analysis/full-audit/wpf-native-window-frame.json"));Check(nativeTopInset==0,"Native window top has no retained non-client band; inset="+nativeTopInset);
@@ -623,6 +654,7 @@ static class Program
             MiniMapWheelParityChecks.Run(window,Check);
             NativeCompoundSelectorChecks.Run(window,Check);
             GroupMappedOutputUiChecks.Run(window,Check);
+            DynamicOutputPresentationChecks.Run(window,Check,Pump,WaitDebugTask);
             var leafPicker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption("blob","Components.CentroidPoint.CentroidX",VisionFramework.DataKind.Number,"blob.Components.CentroidPoint.CentroidX"){Cardinality=VisionFramework.ValueCardinality.Array},new WorkflowSourceOption("blob","Components.Area",VisionFramework.DataKind.Number,"blob.Components.Area"){Cardinality=VisionFramework.ValueCardinality.Array}}){Owner=window,WindowStartupLocation=WindowStartupLocation.Manual,Left=-20000,Top=-20000};
             Exception? leafPickerError=null;window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>{try{leafPicker.UpdateLayout();var items=Children(leafPicker).OfType<TreeViewItem>().ToArray();Check(items.Any(i=>Equals(i.Header,"Components"))&&items.Any(i=>Equals(i.Header,"CentroidPoint")),"Actual compound source picker expands nested component and centroid branches");leafPicker.SetInitialSelection(o=>o.Port=="Components.CentroidPoint.CentroidX");Capture(leafPicker,"wpf-compound-leaf-tree.png");Children(leafPicker).OfType<Button>().Single(b=>Equals(b.Content,"确定")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));}catch(Exception ex){leafPickerError=ex;leafPicker.Close();}}));leafPicker.ShowDialog();if(leafPickerError is not null)throw leafPickerError;
             Check(leafPicker.Selection?.Port=="Components.CentroidPoint.CentroidX"&&leafPicker.Selection.Cardinality==VisionFramework.ValueCardinality.Array,"Actual compound picker confirms full leaf path and array shape without selecting sibling");

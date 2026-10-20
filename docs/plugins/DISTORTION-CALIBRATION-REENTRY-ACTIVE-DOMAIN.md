@@ -1,0 +1,13 @@
+# 畸变自动重入活动域最终核认
+
+2026-10-19。此结论取代上一共享映射中把mode1重入预列整工具必需阻塞的过强结论；candidate保留为额外SDK模式实现研究，不删除、不构建。
+
+严格匹配core SHA85D17ECC87D52E9A62D8BB86C8D5208AC999BCD31EC6D0806453F8165733F549，已有私有Ghidra工程只读补7c9320/asm与1627a50前80bytes，session43289退出0，无新导入/REA target切换/原厂执行。新C SHA42DFF814F04855E0D02BA339D8534D12591409C79D8845655A82C0E58F5EC998与已有analysis/full-audit/n-point-solver/core-native/1807c9320.c逐字节hash相同。
+
+原指令7c9351目的engine+170；7c938e/9397和7c93ae/93b7两对齐分支均按16bytes块从1627a50复制到engine+170，RAX按4增直到18hex，覆盖96bytes。被动导出前80bytes足以含本问题字段。table[6]=2，落engine+188；table[9]=5落engine+194。不是控件默认/注释推断。首次7c5340:654调用7c9320默认构造；既有对象分支:620复制旧engine188，非另设成1。
+
+原畸变模块21560:277-280（模块SHA0A6BAC886F1AA1CCC41433EF9D35FC1091B3D43354DE5794563454D8BBA03BCB）对SubPixelWindowSize、GrayContrast、SubpixelWinAuto直接return0，不调用SDK/不写参数。资源IsAbandon/注释只作旁证，不作初值证据。7f69e0:138将engine188放入options+44；7e4ff0:104只有==1才进入80b720相关自动选择与末尾7e33c0；模式2初始873de0不走这个outer gate。当前产品Pyramid对应该正常模式2。
+
+通用core7c6830的0x40208确实能写engine188=1，属于额外低层API可达模式；其存在不证明本模块活动UI能调用。正常新建/普通配置设置链没有从2改成1的已确认路径。本模块19float文件不携此模式；不能从extraSDK setter推导必需UI成员遗漏。故7e33c0→7dce20/7dda50/818c1a→8609a0的外层重入不再作为当前畸变正常活动域实施阻塞。
+
+当前C共享必需缺口仍是活动编码板R04尚待根线/D实际整合。棋盘圆点内层当前实现与原有具体成员继续按其source映射审查，不能因不同RVA推导缺算法。新NMS比较显示85fcd0与8b30c0仅输出指针赋值位置变化，其余规范化原体/常量一致；更不能把mode1专用精修当正常mode2缺失。此核认不自动声称任意图像bit parity。

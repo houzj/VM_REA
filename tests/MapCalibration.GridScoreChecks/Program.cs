@@ -1,0 +1,18 @@
+using System.IO;
+using System.Text.Json;
+using VisionPlugins.Calibration;
+try {
+var bytes=File.ReadAllBytes("analysis/map-calibration/image-grid-trace/candidates-002.bin");var candidates=new List<NImageSourceCandidate>();for(int i=0;i<bytes.Length;i+=28)candidates.Add(new(BitConverter.ToSingle(bytes,i),BitConverter.ToSingle(bytes,i+4),BitConverter.ToInt32(bytes,i+8),BitConverter.ToSingle(bytes,i+12),BitConverter.ToSingle(bytes,i+16),BitConverter.ToSingle(bytes,i+20),BitConverter.ToSingle(bytes,i+24)));
+const string directory="analysis/map-calibration/grid-score";var report=new List<object>();long fields=0;
+foreach(string line in File.ReadLines(directory+"/image-results.jsonl")){
+ using var document=JsonDocument.Parse(line);var row=document.RootElement;int kind=row.GetProperty("kind").GetInt32();int sequence=row.GetProperty("sequence").GetInt32(),reference=row.GetProperty("reference").GetInt32(),mode=row.GetProperty("mode").GetInt32();var used=new int[90000];if(mode!=0)Array.Fill(used,1);
+ var state=new NImageSourceGridState{Count=mode==2?17:0,Width=mode==2?19:0,Height=mode==2?23:0};bool result=kind==0?NImageSourceGridSeeds.Create2x2(candidates,reference,used,state):NImageSourceGridSeeds.Create3x3(candidates,reference,used,state);
+ if((result?1:0)!=row.GetProperty("status").GetInt32()||state.Count!=row.GetProperty("count").GetInt32()||state.Width!=row.GetProperty("dimensions")[0].GetInt32()||state.Height!=row.GetProperty("dimensions")[1].GetInt32())throw new Exception($"Native seed status mismatch {sequence}");
+ var expectedIndices=File.ReadAllBytes($"{directory}/seed-{sequence:D3}-indices.bin");var expectedUsed=File.ReadAllBytes($"{directory}/seed-{sequence:D3}-used.bin");var expectedScores=File.ReadAllBytes($"{directory}/seed-{sequence:D3}-scores.float");
+ int exact=0;for(int i=0;i<90000;i++){if(state.Indices[i]==BitConverter.ToInt32(expectedIndices,i*4))exact++;if(used[i]==BitConverter.ToInt32(expectedUsed,i*4))exact++;}for(int y=0;y<3;y++)for(int x=0;x<9;x++)if(BitConverter.SingleToInt32Bits(state.Scores[y*900+x])==BitConverter.ToInt32(expectedScores,(y*9+x)*4))exact++;
+ if(exact!=180027)throw new Exception($"Native seed workspace mismatch {sequence}: {exact}/180027");var worst=NImageSourceGridScoring.FindWorst(candidates,state);var expectedWorst=row.GetProperty("worst");if(worst.Column!=expectedWorst[0].GetInt32()||worst.Row!=expectedWorst[1].GetInt32()||worst.Axis!=expectedWorst[2].GetInt32()||(uint)BitConverter.SingleToInt32Bits(worst.Value)!=row.GetProperty("scoreBits").GetUInt32())throw new Exception($"Native worst triple mismatch {sequence}");var scored=File.ReadAllBytes($"{directory}/seed-{sequence:D3}-scored.float");int scoreExact=0;for(int i=0;i<state.Scores.Length;i++)if(BitConverter.SingleToInt32Bits(state.Scores[i])==BitConverter.ToInt32(scored,i*4))scoreExact++;if(scoreExact!=state.Scores.Length)throw new Exception($"Native triple score array mismatch {sequence}: {scoreExact}/{state.Scores.Length}");fields+=scoreExact+4;fields+=exact+4;report.Add(new{sequence,result,state.Count,state.Width,state.Height,exact});
+}
+if(report.Count!=24)throw new Exception("Expected24 original 2x2/3x3 seed cases");File.WriteAllText(directory+"/comparison.json",JsonSerializer.Serialize(new{cases=report.Count,fields,exact=fields,report},new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine($"Native grid scoring: {report.Count} cases/{fields} fields exact");return 0;
+}catch(Exception error){Console.Error.WriteLine(error);return 1;}
+
+

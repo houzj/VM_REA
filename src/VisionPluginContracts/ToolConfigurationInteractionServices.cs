@@ -47,7 +47,7 @@ public sealed class WpfConfigurationFileService:IToolConfigurationFileService {
  public ConfigurationFileHistoryResult Remember(string moduleKey,string selectedFile)=>history.Remember(moduleKey,selectedFile);
  static ConfigurationFileSelection Pick(Window? owner,ConfigurationFilePickerOptions options){var picker=new Microsoft.Win32.OpenFileDialog{InitialDirectory=options.InitialDirectory,Filter=options.Filter,Title=options.Title,Multiselect=options.Multiselect,CheckFileExists=options.CheckFileExists,CheckPathExists=options.CheckPathExists};bool selected=owner is null?picker.ShowDialog()==true:picker.ShowDialog(owner)==true;return selected?new(ConfigurationFileStatus.Selected,picker.FileNames):new(ConfigurationFileStatus.Cancelled,[]);}
 }
-public enum ConfigurationNotificationKind { Information, Success, Error }
+public enum ConfigurationNotificationKind { Information, Success, Error, Warning }
 public enum ConfigurationNotificationStatus { Displayed, Suppressed, Failed }
 public sealed record ConfigurationNotification(ConfigurationNotificationKind Kind,string Message,string Caption="",ToolEditorMode Mode=ToolEditorMode.Desktop);
 public sealed record ConfigurationNotificationResult(ConfigurationNotificationStatus Status,string? Diagnostic=null);
@@ -57,5 +57,5 @@ public sealed class WpfConfigurationNotificationService:IToolConfigurationNotifi
  readonly Action<Window?,ConfigurationNotification> show;
  public WpfConfigurationNotificationService(Action<Window?,ConfigurationNotification>? presenter=null){show=presenter??Show;}
  public ConfigurationNotificationResult Notify(Window? owner,ConfigurationNotification notification){if(notification.Mode==ToolEditorMode.SdkEmbedded)return new(ConfigurationNotificationStatus.Suppressed);try{var dispatcher=owner?.Dispatcher??System.Windows.Application.Current?.Dispatcher;if(dispatcher is not null&&!dispatcher.CheckAccess())dispatcher.Invoke(()=>show(owner,notification));else show(owner,notification);return new(ConfigurationNotificationStatus.Displayed);}catch(Exception error)when(error is InvalidOperationException or ArgumentException){return new(ConfigurationNotificationStatus.Failed,error.Message);}}
- static void Show(Window? owner,ConfigurationNotification notification){var icon=notification.Kind==ConfigurationNotificationKind.Error?MessageBoxImage.Error:MessageBoxImage.Information;if(owner is null)System.Windows.MessageBox.Show(notification.Message,notification.Caption,MessageBoxButton.OK,icon);else System.Windows.MessageBox.Show(owner,notification.Message,notification.Caption,MessageBoxButton.OK,icon);}
+ static void Show(Window? owner,ConfigurationNotification notification){var icon=notification.Kind==ConfigurationNotificationKind.Error?MessageBoxImage.Error:notification.Kind==ConfigurationNotificationKind.Warning?MessageBoxImage.Warning:MessageBoxImage.Information;if(owner is null)System.Windows.MessageBox.Show(notification.Message,notification.Caption,MessageBoxButton.OK,icon);else System.Windows.MessageBox.Show(owner,notification.Message,notification.Caption,MessageBoxButton.OK,icon);}
 }

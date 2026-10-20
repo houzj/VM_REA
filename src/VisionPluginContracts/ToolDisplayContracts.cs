@@ -22,11 +22,23 @@ public sealed record ToolTextDisplaySettings(string Content, string OkColor, str
     double FontSize, double Opacity, double PositionX, double PositionY);
 public sealed record ToolDisplayCell(string Column, string Value);
 public sealed record ToolDisplayDiagnostic(uint NativeErrorCode, string ErrorInfo);
+/// <summary>A source Display.xml image object resolved against the captured execution snapshot.
+/// Visible carries the source IsDisplay object flag; image selection itself remains a separate host operation.</summary>
+public sealed record ToolDisplayImageLayer(string Name, VisionCore.IImageData? Image, bool Visible, double Opacity)
+{
+    public int OverlayZIndex { get; init; }
+    public byte? OverlayAlpha { get; init; }
+}
 public sealed record ToolDisplayFrame(VisionCore.IImageData? Image, string Text, string Color,
     double FontSize, double Opacity, double PositionX, double PositionY, string RecordText,
     IReadOnlyList<ToolDisplayCell> ResultList)
 {
     public IReadOnlyList<ToolDisplayGraphic> Graphics { get; init; } = Array.Empty<ToolDisplayGraphic>();
+    /// <summary>Optional source image objects. The presenter displays one selected object at a time.</summary>
+    public IReadOnlyList<ToolDisplayImageLayer> ImageLayers { get; init; } = Array.Empty<ToolDisplayImageLayer>();
+    public string? SelectedImageName { get; init; }
+    public string? BackgroundImageName { get; init; }
+    public IReadOnlyList<string> CheckedImageNames { get; init; } = Array.Empty<string>();
     public bool TextVisible { get; init; }
     public bool ImageVisible { get; init; }
     public bool RecordVisible { get; init; }

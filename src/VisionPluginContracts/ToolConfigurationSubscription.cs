@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using VisionFramework;
 using System.Globalization;
 
 namespace VisionPluginContracts;
@@ -15,10 +16,12 @@ public sealed record ConfigurationConstantReference(string NativeType,string Lit
 public sealed record ConfigurationSubscriptionIndex {
  public ConfigurationSubscriptionIndexKind Kind {get;}
  public int? Literal {get;}
+ public string? LiteralText {get;init;}
  public ConfigurationSubscriptionReference? Reference {get;}
  private ConfigurationSubscriptionIndex(ConfigurationSubscriptionIndexKind kind,int? literal=null,ConfigurationSubscriptionReference? reference=null){Kind=kind;Literal=literal;Reference=reference;}
  public static ConfigurationSubscriptionIndex All {get;}=new(ConfigurationSubscriptionIndexKind.All);
- public static ConfigurationSubscriptionIndex At(int index){if(index<0)throw new ArgumentOutOfRangeException(nameof(index));return new(ConfigurationSubscriptionIndexKind.Literal,index);}
+ public static ConfigurationSubscriptionIndex At(int index)=>At(index.ToString(CultureInfo.InvariantCulture));
+ public static ConfigurationSubscriptionIndex At(string literal)=>new(ConfigurationSubscriptionIndexKind.Literal,WorkflowArrayIndex.ParseLiteral(literal)){LiteralText=literal};
  public static ConfigurationSubscriptionIndex From(ConfigurationSubscriptionReference reference) {
   ArgumentNullException.ThrowIfNull(reference);
   if(reference is ConfigurationConstantReference)throw new ArgumentException("Use At for a constant index.",nameof(reference));
@@ -91,6 +94,8 @@ public static class ConfigurationSubscriptionValidation {
  public static ConfigurationSubscriptionQuery? FromElement(ConfigurationElement element,ConfigurationSubscriptionDomain? domain=null) {
   string? F(ConfigurationElement e,string key)=>e.Children.FirstOrDefault(c=>c.Tag==key)?.Text??e.Attributes.GetValueOrDefault(key);
   var drop=element.Children.FirstOrDefault(x=>x.Tag=="DropOpenSetter");
+  // Some original EnumerationG declarations initialize this list once instead of a DropOpenSetter.
+  if(drop is null&&element.Tag=="EnumerationG")drop=element.Children.FirstOrDefault(x=>x.Tag=="Initers")?.Children.FirstOrDefault(x=>F(x,"OperationName")=="GetFrontParamItemsOperation");
   if(domain==ConfigurationSubscriptionDomain.Parameter) {
    string type=F(element,"ComType")??element.Tag switch {"Integer"=>"int","Float"=>"float","Boolean"=>"int","String" or "OpenFileForCalibDialog"=>"string",_=>""};
    return new(new(ConfigurationSubscriptionDomain.Parameter,(element.Name??"")+(F(element,"ComTailName")??""),type),Array.AsReadOnly(type.Split(';',StringSplitOptions.RemoveEmptyEntries)));

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Windows;
+using System.Xml.Linq;
 using VisionPluginContracts;
 namespace VisionPlugins.CameraMapping;
 public sealed partial class CameraMappingPlugin {
@@ -19,7 +20,40 @@ public sealed partial class CameraMappingPlugin {
   var execution=new ToolConfigurationExecution(()=>context.Run(new(values)),()=>Host().SolutionBusy,()=>Host().Ready&&Host().RunEnabled,()=>Host().Loading,()=>Host().ProcedureBusy);
   Dictionary<string,string> User()=>JsonSerializer.Deserialize<Dictionary<string,string>>(ReadValues()["ConfigurationUserData"].GetString()??"{}")??[];
   var adapter=new ToolConfigurationParameterAdapter(Descriptor,ReadValues,Apply,key=>User().GetValueOrDefault(key),(key,value)=>{var user=User();user[key]=value;var next=new Dictionary<string,JsonElement>(values){["ConfigurationUserData"]=J(JsonSerializer.Serialize(user))};Apply(next);});
-  void Save(){var result=save.SelectSave(owner(),new(Id,values["CalibPathName"].GetString()??"",".iwcal|*.iwcal",text("Create Calibration File"),".iwcal"));if(result.Status==ConfigurationFileStatus.Cancelled)return;if(result.Status!=ConfigurationFileStatus.Selected){Notify(result.Diagnostic??"无法选择保存路径",true);return;}try{SyncValues();var path=result.Paths.Single();var raw=Get(context.Node.Id,context.BaseDirectory,context.Scope);lock(raw.Gate){if(!raw.CalibrationValid||raw.Matrix is null)throw new CameraMappingOperationException(0xe0000018,"尚无有效标定结果。");Apply(new Dictionary<string,JsonElement>(values){["CalibPathName"]=J(path)});state!.RefreshParameter(state.Find("CalibPathName")!);SaveCalibration(Current(),path);}save.Remember(Id,result.Paths.Single());Notify(text("Lang_SaveSuccess"));}catch(Exception error)when(error is IOException or InvalidOperationException or UnauthorizedAccessException or ArgumentException){Notify(error.Message,true);}}
+  void Save(){var result=save.SelectSave(owner(),new(Id,values["CalibPathName"].GetString()??"",".iwcal|*.iwcal",text("Create Calibration File"),".iwcal"));if(result.Status==ConfigurationFileStatus.Cancelled)return;if(result.Status!=ConfigurationFileStatus.Selected){Notify(result.Diagnostic??"无法选择保存路径",true);return;}try{SyncValues();var path=result.Paths.Single();var raw=Get(context.Node.Id,context.BaseDirectory,context.Scope);lock(raw.Gate){if(!raw.CalibrationValid||raw.Matrix is null)throw new CameraMappingOperationException(0xe0000018,"尚无有效标定结果。");SaveCalibration(Current(),path);state!.RefreshParameter(state.Find("CalibPathName")!);}save.Remember(Id,result.Paths.Single());Notify(text("Lang_SaveSuccess"));}catch(Exception error)when(error is IOException or InvalidOperationException or UnauthorizedAccessException or ArgumentException){Notify(error.Message,true);}}
+  ConfigurationOperationResult Reset(){
+   var confirmation=context.ConfigurationConfirmations??new WpfConfigurationConfirmationService();
+   if(!confirmation.Confirm(owner(),new(text("Lang_Sure"),text("Lang_ResetAlgoParamTips")+"?")))return new(true);
+   // Original ResetRunParamBind visits only these ISubInfo controls, in resource order.
+   foreach(string name in new[]{"CalibPathName","RefreshFileEnable","WeightFactor"}){
+    var node=state!.Find(name)!;
+    if(node.Get("IsSub")!="True"&&User().GetValueOrDefault("@"+name)!="True")continue;
+    state.SetProgrammatic(node,"IsSub","False");
+    var query=ConfigurationSubscriptionValidation.FromElement(node.Element,ConfigurationSubscriptionDomain.Parameter)!;
+    var service=context.ConfigurationSubscriptions;
+    try{
+     var current=service?.Read(query.Destination);
+     if(node.SubscriptionBinding is not null||!string.IsNullOrEmpty(node.Get("Subscription"))||current?.Binding is not null){
+      var cleared=service?.Bind(query.Destination,null);
+      if(cleared is not null&&state.ApplySubscription(node,cleared,true))state.RefreshParameter(node);
+      else state.ReportSubscriptionDiagnostic(node,"ResetRunParamBind",cleared?.Diagnostic??"无法清除参数订阅。");
+     }
+    }catch(Exception error){state.ReportSubscriptionDiagnostic(node,"ResetRunParamBind",error.Message);}
+    // Re-read effective parameters after unbinding, before persisting user data.
+    state.PersistSubscriptionMode(node,false);
+   }
+   string? lastError=null;
+   foreach(var item in XDocument.Parse(Resource("CameraMappingAlgorithm.xml")).Root!.Elements("ParamItem")){
+    string name=item.Element("Name")!.Value,value=item.Element("DefaultValue")!.Value;
+    if(name=="CalibPathName"&&value.Length==0){lastError="文件格式错误 (0xe0000204)";continue;}
+    var result=adapter.Dispatch(new(ConfigurationOperationKind.WriteParameter,"ResetAlgorithmParameter",state!.Find(name)!,null,[],ConfigurationChangeKind.Command,value));
+    if(!result.Handled||result.Error is not null)lastError=result.Error??("无法重置参数："+name);
+   }
+   // CameraMap's empty default path fails; original UI returns before full success refresh.
+   if(lastError is not null){Notify(lastError,true);return new(true,Error:lastError);}
+   foreach(var node in state!.Nodes)if(node.Name is {} name&&values.ContainsKey(name))state.RefreshParameter(node);
+   Notify(text("Lang_ResetAlgoParamSuccess"));return new(true);
+  }
   ConfigurationOperationResult Subscription(ConfigurationOperationRequest r){bool parameter=r.Kind is ConfigurationOperationKind.ReadParameterBinding or ConfigurationOperationKind.WriteParameterBinding or ConfigurationOperationKind.ClearParameterBinding;var query=ConfigurationSubscriptionValidation.FromElement(r.Source.Element,parameter?ConfigurationSubscriptionDomain.Parameter:null);if(query is null||context.ConfigurationSubscriptions is null)return new(true,Error:"Subscription service is unavailable.");var result=r.Kind is ConfigurationOperationKind.WriteInputBinding or ConfigurationOperationKind.WriteParameterBinding or ConfigurationOperationKind.ClearParameterBinding?context.ConfigurationSubscriptions.Bind(query.Destination,r.Kind==ConfigurationOperationKind.ClearParameterBinding?null:r.SubscriptionBinding):context.ConfigurationSubscriptions.Read(query.Destination);if(result.Status!=ConfigurationSubscriptionStatus.Available||!state!.ApplySubscription(r.Source,result,parameter))return new(true,Error:result.Diagnostic??"Subscription rejected.");return new(true,result.DisplayText??"");}
   var dispatch=new Dispatcher(r=>{
    if(r.Kind is ConfigurationOperationKind.ReadInputBinding or ConfigurationOperationKind.WriteInputBinding or ConfigurationOperationKind.ReadParameterBinding or ConfigurationOperationKind.WriteParameterBinding or ConfigurationOperationKind.ClearParameterBinding)return Subscription(r);
@@ -32,7 +66,7 @@ public sealed partial class CameraMappingPlugin {
    if(r.Kind==ConfigurationOperationKind.RunContinuous){var rejected=execution.StartContinuous();return new(true,Error:rejected==ConfigurationRunRejection.None?null:rejected.ToString());}
    if(r.Kind==ConfigurationOperationKind.StopContinuous){_=execution.StopAsync();return new(true);}
    if(r.Kind==ConfigurationOperationKind.Close){session?.RequestClose();return new(true);}
-   if(r.Kind==ConfigurationOperationKind.ResetParameters){var confirmation=context.ConfigurationConfirmations??new WpfConfigurationConfirmationService();if(!confirmation.Confirm(owner(),new(text("Lang_Sure"),text("Lang_ResetAlgoParamTips")+"?")))return new(true);if(context.ResetConfigurationParameters is null)return new(true,Error:"Atomic reset host service unavailable.");SyncValues();var next=new Dictionary<string,JsonElement>(values);foreach(var parameter in Descriptor.Parameters.Where(p=>p.Name!="ConfigurationUserData"&&p.Name!=ToolDisplayService.SettingsParameter&&p.Name!=ToolConfigurationDisplaySubscriptions.ParameterName&&p.Name!=ToolDisplayObjectStore.ParameterName))next[parameter.Name]=parameter.DefaultValue!.Value.Clone();var resetSubscriptions=state!.Nodes.Where(n=>n.Name is "WeightFactor" or "CalibPathName" or "RefreshFileEnable").ToArray();var user=User();foreach(var node in resetSubscriptions){var key="@"+node.Name+(node.Get("ComTailName")??"");if(node.Get("IsSub")=="True"||user.GetValueOrDefault(key)=="True")user[key]="False";}next["ConfigurationUserData"]=J(JsonSerializer.Serialize(user));context.ResetConfigurationParameters(next.ToDictionary(p=>p.Key,p=>p.Value.Clone()));values=next;foreach(var node in resetSubscriptions){state.SetProgrammatic(node,"IsSub","False");state.ApplySubscription(node,new(ConfigurationSubscriptionStatus.Available,null,""),true);}foreach(var node in state!.Nodes)if(node.Name is {} name&&next.ContainsKey(name))state.RefreshParameter(node);for(int i=1;i<=8;i++)state.SetProgrammatic("Data"+i,"CustomVisible",(i<=2).ToString());return new(true);}
+   if(r.Kind==ConfigurationOperationKind.ResetParameters)return Reset();
    return adapter.Dispatch(r);
   });
   state=new(definition,dispatch){ExecutionEnabled=Host().RunEnabled};state.RegisterRule("SetCombinationForcePropertyOperation",new SourceIgnoredCombinationForceRule());var controls=new ToolConfigurationControlRegistry();ToolConfigurationStandardControls.Register(controls,text,()=>new(execution.IsContinuous,Host().ProcedureBusy,Host().RunEnabled),"Chinese",context.ConfigurationSubscriptions);ToolConfigurationSubscriptionControls.Register(controls,context.ConfigurationSubscriptions,text);
@@ -41,7 +75,7 @@ public sealed partial class CameraMappingPlugin {
   ToolConfigurationImageObjectControls.Register(controls,new ToolDisplayObjectStore(DisplayObjectDefinitions,ReadValues,Apply),text);
   CameraMappingPointPairControls.Register(controls,context.ConfigurationSubscriptions,text,c=>{owner=c.Owner;},(name,visible)=>{
    SyncValues();var next=new Dictionary<string,JsonElement>(values){[name]=J(name+(visible?"#1":"#0"))};try{Apply(next);state.SetProgrammatic(name,"CurValue",name+(visible?"#1":"#0"));state.SetProgrammatic(name,"CustomVisible",visible.ToString());return true;}catch(Exception error){Notify(error.Message,true);return false;}
-  },Notify);
+  },Notify,message=>notifications.Notify(owner(),new(ConfigurationNotificationKind.Warning,message,"相机映射",context.Mode)));
   ToolConfigurationCalibrationPathControls.Register(controls,c=>{owner=c.Owner;var result=files.Select(owner(),new(Id,c.Node.Value,".iwcal|*.iwcal",text("Set Calibration File Path"),CheckFileExists:false));if(result.Status==ConfigurationFileStatus.Selected){state.CommitUser(c.Node,result.Paths.Single(),true);if(c.Node.Value==result.Paths.Single())files.Remember(Id,c.Node.Value);}},text,context.ConfigurationSubscriptions,"CameraMappingChooseCalibrationPath");
   controls.Register("SaveFileDialog",c=>CameraMappingPointPairControls.Command(c,text("Create Calibration File"),()=>{owner=c.Owner;Save();}));
   long revision=0;void Changed(){state.IsBusy=execution.IsRunning;state.SetProgrammatic("CalibPathName","ExecutionRevision",(++revision).ToString());}execution.Changed+=Changed;

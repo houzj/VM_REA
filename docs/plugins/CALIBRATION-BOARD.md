@@ -1,0 +1,312 @@
+# 标定板标定独立逆向清单
+
+## 2026-10-19 源码级参数修复与稳定宿主验证
+
+第一轮候选角度按原厂公共块30/140传至8bb3a0，修复共享实现原固定30/135；原API默认保持，源码证据/边界见A2-CANDIDATE-ANGLE-SOURCE。最终5228检查通过且源码稳定，0警告/错误；生产配置宿主49项通过且源码稳定（2条既有MainWindow nullable警告）。最新独立产物见HANDOFF顶部。A3-SDK-LIFECYCLE另区分ROI clone/释放、GetResult有效门与文件导出对象门；仅静态源码确认，不扩大为所有失败运行行为。当前手验程序启动中，尚无人工验收，不提交推送。
+
+## 2026-10-19 四线并行：圆点阈值传递已补证
+
+同一原厂模块/SDK实例六次运行，24次setter硬件断点确认RDX/R8中的name/value原样传递；原厂圆点877230入口options+4/+8分别精确等于Low/High的20/40、0/40、20/80。旧“只传名称”的反编译解释已撤回，源码/运行链及哈希见 `CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.md` 最新节。此项只闭合受控圆点路径，其他板型参数块、任意图像灵敏度仍不外推；没有产品代码或容差修改。源级指导补充原生ABI寄存器活性规则，以防同类误判。
+
+## 2026-10-19 真实宿主候选已启动（待人工验收）
+
+本工具现已加入生产项目引用、MainWindow注册及原厂工具箱项映射。普通三页签、外置单矩形/全图ROI、显示对象眼睛/透明度、旋转ROI保存重开、失败ROI NG/成功恢复及owned Group由真实宿主49项检查验证；现有WPF470项通过。原厂语言资源提取79项及两条Data Record映射补齐；实现/源依据见 `CALIBRATION-BOARD-FRAMEWORK.md`，无算法/阈值放宽。
+
+修改后的最终 `Run.ps1 -AllCandidates` 再次5228项通过，`sourceChangedDuringBuild=false`：`analysis/calibration-board/verification-1cb46b3612ad4885a303a9b4c9b8dfc2/summary.json`。宿主/WPF及源码身份在 `analysis/board-host-acceptance/summary.json`。通过CMD启动 `Start-CalibrationBoard-Acceptance.cmd`，产物 `analysis/manual-acceptance/16f33069ed8f4ac8ab32383f51791cc0`、PID52572、READY且stderr为空；保留棋盘测试图→真实图像源→板工具及配置窗给用户手验。样本/反射/截图仅在tests。
+
+该状态覆盖后文“未注册/宿主接线待所有者”等历史描述；原厂阈值槽位、排序workspace、ROI字节ABI、任意图像域和桌面差分仍未闭合。当前只交付本轮宿主候选，尚未用户人工验收、未提交推送，设备测试未做。
+
+## 2026-10-19 接续后的稳定全量结果
+
+本节覆盖下方历史“全量仍在执行/源码变化/四组拟合差”的当前状态描述，历史调查保留。当前源先在未改入口下通过5208项，`sourceChangedDuringBuild=false`（`analysis/calibration-board/verification-96721b6c824d4dff8d1b5a72ef383e52`）。随后仅补测试入口：常规套件加入已有 `EncodedAxisRuntimeChecks.Run` 及 `await FailureOutputChecks.Run`，使四编码板×三轴向ROI完整输出和失败帧显示生命周期不再只由专项命令验证。没有修改产品算法、共享合同或已有断言门槛。
+
+最终 `pwsh -NoProfile -File tests/CalibrationBoard.Checks/Run.ps1 -AllCandidates` 通过5228项，exit0、构建0警告0错误、`sourceChangedDuringBuild=false`；摘要和构建/执行日志在 `analysis/calibration-board/verification-41a5de83b6334d5995c4f61f17a9f03d/`。执行DLL SHA256 `cf2e38e9f436c6277eb9f92af73117aee99b0c95dd5412691b317463bac6a76f`，最终测试入口 `Program.cs` SHA256 `f58b0a1629eccb6ffe8c806d6a868004413dafe63eb805f402329e458654fb97`。运行器源码稳定标记覆盖其登记的三个目录，并非全仓全部传递依赖审计。
+
+原厂 `ProcessOutput @ 0x180020630` 的现有反编译重新核读确认：Detect五字段发布位于成功标志判断之前；此源确认支撑已实现的失败ROI/显示专项，不把托管回放称作原厂桌面操作。12组轴向ROI的点数/ID/顺序/XY、9H和14标量均逐float位一致；边界、候选及失败显示等其余结果按套件原断言通过。`-AllCandidates` 是当前编排套件全量，不包含所有另设专项模式和任意图像域。
+
+尚未闭合：原厂平台默认ROI与显示像素、EdgeThresh具名参数到槽位桥接、排序workspace旧值生命周期、任意输入覆盖，以及真实主窗口注册/Group与人工验收。设备测试未做，`desktopParity=false`、`manualAccepted=false`；未提交推送。
+
+本工具为四条独立工具开发线之一。模块 `IMVSCalibBoardCalibModu`；新项目 `VisionPlugins.CalibrationBoard`。不修改 N点/N图像工具、共享宿主或其他工作树。2026-10-18 在制，尚未宣布完整原厂等价；没有设备测试。下列当前状态表和最新验证段为权威状态，后续较早记录仅保留调查历史。
+
+## 原厂证据
+
+- 安装目录 `D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSCalibBoardCalibModu`。AlgorithmTab/Algorithm/Display/模块声明及公共 Group 原样嵌入新项目 Resources。
+- 托管 SDK 反编译：`analysis/full-audit/calibration-dependencies/decompiled/IMVSCalibBoardCalibModuCs`。参数构造器给定精确范围，结果声明确认点数组、坐标原点、XY向量和 ROI。
+- REA 托管身份：`ev_80ccadddacca09c728b4f900dafb275b2664d00c7002ca2a8be96dd1d417dd1e`；SHA256 `ff1408b85625819490efeb51e9e6d2714c7db003e5329aa65cc6b55a8ce8ba58`；.NET Framework 4.6.1 AnyCPU，未通过该静态检查执行程序集。
+- 文档化 SDK 头 `MVDAlgorithmSDK/Includes/Algorithms/CalibBoardCalibCpp.h`。真实原厂 SDK 探针见 `tests/CalibrationBoard.NativeProbe`；运行日志 [十二组原厂运行](calibration-board-native-fixtures.jsonl)。这是独立进程、合成图像、SDK 执行，不是原厂平台模块初始化或桌面交互。
+- 首次探针在完成空白图后将 SDK 输入设为 nullptr，SDK 未捕获异常退出；没有弹错误窗。修正探针去掉此调用后十二组完成 exit0。失败不得当成产品行为。首次异常由工具返回记录确认；当前 analysis 日志为随后成功重跑结果。
+
+## 工具 / 公共能力 / 主框架接口 / 验收
+
+| 项 | 当前结果 | 仍需闭合 |
+|---|---|---|
+| 配置模型 | 原始三标签、26直接叶/隐藏条件与公共 IToolConfigurationProvider；共享真实宿主、ROI/显示配置已接线，不另造窗 | 原厂桌面逐页可视验收 |
+| 参数/持久化 | XML类型范围和模块覆盖默认；事务写回、具名ROI组、显示设置、公共路径服务消费 | 最终真实宿主交互验收 |
+| 实际算法 | 已接7ed0c0公开分支两阶段；HomoFreedom两阶段传用户值；Weight1原LS，2/3原IRLS20次，公开Weight4按setter映射3 | 已消除本批棋盘与编码板角点差；圆点4例最终H待公共IRLS分母hoist修复（独立修正33/33完整结果同位），内部median历史边界另列 |
+| ROI | 真实轴rect裁剪、原坐标float加回；圆板/棋盘/四编码板旋转mask按源顺序消费共享source grid，保留原图解码 | Solver棋盘21与编码板84点集严格同值，4型masked完整输出也严格同值；Plugin旧!=2 guard由其所有者待同步；空旋转mask不复刻崩溃 |
+| 图像/显示 | 原Display对象与共享ImageViewConfig/图形框架消费、复合输出已接；输入图像选择使用共享宿主 | 桌面最终可视验收；原点/向量23组严格核验及真实Plugin两组SDK输出全部通过 |
+| 圆点识别 | 360常规候选、另180边界候选全部同值；90圆核/48非空凸包及fallback同位；70旋转缺点网格、21最大密集窗口已实现 | 超过已录fixture的输入不可据测试宣称全部原生等价 |
+| 标定文件 | 原厂36字节little-endian float32；原厂模块缺失/refreshFalse/refreshTrue受控运行证实，插件遵循同分支 | 不把文件创建和路径测试当作原厂桌面验收 |
+| 验证 | 2026-10-19 `tests/CalibrationBoard.Checks/Run.ps1 -AllCandidates` 最新运行 5183 项通过，0警告/错误，`sourceChangedDuringBuild=false`；范围含 source-grid、真实 SDK/产品输出、ROI/mask、圆点候选及边界拟合。机器摘要 `analysis/calibration-board/verification-62e718a4f009474ca1f56256e7a9efcd/summary.json` | 这次回归无设备、无桌面像素验收（summary: `devices=false`, `desktopParity=false`, `manualAccepted=false`）；圆点二次细化及未录输入仍不能据此宣称原厂全等，公共拟合hoist、插件宿主ROI guard和用户验收仍开放 |
+
+原厂SDK基础默认 DOF=2、Weight=3；模块 Algorithm.xml 覆盖为 DOF=1、Weight=2。因此新工具按模块覆盖后的值运行，不能直接套SDK默认值。
+
+十二组受控证据确认：棋盘空白错误0x10103000、圆点空白0x10000107；棋盘99个内角点物点索引从(1,1)，圆点80个从(0,0)。左右手切换令世界Y方向反转。当前source网格在本批原厂fixture已逐float位对齐；不能从这些有限fixture外推任意输入的全部原生等价。
+
+## 公共框架契约原始取证（当前接线状态以上表为准）
+
+1. Producer：公共图像/ROI配置宿主；consumer：标定板 Provider。载荷：InputImage原始图像身份、单个Box/full-image、ApplyConfiguration原子写回和跨流程所有者身份；关闭或切换流程后回调失效。接受证据：原XML ROISelecter FullScreenEnable=True / SelectType=Single / ROISelection=Box，以及 SDK SetROI。不得每工具创建第二个ROI窗口。
+2. Producer：公共对象显示服务；consumer：ImageViewConfig CalibPoint / CalibOrignPoint。载荷：Display Calibration Point、Display Original Calibration Point对应对象和样式，当前只有 scalar/array 输出不替代对象桥接。
+3. Producer：公共校准文件服务；consumer：CalibPathName和SaveFile。载荷：保存而非打开已有文件，扩展.iwcal、SaveCalibPath命令、历史记录、撤销/关闭/错误；旧 ReadCalibFile .xml 服务不自动兼容。需真实原厂导出后方可落盘，当前拒绝写伪造格式。
+4. 主框架只需消费注册Manifest及标准图执行/方案参数/ROI持久化；本线无第二个发现扫描器。产品注册/共享Contracts由root单一所有者集成。
+
+## 第二轮原厂运行与实现修正
+
+已用原厂 Apps.XmlParser 对复制的原始配置执行 DoIniter/GetItemsValueUnit/六种板型切换；7个状态快照保存在 calibration-board-evidence.json。参数由受控替身提供，未创建原厂模块、未操作原厂桌面；该证据确认源规则执行，不是桌面截图。
+
+原厂 SDK 12个fixture进一步确认：原点按 `index*PhysicalSize-Origin` 先减，随后正角顺时针旋转，再在右手模式翻转世界Y。显示向量归一化。真实导出的10个.iwcal均为36字节float32矩阵，证据JSON含完整base64和hash，测试不依赖本地原厂安装即可校验格式。
+
+独立棋盘角点复用既有 NImageBoardDetector，干净合成棋盘第一点(89.4795867,79.4795867)，原厂(89.5030746,79.5030746)，约0.02349像素差异：不能宣称亚像素完全一致。逐点验证采用0.03px边界，并单独比较全部网格索引和矩阵；该阈值是本项目独立验收边界，不是原厂规格。圆点阈值/圆度、任意透视/噪声/局部板完整语义仍开放。
+
+标定板保存的二进制协议与原厂SDK输出一致，UI路径叶已消费公共 ToolConfigurationCalibrationPathControls，不复制 N点UI。保存对话框使用公共保存服务。自动刷新写失败当前以明确失败返回，这是独立行为；原厂平台模块对此的异常处理尚待取证。
+
+
+## 历史验证节点（后续结果覆盖此状态）
+
+`tests/CalibrationBoard.Checks/Run.ps1` 最新成功报告 `analysis/calibration-board/verification-be08c546c5494be1b4a843382b828eaf`：0警告0错误，2162项检查通过；[机器可读验证](calibration-board-verification.json)记录当前源哈希、运行摘要和未闭合项。编译与检查均不等于实际产品/原厂桌面验收。
+
+复合输出已包括 Calibration Point 点数组、Calibration Origin、PosXVector、PosYVector、ROI，以及原始标量/数组字段；当前显示服务提供原始Show Text模板、结果列与实际输入图像。原厂点/坐标系叠加对象仍需公共ImageViewConfig服务，不把有图像和文本当作全部显示完成。
+
+非默认圆度与圆点边缘提取参数当前明确返回CircleRefinementUnavailable，不允许UI参数悄悄无效。矩形ROI限单个；关闭/失效/跨流程生命周期由公共配置宿主承接，契约取证见 [公共宿主与ROI](CALIBRATION-BOARD-FRAMEWORK.md)。
+
+## 原厂模块运行闭合的文件分支
+
+Ghidra CLI在当前工作树独立缓存完成三个指定函数反编译：ProcessAlg `0x180020240`、ProcessOutput `0x180020630`、SetParam `0x180020d40`；原厂DLL未修改。自动分析60秒超时，三个指定函数成功不代表全部二进制已恢复。第一次沙箱内脚本bundle读取jar被拒，第二次经正常工具审批在沙箱外运行成功，未安装/更新工具或修改REA服务。
+
+ProcessOutput证实Scale来自GetCalibMatrixToParamInfo()->GetScale（vtable+8），不是HomoEstInfo.GetScale；TranslateX/Y、Rotate、Aspect、Skew、PixelPrecision同来自矩阵分解对象。原点/XY向量和EstimationError来自HomoEstInfo，点来自LocateInfo。原生分解在接近零角/90度时对float微差敏感，不能仅据矩阵误差宣称所有输出标量等价。
+
+ProcessAlg明确路径非空且“文件不存在或RefreshFileEnable=True”时ExportCalibFile。通过原厂模块构造器+正常SDK实例（源确认字段+0x15d98）和原始ProcessAlg的受控运行验证：缺失文件+refreshFalse创建36字节；加入1字节哨兵后refreshFalse保留37字节；refreshTrue重写为36字节。没有调用平台Init、设备或改原DLL代码。结果见[模块运行证据](calibration-board-module-runtime.jsonl)。独立运行实现已同步此条件，补充创建父目录、单矩形限制；自动刷新失败返回明确错误仍是独立托管边界。
+
+## 原厂模块完整输出捕获与差分
+
+原厂构造器/ProcessAlg后调用原始ProcessOutput，仅将8个ModuleFrame输入输出导入槽对接本测试进程的明确合成宿主，算法/模块代码及磁盘DLL未修改。捕获23个原厂实际输出字段（含99点两数组），补齐此前遗漏的DetectCenterX/Y/Width/Height/Angle。完整值与托管差分见 [输出差分](calibration-board-output-differences.json)。
+
+成功棋盘fixture中，状态、点数和5个ROI标量完全相同；点坐标最大差0.02349533px；原点/平移约0.02077px；Scale差0.00007818；PixelPrecision差约1.06e-7；EstimationError差0.00430094、Aspect差0.01355392。后两项明确仍有差异，不以“所有2126检查通过”宣称数值完全等价。现有检查覆盖所有23字段存在/数量、源网格索引、点/矩阵有界比较、原厂文件字节协议与三个保存分支；完整差分保留未闭合标量。
+
+SDK运行fixture已经按模块Algorithm.xml将DOF设1、权重设2，区分此前单纯导出的SDK基础默认DOF2/权重3；配置取证不混用这两个默认层。
+
+## 亚像素、圆度与拟合的进一步隔离
+
+[独立探针与核心函数摘要](calibration-board-refinements.json)保留了360个原厂圆点运行、48个棋盘窗口组合和10个原厂N点回放结果。圆点探针使用圆、9×5椭圆、方形三种合成形状，对比度2/5/10/20/50/255、圆度20/50/70/90/100和四组边缘阈值。292组成功、68组返回0x10000107。方形在圆度100仍可成功，椭圆结果随对比度变化，不能把UI圆度直接解释为面积周长圆度。四组阈值在这些样本中的成功/失败分类相同，但坐标并不相同；不能推出参数无效。当前固定128阈值的独立圆点实现仍不覆盖原厂低对比度行为，非默认细化参数仍明确拒绝运行。
+
+将原厂检测坐标直接送入共享托管N点拟合，可将默认棋盘矩阵最大差降至约5.92e-7、EstimationError差降至约3.56e-7；这支持默认误差主要来自检测坐标的判断。接近90度的Aspect分解仍敏感，原厂圆点80坐标会让当前托管拟合返回0x10103007。相同原厂圆点坐标送回原厂N点SDK则成功，默认误差约0.00010456，已向共享求解器所有者提交精确样本与证据。这里没有把失败回放计为等价通过。
+
+只读复制核心分析数据库后，指定反编译恢复了真实图像路径：SDK Run的操作码0x67 → 核心0x18001e330 → 分派op0xe → 0x1807f69e0 → 0x1807e4ff0 → 0x180815560；核心kind1/2从0x180874db0开始识别，自动细化0x1807e33c0的kind1分支继续经0x1807dce20、0x1808084b0到0x180867010。可见多尺度窗口重试、局部方向/灰度统计及格点关系处理；尚未完整转写，不据单个干净棋盘调常数模拟原厂。42个指定函数的hash保留在摘要，完整反编译输出只保留本地analysis目录。该源恢复范围不代表整个核心库已验证。
+
+公共ImageViewConfig已接入原始显示XML、独立DisplayObjectSettings及共享图形投影；两个同名Data Record保持原顺序，不删改源资源。点、标定原点及坐标系通过公共图形API生成，原点数量依据实际输出特征而非Num标量。ROI图形编辑仍等待公共所有者接线，产品注册与实际宿主手动验收未完成。
+
+
+输入尺寸边界补充：原厂核心0x1807f69e0要求宽高均至少64像素。原厂SDK对32/63方形返回0x10103054，64/65/100则进入各板型的空白识别错误；托管求解器已按此返回原始错误码，并增加十组边界回归。该验证只覆盖下限，不外推原厂最大尺寸或内存策略。
+
+共享求解器后续按原厂0x7fcf60→0x8580e0的单次float正规方程修正了上述圆点80坐标失败。板工具已增加真正的失败断言：五组坐标转换回放全部必须成功，矩阵差小于5e-6；默认左右手两组还要求EstimationError差小于1e-6、Aspect的float值相同。默认组实测矩阵最大差约7.15e-7、EstimationError差约6.25e-7。90度及平移/尺寸改变的全部标量仍保留真实差分，不把矩阵接近当作所有输出等价。单独原厂N点SDK回放与原厂板SDK指标各自保留，不混作同一误差基准。
+
+
+板型分派修正证据：SDK Run先调用0x180003ee0转换公开CalibBoardType，jump table确认公开1→core kind1、公开2→core kind3。因此圆点不是core kind2；圆点自动细化实际沿0x1807e33c0→0x1807dda50→0x180817c50。前文kind2只代表内部编号，不能据此推导公开圆点实现。
+
+圆点真实初始路径进一步恢复为0x180812930→0x180877f90→0x180877230：包含重采样、自动直方图阈值0x180724460、反相0x180720200、连通域相对面积筛选及圆度特征0x180722bf0，再由0x180877b20对边缘轮廓拟合圆。圆度特征为区域面积除以`pi*最大轮廓半径平方`并封顶1，不能用包围盒长宽比替代。独立实现已据此替换此前`长宽比>0.6`的猜测筛选，增加原厂9×5椭圆/圆度50的80点成功回归；整个原厂重采样、分支筛选、亚像素轮廓拟合尚未移植，非默认参数仍不开放。方形/圆度100的原厂成功现象还需结合真实轮廓和分支解释，不能据一个特征函数外推全部流程。
+
+
+float误差层回归：共享求解器后续更正了最终矩阵的float逆变换、float投影、sqrtf、左结合float累计和float除count，严格2162项再次通过。独立试算同一原厂圆点矩阵得到7.766734779579565e-5，与BOARD SDK的7.76673478e-5对应；此前double误差7.159313843291429e-5的失败已保留在analysis。未放宽默认80点的1e-6误差断言。
+
+
+板内坐标构造已改为原厂顺序：7ed0c0先用float索引乘物理尺寸，853380建立旋转/手性/原点矩阵，经730e90完整float逆后以float仿射变换物点，再交共享拟合。原厂角度换算常数为float位0x3c8efa35。新增CalibrationBoardCoordinates作为板工具算法，未改公共契约。最新2162项通过；隔离原厂棋盘点的90度组矩阵差降至约3.89e-9、误差命中原float；圆点90度组仍有约3.81e-6矩阵和0.1468 Aspect差异，原点/尺寸组也未全部同值，完整数据见refinements报告，不隐藏该差异。
+
+
+圆点探针补充了360次GetRunParam权威回读，Circularity请求值与回读一致。进一步逐坐标审计发现65组相同形状/对比度/圆度的四阈值组合存在首点位置差异，最大约15.9625像素（方形高对比、高边缘阈值时首点Y=64而常用阈值约79.9625）。此前仅成功/失败分类相同，不能写成像素结果相同。完整回读、逐行坐标及差异组已写入refinements报告。
+
+## 圆点预处理与边缘的逐像素隔离
+
+正常创建原厂公开 SDK 实例后，受控调用原厂纯图像函数，生成 [48 个预处理样本](calibration-board-preprocess-fixtures.json) 和 [18 组梯度及两阶段216组轮廓样本](calibration-board-edge-fixtures.json)。没有初始化原厂全局平台、设备或改写算法代码。缩放覆盖 64～192 的奇偶尺寸、随机噪声、边界脉冲和斜坡，以及三形状六对比度。CPU11 缩放的 SIMD 区域使用偶数舍入，末尾四至七列使用加 0.5 截断，宽度不超过32走标量；独立实现按源分支复现，全部像素相同。标量及 feature6 两条 Otsu 路径在18个原图与半尺寸样本上逐像素一致；严格小于阈值使本组原始二灰阶图输出全白，不能擅自替换成小于等于。
+
+独立 Sobel X/Y 实现与18种32×32圆/椭圆/方形 crop 的原厂有符号梯度逐像素相同。877b20→7075e0→730be0→730e90确认圆心采用完整有序轮廓（含闭合重复点）、float正规方程、float全主元逆及左结合乘加。独立拟合在66个成功原厂crop的X/Y float值全部相同，不使用近似容差；最新2384项回归通过。这些低层辅助函数尚未接入完整圆点候选链，不能因此宣称整板低对比识别已解决。轮廓顺序、非极大抑制和连接仍继续单独对照；整板二次细化使用8609a0入口，与初始877b20调用的8b3d90不同。
+
+四组重新创建 SDK 的隔离运行重现：对比度2完整识别失败，对比度5成功；两者半尺寸 Otsu mask 字节完全相同。同一对比度5的首点在边缘阈值0/1时约(89.99875,79.99643)，20/40时为(92,82)。因此差异并非简单初始二值化或 SDK 历史状态；仍须恢复原厂后续候选/轮廓失败 fallback，不能加猜测的低对比拒绝阈值。
+
+[72组非极大抑制中间态](calibration-board-nms-fixtures.json)进一步覆盖手动阈值的有序亚像素点，独立实现所有点数、顺序和float坐标严格相同。高阈值方形的无强边缘情形尤其保留原厂行为：删除弱点时用亚像素点加0.5取整回查grid，半像素轴向点仍可保留，不能替换为标准Canny的全弱点删除。首次实现因此在72组中失败1组，修正原码分支后2456项通过；失败日志保留。两阶段边缘入口在上述108种crop上完整轮廓同值，不外推整板识别等价。自动阈值、轮廓连接和完整候选筛选仍开放。
+
+后续按8b1b10/8b21e0移植了八方向邻接优先级、顺序双向互验、开/闭轮廓追踪、长度与归一化梯度强度的float累计及筛选。72组原厂手动阈值crop的完整轮廓点数/顺序/坐标/长度/强度全部严格同值，2600项回归通过。连接阶段同样必须保留NMS原grid残留，不能只从返回亚像素点重建grid。自动阈值、整板候选筛选/网格匹配与失败fallback仍开放，现有产品整板入口尚未消费这些新辅助阶段。
+
+自动边缘阈值现已补入同一链：按最大Sobel幅值量化64级直方图，累计超过图像面积70%的bin确定高阈值 `(bin+1)*maximum/64`，低阈值为高阈值0.4倍。7573d0源确认为最大值统计；8b3d90的8b478e/8b4796指令及原始常量9f8确认0.4，而非依据样本调参。新增36个自动阈值crop后，108组原厂完整轮廓均逐字段float同值，2636项回归通过。整板实际重采样/前处理、候选网格匹配与失败fallback仍开放。
+
+
+## 圆点默认采样与完整初始候选补证（2026-10-18）
+
+原厂 7c9320 从 RVA 1627a50 拷贝默认参数，7f69e0 的模式2取 engine+194，即重采样因子 **5**；此前半尺寸实验只用于隔离，不能代表 SDK 默认链。因子5的 Otsu 输出中，对比度2每圆只有4个前景像素，被877230的面积小于5条件全部剔除；对比度5每圆6像素可保留。该失败条件来自原码及受控运行，没有添加猜测的对比度阈值。
+
+[360组初始候选](calibration-board-candidate-fixtures.json)覆盖三种形状、六种对比度、五种圆度及四组手动边缘阈值。独立实现逐个候选的坐标、EdgeFit及Size均与原厂float值严格相同；已接入产品圆点入口，开放对应边缘阈值参数。9组白色边框/含孔边框fallback亦与原厂中心同值；此后非frame轮廓fallback已按 `8620c0→7582e0→8a9f50` 路径接入，边界 fixture `index=120` 的真实插件输出已逐float位对照（见本节末残余源码审计）。未录输入仍不能外推。8cd840网格排序与缺点/旋转匹配、二次自适应细化仍为未闭合项，不因候选阶段同值而声称整板全等。完整候选回归3086项通过；后续针对当前路径的验证见本节末摘要。
+
+## 矩形 ROI 浮点与像素裁剪契约
+
+[原厂ROI证据](calibration-board-roi-fixtures.json)由正常创建的公开RectangleF及标定板SDK生成，无平台初始化及设备操作。45组Getter逐项float同值确认：`left = float(float(centerX) - float(float(width)*0.5f))`，top同理；没有额外整数化。SDK Run反编译180002ad0第151～194行再独立对两边执行`trunc(double(float(edge)) + 0.5)`，原点下限0，右/下边上限图像尺寸，裁剪宽高为两边整数差，而非先四舍五入width。早期完全不相交返回0x80100025，取整后宽高为0返回0x1000002d；12组运行保留了这些边界。
+
+插件由公共ROI宿主传入源图矩形，实际裁剪像素后调用`SolveCropped(image, options, roiOriginX, roiOriginY)`，局部识别坐标以float加回原点，再构造世界点并拟合。必须保留局部因子5采样相位，禁止用全图白填充代替裁剪。原厂全图及负左上裁剪均输出80个源图坐标；另外三个不同局部采样相位返回0x10000107，完整识别核差异尚需逐步对照，不能标注全路径相等。旋转矩形abs(angle)>0.0001走原厂mask分支，其栅格边界及背景语义尚未确认，产品保留明确未支持结果。
+
+ROI裁剪差异后续已定位并修复：877f90第60～66行同时要求原ROI和缩小图两轴大于63。默认因子5导致319像素缩至63失败，而320/321缩至64成功；新增原厂SDK三例均验证。全部15组SDK ROI错误码及4组成功80点的源图坐标现严格一致，2809项回归通过。此前三组“采样相位”只是观察名称，真实失败原因是wrapper尺寸门限，不是相位算法。原图尺寸校验留在Solve(full)/Plugin，SolveCropped不把小ROI错误返回成原图0x10103054。
+
+[15组非默认因子wrapper探针](calibration-board-circle-wrapper-fixtures.json)在因子2～6上确认同一缩小尺寸边界；直接辅助函数的尺寸错误是0x1000001a，由板识别层统一映射0x10000107。它们是受控私有辅助函数输入，不代表SDK公开支持用户修改因子。
+
+[64组原厂旋转矩形完整掩膜像素](calibration-board-roi-mask-fixtures.json)已通过公开PreproMask SDK采集，像素为0/255；0与0.0002度在边界上不同。圆板mask路径8115e0先在mask非零bbox上对原图识别，再按局部中心加0.5取整回查mask，过滤非零中心并float恢复全局坐标及保留网格索引。没有白刷背景。独立栅格化、bbox到原始点索引的全链尚未实现，旋转ROI仍明确未支持。
+
+旋转掩膜独立生成层完成：3100的角度先以double除180乘PI再转float，之后cosf/sinf及所有点旋转为float；3240固定顶点顺序。3860以float归一化顶点逐行扫描，Y边界低开高闭，X端点为`trunc(left+1)`至`trunc(right)`。C#生成器64组mask、bbox及224个旋转顶点全部与原厂严格一致。`CalibrationBoardRoiMask.Rectangle`是工具内算法，不重造公共ROI编辑器。
+
+圆板`SolveMasked`现实现真实bbox裁剪、识别后按中心mask过滤并保持网格索引、float加回原点再拟合。[21组原厂有效旋转ROI](calibration-board-roi-rotated-fixtures.json)覆盖局部bbox和79点保留，托管点数、索引、顺序和所有坐标float严格同值；专项457项及全部3266项均通过。其他板型mask分派、空mask异常仍明确未支持；原厂完全越界的旋转矩形在PreproMask.Run触发0xc0000409，已隔离保留阶段日志，不将该abort带入产品，也不将其作为正常识别错误码。
+
+[70组原厂网格辅助函数](calibration-board-circle-grid-fixtures.json)已补齐14角度×5缺点模式。缺失每第11点时原厂会选出37点子网格，而非简单保留全部72点，说明独立轴聚类或一般最近邻网格不能充当原厂匹配。8cd840及其邻接、双向一致/拓扑剪枝、索引归整函数源码已取回，独立移植仍在进行。该fixture明确不等于原厂完整工具运行对照。
+
+圆点网格匹配已按8cd840及其辅助函数移植：包括140组方向邻接、70组剪枝、70组连通子网格、70组方向归整和70组最终匹配，共630项严格断言；14角度及5种缺点模式的点集、索引、顺序、像素float全部一致。原厂排序比较器相等时仍返回-1，产品使用恢复出的CRT分区顺序，未替换成一般稳定排序。完整候选回归4902项通过，360组受控识别中292成功/68失败的类别、点数和首点float严格一致；该证据不包含任意输入或完整输出数值等价。
+
+【历史阶段，现已覆盖】默认300×300网格上限已确认于CreateHandle(0x68)→01bff0→01c210→01cdc0(null)分支，后经7c5340/7c93e0传入engine8c/90。超窗密度选择8cfb40仍未移植，当前产品明确拒绝该分支，不能声明其已支持。
+
+【历史阶段，拟合状态现已覆盖】独立Recognize、RecognizeCropped和RecognizeMasked入口现返回识别索引与全图float像素，不为获取点而先执行标定工具世界坐标拟合。世界坐标参数无效时圆点识别仍与原厂fixture全部点及索引相同；3911项常规验证通过。编码板间距仅以EncodedGridPitch元数据返回。圆点自身网格方向归整中的原厂内部拟合仍保留。Solve系列最终世界标定目前仍走既有高层拟合，尚未替换为7ed0c0按自由度/权重的两阶段调度，这是整工具闭合的明确阻塞。
+
+掩膜栅格器已抽为VisionCore.RectangleRoiMaskRasterizer，板工具仅薄适配。64组原厂像素/bbox及224个顶点、21组有效旋转圆板ROI运行证据继续严格通过。小ROI新增32/63像素对照，均返回圆板wrapper错误0x10000107；原图小于64仍为0x10103054，二者不混用。
+
+## 最新实现与证据状态（2026-10-18）
+
+此前两阶段拟合和8cfb40未移植的段落仅是历史记录，已不再是当前阻塞。公开HomoFreedom的0x40001 setter写engine9c，再传给每阶段拟合模型；7ed分两阶段的+18来自engineb4固定1。Weight4在公开0x40002 setter中明确转成3，不能把私有832830/RANSAC分支当作公开行为。
+
+`CalibrationBoardFitting`已接入Solve系列产品路径：重编码网格、参考点最近点/四邻像素比例、归一网格到像素第一H、853380世界坐标变换后像素到世界第二H。Weight1走8345e0+8006e0，2/3走7ff3c0(20次、1e-4)；不再借高层NPointSolver.Solve重新选择点。实际SDK的reference为(0,0)，独立于世界原点及图像中心；受控fixture的(240,200)是明确输入，不能混作默认。共享核的零残差捷径已按原码取消于native入口，保留原厂0x10000038线性失败到0x10103002的边界。
+
+[27组两阶段证据](calibration-board-fit-dispatch-evidence.json)包含4个失败及23个成功；错误码、第一/第二H、索引均float严格一致。23个成功H经真实SDK003fc0尾处理再读取六参数和PixelPrecision，全部与产品Analyze逐float位一致；原fit的23个MeanError也逐位一致。003fc0→process6a→01fcb0→7c6ba0命令4→7f5b80确认像素精度需先逐系数乘1/(H33+eps)再算行范数。六参数来自独立800af0，不以再次拟合替代分解。
+
+[最大密集窗口21组](calibration-board-circle-window-fixtures.jsonl)覆盖299/300/301/599/600/601列、缺点、负初始索引及非方8×6限制。8cfb40/89cfa0/89ead0实现row-major首个最大密度，置于LargestComponent和Canonical之间；尺寸、保留ID/顺序/索引42项全部严格一致，已移除>=299的未实现拒绝。`CalibrationBoardAxes`按730e90全pivot float求逆、投影与单位化，23组原厂6值全部逐位一致，Plugin已消费它，实际SDKWeight3/4两组产品运行的6轴输出也逐位一致。
+
+[12组黑/白点SDK](calibration-board-dot-mode-fixtures.jsonl)覆盖两种DotMode、对比2/5/255及自动/手动阈值：4失败/8成功全部错误码、80点索引/像素、9H及MeanError逐位一致。白点强对比的原厂首点约90.072/80.072，低对比手动阈值fallback首点92/82，产品保留该真实行为，未用普通bbox中心替换。此证据并不证明一般非frame复杂轮廓的fallback已闭合。
+
+工具内5份AlgorithmTab/Algorithm/Display/Module/Groups资源与安装目录原资源逐字节相同，哈希和sameBytes记录于[原厂资源报告](calibration-board-evidence.json)。配置仍消费公共模型/模板/ROI/显示框架；原厂完整桌面逐页像素验收尚未取得，不能因XML相同宣布UI一致。
+
+历史完整候选产品回归5110项（verification-b6df9b08cdbe4492aeb588cec7818655，0警告0错误，sourceChangedDuringBuild=false）已由本节当前状态表中的2026-10-19 5183项回归覆盖；当次还包含无轴邻接点专项，识别/阶段套件206项。9组对角点原厂输入确认：没有水平/垂直索引相邻点时，重编码需保留cvttss2si对NaN/越界返回int.MinValue及后续整数环绕，不能用会抛异常的Math.Abs(int.MinValue)或饱和转换。6组拟合失败码、3组成功的矩阵/参数/误差/坐标轴均严格匹配。该历史运行包含新稀疏点修复、共享QuadraticCornerRefiner及Plugin float坐标轴接线。
+
+棋盘旋转mask另有21组实际SDK证据，独立诊断重放crop→识别→按局部点查mask→float恢复原坐标。21组bbox、点数、全部索引和顺序均严格相同（22项断言）；当前共享角点核下最大坐标差0.00616455078125像素，报告位于analysis/calibration-board/checker-mask-differences.json。此测试不以容差宣布数值等价，尚未扩大产品的板型mask支持guard。默认棋盘实际调用873de0；8bb3a0的8次99点运行不改变XY，不能将其误称为位置细化核。8b5330及8bb3a0的原始记录、灰度输入已交共享识别核开发线，避免工具内重复实现。
+
+未闭合范围仍是棋盘原厂角点精度、其他板型旋转mask、超出已录非frame轮廓 fixture 的一般输入、最终原厂桌面验收；没有设备测试，也没有启动原厂全局平台。
+
+## 编码板旋转mask调查（在制）
+
+816650分派6→80f9a0、7→80e690、8→80cfc0、9→80bcd0。四个原函数均在bbox局部图像执行873de0后，先按局部点加0.5取整回查mask，再构建有缺点的网格并执行编码/方向解码；7/9后段调用813ca0/813020。该顺序不能用完整编码板Recognize后过滤结果替代，mask会影响解码输入。独立SDK探针EncodedRoiRotatedProbe已完成四型各21组，共84次成功；6/8保留141～225点，7/9保留108～168点。原始bbox、ID、顺序与坐标保存在[84组原厂fixture](calibration-board-encoded-roi-rotated-fixtures.jsonl)，[证据说明](calibration-board-encoded-roi-rotated-evidence.json)含来源hash。type8首次30秒受控超时，保留部分日志，120秒独立重跑完成21组；这不是原厂失败码。尚未据此扩大产品支持范围。源码和实际SDK结构、坐标必须分别验证。
+
+`CalibrationBoardMaskedGrid.Project`已实现前置mask投影。另一个独立原厂探针分别捕获每次873de0返回与80e690→7ff3c0(返回地址80f5b0)的解码前输入，作为21组中间态fixture；42项数目/ID/顺序/XY float位断言全部通过，识别/阶段专项248项通过。该helper并不自行实现identity解码，产品仍需共享识别的前置grid生命周期接点，并完成84组结构差分后才能扩大分派。
+
+84组mask-aware共享解码诊断已完成数据覆盖：[逐组差分](calibration-board-encoded-mask-differences.json)。6/8各21组全部点数、ID、顺序及XY float位相同；7/9各18组结构相同，坐标差最大0.00323486328125像素，另0/1/5三组存在码opening左上角多点或网格边缘漏点，完整单例raw/projected/tag数据已交共享识别线。原全84进程达到900秒受控超时；6/7全部完成记录在每例bbox断言后落盘，8/9独立批次各exit0，合并数据不冒充全进程成功或产品等价。生产mask分派仍等待四型所有结构/点值严格通过。
+
+四编码板空白图在full/旋转mask共8次原厂SDK运行均返回0x10000107，已修正工具原有将编码板错误归为棋盘0x10103000的分支；棋盘错误码保持不变。专项增加4条原图空白断言。
+
+## 编码板物理尺寸与完整输出（2026-10-18）
+
+补齐四型84组实际SDK旋转ROI的9H、MeanError、六参数、PixelPrecision和六坐标轴；使用原厂点输入两阶段Fit/Analyze并采用公开PhysicalSize=1，84组全部字段逐float位一致。再以frame7/9相同payload分别调用SetCalibBoardGridSize(1/2)，4组公开setter证据及所有完整输出也严格匹配，共88组。source7ed0c0的param11+0x10来自公开PhysicalSize，不能用识别payload的GridPitch覆盖。旧Product覆盖的H00/SDK实际系数在7型约9.999996959、9型约1000.004485437；Finish已移除该metadata覆盖，保留识别元数据本身。
+
+原厂完整结果见calibration-board-encoded-roi-output-fixtures.jsonl及calibration-board-encoded-physical-pitch-fixtures.jsonl。88组结果比较为原厂点对的结果层隔离，不能替代图像到点的识别等价证明；识别/阶段正式套件253项通过，产品4型真实运行与原厂完整输出差分正另行验证。
+
+最新全套5167项通过（verification-a58ac45d32334a779210aba189bbf948，0警告0错误），含两阶段88组原点对结果、四型真实ModuleRuntime、编码板空白错误及mask前置投影。6/8型实际生产输出的225个点、9H和全部14标量均逐float位严格同值；7/9均168点，仍有共享角点差及相应矩阵/标量小差，不能把尺度修复视作识别等价。[真实节点差分](calibration-board-encoded-full-product-differences.json)保留全部字段。
+
+本次sourceChangedDuringBuild为true：已有冻结CS文件hash均未变，新增NImageSourceGridNeighbor.cs恰在构建期间创建，但编译产物不含该类型元数据；source-change-review.json保留此核查。本次不验证该新helper及未来共享selection接线，待其稳定后继续实际图像/ROI全链重跑。
+
+## 非frame圆点轮廓闭合调查（2026-10-18，在制）
+
+原厂7582e0(mode0)先取逐行非零首尾点，经Y/X排序去重和有序凸包得到轮廓，8620c0再调用8a9f50/8aa010包围圆。独立`CalibrationBoardBinaryHull`与`CalibrationBoardEnclosingCircle`已进入候选fallback：90组圆核的中心/半径全部float位相同；54组二值fixture中48组非空的有序凸包和完整fallback全部同值，6组空图的原厂未初始化scratch行为不伪造，托管返回空集。正常Otsu非空最大灰度分支不触发空图情形。
+
+877b20在非空边缘但线性拟合退化时仍返回1，且不覆盖调用者已有中心；877230在整个候选循环前仅初始化一次中心。产品按该源行为保留上一成功边缘拟合中心，不把退化返回错标为fallback。180组实际原厂877230初始候选的点数/顺序/XY/EdgeFit/Size现已全部严格同值，含32组此前不支持的三灰度圆环非frame轮廓和1组退化边缘。
+
+33组完整原厂SDK边界图运行的全部点数/ID/顺序/XY float位相同，29组H/误差/参数/坐标轴也全部同值；160/161/166/167四组最终输出仍有公共拟合核差异。捕获132个7ff3c0调用，其中66个板工具两阶段直接重放已有58个H同位，8个不同；这证明差异不由板识别或世界坐标前处理产生。
+
+独立测试候选仅将IRLS残差分母改为使用预先计算的float逆矩阵系数，66组提高到64个H同位，四组最终H全部修正。7fec40实际指令1807fefea～1807feff9在循环前计算cofactor×inverseDeterminant，1807ff052～1807ff075仅作逐点乘加，支持该修正；反编译C文本会隐藏此提取顺序。公共生产源码尚待统一所有者合入及跨工具回归。132/144首阶段仍有微差，最终H本来相同，继续单独定位，不放宽断言。
+
+证据：`calibration-board-enclosing-circle-fixtures.jsonl`、`calibration-board-binary-hull-fixtures.jsonl`、`calibration-board-boundary-candidate-fixtures.jsonl`、`calibration-board-boundary-runtime-fixtures.jsonl`、`calibration-board-boundary-fit-stage-fixtures.jsonl`。当前180候选通过不代表33全工具或新全量回归已闭合；5167项全量记录是本节修改前的历史通过结果。
+
+后续隔离补证：66阶段594个初始H字段、19872个归一化点字段全部与7fd4e0入口同位。132/144各13轮的H、80个radii和median以及最终8580e0八系数也全部同位，剩余第一阶段差异仅在尾部反归一化输出。仅删除特殊z重算的候选核（没有额外改determinant结合顺序）经同一两阶段Fit/Analyze重放33组原厂点，最终9H、MeanError、六参数、PixelPrecision及六轴33/33全部float位一致；这是独立实验，不代表公共生产核已修复或产品全回归已完成。摘要见[边界拟合证据](calibration-board-boundary-fit-evidence.json)。
+
+范围更正：上段“132/144末轮LS全同、仅尾部反归一化不同”撤回为待确认。后续轮次/730be0探针仅运行132/144两例时，原厂第一阶段H会随前序SDK调用历史改变；该隔离序列恰与候选同值，不能外推完整33序列。现正按完整33顺序重采。66个初始H/归一化输入来自完整33序列，0差结论有效；33最终完整结果同位实验也有效。原厂内部第一阶段的历史敏感行为需与产品可见最终结果区分。
+
+完整33顺序的后续证据已确定上述内部H差的来源：首轮H及所有radii相同，原厂median却不同；7fec40插入排序无下界，实际读取/移动sorted[-1]。共51轮原厂排序结果不等于对radii正常排序。132/144第一阶段首轮前缀都为1，使原厂median升到0.00991088338/0.00991073437，随后前缀变成前一轮最小残差。详见[排序历史证据](calibration-board-boundary-median-history.json)。这不是尾部矩阵乘法误差。当前不把未知workspace前缀固定为1、不复制越界读写；其生命周期尚需追证，当前33组最终工具可见输出不受这两例内部H微差影响。
+
+## 源网格接入后的棋盘实际产品证据（2026-10-18）
+
+共享NImageSourceGridPyramid完整873de0选择已由共享线证明原始网格点/顺序/索引/float坐标。板工具专属checker分派现使用此入口，保留公共旧FindLattice供其他消费者，不在工具内重建公共核。RecognizeMasked扩展到checker，按真实bbox原像素识别→局部mask回查→float加全图原点；21组实际产品入口的99点或裁剪点数/ID/顺序/XY逐float位全部相同，43项通过（verification-bf3316eb599e4a67b5976ca051318119）。
+
+独立读取既有原厂SDK棋盘mode1～5（两坐标模式、物理尺寸、原点、90度旋转）完整结果，实际CalibrationBoardSolver.Solve五组全部识别点、最终9H、MeanError、六参数、PixelPrecision和六轴严格同位，verification-994353256b8341f2a52304812e9ed167通过。此5组完整产品证据已加入正式suite，不能再把历史0.00616455px差当作当前这组fixture的未闭合项；一般输入和桌面像素验收仍独立。
+
+## 编码板source grid产品接入（2026-10-18）
+
+84组四型旋转mask解码的点数/ID/顺序/坐标全部零差，详见calibration-board-encoded-source-mask-differences.json。完整原进程在900秒受控超时，保留6/7各21、8前15组，另7/9独立各21组和8末6组strict位断言完成；这里明确是合并84独立实际结果，不称同一进程全通过。
+
+板工具已接入共享source adapter，不修改公共FindLattice：四编码板full模式实际ModuleRuntime每型点、9H和全部14标量均位同（verification-42ecbe7bd5ab490a86b1fdb3cd4c1e88；当次严格断言原6/8，7/9完整差分也全同，测试现已收紧到四型）。RecognizeMasked按原厂前置mask→全图索引与像素→identity解码顺序，Solver.SolveMasked四型5°ROI实际整工具的点/ID/顺序、9H、MeanError、六参数、PixelPrecision、六轴全部同位（verification-1e9956dcce124c09843ace240e35a486）。报告分别为calibration-board-encoded-full-product-differences.json和calibration-board-encoded-mask-product-differences.json。
+
+插件宿主的旋转ROI旧!=2拒绝位于根线拥有的CalibrationBoardPlugin.cs，尚需所有者移除后才是实际ModuleRuntime旋转ROI接线完成；不把Solver层通过称为宿主已放行。新增SolveCropped(source,crop,options,x,y,token)及RecognizeCropped同形重载，为轴ROI保留原图解码，旧重载保留兼容。12组四型×三尺寸的真实SDK轴ROI完整结果已采集，正在检查新重载，未据接口存在宣称产品已消费。
+
+12组四编码板×三尺寸的原厂SDK axis ROI完整结果与新source+crop重载已全部严格通过（verification-5e7bd0e49d3d47d6b621d68e06826f68）：点数、ID、顺序、XY float位、9H、Mean、六参数、PixelPrecision及六轴均相同，见calibration-board-encoded-axis-output-fixtures.jsonl和calibration-board-encoded-axis-product-differences.json。宿主接线只需由其所有者把SolveCropped(image,options,x,y,token)改为SolveCropped(sourceImage,image,options,x,y,token)，保留原厂轴ROI既有round/clip规则。Source-grid适配/解码的独立几何边界仍不外推任意未录图像。
+
+当前阻塞集中为公共新native IRLS的z分母hoist修复与其跨工具回归、宿主上述两处接线、fresh-AllCandidates和最终用户手验。180候选及33独立完整输出实验不是生产4例拟合差已修复的声明；尚未提交、推送或启动验收窗。
+
+最新真实产品边界严格回归verification-f663c06564e44c5cb68d0993b3cd1caf已完成：sourceChangedDuringBuild=false，33组识别点全部float位同，29组完整输出同位，仅160/161/166/167四组仍按预期在公共IRLS未合hoist修复处失败。测试保持失败，不用独立实验结果替代产品通过。当前没有遗留设备探针或运行中的板工具构建/验证进程。
+
+## 隐藏运行参数写入边界复核（2026-10-19）
+
+原厂模块 `IMVSCalibBoardCalibModu.dll`（SHA256 `bd62ee940a2e299c0c47e41909e64ca78c09d7717e7cefc629dbfb9e21105c1d`）的 Ghidra 指定函数 `SetParam @ 0x180020d40` 反编译文本在 `analysis/calibration-board/native-decompile/output/180020d40.c`（当前文件 SHA256 `dcf7ef94f929d6aa28501de637cab5298238a8322ce9b74249ca9993027a3361`）。源码确认 `FilterState` 改写为原生参数名 `FilterStatus`，`WeightFun` 改写为 `CalibBoardWeightFun`，`SubpixelWinSizeUserSetValue` 改写为 `SubPixelWindowSize` 后才进入 native `SetParam`；这是模块适配别名，不是新 SDK 参数。
+
+同一函数确认直接请求 `GrayContrast`、`SubpixelWinAuto`、`SubPixelWindowSize` 会返回0且不进入 SDK setter；`SubpixelWin` / `SubpixelWinAuto` 的映射分支也以成功返回结束，不写入 SDK。资源 `AlgorithmTab.xml` 将 GrayContrast、SubpixelWinAuto、SubPixelWindowSize 标为 `IsAbandon=True`，且上述字段为隐藏/只读配置，因此当前插件未将它们作为用户可改的运行选项开放是符合已见模块写入路径的。独立/原厂 SDK 对所有非法别名组合的运行结果仍未逐一回放；不能把模块对这几个名字返回0解释成算法确实消费了相应数值。
+
+参数读取/执行路径仍有待补证：该结论只说明 SetParam 名称转换与 setter 分支，不足以证明 SDK 中 `FilterStatus` 对每类板型是否影响像素检测，也不证明被隐藏的 subpixel size 在别的初始化路径完全无效。设备与原厂桌面未测试。
+
+本轮加入 `AbandonedParameterChecks` 专项回归，没有改变产品算法或共享配置框架：从实际嵌入资源建立 `ToolConfigurationState`，对以上三项逐一检查 `IsAbandon=True`、`AccessMode=O`、计算后 `Visible=False`，同时断言模块参数描述仍保留默认值15/1/30，避免把配置兼容值误删。原厂dll SHA256 `bd62ee940a2e299c0c47e41909e64ca78c09d7717e7cefc629dbfb9e21105c1d`；资源 `AlgorithmTab.xml` SHA256 `76c9cd661a359216041b902cce8fae115566726707e749cc42c0bb9722bcbf91`、`Algorithm.xml` SHA256 `f3686bb776ae7765a33d1a071a42c3360adad5e6f8035db1a8a17d8ca60e3cb8`；反编译 `SetParam @ 0x180020d40` 文本 SHA256 `dcf7ef94f929d6aa28501de637cab5298238a8322ce9b74249ca9993027a3361`。定向运行 `tests/CalibrationBoard.Checks/Run.ps1 -AbandonedParametersOnly` 通过15项，sourceChangedDuringBuild=false，运行摘要 `analysis/calibration-board/verification-b7be2a66f86f4837ade1a3c3496a7bff/summary.json`。该检查只证实插件状态模型按嵌入XML隐藏并保留兼容默认值，不是桌面像素验收，也不补足原生初始化路径的未知。
+
+## 残余源码审计补充（2026-10-19）
+
+### 非 frame 圆点定位回退：当前已接入，旧状态描述作废
+
+此前第120、166行仍写着“其他非矩形边框fallback明确拒绝/仍开放”。这与当前 `CalibrationBoardCircleCandidates.Find` 的真实分支不符：边缘圆拟合没有可用候选时先检查整幅二值 crop 是否为全亮边框；不满足则调用有序二值凸包，再调用包围圆拟合。只有空凸包相关原厂工作区状态不确定时才明确抛出 `NotSupportedException`，不是笼统拒绝非 frame 输入。
+
+| 证据 | 直接确认内容 | SHA-256 |
+|---|---|---|
+| 原厂 `FUN_1808620c0` | 建立候选工作区，调用 `FUN_1807582e0` 生成 mode 0 轮廓，再交 `FUN_1808a9f50` 估算位置 | `7DA7670A4F2731117AFECCCBE9730911A45ED11089D4B0D7C93819803A44CF2D` |
+| 原厂 `FUN_1807582e0` | mode 0 按图像行扫描非零区间并形成有序轮廓/凸包输入 | `67251017A355121621361694CAE6037230EEE8ED202587060664003FD977E245` |
+| 原厂 `FUN_1808a9f50` | 消费轮廓输出并进入包围圆候选计算 | `A287A6674B60DB17C78187DA95422C674ECDCBA78AF51699C774C35936C16D16` |
+| 当前独立实现 | `CalibrationBoardCircleCandidates.Find` 在 frame 检查失败后执行 `CalibrationBoardBinaryHull.Find` 与 `CalibrationBoardEnclosingCircle.Find` | `B1B07B52B4326892F2F91F56FE290A0F79CA2C457552523712F8C4527BFDCBAA`、`752A0B055DAEED40C6BAF7023631344B5E5B23DD3F4A9A76C8D80B0B6811189B` |
+| 定向原厂回放回归 | `BoundaryRuntimeChecks` 对 native fixture `index=120` 还调用真实 `CalibrationBoardPlugin` 入口；断言模块成功且 `CalibData` 的 H 逐 float 位匹配，此外同批每个 boundary case 比较点序、索引、H、指标、轴 | 检查 `21814D686D96092F9C4537F06DAF461232B6DF6F453129FED8186E350947D9D0`；fixture `4B10BD810CD60816BFCC71BB38EF7C74D73D78C4BC09053956395D9BDA315DDC` |
+
+index 120 是 480×400 圆点图案、contrast 5、EdgeThreshLow/High=20/40 的非 frame 候选回退样本；原厂与产品均输出72点，真实插件完整 H 逐float位相同。按最新稳定源运行 `Run.ps1 -BoundaryRuntimeOnly` 通过3项聚合断言；摘要 `analysis/calibration-board/verification-3f3d8d2675204df48527212a56e2150a/summary.json` SHA-256 `D17DAE7598BAF0514D2C0AAE32834F6F93676E75443DCFB91B3FCD01BFC73E2B`，`sourceChangedDuringBuild=false`、`devices=false`。同日 `-AllCandidates` 虽 PASS 5198，但 `sourceChangedDuringBuild=true`，期间共享 `src/VisionPlugins.Calibration/NPointSolver.cs` 发生改动，故不把它作为干净全量回归结论。报告将“非 frame fallback 整体不支持”收窄为“已录非空轮廓样本已接通并对照；任意轮廓仍受样本覆盖边界约束；空凸包异常 scratch 不模拟”。
+
+### 低对比候选门限与 EdgeThresh 桥接
+
+已登记的 contrast 2 圆/椭圆失败条件可以收敛到原厂候选筛选：SDK 默认因子5时，受控预处理 fixture 的每圆前景连通域面积为4；`FUN_180877230`先只保留面积大于4的区域，故候选数为零并在局部细化前失败。该面积是逐像素预处理 fixture 与反编译筛选条件的阶段重建，不是内部组件缓冲直接动态捕获。产品 `CalibrationBoardCircleCandidates` 也按 `region.Area>4` 初筛；此已录失败无需加猜测对比度门限。证据及边界见 [圆点低对比度追踪](CALIBRATION-BOARD-CIRCLE-LOW-CONTRAST-TRACE.md)。
+
+`EdgeThreshLow/High` 对 `param_10+0x28/+0x2c` 的准确桥接依然没有闭合。已有 Ghidra 源确认候选侧阈值槽的强弱语义，模块 setter 也确认收到具名参数；但 SDK vtable setter 的反编译没有读取 name/value，无法证明这两个 XML 叶分别写入哪个运行槽。360组已采集圆点 SDK结果及当前候选逐float对照证明这些输入在受测样本会影响输出，不提供槽位证据。不得根据数值输出反向猜偏移；最小闭合证据仍是同一SDK实例单变量写入并捕获候选入口三个4-byte槽位。
+
+本轮只纠正该专属逆向报告的过期 residual 描述并运行既有定向回归；未改产品/共享框架代码、未做设备测试。更广的 `-AllCandidates` 回归仍在执行中，最终结果以其独立 summary 为准。
+
+## 失败结果中的 Detect ROI 输出（2026-10-19）
+
+`IMVSCalibBoardCalibModu.dll` 的 `ProcessOutput @ 0x180020630`（Ghidra 文本 `analysis/calibration-board/native-decompile/output/180020630.c`, SHA-256 `E13AF4828717AFE54ED4A9B54947CB21300427482FA81432D709779F044F66C0`）先写 `ModuStatus` 和运行耗时，再无条件尝试写 `DetectCenterX/Y/Width/Height/Angle`，这五个 SetFloat 的 `count` 为 `param_1+4 != 0`；之后才判断 `BASIC_MODU_OUTPUT` 首字段是否非零，并仅在成功时写标定结果。原厂模块输入结构 `VmAlgModuBase.h`（安装目录 VM4 工具源码，SHA-256 `0E6151650D7758356CF4BBC8546F4CED10DDC9191EECA7047E5C9BCB34849278`）证明 `param_1+4` 是 `nROIInputStatus`，`struDetectBox` 从 `+0xa4` 开始；`VmAlgModuTypes.h`（SHA-256 `629DAF343C7408D79CE3AEEA798741BE374169609502B414601FD4D2536DFDD8`）定义 ROI 状态 0 为 `IMVS_ROI_FROM_ERROR`，非零状态为 UI/Input/Mask。故失败帧也可能输出 ROI 检测框；标定数组、矩阵和拟合标量仍受 success 标志门控。
+
+`CalibrationBoardPlugin.Runtime` 先前遇到识别错误时只返回 `ModuStatus=0`，漏掉了有 ROI 输入时的五个几何输出。本次修复在 `NoMatch` 路径按原生 float 精度写出配置 ROI 的中心、宽高和角度；`c.Rois` 为空时保留无 ROI 状态，省略五项。成功结果路径不变。原始 `ProcessAlg` 依次把固定 ROI shape 对象转交 SDK，输入结构定义与插件 ROI 配置提供了这一映射依据；具体 VM 宿主在没有显式 ROI 配置时是否总生成默认 full-image ROI 仍未知，不能据这项修复宣称空配置桌面行为已确认。
+
+新增 `FailureOutputChecks` 对空 ROI 与有 ROI 的空白失败图像验证：NoMatch 状态、无 ROI 五字段缺失、有 ROI 五字段 float 值、两种情况下标定结果字段均不出现。`tests/CalibrationBoard.Checks/Run.ps1 -FailureOutputOnly` 通过11项，摘要 `analysis/calibration-board/verification-afb02caf43b949dfba271fe1b2607393/summary.json`，`sourceChangedDuringBuild=false`。完整 `Run.ps1` 已结束，在 `tests/CalibrationBoard.Checks/Program.cs:50` 的严格原厂 circle80 fixture 断言（`board=2, mode=1, native default circle80 estimation error replay`）截停；原厂 EstimationError `7.76673478e-05`、当前 `1.0455666051711887e-04`，差约 `2.69e-05`。这不是本轮 ROI 变更导致的回归结论：全量快照 `analysis/calibration-board/verification-fae98226797740ffb73483f12bc70b50/sources.json` SHA-256 `054A9F624E94430D51F039B02316E9CD0E96969B0AB63B5DF4915CAB326F567F`；摘要为 exitCode=1 且 `sourceChangedDuringBuild=true`，唯一检测到变化的是由 `8b2216c99ca46c0ba9cf8dcdf14887bc318212201ac60472995c1a95f02d61ee` 变为 `AAF789A9EFD17AFEADEC197B73287CEFFCBA922236E17DC6738085BA71925CEC` 的 `src/VisionPlugins.Calibration/TranslationWindow.cs` 在制修改。因此全量结果不作为干净回归基线，待 Translation 源稳定后再跑；本次板 ROI 独立专项仍是干净验证。无设备或桌面测试。
+
+## circle80 EstimationError 基准归属修正（2026-10-19）
+
+原厂 `EstimationError` 严格比较的算法归属应为标定板模块的 `Fit + Analyze` 流程。标定板 dispatch 源 `docs/plugins/calibration-board-fit-dispatch-evidence.json` 所记录的 board=2 fit+18=1 路径执行两阶段拟合：先拟合归一网格到图像，再拟合图像到世界坐标；它随后按板工具的 Analyze 路径计算估计误差。产品对应实现是 `CalibrationBoardFitting.Fit` 与 `CalibrationBoardFitting.Analyze`，`CalibrationBoardSolver` 的成功流程也消费这两个阶段。
+
+本轮 80 个 circle 点 fixture 的逐项回放确认：Board 两阶段末矩阵与原厂九个 float 系数完全一致；Board `Fit + Analyze` 的 `OffsetError` 转为 float 后与原厂 metrics `EstimationError` 相同（原厂 `7.76673478e-05`，产品 double `7.766734779579565e-05`）。用于定向诊断的隔离检查 `Run.ps1 -Circle80FitDiagnosticOnly` 通过，`sourceChangedDuringBuild=false`，输出在 `analysis/calibration-board/verification-fd869752304049709337b74296b468d1/summary.json`。此回放不依赖设备。
+
+此前完整检查把同一个原厂板工具 `EstimationError` 错误地与通用 `NPointSolver.Solve` 的 `OffsetError` 比较。该通用 solver 使用不同的点选取/求解路径，尽管当前矩阵 float 值相同，`OffsetError` 为 `1.0455666051711887e-04`；它不应被当成板工具的原厂误差基准。测试已改为：generic solver 仅独立验证成功和矩阵边界，原厂 EstimationError/Aspect 的严格 float 断言绑定 Board 的 `Fit + Analyze`。未放宽阈值，未改共享 NPoint 求解器；generic solver 的差异作为独立算法边界保留在 `analysis/calibration-board/native-point-fit-differences.json`。
+
+原厂控制流证据仍以 `docs/plugins/calibration-board-fit-dispatch-evidence.json` 和 native fixtures 的 `phase=metrics` 项为锚点；Board 两阶段拟合/分析代码为 `src/VisionPlugins.CalibrationBoard/CalibrationBoardFitting.cs`。目前没有把 Board 所有模式的误差差异推广为已闭合，仅对严格断言覆盖的圆点默认左右手模式逐个 fixture 比较。
+
+## 失败帧进入结果显示的生命周期修正（2026-10-19）
+
+原厂 `ProcessAlg @ 0x180020240` 将算法结果状态与耗时写回 `BASIC_MODU_OUTPUT`；`ProcessOutput @ 0x180020630` 先写 `ModuStatus`，再无条件尝试写 `DetectCenterX/Y/Width/Height/Angle`（写入计数取决于输入 `nROIInputStatus`），随后才以结果首字段作为成功门控读取并写标定点、矩阵指标等字段。嵌入 `Display.xml` 的 ROI 对象分别映射五个 Detect 字段，并用 `ModuStatus` 决定状态颜色。因此源链允许失败帧仍以 NG 状态显示其检测 ROI，同时不显示成功专属的标定点、原点和坐标系。
+
+此前插件失败分支已返回原厂对齐的失败输出，但在返回前没有保存 `snapshot.Outputs`；`LastDisplay` 只读取该快照构造显示帧，导致失败结果没有进入显示层。本次在 NoMatch 结果分支把当前失败输出快照一并写入，未更改字段、成功门控或错误码。
+
+`FailureOutputChecks` 现在通过真实插件执行路径验证：失败 ROI 可在 `LastDisplay` 中生成红色 ROI，几何值匹配失败 Detect 输出，成功专属图形不出现；同一节点随后成功执行，显示状态恢复蓝色 OK 且标定点重新出现。`Run.ps1 -FailureOutputOnly` 通过19项，`sourceChangedDuringBuild=false`，summary 为 `analysis/calibration-board/verification-2309b9a4304a4a2ea71eeeec9aa63bff/summary.json`。无设备/桌面测试。
+
+源码锚点 SHA-256：`ProcessAlg` 反编译文本 `54F2D3D7E37CE1DFBA973629F8B135D450E2DF7B78AC5263FB71889B5E8A073A`；`ProcessOutput` 文本 `E13AF4828717AFE54ED4A9B54947CB21300427482FA81432D709779F044F66C0`。该修复的未验证边界仍包括原厂平台显示对象真实渲染与桌面视觉验收；专项证明的是模板映射和插件的 `LastDisplay` 输出结构。

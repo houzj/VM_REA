@@ -63,7 +63,8 @@ static class Program {
   var target=Path.Combine(output,"source-save.xml");saves.Path=target;state.Invoke(state.Find("SaveFile")!);Check(File.Exists(target)&&values["CalibPathName"].GetString()==target,"source save command exports actual solved calibration file");Check(JsonSerializer.Deserialize<Dictionary<string,string>>(values["ConfigurationUserData"].GetString()!)!["SaveCalibPath"]==target,"SaveFileDialog records original user-string key");
   Check(saves.Remembered==target&&notices.Messages.Any(m=>m.Kind==ConfigurationNotificationKind.Success),"successful export records history and notification");
   int messages=notices.Messages.Count;saves.Cancel=true;state.Invoke(state.Find("SaveCalibPath")!);Check(notices.Messages.Count==messages,"hidden SaveFileDialog command supports cancel without export or notification");saves.Cancel=false;
-  var previous=state.Find("CalibPathName")!.Value;state.CommitUser("CalibPathName",Path.Combine(output,"wrong.txt"),true);Check(state.Find("CalibPathName")!.Value==previous,"typed path validates extension as browse path does");
+  var previous=values["CalibPathName"].GetString();string invalid=Path.Combine(output,"wrong.txt");state.CommitUser("CalibPathName",invalid,true);Check(state.Find("CalibPathName")!.Value==invalid&&values["CalibPathName"].GetString()==previous,"source invalid typed path retains attempt while backend path remains accepted");
+  string upper=Path.Combine(output,"rejected.XML");saves.Path=upper;int notifyCount=notices.Messages.Count;state.Invoke(state.Find("SaveFile")!);Check(!File.Exists(upper)&&values["CalibPathName"].GetString()==previous&&saves.Remembered==target,"source save rejects uppercase suffix before export and history");Check(notices.Messages.Count==notifyCount+1&&notices.Messages.Last().Kind==ConfigurationNotificationKind.Error,"source save suffix rejection reports once");
   window.ConfigurationView.Tabs.SelectedIndex=2;window.ConfigurationView.Refresh();window.UpdateLayout();Check(Walk(window).OfType<ConfigurationObjectTextBox>().Any(),"result tab uses actual object StringConfig control");Capture(window,Path.Combine(output,"result-source-derived.png"));
   window.ConfigurationView.Tabs.SelectedIndex=0;window.ConfigurationView.Refresh();window.UpdateLayout();Capture(window,Path.Combine(output,"manual-source-derived.png"));
   state.Invoke(state.Find("ClearPoint")!);Check(plugin.Snapshot(context with{Node=node with{Parameters=values}})[0,2]==0,"clear command really clears runtime points");
@@ -76,7 +77,7 @@ static class Program {
    var acceptedCount=values["CalibPointTotalNum"].GetInt32();resetSession.State.Invoke(reset);
    Check(resets==0&&values["CalibPointTotalNum"].GetInt32()==acceptedCount,"cancelled reset leaves accepted parameters untouched");
    acceptReset=true;resetSession.State.Invoke(reset);
-   Check(resets==1&&values["CalibPointTotalNum"].GetInt32()==plugin.Descriptor.Parameters.Single(p=>p.Name=="CalibPointTotalNum").DefaultValue!.Value.GetInt32(),"confirmed reset uses host atomic transaction");
+   Check(resets==0&&values["CalibPointTotalNum"].GetInt32()==acceptedCount&&values["HomoFreedom"].GetInt32()==2&&values["WeightFun"].GetInt32()==3,"confirmed source-list reset is non-atomic and preserves point count");
    Check(ToolDisplayService.Read(values,plugin.DisplayDefinition).FontSize==18,"algorithm reset retains display object configuration");
    Check(values[ToolConfigurationDisplaySubscriptions.ParameterName].GetString()==positionBeforeReset,"algorithm reset retains display-only source bindings");
   }

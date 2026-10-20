@@ -1,0 +1,11 @@
+# 裁剪与掩膜后源码网格上下文
+
+2026-10-19，根线审查D线候选后接入共享上下文与标定板两个调用入口。原core SHA85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549，具体80e690体见analysis/map-calibration/d2-padding-address/source/18080e690.c及对应asm。
+
+原体873de0输出crop局部点之后，mask按local float+.5截断取样并稳定压紧XY/原ID，XY以float加bbox原点。原grid宽高保留到uStack2b8。随后才计算剩余ID的minima、初始化dense缺失身份并按输入顺序写XY。因此删去最小ID后应重算minima，但不能把分配宽高缩成剩余extent，也不能保留旧局部XY。
+
+新增NImageSourceGridContext.RebuildForProjectedPoints复用已验证的FromResult分配/后写规则，保留原宽高，对调用者已投影的点重建不可变上下文。CalibrationBoardSolver两个encoded crop/mask入口将其附回重建的NImageLattice。此前这两个入口重新构造lattice时丢掉SourceGrid；当前解码旧路径还未消费上下文，后续R04必须使用正确原图坐标。
+
+验证：analysis/nimage-context-projection/869d86ac152448e99e60f2486cb84d46，新增删除最小ID后尺寸保留/minima更新/globalXY、原snapshot不变、空点返回null检查；原八组source/target×HIK7/9×normal/reverse各168点通过。analysis/calibration-board/context-projection-4fd5d31d3abb48e391607ff3c8291f98，构建0警告0错误，encoded-axis及encoded-mask完整输出aggregate各1项通过，退出码均0。未执行新原厂或设备操作。
+
+这是上下文传输与已确认调用顺序修复，不能据此称R04自动opening/refinement已经完成。Map专属ROI原先先解码crop再mask/offset的另一处顺序差异由D线继续实施及验证。工具计数不因本片增加，人工验收独立。

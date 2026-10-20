@@ -65,7 +65,7 @@ public partial class MainWindow
     Point World(Point p)=>new((p.X-panX)/scale,(p.Y-panY)/scale);
     Rect ViewRect()=>new(CanvasScrollViewer.HorizontalOffset/scale,CanvasScrollViewer.VerticalOffset/scale,Math.Max(1,CanvasScrollViewer.ViewportWidth)/scale,Math.Max(1,CanvasScrollViewer.ViewportHeight)/scale);
     static double Snap(double value)=>Math.Round(value/5)*5;
-    static double NodeVisualHeight(NodeDocument n)=>n.ModuleId==WorkflowCalls.ModuleId?40:NodeHeight; Rect NodeBounds(NodeDocument n)=>new(n.X,n.Y,NodeWidth,NodeVisualHeight(n));
+    double NodeVisualHeight(NodeDocument n)=>n.ModuleId==WorkflowCalls.ModuleId?40:NodeHeight+(RuntimeDescriptor(n) is {SupportsDynamicOutputs:true} descriptor?Math.Max(1,descriptor.Outputs.Count)*14:0); Rect NodeBounds(NodeDocument n)=>new(n.X,n.Y,NodeWidth,NodeVisualHeight(n));
 
     void RenderGraph()
     {
@@ -127,13 +127,39 @@ public partial class MainWindow
 
     Canvas CreateNodeCard(NodeDocument node,int index,bool isSelected)
     {
+        var runtimeDescriptor=RuntimeDescriptor(node);
+        int runtimePortCount=runtimeDescriptor is {SupportsDynamicOutputs:true}?Math.Max(1,runtimeDescriptor.Outputs.Count):0;
         var card=new Canvas {Width=130,Height=NodeVisualHeight(node)+20,Background=Brushes.Transparent,Tag=node.Id}; if(node.ModuleId==WorkflowCalls.ModuleId)return CreateGroupCard(node,isSelected,card);
-        var body=new Border {Width=NodeWidth,Height=NodeHeight,CornerRadius=new CornerRadius(node.ModuleId=="vision.image-source"?15:4),Background=new LinearGradientBrush(Color.FromRgb(250,247,245),Color.FromRgb(235,230,226),90),BorderBrush=isSelected?orange:Brushes.Gray,BorderThickness=new Thickness(isSelected?2:.7),Effect=new System.Windows.Media.Effects.DropShadowEffect {BlurRadius=3,ShadowDepth=3,Opacity=.45}};
+        var body=new Border {Width=NodeWidth,Height=NodeVisualHeight(node),CornerRadius=new CornerRadius(node.ModuleId=="vision.image-source"?15:4),Background=new LinearGradientBrush(Color.FromRgb(250,247,245),Color.FromRgb(235,230,226),90),BorderBrush=isSelected?orange:Brushes.Gray,BorderThickness=new Thickness(isSelected?2:.7),Effect=new System.Windows.Media.Effects.DropShadowEffect {BlurRadius=3,ShadowDepth=3,Opacity=.45}};
         if(!node.Enabled)body.Background=new LinearGradientBrush(Color.FromArgb(211,211,211,245),Color.FromArgb(211,211,211,225),90);
-        var content=new Grid();content.ColumnDefinitions.Add(new ColumnDefinition {Width=new GridLength(24)});content.ColumnDefinitions.Add(new ColumnDefinition());
-        var icon=new Image {Source=ToolAsset(node.ModuleId),Width=16,Height=16,Margin=new Thickness(4,0,0,0),VerticalAlignment=VerticalAlignment.Center};content.Children.Add(icon);
-        var text=new TextBlock {Text=index+node.Name,FontSize=12,FontWeight=FontWeights.Bold,Foreground=new SolidColorBrush(Color.FromRgb(55,58,60)),VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis};Grid.SetColumn(text,1);content.Children.Add(text);body.Child=content;
+        var content=new StackPanel();var title=new Grid {Height=NodeHeight};title.ColumnDefinitions.Add(new ColumnDefinition {Width=new GridLength(24)});title.ColumnDefinitions.Add(new ColumnDefinition());
+        var icon=new Image {Source=ToolAsset(node.ModuleId),Width=16,Height=16,Margin=new Thickness(4,0,0,0),VerticalAlignment=VerticalAlignment.Center};title.Children.Add(icon);
+        var text=new TextBlock {Text=index+node.Name,FontSize=12,FontWeight=FontWeights.Bold,Foreground=new SolidColorBrush(Color.FromRgb(55,58,60)),VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis};Grid.SetColumn(text,1);title.Children.Add(text);content.Children.Add(title);
+        if(runtimePortCount>0)
+        {
+            var outputs=runtimeDescriptor!.Outputs;
+            if(outputs.Count==0)content.Children.Add(RuntimeOutputRow("无动态输出端口",null));
+            else foreach(var output in outputs)content.Children.Add(RuntimeOutputRow(output));
+        }
+        body.Child=content;
         Canvas.SetLeft(body,10);Canvas.SetTop(body,10);card.Children.Add(body);return card;
+    }
+
+    static Border RuntimeOutputRow(string name,string? kind)
+    {
+        var row=new Grid {Height=14,Margin=new Thickness(3,0,3,0),ToolTip=kind is null?name:$"{name} · {kind}"};row.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(8)});row.ColumnDefinitions.Add(new ColumnDefinition());
+        row.Children.Add(new Ellipse{Width=4,Height=4,Fill=new SolidColorBrush(Color.FromRgb(236,112,28)),VerticalAlignment=VerticalAlignment.Center});
+        var label=new TextBlock{Text=kind is null?name:$"{name} : {kind}",FontSize=8,Foreground=new SolidColorBrush(Color.FromRgb(92,75,64)),VerticalAlignment=VerticalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis,ToolTip=kind is null?name:$"{name} · {kind}"};Grid.SetColumn(label,1);row.Children.Add(label);
+        return new Border{Child=row,Background=new SolidColorBrush(Color.FromArgb(150,255,255,255)),CornerRadius=new CornerRadius(2),Margin=new Thickness(2,0,2,0)};
+    }
+
+    static Border RuntimeOutputRow(PortDescriptor output)
+    {
+        var cardinality=output.Cardinality==ValueCardinality.Array?"数组":"单值";var required=output.Required?"必需":"可选";
+        var row=RuntimeOutputRow(output.Name,$"{output.Kind} · {cardinality} · {required}");
+        var detail=$"{output.Name} · 类型：{output.Kind} · 基数：{cardinality} · {required}";
+        if(row.Child is Grid grid){grid.ToolTip=detail;if(grid.Children.OfType<TextBlock>().FirstOrDefault() is{} label)label.ToolTip=detail;}
+        return row;
     }
 
     static RoutePort Port(RouteRect box,int index)=>index switch

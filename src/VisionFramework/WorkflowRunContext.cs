@@ -16,7 +16,10 @@ internal sealed class WorkflowRunContext
   foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);
  }
  PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException("Current-run source unavailable: "+node+"."+port);
- public PortValue Resolve(WorkflowValueReference source)=>source.Kind switch
+ // Only an executed successful producer with absent data may become a primitive
+ // missing-data result. Preserve the existing failure of unavailable predecessors.
+ public bool CanDeferNumericRead(WorkflowValueReference source)=>source.Kind==WorkflowSourceKind.NodeOutput&&records.TryGetValue(source.Id,out var record)&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch;
+ public PortValue Resolve(WorkflowValueReference source){if(source.ArrayIndex is not null)throw new InvalidDataException("Indexed input requires an opted-in primitive reader.");return source.Kind switch
  {
   WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException("Group LoopIndex requires an owned invocation context."),
   WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),
@@ -28,7 +31,7 @@ internal sealed class WorkflowRunContext
   WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException("Current-run variable unavailable: "+source.Id),
   WorkflowSourceKind.WorkflowInput=>Input(source.Id),
   _=>throw new InvalidDataException("Unknown source kind.")
- };
+ };}
  PortValue Input(string id){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==id);return arguments.TryGetValue(spec.Name,out var value)?value:spec.NodeId is not null?Node(spec.NodeId,spec.Port!):throw new InvalidDataException("Missing workflow input: "+spec.Name);}
  public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}
  public ExecutionSessionResult Complete(ExecutionSessionResult session)

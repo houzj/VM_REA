@@ -1,12 +1,13 @@
 #Requires -Version 7.0
-param([ValidateSet('N点标定','N图像标定','平移旋转标定','旋转标定','标定加载','相机映射')][string]$Tool='N点标定',[string]$SampleCalibFile='',[switch]$CalibrationPair)
+param([ValidateSet('N点标定','N图像标定','平移旋转标定','旋转标定','标定加载','相机映射','标定板标定')][string]$Tool='N点标定',[string]$SampleCalibFile='',[switch]$CalibrationPair,[switch]$WaitForExit)
 $ErrorActionPreference='Stop'
 $workspace=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$module=@{'N点标定'='vision.n-point-calibration';'N图像标定'='vision.n-image-calibration';'平移旋转标定'='vision.translation-calibration';'旋转标定'='vision.rotate-calibration';'标定加载'='vision.read-calib-file';'相机映射'='vision.camera-mapping'}[$Tool]
-$run=Join-Path $workspace ('analysis/manual-acceptance/'+[guid]::NewGuid().ToString('N'))
-$artifacts=Join-Path $run 'build'
+$module=@{'N点标定'='vision.n-point-calibration';'N图像标定'='vision.n-image-calibration';'平移旋转标定'='vision.translation-calibration';'旋转标定'='vision.rotate-calibration';'标定加载'='vision.read-calib-file';'相机映射'='vision.camera-mapping';'标定板标定'='vision.calibration-board'}[$Tool]
+$run=[IO.Path]::GetFullPath((Join-Path $workspace ('analysis/manual-acceptance/'+[guid]::NewGuid().ToString('N'))))
+$artifacts=[IO.Path]::GetFullPath((Join-Path $run 'build'))
+if($artifacts.StartsWith([IO.Path]::GetFullPath((Join-Path $workspace 'src'))+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw "拒绝将验收产物写入源码目录：$artifacts"}
 New-Item -ItemType Directory -Path $run | Out-Null
-& dotnet build (Join-Path $PSScriptRoot 'Calibration.ManualAcceptance/Calibration.ManualAcceptance.csproj') "-p:ArtifactsPath=$artifacts" *> (Join-Path $run 'build.log')
+& dotnet build (Join-Path $PSScriptRoot 'Calibration.ManualAcceptance/Calibration.ManualAcceptance.csproj') --artifacts-path $artifacts *> (Join-Path $run 'build.log')
 if($LASTEXITCODE -ne 0){throw "验收程序构建失败，日志：$run/build.log"}
 $exe=Join-Path $artifacts 'bin/Calibration.ManualAcceptance/debug/Calibration.ManualAcceptance.exe'
 # A visible window is intentional: the user explicitly requests interactive acceptance.
@@ -17,3 +18,4 @@ $process=Start-Process -FilePath $exe -ArgumentList $arguments -WorkingDirectory
 @{tool=$Tool;module=$module;processId=$process.Id;executable=$exe;scope='tool-plugins';banner='插件线验收';userAccepted=$false} | ConvertTo-Json | Set-Content (Join-Path $run 'launch.json')
 Write-Output "已启动 $Tool 手动验收，顶部橙色条标记：插件线验收。"
 Write-Output $run
+if($WaitForExit){$process.WaitForExit();exit $process.ExitCode}

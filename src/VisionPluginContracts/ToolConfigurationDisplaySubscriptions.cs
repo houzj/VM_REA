@@ -31,8 +31,8 @@ public sealed class ToolConfigurationDisplaySubscriptions : IToolConfigurationSu
 
     static bool Display(ConfigurationSubscriptionDestination d) => d.Domain == ConfigurationSubscriptionDomain.Display;
     static bool Position(string name) => name is ToolDisplayService.PositionXInput or ToolDisplayService.PositionYInput;
-    static string? Native(PortDescriptor p) => p.Cardinality == ValueCardinality.Scalar ? p.Kind switch
-    { DataKind.Integer => "int", DataKind.Number => "float", _ => null } : null;
+    static string? Native(PortDescriptor p) => p.Kind switch
+    { DataKind.Integer => "int", DataKind.Number or DataKind.NumberArray => "float", _ => null };
     static string Id(params string[] parts) => string.Join("|", parts.Select(x => x.Length + ":" + x));
     ProcedureDocument Snapshot(ConfigurationSubscriptionDestination d)
     {
@@ -75,7 +75,7 @@ public sealed class ToolConfigurationDisplaySubscriptions : IToolConfigurationSu
             var allowed = Allowed(p); var roots = new List<ConfigurationSubscriptionTreeNode>();
             foreach (var node in p.Nodes.Where(n => allowed.Contains(n.Id) && n.Enabled && (query.IncludeSelf || n.Id != targetId)))
             {
-                var leaves = registry.GetDescriptor(node).Outputs.Where(port => Native(port) is { } type &&
+                var leaves = registry.GetDescriptor(node).Outputs.Where(port => port.CanSubscribe && Native(port) is { } type &&
                     query.Destination.NativeType.Split(';').Contains(type) && (query.NativeTypes.Count == 0 || query.NativeTypes.Contains(type)))
                     .Select(port => new ConfigurationSubscriptionTreeNode(Id(p.Id, node.Id, port.Name), port.Name,
                         binding: new(new ConfigurationOutputReference(p.Id, node.Id, port.Name, Native(port)!), ConfigurationSubscriptionIndex.All))).ToArray();
@@ -171,10 +171,25 @@ public sealed class ToolConfigurationDisplaySubscriptions : IToolConfigurationSu
                     if (item.NativeType == "int" && int.TryParse(item.Literal, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integer)) return integer;
                     if (item.NativeType == "float" && float.TryParse(item.Literal, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && float.IsFinite(number)) return number;
                 }
-                if (item.Kind == "output" && item.ProcedureId == procedureId && item.NodeId is not null && item.PortId is not null && outputs(item.NodeId, item.PortId) is { } value && value.Cardinality == ValueCardinality.Scalar)
+                if (item.Kind == "output" && item.ProcedureId == procedureId && item.NodeId is not null && item.PortId is not null && outputs(item.NodeId, item.PortId) is { } value)
                 {
-                    if (item.NativeType == "int" && value.Kind == DataKind.Integer) return value.As<long>();
-                    if (item.NativeType == "float" && value.Kind == DataKind.Number && double.IsFinite(value.As<double>())) return value.As<double>();
+                    // The active calibration Show Text Content has one scalar shape.
+                    // Original position trees also accept arrays; that shape reads index0.
+                    if (item.NativeType == "int" && value.Kind == DataKind.Integer)
+                    {
+                        if (value.Cardinality == ValueCardinality.Scalar) return value.As<long>();
+                        var integers = value.As<IReadOnlyList<long>>();
+                        if (integers.Count > 0) return integers[0];
+                    }
+                    if (item.NativeType == "float")
+                    {
+                        if (value.Kind == DataKind.Number && value.Cardinality == ValueCardinality.Scalar && double.IsFinite(value.As<double>())) return value.As<double>();
+                        if (value.Kind == DataKind.NumberArray || value.Kind == DataKind.Number && value.Cardinality == ValueCardinality.Array)
+                        {
+                            var numbers = value.As<IReadOnlyList<double>>();
+                            if (numbers.Count > 0 && double.IsFinite(numbers[0])) return numbers[0];
+                        }
+                    }
                 }
                 diagnostic?.Invoke("Display position unavailable: " + key); return 0;
             }

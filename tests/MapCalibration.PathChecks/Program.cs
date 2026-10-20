@@ -1,0 +1,39 @@
+using System.IO;
+using System.Reflection;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Media;
+using VisionFramework;
+using VisionPluginContracts;
+using VisionPlugins.MapCalibration;
+
+
+using W=System.Windows.Controls;
+static class Program{
+ static int checks;static void Check(bool value,string message){if(!value)throw new Exception(message);Console.WriteLine($"PASS {++checks}: {message}");}
+ static IEnumerable<DependencyObject> Walk(DependencyObject value){yield return value;for(int i=0;i<VisualTreeHelper.GetChildrenCount(value);i++)foreach(var item in Walk(VisualTreeHelper.GetChild(value,i)))yield return item;}
+ [STAThread]static int Main(string[] args){try{
+ if(args.Length!=1)throw new ArgumentException("Fresh output directory required");string output=Path.GetFullPath(args[0]);Directory.CreateDirectory(output);_=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+ foreach(var item in new (IVisionToolPlugin Plugin,string Extension)[]{(new MapCalibrationPlugin(),".xml")}){
+ var plugin=item.Plugin;var values=plugin.Descriptor.Parameters.ToDictionary(p=>p.Name,p=>p.DefaultValue!.Value.Clone());var events=new List<string>();var picker=new Picker(events);int writes=0,runs=0;
+ var context=new ToolEditorContext(new(plugin.Manifest.Id,plugin.Manifest.Id,"1.0.0",plugin.Manifest.Name,values),output,next=>{writes++;events.Add("apply");values=next;},_=>{runs++;throw new Exception("host not ready; no self run");}){ReadEffectiveParameters=()=>values,ConfigurationFiles=picker,ConfigurationNotifications=new Notices(events)};
+ using var session=((IToolConfigurationProvider)plugin).CreateConfiguration(context);var state=session.State;var node=state.Find("CalibPathName")!;Check(node is not null,"source path node "+plugin.Manifest.Id);int baseline=writes;events.Clear();string initial=values["CalibPathName"].GetString()??"";string uppercase=Path.Combine(output,"bad"+item.Extension.ToUpperInvariant());
+ state.CommitUser(node,uppercase);Check(node.Value==uppercase&&state.IsRejectedParameterWrite(node),"source uppercase rejection retains attempted text "+plugin.Manifest.Id);Check(writes==baseline&&runs==0&&values["CalibPathName"].GetString()==initial,"rejected text does not reach backend "+plugin.Manifest.Id);Check(events.SequenceEqual(new[]{"notify:Error"}),"source rejection notification exactly once "+plugin.Manifest.Id);
+ events.Clear();state.CommitUser(node,uppercase);Check(events.Count==0,"same rejected typed value is quiet "+plugin.Manifest.Id);
+ string missing=Path.Combine(output,"nonexistent-parent",Guid.NewGuid().ToString("N")+item.Extension);state.CommitUser(node,missing);Check(writes==baseline&&node.Value==missing&&state.IsRejectedParameterWrite(node),"missing parent rejected before setter "+plugin.Manifest.Id);
+ state.CommitUser(node,"");Check(writes==baseline&&node.Value==""&&state.IsRejectedParameterWrite(node),"empty text rejected by UI suffix before native empty handling "+plugin.Manifest.Id);
+ string valid=Path.Combine(output,"valid-"+plugin.Manifest.Id+item.Extension);events.Clear();state.CommitUser(node,valid);Check(writes==baseline+1&&values["CalibPathName"].GetString()==valid&&!state.IsRejectedParameterWrite(node),"valid directory path commits declared backend "+plugin.Manifest.Id);Check(events.SequenceEqual(new[]{"apply","notify:Success"}),"successful setter then success notification "+plugin.Manifest.Id);
+ var controlContext=(ToolConfigurationControlContext)Activator.CreateInstance(typeof(ToolConfigurationControlContext),BindingFlags.Instance|BindingFlags.NonPublic,null,new object[]{state,node,(Func<Window?>)(()=>null)},null)!;Check(session.Controls.TryCreate("OpenFileForCalibDialog",controlContext,out var control),"real source control factory "+plugin.Manifest.Id);control!.Measure(new Size(400,100));control.Arrange(new Rect(0,0,400,100));control.UpdateLayout();var choose=Walk(control).OfType<W.Button>().Single(b=>b.Name=="ChooseCalibrationPath");picker.Selected=uppercase;events.Clear();choose.RaiseEvent(new RoutedEventArgs(W.Button.ClickEvent));Check(events.SequenceEqual(new[]{"select","notify:Error","history"}),"failed real picker still remembers directory after notification "+plugin.Manifest.Id);Check(writes==baseline+1&&node.Value==uppercase,"failed picker preserves backend and attempted text "+plugin.Manifest.Id);events.Clear();choose.RaiseEvent(new RoutedEventArgs(W.Button.ClickEvent));Check(events.SequenceEqual(new[]{"select","notify:Error","history"}),"same bad picker forces validation and history again "+plugin.Manifest.Id);
+ events.Clear();state.CommitUser(node,valid);Check(writes==baseline+2&&values["CalibPathName"].GetString()==valid&&!state.IsRejectedParameterWrite(node),"return to old valid value retries setter "+plugin.Manifest.Id);
+ state.CommitUser("InputType","2",true);var raw=(MapCalibrationFileSession)typeof(MapCalibrationPlugin).GetMethod("Current",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(plugin,[plugin.Manifest.Id,output,null])!;
+ for(int side=0;side<2;side++){
+ var source=state.Find("CalibPath"+side)!;string good=Path.Combine(output,"input-"+side+".payload");File.WriteAllBytes(good,new float[]{2,0,10,0,2,-5,0,0,1}.SelectMany(BitConverter.GetBytes).ToArray());events.Clear();state.CommitUser(source,good,true);Check(values[source.Name!].GetString()==good&&raw.InputPath(side)==good,"base manual input does not impose derived suffix gate side"+side);Check(events.SequenceEqual(new[]{"apply","notify:Success"}),"base successful native write commits then source success side"+side);
+ string bad=Path.Combine(output,"invalid-container-"+side+".xml");File.Copy("analysis/map-calibration/native/reader-8.xml",bad,true);int before=writes;events.Clear();state.CommitUser(source,bad,true);Check(source.Value==bad&&state.IsRejectedParameterWrite(source)&&writes==before,"base failure keeps attempted model value without document commit side"+side);Check(raw.InputPath(side)==good&&raw.CachedMatrix(side)![0]==2,"native missing XML container preserves actual path and matrix side"+side);Check(events.SequenceEqual(new[]{"notify:Error"}),"base failure source error once and no success side"+side);
+ var cc=(ToolConfigurationControlContext)Activator.CreateInstance(typeof(ToolConfigurationControlContext),BindingFlags.Instance|BindingFlags.NonPublic,null,new object[]{state,source,(Func<Window?>)(()=>null)},null)!;Check(session.Controls.TryCreate("OpenFileDialog",cc,out var baseControl),"base control factory side"+side);baseControl!.Measure(new Size(400,100));baseControl.Arrange(new Rect(0,0,400,100));baseControl.UpdateLayout();var button=Walk(baseControl).OfType<W.Button>().Single();picker.Selected=bad;for(int retry=0;retry<2;retry++){events.Clear();button.RaiseEvent(new RoutedEventArgs(W.Button.ClickEvent));Check(events.SequenceEqual(new[]{"select","notify:Error","history"}),"base same bad picker retries and unconditionally remembers side"+side);}
+ }
+ }
+ File.WriteAllText(Path.Combine(output,"summary.json"),JsonSerializer.Serialize(new{checks,passed=true,manualAcceptance=false,scope="Map real provider, UI source path state and concrete control picker; no algorithm rerun"}));return 0;
+ }catch(Exception error){Console.Error.WriteLine(error);return 1;}}
+ sealed class Notices(List<string> events):IToolConfigurationNotificationService{public ConfigurationNotificationResult Notify(Window? owner,ConfigurationNotification value){events.Add("notify:"+value.Kind);return new(ConfigurationNotificationStatus.Displayed);}}
+ sealed class Picker(List<string> events):IToolConfigurationFileService{public string Selected="";public ConfigurationFileSelection Select(Window? owner,ConfigurationFileRequest request){events.Add("select");return new(ConfigurationFileStatus.Selected,[Selected]);}public ConfigurationFileHistoryResult Remember(string moduleKey,string path){events.Add("history");return new(true,Path.GetDirectoryName(path));}}
+}

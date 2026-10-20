@@ -2,6 +2,14 @@
 
 Read docs/PARALLEL-WORK.md before making changes. Use decompiled source, resources and confirmed runtime evidence as implementation evidence; user feedback identifies differences and is not a substitute specification. Distinguish source-confirmed behavior, independent implementation, and unverified native behavior. Never claim complete parity from passing tests alone.
 
+## Source-level reverse engineering standard
+
+Use docs/SOURCE-LEVEL-REVERSE-PLAN.md to drive grouped reverse engineering. Obtain missing original member/function bodies and resources through REA before reconstruction. Recover concrete call paths, field reads/writes, branch predicates and lifecycle; native pseudocode requires assembly/ABI checks where ambiguous. A missing source body is a retrieval task, not permission to implement plausible intent. Keep source recovery, runtime corroboration, implementation and host acceptance as separate completion states.
+
+Reconstruct behavior from the original decompiled source, shipped resources, and confirmed runtime evidence. Trace the concrete type, member, operation, template, binding, trigger, and lifecycle path before implementing it. Do not fill evidence gaps with intended, typical, or plausible behavior. Mark unresolved details as unknown, keep independent implementation choices separate from source-confirmed facts, and update this guidance when new primary evidence changes a conclusion. User feedback is a discrepancy signal and acceptance input, not a substitute specification.
+
+Native ABI arguments cannot be inferred solely from a decompiler's displayed signature. A wrapper that only rewrites RCX may preserve incoming RDX/R8/R9 for its callee; inspect register liveness and, when necessary, record actual entry registers before concluding a name/value was dropped. The 2026-10-19 board EdgeThresh hardware trace disproved the earlier one-argument inference; see docs/plugins/CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.md.
+
 The human user controls the two projects and chooses integration points. Main/framework owns the tool-independent WPF shell, workflow tabs/canvas, Group, procedure/solution lifecycle, persistence, scheduling, framework-level data contracts, and final integration when requested. The tool-plugins worktree owns tool implementations **and the plugin-facing framework needed to run them**: common tool configuration models/templates, dedicated and common tool editors, parameter/ROI/display interaction, plugin execution sessions, and per-tool evidence/tests. Do not implement a second copy of the plugin configuration framework in main or leave tool-facing framework gaps to each tool.
 
 Shared files are assigned per feature in docs/PLUGIN-FRAMEWORK-BOUNDARY.md. A project may edit its own worktree, but cross-project contract changes must be recorded in docs/CONTRACT-REQUESTS.md with producer, consumer, payload, lifecycle, compatibility, and acceptance evidence. Do not change the other worktree or silently merge uncommitted changes. Main does not automatically direct the plugin project; the user decides task priority and handoff timing.
@@ -10,3 +18,19 @@ Shared files are assigned per feature in docs/PLUGIN-FRAMEWORK-BOUNDARY.md. A pr
 Keep screenshot/export helpers in tests. Do not introduce screenshot code into product assemblies. Do not spawn subagents unless the user explicitly requests delegation. Do not modify the other worktree or terminate processes owned by another task.
 
 Evidence is local at D:/MyWork/REA逆向测试/analysis/decompiled and D:/MyWork/REA逆向测试/analysis/full-audit. Read original evidence there; write generated reports, screenshots and build outputs to the current worktree. Raw decompiled assemblies/projects and full audit outputs are intentionally excluded from Git. Required UI assets and the image sample are tracked for builds; their presence does not establish runtime parity.
+
+## Progress reporting
+
+User requirement (2026-10-19): every end-of-turn report includes overall completion percentage. Use the fixed authorized first-stage scope A1-A4/B1-B4/C1-C4/D1-D4, eight S0-S7 gates per card (128 equal gates); count only fully evidenced gates, not partial slices, function counts or passing tests. Maintain docs/SOURCE-LEVEL-REVERSE-PROGRESS.json and explain the denominator. This is not a percentage of all 162 catalog plugins; later batches require their own selected scope. Keep branch-level unknowns and manual host acceptance separate. Continue actionable work between reports and scheduled wakeups.
+
+Latest user override (2026-10-19): overall progress is fully implemented and self-reviewed calibration tool count / 10 tools. Current audited count is 10/10 = 100% (all10 authorized calibration tools including coordinate). IMAGE initialization query and typed candidate-tree retention are implemented and root-reviewed; historical numerical/host baselines remain separately preserved. Original shared calibration-path UI and save gates are repaired and root-reviewed; All scoped normal tool implementation and root self-review are complete; finite native/ABI/UI limits remain documented. automation-2 is PAUSED; manual Board process56356 is ready but manualAccepted=false. Source fixes were reverified; historical premature count and failures remain preserved. docs/SOURCE-LEVEL-REVERSE-PROGRESS.json is the authoritative current count, and each final exit matrix records scope and finite parity limits. The 128 stage gates remain internal only. Human/manual acceptance never blocks or contributes to count.
+
+Latest user override (2026-10-19): measure implementation completion only. A calibration tool counts when all scoped reverse-engineering/implementation work is finished and agent self-review passes. Human/manual acceptance is separate and MUST NOT block or contribute to progress. Re-audit historical tools under this criterion; retain actual source/implementation gaps.
+
+
+
+
+
+
+
+

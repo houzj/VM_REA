@@ -60,7 +60,20 @@ public sealed partial class ReadCalibFilePlugin : IToolConfigurationProvider
     (bool Initialized,string Requested,string Path,string Cache,ReadCalibFileData Data,uint Error) previous;
     lock(raw.Gate)previous=(raw.Initialized,raw.Requested,raw.Path,raw.Cache,raw.Data,raw.LoadError);
     var path=request.Value??"";var loaded=Load(Current(),path);
-    if(loaded.ErrorCode!=0){RefreshData();var error=$"LoadFile returned 0x{loaded.ErrorCode:x8}";Notify(ConfigurationNotificationKind.Error,text("Lang_SysErr")+":"+error,text("Lang_FileOpenFail"));return new(true,Error:error);}
+    if(loaded.ErrorCode!=0){
+     // Keep native partial data/path commits; the failed picker value is presentation only.
+     var partial=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());
+     if(loaded.CommitPath){partial["FilePath"]=JsonSerializer.SerializeToElement(path);partial["CachedFileData"]=JsonSerializer.SerializeToElement("");}
+     if(loaded.ReplaceData&&loaded.Data is {} data)partial["OutputSchema"]=JsonSerializer.SerializeToElement(Schema(data));
+     try{if(partial.Any(p=>!values.TryGetValue(p.Key,out var oldValue)||oldValue.GetRawText()!=p.Value.GetRawText()))ApplyValues(partial);}
+     catch(Exception error)when(error is InvalidOperationException or IOException or UnauthorizedAccessException or ArgumentException){
+      // Independent host transaction refusal: restore the prior runtime snapshot.
+      lock(raw.Gate)(raw.Initialized,raw.Requested,raw.Path,raw.Cache,raw.Data,raw.LoadError)=previous;
+      return new(true,Error:error.Message);
+     }
+     lock(raw.Gate)raw.Requested=values["FilePath"].GetString()??"";
+     RefreshData();var message=$"LoadFile returned 0x{loaded.ErrorCode:x8}";Notify(ConfigurationNotificationKind.Error,text("Lang_SysErr")+":"+message,text("Lang_FileOpenFail"));return new(true,Error:message){KeepAttemptedValueOnError=true};
+    }
     var next=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());next["FilePath"]=JsonSerializer.SerializeToElement(path);next["CachedFileData"]=JsonSerializer.SerializeToElement("");next["OutputSchema"]=JsonSerializer.SerializeToElement(Schema(loaded.Data!));
     try{ApplyValues(next);}catch(Exception error)when(error is InvalidOperationException or IOException or UnauthorizedAccessException or ArgumentException){
      // Independent document-transaction boundary: a refused host write must
@@ -80,7 +93,7 @@ public sealed partial class ReadCalibFilePlugin : IToolConfigurationProvider
   var controls=new ToolConfigurationControlRegistry();
   ToolConfigurationStandardControls.Register(controls,text,()=>new(execution.IsContinuous,Host().ProcedureBusy,Host().RunEnabled),language);
   ToolConfigurationSubscriptionControls.Register(controls,context.ConfigurationSubscriptions,text,language);
-  controls.Register("OpenFileDialog4ReadFile",c=>{owner=c.Owner;return ReadFilePicker(c,text,files,notifications,context.Mode);});
+  controls.Register("OpenFileDialog4ReadFile",c=>{owner=c.Owner;return ReadFilePicker(c,text,files,notifications,context.Mode,context.IsRemoteMode);});
   controls.Register("ReadFileConfigData",c=>new ReadCalibFileConfigurationPanel(c,text));
   long revision=0;
   void ExecutionChanged(){state.IsBusy=execution.IsRunning;RefreshData();if(state.Find("FilePath") is {} file)state.SetProgrammatic(file,"ExecutionRevision",(++revision).ToString(CultureInfo.InvariantCulture));}
@@ -90,7 +103,7 @@ public sealed partial class ReadCalibFilePlugin : IToolConfigurationProvider
  }
  sealed class ReadConfigurationDispatcher(Func<ConfigurationOperationRequest,ConfigurationOperationResult> run):IToolConfigurationDispatcher
  {public ConfigurationOperationResult Dispatch(ConfigurationOperationRequest request)=>run(request);}
- static FrameworkElement ReadFilePicker(ToolConfigurationControlContext c,Func<string,string> text,IToolConfigurationFileService files,IToolConfigurationNotificationService notifications,ToolEditorMode mode)
+ static FrameworkElement ReadFilePicker(ToolConfigurationControlContext c,Func<string,string> text,IToolConfigurationFileService files,IToolConfigurationNotificationService notifications,ToolEditorMode mode,bool isRemoteMode)
  {
   var row=new Grid{Height=34};System.Windows.Documents.TextElement.SetFontWeight(row,FontWeights.Normal);row.ColumnDefinitions.Add(new(){Width=new GridLength(89)});row.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});
   var label=new TextBlock{FontSize=14,VerticalAlignment=VerticalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis,Foreground=new SolidColorBrush(System.Windows.Media.Color.FromRgb(102,102,102))};row.Children.Add(label);
@@ -104,7 +117,7 @@ public sealed partial class ReadCalibFilePlugin : IToolConfigurationProvider
   void Commit(){if(path.Text!=c.Node.Value)c.State.CommitUser(c.Node,path.Text);path.Text=c.Node.Value;}
   path.LostKeyboardFocus+=(_,_)=>Commit();
   choose.Click+=(_,_)=>{
-   var result=files.Select(c.OwnerWindow,new(Id,c.Node.Value,text("%.xml|*.xml%"),text("Open"),false,bool.TryParse(c.Node.Get("IsUploadServer"),out var remote)&&remote));
+   var result=files.Select(c.OwnerWindow,new(Id,c.Node.Value,text("%.xml|*.xml%"),text("Open"),false,isRemoteMode));
    void Error(string diagnostic){c.State.ReportDiagnostic(new("FileService","Select/Remember",c.Node.Name,diagnostic));choose.ToolTip=diagnostic;notifications.Notify(c.OwnerWindow,new(ConfigurationNotificationKind.Error,text("Lang_SysErr")+":"+diagnostic,text("Lang_FileOpenFail"),mode));}
    if(result.Status==ConfigurationFileStatus.Selected){if(result.Paths.Count==0){Error("File service returned an empty selected-file list.");return;}var selected=result.Paths[0];path.Text=selected;c.State.CommitUser(c.Node,selected,forceWrite:true);path.Text=c.Node.Value;var saved=files.Remember(Id,selected);if(!saved.Success)Error(saved.Diagnostic??"Open-directory history could not be stored.");}
    else if(result.Status is ConfigurationFileStatus.Failed or ConfigurationFileStatus.Unsupported)Error(result.Diagnostic??result.Status.ToString());

@@ -2,6 +2,7 @@ namespace VisionPlugins.Calibration;
 
 public readonly record struct NPointPair(double ImageX, double ImageY, double WorldX, double WorldY);
 public readonly record struct NPointRotation(double ImageX, double ImageY, double WorldX, double WorldY, double Angle);
+public readonly record struct NPointMatrixParameters(float Scale,float DeltaX,float DeltaY,float Theta,float Aspect,float Skew);
 public sealed record NPointSolveOptions(int Freedom = 2, int Weight = 3, int CameraMode = 1,
     double OriginX = 0, double OriginY = 0, double WeightFactor = 20, double DistThreshold = 30, double SampleRatio = 60);
 public sealed record NPointSolveResult
@@ -36,6 +37,68 @@ public sealed record NPointSolveResult
 /// <summary>Independent numerical calibration. Original SDK evidence and limits are recorded with its tests.</summary>
 public static class NPointSolver
 {
+    /// <summary>Original 800af0 matrix decomposition, including its float inverse and
+    /// reciprocal H33 normalization. Returns six source values; angles are radians.
+    /// Pixel precision belongs to the caller's calibration result, not this core function.</summary>
+    public static (uint ErrorCode,NPointMatrixParameters? Parameters) MatrixToNativeParameters(IReadOnlyList<float> matrix)
+    {
+        ArgumentNullException.ThrowIfNull(matrix);
+        if(matrix.Count!=9||matrix.Any(v=>!float.IsFinite(v)))return (0x10103002u,null);
+        var inverse=InvertNativeAnalysisMatrix(matrix);
+        const float epsilon=1.1920928955078125e-7f;
+        if(inverse is null||MathF.Abs(inverse[8])<epsilon)return (0x10103002u,null);
+        float reciprocal=1f/inverse[8];var h=inverse.Select(x=>x*reciprocal).ToArray();
+        float theta=MathF.Atan2(h[3],h[0]),scale=h[0]/(MathF.Cos(theta)+epsilon);
+        float skew=MathF.Atan2(-h[1],h[4])-theta;
+        if(skew<-MathF.PI)skew+=2f*MathF.PI;else if(skew>MathF.PI)skew-=2f*MathF.PI;
+        float aspect=-h[1]/(MathF.Sin(theta+skew)*scale+epsilon);
+        return (0u,new(scale,h[2],h[5],theta,aspect,skew));
+    }
+    /// <summary>Analyze a supplied raw H without fitting or normalizing it. Source: 7ff3c0
+    /// final inverse projection; source/destination are float pixels/world points.</summary>
+    public static (uint ErrorCode,float MeanInverseError,float[]? PointErrors) AnalyzeNativeIrlsMatrix(
+        IReadOnlyList<(float ImageX,float ImageY,float WorldX,float WorldY)> points,IReadOnlyList<float> matrix)
+        => AnalyzeNativeMatrix(points,matrix);
+
+    /// <summary>Analyze a supplied raw H without changing it. Source: standalone 8006e0.
+    /// Original instructions confirm the same precomputed float inverse as the IRLS tail.</summary>
+    public static (uint ErrorCode,float MeanInverseError,float[]? PointErrors) AnalyzeNativeLeastSquaresMatrix(
+        IReadOnlyList<(float ImageX,float ImageY,float WorldX,float WorldY)> points,IReadOnlyList<float> matrix)
+        => AnalyzeNativeMatrix(points,matrix);
+
+    static (uint ErrorCode,float MeanInverseError,float[]? PointErrors) AnalyzeNativeMatrix(
+        IReadOnlyList<(float ImageX,float ImageY,float WorldX,float WorldY)> points,IReadOnlyList<float> matrix)
+    {
+        ArgumentNullException.ThrowIfNull(points);ArgumentNullException.ThrowIfNull(matrix);
+        // Invalid API payload maps to an explicit adapter failure; native pointer/NaN
+        // behavior is not represented as a successful finite result.
+        if(points.Count==0||matrix.Count!=9||matrix.Any(v=>!float.IsFinite(v))||
+            points.Any(p=>!float.IsFinite(p.ImageX)||!float.IsFinite(p.ImageY)||!float.IsFinite(p.WorldX)||!float.IsFinite(p.WorldY)))
+            return (0x10103002u,float.NaN,null);
+        var inverse=InvertNativeAnalysisMatrix(matrix);if(inverse is null)return (0x10103002u,float.NaN,null);
+        var errors=new float[points.Count];float sum=0;
+        for(int n=0;n<points.Count;n++){
+            var p=points[n];float z=inverse[6]*p.WorldX+inverse[7]*p.WorldY+inverse[8];
+            float dx=(inverse[0]*p.WorldX+inverse[1]*p.WorldY+inverse[2])/z-p.ImageX,dy=(inverse[3]*p.WorldX+inverse[4]*p.WorldY+inverse[5])/z-p.ImageY;
+            errors[n]=MathF.Sqrt(dx*dx+dy*dy);sum+=errors[n];
+        }
+        return (0u,sum/points.Count,errors);
+    }
+
+    static float[]? InvertNativeAnalysisMatrix(IReadOnlyList<float> h)
+    {
+        float p04=h[0]*h[4],p15=h[1]*h[5],p05=h[0]*h[5],p42=h[4]*h[2],p13=h[1]*h[3],p23=h[2]*h[3];
+        // Ghidra C loses these hoisted products; original SSE instructions are authoritative.
+        float determinant=(((h[8]*p04+h[6]*p15+h[7]*p23)-h[7]*p05)-h[8]*p13)-h[6]*p42;
+        // Both original PE constants 18162b690 / 18162b7c0 are double epsilon.
+        if(Math.Abs((double)determinant)<2.220446049250313e-16)return null;
+        float k=1f/determinant;
+        float i0=(h[4]*h[8]-h[5]*h[7])*k,i1=(h[2]*h[7]-h[8]*h[1])*k,i2=(p15-p42)*k;
+        float i3=(h[5]*h[6]-h[8]*h[3])*k,i4=(h[8]*h[0]-h[2]*h[6])*k,i5=(p23-p05)*k;
+        float i6=(h[3]*h[7]-h[4]*h[6])*k,i7=(h[1]*h[6]-h[0]*h[7])*k,i8=(p04-p13)*k;
+        return [i0,i1,i2,i3,i4,i5,i6,i7,i8];
+    }
+
     public static NPointSolveResult Solve(IReadOnlyList<NPointPair> offsets,
         IReadOnlyList<NPointRotation> rotations, NPointSolveOptions options)
     {
@@ -56,7 +119,9 @@ public static class NPointSolver
         offsets = offsets.Select(p => p with { ImageX = p.ImageX - options.OriginX, ImageY = p.ImageY - options.OriginY }).ToArray();
         var matrix = SelectFourPointFit(offsets, options);
         if (matrix is null) return new() { Status = 1, ErrorCode = 0x10103007 };
-        var inv = FloatInverse(matrix);
+        // 0x7f2560 uses the SDK full-pivot float inverse for this inverse
+        // reprojection and the published translation residuals.
+        var inv = NativeFullPivotInverse3x3(matrix);
         if (inv is null) return new() { Status = 1, ErrorCode = 0x10103007 };
         // 0x7ff3c0 computes inverse reprojection and sqrt in float; the running
         // sum is left-associated (sum + e0 + e1), not a double LINQ average.
@@ -198,7 +263,10 @@ public static class NPointSolver
             if (depth < minimal) { for (int i = start; i <= p.Count - (minimal - depth); i++) { indices[depth] = i; Visit(depth + 1, i + 1); } return; }
             var sample = indices.Select(i => p[i]).ToArray();
             var h = RefineNormalized(sample, o);
-            var inv = h is null ? null : FloatInverse(h);
+            // 0x7f2560 scores each candidate only after the SDK full-pivot 3x3
+            // inversion (0x730e90). The closed-form adjugate used by other paths
+            // changes float residual ordering for mirrored H3 candidates.
+            var inv = h is null ? null : NativeFullPivotInverse3x3(h);
             if (inv is null) return;
             float error = 0;
             for (int i = 0; i < p.Count; i++)
@@ -215,7 +283,84 @@ public static class NPointSolver
         return best;
     }
 
+    /// <summary>Fixed all-point 0x7ff3c0 path, without the Solve subset/RANSAC wrapper.
+    /// WeightFactor is the native value (UI 20 becomes 2). Matrix retains reciprocal-multiply
+    /// normalization, including its observable non-unit h33. This independent reconstruction
+    /// has documented float differences. WeightFun1 remains the constant-weight IRLS path;
+    /// callers whose source dispatches 8345e0 use FitNativeLeastSquaresPoints instead.</summary>
+    public static (uint ErrorCode, float[]? Matrix) FitNativePoints(
+        IReadOnlyList<(float ImageX, float ImageY, float WorldX, float WorldY)> points,
+        int homoFreedom, int weightFun, float weightFactor, int iterationLimit = 50,
+        float coefficientDeltaThreshold = 1e-4f)
+    {
+        ArgumentNullException.ThrowIfNull(points);
+        if (weightFun is not (1 or 2 or 3))
+            throw new NotSupportedException("The native WeightFun 4 dispatch requires its distinct solver.");
+        if (homoFreedom is < 1 or > 3 || iterationLimit < 1 || !float.IsFinite(weightFactor) || weightFactor <= 0 ||
+            !float.IsFinite(coefficientDeltaThreshold) || coefficientDeltaThreshold <= 0)
+            throw new ArgumentOutOfRangeException(nameof(homoFreedom), "Invalid fixed-point solve options.");
+        if (points.Count < 4 || points.Any(p => !float.IsFinite(p.ImageX) || !float.IsFinite(p.ImageY) || !float.IsFinite(p.WorldX) || !float.IsFinite(p.WorldY)))
+            return (0x10103002, null);
+        var pairs = points.Select(p => new NPointPair(p.ImageX, p.ImageY, p.WorldX, p.WorldY)).ToArray();
+        var matrix = RefineNormalizedCore(pairs,
+            new NPointSolveOptions(Freedom: homoFreedom, Weight: weightFun), iterationLimit, coefficientDeltaThreshold, true, weightFactor);
+        // This is the public calibration failure mapping, not a recovered uint return from 7ff3c0.
+        return matrix is null || matrix.Any(v => !double.IsFinite(v)) ? (0x10103002u, null) : (0u, matrix.Select(v => (float)v).ToArray());
+    }
+
+    /// <summary>Distinct 8345e0 fixed least-squares branch used by distortion calibration.
+    /// The same WeightFun integer in another module does not establish this dispatch.</summary>
+    public static (uint ErrorCode,float[]? Matrix) FitNativeLeastSquaresPoints(
+        IReadOnlyList<(float ImageX,float ImageY,float WorldX,float WorldY)> points,int homoFreedom)
+    {
+        ArgumentNullException.ThrowIfNull(points);
+        if(homoFreedom is <1 or >3)throw new ArgumentOutOfRangeException(nameof(homoFreedom));
+        int minimum=homoFreedom==3?2:homoFreedom==2?3:4;
+        if(points.Count<minimum||points.Any(p=>!float.IsFinite(p.ImageX)||!float.IsFinite(p.ImageY)||!float.IsFinite(p.WorldX)||!float.IsFinite(p.WorldY)))return(0x10103002u,null);
+        var matrix=FitLeastSquaresNative(points.Select(p=>new NPointPair(p.ImageX,p.ImageY,p.WorldX,p.WorldY)).ToArray(),homoFreedom);
+        return matrix is null||matrix.Any(v=>!double.IsFinite(v))?(0x10103002u,null):(0u,matrix.Select(v=>(float)v).ToArray());
+    }
+
+    // WeightFun1 dispatches 8345e0, not the 7ff3c0 IRLS kernel. Its centroid is
+    // accumulated in double, while reciprocal count, distances and scaling stay float.
+    static double[]? FitLeastSquaresNative(NPointPair[] points, int freedom)
+    {
+        static (float X,float Y,float Scale) Normalize((double X,double Y)[] points)
+        {
+            double x=0,y=0;foreach(var p in points){x+=(float)p.X;y+=(float)p.Y;}
+            float inverseCount=1f/points.Length,cx=(float)(x*inverseCount),cy=(float)(y*inverseCount),sum=0;
+            foreach(var p in points){float dx=(float)p.X-cx,dy=(float)p.Y-cy;sum+=MathF.Sqrt(dx*dx+dy*dy);}
+            return(cx,cy,sum>0?1.4142135381698608f/(sum*inverseCount):1f);
+        }
+        var a=Normalize(points.Select(p=>(p.ImageX,p.ImageY)).ToArray());
+        var b=Normalize(points.Select(p=>(p.WorldX,p.WorldY)).ToArray());
+        var normalized=points.Select(p=>new NPointPair(((float)p.ImageX-a.X)*a.Scale,((float)p.ImageY-a.Y)*a.Scale,
+            ((float)p.WorldX-b.X)*b.Scale,((float)p.WorldY-b.Y)*b.Scale)).ToArray();
+        var h=Fit(normalized,Enumerable.Repeat(1d,points.Length).ToArray(),freedom,true,false);if(h is null)return null;
+        static double[] Multiply(double[] x,double[] y)=>Enumerable.Range(0,9).Select(i=>{float sum=0;for(int k=0;k<3;k++)sum+=(float)x[i/3*3+k]*(float)y[k*3+i%3];return(double)sum;}).ToArray();
+        // 8345e0 obtains the target normalization's left inverse through
+        // (Tw' Tw)^-1 Tw', not the algebraically equivalent direct Tw inverse.
+        // The float round trip creates observable nonzero projective coefficients.
+        double[] tw=[b.Scale,0,-b.X*b.Scale,0,b.Scale,-b.Y*b.Scale,0,0,1];
+        double[] transpose=Enumerable.Range(0,9).Select(i=>tw[i%3*3+i/3]).ToArray();
+        var gram=Multiply(transpose,tw).Select(v=>(float)v).ToArray();
+        float determinant=(((gram[8]*(gram[0]*gram[4])+gram[6]*(gram[1]*gram[5])+gram[7]*gram[2]*gram[3])-gram[7]*(gram[0]*gram[5]))-gram[8]*(gram[1]*gram[3]))-gram[6]*(gram[4]*gram[2]);
+        if(Math.Abs(determinant)<2.2204460492503131e-16)return null;
+        float inverseDeterminant=1f/determinant;
+        double[] gramInverse=[(gram[4]*gram[8]-gram[5]*gram[7])*inverseDeterminant,(gram[2]*gram[7]-gram[1]*gram[8])*inverseDeterminant,(gram[1]*gram[5]-gram[2]*gram[4])*inverseDeterminant,
+            (gram[5]*gram[6]-gram[3]*gram[8])*inverseDeterminant,(gram[0]*gram[8]-gram[2]*gram[6])*inverseDeterminant,(gram[2]*gram[3]-gram[0]*gram[5])*inverseDeterminant,
+            (gram[3]*gram[7]-gram[4]*gram[6])*inverseDeterminant,(gram[1]*gram[6]-gram[0]*gram[7])*inverseDeterminant,(gram[0]*gram[4]-gram[1]*gram[3])*inverseDeterminant];
+        var inverse=Multiply(gramInverse,transpose);
+        var raw=Multiply(Multiply(inverse,h),[a.Scale,0,-a.X*a.Scale,0,a.Scale,-a.Y*a.Scale,0,0,1]);
+        if(Math.Abs(raw[8])<1.1920928955078125e-7)return null;
+        float divisor=1f/(float)raw[8];return raw.Select(v=>(double)((float)v*divisor)).ToArray();
+    }
+
     static double[]? RefineNormalized(NPointPair[] points, NPointSolveOptions o)
+        => RefineNormalizedCore(points, o, 50, 1e-4, false, null);
+
+    static double[]? RefineNormalizedCore(NPointPair[] points, NPointSolveOptions o, int iterationLimit,
+        double coefficientDeltaThreshold, bool reciprocalNormalization, float? nativeWeightFactor)
     {
         // 0x7ff3c0 centers/scales both point sets; 0x7fd4e0 runs at most 50 IRLS
         // iterations with upper-median residual * 1.482579708 * WeightFactor / 10.
@@ -234,10 +379,25 @@ public static class NPointSolver
         // 0x7fcf60 feeds the original design matrix to 0x8580e0/0x7075e0;
         // refinement feeds its already formed normal matrix to that same solver.
         var weights = Enumerable.Repeat(1d, points.Length).ToArray(); var h = Fit(normalized, weights, o.Freedom, true, false);
-        bool converged = false; const double eps = 1.1920928955078125e-7;
-        for (int iteration = 0; h is not null && iteration < 50; iteration++)
+        if(reciprocalNormalization&&h is not null){
+            static double[] MultiplyFloat(double[] a,double[] b)=>Enumerable.Range(0,9).Select(i=>{float sum=0;for(int k=0;k<3;k++)sum+=(float)a[i/3*3+k]*(float)b[k*3+i%3];return(double)sum;}).ToArray();
+            static double[] NormalizeFloat(double[] m){float divisor=1f/(float)m[8];return m.Select(v=>(double)((float)v*divisor)).ToArray();}
+            double[] nativeTi=[ni.Scale,0,-ni.Scale*ni.X,0,ni.Scale,-ni.Scale*ni.Y,0,0,1],nativeTw=[nw.Scale,0,-nw.Scale*nw.X,0,nw.Scale,-nw.Scale*nw.Y,0,0,1];
+            var nativeTiInv=FloatInverse(nativeTi);var nativeTwInv=FloatInverse(nativeTw);if(nativeTiInv is null||nativeTwInv is null)return null;
+            var denormalized=NormalizeFloat(MultiplyFloat(MultiplyFloat(nativeTwInv,h),nativeTi));
+            h=NormalizeFloat(MultiplyFloat(MultiplyFloat(nativeTw,denormalized),nativeTiInv));h[8]=1;
+        }        bool converged = false; const double eps = 1.1920928955078125e-7;
+        for (int iteration = 0; h is not null && iteration < iterationLimit; iteration++)
         {
-            var inverse = FloatInverse(h); if (inverse is null) return null;
+            double[]? inverse;
+            if(reciprocalNormalization){
+                var m=h.Select(v=>(float)v).ToArray();
+                float determinant=(((m[8]*(m[0]*m[4])+m[6]*(m[1]*m[5])+m[7]*m[2]*m[3])-m[7]*(m[0]*m[5]))-m[8]*(m[1]*m[3]))-m[6]*(m[4]*m[2]);
+                if(determinant==0)return null;float inv=1f/determinant;
+                inverse=[(m[4]*m[8]-m[5]*m[7])*inv,(m[2]*m[7]-m[1]*m[8])*inv,(m[1]*m[5]-m[2]*m[4])*inv,
+                  (m[5]*m[6]-m[3]*m[8])*inv,(m[0]*m[8]-m[2]*m[6])*inv,(m[2]*m[3]-m[0]*m[5])*inv,
+                  (m[3]*m[7]-m[4]*m[6])*inv,(m[1]*m[6]-m[0]*m[7])*inv,(m[0]*m[4]-m[1]*m[3])*inv];
+            }else inverse=FloatInverse(h);if(inverse is null)return null;
             var radii = normalized.Select(p => {
                 float x = (float)p.WorldX, y = (float)p.WorldY;
                 float z = (float)inverse[6] * x + (float)inverse[7] * y + (float)inverse[8];
@@ -245,8 +405,8 @@ public static class NPointSolver
                 float dy = ((float)inverse[3] * x + (float)inverse[4] * y + (float)inverse[5]) / z - (float)p.ImageY;
                 return (double)MathF.Sqrt(dx * dx + dy * dy);
             }).ToArray();
-            if (radii.Max() < 1e-10) { converged = true; break; }
-            double threshold = (float)((float)((float)radii.Order().ElementAt(points.Length / 2) * 1.4825797080993652f) * (float)((float)o.WeightFactor * .1f));
+            if (!reciprocalNormalization && radii.Max() < 1e-10) { converged = true; break; }
+            double threshold = (float)((float)((float)radii.Order().ElementAt(points.Length / 2) * 1.4825797080993652f) * (nativeWeightFactor ?? (float)((float)o.WeightFactor * .1f)));
             for (int i = 0; i < points.Length; i++)
             {
                 float radius = (float)radii[i], limit = (float)threshold, e = (float)eps;
@@ -255,8 +415,8 @@ public static class NPointSolver
             }
             var next = Fit(normalized, weights, o.Freedom, true); if (next is null) return null;
             var dimensions = o.Freedom == 3 ? new[] { 0, 1, 2, 5 } : Enumerable.Range(0, o.Freedom == 1 ? 8 : 6).ToArray();
-            double step = Math.Sqrt(dimensions.Sum(i => Math.Pow(h[i] - next[i], 2))); h = next;
-            if (step < 1e-4) { converged = true; break; }
+            double step = Math.Sqrt(dimensions.Sum(i => Math.Pow(h[i] - next[i], 2))); if(reciprocalNormalization){float deltaSquared=0;foreach(int i in dimensions){float delta=(float)h[i]-(float)next[i];deltaSquared+=delta*delta;}step=MathF.Sqrt(deltaSquared);} h = next;
+            if (step < coefficientDeltaThreshold) { converged = true; break; }
         }
         if (!converged || h is null) return null;
         double[] ti = [si, 0, (float)(-(float)si * (float)ix), 0, si, (float)(-(float)si * (float)iy), 0, 0, 1];
@@ -270,7 +430,16 @@ public static class NPointSolver
             float sum = 0; for (int k = 0; k < 3; k++) sum += (float)a[i / 3 * 3 + k] * (float)b[k * 3 + i % 3]; return (double)sum;
         }).ToArray();
         var raw = Multiply(Multiply(twInverse, h), ti);
-        return raw.Select(x => (double)((float)x / (float)raw[8])).ToArray();
+        if (reciprocalNormalization)
+        {
+            float inverse = 1f / (float)raw[8];
+            return raw.Select(x => (double)((float)x * inverse)).ToArray();
+        }
+        // Original 1807fd4e0 normalizes every matrix coefficient by computing
+        // one float reciprocal and multiplying. Per-element float division is
+        // algebraically equivalent but changes ill-conditioned four-point fits.
+        float normalizationInverse = 1f / (float)raw[8];
+        return raw.Select(x => (double)((float)x * normalizationInverse)).ToArray();
     }
 
     static double[]? LeastSquares(IReadOnlyList<double[]> rows, IReadOnlyList<double> values, IReadOnlyList<double>? weights, bool nativeNormal = false)
@@ -359,5 +528,61 @@ public static class NPointSolver
         return [(m[4] * m[8] - m[5] * m[7]) * inv, (m[2] * m[7] - m[1] * m[8]) * inv, (m[1] * m[5] - m[2] * m[4]) * inv,
             (m[5] * m[6] - m[3] * m[8]) * inv, (m[0] * m[8] - m[2] * m[6]) * inv, (m[2] * m[3] - m[0] * m[5]) * inv,
             (m[3] * m[7] - m[4] * m[6]) * inv, (m[1] * m[6] - m[0] * m[7]) * inv, (m[0] * m[4] - m[1] * m[3]) * inv];
+    }
+
+    static double[]? NativeFullPivotInverse3x3(IReadOnlyList<double> matrix)
+    {
+        if (matrix.Count != 9 || matrix.Any(x => !double.IsFinite(x))) return null;
+        var a = matrix.Select(x => (float)x).ToArray();
+        var rows = new int[3];
+        var columns = new int[3];
+        for (int k = 0; k < 3; k++)
+        {
+            float maximum = 0;
+            int pivotRow = k, pivotColumn = k;
+            for (int row = k; row < 3; row++)
+                for (int column = k; column < 3; column++)
+                {
+                    float value = MathF.Abs(a[row * 3 + column]);
+                    if (maximum < value) { maximum = value; pivotRow = row; pivotColumn = column; }
+                }
+            if (maximum == 0) return null;
+            rows[k] = pivotRow;
+            columns[k] = pivotColumn;
+
+            // 0x730e90 records both pivot coordinates, performs the row/column
+            // swaps, and restores those permutations in reverse pivot order.
+            if (pivotColumn != k)
+                for (int row = 0; row < 3; row++)
+                    (a[row * 3 + k], a[row * 3 + pivotColumn]) = (a[row * 3 + pivotColumn], a[row * 3 + k]);
+            if (pivotRow != k)
+                for (int column = 0; column < 3; column++)
+                    (a[k * 3 + column], a[pivotRow * 3 + column]) = (a[pivotRow * 3 + column], a[k * 3 + column]);
+
+            float pivot = a[k * 3 + k];
+            if (pivot == 0) return null;
+            float inversePivot = 1f / pivot;
+            for (int column = 0; column < 3; column++)
+                if (column != k) a[k * 3 + column] *= inversePivot;
+            for (int row = 0; row < 3; row++)
+                if (row != k)
+                    for (int column = 0; column < 3; column++)
+                        if (column != k) a[row * 3 + column] -= a[row * 3 + k] * a[k * 3 + column];
+            for (int row = 0; row < 3; row++)
+                if (row != k) a[row * 3 + k] *= -inversePivot;
+            a[k * 3 + k] = inversePivot;
+        }
+        for (int k = 2; k >= 0; k--)
+        {
+            // Forward pivoting permutes rows and columns separately; the inverse
+            // matrix restores the opposite side of each permutation.
+            if (columns[k] != k)
+                for (int row = 0; row < 3; row++)
+                    (a[k * 3 + row], a[columns[k] * 3 + row]) = (a[columns[k] * 3 + row], a[k * 3 + row]);
+            if (rows[k] != k)
+                for (int column = 0; column < 3; column++)
+                    (a[column * 3 + k], a[column * 3 + rows[k]]) = (a[column * 3 + rows[k]], a[column * 3 + k]);
+        }
+        return a.Select(x => (double)x).ToArray();
     }
 }

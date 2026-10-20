@@ -5,9 +5,10 @@ using VisionFramework;
 using VisionPluginContracts;
 namespace VisionPlugins.Calibration;
 
-public sealed class RotateCalibrationPlugin : IVisionToolPlugin, IWpfToolEditorFactory, IToolAssetPersistence, IToolDisplayProvider
+public sealed class RotateCalibrationPlugin : IVisionToolPlugin, IWpfToolEditorFactory, IToolAssetPersistence, IToolDisplayProvider, IToolPointInputAliasProvider, IToolConfigurationProvider
 {
     public const string Id = "vision.rotate-calibration";
+    public IReadOnlyList<ToolPointInputAlias> PointInputAliases { get; } = [new("Image Point", "ImagePointX", "ImagePointY")];
     public ToolManifest Manifest { get; } = new(Id, "1.0.0", "旋转标定", "calibration", "catalog/RotateCalibModuImageEnable.png");
     public ToolDisplayDefinition DisplayDefinition { get; } = new(
         "模块状态:{0}, 旋转轴图像坐标X:{1}, 旋转轴图像坐标Y:{2}, 旋转中心物理坐标X:{3}, 旋转中心物理坐标Y:{4}, 旋转像素平均误差:{5}, 旋转真实平均误差:{6},剩余标定次数:{7}",
@@ -15,7 +16,7 @@ public sealed class RotateCalibrationPlugin : IVisionToolPlugin, IWpfToolEditorF
         ["ModuStatus", "RotCenterImageX", "RotCenterImageY", "RotCenterWorldX", "RotCenterWorldY", "RotError", "RotWorldError"]);
     static ParameterDescriptor P<T>(string name, ParameterKind kind, T value, double? min = null, double? max = null) => new(name, kind, true, JsonSerializer.SerializeToElement(value), min, max);
     public ModuleDescriptor Descriptor { get; } = new(Id, "1.0.0", "旋转标定",
-        new[] { "ImagePointX", "ImagePointY", "WorldRotateAngle" }.Select(n => new PortDescriptor(n, DataKind.NumberArray, false)).Concat(new[] { "RotNum", "RefreshSignal" }.Select(n => new PortDescriptor(n, DataKind.Integer, false))).Concat(new[] { ToolDisplayService.PositionXInput, ToolDisplayService.PositionYInput }.Select(n => new PortDescriptor(n, DataKind.Number, false, AcceptInteger: true))).Append(new("InputImage", DataKind.Image, false)).ToArray(),
+        new[] { "ImagePointX", "ImagePointY", "WorldRotateAngle" }.Select(n => new PortDescriptor(n, DataKind.NumberArray, false){SupportsDeferredNumericRead=true}).Concat(new[] { "Image Point" }.Select(n => new PortDescriptor(n, DataKind.Point, false) { Cardinality = ValueCardinality.Array })).Concat(new[] { "RotNum", "RefreshSignal" }.Select(n => new PortDescriptor(n, DataKind.Integer, false){SupportsDeferredIntegerRead=true})).Concat(new[] { ToolDisplayService.PositionXInput, ToolDisplayService.PositionYInput }.Select(n => new PortDescriptor(n, DataKind.Number, false, AcceptInteger: true))).Append(new("InputImage", DataKind.Image, false)).ToArray(),
         new[] { "ModuStatus", "remainCount" }.Select(n => new PortDescriptor(n, DataKind.Integer, false)).Concat(new[] { "ModuRunTime", "RotCenterImageX", "RotCenterImageY", "RotCenterWorldX", "RotCenterWorldY", "RotError", "RotWorldError" }.Select(n => new PortDescriptor(n, DataKind.Number, false))).ToArray(),
         [P("InputWay", ParameterKind.Integer, 0, 0, 1), P("RevOutputFlag", ParameterKind.Boolean, false), P("FilePath", ParameterKind.Text, ""), P("CachedMatrix", ParameterKind.Text, ""), P("CachedMatrixLoaded", ParameterKind.Boolean, false), P(ToolDisplayService.SettingsParameter, ParameterKind.Text, "")]);
     sealed class State { public readonly object Gate = new(); public readonly RotateCalibrationSession Session = new(); public string? AppliedPath; public bool Initialized; public Dictionary<string, PortValue>? DisplayInputs, DisplayOutputs; public ToolDisplayDiagnostic? DisplayDiagnostic; }
@@ -48,7 +49,36 @@ public sealed class RotateCalibrationPlugin : IVisionToolPlugin, IWpfToolEditorF
     static string NativeErrorInfo(uint code) => code switch { 0xe0000001 => "参数错误", 0xe0000008 => "资源未初始化或未准备好", 0xe0000201 => "文件无法打开", 0xe000031c => "订阅参数有误", _ => "" };
     public IModule CreateRuntime() => new Runtime(this);
     public Form CreateEditor(ToolEditorContext context) => throw new InvalidOperationException("Use WPF editor factory.");
-    public System.Windows.Window CreateWpfEditor(ToolEditorContext context) => new RotateCalibrationWindow(context, this);
+    public System.Windows.Window CreateWpfEditor(ToolEditorContext context) => new ToolConfigurationModelWindow(context, CreateConfiguration(context));
+    public ToolConfigurationSession CreateConfiguration(ToolEditorContext context) => new CalibrationToolConfigurationProvider(Id, "旋转标定", Descriptor, DisplayDefinition, "RotateCalibModuAlgorithmTab.xml", UpdateConfiguration, algorithmResetResource:"RotateCalibModuAlgorithm.xml", resetParameterWriter:CheckResetParameter, parameterWriter:WriteFilePathParameter, calibrationPathError:message=>ShowPathError(context,message)).CreateConfiguration(context);
+    // Frame 42760 passes strlen(value); the sole Rotate default is empty FilePath.
+    // Original SetParam 38980 rejects length zero before touching matrix/path/sample state.
+    internal static ConfigurationOperationResult? CheckResetParameter(ConfigurationOperationRequest operation) =>
+        operation.Kind==ConfigurationOperationKind.WriteParameter && operation.Source.Name=="FilePath" && string.IsNullOrEmpty(operation.Value)
+            ? new(true,Error:"0xe0000001") : null;
+    void ShowPathError(ToolEditorContext context,string message)
+    {
+        if(context.ConfigurationNotifications is null||context.ConfigurationNotifications.GetType()==typeof(WpfConfigurationNotificationService))
+            RotateCalibrationFileErrorDialog.Show(message,ConfigurationLocalization.ForLanguage("Chinese").Get("Confirm"),context.Mode);
+        else context.ConfigurationNotifications.Notify(null,new(ConfigurationNotificationKind.Error,message,Manifest.Name,context.Mode));
+    }
+    // Original 38980: after its suffix branch, Load* return is reported but FilePath
+    // is committed even on failure. Explicit writes reload even the same path.
+    ConfigurationOperationResult? WriteFilePathParameter(ToolEditorContext context,IToolConfigurationDispatcher adapter,ConfigurationOperationRequest operation)
+    {
+        if(operation.Kind!=ConfigurationOperationKind.WriteParameter||operation.Source.Name!="FilePath")return null;
+        var state=Get(context.Node.Id,context.BaseDirectory,context.Scope);
+        lock(state.Gate){
+            string path=operation.Value??"";
+            uint code=state.Session.Load(path.Length==0?"":Path.GetFullPath(path,context.BaseDirectory));
+            state.Initialized=true;state.AppliedPath=path;
+            // Native cache changes above are source behavior; host document rejection
+            // below is an independent transport failure, not a native rollback promise.
+            var committed=adapter.Dispatch(operation);
+            if(!committed.Handled||committed.Error is not null)return committed;
+            return code==0?committed:new(true,Error:"0x"+code.ToString("x8")){KeepAttemptedValueOnError=true};
+        }
+    }
     public ToolAssetSnapshot PrepareSave(NodeDocument node, string directory, ResourceCatalog resources) => PrepareSave(node, directory, resources, null);
     public ToolAssetSnapshot PrepareSave(NodeDocument node, string directory, ResourceCatalog resources, ModuleExecutionScope? scope)
     {
@@ -70,13 +100,7 @@ public sealed class RotateCalibrationPlugin : IVisionToolPlugin, IWpfToolEditorF
             lock (state.Gate)
             {
                 Synchronize(state, context.Parameters, context.BaseDirectory);
-                var inputs = new Dictionary<string, IReadOnlyList<double>>();
-                foreach (var name in new[] { "ImagePointX", "ImagePointY", "WorldRotateAngle", "RotNum", "RefreshSignal" })
-                {
-                    if (!context.Inputs.TryGetValue(name, out var value)) continue;
-                    inputs[name] = value.Kind switch { DataKind.NumberArray => value.As<IReadOnlyList<double>>(), DataKind.Number => [value.As<double>()], DataKind.Integer => [value.As<long>()], _ => [] };
-                }
-                step = state.Session.Run(inputs, context.Boolean("RevOutputFlag"));
+                step = state.Session.Run(name=>RotateCalibrationInputReader.Float(context,name),name=>RotateCalibrationInputReader.Integer(context,name),context.Boolean("RevOutputFlag"));
             }
             var nonFinite = step.Outputs.Where(p => !double.IsFinite(p.Value)).ToArray();
             var outputs = step.Outputs.Where(p => double.IsFinite(p.Value)).ToDictionary(p => p.Key, p => p.Key is "ModuStatus" or "remainCount" ? PortValue.Integer((int)p.Value) : PortValue.Number(p.Value));

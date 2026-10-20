@@ -28,8 +28,8 @@ public partial class MainWindow
   EnsureToolDebugSolution();
   try
   {
-   ClearWorkflowCallResults(procedureId);if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){results.Clear();RefreshRight();}if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
-   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};var session=await new SolutionExecutor(modules).RunAsync(new SolutionWorkspace(doc.Document,doc.BaseDirectory),procedureId,cancellationToken:token,scope:executionScope,control:control);if(control.StopRequested)continuousRun=false;
+   ClearWorkflowCallResults(procedureId);ClearLiveDynamicDescriptors(procedureId);if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){results.Clear();RefreshRight();RenderGraph();}if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
+   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};var session=await new SolutionExecutor(modules).RunAsync(new SolutionWorkspace(doc.Document,doc.BaseDirectory),procedureId,progress:CreateExecutionProgress(procedureId),cancellationToken:token,scope:executionScope,control:control);if(control.StopRequested)continuousRun=false;
 
    StoreWorkflowCallResults(procedureId,session);var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);RecordWorkflowRun(procedureId,elapsed);
    if(windowClosed)return false;

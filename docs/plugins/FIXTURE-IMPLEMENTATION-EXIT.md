@@ -1,0 +1,32 @@
+# 位置修正：完整实施与自审退出候选
+
+2026-10-20。选定正常工具范围的逆向、实施和本线自审已完成，交根线独立审计；不自行改总进度。人工验收不作实施门，原native未执行。最初31/19与待Copy/Save阶段保留历史，当前由43/30及下表覆盖。
+
+| 项 | 原源码→生产消费者 | 最终实际验证/结论 |
+|---|---|---|
+| 身份与入口 | 原IMVSFixtureModu native/Cs/Control及四XML，三SHA见FIXTURE-IDENTITY；Process9a80/Geta430/Seta6e0/Init8d70/Saveab60/Loadaa70/DeInitade0；独立ModuleId vision.fixture | 当前原件重新hash一致；实际MainWindow注册/catalog映射；正常入口无缺失体 |
+| 数值读/数组 | GetFloat5参，index0顺序X/Y/Angle/ScaleX/Y；success忽略Count；E31B3/E31C2/success1，五flag AND==1；角未绑0、尺度未绑1 | scope reader优先→Graph逐次→materialized；43专项含顺序/Count0/E31B/E31C/空绑定与早停，真实Host POINT数组UI选择→leaf展开→首项运行 |
+| 状态/尺度 | 成功缓存Run、置Basis+6c1；未锁Init+680同步Ref；0..10000尺度，负/超界E32E；其它读错E1；失败分类只status0 | 正常/0/10000/超界/数组/失败Status/错误码真实Runtime通过；不虚构矩阵求解 |
+| 教学 | Command_FixtureModule先Ready，已基准询问覆盖，SetParam FixtureInit；首教只锁、重教才Run→Ref；无valid清锁A0000002；通知后CurValue0/1 | 真WPF按钮与实际host Apply/scope接入；初次/重复/取消/错误/宿主拒绝回滚通过；后者为独立安全事务明确记录 |
+| 配置/模式 | 原AlgorithmTab+Group，Select纯用户态，POINT Origin↔X/Y同alias；Command原模板共享目录，23原zh-cn词条 | 真实WPF模板零diagnostic；Host坐标模式可见性+userData无伪native Select；原成功中文通过；无已知未实现活动控制 |
+| Reset/ROI | 该原XML无Reset按钮，BottomCommandGroup仅Continuous/Stop/Execute/Confirm；无ROI编辑控件，本工具产生FIXTURE | 不造Reset/ROI；原私有ResetMember不是UI入口；外部八默认API静态另列，不当正常UI缺口；下游零尺度Transform继续显式安全拒绝 |
+| 发布/显示 | 原ModuStatus、Runtime、十float及FIXTURE/两POINT组合；两point常Status1，green/red与tips，DataRecord独立模板 | typed输出、两Graphics/RecordText、真实流程及NodeDebug同scope通过；不宣称Hik像素级视觉等价 |
+| 保存/精度 | 原GetParam六float→double→MSVCR120%f；GetAll原八项，不存尺度 | 原CRT叶12边界bits通过；本工具量化与保存投影逐字段Seed确认；Host Save→单改Angle→首次Run不误量化RefX；Load新scope才恢复六位值 |
+| 复制 | 原VmModuleSet→SDK648bf0/6785f0 msg410→manager6280b0/5e7be0 JSONBE9→proxy024310 table+a8（loader/GetProcAddress确证）→Frame13a0f0/040d50 source Save(+28)→dest Load(+30) | root窄scoped copy接口仅此工具启用；Host真正Paste读取live八值、六位量化、不改source，目标不恢复scale；详见FIXTURE-COPY-SAVE-SOURCE |
+| 生命周期/释放 | native dtor8d40→DeInitade0，继承VmModule.Dispose；本工具无自有设备/模型文件 | 生产scope拥有状态、配置沿公共Execution释放/lease、节点删除清pose/display；真实Host验证。nativeheap/远程服务不伪模拟 |
+
+## 最终验证及失败历史
+
+顺序独占managed、短artifacts analysis/b-fixture/artifacts：Fixture.PluginChecks43、Fixture.HostChecks30，最终exit0；native-format CRT12例exit0。最终专属编译0warning/error；最终Host全重建仅既有MainWindow.xaml.cs83 CS8603两条，无新增测试警告。不存在因测试通过放宽阈值/清零失败状态。
+
+所有旧日志保留：plugin-build首HorizontalAlignment歧义；plugin-run-2第29误假设Reset导致NRE；host-build-3 Point2 using缺失；中间nullable测试警告，均按源/真实测试环境修正。原native首次import括号路径bat解析exit255、类型archive cache警告及初期空asm/无xref均保留并有具体修复证据，不覆盖为成功原运行。
+
+真实Host第一窗口由MainWindow.OpenToolConfiguration创建；教学窗口复用真实CreateToolEditorContext/ConnectToolEditorServices，其Apply/Run/Scope是真实宿主，仅注入记录式notifications防弹层阻塞，默认通知视觉未验。主节点RunProcedure/Debug/Paste/Save/Load/Delete均实际入口，未代入结果；被复制节点的零尺度由实际Paste产物调用生产Runtime核对。
+
+最终五程序集PDB182文档与当前源码SHA2560差异：analysis/b-fixture/compiled-sources-final.json、source-review-final.json；后续任何源变动不冒旧快照通过。final-manifest.json包含产品/测试/文档、原件和恢复体、最终/失败log、DLL/PDB及源hash，供根线独立核对。
+
+## 明确有限边界
+
+原算法/Frame/SDK未加载运行；只有相同原依赖MSVCR120的C-locale格式叶探针，因此不宣称原整体运行差分通过。NaN的COMISS unordered静态可能允许，托管仍保持有限值安全边界；任意非法native输入、损坏heap、逐输出setter失败、远程/父Group/provider扩域均不冒称完成。共享Fixture变换仍原有独立数学实现，本工具只发布pose；zero运输和安全逆变换分离。测时独立、UI非像素全等。null-scope/已移除源的复制使用宿主immutable安全回退，不冒原被释放对象仍可复制。原SDK额外DynamicIO setter无本工具正常控件入口，不自动扩本卡范围。
+
+本线已确认的正常活动缺口（零运输、资源/词条、保存六位及live Seed、复制live八值、数组/模式）均实施并自动验证，无已知未实施正常工具门。请求根线按当前声明范围审核整工具完成，人工验收另列。

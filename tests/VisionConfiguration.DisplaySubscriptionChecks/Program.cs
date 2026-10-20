@@ -15,7 +15,7 @@ ConfigurationSubscriptionBinding Constant(string value,string native="float")=>n
 IEnumerable<ConfigurationSubscriptionTreeNode> Leaves(IEnumerable<ConfigurationSubscriptionTreeNode> rows)=>rows.SelectMany(r=>r.Children.Count==0?[r]:Leaves(r.Children));
 var tree=service.Enumerate(new(destination,["int","float"],IncludeSelf:true));
 Check(tree.Status==ConfigurationSubscriptionStatus.Available,"display tree");
-var leaves=Leaves(tree.Roots).Where(n=>n.Binding is not null).ToArray();Check(leaves.Length==4,"scalar numeric self and predecessor only");
+var leaves=Leaves(tree.Roots).Where(n=>n.Binding is not null).ToArray();Check(leaves.Length==8,"numeric scalar and array self/predecessor outputs use the original position tree");
 Check(leaves.Select(n=>((ConfigurationOutputReference)n.Binding!.Reference).NodeId).ToHashSet().SetEquals(["target","before"]),"explicit ancestors");
 Check(service.Bind(destination,Output()).Status==ConfigurationSubscriptionStatus.Available,"self output bind");
 Check(current.Configuration.Subscriptions.Count==0&&current.Connections.Count==0,"no algorithm self cycle");
@@ -24,8 +24,8 @@ var persisted=JsonSerializer.Serialize(current);current=JsonSerializer.Deseriali
 Check(service.Bind(destination,Output("after")).Status!=ConfigurationSubscriptionStatus.Available,"reject descendant");
 Check(service.Bind(destination,Output("unrelated")).Status!=ConfigurationSubscriptionStatus.Available,"reject unrelated");
 Check(service.Bind(destination,Output(procedure:"other")).Status!=ConfigurationSubscriptionStatus.Available,"reject other flow");
-Check(service.Bind(destination,Output(port:"A")).Status!=ConfigurationSubscriptionStatus.Available,"reject NumberArray");
-Check(service.Bind(destination,Output(port:"Batch")).Status!=ConfigurationSubscriptionStatus.Available,"reject cardinality array");
+Check(service.Bind(destination,Output(port:"A")).Status==ConfigurationSubscriptionStatus.Available,"position accepts original float-array sources");
+Check(service.Bind(destination,Output(port:"Batch")).Status==ConfigurationSubscriptionStatus.Available,"position accepts typed float-array sources");
 Check(service.Bind(destination,new(Output().Reference,ConfigurationSubscriptionIndex.At(0))).Status==ConfigurationSubscriptionStatus.Unsupported,"reject index");
 Check(service.Bind(destination,new(new ConfigurationGlobalReference("g","float"),ConfigurationSubscriptionIndex.All)).Status==ConfigurationSubscriptionStatus.Unsupported,"reject global");
 Check(service.Bind(destination,Constant("NaN")).Status!=ConfigurationSubscriptionStatus.Available,"reject nonfinite");

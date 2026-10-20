@@ -25,6 +25,20 @@ static class Program {
     void Invoke(string name,params object[] values)=>typeof(MainWindow).GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,values);
     var document=(VisionEditor.Core.GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
     document.NewSolution();
+    if(id=="vision.calibration-board"){
+     var directory=System.IO.Path.GetFullPath(System.IO.Path.Combine("analysis/manual-acceptance/board-fixtures",Guid.NewGuid().ToString("N")));System.IO.Directory.CreateDirectory(directory);
+     const int width=480,height=400;var pixels=Enumerable.Repeat((byte)255,width*height).ToArray();
+     for(int y=50;y<350;y++)for(int x=60;x<420;x++)pixels[y*width+x]=(byte)((((x-60)/30+(y-50)/30)&1)==0?0:255);
+     var encoder=new System.Windows.Media.Imaging.BmpBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(System.Windows.Media.Imaging.BitmapSource.Create(width,height,96,96,PixelFormats.Gray8,null,pixels,width)));
+     string imagePath=System.IO.Path.Combine(directory,"棋盘格-测试样本.bmp");using(var output=System.IO.File.Create(imagePath))encoder.Save(output);
+     var source=document.AddNode("vision.image-source","1.0.0",50,70);var board=document.AddNode(id,"1.0.0",250,70);document.ConnectExecution(source,board);document.BindInput(source,"Image",board,"InputImage");
+     var values=document.CurrentProcedure.Nodes.Single(n=>n.Id==source).Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone());values["ImagePaths"]=System.Text.Json.JsonSerializer.SerializeToElement(System.Text.Json.JsonSerializer.Serialize(new[]{imagePath}));values["CurrentImagePath"]=System.Text.Json.JsonSerializer.SerializeToElement(imagePath);document.SetParameters(source,values);
+     var task=(Task)typeof(MainWindow).GetMethod("RunProcedure",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,new object[]{document.CurrentProcedureId})!;
+     var frame=new DispatcherFrame();_=task.ContinueWith(_=>window.Dispatcher.BeginInvoke(()=>frame.Continue=false));if(!task.IsCompleted)Dispatcher.PushFrame(frame);task.GetAwaiter().GetResult();
+     var records=(Dictionary<string,VisionFramework.NodeRunRecord>)typeof(MainWindow).GetField("results",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
+     if(records[board].Status!=VisionFramework.NodeRunStatus.Success)throw new InvalidOperationException("标定板验收样本运行失败："+records[board].Message);
+     typeof(MainWindow).GetField("selected",BindingFlags.NonPublic|BindingFlags.Instance)!.SetValue(window,board);Invoke("RefreshAll");Invoke("OpenToolConfiguration",board);Console.WriteLine("MANUAL_ACCEPTANCE_READY "+id+" source -> board; synthetic checker fixture, no device tests; sample="+imagePath);return;
+    }
     if(id=="vision.camera-mapping"){
      var registry=(VisionFramework.ModuleRegistry)typeof(MainWindow).GetField("modules",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
      registry.Register(new CameraPoints().Descriptor,()=>new CameraPoints());
@@ -36,7 +50,7 @@ static class Program {
      var frame=new DispatcherFrame();_=task.ContinueWith(_=>window.Dispatcher.BeginInvoke(()=>frame.Continue=false));if(!task.IsCompleted)Dispatcher.PushFrame(frame);task.GetAwaiter().GetResult();
      Console.WriteLine("MANUAL_ACCEPTANCE_READY "+id+" synthetic point fixture; no device tests");Invoke("OpenToolConfiguration",camera);return;
     }
-    if(args.Contains("--calibration-pair"))document.AddNode(VisionPlugins.Calibration.NImagePlugin.Id,"1.0.0",50,50);
+    if(args.Contains("--calibration-pair")){string paired=id switch{"vision.translation-calibration"=>"vision.rotate-calibration","vision.rotate-calibration"=>"vision.translation-calibration",_=>VisionPlugins.Calibration.NImagePlugin.Id};document.AddNode(paired,"1.0.0",50,50);}
     string? sample=args.Length>1&&!framework?args[1]:null;
     if(framework){
      Invoke("AddModule","vision.image-source");

@@ -1,0 +1,33 @@
+# C4 显示UI参数与方案Save/Load直接边界
+
+2026-10-19；完整工具数仍0/10。本片只恢复具体供应商托管成员和native API契约，不执行原厂/构建、不改共享产品。没有从API调用宣称.sol逐字段字节布局已取得。
+
+## 具体保存路径
+
+字号链已经写原厂UI参数键`[ParamRoot]_Show Evaluation Error Text.FontSize.Value`：FeatureBase.SaveValue→VmModule.UserData→UserData.SetUIParamValue→ModuleManager.SetUIParamValue→IMVS_SetUIParamValue。显示选项已在平台UI参数层，不是在保存方案时由Feature重新导出一份XML。
+
+公开VmSolution.Save/SaveAs→BaseSave/BaseSaveAs→VmModule.Save/SaveAs→虚ExportFile→VmSolution.ExportFile→InternalExport。InternalExport检查_isSaving；已保存中返回false；选择当前方案路径或导出对话框，路径为空取消并清标志。正常调用SolutionManager.SyncSaveSolution(path,password,IntPtr.Zero,0)，返回后更新SolutionPassword/SolutionPath。这里pData=0/nDataLen=0不是把字号键作为外部额外数据传入；UI参数由底层平台状态管理。ExportFile忽略InternalExport bool并返回ModuleFilePath，因此返回一个路径不能独自证明本次保存成功/发生。
+
+SolutionManager.SyncSaveSolution清nSolutionSaveErrorCode、等待标志，调用ServerSDKAPI.IMVS_SaveSolution；直接非0抛VmException，0才清ParamSeted并SyncWaitor.Wait。保存结束callback先调用OnSolutionSaveEndCallBack，再写nSolutionSaveErrorCode和等待标志；只有SDKMode且callback状态非0时同步方法等待后再抛。事件订阅方异常前无finally确保标志写入，不能保证异常仍结束等待。TempVmSolution.cctor实际把事件连到VmSolution.MSolutionManager_OnSolutionSaveEndCallBack；后者发布结束信息并清_isSaving。这里区分API接受、callback状态、托管提示与真实文件内容四层。
+
+## 具体加载与显示节点重建
+
+现代VmSolution.Load先TempVmSolution.Init、CheckSol，再调用Import（虽然Import标obsolete，现代Load源码仍调用它）；Import注册临时OnSolutionLoadEndCallBack，调用SolutionManager.SyncLoadSolution，finally移除该临时订阅。Load按SDKMode及isSilentExecute继续SilentExecute或SetServerReadyEvent。不能因为Import标obsolete而删除现代真实调用边。
+
+SyncLoadSolution同样先清错误/等待标志，调用IMVS_LoadSolution；非0直接抛，0清ParamSeted并等待callback。GetSolutionLoadEndCallBackInfo先发布OnSolutionLoadEndCallBack，再记录status、初始化procedure状态、置等待完成。TempVmSolution将该事件接VmSolution.MSolutionManager_OnSolutionLoadEndCallBack；该体更新isLoading/失败标志、路径、模块载入状态并发布框架结束事件，并没有逐个调用所有ParamRoot.Reload。
+
+显示恢复为具体按需路径：ModuleResultView源变化new ModuleDisplayDecorator→Init查询VmSolution[模块FullPath+".[Display]"]；VmModule.GetSelfExternNode若ExternPathStartNodes已有该键复用，否则从ActivatorWrap.TypeTable按VmExternPathAttribute.KeyName精确Single查类型、CreateInstance→IVmExternPath.InitNode(this)→缓存。ParamRoot的[Display]属性声明对应这个入口。InitNode读取当前工具Display.xml、设Owner、初始化动态对象、ReloadProperty、InitVmIOs；ReloadProperty→ModuleManager.GetUIParamValueByObject(ID)取得平台UI参数列表→Object.UpdateResultShowParam按精确键恢复Feature.Value/Mapping和对象样式。此路径已由字体片取到末端呈现。
+
+已有缓存对象的显式重载另走VmModule.ReloadFuncChild：isReloadEnd且[Display]已缓存才IReload.Reload；ParamRoot.Reload先DeInitVmIOs，重建Category集合、InitNode(owner)，最后OnParamRootReloadEnd。它不是每次配置窗关闭必运行的链，也不是方案callback无条件遍历所有显示对象。新加载后的节点首次获取和旧对象重载必须分开。
+
+## 当前原件、平台依赖与停止展开条件
+
+当前VM.PlatformSDKCS NativeMethods的ImplMap已被动校核：IMVS_SetUIParamValue、IMVS_SaveSolution、IMVS_LoadSolution均导入`.\\iMVS-6000PlatformSDK.dll`的同名入口（CallingConventionWinApi）。安装可定位原件Applications/PublicFile/x64/iMVS-6000PlatformSDK.dll，另Applications根目录无该文件；进程实际DLL搜索/加载路径未运行确认，不能只凭ImportName断言已加载哪个实体。
+
+上述Save/Load实际原生实现及服务端.sol UI参数字段打包/磁盘事务是公共平台依赖。当前片没有取得它，不把UI参数在Save前已设置、API接受或callback0等同字号键已逐字段写盘证明。本工具无需另做一个原厂.sol打包器；独立项目以根线框架方案格式持久化节点的ConfigurationUserData/DisplaySettings/DisplayInputBindings/DisplayObjectSettings，是另一个明确实现选择，必须用真实宿主保存/重开往返验证。供应商平台内部文件格式不在此继续无限展开，跨框架接口验收由根线对接。
+
+## 验证与整工具残余
+
+机器索引solution-display-evidence.json保留相关原件身份/当前关键IL及PInvoke元数据、复用源哈希；InspectC4SolutionDisplay.ps1被动PEReader，不加载目标。重点核Save/Load、callback顺序、Display按需创建/Reload/恢复，未运行文件读写。
+
+整工具剩余见WHOLE-TOOL-CLOSURE：其它显示对象/样式及复制重置、当前产品差异修复、支持域失败恢复/保存往返、兼容策略、真实宿主与用户验收。无新完整工具完成。
