@@ -355,3 +355,7 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-20 第二十四轮：C02.3 main 回调消费者接入
 
 基线6fc5e70942e5e021f5de117b65c9163a5ca2ad50。C02.3将FrameworkCallbackQueue<Action>接入MainWindow/WorkflowExecution真实ModuleResult发布路径：同步提交结果/历史，Dispatcher刷新视图，owner与关闭隔离；主项目0警告/0错误构建、ExecutionViewChecks11 12/12及既有队列15/15通过，按实施自审核口径计+1。A06无BAML新证据、B06无producer合同、D04.1仅有限托管迁移分支，均不计分。总实施41/96=42.71%，剩55；原生WorkStatus多消费者/SDK线程/设备与人工桌面差分保留未知，tool-plugins未访问、不修改、不推送。
+
+## 2026-10-20 第二十六轮：A05.1/B04.3/C03.2门槛复核
+
+基线ea64cb0e573a9e658e656c3eebc951e9daf8a514。A05.1、B04.3、C03.2均完成源码级门槛复核但没有可安全闭合的新增实施单元；D01.2因原生writer/reader仍缺证据未重复派发。四线报告及独占审计证据保留在`docs/reverse/*-batch26.md`和`analysis/full-audit/batch26-20261020/`。本轮实施+0，总实施41/96=42.71%，剩55；tool-plugins未访问、不修改。
