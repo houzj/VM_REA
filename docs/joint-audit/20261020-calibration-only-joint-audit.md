@@ -43,3 +43,6 @@
 | 畸变修正图→N图像第 1 帧 | [第九轮畸变链](20261020-pass9-distortion-chain.md) 真实主窗 1000×1000 图像源→畸变 `PostCorrectionImage`→N图像，76B `.iccal`、保存重开及错误路径恢复 11/11 | 原厂同构图、ROI/全部板型和数值、双图显示、N图像最终矩阵 |
 | 相机映射文件→旋转标定连续采样 | [第九轮旋转链](20261020-pass9-rotate-consumer-chain.md) 实际 `.iwcal` 同图 3 轮 `remainCount=2/1/0`，丢文件失败且同 scope 恢复；三个既有 XML 生产物只做读取兼容 | 原厂同构整图、数值逐位差分、XML 三生产者本轮同图重跑及旋转结果后继 |
 | 平移旋转点数组→Group→坐标系 POINT | [第九轮坐标系点链](20261020-pass9-coordinate-point-chain.md) `OutImagePointX/Y` 经 Group 到 `SrcPointX/Y`，首跑/保存重开两次实际 Success | 原厂同构图、坐标系 Draw/缺项异常/显示分支及数值逐位差分 |
+| 映射标定双 IMAGE→XML→标定加载/Group/坐标系 | [第十轮双图模式](20261020-pass10-map-image-chain.md) 两个真实图像源的原 SDK 夹具各 168 角点，首跑/重开后新 XML 均被九项矩阵消费者读入 | 双 ROI、教学、原厂同构图及数值逐位差分 |
+| 标定板 `.iwcal`→旋转标定 | [第十轮板到旋转](20261020-pass10-board-rotate-chain.md) 原 SDK 导出与原模块 loader 对齐 9 float；真实图 3 帧连续采样、空白失败与同 scope 恢复 20/20 | 原厂桌面同构图、设备/任意板型/旋转数值全域 |
+| N 点单格编辑→参数历史→XML/标定加载 | [第十轮编辑链](20261020-pass10-npoint-edit-chain.md) 真实控件和同构回调四行开窗 20 次整节点图编辑，单格 +1；Undo/Redo、保存重开、求解/加载均成功；既有性能合同 FCR-033 追加证据 | 原版历史/刷新次数、实际 MainWindow 单格交互和同机时延、长期未响应根因 |
