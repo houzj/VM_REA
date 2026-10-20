@@ -1,3 +1,7 @@
+## 2026-10-20 main 联合审核第十四轮：标定显示与文件按钮写参
+
+当前目标仍只含标定十工具和必要 ImageSource/Group 交接。B/C 两线新审 N 点/N 图像/相机映射/映射标定显示声明与旋转标定图像/失败快照；映射标定真实主窗成功→空白图失败→切源根线复跑 6/6，旋转标定真图→无效采样→恢复根线复跑 9/9。根线从安装版 `Apps.XmlParser.dll`/`VM.Core.dll` 定点 CIL 补原标定加载文件按钮→参数写入/可选运行，排除按钮直接调动态端口重建；SDK/回调间接通知及旧 Group 订阅未证。旋转原 IMAGE 四叶强制而当前聚合端口可选的声明差异已登 FCR-035，未据此推算法无图拒绝。证据、SHA 与未闭边见[第十四轮根线复核](joint-audit/20261020-pass14-root-review.md)。本轮无产品改动、未推送，`tool-plugins` 不动；框架实施仍 **41/96=42.71%**，插件历史自审 10/10 单列。
+
 ## 2026-10-20 main 联合审核第十三轮：标定创建链、文件控件与坐标系终端
 
 当前目标仅是标定十工具的框架→工具 UI/后台/算法→结果代码链，其他工具留待下一目标；ImageSource/Group 只核必要交接。原工具箱 `ToolBoxData→ToolItemGrid→ItemsPage→DecoratorBase→AddNewItem→VmModule.CreateToModuleSet→SyncAddOneModule` 共用源码边已追到 SDK 请求。REA/CIL 证标定板虽然 `ToolItemInfo.name=CalibBoardCalib`，普通构造实际传 `IMVSCalibBoardCalibModu`。原标定加载文件控件的 override 仅经基类写参/可选运行并 `ReadData(false)` 刷显示，没有直达 `InitDynamicIO`，原文件刷新后的间接动态端口通知仍未知。坐标系正常/暖保留/冷安全拒绝结果→owned Group/同轮显示在真实图 10/10，根线独立复跑 exit0。源码、测试、SHA、未证边见[第十三轮根线复核](joint-audit/20261020-pass13-root-review.md)。本轮无产品代码改动、未推送；`tool-plugins` 不动；框架实施仍 **41/96=42.71%**，历史工具实施自审 10/10 单列。

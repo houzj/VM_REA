@@ -1,0 +1,16 @@
+# 第十四轮：标定加载文件选择父类 CIL 与 SDK 写参边
+
+接续[第十三轮文件控件源审](20261020-pass13-readcalib-filepicker-dynamic-io.md)：REA 对安装版 `Apps.XmlParser.dll` 的 `inspect_managed_members` 因 64 MiB metadata representation 预算返回 unavailable。这是工具提供器限制，本轮用已安装 `dotnet-ildasm 0.12.2.0` 配合 `DOTNET_ROLL_FORWARD=Major` 对**同一安装原件**单方法离线导出 CIL，不修改安装件、不执行 VM。原件 `D:/Program Files/VisionMaster4.4.0/Applications/myLibs/Apps.XmlParser.dll` SHA-256 `78EC7AE1E5ADEFFF29197099C7109B153A3F75D092B7C3E9DC253D8C1B25A8D1`。
+
+| 原成员/原 CIL | 本轮确认的调用边 | 导出路径与 SHA-256 |
+| --- | --- | --- |
+| `Apps.XmlParser.ParamTab.OpenFileDialog.ValueChangedCmdExecute` | 判 `IsUnConnect`/`CurValueA == null` 后，调用虚 `NameValueItem.SetParamUnit`；返回 **0** 时显示成功并调用 `NameValueItem.PreExecuteRun`。未直接调 `InitDynamicIO`。 | `analysis/joint-audit/pass14-cal-readpicker-base/openfile-base.il` `BBD92F7D2D6E645BA392BFB2030E5777DE51613D90FA2E33CD92F2E0D0DD6A86` |
+| `NameValueItem.SetParamUnit()` 与带 parent 重载 | 无参重载传 null 给带 parent 重载；后者核访问模式和当前值、执行 `Check`，再调 `SetParamUnitByZmq(parent,value)`；校验异常会恢复 `OldValue` 并报失败。 | `analysis/joint-audit/pass14-cal-readpicker-base/namevalue-setparam.il` `F8B028704F557104D378A21567714DFDA7858F3ACF49A3CDE47587792F82C8C3` |
+| `NameValueItem.SetParamUnitByZmq`、`SetParamUnitDirect` | ZMQ 包装经 Dispatcher.Invoke 后调用 Direct；Direct `IUserStringData.set_Item(key,value)`。这是写参入口，非重建动态叶的直接调用。 | `namevalue-zmq.il` `790463B1E6C21AABD294E92D7A20A3F4C569371524A34826D5DFB51E0C4D45EA`；`namevalue-direct.il` `B141117DF72AD5E201ED5277F6CA7841F110FF90F0C3E1A9EF9FED775FAABE7B`，同目录 |
+| `NameValueItem.PreExecuteRun` | `VmSolution.IsParamModifyExecute`/`CanTriggerExecute`/动态组等门后调用 `ExecuteRun`；并未在此方法直接 `InitDynamicIO`。 | `namevalue-prerun.il` `288D06C20FA1B9ED1CFFC7907D23F6F2C45726F0BB84085ACEE1B0A48D65726B`，同目录 |
+
+下一段原反编译源码与安装版 `VM.Core.dll` 定点 CIL 双重核对。原件 SHA-256 `936763F6C8A1BF9FCF59F22ACEBCA8FEB09B5F3D5701AE77C82BDC81E626190D`。`VmModule.IUserStringData.this[key]` 将写入转交 `Params`；`ModuleParam.this[key]` 在非全局分支做 `RecordParamUnRedo → SetValueBySDK → Parent.OnModuleParamChanged`（`moduleparam-set.il` SHA-256 `D801C62E982B35595DE01D2AEEC2565F7083337DACFCC5130A0E019C100D4715`）。`SetValueBySDK` 普通键经 `ModuleManager.SetParamValue`，此边据原 `ModuleParam.cs` 反编译文本 SHA-256 `AF392BF2D3AF006C6A16021A271D67DD8EF2017B268580841874AB6FEDE1DA48`，本轮未导出该方法 CIL。`VmModule.OnModuleParamChanged` 发 `ModuleParamChanged` 事件（`vmmodule-paramchanged.il` SHA-256 `107E1B27517763CCD84CC598A70335C55B4115A1C8D1BF223A79FED24B0FEDE1`）。`VmModule.Outputs` getter 仅在 `outputs_IsLoaded=false` 且方案未加载中时 `InitOutputDynamicIO`，然后置 true（`vmmodule-outputs.il` SHA-256 `E420020115126E2453568F2C3D85243CA339D3FE4925A88B15A4863C70A74A2C`）；在已读过 Outputs 的同一对象上，不能从 getter 这条首次访问路径推断文件再次选择会刷新动态叶。三个 `.il` 均在 `analysis/joint-audit/pass14-cal-readpicker-base/`。原 `VmModule.cs` 反编译文本 SHA-256 `53E2F0F9032C4631B59CF0EB2A00E06D50469D94706E7E370E9CC7E1059C72CE`。
+
+**可排除的解释：** 原文件按钮通过 override、父类 SetParam、Direct 或 PreExecuteRun **直接**调用 `VmModule.InitDynamicIO`，证据均不成立；`ReadFileConfigData.ReadData(true)` 更不能因该函数存在而被移作本入口默认路径。**仍未关闭：** 原 SDK `SetParamValue` 或 `SelfRun` 引发的模块回调、以及 `ModuleParamChanged` 的订阅者是否在后来重查/重建输出、如何处理既有 Group `RelateIO`。要确认“自动迁移”或“不会迁移”，需追这一间接 caller 或受控原机动态 IO/对象身份；当前项目第十二轮旧 Group 绑定明确失败仅是**当前实现实测**，不是原版结论。
+
+本轮关闭 REA 超限造成的**父类 CIL 缺口**，没有产品改动或新实施单元；主框架进度仍 `41/96 = 42.71%`。`tool-plugins` 在制文件只读。

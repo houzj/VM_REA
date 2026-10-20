@@ -574,3 +574,11 @@ PointAlias构造追加可选presentation状态，旧调用仍可编译。实际M
 第十二轮真实离屏 MainWindow 图先成功、再改自动导出扩展名为 `.bad` 导致该节点 `Failed`：当前显示仍有两图层和 170 图形，失败记录文本已更新；切换到图像源节点后 presenter 图/记录/列表清空。标定板的空白 `NoMatch` 则保持本轮输入图、清掉旧检测点图形。原 `IMVSImageCalibModuDisplay.xml` 将校正图映射为 `PostCorrectionImageData`，原 `ProcessOutput` 可非原子发布；但未证同一导出失败后原厂是否保留旧图。证据、原件哈希和运行日志见 `docs/joint-audit/20261020-pass12-board-distortion-display.md`；根线独立复跑日志 SHA-256 `0DA4B51325A5A0AFFBEFA6FB8629F5D858F18FAECCA2E4C29A5CBA4E56AF16B2`。
 
 生命周期和兼容裁决：不得只因 `NodeRunRecord.Failed` 就在 main 清所有插件显示，也不得把 retained 图形无证据称为原厂行为。需要原版同输入“成功→自动导出失败→切节点”的 `ProcessOutput/GetDisplayList` 结果与可见选层，再由插件显示快照所有者决定保留、标注旧轮或清除的具体条件；main 只按约定显示该快照和当前运行状态。接受证据应含同节点连续两轮、切选、切方案、关闭、重开和失败后再成功的实际 WPF 显示/释放回归。此条仅登记跨项目合同风险，不修改 `tool-plugins` 在制文件或擅自修复。
+
+## FCR-035 — 旋转标定 IMAGE 强制叶与聚合端口的声明合同（2026-10-20，待插件所有者补证）
+
+原版生产者：安装 `RotateCalibModu.xml` 的 `InputImage` 组合及 `InImage/InImageWidth/InImageHeight/InImagePixelFormat` 四个 `IsForce=true` 叶；`RotateCalibModuDisplay.xml` 从 `InImage` 展示。当前生产者：ImageSource/图连接；消费者：`vision.rotate-calibration` Descriptor/Runtime/`LastDisplay`、main 连线验证和图像 presenter。当前 Descriptor 只暴露可选聚合 `InputImage`，显示从 scope 中的聚合图快照取得；这不是原四叶端口的逐口重建。
+
+载荷与生命周期：应逐项核组合 IMAGE 与四叶的源身份、宽高、格式、断开/重连、无图运行、失败后本轮图/旧数值清理、Group/保存重开及取消释放。第十四轮源码及真实图探针见 `docs/joint-audit/20261020-pass14-c-display-chain.md`；根线 9/9 证当前真图首轮、非法 `RotNum=2` 失败、同 scope 恢复与未运行节点快照隔离。原 `Process 0x376b0` 未见读取图，故 `IsForce=true` 只能证**声明/绑定合同差异**，不能据此断言原算法无图拒绝或当前运算数值错误。原版无图条件的上游 validator/SDK 路径仍需原指令或受控原机证据。
+
+责任：插件项目持有工具 Descriptor、配置/显示适配及复合输入契约，main 仅按已确认的端口类型/必需性执行连线与调度；如需跨项目改公共复合端口合同，先由用户选择合流点。兼容需保留现有方案中聚合 `InputImage` 连接或明确迁移路径，验收以真实 ImageSource→Rotate 的连线/执行/显示/Group/重开正负例及原同条件差分为准。此项仅登记，未修改 `tool-plugins` 在制文件或建立第二套插件配置框架。

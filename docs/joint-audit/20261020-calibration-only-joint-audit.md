@@ -23,6 +23,8 @@
 
 第十三轮又闭合了一个共用原始创建代码路径及两个工具特有结果/事件边：[工具箱拖放→SDK 请求](20261020-pass13-calibration-create-call-chain.md)、[标定加载文件控件的动态输出歧义](20261020-pass13-readcalib-filepicker-dynamic-io.md)、[坐标系终端输出→Group/显示](20261020-pass13-coordinate-terminal.md)。这些是代码级具名边的新增证据，不代表十工具 J01–J12 全部门槛都已关闭。
 
+第十四轮新增 [四工具显示链](20261020-pass14-b-four-display.md)、[旋转标定图/失败显示链](20261020-pass14-c-display-chain.md) 及[标定加载文件按钮父类 CIL→写参/可选运行](20261020-pass14-readcalib-parent-cil-bridge.md)；根线独立复跑见[第十四轮复核](20261020-pass14-root-review.md)。原版同条件失败呈现、动态端口回调/Group 订阅及旋转图像四叶合同仍有限未闭；未因当前探针通过而将整个 J 门改为完成。
+
 ## 当前基线和待闭边
 
 - 当前 WPF 主窗 `MainWindow.xaml.cs` 注册了十个插件类型；工作区 `tool-catalog.json` 的标定分类也有十个非空 ID。不过 `HEAD` 目录仅有其中八个，N图像标定和相机映射两项目录映射是用户已有未提交改动，**暂不作为提交基线完成证据**；主线只读核其现状，不覆盖该文件。
