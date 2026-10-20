@@ -554,3 +554,11 @@ PointAlias构造追加可选presentation状态，旧调用仍可编译。实际M
 当前七态探针 `tests/FrameworkImageTypeGroup.Checks` 已证：Binary 的 `OutputMaskImage=false` 时仍成功发布普通 `Image`，但 Group 同时声明 `MaskResult ← OutMask` 会因该可选值缺席整体 `SubprogramFailed`，普通 `Result` 的父流程消费者也被跳过；开启后两路成功。日志与 SHA 见 `docs/joint-audit/20261020-pass5-group-image-type.md`。原厂 `IMVSBinaryModu.xml` 把 OutMask 叶设 `IsForce=false`；同版 `VmProcedure.SetIoParams → GetGroupIoList → AddFilterToList → ProcessManager.SetGroupIO` 的 CIL 及 SDK 结构却只向 Group IO 写类型号/名称，不传 `IsForce`，故**尚不能**凭 XML 直接裁定原版 Group 缺席值是整体失败还是局部可用。原版 Group/SDK 在开关关、开、失败后的实际输出和状态是解除条件。
 
 兼容性：当前 Group 声明输出视为必需，保存格式无可选性字段；不得无证据将所有 Group 输出改为可选或吞掉真实失败。验收需同一 ImageSource→Binary→Group→父流程 Binary 链测普通图、可选 OutMask、失败与重开，并分别核原版与当前状态；需要扩展共享输出合同或插件端口元数据时由唯一所有者实施，用户决定跨项目合流。本条仅登记合同风险，不采用插件工作树在制代码。
+
+## FCR-033 — N 点标定点表初始化与图文档历史写入边界（2026-10-20，待插件线裁定）
+
+生产者：标定工具专属 `NPointConfigurationPointEditor` 的逐字段初始化和编辑回调。消费者：共享配置宿主 `ToolConfigurationHost.Apply` 及主框架 `GraphEditorDocument.SetProcedureNodeParameters` 的参数、撤销历史和后续运行。载荷为 32×5 点字段及当前点数/行 ID；字段成功/失败与文档版本必须保持一致，不可把初始化读回误当用户编辑。
+
+原版 `IMVSNPointCalibModuControl.NPointList.Init` 每行取五个原参数并给 `PointList` 五属性，setter 写对应 `IUserStringData` 字段；当前也逐字段写，但每格均复制整份 `PointValues`、同步 160 键并调用图文档编辑。`tests/NPointEditCost.Checks` 的真实配置＋图文档探针证开 4/9/32 点表分别调用 20/45/160 次 host Apply，单格修改各一次；原始成员、当前路径、耗时边界及哈希见 `docs/joint-audit/20261020-pass6-npoint-ui.md`。这是已证调用放大，不是原版与当前的同机时延差分，也未归因用户长期卡死。
+
+生命周期与兼容：首次打开、再次打开、字段失效/写失败、导入/清空/删除、修改后撤销重做与保存重开均需保留原字段写入副作用及当前图历史语义。所需合同是区分**初值投影**与**用户修改**，以便插件配置层决定何时触发共享文档 Apply；主框架不能无据吞掉编辑事件或修改所有工具的历史策略。接受证据应包含原 setter 成功/失败指令、4/9/32 点真实主窗口 Apply/历史/重开矩阵及逐字段值，性能优化前后均回归。插件配置与点表为 `tool-plugins` 所有，本工作树只登记请求，不改其在制文件；跨项目采用由用户决定。
