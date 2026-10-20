@@ -346,3 +346,6 @@ At the user's request, the original checkout now develops framework and integrat
 ## 2026-10-20 第二十批：B03.3实施完成与scope终止异常隔离
 
 基线3996ad1732929823755957de5537b1460ab3b8e0。三子线并行取证/工具，root串行共享修复与验证；B03.3实际main每轮factory/持久state/回调/asyncDispose栅栏及故障cancel恢复57项完整自审，实施done、原native生命周期未知另列。scope终止路径修前实际复验首项Dispose跳过后续资源与cancel callback外抛，修后逐资源隔离、诊断保留、无自动重试与lease延迟保持，FCR-030。实际MainWindow有限恢复89、scope8、配置关闭16，加Group57共170项最终正向自审exit0；修前8单列不计修复，A标准WPF11项只作绑定歧义证据。A05.1全入口穷尽/C07.3长并发仍partial，D02.2合同阻塞及C07.1旧长稳失败保留不重跑。总实施40/96=41.67%，本批+1，剩56；人工验收后置，既有CS8603保留。详见reverse/BATCH20-20261020.md和batch20-20261020审计。tool-plugins未访问，不自动推送。
+## 2026-10-20 第二十二批：A/B/D阻塞复核与C队列独立实现
+
+基线403d8e4af09dca4ebc9bc4f971b1b3cb41cb4c40。A06在FrontendEdit原BAML偏移0x1929遇当前解析器未支持记录，B06五个关键文件哈希与上一批一致，D01.3仍缺native writer/reader及最小保存差分。C02从原VmSolution重取双缓冲/10000容量/顺序/关闭不drain源码证据；独立`FrameworkCallbackQueue<T>`和15/15自审通过，并保留修前MainWindow无回调入口观察，但尚未接入main真实消费者，C02.3继续partial。故本批实施+0，总实施40/96=41.67%，剩56。完整报告docs/reverse/BATCH22-20261020.md及batch22-20261020审计；tool-plugins未访问、不修改、不自动推送。
