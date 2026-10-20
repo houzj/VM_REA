@@ -50,7 +50,7 @@ public partial class MainWindow
   return false;
  }
  void ClearWorkflowCallResults(string procedure){var seen=new HashSet<string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);ClearToolDebugResults(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}
- void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){clearedWorkflowResultViews.Remove(procedure);workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}
+ void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){ClearToolDebugResults(procedure);clearedWorkflowResultViews.Remove(procedure);workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}
  void RestoreWorkflowResults()
  {
   results.Clear();if(!clearedWorkflowResultViews.Contains(doc.CurrentProcedureId)){if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;RestoreToolDebugResults(doc.CurrentProcedureId);}

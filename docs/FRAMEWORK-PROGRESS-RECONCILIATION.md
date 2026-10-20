@@ -139,7 +139,7 @@
 
 前置：A02；完整包未因本表计分关闭。
 
-证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A-shell-implementation-batch11.md](reverse/A-shell-implementation-batch11.md)、[BATCH17-20261019.md](reverse/BATCH17-20261019.md)、[A05-full-menu-map-batch17.md](reverse/A05-full-menu-map-batch17.md)、[A05-entry-reconciliation-batch17.md](reverse/A05-entry-reconciliation-batch17.md)、[A-entry-closure-batch20.md](reverse/A-entry-closure-batch20.md)、[BATCH20-20261020.md](reverse/BATCH20-20261020.md)
+证据：[MF01-GLOBAL-ENTRY-AUDIT.md](MF01-GLOBAL-ENTRY-AUDIT.md)、[MF01-TITLE-MENU-ACCEPTANCE.md](MF01-TITLE-MENU-ACCEPTANCE.md)、[MF01-SOLUTION-PATH-ACCEPTANCE.md](MF01-SOLUTION-PATH-ACCEPTANCE.md)、[FRAMEWORK-WORKTREE-RETIREMENT.md](FRAMEWORK-WORKTREE-RETIREMENT.md)、[A-shell-implementation-batch11.md](reverse/A-shell-implementation-batch11.md)、[BATCH17-20261019.md](reverse/BATCH17-20261019.md)、[A05-full-menu-map-batch17.md](reverse/A05-full-menu-map-batch17.md)、[A05-entry-reconciliation-batch17.md](reverse/A05-entry-reconciliation-batch17.md)、[A-entry-closure-batch20.md](reverse/A-entry-closure-batch20.md)、[A-candidate-gates-batch21.md](reverse/A-candidate-gates-batch21.md)、[BATCH20-20261020.md](reverse/BATCH20-20261020.md)
 
 当前实现/工具位置：`src/VisionEditor/MainWindow.xaml.cs`、`src/VisionEditor/MainWindow.ShellHelp.cs`、`src/VisionEditor/MainWindow.ShellRunMode.cs`、`tests/MenuEntryInventory17/Reconcile.py`、`tests/EntryClosureChecks20/ReadBaml.py`、`tests/EntryClosureChecks20/ResolveStandardBindings.ps1`
 
@@ -195,7 +195,7 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[VARIABLE-TAB-ROUND2-20261019.md](VARIABLE-TAB-ROUND2-20261019.md)、[B01-first-fill-batch3.md](reverse/B01-first-fill-batch3.md)、[B01-lazy-root-batch4.md](reverse/B01-lazy-root-batch4.md)、[B01-binding-batch5.md](reverse/B01-binding-batch5.md)、[B-selection-complete-gate-batch16.md](reverse/B-selection-complete-gate-batch16.md)
+证据：[VARIABLE-TAB-ROUND2-20261019.md](VARIABLE-TAB-ROUND2-20261019.md)、[B01-first-fill-batch3.md](reverse/B01-first-fill-batch3.md)、[B01-lazy-root-batch4.md](reverse/B01-lazy-root-batch4.md)、[B01-binding-batch5.md](reverse/B01-binding-batch5.md)、[B-selection-complete-gate-batch16.md](reverse/B-selection-complete-gate-batch16.md)、[B-complete-unit-gates-batch21.md](reverse/B-complete-unit-gates-batch21.md)
 
 当前实现/工具位置：`src/VisionEditor/WorkflowVariableTargetsWindow.xaml.cs`、`src/VisionEditor/WorkflowSourcePicker.cs`
 
@@ -321,9 +321,9 @@
 
 前置：无；完整包未因本表计分关闭。
 
-证据：[MF05-CONTINUOUS-RUN-CALLCHAIN.md](MF05-CONTINUOUS-RUN-CALLCHAIN.md)、[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C02-clear-leaf-batch6.md](reverse/C02-clear-leaf-batch6.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[C02-value-consumer-batch7.md](reverse/C02-value-consumer-batch7.md)、[C02-begin-isolation-batch8.md](reverse/C02-begin-isolation-batch8.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)
+证据：[MF05-CONTINUOUS-RUN-CALLCHAIN.md](MF05-CONTINUOUS-RUN-CALLCHAIN.md)、[MF05-PROCEDURE-RUN-CALLCHAIN.md](MF05-PROCEDURE-RUN-CALLCHAIN.md)、[C02-config-write-batch3.md](reverse/C02-config-write-batch3.md)、[C02-callbacks-batch4.md](reverse/C02-callbacks-batch4.md)、[C02-clear-leaf-batch6.md](reverse/C02-clear-leaf-batch6.md)、[MAIN-PENDING-REVIEW.md](MAIN-PENDING-REVIEW.md)、[C02-value-consumer-batch7.md](reverse/C02-value-consumer-batch7.md)、[C02-begin-isolation-batch8.md](reverse/C02-begin-isolation-batch8.md)、[C-execution-policy-batch11.md](reverse/C-execution-policy-batch11.md)、[C-result-overlay-batch21.md](reverse/C-result-overlay-batch21.md)
 
-当前实现/工具位置：`src/VisionEditor/WorkflowExecution.cs`、`src/VisionFramework/GraphExecutor.cs`
+当前实现/工具位置：`src/VisionEditor/WorkflowExecution.cs`、`src/VisionFramework/GraphExecutor.cs`、`tests/ResultOverlayChecks21/Program.cs`
 
 | 单元 | 验收范围 | 源码 | 实现 | 验证 | 仍缺/边界 |
 |---|---|---|---|---|---|
