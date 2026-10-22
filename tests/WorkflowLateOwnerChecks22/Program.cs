@@ -47,7 +47,20 @@ static class Program
    second.Release.TrySetResult();PumpUntil(oldRun);PumpSteps(12);
    if(sessions.Count!=0)throw new Exception("Late old-generation session entered replacement cache.");
    Console.WriteLine("PASS same-ID solution replacement rejects late workflow session.");
-   window.Close();PumpSteps(4);app.Shutdown();
+
+   var third=new Gate();gates.Enqueue(third);var closingRun=Run();PumpUntil(third.Entered.Task);
+   window.Close();PumpSteps(6);
+   if(!window.IsVisible||!((bool)Field("closeDrainPending")!)||closingRun.IsCompleted)
+    throw new Exception("Window closed before the pending workflow module drained.");
+   third.Release.TrySetResult();PumpUntil(closingRun);
+   var closeWatch=Stopwatch.StartNew();while(window.IsVisible&&closeWatch.Elapsed<TimeSpan.FromSeconds(25))PumpSteps(1);
+   if(window.IsVisible||!(bool)Field("windowClosed")!)throw new Exception("Window failed to finish draining.");
+   if(sessions.Values.Any(s=>s.Status==SessionStatus.Success||s.Nodes.Any(n=>n.Outputs.Count!=0)))
+    throw new Exception("Closing workflow published late success output.");
+   int closedSessionCount=sessions.Count;PumpSteps(12);
+   if(sessions.Count!=closedSessionCount)throw new Exception("Workflow session cache changed after window closed.");
+   Console.WriteLine("PASS close waits for pending module and rejects late success output.");
+   app.Shutdown();
    var root=Directory.GetCurrentDirectory();
    string Hash(string path)=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
    var hostSources=new[]{"src/VisionEditor/WorkflowExecution.cs","src/VisionEditor/ToolExecutionScope.cs","src/VisionEditor/MainWindow.FrameworkExecutionOwnership.cs"};
@@ -57,7 +70,7 @@ static class Program
     foreach(var relative in paths){var matches=documents.Where(d=>d.path.EndsWith("/"+relative,StringComparison.OrdinalIgnoreCase)).ToArray();
      if(matches.Length!=1||!matches[0].hash.SequenceEqual(SHA256.HashData(File.ReadAllBytes(Path.Combine(root,relative)))))throw new Exception("Assembly PDB source checksum does not match "+relative);}}
    CheckPdb(typeof(MainWindow).Assembly.Location,hostSources);CheckPdb(typeof(GraphExecutor).Assembly.Location,frameworkSources);
-   var evidence=new{passed=2,stoppedSession=stopSession.Status.ToString(),stoppedNode=stopSession.Nodes.Single().Status.ToString(),sameIdentity=true,lateReplacementSessionCount=sessions.Count,
+   var evidence=new{passed=3,stoppedSession=stopSession.Status.ToString(),stoppedNode=stopSession.Nodes.Single().Status.ToString(),sameIdentity=true,lateReplacementSessionCount=0,closeDrained=true,closedSessionCount=sessions.Count,closedSessionStatuses=sessions.Values.Select(s=>s.Status.ToString()).ToArray(),
     source=sourcePaths.Select(p=>new{path=p,sha256=Hash(Path.Combine(root,p))}).ToArray(),hostPdb=Hash(Path.ChangeExtension(typeof(MainWindow).Assembly.Location,".pdb")),frameworkPdb=Hash(Path.ChangeExtension(typeof(GraphExecutor).Assembly.Location,".pdb")),pdbSourceChecks=sourcePaths.Length,
     hostAssembly=Hash(typeof(MainWindow).Assembly.Location),scope="Actual offscreen WPF main host with a controlled noncooperative synthetic module; no vendor SDK, device or interactive desktop."};
    File.WriteAllText(Path.Combine(output,"summary.json"),JsonSerializer.Serialize(evidence,new JsonSerializerOptions{WriteIndented=true}));
