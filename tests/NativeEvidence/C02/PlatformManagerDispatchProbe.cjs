@@ -57,4 +57,9 @@ checkEvidence(audit + 'server-wait-read-callers/output/1805aa6f0.asm.txt', 'CAD6
 checkEvidence(audit + 'server-run-record-consumer/output/1805cd170.asm.txt', '77B92B5BDFF0F14D7DA4DDE4D7EA3C1743C61E79841B259678554464C5B590B5', ['CALL 0x1805cce90', 'CALL qword ptr [RAX + 0x80]']);
 checkEvidence(audit + 'server-run-record-next/output/1805cce90.asm.txt', 'E5461549E4511BF48465C3D9B0DAEAB5F6A9E2CF1306EE5F8DF7FD9354185908', ['MOV RSI,R8', 'MOV R8,RSI', 'CALL 0x1805cc780']);
 checkEvidence(audit + 'server-run-record-field/output/1805cc780.asm.txt', '090A000973E168DDCC0F9298106FCDA7BA79C994FE8E2390ED2402FC19402121', ['MOV R8D,dword ptr [R14 + 0x10]', 'LEA RDX,[0x1807d2150]', 'CALL 0x1806aca10']);
+checkEvidence(audit + 'server-run-timeout-refs/output/1805c43d0.asm.txt', '061C4765B1A84BDC57FF4FFC12369AB2D851929273BB52266AFFCFF5AA55C123', ['LEA RDX,[0x1807d2150]', 'MOV dword ptr [RBP + -0x69],EAX', 'CALL 0x1805d2890']);
+checkEvidence(audit + 'server-run-timeout-refs/output/1805c7ea0.asm.txt', '581907C1C867EDD389147BF1A3027C493C50CFE0C7061EF84F1712959BB7AF12', ['MOV R8D,dword ptr [RBX + 0x20]', 'LEA RDX,[0x1807d2150]', 'CALL 0x1806aca10']);
+checkEvidence(audit + 'server-run-timeout-refs/output/1805ce0e8.asm.txt', '24B12C0943799DC57204D2C70E932C9CF59A93B818E0B3A194A131959AD03723', ['LEA RDX,[0x1807d2150]', 'MOV dword ptr [R14 + 0x10],0x0', 'MOV dword ptr [R14 + 0x10],EAX']);
+checkEvidence(audit + 'server-run-timeout-callers/output/1805c5750.asm.txt', '58ADA515BCF67487E3B0B1997678674E6B783F35A73F24F876C3FB648938946F', ['CALL 0x1805c43d0', 'TEST EAX,EAX', 'CALL 0x1805c53b0']);
+checkEvidence(audit + 'server-run-timeout-callers/output/1805c5f40.asm.txt', '60745EBD998C4F34D4AEF07B6C186D3CBBEDD1093BEB7EF7E98196DFEA65EF9D', ['CALL 0x1805c7ea0', 'TEST EAX,EAX', 'CALL 0x1805c8fd0']);
 console.log(JSON.stringify({sha256, callback, setOpcode: 0x41f, getOpcode: 0x420, procedureFieldOffset: '0x2a8', status: 'static-evidence-consistent'}, null, 2));

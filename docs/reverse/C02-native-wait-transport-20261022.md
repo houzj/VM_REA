@@ -27,6 +27,10 @@
 
 14. 继续解开 `0x1805cce90`：入口 `R8` 被保存为 `RSI`，在 `0x1805cd0a9–0x1805cd0af` 以第三参数传给 `0x1805cc780`。该函数的原汇编 `0x1805cc9ab–0x1805cc9b9` 从记录 `+0x10` 取 32 位值，连同 `.rdata` 的 `RunTimeout` 键交 `0x1806aca10`；`tests/NativeEvidence/C02/ReadRunRecordKeys.cjs` 对同 SHA PE 读取并校验该键，另可见 `Index/DisplayName/ShieldGlobalCtrl/ContinueExecuteTimGap/Guid/StopWhenNG`。因此原 `SetProcedureWaitTime` 的字段 8 已追至服务端流程对象 `+0x2a8`、运行前记录 `+0x10`、序列化对象的 `RunTimeout` 字段。这里证明**运行配置构造/序列化**，不是执行器已按时计时或中断；`0x1805cce90` 后续多个序列化步骤遇到非零错误会提前返回，不能把该记录当成总能完整生成。反编译对 `0x1805cce90` 省略了寄存器实参，结论以原汇编的 `R8→RSI→R8` 和 `0x1805cc780` 中的 `R14+0x10` 为准。
 
+15. 对同一 `.rdata` `RunTimeout` 地址 `0x1807d2150` 做原 PE `.text` 的 RIP-relative `LEA` 候选扫描，只有四处：`0x1805c4878`（`0x1805c43d0`）、`0x1805c81f0`（`0x1805c7ea0`）、已知写入点 `0x1805cc9af`（`0x1805cc780`）、`0x1805ce254`（`0x1805ce0e8` 代码范围）。逐处原汇编复核后，`0x1805c43d0` 从配置键找值、转换为整数，缺键时将相应本地值置零，并交 `0x1805d2890` 建列表元素；`0x1805ce0e8` 代码范围也查键，存在时经 `atoi` 写记录 `+0x10`，缺键或空值时写零。`0x1805c7ea0` 则从其输入记录 `+0x20` 以 `RunTimeout` 键再次构造配置对象。这里形成一组**配置读/写/再构造**边，但 `0x1805ce0e8` 的反编译入口显示未追明的上游寄存器，不能把它单独当完整函数；四处候选也只覆盖该 DLL 的此种 RIP-relative `LEA` 形式，不能证明其他模块或间接引用不存在。`tests/NativeEvidence/C02/FindRunTimeoutRefs.cjs` 只读复验候选，`PlatformManagerDispatchProbe.cjs` 核对实际反汇编及哈希。暂未发现执行器启动计时或取消的具体指令。
+
+16. `E8 rel32` 候选及原汇编共同确认 `0x1805c5750` 在 `0x1805c58d7` 调 `0x1805c43d0`，`0x1805c5f40` 在 `0x1805c617f` 调 `0x1805c7ea0`。两位调用者都把该处理置于多段配置构造/转换序列内，每次非零返回提前退出，未见直接的计时器或取消调用；这进一步限定了当前所追对象仍是配置/列表链。`0x1805ce0e8` 没有在本次直接 `E8` 扫描中出现，可能为更大函数的代码范围或由其他控制流进入，不能以零命中断言它不可达。`FindServerDirectCallers.cjs` 的自定义目标模式可只读复扫，原汇编产物另以哈希固定。
+
 ## 对先前缺口记录的更正
 
 `docs/reverse/C02-scheduling-batch2.md` 早已从原 `VM.Util.dll` CIL 和受控探针取得 `Hik.Util.SyncWaitor` 的实际实现：普通 `Wait/PrecisionWait(ref bool)` 无托管超时；P2P 数组重载有独立 nTimeout，超时返回时 flag 可保持 false。`docs/reverse/C-timeout-boundary-batch25.md` 及 `docs/MF05-PROCEDURE-RUN-CALLCHAIN.md` 中“SyncWaitor 实现未在反编译树/未取得”的描述已过期；准确缺口是 **native 服务端如何消费 0x41f/0x420 命令、何时开始计时、超时如何改变执行/回调/错误状态**。此更正不覆盖第二批历史运行结果，也不证明整个原生调度器行为。
@@ -77,5 +81,13 @@
 | `analysis/full-audit/reverse-c02-20261022/server-run-record-next/output/1805cce90.asm.txt` | `E5461549E4511BF48465C3D9B0DAEAB5F6A9E2CF1306EE5F8DF7FD9354185908` |
 | `analysis/full-audit/reverse-c02-20261022/server-run-record-field/output/1805cc780.c` | `B8A282EB6504A0EECEF5FED7E981D8073ADED36E3D3B4069E78ECB32FA4FB813` |
 | `analysis/full-audit/reverse-c02-20261022/server-run-record-field/output/1805cc780.asm.txt` | `090A000973E168DDCC0F9298106FCDA7BA79C994FE8E2390ED2402FC19402121` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-refs/output/1805c43d0.c` | `8FCCBCC2174FA0B4401372AFE494D529AB845DAE6196075AC84392C077FBDFA2` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-refs/output/1805c43d0.asm.txt` | `061C4765B1A84BDC57FF4FFC12369AB2D851929273BB52266AFFCFF5AA55C123` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-refs/output/1805c7ea0.c` | `CE357E4FFDC2E3C227E862B797F60E61EC450250D2F434125CAC3E232E23510E` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-refs/output/1805c7ea0.asm.txt` | `581907C1C867EDD389147BF1A3027C493C50CFE0C7061EF84F1712959BB7AF12` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-refs/output/1805ce0e8.c` | `AFF1C8A6B627674089C48286BDA2F998731AA87E322EAB2F1011A2FEFAE0146C` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-refs/output/1805ce0e8.asm.txt` | `24B12C0943799DC57204D2C70E932C9CF59A93B818E0B3A194A131959AD03723` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-callers/output/1805c5750.asm.txt` | `58ADA515BCF67487E3B0B1997678674E6B783F35A73F24F876C3FB648938946F` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-callers/output/1805c5f40.asm.txt` | `60745EBD998C4F34D4AEF07B6C186D3CBBEDD1093BEB7EF7E98196DFEA65EF9D` |
 
-下一步从 `RunTimeout` 序列化结果追 reader/执行调度入口与异常返回，沿 `0x1805aa6f0` 外层消息入口和两个流程列表调用者的后续用途核对计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更及失败时状态。不能从字段已进入 `RunTimeout` 或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。
+下一步沿 `0x1805c43d0` 产生的列表元素与 `0x1805ce0e8` 所在上游完整函数追执行调度入口及异常返回，沿 `0x1805aa6f0` 外层消息入口核对计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更及失败时状态。不能从字段已进入 `RunTimeout` 或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。

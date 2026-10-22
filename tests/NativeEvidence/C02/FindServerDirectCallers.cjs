@@ -39,7 +39,8 @@ for (const s of sections.filter(s => s.name === '.text')) {
     hits.push({site: '0x' + (base + BigInt(siteRva)).toString(16), callee: '0x' + destination.toString(16), callerStart: owner(siteRva)});
   }
 }
-const expected = ['0x1805ab371>0x1805eec10', '0x1805b86ca>0x1805dda30', '0x180622f41>0x1805dda30'];
+const expected = process.argv[3] ? [] :
+  ['0x1805ab371>0x1805eec10', '0x1805b86ca>0x1805dda30', '0x180622f41>0x1805dda30'];
 for (const edge of expected) {
   if (!hits.some(h => `${h.site}>${h.callee}` === edge)) throw Error(`Missing original direct call ${edge}`);
 }
