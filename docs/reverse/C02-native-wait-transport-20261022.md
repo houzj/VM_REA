@@ -31,6 +31,8 @@
 
 16. `E8 rel32` 候选及原汇编共同确认 `0x1805c5750` 在 `0x1805c58d7` 调 `0x1805c43d0`，`0x1805c5f40` 在 `0x1805c617f` 调 `0x1805c7ea0`。两位调用者都把该处理置于多段配置构造/转换序列内，每次非零返回提前退出，未见直接的计时器或取消调用；这进一步限定了当前所追对象仍是配置/列表链。`0x1805ce0e8` 没有在本次直接 `E8` 扫描中出现，可能为更大函数的代码范围或由其他控制流进入，不能以零命中断言它不可达。`FindServerDirectCallers.cjs` 的自定义目标模式可只读复扫，原汇编产物另以哈希固定。
 
+17. `0x1805c43d0` 的列表构造调用 `0x1805d2890`，后者将输入记录传给 `0x1805c2570` 复制到元素内部偏移 `+0x10`；原汇编逐个复制记录前五个 32 位字段，因而输入 `+0x10` 的等待值成为列表元素内部 `+0x20`。另一条已确认的 `0x1805c7ea0` 序列化路径恰从输入元素 `+0x20` 取值写 `RunTimeout`。这是同一字段在配置元素中的布局证据，不代表这些具体元素之间已经证明是同一运行实例；还需识别列表发布/选择与实际执行消费者。`0x1805c2570` 的后续两段字符串复制保留原样，不能把 0x68/0x90 等分配尺寸误认作等待时间。
+
 ## 对先前缺口记录的更正
 
 `docs/reverse/C02-scheduling-batch2.md` 早已从原 `VM.Util.dll` CIL 和受控探针取得 `Hik.Util.SyncWaitor` 的实际实现：普通 `Wait/PrecisionWait(ref bool)` 无托管超时；P2P 数组重载有独立 nTimeout，超时返回时 flag 可保持 false。`docs/reverse/C-timeout-boundary-batch25.md` 及 `docs/MF05-PROCEDURE-RUN-CALLCHAIN.md` 中“SyncWaitor 实现未在反编译树/未取得”的描述已过期；准确缺口是 **native 服务端如何消费 0x41f/0x420 命令、何时开始计时、超时如何改变执行/回调/错误状态**。此更正不覆盖第二批历史运行结果，也不证明整个原生调度器行为。
@@ -89,5 +91,7 @@
 | `analysis/full-audit/reverse-c02-20261022/server-run-timeout-refs/output/1805ce0e8.asm.txt` | `24B12C0943799DC57204D2C70E932C9CF59A93B818E0B3A194A131959AD03723` |
 | `analysis/full-audit/reverse-c02-20261022/server-run-timeout-callers/output/1805c5750.asm.txt` | `58ADA515BCF67487E3B0B1997678674E6B783F35A73F24F876C3FB648938946F` |
 | `analysis/full-audit/reverse-c02-20261022/server-run-timeout-callers/output/1805c5f40.asm.txt` | `60745EBD998C4F34D4AEF07B6C186D3CBBEDD1093BEB7EF7E98196DFEA65EF9D` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-record-copy/output/1805c2570.c` | `5AD3DE41FE112A376DB8845D0B4DB43B33EA4FBEBF3C0CF345D975AE87C3298F` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-timeout-record-copy/output/1805c2570.asm.txt` | `426F3AC967C842C69A12ADEC86CEE6AD6AEEDD70374D7B6B710EBDA8ADE30559` |
 
 下一步沿 `0x1805c43d0` 产生的列表元素与 `0x1805ce0e8` 所在上游完整函数追执行调度入口及异常返回，沿 `0x1805aa6f0` 外层消息入口核对计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更及失败时状态。不能从字段已进入 `RunTimeout` 或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。

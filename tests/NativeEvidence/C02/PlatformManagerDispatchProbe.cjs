@@ -62,4 +62,5 @@ checkEvidence(audit + 'server-run-timeout-refs/output/1805c7ea0.asm.txt', '58190
 checkEvidence(audit + 'server-run-timeout-refs/output/1805ce0e8.asm.txt', '24B12C0943799DC57204D2C70E932C9CF59A93B818E0B3A194A131959AD03723', ['LEA RDX,[0x1807d2150]', 'MOV dword ptr [R14 + 0x10],0x0', 'MOV dword ptr [R14 + 0x10],EAX']);
 checkEvidence(audit + 'server-run-timeout-callers/output/1805c5750.asm.txt', '58ADA515BCF67487E3B0B1997678674E6B783F35A73F24F876C3FB648938946F', ['CALL 0x1805c43d0', 'TEST EAX,EAX', 'CALL 0x1805c53b0']);
 checkEvidence(audit + 'server-run-timeout-callers/output/1805c5f40.asm.txt', '60745EBD998C4F34D4AEF07B6C186D3CBBEDD1093BEB7EF7E98196DFEA65EF9D', ['CALL 0x1805c7ea0', 'TEST EAX,EAX', 'CALL 0x1805c8fd0']);
+checkEvidence(audit + 'server-run-timeout-record-copy/output/1805c2570.asm.txt', '426F3AC967C842C69A12ADEC86CEE6AD6AEEDD70374D7B6B710EBDA8ADE30559', ['MOV dword ptr [RCX + -0x8],EAX', 'CALL 0x180577f30']);
 console.log(JSON.stringify({sha256, callback, setOpcode: 0x41f, getOpcode: 0x420, procedureFieldOffset: '0x2a8', status: 'static-evidence-consistent'}, null, 2));
