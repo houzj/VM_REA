@@ -43,6 +43,13 @@ static class Program
                 throw new Exception("Generic WorkflowSources did not expose both compatible image producers.");
             Console.WriteLine("PASS WorkflowSources(GrayImage) includes A and independent C.");
 
+            var frontSources = ((IEnumerable<WorkflowSourceOption>)typeof(MainWindow)
+                .GetMethod("WorkflowFrontSources", Private)!.Invoke(window, [graph.CurrentProcedureId, b, DataKind.GrayImage])!).ToArray();
+            var frontIds = frontSources.Select(x => x.NodeId).ToHashSet(StringComparer.Ordinal);
+            if (!frontIds.Contains(a) || frontIds.Contains(b) || frontIds.Contains(c))
+                throw new Exception("Tool input candidates escaped the execution predecessor scope.");
+            Console.WriteLine("PASS tool input candidates include A and exclude independent C.");
+
             var service = new WorkflowConfigurationSubscriptionService(() => graph.CurrentProcedure,
                 registry, b, (_, _) => throw new NotSupportedException("Read-only probe"));
             var destination = new ConfigurationSubscriptionDestination(ConfigurationSubscriptionDomain.Combination, "Image", "IMAGE");
@@ -89,6 +96,7 @@ static class Program
             {
                 Nodes = new { A = a, B = b, C = c },
                 GenericCandidates = workflowSources.Select(x => new { x.NodeId, x.Port, x.Kind, x.Label }),
+                ToolInputCandidates = frontSources.Select(x => new { x.NodeId, x.Port, x.Kind, x.Label }),
                 ScopedCandidateNodeIds = ancestorIds.Order(),
                 ValidatorIssue = new { issue.Code, issue.Message, issue.NodeId },
                 RejectedEditPreservedEdge = true

@@ -13,6 +13,19 @@ public partial class MainWindow
   doc.SetWorkflowConfiguration(id,value);
  }
  IEnumerable<WorkflowSourceOption> WorkflowSources(string id,DataKind? kind)=>ConfigurationProcedure(id).Nodes.SelectMany(n=>modules.GetDescriptor(n).Outputs.Where(p=>p.CanSubscribe&&(!kind.HasValue||DataKinds.CanFlow(p.Kind,kind.Value))).Select(p=>new WorkflowSourceOption(n.Id,p.Name,p.Kind,n.Name+"."+WorkflowPresentation.Output(n.ModuleId,p.Name)){Cardinality=p.Cardinality}));
+ // VmModule.GetFrontParamItems follows PreModules transitively. Keep this scope on
+ // consumer input pickers; procedure output and variable pickers need all nodes.
+ IEnumerable<WorkflowSourceOption> WorkflowFrontSources(string procedureId,string targetNodeId,DataKind? kind)
+ {
+  var p=ConfigurationProcedure(procedureId);
+  if(p.ExecutionLinks is null)throw new InvalidOperationException("当前流程缺少显式执行连线，无法确定前置模块。");
+  var previous=new Dictionary<string,List<string>>(StringComparer.Ordinal);
+  foreach(var link in p.ExecutionLinks){if(!previous.TryGetValue(link.ToNode,out var list))previous[link.ToNode]=list=new();list.Add(link.FromNode);}
+  var front=new HashSet<string>(StringComparer.Ordinal);var pending=new Stack<string>();pending.Push(targetNodeId);
+  while(pending.TryPop(out var id))if(previous.TryGetValue(id,out var sources))foreach(var source in sources)if(front.Add(source))pending.Push(source);
+  front.Remove(targetNodeId);
+  return WorkflowSources(procedureId,kind).Where(source=>front.Contains(source.NodeId)&&p.Nodes.Any(node=>node.Id==source.NodeId&&node.Enabled)).ToArray();
+ }
  PortValue? WorkflowOutput(string id,string node,string port)=>workflowSessions.TryGetValue(id,out var session)?session.Nodes.FirstOrDefault(n=>n.NodeId==node)?.Outputs.GetValueOrDefault(port):null;
  WorkflowConfigurationWindow CreateWorkflowConfigurationWindow(string id)
  {
