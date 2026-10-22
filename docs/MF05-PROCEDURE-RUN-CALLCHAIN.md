@@ -2,6 +2,8 @@
 
 更新：2026-10-19。此记录区分 VM 的托管可见调用链与 native SDK 内部未知行为。它不把独立 WPF 执行器描述成 VM 算法复刻。
 
+> 2026-10-22 补证：下文“SyncWaitor 实现未取得”是旧断点；第二批已取得原 `VM.Util.dll` CIL 并运行受控探针，见 [C02 第二批](reverse/C02-scheduling-batch2.md)。`IMVS_Set/GetProcedureWaitTime` 的 x64 导出与下层命令传输也已静态恢复，见 [C02 原生等待传输](reverse/C02-native-wait-transport-20261022.md)。服务端消费字段 8 后的实际计时、执行取消和回调归因仍未知。保留以下旧段落作为历史，不再用其描述当前缺证据范围。
+
 ## 普通流程单次运行
 
 |阶段|原始证据|确认行为|

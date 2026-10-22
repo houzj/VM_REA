@@ -1,0 +1,57 @@
+# C02.2：流程等待时间的原生导出与命令传输
+
+2026-10-22。取证对象是安装原件 `D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/iMVS-6000PlatformSDK.dll`，SHA-256 `b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1`。本次只静态读取 PE 并反编译指定地址；没有加载 DLL、建立 SDK 实例、连接设备或修改安装目录。REA `open_binary` 确认该 PE 身份；其深度 provider 在本机报告 `provider_unavailable`（Ghidra 未配置到 REA、Hopper 不支持 Windows、IDA 未配置），故使用仓库既有受控 Ghidra 12.1.4 脚本 `tests/NativeImageBinaryProbe/Run-GhidraFunctions.ps1`，输出留在 `analysis/full-audit/reverse-c02-20261022/`。伪代码是反编译结果，不是原始 C++ 源码。
+
+## 已确认的入口至传输链
+
+1. 原托管 `analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ProcessManager.cs::SetProcedureWaitTime(uint,uint)` 将 `CVmObjectBase.mhandle`、流程 ID、等待值传入 `ServerSDKAPI.IMVS_SetProcedureWaitTime`；非零返回转成 `VmException`。`NativeMethods.cs` 的 P/Invoke 目标是 `.\\iMVS-6000PlatformSDK.dll`。读取方法同样转发，并以 `ref uint` 接收结果。
+2. x64 PE 导出表给出 `IMVS_SetProcedureWaitTime` VA `0x18064ed60`、`IMVS_GetProcedureWaitTime` VA `0x18064ee70`。两者先从列表按传入 handle 寻找对象、取得次级句柄，并再次核对；失败路径返回 `0xE0000006`。这是本导出体的判断，不能据此概括服务端错误全集。
+3. 设置导出的汇编 `0x18064ed7a–0x18064ed80` 保存 `R8D`（等待值）、`EDX`（流程 ID）、`RCX`（handle）；`0x18064ee43–0x18064ee50` 显式把 `R8D/EDX` 送至 `0x1806abda0`。所以第三参数没有因伪代码签名而消失。读取导出对应把 `R8` 输出指针传给 `0x1806abf40`。
+4. `0x1806abda0` 拒绝 `processID < 1`，正常路径以 `sprintf_s` 格式串 `%d-%u-%u-%u`、常数 `0x41f`、流程 ID、字段号 `8`、传入等待值组装命令，再调用 `0x1806c00d0` 发送；返回该传输调用的错误码或 0。字符串来自该 PE 的 RVA `0xac9560`，不是根据产品 UI 猜测。
+5. 读取路径 `0x1806abf40` 拒绝空输出指针或 `processID < 1`，以 `%d-%u-%u`、常数 `0x420`、流程 ID、字段号 `8` 组装查询，经 `0x1806c1f30` 获取返回；响应满足 `OK` 前缀时把第二字段的 `atoi` 结果写到输出指针。字符串分别位于 RVA `0xac5830`、`0xac5258`，扫描格式 `%[^*]*%d` 位于 `0xac5208`。Ghidra 对复杂响应分支的局部变量恢复不够稳定，具体错误码/所有畸形响应路径尚不作结论。
+6. 后续定向反编译 `0x1806c00d0` 表明设置命令使用 SDK 对象偏移 `+0x2398` 的函数指针发送。汇编 `0x1806c01d9–0x1806c0204` 显示先检查该指针，再将命令字符串、长度、响应缓冲与输出指针交给 `CALL RAX`，并将其返回码存入 `EDI`；`0x1806c0424` 将 `EDI` 送回 `EAX`。Ghidra 伪代码把函数恢复为 `void` 是错误的，不能据此说下层错误被丢弃。特定返回码 `0xE0000012` 进入 `0x180662a70` 重发路径；读取命令经 `0x1806c1f30` 转入 `0x1806c20b0` 并持有返回缓冲。当前证据只到**客户端传输回调边界**，没有定位真正处理命令的进程或计时器。
+
+7. 定向反编译和原汇编进一步消除了“备用传输”的歧义：`0x180662a70` 在 `0x180662a7a` 读取同一个 `+0x2398` 回调；存在时于 `0x180662ab1` 以尾跳转传递重排后的原参数，不存在时返回 `0xE0000010`。它不是已证实的另一接收通道。查询下层 `0x1806c20b0` 首先分配并清零 `0x2000` 字节、用容量 `0x1fff` 调用同一回调；只有回调给出 `0xE0000012` 时才检查所需长度、释放初始缓冲、分配 `required+1` 并第二次调用同一回调；成功把缓冲和响应长度交给上层，失败释放缓冲并传回错误码。这里可确认的是客户端的变长响应重试与所有权转移，仍不能推断服务端计时策略。`0x180662a70` 的伪代码把尾跳转显示为一次普通调用，其实汇编是 `JMP R10`；按汇编解释。
+
+8. 对客户端 `.text` 中位移 `0x2398` 的有界字节扫描共得 8 个候选，并以 x64 `.pdata` 函数范围校验：`0x180661ab3` 是唯一取得非零回调的直接写入点，函数 `0x1806615b0` 先构造 `..\\..\\Server\\PlatformManager.dll` 路径、`LoadLibraryW`，再以 `GetProcAddress` 查导出 `PF_M_MsgDeal`，写入 SDK 对象 `+0x2398`；失败时 `0x180661d00` 将 `+0x2370` 至 `+0x23a8` 的函数指针清零，并 `FreeLibrary` 句柄 `+0x2368`。扫描的另外一处写入正是这个清理分支；其余候选为读取或非该字段指令。字面量在客户端 PE 的 RVA `0xac0aa8`、`0xac40d0`、`0xac41c8`，`tests/NativeEvidence/C02/FindTransportSlotRefs.cjs` 可只读复验。此结论只涵盖该 DLL 的直接位移写入；间接内存复制仍未穷尽。
+
+9. 原安装件 `D:/Program Files/VisionMaster4.4.0/Applications/Server/PlatformManager.dll` SHA-256 `06D86F51BEBFEBA357D1B79297E20A3B0A70580A40AF7B77C8ABDD6C38CA0624`。REA `open_binary` 确认 x64 PE 身份；本机深反编译继续用独立受控 Ghidra 输出。PE 导出表确认 `PF_M_MsgDeal` RVA `0x6a0250`（VA `0x1806a0250`），并非转发导出。该导出拒绝空响应缓冲或容量 `<0x200`，返回 `0xE0000012`；正常路径将五参数传给 `0x180602df0`。该分派函数的 `case 0x41f` 进入 `0x18061a320`，`case 0x420` 进入 `0x18061a8b0`。原分派伪代码约 1.6 万行，记录具体 case 和下层函数，而不把整个分派树宣称已审核。
+
+10. `0x18061a320` 要求命令拆出四字段（流程 ID、字段号、值），经 `0x1805e5c10` 操作流程配置容器并 `0x1805dd580` 找流程对象；字段号 `8` 时 `atoi` 值最终以 `MOV [RSI+0x2a8],EBX` 写入该对象。`0x18061a8b0` 要求三字段，调用 `0x1805e5de0` 取值，同样找流程对象；字段号 `8` 时把转换值写入对象 `+0x2a8`，再格式化响应。两处理函数还处理字段号 `4`，但这不是本次等待时间结论。此处已经定位**服务端存储字段**，尚未追到执行器读取 `+0x2a8` 及其与计时、取消和回调的关系。Ghidra 对处理函数返回型恢复为 `void`，本报告不据此推断成功码完整集合。`node tests/NativeEvidence/C02/PlatformManagerDispatchProbe.cjs` 复验服务端 PE 身份、导出、分派 case 与原汇编写入点。
+
+## 对先前缺口记录的更正
+
+`docs/reverse/C02-scheduling-batch2.md` 早已从原 `VM.Util.dll` CIL 和受控探针取得 `Hik.Util.SyncWaitor` 的实际实现：普通 `Wait/PrecisionWait(ref bool)` 无托管超时；P2P 数组重载有独立 nTimeout，超时返回时 flag 可保持 false。`docs/reverse/C-timeout-boundary-batch25.md` 及 `docs/MF05-PROCEDURE-RUN-CALLCHAIN.md` 中“SyncWaitor 实现未在反编译树/未取得”的描述已过期；准确缺口是 **native 服务端如何消费 0x41f/0x420 命令、何时开始计时、超时如何改变执行/回调/错误状态**。此更正不覆盖第二批历史运行结果，也不证明整个原生调度器行为。
+
+当前 main 的 `ProcedureDocument.WaitTimeMs`、`SolutionExecutor.RunAsync` 仍为独立的 `CancellationTokenSource.CancelAfter` 协作式流程预算；已确认的原导出只是把字段 8 传给下层，未见在导出体内取消执行。不能把两者宣称等价，也不能仅因传输格式已知就改写产品超时逻辑。C02.2 保持 `implementation=partial`，总实施进度不增加。
+
+## 复验与下一取证点
+
+`node tests/NativeEvidence/C02/ProcedureWaitTransportProbe.cjs` 对同 SHA 原 PE 静态核对导出地址、命令字符串以及保存的伪代码/汇编关键数据流，实测退出 0。取证产物：
+
+| 文件 | SHA-256 |
+|---|---|
+| `analysis/full-audit/reverse-c02-20261022/native-wait/output/18064ed60.c` | `D5D37876DD9EA6EE7C0B7BD3DF23DC972C874C57F2C68FDEAB01F4FA925E1C64` |
+| `analysis/full-audit/reverse-c02-20261022/native-wait/output/18064ed60.asm.txt` | `B820F497D8687B84FB039E110DB4CED0A98EEBDA6B39DE21C241E4DD73CF3FD0` |
+| `analysis/full-audit/reverse-c02-20261022/native-wait-callees/output/1806abda0.c` | `CC2C1CBF8435626C48D782261CB196487A15210869001607B2F5D334A6071EFA` |
+| `analysis/full-audit/reverse-c02-20261022/native-wait-callees/output/1806abf40.c` | `FBF82DC683DEC0ABC0A63517363403704D25BC19963CF62266F99A614A2D7EAD` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport/output/1806c00d0.c` | `00DA7DEB7E8B35F2C98B7C83323E6FA30C02FCF87B82E915F5C4D08484763053` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport/output/1806c00d0.asm.txt` | `D2EF29B0AE20ED85E78BD692E110CF28AD4EE7E197AACFCF3DC3F121B35DBC14` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport/output/1806c1f30.c` | `2FA0821E3B4D908A5852944145AAE41AFF20DDAD38754EA21ECF0E6E793AFEAC` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/180662a70.c` | `A63422BEEB789175A4B840B3C9A0A1D00CA606D4C3CE298BC86489BE74242B4B` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/180662a70.asm.txt` | `E08BB31038A926A5B83460E19D056912B8A82B930A546CE5F6DB7EC9D5C12D71` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/1806c20b0.c` | `CDEF9D4FD64C594B4831ACE760C151C73A3B4DAEBD51993FF5BEFC3ADEFA5930` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/1806c20b0.asm.txt` | `C0E8FE6D5A48D7B76F52B2F2E035FF3772E6C0CD41E0C1D2C22179C5A65AE875` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/1806615b0.c` | `7A0BF7CAFEA848CF456C3F4EE84FCA67E9AF996593778F83DCBB5D9B6694BFF6` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/1806615b0.asm.txt` | `E01B03F86BB972705EAE2D98AC80FD5BA6604748C68E89F4FFC2916EE34CB5A2` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/180661d00.c` | `6290DA1844F198E910D40D0F99E0F818F7B793D0A416D4C96E05D75F7461CE4A` |
+| `analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/180661d00.asm.txt` | `AF520D8D8ADBBDBB9AEE42526430AC410835724A098AE6A3EC7AC77DA99D4B8F` |
+| `analysis/full-audit/reverse-c02-20261022/server-message-export/output/1806a0250.c` | `0BE6BCBC9C25545ABB38AD1C4818E52184789F4796EF18D5E2F324F3AF4A982B` |
+| `analysis/full-audit/reverse-c02-20261022/server-message-export/output/1806a0250.asm.txt` | `4394E7DE22E263778D1A9DC779A258153A6C4C3E37A7EB02A4DD1FBB13B05629` |
+| `analysis/full-audit/reverse-c02-20261022/server-message-dispatch/output/180602df0.c` | `AF99B707CB47309609C63D83992826728CD1190F27A381A6AD25A811B0517C46` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a320.c` | `0F37DAFAB4C96D7C529FBB6A347D52B6DEA1A3B1F5F6AC2331AB669747B1D642` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a320.asm.txt` | `657E5C24C5142FA923517539C7B02B406070FDE10A67924B85E7D46C3AEFB10C` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a8b0.c` | `DCC18D71986441CE0FCD5D94172E324724315A46B262F31AAF80A8D686E078A1` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a8b0.asm.txt` | `8B6D9FB79152E40F0E88BC80D9E2465D0F3C2FDA1CD07CF88C815FCCF10CD774` |
+
+下一步在服务端扫描流程对象 `+0x2a8` 的读取点，沿运行路径追实际计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更和失败时状态。不能从字段已存储或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。
