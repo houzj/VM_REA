@@ -63,4 +63,6 @@ checkEvidence(audit + 'server-run-timeout-refs/output/1805ce0e8.asm.txt', '24B12
 checkEvidence(audit + 'server-run-timeout-callers/output/1805c5750.asm.txt', '58ADA515BCF67487E3B0B1997678674E6B783F35A73F24F876C3FB648938946F', ['CALL 0x1805c43d0', 'TEST EAX,EAX', 'CALL 0x1805c53b0']);
 checkEvidence(audit + 'server-run-timeout-callers/output/1805c5f40.asm.txt', '60745EBD998C4F34D4AEF07B6C186D3CBBEDD1093BEB7EF7E98196DFEA65EF9D', ['CALL 0x1805c7ea0', 'TEST EAX,EAX', 'CALL 0x1805c8fd0']);
 checkEvidence(audit + 'server-run-timeout-record-copy/output/1805c2570.asm.txt', '426F3AC967C842C69A12ADEC86CEE6AD6AEEDD70374D7B6B710EBDA8ADE30559', ['MOV dword ptr [RCX + -0x8],EAX', 'CALL 0x180577f30']);
+checkEvidence(audit + 'server-run-message-bridge/output/1806203a0.asm.txt', 'A56BDD8E638E12879E5DE03FE14A2C299227D487271CF509E8EFA0D9CAEBDD6A', ['CALL qword ptr [RDI + 0x7fc48]', 'MOV EDI,EAX', 'XOR EAX,EAX', 'MOV EAX,0xe0000001']);
+checkEvidence(audit + 'server-run-callback-binding/output/180631510.asm.txt', '8A9C2BC60ADA4879BC5B6352374A30F4F0FBC85D8A8C598A47826B0EF98FF643', ['MOV qword ptr [RDI + 0x7fc48],RBP', 'MOV qword ptr [RDI + 0x7fc50],RSI']);
 console.log(JSON.stringify({sha256, callback, setOpcode: 0x41f, getOpcode: 0x420, procedureFieldOffset: '0x2a8', status: 'static-evidence-consistent'}, null, 2));
