@@ -16,4 +16,4 @@
 
 ## 尚未收口
 
-`ToolExecutionScope.PickSubscription` 仍使用全流程 `WorkflowSources`；它属于插件面对的公共配置入口，本轮未修改该文件或 `tool-plugins`。该入口的前驱候选范围、父 Group/变量资格、原生输出叶 `Visible/IsPrivate/CanSubscribeA`、数字 ID 和已选值刷新，须由插件面对框架所有者按原 `GetFrontFilterTree` 调用参数逐项核证。当前测试证明了主框架独立工具输入入口的候选筛选和提交拒绝，**不能**证明所有插件配置输入框或原版 UI 等价。本轮不增加 96 项实施完成计数。
+本段记录首次修复时的开放状态：当时 `ToolExecutionScope.PickSubscription` 仍使用全流程 `WorkflowSources`，且未修改该文件或 `tool-plugins`。**现状更正（main `f4b14bd009d1da85a67388f72aa2d3f19e17c5c3`）：**main 已将该公共入口的节点候选改为执行前驱范围；当前源码、真实主窗探针及有限结论见 [FCR-038 补证](B-plugin-picker-predecessor-20261022.md)。父 Group/变量资格、原生输出叶 `Visible/IsPrivate/CanSubscribeA`、数字 ID、已选值刷新及具体插件弹窗仍需按原 `GetFrontFilterTree` 各入口参数逐项核证。不能把有限候选筛选和提交拒绝推为所有插件配置输入框或原版 UI 等价；这两轮均不增加 96 项实施完成计数。
