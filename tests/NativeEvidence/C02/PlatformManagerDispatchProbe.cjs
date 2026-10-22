@@ -53,4 +53,8 @@ checkEvidence(audit + 'server-wait-handlers/output/18061a320.asm.txt', '657E5C24
 checkEvidence(audit + 'server-wait-handlers/output/18061a8b0.asm.txt', '8B6D9FB79152E40F0E88BC80D9E2465D0F3C2FDA1CD07CF88C815FCCF10CD774', ['MOV dword ptr [RAX + 0x2a8],R14D']);
 checkEvidence(audit + 'server-wait-field-consumers/output/1805dda30.asm.txt', '6B525056585DEC891011B4F4937C799137E4F86EDFB02C2FA754CAF303ECCCA0', ['MOV ECX,dword ptr [RAX + 0x2a8]', 'CALL 0x1805d2890']);
 checkEvidence(audit + 'server-wait-field-consumers/output/1805eec10.asm.txt', '9DEE5580FE02BE7AE65921BC6B491F3777AC361088BBBEF953D3ECD57E8BA33B', ['MOV EAX,dword ptr [R14 + 0x2a8]', 'MOV dword ptr [RDI + 0x10],EAX']);
+checkEvidence(audit + 'server-wait-read-callers/output/1805aa6f0.asm.txt', 'CAD64373914E1621CB69DEF8116ACEC508B5D7F3919A4F101BF53C56B9D47F51', ['CALL 0x1805eec10', 'MOV R9D,0x7fe', 'CALL 0x1806203a0', 'CALL 0x1805cd170']);
+checkEvidence(audit + 'server-run-record-consumer/output/1805cd170.asm.txt', '77B92B5BDFF0F14D7DA4DDE4D7EA3C1743C61E79841B259678554464C5B590B5', ['CALL 0x1805cce90', 'CALL qword ptr [RAX + 0x80]']);
+checkEvidence(audit + 'server-run-record-next/output/1805cce90.asm.txt', 'E5461549E4511BF48465C3D9B0DAEAB5F6A9E2CF1306EE5F8DF7FD9354185908', ['MOV RSI,R8', 'MOV R8,RSI', 'CALL 0x1805cc780']);
+checkEvidence(audit + 'server-run-record-field/output/1805cc780.asm.txt', '090A000973E168DDCC0F9298106FCDA7BA79C994FE8E2390ED2402FC19402121', ['MOV R8D,dword ptr [R14 + 0x10]', 'LEA RDX,[0x1807d2150]', 'CALL 0x1806aca10']);
 console.log(JSON.stringify({sha256, callback, setOpcode: 0x41f, getOpcode: 0x420, procedureFieldOffset: '0x2a8', status: 'static-evidence-consistent'}, null, 2));

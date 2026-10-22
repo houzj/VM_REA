@@ -23,6 +23,10 @@
 
 12. 对两条读函数做 PE `.text` 的 `E8 rel32` 反向候选搜索，并以 Ghidra 函数汇编复核，得到 `0x1805aa6f0` 在 `0x1805ab371` 调用 `0x1805eec10`；`0x1805b7770` 在 `0x1805b86ca`、`0x180622e70` 在 `0x180622f41` 调用 `0x1805dda30`。`0x1805aa6f0` 在调用时传入流程配置容器和一个本地输出记录，成功分支准备一个 `0x7fe` 格式的后续消息；仅凭此调用上下文，尚不能给该函数命名为执行超时回调。另两位调用者在多个配置容器操作间生成流程列表，不能直接视为计时器。`tests/NativeEvidence/C02/FindServerDirectCallers.cjs` 复验同 SHA PE 的相对调用位移；它不能找到间接调用或证明仅有这些调用者。
 
+13. `0x1805aa6f0` 的成功路径在 `0x1805ab4d1–0x1805ab54b` 先格式化 `0x7fe` 并调用 `0x1806203a0`，随后有多轮记录与对象处理，至 `0x1805ab6e1` 才调用 `0x1805cd170`，传入同一个本地流程记录地址；不能把这两次调用压缩成单一步骤。`0x1805cd170` 原汇编保留记录指针于 `R14`，转入 `0x1805cce90` 的 `R8`，之后创建含 `0x70` 字节的对象并调用虚方法 `+0x80`；反编译仅显示它最终从该对象取字符串，未解释 `0x1805cce90` 如何使用记录中的等待字段。当前可证是字段由服务端对象进入运行前记录，再穿过 `0x1805cce90` 的参数边界；`0x7fe` 的外部语义和计时/取消效果未证。原汇编/反编译与 `tests/NativeEvidence/C02/PlatformManagerDispatchProbe.cjs` 共同复验这个有序链。
+
+14. 继续解开 `0x1805cce90`：入口 `R8` 被保存为 `RSI`，在 `0x1805cd0a9–0x1805cd0af` 以第三参数传给 `0x1805cc780`。该函数的原汇编 `0x1805cc9ab–0x1805cc9b9` 从记录 `+0x10` 取 32 位值，连同 `.rdata` 的 `RunTimeout` 键交 `0x1806aca10`；`tests/NativeEvidence/C02/ReadRunRecordKeys.cjs` 对同 SHA PE 读取并校验该键，另可见 `Index/DisplayName/ShieldGlobalCtrl/ContinueExecuteTimGap/Guid/StopWhenNG`。因此原 `SetProcedureWaitTime` 的字段 8 已追至服务端流程对象 `+0x2a8`、运行前记录 `+0x10`、序列化对象的 `RunTimeout` 字段。这里证明**运行配置构造/序列化**，不是执行器已按时计时或中断；`0x1805cce90` 后续多个序列化步骤遇到非零错误会提前返回，不能把该记录当成总能完整生成。反编译对 `0x1805cce90` 省略了寄存器实参，结论以原汇编的 `R8→RSI→R8` 和 `0x1805cc780` 中的 `R14+0x10` 为准。
+
 ## 对先前缺口记录的更正
 
 `docs/reverse/C02-scheduling-batch2.md` 早已从原 `VM.Util.dll` CIL 和受控探针取得 `Hik.Util.SyncWaitor` 的实际实现：普通 `Wait/PrecisionWait(ref bool)` 无托管超时；P2P 数组重载有独立 nTimeout，超时返回时 flag 可保持 false。`docs/reverse/C-timeout-boundary-batch25.md` 及 `docs/MF05-PROCEDURE-RUN-CALLCHAIN.md` 中“SyncWaitor 实现未在反编译树/未取得”的描述已过期；准确缺口是 **native 服务端如何消费 0x41f/0x420 命令、何时开始计时、超时如何改变执行/回调/错误状态**。此更正不覆盖第二批历史运行结果，也不证明整个原生调度器行为。
@@ -67,5 +71,11 @@
 | `analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/1805aa6f0.asm.txt` | `CAD64373914E1621CB69DEF8116ACEC508B5D7F3919A4F101BF53C56B9D47F51` |
 | `analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/1805b7770.asm.txt` | `9D05863DF06D363B69AC90C33FD4D59CC77DEB40BD9DD7BA844EF67B419D746C` |
 | `analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/180622e70.asm.txt` | `B2412AB0A69EF436EAFFC978D7570A5490995E961D08CE57CC6CCD063BB132B1` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-record-consumer/output/1805cd170.c` | `FE9BC59C2AE0FD984E6561992F30E2F0D5EC8EE3F02C33A66AC4CAD3D59B92F2` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-record-consumer/output/1805cd170.asm.txt` | `77B92B5BDFF0F14D7DA4DDE4D7EA3C1743C61E79841B259678554464C5B590B5` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-record-next/output/1805cce90.c` | `5F81FEA09303ECC31D7C63C7A15E385C80BB217DF01AE595A407DDAD2517AC4B` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-record-next/output/1805cce90.asm.txt` | `E5461549E4511BF48465C3D9B0DAEAB5F6A9E2CF1306EE5F8DF7FD9354185908` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-record-field/output/1805cc780.c` | `B8A282EB6504A0EECEF5FED7E981D8073ADED36E3D3B4069E78ECB32FA4FB813` |
+| `analysis/full-audit/reverse-c02-20261022/server-run-record-field/output/1805cc780.asm.txt` | `090A000973E168DDCC0F9298106FCDA7BA79C994FE8E2390ED2402FC19402121` |
 
-下一步沿 `0x1805aa6f0` 的外层消息入口和它产生的记录消费方，及两个流程列表调用者的后续用途，追实际计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更及失败时状态。不能从字段已被复制或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。
+下一步从 `RunTimeout` 序列化结果追 reader/执行调度入口与异常返回，沿 `0x1805aa6f0` 外层消息入口和两个流程列表调用者的后续用途核对计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更及失败时状态。不能从字段已进入 `RunTimeout` 或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。
