@@ -40,6 +40,8 @@ payload为descriptor已声明参数名及原DefaultValue字符串；复用同一
 
 # Shared contract requests
 
+2026-10-22 新需求的提报、负责人和同步顺序以[框架与插件逆向联动协议](FRAMEWORK-PLUGIN-REVERSE-HANDOFF.md)为准：插件线提出工具所需的通用框架缺口并附原入口/消费探针；`main` 优先恢复和实施公共链路；用户决定同步，插件线确认共同提交 SHA 后接续。下列历史 FCR 的当时所有者、状态和代码位置不因本条自动变更；每个新 FCR 必须注明生产者/消费者、载荷、生命周期、兼容、原证据、最小验收和基线。
+
 ## CAL-CONFIG-RESET-005 — 公共原名单顺序重置
 
 生产者：VisionPluginContracts.ToolConfigurationAlgorithmReset.Execute；消费者：标定板与畸变配置provider。载荷为ModuleDescriptor、ToolConfigurationState、参数dispatcher、可空订阅服务、原Algorithm.xml文本、可选effective参数同步委托。公共helper按实际ISubInfo控件资源顺序读persisted @Name+tail模式、尝试解绑、同步权威参数并持久化False；再仅按有效ParamItem顺序写默认值，继续失败并报告最后失败，不回滚已成功项。宿主仍通过既有context.Apply提供写入权威，不需要第二套atomic协议。

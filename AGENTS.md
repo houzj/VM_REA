@@ -1,5 +1,9 @@
 # Parallel reconstruction work
 
+## Latest ownership override (2026-10-22)
+
+The user now assigns all shared framework reverse engineering and implementation, including plugin-facing common configuration/interaction/session contracts, to the main framework line. The tool-plugins line owns only tool-specific source recovery and implementation, while reading the global architecture model and tracing framework calls to submit concrete dependency requests. Main prioritizes tool-blocking framework requests, delivers a reviewed commit and contract, then the user chooses synchronization; plugins continue on the confirmed common baseline. Pure framework work follows the actionable tool-dependent framework needs. See docs/FRAMEWORK-PLUGIN-REVERSE-HANDOFF.md. Historical ownership text below explains earlier work and does not override this latest rule. Do not modify the tool-plugins worktree or silently integrate its changes.
+
 Read docs/PARALLEL-WORK.md before making changes. Use decompiled source, resources and confirmed runtime evidence as implementation evidence; user feedback identifies differences and is not a substitute specification. Distinguish source-confirmed behavior, independent implementation, and unverified native behavior. Never claim complete parity from passing tests alone.
 
 ## Source-level reconstruction standard (standing user requirement)
