@@ -44,6 +44,18 @@ public partial class MainWindow {
  void ReplaceExecutionScope(){executionOwnerEpoch.Invalidate();DetachExecutionScope();activeConfigurationRuns=0;configurationRunsByProcedure.Clear();debugSolution=null;toolDebugRecords.Clear();toolDebugInvalid.Clear();CloseToolConfiguration();activeRun?.Cancel();configurationResults.Clear();pointAliasPresentation.Clear();workflowSessions.Clear();results.Clear();executionScope.Dispose();executionScope=new();AttachExecutionScope();}
  void RetainExecutionNodes(){var nodes=doc.Document.Procedures.SelectMany(p=>p.Nodes.Select(n=>(p.Id,n.ModuleId,n.Id))).ToHashSet();executionScope.RetainProcedureNodes(nodes);foreach(var key in pointAliasPresentation.Keys.Where(k=>!nodes.Contains(k)).ToArray())pointAliasPresentation.Remove(key);}
 
+ IReadOnlyList<WorkflowSourceOption> ToolSubscriptionOptions(string procedure,string node,string target,bool parameter,DataKind kind){
+  var flow=ConfigurationProcedure(procedure);
+  var targetPort=parameter?null:modules.GetDescriptor(flow.Nodes.Single(n=>n.Id==node)).Inputs.Single(p=>p.Name==target);
+  bool Accept(DataKind source)=>targetPort is null?DataKinds.CanFlow(source,kind):DataKinds.CanFlow(source,targetPort);
+  var options=new List<WorkflowSourceOption>{new("none","",kind,"不订阅")};
+  options.AddRange(flow.Configuration.Variables.Where(v=>Accept(WorkflowSubscriptions.VariableKind(v.Type))).Select(v=>new WorkflowSourceOption("variable:"+v.Id,v.Name,kind,"局部变量."+v.Name){Reference=new(WorkflowSourceKind.LocalVariable,v.Id)}));
+  options.AddRange(flow.Configuration.Inputs.Where(v=>Accept(v.Kind)).Select(v=>new WorkflowSourceOption("input:"+v.Id,v.Name,v.Kind,"流程输入."+v.Name){Reference=new(WorkflowSourceKind.WorkflowInput,v.Id)}));
+  if(flow.ExecutionLinks is not null)
+   options.AddRange(WorkflowFrontSources(procedure,node,null).Where(s=>Accept(s.Kind)).Select(s=>s with{Reference=new(WorkflowSourceKind.NodeOutput,s.NodeId,s.Port)}));
+  return options;
+ }
+
  ToolEditorContext ConnectToolEditorServices(ToolEditorContext context,string node){
   string procedure=doc.CurrentProcedureId,solution=doc.SolutionId;
   var contextOwner=CaptureExecutionOwner();
@@ -90,12 +102,7 @@ public partial class MainWindow {
    SetInputInteger=(target,value)=>{if(!Alive()||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");doc.SetProcedureInputSubscription(procedure,node,target,value.HasValue?new(WorkflowSourceKind.IntegerConstant,value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)):null);},
    PickSubscription=(owner,target,parameter,kind)=>{
    if(!Alive()||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution)throw new InvalidOperationException("当前模块不可编辑。");
-   var targetPort=parameter?null:modules.GetDescriptor(Flow().Nodes.Single(n=>n.Id==node)).Inputs.Single(p=>p.Name==target);
-   bool Accept(DataKind source)=>targetPort is null?DataKinds.CanFlow(source,kind):DataKinds.CanFlow(source,targetPort);
-   var options=new List<WorkflowSourceOption>{new("none","",kind,"不订阅")};
-   options.AddRange(Flow().Configuration.Variables.Where(v=>Accept(WorkflowSubscriptions.VariableKind(v.Type))).Select(v=>new WorkflowSourceOption("variable:"+v.Id,v.Name,kind,"局部变量."+v.Name){Reference=new(WorkflowSourceKind.LocalVariable,v.Id)}));
-   options.AddRange(Flow().Configuration.Inputs.Where(v=>Accept(v.Kind)).Select(v=>new WorkflowSourceOption("input:"+v.Id,v.Name,v.Kind,"流程输入."+v.Name){Reference=new(WorkflowSourceKind.WorkflowInput,v.Id)}));
-   options.AddRange(WorkflowSources(procedure,null).Where(s=>s.NodeId!=node&&Accept(s.Kind)).Select(s=>s with{Reference=new(WorkflowSourceKind.NodeOutput,s.NodeId,s.Port)}));
+   var options=ToolSubscriptionOptions(procedure,node,target,parameter,kind);
    var picker=new WorkflowSourcePicker(options){Owner=owner};if(picker.ShowDialog()!=true)return Label(target,parameter);RequireAlive();var source=picker.Selection?.Reference;
    if(parameter){var config=Flow().Configuration;var bindings=config.Subscriptions.Where(b=>b.NodeId!=node||b.Target!=target||!b.IsParameter);doc.SetWorkflowConfiguration(procedure,config with{Subscriptions=(source is null?bindings:bindings.Append(new(node,target,true,source))).ToArray()});}
    else doc.SetProcedureInputSubscription(procedure,node,target,source);

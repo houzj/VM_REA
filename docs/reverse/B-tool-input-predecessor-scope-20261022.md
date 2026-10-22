@@ -10,7 +10,7 @@
 
 `MainWindow.WorkflowSources` 列举整个流程的输出，供流程级配置、Group 等入口使用；它不能直接当作某个工具输入的前驱候选。原 `ToolEditorHost.EditToolInput` 恰好这样使用，故 A→B 连线、C 独立时会向 B 展示 C，选择 C 又被 `GraphValidator` 的 `DataExecutionOrder` 拒绝。
 
-本轮新增 `WorkflowFrontSources(procedureId, targetNodeId, kind)`：仅在有显式 `ExecutionLinks` 时沿目标节点的反向连线遍历，去重并排除自身及已禁用节点，然后复用当前类型输出列表。`EditToolInput` 改用此范围；流程级 `WorkflowSources` 保持全流程。旧文档无显式执行连线时拒绝构造候选，避免把存储顺序或数据连接冒充原版 `PreModules`。这是主框架独立执行图表示上的实现，不宣称原版 Group/父模块、变量、叶过滤或文案已等价。
+本轮新增 `WorkflowFrontSources(procedureId, targetNodeId, kind)`：仅在有显式 `ExecutionLinks` 时沿目标节点的反向连线遍历，去重并排除自身及已禁用节点，然后复用当前类型输出列表。`EditToolInput` 改用此范围；流程级 `WorkflowSources` 保持全流程。**更正 2026-10-22：**直接传入 `ExecutionLinks=null` 的原始模型会拒绝构造候选，但实际旧文档经 `GraphEditorDocument.Load` 时，`ProcedureGraph.Separate` 会从既有数据连接生成显式执行连接；因此不能笼统说“旧文档无候选”。已用真实 Save/Load 探针核实 A→B 数据连接迁移后 A 恢复为前驱，见 [公共插件选择器补证](B-plugin-picker-predecessor-20261022.md)。这是主框架独立执行图表示上的实现，不宣称原版 Group/父模块、变量、叶过滤或文案已等价。
 
 `tests/WorkflowCandidateScope.Checks` 在真实 `MainWindow`/`GraphEditorDocument` 构造 A 图像源→B 二值化、C 独立图像源，证明全流程候选仍含 A/C，工具输入候选仅含 A；现有 typed 订阅服务也只含 A，非法 C→B 持久化仍被拒绝。`dotnet run --project tests/WorkflowCandidateScope.Checks/WorkflowCandidateScope.Checks.csproj -c Release --no-restore` 通过（仅既有 `CS8603`），记录在 `analysis/joint-audit/candidate-scope/candidate-scope.json`（SHA-256 `6A431E59ED988162889ECFAC8D2A27F49430346F86E6533A55F78116748A8B70`）。首次普通沙箱构建无法写 `obj`；独立 `obj` 参数触发 SDK 自动生成程序集特性重复；随后在授权构建环境用标准输出目录通过。这两个失败保留，不作为产品回归。
 

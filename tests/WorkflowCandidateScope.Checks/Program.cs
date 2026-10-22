@@ -50,6 +50,36 @@ static class Program
                 throw new Exception("Tool input candidates escaped the execution predecessor scope.");
             Console.WriteLine("PASS tool input candidates include A and exclude independent C.");
 
+            WorkflowSourceOption[] PluginPickerOptions() => ((IReadOnlyList<WorkflowSourceOption>)typeof(MainWindow)
+                .GetMethod("ToolSubscriptionOptions", Private)!.Invoke(window,
+                    [graph.CurrentProcedureId, b, "Image", false, DataKind.GrayImage])!).ToArray();
+            var pluginOptions = PluginPickerOptions();
+            var pluginIds = pluginOptions.Where(x => x.Reference?.Kind == WorkflowSourceKind.NodeOutput)
+                .Select(x => x.NodeId).ToHashSet(StringComparer.Ordinal);
+            if (!pluginIds.SetEquals([a]) || pluginOptions.Count(x => x.Reference is null) != 1)
+                throw new Exception("Plugin-facing picker included a disconnected producer or lost its null option.");
+            graph.SetNodeEnabled(a, false);
+            if (PluginPickerOptions().Any(x => x.Reference?.Kind == WorkflowSourceKind.NodeOutput))
+                throw new Exception("Plugin-facing picker included a disabled predecessor.");
+            graph.SetNodeEnabled(a, true);
+            var executionLink = graph.CurrentProcedure.ExecutionLinks!.Single(x => x.FromNode == a && x.ToNode == b);
+            graph.DisconnectExecution(executionLink);
+            if (PluginPickerOptions().Any(x => x.Reference?.Kind == WorkflowSourceKind.NodeOutput))
+                throw new Exception("Plugin-facing picker retained a disconnected execution predecessor.");
+            graph.ConnectExecution(a, b);
+            if (!PluginPickerOptions().Any(x => x.NodeId == a && x.Reference?.Kind == WorkflowSourceKind.NodeOutput))
+                throw new Exception("Plugin-facing picker did not restore the reconnected predecessor.");
+            var d = graph.AddNode(binary.Manifest.Id, binary.Manifest.Version, 400, 100);
+            graph.Connect(b, "Image", d, "Image");
+            var downstream = ((IReadOnlyList<WorkflowSourceOption>)typeof(MainWindow)
+                .GetMethod("ToolSubscriptionOptions", Private)!.Invoke(window,
+                    [graph.CurrentProcedureId, d, "Image", false, DataKind.GrayImage])!).ToArray();
+            var downstreamIds = downstream.Where(x => x.Reference?.Kind == WorkflowSourceKind.NodeOutput)
+                .Select(x => x.NodeId).ToHashSet(StringComparer.Ordinal);
+            if (!downstreamIds.SetEquals([a, b]))
+                throw new Exception("Plugin-facing picker lost a transitive predecessor or included an unrelated node.");
+            Console.WriteLine("PASS plugin-facing picker tracks execution predecessors, disable and reconnect.");
+
             var service = new WorkflowConfigurationSubscriptionService(() => graph.CurrentProcedure,
                 registry, b, (_, _) => throw new NotSupportedException("Read-only probe"));
             var destination = new ConfigurationSubscriptionDestination(ConfigurationSubscriptionDomain.Combination, "Image", "IMAGE");
@@ -90,13 +120,29 @@ static class Program
             }
             if (graph.CurrentProcedure.Connections.SingleOrDefault(x => x.ToNode == b)?.FromNode != a)
                 throw new Exception("Rejected subscription changed the existing A→B wire.");
+            var legacyPath = Path.GetFullPath("analysis/joint-audit/candidate-scope/legacy-no-links.vmx.json");
+            var current = graph.Document;
+            SolutionStore.Save(legacyPath, current with
+            {
+                Procedures = current.Procedures.Select(p => p with { ExecutionLinks = null }).ToArray()
+            });
+            graph.Load(legacyPath);
+            if (graph.CurrentProcedure.ExecutionLinks is null ||
+                !PluginPickerOptions().Where(x => x.Reference?.Kind == WorkflowSourceKind.NodeOutput)
+                    .Select(x => x.NodeId).ToHashSet(StringComparer.Ordinal).SetEquals([a]))
+                throw new Exception("Legacy data-link migration did not restore the exact execution predecessor.");
+            Console.WriteLine("PASS legacy load derives the plugin-facing predecessor from saved data links.");
             var output = Path.GetFullPath("analysis/joint-audit/candidate-scope/candidate-scope.json");
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             File.WriteAllText(output, JsonSerializer.Serialize(new
             {
-                Nodes = new { A = a, B = b, C = c },
+                Nodes = new { A = a, B = b, C = c, D = d },
                 GenericCandidates = workflowSources.Select(x => new { x.NodeId, x.Port, x.Kind, x.Label }),
                 ToolInputCandidates = frontSources.Select(x => new { x.NodeId, x.Port, x.Kind, x.Label }),
+                PluginPickerCandidates = pluginOptions.Select(x => new { x.NodeId, x.Port, x.Kind, x.Label, SourceKind = x.Reference?.Kind.ToString() }),
+                PluginPickerTopologyTransitions = new[] { "A connected", "A disabled", "A disconnected", "A reconnected" },
+                DownstreamPluginPickerNodeIds = downstreamIds.Order(),
+                LegacyLoadDerivedExecutionLinksFromDataLinks = true,
                 ScopedCandidateNodeIds = ancestorIds.Order(),
                 ValidatorIssue = new { issue.Code, issue.Message, issue.NodeId },
                 RejectedEditPreservedEdge = true

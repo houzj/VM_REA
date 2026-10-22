@@ -598,7 +598,9 @@ PointAlias构造追加可选presentation状态，旧调用仍可编译。实际M
 生产者是 `ReadCalibFilePlugin.Runtime` 从文件发布的 `UpdatedDescriptor` 和动态 `NodeOutput`；消费者是 main 的 `GraphExecutor/WorkflowSubscriptions`、坐标系 `CalibMatrix` deferred numeric 读取及 owned Group 出口。载荷必须同时区分文档持久化 `OutputSchema/WorkflowSubscription.Source.Port`、**本轮**运行时 descriptor、缓存矩阵所属轮次与 Group 导出状态。第十七轮真实 Group 探针将文件 `OldMatrix` 改为 `NewMatrix` 而保留旧订阅：warm 坐标系/Group 仍 Success，坐标系 `ModuStatus=0`、Group 输出旧九项；cold 坐标系 `NativeUninitializedMatrix`、Group Failed。显式同步更新 schema+订阅后，Undo/Redo 单历史根及保存重开 fresh scope 正常。报告 `docs/joint-audit/20261020-pass17-readcalib-group-history.md`，根线独立复跑日志 SHA-256 `DFF3EDFC5E492CB6183A70F8EF4E92E8AB706CD2963CDD000908A86A7C10236F`。
 
 原厂 `FilePath` 写入、原生 `LoadFile`、`VmModule.Outputs` 懒读和手动 `DynamicVmIO` 改名历史是各自已证边；文件刷新通知已载入输出及 Group 旧订阅实际迁移尚待定点取回，见 `docs/joint-audit/20261020-pass17-readcalib-native-callback.md`。不能把当前 warm 旧值说成原版缺陷，也不能把 Success 当作新叶已被消费。主框架若采纳“动态叶消失时停止旧订阅”的**独立安全一致性政策**，应在本轮运行 descriptor 上校验端口存在/类型后再允许 deferred fallback；插件侧提供可区分轮次和身份的结果契约。必须兼容旧方案的明确错误与手工重绑，覆盖 warm/cold、改名/改型、Undo/Redo、重开、Group 和失败恢复。两个所有者先用原始 callback 证据及该探针裁决合同，由用户决定合流点；本条仅登记，没有修改 `tool-plugins`。
-## FCR-038 — 插件公共输入选择器的执行前驱范围（2026-10-22，待插件所有者处理）
+## FCR-038 — 插件公共输入选择器的执行前驱范围（2026-10-22，main有限修复，原生叶与真实插件窗口待核）
+
+最新所有权与实施：按用户 2026-10-22 调整，插件面向的公共选择器归 main。`ToolExecutionScope.ToolSubscriptionOptions` 已将节点候选从全流程 `WorkflowSources` 改为目标节点的 `WorkflowFrontSources`，保留变量、流程输入和空项原有路径；真实 MainWindow 图 A→B、C 独立、多跳 A→B→D、禁用、执行线断开/恢复，以及旧方案数据线迁移的探针通过。依据、证据哈希和有限未知见 [主线补证](reverse/B-plugin-picker-predecessor-20261022.md)。原生 `GetFrontFilterTree` 的参数、叶资格、Group 父模块与实际插件弹窗仍未全证，不以此宣称 FCR 全域闭合或原版树等价。下述“待插件所有者处理”是本次调整前的历史交接状态。
 
 生产者为 main 的流程 `ExecutionLinks`、节点输出描述及 `WorkflowConfigurationSubscriptionService`；消费者为插件配置入口 `ToolExecutionScope.PickSubscription` 和各工具输入控件。原 `VmModule.GetFrontParamItems` 从 `PreModules` 递归，`Apps.XmlParser.ParamTab.GetFrontFilterTreeOperation` 再按目标类型生成候选；当前 `PickSubscription` 调用全流程 `WorkflowSources`，可展示无执行路径的同类节点，提交时却被 `GraphValidator.DataExecutionOrder` 拒绝。主框架独立的 `ToolEditorHost.EditToolInput` 已按前驱范围收窄，原源码、探针和有限边界见 `docs/reverse/B-tool-input-predecessor-scope-20261022.md`。
 
