@@ -51,4 +51,6 @@ checkEvidence(audit + 'server-message-export/output/1806a0250.asm.txt', '4394E7D
 checkEvidence(audit + 'server-message-dispatch/output/180602df0.c', 'AF99B707CB47309609C63D83992826728CD1190F27A381A6AD25A811B0517C46', ['case 0x41f:', 'FUN_18061a320(', 'case 0x420:', 'FUN_18061a8b0(']);
 checkEvidence(audit + 'server-wait-handlers/output/18061a320.asm.txt', '657E5C24C5142FA923517539C7B02B406070FDE10A67924B85E7D46C3AEFB10C', ['MOV dword ptr [RSI + 0x2a8],EBX']);
 checkEvidence(audit + 'server-wait-handlers/output/18061a8b0.asm.txt', '8B6D9FB79152E40F0E88BC80D9E2465D0F3C2FDA1CD07CF88C815FCCF10CD774', ['MOV dword ptr [RAX + 0x2a8],R14D']);
+checkEvidence(audit + 'server-wait-field-consumers/output/1805dda30.asm.txt', '6B525056585DEC891011B4F4937C799137E4F86EDFB02C2FA754CAF303ECCCA0', ['MOV ECX,dword ptr [RAX + 0x2a8]', 'CALL 0x1805d2890']);
+checkEvidence(audit + 'server-wait-field-consumers/output/1805eec10.asm.txt', '9DEE5580FE02BE7AE65921BC6B491F3777AC361088BBBEF953D3ECD57E8BA33B', ['MOV EAX,dword ptr [R14 + 0x2a8]', 'MOV dword ptr [RDI + 0x10],EAX']);
 console.log(JSON.stringify({sha256, callback, setOpcode: 0x41f, getOpcode: 0x420, procedureFieldOffset: '0x2a8', status: 'static-evidence-consistent'}, null, 2));

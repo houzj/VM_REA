@@ -17,7 +17,11 @@
 
 9. 原安装件 `D:/Program Files/VisionMaster4.4.0/Applications/Server/PlatformManager.dll` SHA-256 `06D86F51BEBFEBA357D1B79297E20A3B0A70580A40AF7B77C8ABDD6C38CA0624`。REA `open_binary` 确认 x64 PE 身份；本机深反编译继续用独立受控 Ghidra 输出。PE 导出表确认 `PF_M_MsgDeal` RVA `0x6a0250`（VA `0x1806a0250`），并非转发导出。该导出拒绝空响应缓冲或容量 `<0x200`，返回 `0xE0000012`；正常路径将五参数传给 `0x180602df0`。该分派函数的 `case 0x41f` 进入 `0x18061a320`，`case 0x420` 进入 `0x18061a8b0`。原分派伪代码约 1.6 万行，记录具体 case 和下层函数，而不把整个分派树宣称已审核。
 
-10. `0x18061a320` 要求命令拆出四字段（流程 ID、字段号、值），经 `0x1805e5c10` 操作流程配置容器并 `0x1805dd580` 找流程对象；字段号 `8` 时 `atoi` 值最终以 `MOV [RSI+0x2a8],EBX` 写入该对象。`0x18061a8b0` 要求三字段，调用 `0x1805e5de0` 取值，同样找流程对象；字段号 `8` 时把转换值写入对象 `+0x2a8`，再格式化响应。两处理函数还处理字段号 `4`，但这不是本次等待时间结论。此处已经定位**服务端存储字段**，尚未追到执行器读取 `+0x2a8` 及其与计时、取消和回调的关系。Ghidra 对处理函数返回型恢复为 `void`，本报告不据此推断成功码完整集合。`node tests/NativeEvidence/C02/PlatformManagerDispatchProbe.cjs` 复验服务端 PE 身份、导出、分派 case 与原汇编写入点。
+10. `0x18061a320` 要求命令拆出四字段（流程 ID、字段号、值），经 `0x1805e5c10` 操作流程配置容器并 `0x1805dd580` 找流程对象；字段号 `8` 时 `atoi` 值最终以 `MOV [RSI+0x2a8],EBX` 写入该对象。`0x18061a8b0` 要求三字段，调用 `0x1805e5de0` 取值，同样找流程对象；字段号 `8` 时把转换值写入对象 `+0x2a8`，再格式化响应。两处理函数还处理字段号 `4`，但这不是本次等待时间结论。这里定位了**服务端存储字段**；后续读取位置见第 11 条，计时、取消和回调关系仍未知。Ghidra 对处理函数返回型恢复为 `void`，本报告不据此推断成功码完整集合。`node tests/NativeEvidence/C02/PlatformManagerDispatchProbe.cjs` 复验服务端 PE 身份、导出、分派 case 与原汇编写入点。
+
+11. 继续静态扫描服务端 `.text` 中 `0x2a8` 位移，得到 393 个**原始字节候选**；大量位于栈访问或其他结构，绝不能把 393 当成实际字段引用。`tests/NativeEvidence/C02/FindWaitFieldRefs.cjs` 默认只显示已定向检查的函数，`--all` 给出全部字节候选和 `.pdata` 函数起点。汇编证实 `0x1805dda30` 在 `0x1805ddc00` 从流程对象读 `+0x2a8`，置入临时记录并交 `0x1805d2890` 建立列表元素；`0x1805eec10` 在 `0x1805eee8c` 从流程对象读 `+0x2a8`，写到其第三参数所指记录的 `+0x10`，随后才继续调用对象虚方法。`0x1806a32e0` 还在初始化对象时写 `+0x2a8`。另一个 `0x180651750` 虽有 `LEA [RDI+0x2a8]`，同时成组处理 `+0x298/+0x2b8/+0x2c8` 的容器元素，尚不能把这个偏移认作同一流程对象字段。以上确定了**保存后的值至少进入两条下游记录构造链**，但记录如何供执行器计时、超时是否停止/仅报告、是否影响回调仍未证实；`FUN_1805eec10` 的反编译数组别名把 `+0x2a8` 表示为 `plVar13[0x55]`，以原汇编为准。
+
+12. 对两条读函数做 PE `.text` 的 `E8 rel32` 反向候选搜索，并以 Ghidra 函数汇编复核，得到 `0x1805aa6f0` 在 `0x1805ab371` 调用 `0x1805eec10`；`0x1805b7770` 在 `0x1805b86ca`、`0x180622e70` 在 `0x180622f41` 调用 `0x1805dda30`。`0x1805aa6f0` 在调用时传入流程配置容器和一个本地输出记录，成功分支准备一个 `0x7fe` 格式的后续消息；仅凭此调用上下文，尚不能给该函数命名为执行超时回调。另两位调用者在多个配置容器操作间生成流程列表，不能直接视为计时器。`tests/NativeEvidence/C02/FindServerDirectCallers.cjs` 复验同 SHA PE 的相对调用位移；它不能找到间接调用或证明仅有这些调用者。
 
 ## 对先前缺口记录的更正
 
@@ -53,5 +57,15 @@
 | `analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a320.asm.txt` | `657E5C24C5142FA923517539C7B02B406070FDE10A67924B85E7D46C3AEFB10C` |
 | `analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a8b0.c` | `DCC18D71986441CE0FCD5D94172E324724315A46B262F31AAF80A8D686E078A1` |
 | `analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a8b0.asm.txt` | `8B6D9FB79152E40F0E88BC80D9E2465D0F3C2FDA1CD07CF88C815FCCF10CD774` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805dda30.c` | `E510FA79451361C8EFDD9E63F9FA0A0D71FA3F1A2E29E22A4AC1A2B76166771C` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805dda30.asm.txt` | `6B525056585DEC891011B4F4937C799137E4F86EDFB02C2FA754CAF303ECCCA0` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805eec10.c` | `CAFB54C49085221CC6F4518C0AC426B43CB56F3CEF4C285CE317CD1D7F6532B9` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805eec10.asm.txt` | `9DEE5580FE02BE7AE65921BC6B491F3777AC361088BBBEF953D3ECD57E8BA33B` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1806a32e0.c` | `3C7BEC711BB2160F62E6D0D92050952BB7112B5CA448297DA576EA180EAF8A65` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/180651750.c` | `E15F7FE1FF5D9025100E439088CFD34DEA48C8F90793FBCB1E3CAF34C24B4C18` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-snapshot/output/1805d2890.c` | `F1EDBDA8DC367B235C126325DAB1315F2531E179FCCC868B2371460B5E0912A7` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/1805aa6f0.asm.txt` | `CAD64373914E1621CB69DEF8116ACEC508B5D7F3919A4F101BF53C56B9D47F51` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/1805b7770.asm.txt` | `9D05863DF06D363B69AC90C33FD4D59CC77DEB40BD9DD7BA844EF67B419D746C` |
+| `analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/180622e70.asm.txt` | `B2412AB0A69EF436EAFFC978D7570A5490995E961D08CE57CC6CCD063BB132B1` |
 
-下一步在服务端扫描流程对象 `+0x2a8` 的读取点，沿运行路径追实际计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更和失败时状态。不能从字段已存储或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。
+下一步沿 `0x1805aa6f0` 的外层消息入口和它产生的记录消费方，及两个流程列表调用者的后续用途，追实际计时消费者；还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更及失败时状态。不能从字段已被复制或发送侧 `OK` 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。
