@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenFileForCalibDialog 路径控件完整门</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/TRANSLATION-PATH-POLICY-SOURCE.md">下载原始文件</a></nav><main><h1 id="openfileforcalibdialog-路径控件完整门">OpenFileForCalibDialog 路径控件完整门</h1><p>2026-10-19，根线当前计数2/10=20%；Translation尚未计数。新确认活动路径差异已保留，之前数值/Host通过不等于该分支已实现。</p>
+<p>原 <code>Apps.XmlParser.ParamTab.AlgorithmTabRoot.Init</code> 577起把 <code>BaseNode.defaultNameSpace</code> 临时设为 <code>Apps.XmlParser.ParamTab</code> 再 <code>base.Init(node)</code>，恢复后通知加载。实际资源标签 <code>OpenFileForCalibDialog</code> 对应原 <code>Apps.XmlParser.ParamTab.OpenFileForCalibDialog : OpenFileDialog, ISubInfo</code>；父 <code>OpenFileDialog : NameValueItem</code> 的 CurValueA 先赋值再同步调用 ValueChangedCmdExecute。不是普通 OpenFileDialog 的加载策略。</p>
+<p>原控件源码SHA256 <code>16B255C28C1CC21E57FFC162E349C5CC77A4B3F0CBF3F206BDEDC97E796D8EE4</code>；父类 <code>129D9185E0FBDCCD5146EA57C1CA9033AB1D4D0AAF8EEFE29FCA2B1921C40BC4</code>。源位置是 REA主目录 analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab。已有NImage专属反编译副本同类型、同完整方法，不以同名API猜测。</p>
+<table>
+<thead>
+<tr>
+<th>资源工具/字段</th>
+<th>原实际标签</th>
+<th>FileOption.FilterName</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Board CalibPathName</td>
+<td>OpenFileForCalibDialog</td>
+<td>`%.iwcal</td>
+</tr>
+<tr>
+<td>NPoint CalibPathName</td>
+<td>OpenFileForCalibDialog</td>
+<td>`%.xml</td>
+</tr>
+<tr>
+<td>NImage CalibPathName</td>
+<td>OpenFileForCalibDialog</td>
+<td>`.xml</td>
+</tr>
+<tr>
+<td>Map CalibPathName</td>
+<td>OpenFileForCalibDialog</td>
+<td>`%.xml</td>
+</tr>
+<tr>
+<td>Translation CalibPathName</td>
+<td>OpenFileForCalibDialog</td>
+<td>`%.xml</td>
+</tr>
+<tr>
+<td>Rotate FilePath</td>
+<td>OpenFileForCalibDialog</td>
+<td>`.xml</td>
+</tr>
+<tr>
+<td>Map CalibPath0/1</td>
+<td><strong>OpenFileDialog</strong></td>
+<td>`.xml;.iwcal</td>
+</tr>
+</tbody></table>
+<p>资源与三个存在的自定义Control.dll元数据只读审计见 <code>analysis/translation/audit-20261019/path-controls.json</code>：NPoint、NImage、Translation Control.dll均没有文件控件派生/同全名覆盖；Board/Map/Rotate安装目录无专属Control.dll。Translation控制扩展实际只定义EditButton_Calib及点表，不覆写此文件控件。Distortion由根线独立核的第七资源与控制身份补入其跨工具报告，不在此伪称本线读取过。</p>
+<p>ValueChangedCmdExecute 284–345完整顺序：</p>
+<ol>
+<li>CurValueA为null直接返回；取本地化FilterName，<code>Split(&#39;|&#39;)</code>，按第二段<code>;</code>拆patterns，使用 <code>text.EndsWith(pattern.Substring(1))</code>，即当前文化且区分大小写。没有通过则错误消息并返回，<strong>不SetParam</strong>。</li>
+<li><code>/root</code>分支取最后<code>/</code>前缀并调用FtpCheckFileName。当前公共本地policy明确Unsupported，不用本地Directory.Exists冒充远端。其它分支只找最后反斜杠<code>\\</code>截前缀，若无反斜杠则检查原串；Directory.Exists失败返回。不能代数替换成Path.GetDirectoryName/绝对化。</li>
+<li>校验后SetParamUnit失败显示模块错误、成功显示Lang_SetSuc再PreExecuteRun。保留CurValue尝试值与OldValue/模块参数的区别；宿主Apply拒绝事务回滚另列为独立适配。</li>
+</ol>
+<p>DoOpenFile本地273–278在 <code>CurValueA=null; path=(CurValueA=selected)</code> 之后<strong>无条件</strong>记默认目录；Remote245–250同样。校验失败仅return，不阻止随后history。文件选择同值仍通过null→path强制重试；普通文本同值不变不重试、不写picker history。不能根据尝试值与文档值相等推断已成功，也不能把history条件擅改为只成功才写。</p>
+<p>根线拟采用State可选ParameterWriteValidator委托；七provider仅接同一公共helper并保自身通知。helper严格检查实际标签/Filter，不按moduleId硬编码，不拦Loader派生OpenFileDialog4ReadFile，也不拦Map两个base输入。AlgorithmReset直接backend adapter，不经过UI前置门，保持原空默认写入语义。候选与专属测试位于 analysis/translation/proposals/path-policy 和 tests/TranslationCalibration.PathPolicyChecks；尚未验证前不预报通过。</p>
+<p>Translation资源还引用 HidePhysicInfoOperation，但其目标 <code>Tab_Phys Coord Params</code> 在原树中不存在（实际仅Tab_Calib Params、Tab_Align File及结果TextDisplayGroup）。不据该遗留无目标声明虚构N点物理网格类别。</p>
+<p class="meta">来源：docs/plugins/TRANSLATION-PATH-POLICY-SOURCE.md · SHA256 55e716fffe969e8f5e24e4f0578f547435fd3ce38da8aa142ef916a073e3c8b7<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),path=require('path');
+const site=path.resolve(__dirname,'../../../docs/架构逆向与实现对照文档'),events={},where=new URL('file:///docs/index.html?scope=original');
+const buttons=['main','tools','results'].map(scene=>({dataset:{scene},attrs:{},events:{},setAttribute(k,v){this.attrs[k]=v;},addEventListener(k,v){this.events[k]=v;},click(){this.events.click();},focus(){this.focused=true;}}));
+const panels=buttons.map(b=>({dataset:{scenePanel:b.dataset.scene},hidden:b.dataset.scene!=='main'}));
+const document={documentElement:{dataset:{routeHost:'false'}},getElementById:()=>null,querySelector:()=>null,querySelectorAll:s=>s==='[data-scene]'?buttons:s==='[data-scene-panel]'?panels:[]};
+vm.runInNewContext(fs.readFileSync(path.join(site,'公共资源/site.js'),'utf8'),{window:{},document,location:where,URL,URLSearchParams,CSS:{escape:s=>s},history:{pushState(a,b,u){where.href=new URL(u,where).href;}},addEventListener:(k,v)=>events[k]=v});
+buttons[1].click();assert.equal(where.search,'?scope=original');assert.equal(where.hash,'#tools');assert.equal(panels[1].hidden,false);
+where.hash='';events.popstate();assert.equal(panels[0].hidden,false);assert.equal(buttons[0].attrs.tabindex,'0');assert.equal(buttons[1].attrs.tabindex,'-1');
+let prevented=false;buttons[0].events.keydown({key:'End',preventDefault(){prevented=true;}});assert(prevented);assert.equal(where.hash,'#results');assert(buttons[2].focused);
+where.hash='#tools';events.hashchange();assert.equal(panels[1].hidden,false);assert.equal(buttons[1].attrs['aria-selected'],'true');
+buttons[1].events.keydown({key:'Home',preventDefault(){}});assert.equal(where.hash,'#main');assert.equal(panels[0].hidden,false);
+let redirected;const movedLocation=new URL('file:///docs/data/parent.html?scope=original#fact-1');movedLocation.replace=u=>redirected=u;
+vm.runInNewContext(fs.readFileSync(path.join(site,'公共资源/site.js'),'utf8'),{window:{},document:{documentElement:{dataset:{routeHost:'false'}},getElementById:id=>id==='fact-1'?{dataset:{movedTarget:'scene.html#fact-1'}}:null},location:movedLocation,URL,URLSearchParams});
+assert.equal(new URL(redirected).pathname,'/docs/data/scene.html');assert.equal(new URL(redirected).search,'?scope=original');assert.equal(new URL(redirected).hash,'#fact-1');
+const result={passed:true,environment:'VM DOM substitute; not browser acceptance',operations:['query retained on scene click','empty hash history restores main','roving tab index','End selects and focuses results','hashchange restores tools','Home restores main','moved scene anchor redirects with query and hash'],browserVerified:false};
+fs.writeFileSync(path.join(site,'清单/导航操作检查.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));

@@ -1,0 +1,68 @@
+{
+  "entry": {
+    "id": "viewport",
+    "label": "视口/小地图",
+    "node": "oTool",
+    "families": [
+      "model"
+    ],
+    "lifecycleTracks": [],
+    "operations": [
+      {
+        "key": "canvas-viewport:V01",
+        "href": "canvas-viewport.html#edge-V01",
+        "from": "ZoomArea.OnPreviewMouseWheel",
+        "to": "Shift 横滚 → Ctrl 缩放",
+        "classification": "source-confirmed",
+        "behavior": "先 OnHoriScroll 再 OnChangeZoom；Shift 按 Delta 正负 LineLeft/Right 并 Handled=true；Ctrl 在非零 Delta 改一档后 DoChangeZoom。Ctrl+Shift 两支都执行。"
+      },
+      {
+        "key": "canvas-viewport:V04",
+        "href": "canvas-viewport.html#edge-V04",
+        "from": "鹰眼 XAML 事件/绑定",
+        "to": "SelectRegion* 与 ScrollViewer 比例",
+        "classification": "source-confirmed",
+        "behavior": "187×150 的 GridEagleEye 绑定四种鼠标事件；选框宽高取 viewport/extent 比例、限制到鹰眼尺寸；左上角读写按 offset/extent 与鹰眼尺寸互换。"
+      }
+    ],
+    "classification": "independent-implementation",
+    "meaning": "按界面问题组织的研究导航，不证明该控件直接调用全部所列关系。",
+    "sections": [
+      {
+        "id": "model",
+        "title": "方案、流程、节点与资源",
+        "gap": "原版全部对象字段、跨版本身份规则及.sol完整模式未恢复。",
+        "facts": [
+          {
+            "key": "workflow-data:C04",
+            "href": "workflow-data.html#edge-C04",
+            "classification": "independent-implementation",
+            "from": "WorkflowInterfaceItem / WorkflowLocalVariable",
+            "to": "稳定 ID、类型、绑定与快照",
+            "behavior": "当前接口项区分 Id/Name、Kind、NodeId/Port、Display/Accumulate、Cardinality；局部变量有独立 Id、值/类型和来源。结构不是原 VmIO/native 指针布局，按独立数据契约记录。"
+          },
+          {
+            "key": "execution-storage:M03",
+            "href": "execution-storage.html#edge-M03",
+            "classification": "independent-implementation",
+            "from": "SolutionExecutor.RunAsync",
+            "to": "GraphExecutor.RunAsync",
+            "behavior": "先校验并复制方案/参数；校验调用及资源；WaitTimeMs 使用链接 CTS，调用 GraphExecutor 后把等待超时导致的 Cancelled 改为 TimedOut。"
+          },
+          {
+            "key": "execution-storage:J02",
+            "href": "execution-storage.html#edge-J02",
+            "classification": "independent-implementation",
+            "from": "GraphEditorDocument.Save",
+            "to": "SolutionStore.Save",
+            "behavior": "PrepareSave 接收文档副本，随后 Rebase 并落盘；返回后才替换 document、基目录、路径、Dirty、Revision 并发 Changed。"
+          }
+        ]
+      }
+    ]
+  },
+  "operationBinding": null,
+  "dataFacts": [],
+  "lifecycleTracks": [],
+  "lifecycleFacts": []
+}

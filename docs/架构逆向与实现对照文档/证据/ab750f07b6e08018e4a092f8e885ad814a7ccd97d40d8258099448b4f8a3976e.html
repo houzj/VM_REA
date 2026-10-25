@@ -1,0 +1,73 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 ab750f07b6e0 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 ab750f07b6e0</p><h1>原文证据 ab750f07b6e0</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 ab750f07b6e08018e4a092f8e885ad814a7ccd97d40d8258099448b4f8a3976e。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>using System.Reflection;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using SunEyeVision.Workflow;
+using SunEyeVision.Plugin.SDK.Core;
+using SunEyeVision.Plugin.SDK.Execution.Parameters;
+using SunEyeVision.Plugin.SDK.Execution.Results;
+using SunEyeVision.Plugin.SDK.Logging;
+
+// Real linked Workflow source; existing managed dependency baselines are recorded separately.
+// No camera, image pixels, vendor SDK execution, UI or external process is exercised.
+var observations=new List&lt;object>();
+var logger=DispatchProxy.Create&lt;ILogger,NoLog>();
+var engine=(WorkflowExecutionEngine)RuntimeHelpers.GetUninitializedObject(typeof(WorkflowExecutionEngine));
+typeof(WorkflowExecutionEngine).GetField(&quot;_logger&quot;,BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(engine,logger);
+var flags=BindingFlags.Instance|BindingFlags.NonPublic;
+var execute=typeof(WorkflowExecutionEngine).GetMethod(&quot;ExecuteAlgorithmNode&quot;,flags)!;
+
+// Exercise the actual input synthesis and ToolExecutor path with one scalar parameter.
+var globals=new Dictionary&lt;string,object?>{{&quot;X&quot;,1L}};
+var request=new WorkflowRunRequest(&quot;A&quot;,globalVariables:globals);
+globals[&quot;X&quot;]=2L;
+if((long)request.GlobalVariables[&quot;X&quot;]! != 1L)throw new Exception(&quot;Request snapshot contract changed&quot;);
+var context=new WorkflowContext {WorkflowId=&quot;A&quot;,GlobalVariables=new Dictionary&lt;string,object?>(request.GlobalVariables)};
+var produced=new GenericToolResults {Status=ExecutionStatus.Success};produced.AddResultItem(&quot;X&quot;,2L,ResultItemType.Numeric);
+context.SetNodeResult(&quot;producer&quot;,new NodeExecutionResult {NodeId=&quot;producer&quot;,Success=true,Status=ExecutionStatus.Success,Result=produced});
+var capture=new ProbeTool((r)=>{var read=r.RuntimeParameters!.GetRequired&lt;long>(nameof(ProbeParameters.X));if(read!=1L)throw new Exception(&quot;Global snapshot changed&quot;);observations.Add(new {name=&quot;ordinary_global_binding&quot;,read,seed=1L,producerOutput=2L,producerAlreadyRecorded=true});return ValueTask.FromResult&lt;ToolResults>(new GenericToolResults {Status=ExecutionStatus.Success});});
+var consumer=new AlgorithmNode(&quot;consumer&quot;,&quot;consumer&quot;,&quot;consumer&quot;,capture){Parameters=new ProbeParameters()};
+consumer.ParamSettings.SetSetting(ParamSetting.CreateBinding(nameof(ProbeParameters.X),&quot;__GlobalVars__&quot;,&quot;X&quot;));
+await (Task&lt;NodeExecutionResult>)execute.Invoke(engine,new object[]{consumer,context})!;
+if(capture.Calls!=1)throw new Exception(&quot;Consumer did not execute&quot;);
+
+// Two actual asynchronous tools. The slow one deliberately does not cooperate with cancellation.
+using var cts=new CancellationTokenSource();using var session=new WorkflowRunSession(&quot;cancel-probe&quot;,cts.Token);
+session.TryStart();
+var entered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+var release=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+var slowExited=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+int lateWrites=0;
+var slow=new ProbeTool(async _=>{entered.TrySetResult();await release.Task;Interlocked.Increment(ref lateWrites);slowExited.TrySetResult();return new GenericToolResults {Status=ExecutionStatus.Success};});
+var fast=new ProbeTool(async _=>{await entered.Task;return new GenericToolResults {Status=ExecutionStatus.Success};});
+var workflow=new Workflow(&quot;cancel-probe&quot;,&quot;cancel-probe&quot;);
+workflow.Nodes.Add(new AlgorithmNode(&quot;slow&quot;,&quot;slow&quot;,&quot;slow&quot;,slow){Parameters=new ProbeParameters()});
+workflow.Nodes.Add(new AlgorithmNode(&quot;fast&quot;,&quot;fast&quot;,&quot;fast&quot;,fast){Parameters=new ProbeParameters()});
+var cancelContext=new WorkflowContext {WorkflowId=workflow.Id,CancellationToken=session.CancellationToken};
+var dependency=WorkflowExecutionDependencyGraph.Compile(workflow);
+var profiles=workflow.Nodes.ToDictionary(n=>n.Id,n=>new ToolExecutionProfile(ToolConcurrencyKind.ExternalDataWait));
+engine.NodeExecutionFinished+=(_,e)=>{if(e.NodeId==&quot;fast&quot;)cts.Cancel();};
+var queue=typeof(WorkflowExecutionEngine).GetMethod(&quot;ExecuteWorkflowWithReadyQueue&quot;,flags)!;
+var run=(Task&lt;ExecutionResult>)queue.Invoke(engine,new object[]{session,workflow,cancelContext,dependency,profiles})!;
+bool cancelled=false;
+try {await run.WaitAsync(TimeSpan.FromSeconds(15));}catch(OperationCanceledException){cancelled=true;}
+if(!cancelled||slowExited.Task.IsCompleted)throw new Exception(&quot;Selected cancellation path not reproduced&quot;);
+observations.Add(new{name=&quot;queue_returns_before_noncooperative_tool_exits&quot;,cancelled,slowStillRunning=!slowExited.Task.IsCompleted,lateWritesAtReturn=lateWrites});
+release.TrySetResult();await slowExited.Task.WaitAsync(TimeSpan.FromSeconds(10));
+observations.Add(new{name=&quot;noncooperative_tool_can_finish_side_effect_after_queue_return&quot;,lateWrites});
+if(lateWrites!=1)throw new Exception(&quot;Late synthetic side effect was not observed&quot;);
+var assemblies=AppDomain.CurrentDomain.GetAssemblies().Where(a=>!a.IsDynamic&amp;&amp;a.GetName().Name!.StartsWith(&quot;SunEye&quot;,StringComparison.Ordinal)).Select(a=>new {name=a.GetName().Name,path=a.Location,mvid=a.ManifestModule.ModuleVersionId,sha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(a.Location))).ToLowerInvariant()}).ToArray();
+var result=new {scope=&quot;Real linked current SunEye Workflow/SDK/Core/Infrastructure sources on net10.0-windows; synthetic tools and private scheduler entry, not complete net9 product UI/manager execution&quot;,passed=3,observations,assemblies,guiStarted=false,cameraCalled=false,vendorSdkExecuted=false,otherProjectModified=false,fullHostParity=false};
+File.WriteAllText(args[0],JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true}));
+Console.WriteLine(JsonSerializer.Serialize(result));
+
+public class ProbeParameters:ToolParameters {public long X{get;set;}}
+public sealed class ProbeTool(Func&lt;ToolExecutionRequest,ValueTask&lt;ToolResults>> body):IAsyncToolPlugin
+{
+ public int Calls;public Type ParamsType=>typeof(ProbeParameters);public Type ResultType=>typeof(GenericToolResults);
+ public IReadOnlyList&lt;OutputVariable> OutputVariables=>Array.Empty&lt;OutputVariable>();
+ public ToolResults Run(ToolParameters p)=>throw new InvalidOperationException(&quot;Async path expected&quot;);
+ public ValueTask&lt;ToolResults> ExecuteAsync(ToolExecutionRequest request){Interlocked.Increment(ref Calls);return body(request);}
+}
+public class NoLog:DispatchProxy {protected override object? Invoke(MethodInfo? method,object?[]? args)=>method?.ReturnType==typeof(void)?null:method!.ReturnType.IsValueType?Activator.CreateInstance(method.ReturnType):null;}
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis--GEX24.html">数据/global-variable-analysis--GEX24.html</a></li><li><a href="../数据/global-variable-analysis--GEX25.html">数据/global-variable-analysis--GEX25.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

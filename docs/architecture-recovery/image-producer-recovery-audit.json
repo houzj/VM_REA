@@ -1,0 +1,4421 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "scope": "IU01 原生图像生产者的静态恢复条件与地址任务；不是厂商功能/运行验收",
+  "originalRuntimeExecuted": false,
+  "targetAssemblyLoaded": false,
+  "deviceCalled": false,
+  "toolConfigurationChanged": false,
+  "anotherWorktreeRead": false,
+  "cliLaunched": false,
+  "cliLaunchedByThisAudit": false,
+  "separateBufferCliRecovery": {
+    "present": true,
+    "report": "buffer-native-ownership.provenance.json",
+    "meaning": "其它独立脚本已恢复所选缓冲工具五体；本审计不启动CLI，目标函数正文状态按实际文件更新。"
+  },
+  "liveProcessHandle": null,
+  "discoveryCorrection": {
+    "priorDefaultRgHonoredIgnore": true,
+    "currentDirectFilesystemCheckFoundOriginalBodies": true,
+    "meaning": "先前rg --files默认遵循Git忽略，不能据未列出断言原体不存在；本次fs.existsSync/readdir及逐文件读取确认实际原体。"
+  },
+  "facts": [
+    {
+      "id": "NP01",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "processing",
+        "results"
+      ],
+      "modes": [
+        "local"
+      ],
+      "from": "原CMyAlgorithmManager.Process：缓存容器未满分支",
+      "to": "接口返回缓冲 → memcpy_s像素复制",
+      "behavior": "所选Process原体按(this+0x25d58 − this+0x25d50)/0x3a0与this+0x25d68比较，未满才进入该复制分支。分支通过this+0x10的虚表+8调用取得目标指针；返回非0或目标为空转错误。成功时从this+0x25ab0对象的描述取得源地址和+c长度，调用memcpy_s。原汇编入口保存RCX→R14、RDX→R12、R8→R13；0x1800111de–0x1800111ef在调用前写EDX=目标长度、R9D=源长度、R8=源指针、RCX=目标指针，IAT 0x18002d330由当前原件导入表确认为MSVCR120.dll::memcpy_s。这里证明一次像素复制，不能描述成只转发同一原图指针。",
+      "representation": "已有图像描述内的源指针/长度 → 接口返回目标缓冲；不是把当前托管ToArray规则套给原版。",
+      "cache": "仅确认这一个“容器未满”准入分支，未由此宣称全部命中、替换、缩容或并发策略恢复。",
+      "release": "所选复制分支不证明接口返回缓冲的最终释放者；需连接DeInit/相关虚表实现及显示最后读者。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "if ((ulonglong)((*(longlong *)(this + 0x25d58)",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 1936,
+          "end": 1997,
+          "excerpt": "  if ((ulonglong)((*(longlong *)(this + 0x25d58) - *(longlong *)(this + 0x25d50)) / 0x3a0) <\n      (ulonglong)(longlong)*(int *)(this + 0x25d68)) {\n    dStack_25358 = FUN_18000c900();\n    memset(acStack_25948,0,0x3a0);\n    dStack_25350 = FUN_18000c900();\n    pCStack_25dc8 = &local_908;\n    if (0xf < CONCAT17(uStack_8e9,CONCAT25(uStack_8eb,CONCAT41(uStack_8ef,local_8f0)))) {\n      pCStack_25dc8 = (CMyAlgorithmManager *)CONCAT71(uStack_907,local_908);\n    }\n    _snprintf_s(acStack_25948,0x30c,0x30b,\"%s\");\n    lVar20 = *(longlong *)(this + 0x25d58);\n    lVar23 = *(longlong *)(this + 0x25d50);\n    lVar17 = *(longlong *)(this + 0x10);\n    lVar25 = (**(code **)(**(longlong **)(this + 0x25ab0) + 0x30))(*(longlong **)(this + 0x25ab0),0)\n    ;\n    pcStack_25dc0 = (char *)CONCAT44(pcStack_25dc0._4_4_,(int)((lVar20 - lVar23) / 0x3a0) + 100);\n    pCStack_25dc8 = (CMyAlgorithmManager *)acStack_25610;\n    iVar11 = (**(code **)(lVar17 + 8))\n                       (this + 0x10,*(undefined4 *)(this + 0x24938),*(undefined4 *)(lVar25 + 0xc),\n                        apvStack_25620);\n    dStack_25348 = FUN_18000c900();\n    if ((iVar11 != 0) || (apvStack_25620[0] == (void *)0x0)) {\n      cVar10 = HSlog_ShouldLog(4);\n      if (cVar10 != '\\0') {\n        puVar15 = FUN_180001320();\n        if (0xf < (ulonglong)puVar15[3]) {\n          puVar15 = (undefined8 *)*puVar15;\n        }\n        LStack_25db8.s.LowPart = iVar11;\n        pcStack_25dc0 = (char *)CONCAT44(pcStack_25dc0._4_4_,0x354);\n        pCStack_25dc8 = (CMyAlgorithmManager *)0x18002eda8;\n        HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] AllocateSharedMemory is error:[%x]\",puVar15,\n                       *(undefined4 *)(this + 0x24938));\n      }\n      if (0xf < CONCAT17(uStack_8e9,CONCAT25(uStack_8eb,CONCAT41(uStack_8ef,local_8f0)))) {\n        operator_delete((void *)CONCAT71(uStack_907,local_908));\n      }\n      local_8f0 = 0xf;\n      uStack_8ef = 0;\n      uStack_8eb = 0;\n      uStack_8e9 = 0;\n      local_8f8 = 0;\n      uStack_8f7 = 0;\n      local_908 = (CMyAlgorithmManager)0x0;\n      if ((LARGE_INTEGER *)LVar26.QuadPart != (LARGE_INTEGER *)0x0) {\n        LeaveCriticalSection((LPCRITICAL_SECTION)LVar26);\n      }\n      return -0x1ffffffe;\n    }\n    puVar15 = (undefined8 *)\n              (**(code **)(**(longlong **)(this + 0x25ab0) + 0x30))\n                        (*(longlong **)(this + 0x25ab0),0);\n    plVar19 = *(longlong **)(this + 0x25ab0);\n    lVar20 = (**(code **)(*plVar19 + 0x30))(plVar19,0);\n    uVar2 = *(uint *)(lVar20 + 0xc);\n    lVar20 = (**(code **)(*plVar19 + 0x30))(plVar19,0);\n    memcpy_s(apvStack_25620[0],(ulonglong)*(uint *)(lVar20 + 0xc),(void *)*puVar15,(ulonglong)uVar2)\n    ;\n    dStack_25340 = FUN_18000c900();\n    uStack_25638 = (**(code **)(**(longlong **)(this + 0x25ab0) + 0x10))();\n    uStack_25634 = (**(code **)(**(longlong **)(this + 0x25ab0) + 0x18))();\n    lVar20 = (**(code **)(**(longlong **)(this + 0x25ab0) + 0x30))(*(longlong **)(this + 0x25ab0),0)",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "0x18000d8af:",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 25,
+          "end": 33,
+          "excerpt": "0x18000d8af: MOV R13, R8\n0x18000d8b2: MOV R12, RDX\n0x18000d8b5: MOV qword ptr [RSP + 0x2d0], RDX\n0x18000d8bd: MOV R14, RCX\n0x18000d8c0: MOV qword ptr [RSP + 0x278], RCX\n0x18000d8c8: MOV qword ptr [RSP + 0x298], RDX\n0x18000d8d0: MOV qword ptr [RSP + 0x290], R8\n0x18000d8d8: XOR R9D, R9D\n0x18000d8db: XOR R8D, R8D",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "0x18001107d:",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 2525,
+          "end": 2552,
+          "excerpt": "0x18001107d: MOV RCX, qword ptr [R14 + 0x25d58]\n0x180011084: SUB RCX, qword ptr [R14 + 0x25d50]\n0x18001108b: MOV RAX, RDI\n0x18001108e: IMUL RCX\n0x180011091: SAR RDX, 0x8\n0x180011095: MOV RAX, RDX\n0x180011098: SHR RAX, 0x3f\n0x18001109c: ADD RDX, RAX\n0x18001109f: MOVSXD RAX, dword ptr [R14 + 0x25d68]\n0x1800110a6: CMP RDX, RAX\n0x1800110a9: JNC 0x180011621\n0x1800110af: CALL 0x18000c900\n0x1800110b4: MOVSD qword ptr [RSP + 0xa90], XMM0\n0x1800110bd: XOR EDX, EDX\n0x1800110bf: MOV R8D, 0x3a0\n0x1800110c5: LEA RCX, [RSP + 0x4a0]\n0x1800110cd: CALL 0x18002986e\n0x1800110d2: CALL 0x18000c900\n0x1800110d7: MOVSD qword ptr [RSP + 0xa98], XMM0\n0x1800110e0: LEA RAX, [RSP + 0x254e0]\n0x1800110e8: CMP qword ptr [RSP + 0x254f8], 0x10\n0x1800110f1: CMOVNC RAX, qword ptr [RSP + 0x254e0]\n0x1800110fa: MOV qword ptr [RSP + 0x20], RAX\n0x1800110ff: LEA R9, [0x18002dac8]\n0x180011106: MOV EDX, 0x30c\n0x18001110b: LEA R8D, [RDX + -0x1]\n0x18001110f: LEA RCX, [RSP + 0x4a0]\n0x180011117: CALL qword ptr [0x18002d320]",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "0x1800111a7:",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 2582,
+          "end": 2602,
+          "excerpt": "0x1800111a7: MOV RAX, qword ptr [R14 + 0x25ab0]\n0x1800111ae: MOV RCX, RAX\n0x1800111b1: MOV RAX, qword ptr [RAX]\n0x1800111b4: XOR EDX, EDX\n0x1800111b6: CALL qword ptr [RAX + 0x30]\n0x1800111b9: MOV RSI, RAX\n0x1800111bc: MOV RDI, qword ptr [R14 + 0x25ab0]\n0x1800111c3: MOV R8, qword ptr [RDI]\n0x1800111c6: XOR EDX, EDX\n0x1800111c8: MOV RCX, RDI\n0x1800111cb: CALL qword ptr [R8 + 0x30]\n0x1800111cf: MOV EBX, dword ptr [RAX + 0xc]\n0x1800111d2: MOV R8, qword ptr [RDI]\n0x1800111d5: XOR EDX, EDX\n0x1800111d7: MOV RCX, RDI\n0x1800111da: CALL qword ptr [R8 + 0x30]\n0x1800111de: MOV EDX, dword ptr [RAX + 0xc]\n0x1800111e1: MOV R9D, EBX\n0x1800111e4: MOV R8, qword ptr [RSI]\n0x1800111e7: MOV RCX, qword ptr [RSP + 0x7c8]\n0x1800111ef: CALL qword ptr [0x18002d330]",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        }
+      ],
+      "unknowns": [
+        "modes=local是按本分支所用文件解码器对象作研究归组，不代表原Process全部模式都有同一缓存或复制行为。",
+        "this+0x10虚表+8的实际分配实现、容器追加helper与释放helper仍需逐体汇合；Process保留的terminal-call limitation未被抹去。"
+      ]
+    },
+    {
+      "id": "NP02",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "camera"
+      ],
+      "from": "原Process：帧描述保留列表达到阈值",
+      "to": "FreeBuf通知 → 摘链 → 删除列表节点",
+      "behavior": "所选Process分支将this+0x25c90列表长度与this+0x25c80阈值比较，满足条件时从队首处理。节点+0x30非0才调用VM_M_SetBinayData，参数取节点+0x10模块标识、字符串FreeBuf、节点+0x18描述地址与0x40字节长度，然后无论该调用返回值如何都继续摘链、长度减一与operator_delete节点。原汇编0x18000e6a5–0x18000e6b9明确R8=RBX+0x18、R9D=0x40、RDX=FreeBuf字符串地址、ECX=[RBX+0x10]；当前原件IAT 0x18002d598确认为ModuleFrame.dll::VM_M_SetBinayData。发送归还通知、删除列表节点与生产者底层帧真正释放是三个边界。",
+      "representation": "保留的是含图像描述的列表节点；通知传描述地址/固定长度，不是把其像素数组直接delete。",
+      "cache": "达到阈值后循环处理队首直到条件不再成立；不把该缓冲保留列表与NP01路径图像缓存容器当作同一结构。",
+      "release": "本段没有检查FreeBuf返回码，也没有取得接收方实现，故仅确认通知与本地摘链，不确认外部native像素已归还或最后读者安全。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "if ((ulonglong)(longlong)*(int *)(this + 0x25c80)",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 847,
+          "end": 888,
+          "excerpt": "    if ((ulonglong)(longlong)*(int *)(this + 0x25c80) <= *(ulonglong *)(this + 0x25c90)) {\n      do {\n        lVar20 = **(longlong **)(this + 0x25c88);\n        if (*(longlong *)(lVar20 + 0x30) != 0) {\n          VM_M_SetBinayData(*(undefined4 *)(lVar20 + 0x10),\"FreeBuf\",lVar20 + 0x18,0x40);\n          cVar10 = HSlog_ShouldLog(1);\n          if (cVar10 != '\\0') {\n            if ((DAT_18003cf00 & 1) == 0) {\n              DAT_18003cf00 = DAT_18003cf00 | 1;\n              FUN_180001360();\n              atexit(FUN_18002c980);\n            }\n            puVar15 = &DAT_18003cee0;\n            if (0xf < DAT_18003cef8) {\n              puVar15 = DAT_18003cee0;\n            }\n            LStack_25db8 = *(LARGE_INTEGER *)(lVar20 + 0x40);\n            pcStack_25dc0 = (char *)CONCAT44(pcStack_25dc0._4_4_,0x44a);\n            pCStack_25dc8 = (CMyAlgorithmManager *)0x18002eda8;\n            HSlog_LogPrint(1,\"[%s] [ModuId:%d] [%s@%d] FreeBuf,%s\",puVar15,\n                           *(undefined4 *)(this + 0x24938));\n          }\n        }\n        plVar19 = (longlong *)**(undefined8 **)(this + 0x25c88);\n        *(longlong *)plVar19[1] = *plVar19;\n        *(longlong *)(*plVar19 + 8) = plVar19[1];\n        *(longlong *)(this + 0x25c90) = *(longlong *)(this + 0x25c90) + -1;\n        operator_delete(plVar19);\n      } while ((ulonglong)(longlong)*(int *)(this + 0x25c80) <= *(ulonglong *)(this + 0x25c90));\n    }\n    QueryPerformanceCounter(&LStack_25b78);\n    QueryPerformanceFrequency(&LStack_25b68);\n    dVar5 = ((double)LStack_25b78.QuadPart / (double)LStack_25b68.QuadPart) * 1000.0;\n    cVar10 = HSlog_ShouldLog(4);\n    if (cVar10 != '\\0') {\n      puVar15 = FUN_180001320();\n      if (0xf < (ulonglong)puVar15[3]) {\n        puVar15 = (undefined8 *)*puVar15;\n      }\n      LStack_25db8.s.LowPart = *(undefined4 *)(this + 0x259f0);\n      pcStack_25dc0 = (char *)CONCAT44(pcStack_25dc0._4_4_,0x450);\n      pCStack_25dc8 = (CMyAlgorithmManager *)0x18002eda8;",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "0x18000e66c:",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 667,
+          "end": 688,
+          "excerpt": "0x18000e66c: MOVSXD RAX, dword ptr [R14 + 0x25c80]\n0x18000e673: CMP qword ptr [R14 + 0x25c90], RAX\n0x18000e67a: JC 0x18000e778\n0x18000e680: LEA RDI, [0x18003cee0]\n0x18000e687: NOP word ptr [RAX + RAX*0x1]\n0x18000e690: MOV RBX, qword ptr [R14 + 0x25c88]\n0x18000e697: MOV RBX, qword ptr [RBX]\n0x18000e69a: CMP qword ptr [RBX + 0x30], 0x0\n0x18000e69f: JZ 0x18000e735\n0x18000e6a5: LEA R8, [RBX + 0x18]\n0x18000e6a9: MOV R9D, 0x40\n0x18000e6af: LEA RDX, [0x18002ef28]\n0x18000e6b6: MOV ECX, dword ptr [RBX + 0x10]\n0x18000e6b9: CALL qword ptr [0x18002d598]\n0x18000e6bf: MOV ECX, 0x1\n0x18000e6c4: CALL qword ptr [0x18002d008]\n0x18000e6ca: TEST AL, AL\n0x18000e6cc: JZ 0x18000e735\n0x18000e6ce: MOV EAX, dword ptr [0x18003cf00]\n0x18000e6d4: TEST AL, 0x1\n0x18000e6d6: JNZ 0x18000e6f3\n0x18000e6d8: OR EAX, 0x1",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "0x18000e735:",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 705,
+          "end": 721,
+          "excerpt": "0x18000e735: MOV RAX, qword ptr [R14 + 0x25c88]\n0x18000e73c: MOV RDX, qword ptr [RAX]\n0x18000e73f: MOV RCX, qword ptr [RDX + 0x8]\n0x18000e743: MOV RAX, qword ptr [RDX]\n0x18000e746: MOV qword ptr [RCX], RAX\n0x18000e749: MOV RCX, qword ptr [RDX]\n0x18000e74c: MOV RAX, qword ptr [RDX + 0x8]\n0x18000e750: MOV qword ptr [RCX + 0x8], RAX\n0x18000e754: DEC qword ptr [R14 + 0x25c90]\n0x18000e75b: MOV RCX, RDX\n0x18000e75e: CALL qword ptr [0x18002d540]\n0x18000e764: MOVSXD RAX, dword ptr [R14 + 0x25c80]\n0x18000e76b: CMP qword ptr [R14 + 0x25c90], RAX\n0x18000e772: JNC 0x18000e690\n0x18000e778: LEA RCX, [RSP + 0x270]\n0x18000e780: CALL qword ptr [0x18002d0e0]\n0x18000e786: LEA RCX, [RSP + 0x280]",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        }
+      ],
+      "unknowns": [
+        "camera是CameraImage/FreeBuf帧归还支路的研究归组，完整模式前置条件和设备调用时序尚未闭合。",
+        "不从FreeBuf名称推断已经完成释放，也不从operator_delete列表节点推断其指向图像一同释放。"
+      ]
+    },
+    {
+      "id": "NP03",
+      "classification": "source-confirmed",
+      "stages": [
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原CMyAlgorithmManager.DeInit@0x12470",
+      "to": "有界等待、句柄关闭与多类资源退役",
+      "behavior": "已取回且与保留REA记录逐字匹配的DeInit原体设置停止字节、发送事件；若线程句柄非0，调用WaitForSingleObject(...,2000)后直接CloseHandle并置0，伪码中未分支使用等待结果。它另遍历路径缓存记录，在两个非0指针门下分别调用this+0x10虚表+0x10并清记录指针；对多个图像实例调用DestroyImageInstance后清相应字段，还向保留帧列表发送FreeBuf，再删除列表节点。原件PE导出精确绑定DeInit RVA0x12470，不能再记作“当前根源码体缺失”。",
+      "representation": "线程句柄、缓存描述指针、图像实例与列表节点是不同资源域，不能合并一个“清图像”动作。",
+      "cache": "本条仅记录DeInit所选清理顺序/字段门；不补未取得的虚表callee行为。",
+      "release": "WaitForSingleObject的2000ms等待与CloseHandle不能证明线程确已退出；DestroyImageInstance伪码显示的实参不完整，不能据其显示签名臆断被释放对象ABI或全部像素寿命。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-extra-4.c",
+          "member": "int __thiscall CMyAlgorithmManager::DeInit",
+          "sha256": "e5b3e34cc013a8e0d093ae968a2302742c9da52eed88d679e3393ce92b1bd3a0",
+          "start": 4,
+          "end": 114,
+          "excerpt": "int __thiscall CMyAlgorithmManager::DeInit(CMyAlgorithmManager *this)\n\n{\n  undefined8 *puVar1;\n  undefined8 *puVar2;\n  longlong *plVar3;\n  longlong *plVar4;\n  ulonglong uVar5;\n  uint uVar6;\n  ulonglong uVar7;\n  \n                    /* 0x12470  17  ?DeInit@CMyAlgorithmManager@@UEAAHXZ */\n  this[0x25d34] = (CMyAlgorithmManager)0x1;\n  if (*(HANDLE *)(this + 0x25d38) != (HANDLE)0x0) {\n    SetEvent(*(HANDLE *)(this + 0x25d38));\n  }\n  if (*(HANDLE *)(this + 0x25d48) != (HANDLE)0x0) {\n    SetEvent(*(HANDLE *)(this + 0x25d48));\n  }\n  uVar5 = 0;\n  if (*(HANDLE *)(this + 0x25d20) != (HANDLE)0x0) {\n    WaitForSingleObject(*(HANDLE *)(this + 0x25d20),2000);\n    CloseHandle(*(HANDLE *)(this + 0x25d20));\n    *(undefined8 *)(this + 0x25d20) = 0;\n  }\n  if (*(void **)(this + 0x25d28) != (void *)0x0) {\n    free(*(void **)(this + 0x25d28));\n    *(undefined8 *)(this + 0x25d28) = 0;\n  }\n  *(undefined4 *)(this + 0x25d30) = 0;\n  if (*(HANDLE *)(this + 0x25d38) != (HANDLE)0x0) {\n    CloseHandle(*(HANDLE *)(this + 0x25d38));\n    *(undefined8 *)(this + 0x25d38) = 0;\n  }\n  if (*(HANDLE *)(this + 0x25d48) != (HANDLE)0x0) {\n    CloseHandle(*(HANDLE *)(this + 0x25d48));\n    *(undefined8 *)(this + 0x25d48) = 0;\n  }\n  uVar7 = uVar5;\n  if ((*(longlong *)(this + 0x25d58) - *(longlong *)(this + 0x25d50)) / 0x3a0 != 0) {\n    do {\n      if (*(longlong *)(*(longlong *)(this + 0x25d50) + 0x328 + uVar5) != 0) {\n        (**(code **)(*(longlong *)(this + 0x10) + 0x10))\n                  (this + 0x10,*(undefined4 *)(this + 0x24938),\n                   *(undefined8 *)(*(longlong *)(this + 0x25d50) + 0x338 + uVar5));\n        *(undefined8 *)(uVar5 + 0x328 + *(longlong *)(this + 0x25d50)) = 0;\n      }\n      if (*(longlong *)(*(longlong *)(this + 0x25d50) + 0x368 + uVar5) != 0) {\n        (**(code **)(*(longlong *)(this + 0x10) + 0x10))\n                  (this + 0x10,*(undefined4 *)(this + 0x24938),\n                   *(undefined8 *)(*(longlong *)(this + 0x25d50) + 0x378 + uVar5));\n        *(undefined8 *)(uVar5 + 0x368 + *(longlong *)(this + 0x25d50)) = 0;\n      }\n      uVar6 = (int)uVar7 + 1;\n      uVar5 = uVar5 + 0x3a0;\n      uVar7 = (ulonglong)uVar6;\n    } while ((ulonglong)(longlong)(int)uVar6 <\n             (ulonglong)((*(longlong *)(this + 0x25d58) - *(longlong *)(this + 0x25d50)) / 0x3a0));\n  }\n  if (*(longlong *)(this + 0x25aa8) != 0) {\n    DestroyImageInstance();\n    *(undefined8 *)(this + 0x25aa8) = 0;\n  }\n  if (*(longlong *)(this + 0x25ab0) != 0) {\n    DestroyImageInstance();\n    *(undefined8 *)(this + 0x25ab0) = 0;\n  }\n  if (*(longlong *)(this + 0x25ab8) != 0) {\n    DestroyImageInstance();\n    *(undefined8 *)(this + 0x25ab8) = 0;\n  }\n  if (*(longlong *)(this + 0x25ac0) != 0) {\n    DestroyImageInstance();\n    *(undefined8 *)(this + 0x25ac0) = 0;\n  }\n  if (*(void **)(this + 0x25ac8) != (void *)0x0) {\n    operator_delete__(*(void **)(this + 0x25ac8));\n    *(undefined8 *)(this + 0x25ac8) = 0;\n  }\n  if (*(void **)(this + 0x25ad8) != (void *)0x0) {\n    operator_delete__(*(void **)(this + 0x25ad8));\n    *(undefined8 *)(this + 0x25ad8) = 0;\n    *(undefined4 *)(this + 0x25ae0) = 0;\n  }\n  if (*(void **)(this + 0x25ae8) != (void *)0x0) {\n    operator_delete__(*(void **)(this + 0x25ae8));\n    *(undefined8 *)(this + 0x25ae8) = 0;\n    *(undefined4 *)(this + 0x25af0) = 0;\n  }\n  puVar1 = *(undefined8 **)(this + 0x25c88);\n  for (puVar2 = (undefined8 *)*puVar1; puVar2 != puVar1; puVar2 = (undefined8 *)*puVar2) {\n    if (puVar2[6] != 0) {\n      VM_M_SetBinayData(*(undefined4 *)(puVar2 + 2),\"FreeBuf\",puVar2 + 3,0x40);\n    }\n  }\n  plVar3 = *(longlong **)(this + 0x25c88);\n  plVar4 = (longlong *)*plVar3;\n  *plVar3 = (longlong)plVar3;\n  *(longlong *)(*(longlong *)(this + 0x25c88) + 8) = *(longlong *)(this + 0x25c88);\n  *(undefined8 *)(this + 0x25c90) = 0;\n  if (plVar4 != *(longlong **)(this + 0x25c88)) {\n    do {\n      plVar3 = (longlong *)*plVar4;\n      operator_delete(plVar4);\n      plVar4 = plVar3;\n    } while (plVar3 != (longlong *)*(longlong *)(this + 0x25c88));\n  }\n  return 0;\n}\n\n",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_3c1cfc7dd10fd8da320aeacfb1cc1bdafbf9ae3f5ede89aa9dffd3fbddbff8c0"
+        }
+      ],
+      "unknowns": [
+        "本条复核的是原件身份/PE导出与保留伪码，尚无该函数专属汇编实参再核；特别不据DestroyImageInstance显示成零参数就断言没有传入寄存器。",
+        "线程等待超时路径、共享缓冲callee、重复释放与显示最后读者须继续逐体追踪，未执行原版或设备。"
+      ]
+    }
+  ],
+  "unknowns": [
+    "已取回原生伪码与Process汇编，并非所有模式/参数分支/分配释放callee与显示读者已经闭合。",
+    "旧buffer/native目录未发现；本轮buffer-native-ownership.resources另存所选五体的新离线输出，分配接口和最终释放仍未闭合。"
+  ],
+  "retainedSourceRecovery": {
+    "bodies": [
+      {
+        "procedure": "CMyAlgorithmManager::Process",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "byteLength": 94098
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-0.json",
+          "sha256": "6ea564d74b4eef4aee9c97e71ca82fe5c3a22c0c7e418f5553bdd091cb3a2d15",
+          "byteLength": 413887
+        },
+        "evidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x18000e615 with no resolved callee; its no-return basis is unknown."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::Init",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-1.c",
+          "sha256": "77fe8644089b30251007877c326c3ecff776f2277d551cd0f015e486896d4835",
+          "byteLength": 3051
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-1.json",
+          "sha256": "1f3eca2aea83209ef604cda04869b9e652796a7bd3d9a58be00137c768db7090",
+          "byteLength": 21660
+        },
+        "evidenceId": "ev_d6e22ad4970496a8a4eb7263ccbbce0be77384da8abc3688a779c44f9aa776a0",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SortImageNameInFolder",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-10.c",
+          "sha256": "759e73750d4df789197f0e4ce6ea3705a9eec3b0088cd0c3f0e229df326c192d",
+          "byteLength": 1246
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-10.json",
+          "sha256": "b7ee2cc17e3d83ff16b4864ed0c0bd0be0ac32a0702207726e68713238219c4f",
+          "byteLength": 13638
+        },
+        "evidenceId": "ev_0db800cbff06bb58a956359c85ed13edf46d4ee9a7299a731a045d739f86f844",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::GetParam",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-2.c",
+          "sha256": "08d2342587e278886925aaecea6ee5c9a45fc1c9b687a301bb896deef8d41b6c",
+          "byteLength": 51402
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-2.json",
+          "sha256": "c659862d234aac6c056ab9401656edfdd567f9e0c761b3d138af8beb73a80979",
+          "byteLength": 230429
+        },
+        "evidenceId": "ev_9a7541802aaff2d1925f28c59dd4f36ad0be27eae6521125015384b36ba658f9",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x180012df1 with no resolved callee; its no-return basis is unknown.",
+          "Ghidra Listing reports a terminal call at 0x180012f43 with no resolved callee; its no-return basis is unknown.",
+          "Ghidra Listing reports a terminal call at 0x180013a8a to 0x180029874 MSVCR120.DLL::_CxxThrowException (external=false, thunk=true, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SetParam",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-3.c",
+          "sha256": "08b8dfcd958b692e5059ec895737202bd5731cd701912cba5f2ef2f8fd0b8f6e",
+          "byteLength": 63866
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-3.json",
+          "sha256": "cc94fac0cd5e7456900d854571d210a521ca22a4951ac91bef7955e42288e150",
+          "byteLength": 284816
+        },
+        "evidenceId": "ev_c4c71d002c9bd6a275a4352fc858541e0f842f6570dc9e818fe9fed00446f042",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ConvertFileImage",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-4.c",
+          "sha256": "e04bbcb91354bd68d0ac8c37ab5ee04f6f47cc3b98e9fc907cfaef5f35f0297f",
+          "byteLength": 5186
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-4.json",
+          "sha256": "309d10ab62c97e036fa83e9874e3eb326ce3ab16617e59f206b8b4d3ab3dd831",
+          "byteLength": 30976
+        },
+        "evidenceId": "ev_28ad4b8fa08378ccc72c6447d400062f803a4ef19601116cb9eec5a795f267f8",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ConvertDataImage",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-5.c",
+          "sha256": "28b1c8c223e8cf6d645ec5698436e1152857212979261fe68cebc73f6553842d",
+          "byteLength": 9146
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-5.json",
+          "sha256": "b0575475c7a75915c4b7532bb2a78e780c9eed68b1921bf1314f4f585a420245",
+          "byteLength": 48448
+        },
+        "evidenceId": "ev_b6137f9acc717a6dbf6316bfca34a68954944f92b037dbb72830f5ba93dea089",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SetImageOutput",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-6.c",
+          "sha256": "4e82ac296ad2bded918355fb6142a3b3f4d1d6ea36d29aac2d82ea1b652c9a53",
+          "byteLength": 3203
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-6.json",
+          "sha256": "e07845ade3850bff2a8a171700c750e7d71d88693ae5e8fa48b431dd64270c79",
+          "byteLength": 22324
+        },
+        "evidenceId": "ev_7bbcce468361b419e5680f234edb6929907a39954ba46da9c89ce96113c54ff1",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::StitchImageOutput",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-7.c",
+          "sha256": "6fd48677973f78d10b066eab5bbe79486a98a89064698ea74b682177502b1721",
+          "byteLength": 9322
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-7.json",
+          "sha256": "438aae8d8159c8fe794c68645299b897efda778889f992ad79655c8dd154b316",
+          "byteLength": 48402
+        },
+        "evidenceId": "ev_8cec78cab9e50d69c809a7265ff85c45c52aa003db7b340b18c0c4ce211b3ae5",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SaveImageFileToSol",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-8.c",
+          "sha256": "4cb7f0c97fe72e3eb442217ca88e3ea99913641b1f2aac57c9e89441e8d2ec06",
+          "byteLength": 5475
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-8.json",
+          "sha256": "e21863560de05a8a180f9817303e03ebce45a091e5fac443a736156e54a22925",
+          "byteLength": 32648
+        },
+        "evidenceId": "ev_ecaaeae56d4abd5616ec285c16dd8029d470885f0fe7d57f3b908a309971f6fa",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::UpdateImageFilesListFromDir",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-9.c",
+          "sha256": "8d0213b8453f40e6c5f8fb141011e15053595f7f62a7f1bf3c8161882b606ca7",
+          "byteLength": 6068
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-9.json",
+          "sha256": "3559fb4a44727be1dbba226dfc89ceacd3ec3453a899bc48bbbf9df793e03b0e",
+          "byteLength": 37787
+        },
+        "evidenceId": "ev_9b3bb5d16babe8e8f501e44a1e292290efef1dfc50809bcbe7c7883a29a60fe5",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x180023302 to 0x180029874 MSVCR120.DLL::_CxxThrowException (external=false, thunk=true, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+          "Ghidra Listing reports a terminal call at 0x180023386 to 0x180029874 MSVCR120.DLL::_CxxThrowException (external=false, thunk=true, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::CMyAlgorithmManager",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-0.c",
+          "sha256": "330e14fb2c0edf760e5a74bfb9740127c69803a3c5af01313c1cab0bde284c71",
+          "byteLength": 6951
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-0.json",
+          "sha256": "67328db6b1ce5f503e724dd9b3360b34fc5ae26b9428981423862c92e0230965",
+          "byteLength": 38198
+        },
+        "evidenceId": "ev_97cc8e08ebf0d39aa9af27362c826b46a4a6cf03293cc6715c314a468dbdfec9",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::~CMyAlgorithmManager",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-1.c",
+          "sha256": "c88e4c4c516c6aaa47f4368c912eda01853cc77774bf8a9654dd9777aaa6e544",
+          "byteLength": 7071
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-1.json",
+          "sha256": "f154a10884753d7d51c6f0fa8d4f4e4fbb7ed0d93a484d115938140e77ca3a1e",
+          "byteLength": 38956
+        },
+        "evidenceId": "ev_452254103574ad6a940d2a4eb52226e56bb626a8ebb886251fff540eda7c5c05",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SetAllParamList",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-10.c",
+          "sha256": "2209f7ff9a5c44613207713272e09ee6960a63da762457b5168289f40812a34f",
+          "byteLength": 989
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-10.json",
+          "sha256": "d2ebd0beb681a8f74dbf7c66a4d027174cf961161f1dbbec63ab6d947bec9f2c",
+          "byteLength": 12710
+        },
+        "evidenceId": "ev_18a2d0c1d24eb44eab431fab5399681fb20320011ca082652006712277e7e31c",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::GetAllParamList",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-11.c",
+          "sha256": "ebbef09bdc04f0b000ee34994f58cb417d940073e0dfcfea4b6c53137aeef74f",
+          "byteLength": 721
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-11.json",
+          "sha256": "7935e3df965b399a834de07b7082c33f28dc750470877c17263429d6b13622d8",
+          "byteLength": 11446
+        },
+        "evidenceId": "ev_2ca45acc532e850f29d1a7df77d701acfc29887b9edc5f08e7b44aed7a80e8e6",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::GetRootPath",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-12.c",
+          "sha256": "495831359aab5f0033d240b088cd4fad2c1a3c96d5a0d5c88f968a21c8f09acc",
+          "byteLength": 3174
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-12.json",
+          "sha256": "b43ea234a9f6b0e00c19ca0d2c0387dfb554657e57d389ef037748ef6b66b9e3",
+          "byteLength": 22322
+        },
+        "evidenceId": "ev_ac8685da772887d1a132662d85da5fda8769626501cc46e77fd2c1c776f9922f",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ProcSavemoduleFinishEvent",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-13.c",
+          "sha256": "364800dae509130b26b3e3fb7234f0abf0e33046739ea83d22d467ffb1d6c2b5",
+          "byteLength": 857
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-13.json",
+          "sha256": "d1a80380cc5e4409200b00b33b5e2a31debc3effd1809763d140d0dc0ed769d6",
+          "byteLength": 12138
+        },
+        "evidenceId": "ev_e508d4fdcf9f7ac5b4eb213fbc26b0c52ce3f9487f6c9ba1706ecfc4de7a8192",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SharedMemory2Data",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-14.c",
+          "sha256": "db342722946669aac4573d113217be1d212ca2d89698940c0476dd160117f333",
+          "byteLength": 3716
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-14.json",
+          "sha256": "aa6cb6e5cf7f0ade8de6e1a5def8aaff7c357c8458779687c56d917b5c639f84",
+          "byteLength": 25819
+        },
+        "evidenceId": "ev_912e37ba41c17c2161b27063d90199284ff2e9a0107a07e9c83607bc12e79278",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x18001aec1 to 0x180029874 MSVCR120.DLL::_CxxThrowException (external=false, thunk=true, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::AddShareMemoryImgToList",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-15.c",
+          "sha256": "7ed9650365fdf484c6d6197d06cc81689a644596f4707ab9604dd6258a43a902",
+          "byteLength": 30142
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-15.json",
+          "sha256": "7a2ef0480003bac90f34e51deff32235e5514103955d8856eee718a73681c43b",
+          "byteLength": 139531
+        },
+        "evidenceId": "ev_62a929f197c994644a5139e554421aef8b9106a5c8a4e6da934fb682e4ada2ea",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x18001c0c0 to 0x180029874 MSVCR120.DLL::_CxxThrowException (external=false, thunk=true, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ConvertPixelType",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-16.c",
+          "sha256": "b9e803354c17f2305d4e021a32d35e2e986df47d2f46e7e428ede74b93022aab",
+          "byteLength": 1566
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-16.json",
+          "sha256": "53e03e13fa5151e710b04f24ac322f64045a914398530de3b1a5e7d0d1a2039c",
+          "byteLength": 15448
+        },
+        "evidenceId": "ev_fba9b3114fbb1612d66ab7eb513361f59260af68ff8335c73d0082a081bc0ad1",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SetImageOutputMono8",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-17.c",
+          "sha256": "6c8b183d51a211baefb50b71fc414b99d81c5da15e1953501de5339579790358",
+          "byteLength": 3220
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-17.json",
+          "sha256": "ea432b1ff04aed06484148c423f89f4b76c2632d012cc4d01ac489ae7d9948ce",
+          "byteLength": 22390
+        },
+        "evidenceId": "ev_f07be791e79390d7b996eb63efd9674c727158bb05c91319bde30192a5a71166",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ConvertRgbToMono8",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-18.c",
+          "sha256": "aaa97f370db589a6a551cad9c7f972a288381be5f4cf18620b368ff45d47fd16",
+          "byteLength": 9566
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-18.json",
+          "sha256": "b80f18bbb982625f863869f1e9ce513614b3f7c5f62c48d5d680a7fec28144cc",
+          "byteLength": 49854
+        },
+        "evidenceId": "ev_2732ec4d01182cd6929a1155efaeb7c01af5e0b6e15993cccbc71f416516f407",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::DynamicIOInit",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-19.c",
+          "sha256": "53721de7673de74e88b6555e9cf2411eeafd1f9441c922194d78cbe3e2a7d479",
+          "byteLength": 24105
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-19.json",
+          "sha256": "8bba5de698b35a07b9fdab0f739513d25779384c4ffd7f4ca4ef9a6b4bb9ca72",
+          "byteLength": 116123
+        },
+        "evidenceId": "ev_05a06da4899a46bb9b871eeffed1dc8cd2c90ec59476bb8d4842f0da9170a021",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x18001e64a with no resolved callee; its no-return basis is unknown.",
+          "Ghidra Listing reports a terminal call at 0x18001e6e6 with no resolved callee; its no-return basis is unknown.",
+          "Ghidra Listing reports a terminal call at 0x18001e85b with no resolved callee; its no-return basis is unknown.",
+          "Ghidra Listing reports a terminal call at 0x18001e8fd with no resolved callee; its no-return basis is unknown."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::MonitoringSubFolderInit",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-2.c",
+          "sha256": "1250a4cb47b868c114c5801e54c364be6652b1186a84a8a41b7814e3cef7dbf7",
+          "byteLength": 2380
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-2.json",
+          "sha256": "17de143ef2dcf9f0b69e56b99878fadfd9aa2514eacc1e371beb8be8f64a8c77",
+          "byteLength": 18738
+        },
+        "evidenceId": "ev_5996e327d2087ca06dd5313ee1d80d1f813ee0f97f6c4357a423703c038f33b5",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::AnalyzeExtraIO",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-20.c",
+          "sha256": "da844949008e04ec7d39e068ff2de11b65e2f006da4179bf8c08bd53a81f5796",
+          "byteLength": 16877
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-20.json",
+          "sha256": "a996de5d45d96e6c0b35e512b4e72273000134cbe9d12470edf7094f0fc9e88a",
+          "byteLength": 82316
+        },
+        "evidenceId": "ev_47a2edeee01cc46152e693e9c6dadabc6b5322d925e517542f3f0b38fb36e0ce",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::OutputExtra",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-21.c",
+          "sha256": "8562c49da4d4785a626e5fa85299bd2a797751ee2b03a381bdc4a711d8fec058",
+          "byteLength": 6830
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-21.json",
+          "sha256": "67167e5dd6f7916036afdef0e7f8037325047f2f92ceed3691937913c58394fc",
+          "byteLength": 38222
+        },
+        "evidenceId": "ev_0b8501aad18f31909155b19d175f12aded11de86849d310c87adc6e625e62fe8",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SetImageBuffNum",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-22.c",
+          "sha256": "647f72b6c09331c8ad30197763d96bd891de30e357b43b5b90b5adc458940761",
+          "byteLength": 1359
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-22.json",
+          "sha256": "c2571daaa44f0a0c0bd1ecb15411aa25a53ece80d46d15c7dccb34f856f25ae1",
+          "byteLength": 14290
+        },
+        "evidenceId": "ev_eaa8356d4583fda2bf00452573c6e19aa2dec6e4aabdadf9aa0ae578afeb3d02",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::Add_WatchSubFolder",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-23.c",
+          "sha256": "069194eb36b7d202af6d1fc6c6db638426230cb2f7b3fd03932018417708bd31",
+          "byteLength": 10262
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-23.json",
+          "sha256": "8b8f989495781f50c74b96fc7ff3455845150618633529b5ffae12a25a73be90",
+          "byteLength": 53969
+        },
+        "evidenceId": "ev_9dbf19e8f87cbbbe43e3dae78ccbec8b15a9754ade7ae1d553e40855eaa969d3",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x180021b3a with no resolved callee; its no-return basis is unknown."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::Del_WatchSubFolder",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-24.c",
+          "sha256": "cf1f8da896b11e866ee6150a32460681cd924c8ebb2b07f9d337ce6602050ebf",
+          "byteLength": 5319
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-24.json",
+          "sha256": "da2b38d44405857660f09eabfdca2ffdf891bf6d814ebc4f165ccfede32a76b4",
+          "byteLength": 32641
+        },
+        "evidenceId": "ev_02f64d9ecd3fc7384530efa4f9f7e7711fe0a0de8bfcc39ed3915d8c481042ab",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x180021e09 with no resolved callee; its no-return basis is unknown."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::MonitoringSubFolderChanges",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-25.c",
+          "sha256": "e7f86d1f3cedf818710d36984d53155462ef82ad7ad089ff5a62e2550ed9314c",
+          "byteLength": 8233
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-25.json",
+          "sha256": "079727026cb5ea13055ad225a2c8c402682c7cb4cd008764250189acbc0a52f1",
+          "byteLength": 44232
+        },
+        "evidenceId": "ev_6dde2ea054e7e800c5f0ccf5c9d219a7032bcffd4fac88dd3d8e96884de7fc1d",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::GetImageFilesPathNameFromDir",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-26.c",
+          "sha256": "e687d423394585ef6357e0aaf90eb57daa82bc29204c756b1953ab21e93ff540",
+          "byteLength": 15849
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-26.json",
+          "sha256": "fa18f6a944f99a874d1bd8cd615e5229b1d09e66bfbb5bd218850e822a2d83d6",
+          "byteLength": 78757
+        },
+        "evidenceId": "ev_67f8823ae20f7916df19e943a5b9e70624c685a0845cc83b19769a4d49cd2ab3",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x1800230e7 to 0x180029874 MSVCR120.DLL::_CxxThrowException (external=false, thunk=true, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::NotifyEvent",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-27.c",
+          "sha256": "089ed6c440d109060f9bfc6c18275e4d9caf56921aca27ac7b58883386d9c1d7",
+          "byteLength": 1919
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-27.json",
+          "sha256": "811a7042e8c7a9681f02922f59d2456616df823c4d67169656a6d2bcbc748578",
+          "byteLength": 16738
+        },
+        "evidenceId": "ev_3af11d30ebcfd102105f515bb42788cb47992116f584a6307ea23c7d889edebe",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CreateModule",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-28.c",
+          "sha256": "5c78ec0a11978d6215a3e1782bbffe95cafa205ce1e0305633b61ab706307b27",
+          "byteLength": 1864
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-28.json",
+          "sha256": "f297e5d11ac16b32bc61d937d29bf295ee7b1c9edba91a891db6dc6fc07c7afb",
+          "byteLength": 16490
+        },
+        "evidenceId": "ev_3aa242af7e27bbf2ae875f0d10b558b47cd3ac7763eee0442e44db98d927a483",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::MonitoringSubFolderDeInit",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-3.c",
+          "sha256": "dcc34b7225ce4e4d0ae732ec79267056b3e110b3d397c0677ccec4c9bcd99961",
+          "byteLength": 3540
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-3.json",
+          "sha256": "cac885d1cf6fc78948e7383e7e8c7ea288bfbfdb0ea33d7e92008363ef364d7f",
+          "byteLength": 23822
+        },
+        "evidenceId": "ev_e2b5eb2d7cde20d3013adfa8b9063ac28c516eaca651257852829cec72a6f6b2",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::DeInit",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-4.c",
+          "sha256": "e5b3e34cc013a8e0d093ae968a2302742c9da52eed88d679e3393ce92b1bd3a0",
+          "byteLength": 4191
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-4.json",
+          "sha256": "eb3c34aaccbbef28b42474bdf71b38904fa40b309acfe357a4d4f3df2f77d17d",
+          "byteLength": 26436
+        },
+        "evidenceId": "ev_3c1cfc7dd10fd8da320aeacfb1cc1bdafbf9ae3f5ede89aa9dffd3fbddbff8c0",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::AddImage2CircleList",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-5.c",
+          "sha256": "74c865ad126ccc12a495e2a56d70d78f40ac51b713e82bed7407b651f5d56186",
+          "byteLength": 1735
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-5.json",
+          "sha256": "bc40a5176175b2cfd589856743639bb033b67ee63ea06ae7fce5604fc7b06704",
+          "byteLength": 15930
+        },
+        "evidenceId": "ev_e28bdd61c7b0e6f9c7299c80310822a8f34f82048d595f402cdc6a511bb7f1e6",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ThridImageThreadProcess",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-6.c",
+          "sha256": "a405b266867a5149ae755eee9a1a22db8b046edaa0ae129ef8991817115dc5cd",
+          "byteLength": 1358
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-6.json",
+          "sha256": "2d3275797e63f5a2cffdaa91ba6f0bbf10248d35001c8f7e88850b8e1cd75715",
+          "byteLength": 14274
+        },
+        "evidenceId": "ev_da69f2789a96ecac70208f7eaa7e3c45338281c13ae75e35c891696d3c359736",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SaveModuleData",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-7.c",
+          "sha256": "b556956b29291be7b20b64f97f8193c3bfb8f2f1960f41d1d8d20d042fce81ed",
+          "byteLength": 23090
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-7.json",
+          "sha256": "07f8fecca5c2160c42b812d8c7aee3edbdb609890e2b19470441b757474958b5",
+          "byteLength": 108032
+        },
+        "evidenceId": "ev_a0e93820826834da6a4b6b5343a2e58d87e625fad229b4d5996127072756afe0",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::LoadModuleData",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-8.c",
+          "sha256": "6625abfa9124a309bc2538e0f1666b732db67896c538d538d827cfb3d612d23a",
+          "byteLength": 42277
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-8.json",
+          "sha256": "67cc060b542f6a288131f9dad9f185f35c82970cfd0c4e2758330b62336edb19",
+          "byteLength": 192945
+        },
+        "evidenceId": "ev_b043344e5e22661c2e697de856892d7d32e95d6eb685a42419af2b962f6fea56",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "Ghidra Listing reports a terminal call at 0x18001976b with no resolved callee; its no-return basis is unknown."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::SaveDataInfo",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-extra-9.c",
+          "sha256": "44cbc53738417d4938cc0f475a33e71cec9279e33c3037c91feb045dc4d58763",
+          "byteLength": 1031
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-extra-9.json",
+          "sha256": "762c9d7ef575020f7e2df00759f8df64eb638cc36fcc7287b5d7158324338e10",
+          "byteLength": 12764
+        },
+        "evidenceId": "ev_226c39f23d32a8494cd9fc2085a665e7675602ceda10326c62e58246d0680bb9",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::CopyFileFunction",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-utility-0.c",
+          "sha256": "1b5954397e2ea34898c894a597c8fa8421648f688b95dea336395922f85f954f",
+          "byteLength": 3019
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-utility-0.json",
+          "sha256": "94e47c4e35b49b035037750b6da768f884f90fa0a55b7fc51c9232f1ec95bda0",
+          "byteLength": 21684
+        },
+        "evidenceId": "ev_7e75f25b0cc914ac11f47e0bbe4acdb75465dd132113d594376a2e2dc4315120",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::CopyFileLinux",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-utility-1.c",
+          "sha256": "c4971fbbf3f60aa4bda8b0651a15e23fad0ea5efa8fd740ebe6e49274ff1690b",
+          "byteLength": 2447
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-utility-1.json",
+          "sha256": "727f31c264107f9181cff033a8782bddb461ac4be3110b6ab06ca35e5042f035",
+          "byteLength": 19222
+        },
+        "evidenceId": "ev_d548553e394ff028c0a1dbeaa832e2c53b84b5e9b1a4b5aa3c27b9438625e3b8",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::StringSplitVector",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-utility-2.c",
+          "sha256": "3c11636ead925cfaf8ac833caaebab356e327931c93a4ca5a51bbe9dd2201426",
+          "byteLength": 6594
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-utility-2.json",
+          "sha256": "7a971a77d79a237980deeb4c87f91ee83968ba6cc2cc92a3032f6ada01afdcf3",
+          "byteLength": 37030
+        },
+        "evidenceId": "ev_c134c1ad7ee261adecbe89b8f1e2f11bedab3cc9bf8b5177fd98a2033eb7545c",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ConvertFtp2Abs",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-utility-3.c",
+          "sha256": "aa7943ea078844b1d376ccdea6262cbb1a0457b54d7c57c25db329c3ee54d350",
+          "byteLength": 2230
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-utility-3.json",
+          "sha256": "8be14b2b372d8a76fa0bf9caa06e9c81d7c69f3dd830bf279af2eb4710c98de3",
+          "byteLength": 18156
+        },
+        "evidenceId": "ev_790694fabeb9c1862da87b008fbb84392cd5620be9ecb524511b89c1f5afe691",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::ConvertAbs2Ftp",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-utility-4.c",
+          "sha256": "480436d349f48718a48345e9ebd01ae0670ba7ead812945f2e5df5e894ab4f4a",
+          "byteLength": 2225
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-utility-4.json",
+          "sha256": "19790fd9fb63e553f8525c93d08a5e51cd9a68164baa55925ab7e12de36b2045",
+          "byteLength": 18136
+        },
+        "evidenceId": "ev_8bd0d9a7eef3e6893b0156252ef31742d4a9358b2c85000cb3b877626d1943ae",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::StringReplace",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-utility-5.c",
+          "sha256": "5525ed8185cdafc889f7946a6f2c6730485e6bcb737f889f042042d46233309b",
+          "byteLength": 1752
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-utility-5.json",
+          "sha256": "55654d6218f6a05047f383619dfe9154517f8efd9293f21e8e650b74345515b5",
+          "byteLength": 15814
+        },
+        "evidenceId": "ev_d6c00def427659b420f08198a9d7e7d648bb7c3a129e6d4c28f2e1700121780d",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      },
+      {
+        "procedure": "CMyAlgorithmManager::GetFileName",
+        "pseudocode": {
+          "path": "analysis/full-audit/image-source-native-utility-6.c",
+          "sha256": "197a0a9b03d4d37656eb0bf650a9cd019de24844b77c6086d9997f47dd5d5f51",
+          "byteLength": 4989
+        },
+        "retainedEvidence": {
+          "path": "analysis/full-audit/image-source-native-utility-6.json",
+          "sha256": "1fefd6593e198333c3504c7b5f0b98a4ed74a74f9296d4abd7b9a3f2d502edae",
+          "byteLength": 30262
+        },
+        "evidenceId": "ev_0047dee0d770230a5ca8310484efb051af386bd5200028d96bff8a43bb0fde81",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "exactNormalizedTextMatch": true,
+        "retainedExportRecordMatch": true,
+        "limitations": [
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output."
+        ]
+      }
+    ],
+    "retainedExport": {
+      "path": "analysis/full-audit/image-source-native-evidence.json",
+      "sha256": "fd87e8234454320e2474faefe9658b574c3284828a48bf60e25aa1cffde927ac",
+      "byteLength": 1627556
+    },
+    "processAssembly": {
+      "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+      "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+      "byteLength": 121535,
+      "evidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088",
+      "operation": "procedure_assembly",
+      "rawInstructionBytesReverified": false
+    },
+    "reusePolicy": "Reuse actual retained REA source/assembly after identity and exact-text comparison, not historical prose."
+  },
+  "targets": [
+    {
+      "key": "source",
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageSourceModule/ImageSourceModule.dll",
+      "sha256": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+      "byteLength": 252928,
+      "machine": "0x8664",
+      "imageBase": "0x180000000",
+      "exports": [
+        {
+          "name": "??0CMyAlgorithmManager@@QEAA@XZ",
+          "ordinal": 1,
+          "rva": "0xca30",
+          "va": "0x18000ca30",
+          "forwarder": null
+        },
+        {
+          "name": "??1CMyAlgorithmManager@@UEAA@XZ",
+          "ordinal": 2,
+          "rva": "0xcf90",
+          "va": "0x18000cf90",
+          "forwarder": null
+        },
+        {
+          "name": "??_7CMyAlgorithmManager@@6BCAbstractUserModule@@@",
+          "ordinal": 3,
+          "rva": "0x2ec28",
+          "va": "0x18002ec28",
+          "forwarder": null
+        },
+        {
+          "name": "??_7CMyAlgorithmManager@@6BCModuleSharedMemoryBase@@@",
+          "ordinal": 4,
+          "rva": "0x2eb70",
+          "va": "0x18002eb70",
+          "forwarder": null
+        },
+        {
+          "name": "?AddImage2CircleList@CMyAlgorithmManager@@AEAAHPEBD@Z",
+          "ordinal": 5,
+          "rva": "0x16f40",
+          "va": "0x180016f40",
+          "forwarder": null
+        },
+        {
+          "name": "?AddShareMemoryImgToList@CMyAlgorithmManager@@QEAAHPEBD@Z",
+          "ordinal": 6,
+          "rva": "0x1af00",
+          "va": "0x18001af00",
+          "forwarder": null
+        },
+        {
+          "name": "?Add_WatchSubFolder@CMyAlgorithmManager@@QEAAXPEB_W@Z",
+          "ordinal": 7,
+          "rva": "0x215f0",
+          "va": "0x1800215f0",
+          "forwarder": null
+        },
+        {
+          "name": "?AnalyzeExtraIO@CMyAlgorithmManager@@QEAAHXZ",
+          "ordinal": 8,
+          "rva": "0x1f910",
+          "va": "0x18001f910",
+          "forwarder": null
+        },
+        {
+          "name": "?ConvertAbs2Ftp@CMyAlgorithmManager@@QEAA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEBD@Z",
+          "ordinal": 9,
+          "rva": "0x1d5f0",
+          "va": "0x18001d5f0",
+          "forwarder": null
+        },
+        {
+          "name": "?ConvertDataImage@CMyAlgorithmManager@@QEAAHHHHPEAEH@Z",
+          "ordinal": 10,
+          "rva": "0x1c250",
+          "va": "0x18001c250",
+          "forwarder": null
+        },
+        {
+          "name": "?ConvertFileImage@CMyAlgorithmManager@@QEAAHHHHPEBD@Z",
+          "ordinal": 11,
+          "rva": "0x1c8d0",
+          "va": "0x18001c8d0",
+          "forwarder": null
+        },
+        {
+          "name": "?ConvertFtp2Abs@CMyAlgorithmManager@@QEAA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEBD@Z",
+          "ordinal": 12,
+          "rva": "0x1d4c0",
+          "va": "0x18001d4c0",
+          "forwarder": null
+        },
+        {
+          "name": "?ConvertPixelType@CMyAlgorithmManager@@QEAAHW4_MVD_PIXEL_FORMAT_@VisionDesigner@@AEAW4eSTEP_TYPE@@AEAW4eCHANNEL_TYPE@@@Z",
+          "ordinal": 13,
+          "rva": "0x1d2f0",
+          "va": "0x18001d2f0",
+          "forwarder": null
+        },
+        {
+          "name": "?ConvertRgbToMono8@CMyAlgorithmManager@@QEAAHPEAUCAMERA_IMAGE_DATA@@0@Z",
+          "ordinal": 14,
+          "rva": "0x1dd20",
+          "va": "0x18001dd20",
+          "forwarder": null
+        },
+        {
+          "name": "?CopyFileFunction@CMyAlgorithmManager@@QEAAHPEBD0@Z",
+          "ordinal": 15,
+          "rva": "0x1a430",
+          "va": "0x18001a430",
+          "forwarder": null
+        },
+        {
+          "name": "?CopyFileLinux@CMyAlgorithmManager@@QEAA_NPEBD0@Z",
+          "ordinal": 16,
+          "rva": "0x1a630",
+          "va": "0x18001a630",
+          "forwarder": null
+        },
+        {
+          "name": "?DeInit@CMyAlgorithmManager@@UEAAHXZ",
+          "ordinal": 17,
+          "rva": "0x12470",
+          "va": "0x180012470",
+          "forwarder": null
+        },
+        {
+          "name": "?Del_WatchSubFolder@CMyAlgorithmManager@@QEAAXPEB_W@Z",
+          "ordinal": 18,
+          "rva": "0x21d60",
+          "va": "0x180021d60",
+          "forwarder": null
+        },
+        {
+          "name": "?DynamicIOInit@CMyAlgorithmManager@@UEAAHXZ",
+          "ordinal": 19,
+          "rva": "0x1e4c0",
+          "va": "0x18001e4c0",
+          "forwarder": null
+        },
+        {
+          "name": "?GetAllParamList@CMyAlgorithmManager@@UEAAHPEAUPARAM_VALUE_INFO_LIST@@@Z",
+          "ordinal": 20,
+          "rva": "0x1a1f0",
+          "va": "0x18001a1f0",
+          "forwarder": null
+        },
+        {
+          "name": "?GetFileName@CMyAlgorithmManager@@QEAA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEBD@Z",
+          "ordinal": 21,
+          "rva": "0x21300",
+          "va": "0x180021300",
+          "forwarder": null
+        },
+        {
+          "name": "?GetImageFilesPathNameFromDir@CMyAlgorithmManager@@QEAA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@@Z",
+          "ordinal": 22,
+          "rva": "0x22750",
+          "va": "0x180022750",
+          "forwarder": null
+        },
+        {
+          "name": "?GetParam@CMyAlgorithmManager@@UEAAHPEBDPEADHPEAH@Z",
+          "ordinal": 23,
+          "rva": "0x12770",
+          "va": "0x180012770",
+          "forwarder": null
+        },
+        {
+          "name": "?GetRootPath@CMyAlgorithmManager@@AEAA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@XZ",
+          "ordinal": 24,
+          "rva": "0x1a210",
+          "va": "0x18001a210",
+          "forwarder": null
+        },
+        {
+          "name": "?Init@CMyAlgorithmManager@@UEAAHXZ",
+          "ordinal": 25,
+          "rva": "0x12170",
+          "va": "0x180012170",
+          "forwarder": null
+        },
+        {
+          "name": "?LoadModuleData@CMyAlgorithmManager@@UEAAHPEBULOAD_MODULE_DATA_PARAM@@@Z",
+          "ordinal": 26,
+          "rva": "0x18560",
+          "va": "0x180018560",
+          "forwarder": null
+        },
+        {
+          "name": "?MonitoringSubFolderChanges@CMyAlgorithmManager@@QEAAHXZ",
+          "ordinal": 27,
+          "rva": "0x22110",
+          "va": "0x180022110",
+          "forwarder": null
+        },
+        {
+          "name": "?MonitoringSubFolderDeInit@CMyAlgorithmManager@@QEAAHXZ",
+          "ordinal": 28,
+          "rva": "0xd610",
+          "va": "0x18000d610",
+          "forwarder": null
+        },
+        {
+          "name": "?MonitoringSubFolderInit@CMyAlgorithmManager@@QEAAHXZ",
+          "ordinal": 29,
+          "rva": "0xd480",
+          "va": "0x18000d480",
+          "forwarder": null
+        },
+        {
+          "name": "?NotifyEvent@CMyAlgorithmManager@@QEAAHHPEAX@Z",
+          "ordinal": 30,
+          "rva": "0x23620",
+          "va": "0x180023620",
+          "forwarder": null
+        },
+        {
+          "name": "?OutputExtra@CMyAlgorithmManager@@QEAAHPEAX0@Z",
+          "ordinal": 31,
+          "rva": "0x204a0",
+          "va": "0x1800204a0",
+          "forwarder": null
+        },
+        {
+          "name": "?ProcSavemoduleFinishEvent@CMyAlgorithmManager@@QEAAXXZ",
+          "ordinal": 32,
+          "rva": "0x1a3b0",
+          "va": "0x18001a3b0",
+          "forwarder": null
+        },
+        {
+          "name": "?Process@CMyAlgorithmManager@@UEAAHPEAX0@Z",
+          "ordinal": 33,
+          "rva": "0xd820",
+          "va": "0x18000d820",
+          "forwarder": null
+        },
+        {
+          "name": "?SaveDataInfo@CMyAlgorithmManager@@QEAAXQEAUSAVE_MODULE_DATA_PARAM@@PEADHPEBD@Z",
+          "ordinal": 34,
+          "rva": "0x184e0",
+          "va": "0x1800184e0",
+          "forwarder": null
+        },
+        {
+          "name": "?SaveImageFileToSol@CMyAlgorithmManager@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@QEAUSAVE_MODULE_DATA_PARAM@@@Z",
+          "ordinal": 35,
+          "rva": "0x18210",
+          "va": "0x180018210",
+          "forwarder": null
+        },
+        {
+          "name": "?SaveModuleData@CMyAlgorithmManager@@UEAAHPEAUSAVE_MODULE_DATA_PARAM@@@Z",
+          "ordinal": 36,
+          "rva": "0x171a0",
+          "va": "0x1800171a0",
+          "forwarder": null
+        },
+        {
+          "name": "?SetAllParamList@CMyAlgorithmManager@@QEAAHPEBUPARAM_VALUE_INFO_LIST@@@Z",
+          "ordinal": 37,
+          "rva": "0x1a150",
+          "va": "0x18001a150",
+          "forwarder": null
+        },
+        {
+          "name": "?SetImageBuffNum@CMyAlgorithmManager@@QEAAHPEAPEAVIMvdImage@VisionDesigner@@@Z",
+          "ordinal": 38,
+          "rva": "0x21150",
+          "va": "0x180021150",
+          "forwarder": null
+        },
+        {
+          "name": "?SetImageOutput@CMyAlgorithmManager@@QEAAHPEAXPEAUCAMERA_IMAGE_DATA@@@Z",
+          "ordinal": 39,
+          "rva": "0x1d720",
+          "va": "0x18001d720",
+          "forwarder": null
+        },
+        {
+          "name": "?SetImageOutputMono8@CMyAlgorithmManager@@QEAAHPEAXPEAUCAMERA_IMAGE_DATA@@@Z",
+          "ordinal": 40,
+          "rva": "0x1da20",
+          "va": "0x18001da20",
+          "forwarder": null
+        },
+        {
+          "name": "?SetParam@CMyAlgorithmManager@@UEAAHPEBD0H@Z",
+          "ordinal": 41,
+          "rva": "0x145f0",
+          "va": "0x1800145f0",
+          "forwarder": null
+        },
+        {
+          "name": "?SharedMemory2Data@CMyAlgorithmManager@@QEAAHHHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEAEH@Z",
+          "ordinal": 42,
+          "rva": "0x1ac50",
+          "va": "0x18001ac50",
+          "forwarder": null
+        },
+        {
+          "name": "?SortImageNameInFolder@CMyAlgorithmManager@@QEAAHAEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@@Z",
+          "ordinal": 43,
+          "rva": "0x23500",
+          "va": "0x180023500",
+          "forwarder": null
+        },
+        {
+          "name": "?StitchImageOutput@CMyAlgorithmManager@@QEAAHPEAXUCAMERA_IMAGE_DATA@@AEAU2@@Z",
+          "ordinal": 44,
+          "rva": "0x20980",
+          "va": "0x180020980",
+          "forwarder": null
+        },
+        {
+          "name": "?StringReplace@CMyAlgorithmManager@@QEAAXAEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV23@1@Z",
+          "ordinal": 45,
+          "rva": "0x21260",
+          "va": "0x180021260",
+          "forwarder": null
+        },
+        {
+          "name": "?StringSplitVector@CMyAlgorithmManager@@QEAAHV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEBDAEAV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@3@@Z",
+          "ordinal": 46,
+          "rva": "0x1a850",
+          "va": "0x18001a850",
+          "forwarder": null
+        },
+        {
+          "name": "?ThridImageThreadProcess@CMyAlgorithmManager@@QEAAHXZ",
+          "ordinal": 47,
+          "rva": "0x17080",
+          "va": "0x180017080",
+          "forwarder": null
+        },
+        {
+          "name": "?UpdateImageFilesListFromDir@CMyAlgorithmManager@@QEAAHV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+          "ordinal": 48,
+          "rva": "0x23190",
+          "va": "0x180023190",
+          "forwarder": null
+        },
+        {
+          "name": "CreateModule",
+          "ordinal": 49,
+          "rva": "0x23770",
+          "va": "0x180023770",
+          "forwarder": null
+        },
+        {
+          "name": "DestroyModule",
+          "ordinal": 50,
+          "rva": "0x238f0",
+          "va": "0x1800238f0",
+          "forwarder": null
+        }
+      ],
+      "imports": [
+        {
+          "module": "ModuleFrame.dll",
+          "name": "??1CAbstractUserModule@@UEAA@XZ",
+          "iatRva": "0x2d570",
+          "iatVa": "0x18002d570"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "?SaveModuleData@CAbstractUserModule@@UEAAHPEAUSAVE_MODULE_DATA_PARAM@@@Z",
+          "iatRva": "0x2d578",
+          "iatVa": "0x18002d578"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetBinayData",
+          "iatRva": "0x2d580",
+          "iatVa": "0x18002d580"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetDefaultConfigByFile",
+          "iatRva": "0x2d588",
+          "iatVa": "0x18002d588"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_ReportData",
+          "iatRva": "0x2d590",
+          "iatVa": "0x18002d590"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetBinayData",
+          "iatRva": "0x2d598",
+          "iatVa": "0x18002d598"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetString",
+          "iatRva": "0x2d5a0",
+          "iatVa": "0x18002d5a0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetImageEx",
+          "iatRva": "0x2d5a8",
+          "iatVa": "0x18002d5a8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_TryRunProcedureOnce",
+          "iatRva": "0x2d5b0",
+          "iatVa": "0x18002d5b0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_StopOwnerProcedure",
+          "iatRva": "0x2d5b8",
+          "iatVa": "0x18002d5b8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetCurrentConfigByFile",
+          "iatRva": "0x2d5c0",
+          "iatVa": "0x18002d5c0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetModuleId",
+          "iatRva": "0x2d5c8",
+          "iatVa": "0x18002d5c8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetModuleRuntimeInfo",
+          "iatRva": "0x2d5d0",
+          "iatVa": "0x18002d5d0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetFloat",
+          "iatRva": "0x2d5d8",
+          "iatVa": "0x18002d5d8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetBufferNodeNum",
+          "iatRva": "0x2d5e0",
+          "iatVa": "0x18002d5e0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetCreateModuleCause",
+          "iatRva": "0x2d5e8",
+          "iatVa": "0x18002d5e8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetNotifyEventCallback",
+          "iatRva": "0x2d5f0",
+          "iatVa": "0x18002d5f0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_IsUploadRstEnabled",
+          "iatRva": "0x2d5f8",
+          "iatVa": "0x18002d5f8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "??0CAbstractUserModule@@QEAA@XZ",
+          "iatRva": "0x2d600",
+          "iatVa": "0x18002d600"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetFloat",
+          "iatRva": "0x2d608",
+          "iatVa": "0x18002d608"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetOwnerProcedureRunningParam",
+          "iatRva": "0x2d610",
+          "iatVa": "0x18002d610"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetNextModuleListEx",
+          "iatRva": "0x2d618",
+          "iatVa": "0x18002d618"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetModuleMapping",
+          "iatRva": "0x2d620",
+          "iatVa": "0x18002d620"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetString",
+          "iatRva": "0x2d628",
+          "iatVa": "0x18002d628"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetInt",
+          "iatRva": "0x2d630",
+          "iatVa": "0x18002d630"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetInt",
+          "iatRva": "0x2d638",
+          "iatVa": "0x18002d638"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetModuleNodeInfo",
+          "iatRva": "0x2d640",
+          "iatVa": "0x18002d640"
+        },
+        {
+          "module": "MVDImageCpp.dll",
+          "name": "CreateImageInstance",
+          "iatRva": "0x2d558",
+          "iatVa": "0x18002d558"
+        },
+        {
+          "module": "MVDImageCpp.dll",
+          "name": "DestroyImageInstance",
+          "iatRva": "0x2d560",
+          "iatVa": "0x18002d560"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_GetCurrentLevel",
+          "iatRva": "0x2d000",
+          "iatVa": "0x18002d000"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_ShouldLog",
+          "iatRva": "0x2d008",
+          "iatVa": "0x18002d008"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_LogPrint",
+          "iatRva": "0x2d010",
+          "iatVa": "0x18002d010"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_ResetLevel",
+          "iatRva": "0x2d018",
+          "iatVa": "0x18002d018"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "FindNextFileA",
+          "iatRva": "0x2d028",
+          "iatVa": "0x18002d028"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "PostQueuedCompletionStatus",
+          "iatRva": "0x2d030",
+          "iatVa": "0x18002d030"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "LockResource",
+          "iatRva": "0x2d038",
+          "iatVa": "0x18002d038"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "OutputDebugStringW",
+          "iatRva": "0x2d040",
+          "iatVa": "0x18002d040"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetSystemTimeAsFileTime",
+          "iatRva": "0x2d048",
+          "iatVa": "0x18002d048"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "IsProcessorFeaturePresent",
+          "iatRva": "0x2d050",
+          "iatVa": "0x18002d050"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "IsDebuggerPresent",
+          "iatRva": "0x2d058",
+          "iatVa": "0x18002d058"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "EncodePointer",
+          "iatRva": "0x2d060",
+          "iatVa": "0x18002d060"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "FindClose",
+          "iatRva": "0x2d068",
+          "iatVa": "0x18002d068"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "OpenMutexW",
+          "iatRva": "0x2d070",
+          "iatVa": "0x18002d070"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "FindFirstFileA",
+          "iatRva": "0x2d078",
+          "iatVa": "0x18002d078"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CreateFileW",
+          "iatRva": "0x2d080",
+          "iatVa": "0x18002d080"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CreateIoCompletionPort",
+          "iatRva": "0x2d088",
+          "iatVa": "0x18002d088"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CopyFileW",
+          "iatRva": "0x2d090",
+          "iatVa": "0x18002d090"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "Sleep",
+          "iatRva": "0x2d098",
+          "iatVa": "0x18002d098"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "ReadDirectoryChangesW",
+          "iatRva": "0x2d0a0",
+          "iatVa": "0x18002d0a0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetQueuedCompletionStatus",
+          "iatRva": "0x2d0a8",
+          "iatVa": "0x18002d0a8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "LoadResource",
+          "iatRva": "0x2d0b0",
+          "iatVa": "0x18002d0b0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "FindResourceW",
+          "iatRva": "0x2d0b8",
+          "iatVa": "0x18002d0b8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "FindResourceExW",
+          "iatRva": "0x2d0c0",
+          "iatVa": "0x18002d0c0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CreateMutexW",
+          "iatRva": "0x2d0c8",
+          "iatVa": "0x18002d0c8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "MultiByteToWideChar",
+          "iatRva": "0x2d0d0",
+          "iatVa": "0x18002d0d0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "QueryPerformanceFrequency",
+          "iatRva": "0x2d0d8",
+          "iatVa": "0x18002d0d8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "QueryPerformanceCounter",
+          "iatRva": "0x2d0e0",
+          "iatVa": "0x18002d0e0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetCurrentProcessId",
+          "iatRva": "0x2d0e8",
+          "iatVa": "0x18002d0e8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "DeleteCriticalSection",
+          "iatRva": "0x2d0f0",
+          "iatVa": "0x18002d0f0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CancelIo",
+          "iatRva": "0x2d0f8",
+          "iatVa": "0x18002d0f8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "ReleaseMutex",
+          "iatRva": "0x2d100",
+          "iatVa": "0x18002d100"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "DeleteFileW",
+          "iatRva": "0x2d108",
+          "iatVa": "0x18002d108"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "SizeofResource",
+          "iatRva": "0x2d110",
+          "iatVa": "0x18002d110"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetModuleHandleExW",
+          "iatRva": "0x2d118",
+          "iatVa": "0x18002d118"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "WaitForSingleObject",
+          "iatRva": "0x2d120",
+          "iatVa": "0x18002d120"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "SetEvent",
+          "iatRva": "0x2d128",
+          "iatVa": "0x18002d128"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CreateEventW",
+          "iatRva": "0x2d130",
+          "iatVa": "0x18002d130"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CloseHandle",
+          "iatRva": "0x2d138",
+          "iatVa": "0x18002d138"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetCurrentThreadId",
+          "iatRva": "0x2d140",
+          "iatVa": "0x18002d140"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "MapViewOfFile",
+          "iatRva": "0x2d148",
+          "iatVa": "0x18002d148"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "UnmapViewOfFile",
+          "iatRva": "0x2d150",
+          "iatVa": "0x18002d150"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "WideCharToMultiByte",
+          "iatRva": "0x2d158",
+          "iatVa": "0x18002d158"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetModuleFileNameW",
+          "iatRva": "0x2d160",
+          "iatVa": "0x18002d160"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetLastError",
+          "iatRva": "0x2d168",
+          "iatVa": "0x18002d168"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CreateFileMappingA",
+          "iatRva": "0x2d170",
+          "iatVa": "0x18002d170"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "OpenFileMappingA",
+          "iatRva": "0x2d178",
+          "iatVa": "0x18002d178"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "HeapReAlloc",
+          "iatRva": "0x2d180",
+          "iatVa": "0x18002d180"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "HeapAlloc",
+          "iatRva": "0x2d188",
+          "iatVa": "0x18002d188"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "HeapFree",
+          "iatRva": "0x2d190",
+          "iatVa": "0x18002d190"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetProcessHeap",
+          "iatRva": "0x2d198",
+          "iatVa": "0x18002d198"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "InitializeCriticalSection",
+          "iatRva": "0x2d1a0",
+          "iatVa": "0x18002d1a0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "HeapDestroy",
+          "iatRva": "0x2d1a8",
+          "iatVa": "0x18002d1a8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "LeaveCriticalSection",
+          "iatRva": "0x2d1b0",
+          "iatVa": "0x18002d1b0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "InitializeCriticalSectionEx",
+          "iatRva": "0x2d1b8",
+          "iatVa": "0x18002d1b8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "RaiseException",
+          "iatRva": "0x2d1c0",
+          "iatVa": "0x18002d1c0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "HeapSize",
+          "iatRva": "0x2d1c8",
+          "iatVa": "0x18002d1c8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "EnterCriticalSection",
+          "iatRva": "0x2d1d0",
+          "iatVa": "0x18002d1d0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "DecodePointer",
+          "iatRva": "0x2d1d8",
+          "iatVa": "0x18002d1d8"
+        },
+        {
+          "module": "ole32.dll",
+          "name": "CoCreateGuid",
+          "iatRva": "0x2d660",
+          "iatVa": "0x18002d660"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "vfprintf",
+          "iatRva": "0x2d308",
+          "iatVa": "0x18002d308"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_vscprintf",
+          "iatRva": "0x2d310",
+          "iatVa": "0x18002d310"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sprintf_s",
+          "iatRva": "0x2d318",
+          "iatVa": "0x18002d318"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_snprintf_s",
+          "iatRva": "0x2d320",
+          "iatVa": "0x18002d320"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "vsprintf_s",
+          "iatRva": "0x2d328",
+          "iatVa": "0x18002d328"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memcpy_s",
+          "iatRva": "0x2d330",
+          "iatVa": "0x18002d330"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strncpy_s",
+          "iatRva": "0x2d338",
+          "iatVa": "0x18002d338"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sprintf",
+          "iatRva": "0x2d340",
+          "iatVa": "0x18002d340"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sscanf",
+          "iatRva": "0x2d348",
+          "iatVa": "0x18002d348"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "wmemcpy_s",
+          "iatRva": "0x2d350",
+          "iatVa": "0x18002d350"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "malloc",
+          "iatRva": "0x2d358",
+          "iatVa": "0x18002d358"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "rewind",
+          "iatRva": "0x2d360",
+          "iatVa": "0x18002d360"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_wmkdir",
+          "iatRva": "0x2d368",
+          "iatVa": "0x18002d368"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memchr",
+          "iatRva": "0x2d370",
+          "iatVa": "0x18002d370"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "atoi",
+          "iatRva": "0x2d378",
+          "iatVa": "0x18002d378"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strtok",
+          "iatRva": "0x2d380",
+          "iatVa": "0x18002d380"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_snwprintf_s",
+          "iatRva": "0x2d388",
+          "iatVa": "0x18002d388"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_waccess",
+          "iatRva": "0x2d390",
+          "iatVa": "0x18002d390"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "ftell",
+          "iatRva": "0x2d398",
+          "iatVa": "0x18002d398"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_waccess_s",
+          "iatRva": "0x2d3a0",
+          "iatVa": "0x18002d3a0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fseek",
+          "iatRva": "0x2d3a8",
+          "iatVa": "0x18002d3a8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "wcscpy_s",
+          "iatRva": "0x2d3b0",
+          "iatVa": "0x18002d3b0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_lock",
+          "iatRva": "0x2d3b8",
+          "iatVa": "0x18002d3b8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_unlock",
+          "iatRva": "0x2d3c0",
+          "iatVa": "0x18002d3c0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_calloc_crt",
+          "iatRva": "0x2d3c8",
+          "iatVa": "0x18002d3c8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__dllonexit",
+          "iatRva": "0x2d3d0",
+          "iatVa": "0x18002d3d0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__C_specific_handler",
+          "iatRva": "0x2d3d8",
+          "iatVa": "0x18002d3d8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_onexit",
+          "iatRva": "0x2d3e0",
+          "iatVa": "0x18002d3e0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_vsnprintf_s",
+          "iatRva": "0x2d3e8",
+          "iatVa": "0x18002d3e8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "?terminate@@YAXXZ",
+          "iatRva": "0x2d3f0",
+          "iatVa": "0x18002d3f0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__CxxFrameHandler3",
+          "iatRva": "0x2d3f8",
+          "iatVa": "0x18002d3f8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__CppXcptFilter",
+          "iatRva": "0x2d400",
+          "iatVa": "0x18002d400"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_amsg_exit",
+          "iatRva": "0x2d408",
+          "iatVa": "0x18002d408"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_malloc_crt",
+          "iatRva": "0x2d410",
+          "iatVa": "0x18002d410"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_initterm",
+          "iatRva": "0x2d418",
+          "iatVa": "0x18002d418"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_initterm_e",
+          "iatRva": "0x2d420",
+          "iatVa": "0x18002d420"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crt_debugger_hook",
+          "iatRva": "0x2d428",
+          "iatVa": "0x18002d428"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crtUnhandledException",
+          "iatRva": "0x2d430",
+          "iatVa": "0x18002d430"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crtTerminateProcess",
+          "iatRva": "0x2d438",
+          "iatVa": "0x18002d438"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crtCapturePreviousContext",
+          "iatRva": "0x2d440",
+          "iatVa": "0x18002d440"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "?_type_info_dtor_internal_method@type_info@@QEAAXXZ",
+          "iatRva": "0x2d448",
+          "iatVa": "0x18002d448"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__clean_type_info_names_internal",
+          "iatRva": "0x2d450",
+          "iatVa": "0x18002d450"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strcmp",
+          "iatRva": "0x2d458",
+          "iatVa": "0x18002d458"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "isdigit",
+          "iatRva": "0x2d460",
+          "iatVa": "0x18002d460"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "isalpha",
+          "iatRva": "0x2d468",
+          "iatVa": "0x18002d468"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fopen",
+          "iatRva": "0x2d470",
+          "iatVa": "0x18002d470"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fgetc",
+          "iatRva": "0x2d478",
+          "iatVa": "0x18002d478"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strchr",
+          "iatRva": "0x2d480",
+          "iatVa": "0x18002d480"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "isspace",
+          "iatRva": "0x2d488",
+          "iatVa": "0x18002d488"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strncmp",
+          "iatRva": "0x2d490",
+          "iatVa": "0x18002d490"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sscanf_s",
+          "iatRva": "0x2d498",
+          "iatVa": "0x18002d498"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fputc",
+          "iatRva": "0x2d4a0",
+          "iatVa": "0x18002d4a0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "free",
+          "iatRva": "0x2d4a8",
+          "iatVa": "0x18002d4a8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??2@YAPEAX_K@Z",
+          "iatRva": "0x2d4b0",
+          "iatVa": "0x18002d4b0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fclose",
+          "iatRva": "0x2d4b8",
+          "iatVa": "0x18002d4b8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fwrite",
+          "iatRva": "0x2d4c0",
+          "iatVa": "0x18002d4c0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_purecall",
+          "iatRva": "0x2d4c8",
+          "iatVa": "0x18002d4c8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fread",
+          "iatRva": "0x2d4d0",
+          "iatVa": "0x18002d4d0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??_V@YAXPEAX@Z",
+          "iatRva": "0x2d4d8",
+          "iatVa": "0x18002d4d8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_wfopen",
+          "iatRva": "0x2d4e0",
+          "iatVa": "0x18002d4e0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fflush",
+          "iatRva": "0x2d4e8",
+          "iatVa": "0x18002d4e8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_fseeki64",
+          "iatRva": "0x2d4f0",
+          "iatVa": "0x18002d4f0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??_U@YAPEAX_K@Z",
+          "iatRva": "0x2d4f8",
+          "iatVa": "0x18002d4f8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memmove",
+          "iatRva": "0x2d500",
+          "iatVa": "0x18002d500"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_ftelli64",
+          "iatRva": "0x2d508",
+          "iatVa": "0x18002d508"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_beginthreadex",
+          "iatRva": "0x2d510",
+          "iatVa": "0x18002d510"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_stricmp",
+          "iatRva": "0x2d518",
+          "iatVa": "0x18002d518"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memset",
+          "iatRva": "0x2d520",
+          "iatVa": "0x18002d520"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_CxxThrowException",
+          "iatRva": "0x2d528",
+          "iatVa": "0x18002d528"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memcmp",
+          "iatRva": "0x2d530",
+          "iatVa": "0x18002d530"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memcpy",
+          "iatRva": "0x2d538",
+          "iatVa": "0x18002d538"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??3@YAXPEAX@Z",
+          "iatRva": "0x2d540",
+          "iatVa": "0x18002d540"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "ferror",
+          "iatRva": "0x2d548",
+          "iatVa": "0x18002d548"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "??1?$basic_ios@DU?$char_traits@D@std@@@std@@UEAA@XZ",
+          "iatRva": "0x2d1e8",
+          "iatVa": "0x18002d1e8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?imbue@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAXAEBVlocale@2@@Z",
+          "iatRva": "0x2d1f0",
+          "iatVa": "0x18002d1f0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?sync@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAHXZ",
+          "iatRva": "0x2d1f8",
+          "iatVa": "0x18002d1f8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?setbuf@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAPEAV12@PEAD_J@Z",
+          "iatRva": "0x2d200",
+          "iatVa": "0x18002d200"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?xsputn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAA_JPEBD_J@Z",
+          "iatRva": "0x2d208",
+          "iatVa": "0x18002d208"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?xsgetn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAA_JPEAD_J@Z",
+          "iatRva": "0x2d210",
+          "iatVa": "0x18002d210"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?uflow@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAHXZ",
+          "iatRva": "0x2d218",
+          "iatVa": "0x18002d218"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?showmanyc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAA_JXZ",
+          "iatRva": "0x2d220",
+          "iatVa": "0x18002d220"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Unlock@?$basic_streambuf@DU?$char_traits@D@std@@@std@@UEAAXXZ",
+          "iatRva": "0x2d228",
+          "iatVa": "0x18002d228"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Lock@?$basic_streambuf@DU?$char_traits@D@std@@@std@@UEAAXXZ",
+          "iatRva": "0x2d230",
+          "iatVa": "0x18002d230"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "??1?$basic_streambuf@DU?$char_traits@D@std@@@std@@UEAA@XZ",
+          "iatRva": "0x2d238",
+          "iatVa": "0x18002d238"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Swap_all@_Container_base0@std@@QEAAXAEAU12@@Z",
+          "iatRva": "0x2d240",
+          "iatVa": "0x18002d240"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "??1?$basic_iostream@DU?$char_traits@D@std@@@std@@UEAA@XZ",
+          "iatRva": "0x2d248",
+          "iatVa": "0x18002d248"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?setstate@?$basic_ios@DU?$char_traits@D@std@@@std@@QEAAXH_N@Z",
+          "iatRva": "0x2d250",
+          "iatVa": "0x18002d250"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Pninc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@IEAAPEADXZ",
+          "iatRva": "0x2d258",
+          "iatVa": "0x18002d258"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "??0?$basic_ios@DU?$char_traits@D@std@@@std@@IEAA@XZ",
+          "iatRva": "0x2d260",
+          "iatVa": "0x18002d260"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "??0?$basic_iostream@DU?$char_traits@D@std@@@std@@QEAA@PEAV?$basic_streambuf@DU?$char_traits@D@std@@@1@@Z",
+          "iatRva": "0x2d268",
+          "iatVa": "0x18002d268"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "??0?$basic_streambuf@DU?$char_traits@D@std@@@std@@IEAA@XZ",
+          "iatRva": "0x2d270",
+          "iatVa": "0x18002d270"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?flush@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@XZ",
+          "iatRva": "0x2d278",
+          "iatVa": "0x18002d278"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?sputc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@QEAAHD@Z",
+          "iatRva": "0x2d280",
+          "iatVa": "0x18002d280"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Osfx@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAXXZ",
+          "iatRva": "0x2d288",
+          "iatVa": "0x18002d288"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?sputn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@QEAA_JPEBD_J@Z",
+          "iatRva": "0x2d290",
+          "iatVa": "0x18002d290"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "_Mtx_init",
+          "iatRva": "0x2d298",
+          "iatVa": "0x18002d298"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "_Mtx_lock",
+          "iatRva": "0x2d2a0",
+          "iatVa": "0x18002d2a0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "_Mtx_unlock",
+          "iatRva": "0x2d2a8",
+          "iatVa": "0x18002d2a8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "_Mtx_destroy",
+          "iatRva": "0x2d2b0",
+          "iatVa": "0x18002d2b0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?uncaught_exception@std@@YA_NXZ",
+          "iatRva": "0x2d2b8",
+          "iatVa": "0x18002d2b8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_BADOFF@std@@3_JB",
+          "iatRva": "0x2d2c0",
+          "iatVa": "0x18002d2c0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Throw_C_error@std@@YAXH@Z",
+          "iatRva": "0x2d2c8",
+          "iatVa": "0x18002d2c8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Orphan_all@_Container_base0@std@@QEAAXXZ",
+          "iatRva": "0x2d2d0",
+          "iatVa": "0x18002d2d0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Xlength_error@std@@YAXPEBD@Z",
+          "iatRva": "0x2d2d8",
+          "iatVa": "0x18002d2d8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Xout_of_range@std@@YAXPEBD@Z",
+          "iatRva": "0x2d2e0",
+          "iatVa": "0x18002d2e0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Xbad_alloc@std@@YAXXZ",
+          "iatRva": "0x2d2e8",
+          "iatVa": "0x18002d2e8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Syserror_map@std@@YAPEBDH@Z",
+          "iatRva": "0x2d2f0",
+          "iatVa": "0x18002d2f0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Winerror_map@std@@YAPEBDH@Z",
+          "iatRva": "0x2d2f8",
+          "iatVa": "0x18002d2f8"
+        },
+        {
+          "module": "SHLWAPI.dll",
+          "name": "StrCmpLogicalW",
+          "iatRva": "0x2d650",
+          "iatVa": "0x18002d650"
+        }
+      ],
+      "sections": [
+        {
+          "name": ".text",
+          "virtualSize": 178808,
+          "rva": 4096,
+          "rawSize": 179200,
+          "rawOffset": 1024,
+          "flags": 1610612768
+        },
+        {
+          "name": ".rdata",
+          "virtualSize": 60170,
+          "rva": 184320,
+          "rawSize": 60416,
+          "rawOffset": 180224,
+          "flags": 1073741888
+        },
+        {
+          "name": ".data",
+          "virtualSize": 4016,
+          "rva": 245760,
+          "rawSize": 2560,
+          "rawOffset": 240640,
+          "flags": 3221225536
+        },
+        {
+          "name": ".pdata",
+          "virtualSize": 8100,
+          "rva": 249856,
+          "rawSize": 8192,
+          "rawOffset": 243200,
+          "flags": 1073741888
+        },
+        {
+          "name": ".rsrc",
+          "virtualSize": 480,
+          "rva": 258048,
+          "rawSize": 512,
+          "rawOffset": 251392,
+          "flags": 1073741888
+        },
+        {
+          "name": ".reloc",
+          "virtualSize": 760,
+          "rva": 262144,
+          "rawSize": 1024,
+          "rawOffset": 251904,
+          "flags": 1107296320
+        }
+      ],
+      "functions": [
+        {
+          "historicalLabel": "Process",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xd820",
+          "va": "0x18000d820",
+          "fileOffset": 52256,
+          "runtimeFunction": {
+            "startRva": "0xd820",
+            "endRvaExclusive": "0x12166",
+            "unwindRva": "0x35958",
+            "byteLength": 18758
+          },
+          "rangeBytesSha256": "5bc1faaffa04d254c4db2a58c1ff5b385355006850fc7a41a27f8f6a5b140b74",
+          "entryBytes": "405356574154415541564157b8b05d0200e86ac10100482be048c78424980400",
+          "exportNames": [
+            "?Process@CMyAlgorithmManager@@UEAAHPEAX0@Z"
+          ],
+          "pseudocode": {
+            "path": "analysis/full-audit/image-source-native-0.c",
+            "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+            "byteLength": 94098
+          },
+          "assembly": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\image-producer-recovery.resources\\ImageSource.Process.retained.asm.txt",
+            "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+            "byteLength": 121535
+          },
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks.",
+          "retainedEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5",
+          "retainedEvidence": {
+            "path": "analysis/full-audit/image-source-native-0.json",
+            "sha256": "6ea564d74b4eef4aee9c97e71ca82fe5c3a22c0c7e418f5553bdd091cb3a2d15",
+            "byteLength": 413887
+          }
+        },
+        {
+          "historicalLabel": "DeInit",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0x12470",
+          "va": "0x180012470",
+          "fileOffset": 71792,
+          "runtimeFunction": {
+            "startRva": "0x12470",
+            "endRvaExclusive": "0x12765",
+            "unwindRva": "0x345a0",
+            "byteLength": 757
+          },
+          "rangeBytesSha256": "49c2a04cdeeecd034668b54193a6cad45c965c97f7ba61f2e38265d875a9f73e",
+          "entryBytes": "48895c240848896c2410488974241848897c242041564883ec20488bf1c68134",
+          "exportNames": [
+            "?DeInit@CMyAlgorithmManager@@UEAAHXZ"
+          ],
+          "pseudocode": {
+            "path": "analysis/full-audit/image-source-native-extra-4.c",
+            "sha256": "e5b3e34cc013a8e0d093ae968a2302742c9da52eed88d679e3393ce92b1bd3a0",
+            "byteLength": 4191
+          },
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks.",
+          "retainedEvidenceId": "ev_3c1cfc7dd10fd8da320aeacfb1cc1bdafbf9ae3f5ede89aa9dffd3fbddbff8c0",
+          "retainedEvidence": {
+            "path": "analysis/full-audit/image-source-native-extra-4.json",
+            "sha256": "eb3c34aaccbbef28b42474bdf71b38904fa40b309acfe357a4d4f3df2f77d17d",
+            "byteLength": 26436
+          }
+        },
+        {
+          "historicalLabel": "SetImageOutput",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0x1d720",
+          "va": "0x18001d720",
+          "fileOffset": 117536,
+          "runtimeFunction": {
+            "startRva": "0x1d720",
+            "endRvaExclusive": "0x1da1e",
+            "unwindRva": "0x374f0",
+            "byteLength": 766
+          },
+          "rangeBytesSha256": "20383c634bbe94fbe38f3f14fd63987ed4e4437336c4bbb3d34443a35d21f473",
+          "entryBytes": "488bc4555356574156488d6c24804881ec8001000048c7442470feffffff0f29",
+          "exportNames": [
+            "?SetImageOutput@CMyAlgorithmManager@@QEAAHPEAXPEAUCAMERA_IMAGE_DATA@@@Z"
+          ],
+          "pseudocode": {
+            "path": "analysis/full-audit/image-source-native-6.c",
+            "sha256": "4e82ac296ad2bded918355fb6142a3b3f4d1d6ea36d29aac2d82ea1b652c9a53",
+            "byteLength": 3203
+          },
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks.",
+          "retainedEvidenceId": "ev_7bbcce468361b419e5680f234edb6929907a39954ba46da9c89ce96113c54ff1",
+          "retainedEvidence": {
+            "path": "analysis/full-audit/image-source-native-6.json",
+            "sha256": "e07845ade3850bff2a8a171700c750e7d71d88693ae5e8fa48b431dd64270c79",
+            "byteLength": 22324
+          }
+        },
+        {
+          "historicalLabel": "SetImageBuffNum",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0x21150",
+          "va": "0x180021150",
+          "fileOffset": 132432,
+          "runtimeFunction": {
+            "startRva": "0x21150",
+            "endRvaExclusive": "0x21256",
+            "unwindRva": "0x37bf8",
+            "byteLength": 262
+          },
+          "rangeBytesSha256": "549e87b9ae1a2bb828fd8ef2cb4d977f74de87f9caa7d31578e1a247af617a58",
+          "entryBytes": "488bc448894808574883ec6048c740e8feffffff4889581848897020488bfa48",
+          "exportNames": [
+            "?SetImageBuffNum@CMyAlgorithmManager@@QEAAHPEAPEAVIMvdImage@VisionDesigner@@@Z"
+          ],
+          "pseudocode": {
+            "path": "analysis/full-audit/image-source-native-extra-22.c",
+            "sha256": "647f72b6c09331c8ad30197763d96bd891de30e357b43b5b90b5adc458940761",
+            "byteLength": 1359
+          },
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks.",
+          "retainedEvidenceId": "ev_eaa8356d4583fda2bf00452573c6e19aa2dec6e4aabdadf9aa0ae578afeb3d02",
+          "retainedEvidence": {
+            "path": "analysis/full-audit/image-source-native-extra-22.json",
+            "sha256": "c2571daaa44f0a0c0bd1ecb15411aa25a53ece80d46d15c7dccb34f856f25ae1",
+            "byteLength": 14290
+          }
+        },
+        {
+          "historicalLabel": "SharedMemory2Data",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0x1ac50",
+          "va": "0x18001ac50",
+          "fileOffset": 106576,
+          "runtimeFunction": {
+            "startRva": "0x1ac50",
+            "endRvaExclusive": "0x1aef7",
+            "unwindRva": "0x36c00",
+            "byteLength": 679
+          },
+          "rangeBytesSha256": "ad3a96b310c22280e5498ef7cfa3778aaedaaefe5ade51c3ad447068c32f1cc1",
+          "entryBytes": "48894c240856574154415641574883ec6048c7442458feffffff48899c249800",
+          "exportNames": [
+            "?SharedMemory2Data@CMyAlgorithmManager@@QEAAHHHAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PEAEH@Z"
+          ],
+          "pseudocode": {
+            "path": "analysis/full-audit/image-source-native-extra-14.c",
+            "sha256": "db342722946669aac4573d113217be1d212ca2d89698940c0476dd160117f333",
+            "byteLength": 3716
+          },
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks.",
+          "retainedEvidenceId": "ev_912e37ba41c17c2161b27063d90199284ff2e9a0107a07e9c83607bc12e79278",
+          "retainedEvidence": {
+            "path": "analysis/full-audit/image-source-native-extra-14.json",
+            "sha256": "aa6cb6e5cf7f0ade8de6e1a5def8aaff7c357c8458779687c56d917b5c639f84",
+            "byteLength": 25819
+          }
+        },
+        {
+          "historicalLabel": "list-index",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xb430",
+          "va": "0x18000b430",
+          "fileOffset": 43056,
+          "runtimeFunction": {
+            "startRva": "0xb430",
+            "endRvaExclusive": "0xb4be",
+            "unwindRva": "0x33f00",
+            "byteLength": 142
+          },
+          "rangeBytesSha256": "193700e02f13f440ba019b3fc542701b9b3bf54f82b5545ae4ff0df43ef0f836",
+          "entryBytes": "4883ec28488b41184c63d24c8bc94839411074734c8bc049bbe1e514bc9c8297",
+          "exportNames": [],
+          "pseudocode": null,
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "list-advance",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xb4c0",
+          "va": "0x18000b4c0",
+          "fileOffset": 43200,
+          "runtimeFunction": null,
+          "rangeBytesSha256": "57193b7c866f53d4b689a063bcd44bc0e233deecb80de4b0bb89bfd3a15901d1",
+          "entryBytes": "488b41184c8bc148394110743aff4108488bd04533c9482b511048b8e1e514bc",
+          "exportNames": [],
+          "pseudocode": null,
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "list-select-path",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xb550",
+          "va": "0x18000b550",
+          "fileOffset": 43344,
+          "runtimeFunction": {
+            "startRva": "0xb550",
+            "endRvaExclusive": "0xb56d",
+            "unwindRva": "0x340c4",
+            "byteLength": 29
+          },
+          "rangeBytesSha256": "9d74041040885d18b88ab7a1a8d2bc4b88e1ff2514b3af8985e893a68cecc15b",
+          "entryBytes": "40574883ec20488bfa4c8bd14885d2750832c04883c4205fc3488b4918",
+          "exportNames": [],
+          "pseudocode": null,
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "list-last-item",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xb8e0",
+          "va": "0x18000b8e0",
+          "fileOffset": 44256,
+          "runtimeFunction": null,
+          "rangeBytesSha256": "4a068a4058209b0b16fef16b7db555146302f166f1081966f6a5b8726af42ff6",
+          "entryBytes": "488b41184c8bc1483941107503b001c3488bc848b8e1e514bc9c829753492b48",
+          "exportNames": [],
+          "pseudocode": null,
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        }
+      ]
+    },
+    {
+      "key": "buffer",
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageBufferModule/ImageBufferModule.dll",
+      "sha256": "ab8850d7a747df693152ef7e095a5e0ef87eff9410c2424e9b7c84e435717869",
+      "byteLength": 103424,
+      "machine": "0x8664",
+      "imageBase": "0x180000000",
+      "exports": [
+        {
+          "name": "??0CImageBufferModule@@QEAA@AEBV0@@Z",
+          "ordinal": 1,
+          "rva": "0xd6c0",
+          "va": "0x18000d6c0",
+          "forwarder": null
+        },
+        {
+          "name": "??0CImageBufferModule@@QEAA@XZ",
+          "ordinal": 2,
+          "rva": "0xda70",
+          "va": "0x18000da70",
+          "forwarder": null
+        },
+        {
+          "name": "??1CImageBufferModule@@UEAA@XZ",
+          "ordinal": 3,
+          "rva": "0xdb90",
+          "va": "0x18000db90",
+          "forwarder": null
+        },
+        {
+          "name": "??4CImageBufferModule@@QEAAAEAV0@AEBV0@@Z",
+          "ordinal": 4,
+          "rva": "0xd790",
+          "va": "0x18000d790",
+          "forwarder": null
+        },
+        {
+          "name": "??_7CImageBufferModule@@6BCModuleSharedMemoryBase@@@",
+          "ordinal": 5,
+          "rva": "0x13a80",
+          "va": "0x180013a80",
+          "forwarder": null
+        },
+        {
+          "name": "??_7CImageBufferModule@@6BCVmLogicModuleBase@@@",
+          "ordinal": 6,
+          "rva": "0x13ab8",
+          "va": "0x180013ab8",
+          "forwarder": null
+        },
+        {
+          "name": "?CopyImage@CImageBufferModule@@QEAAHAEAUImageData@@AEBU2@@Z",
+          "ordinal": 7,
+          "rva": "0xe6a0",
+          "va": "0x18000e6a0",
+          "forwarder": null
+        },
+        {
+          "name": "?DeInit@CImageBufferModule@@UEAAHXZ",
+          "ordinal": 8,
+          "rva": "0xdd20",
+          "va": "0x18000dd20",
+          "forwarder": null
+        },
+        {
+          "name": "?GetAllParamList@CImageBufferModule@@UEAAHPEAUPARAM_VALUE_INFO_LIST@@@Z",
+          "ordinal": 9,
+          "rva": "0xe520",
+          "va": "0x18000e520",
+          "forwarder": null
+        },
+        {
+          "name": "?GetInImage@CImageBufferModule@@QEAAHPEAXAEAUImageData@@@Z",
+          "ordinal": 10,
+          "rva": "0xe540",
+          "va": "0x18000e540",
+          "forwarder": null
+        },
+        {
+          "name": "?GetParam@CImageBufferModule@@UEAAHPEBDPEADHPEAH@Z",
+          "ordinal": 11,
+          "rva": "0xdd80",
+          "va": "0x18000dd80",
+          "forwarder": null
+        },
+        {
+          "name": "?Init@CImageBufferModule@@UEAAHXZ",
+          "ordinal": 12,
+          "rva": "0xdc80",
+          "va": "0x18000dc80",
+          "forwarder": null
+        },
+        {
+          "name": "?LoadModuleData@CImageBufferModule@@UEAAHPEBULOAD_MODULE_DATA_PARAM@@@Z",
+          "ordinal": 13,
+          "rva": "0xe9a0",
+          "va": "0x18000e9a0",
+          "forwarder": null
+        },
+        {
+          "name": "?PopFrontImage@CImageBufferModule@@QEAAXXZ",
+          "ordinal": 14,
+          "rva": "0xe970",
+          "va": "0x18000e970",
+          "forwarder": null
+        },
+        {
+          "name": "?Process@CImageBufferModule@@UEAAHPEAX0@Z",
+          "ordinal": 15,
+          "rva": "0xde30",
+          "va": "0x18000de30",
+          "forwarder": null
+        },
+        {
+          "name": "?ResetMember@CImageBufferModule@@AEAAXXZ",
+          "ordinal": 16,
+          "rva": "0xdcd0",
+          "va": "0x18000dcd0",
+          "forwarder": null
+        },
+        {
+          "name": "?SaveModuleData@CImageBufferModule@@UEAAHPEAUSAVE_MODULE_DATA_PARAM@@@Z",
+          "ordinal": 17,
+          "rva": "0xea80",
+          "va": "0x18000ea80",
+          "forwarder": null
+        },
+        {
+          "name": "?SetAllParamList@CImageBufferModule@@UEAAHPEBUPARAM_VALUE_INFO_LIST@@@Z",
+          "ordinal": 18,
+          "rva": "0xeb90",
+          "va": "0x18000eb90",
+          "forwarder": null
+        },
+        {
+          "name": "?SetModuleNodeNum@CImageBufferModule@@AEAAXXZ",
+          "ordinal": 19,
+          "rva": "0xec10",
+          "va": "0x18000ec10",
+          "forwarder": null
+        },
+        {
+          "name": "?SetOutImage@CImageBufferModule@@QEAAHPEAXUImageData@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
+          "ordinal": 20,
+          "rva": "0xe760",
+          "va": "0x18000e760",
+          "forwarder": null
+        },
+        {
+          "name": "?SetParam@CImageBufferModule@@UEAAHPEBD0H@Z",
+          "ordinal": 21,
+          "rva": "0xdda0",
+          "va": "0x18000dda0",
+          "forwarder": null
+        },
+        {
+          "name": "CreateModule",
+          "ordinal": 22,
+          "rva": "0xeca0",
+          "va": "0x18000eca0",
+          "forwarder": null
+        },
+        {
+          "name": "DestroyModule",
+          "ordinal": 23,
+          "rva": "0xed40",
+          "va": "0x18000ed40",
+          "forwarder": null
+        }
+      ],
+      "imports": [
+        {
+          "module": "ModuleFrame.dll",
+          "name": "?SaveModuleData@CAbstractUserModule@@UEAAHPEAUSAVE_MODULE_DATA_PARAM@@@Z",
+          "iatRva": "0x122d0",
+          "iatVa": "0x1800122d0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetInt",
+          "iatRva": "0x122d8",
+          "iatVa": "0x1800122d8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "??_7CAbstractUserModule@@6B@",
+          "iatRva": "0x122e0",
+          "iatVa": "0x1800122e0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetImageEx",
+          "iatRva": "0x122e8",
+          "iatVa": "0x1800122e8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetModuleId",
+          "iatRva": "0x122f0",
+          "iatVa": "0x1800122f0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetModuleRuntimeInfo",
+          "iatRva": "0x122f8",
+          "iatVa": "0x1800122f8"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetLastError",
+          "iatRva": "0x12300",
+          "iatVa": "0x180012300"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetCurrentConfigByFile",
+          "iatRva": "0x12308",
+          "iatVa": "0x180012308"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetDefaultConfigByFile",
+          "iatRva": "0x12310",
+          "iatVa": "0x180012310"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetCreateModuleCause",
+          "iatRva": "0x12318",
+          "iatVa": "0x180012318"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "??0CAbstractUserModule@@QEAA@XZ",
+          "iatRva": "0x12320",
+          "iatVa": "0x180012320"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "??1CAbstractUserModule@@UEAA@XZ",
+          "iatRva": "0x12328",
+          "iatVa": "0x180012328"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetFloat",
+          "iatRva": "0x12330",
+          "iatVa": "0x180012330"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetBufferNodeNum",
+          "iatRva": "0x12338",
+          "iatVa": "0x180012338"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetString",
+          "iatRva": "0x12340",
+          "iatVa": "0x180012340"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetFloat",
+          "iatRva": "0x12348",
+          "iatVa": "0x180012348"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetImage",
+          "iatRva": "0x12350",
+          "iatVa": "0x180012350"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetString",
+          "iatRva": "0x12358",
+          "iatVa": "0x180012358"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_GetInt",
+          "iatRva": "0x12360",
+          "iatVa": "0x180012360"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_ResetLevel",
+          "iatRva": "0x12000",
+          "iatVa": "0x180012000"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_ShouldLog",
+          "iatRva": "0x12008",
+          "iatVa": "0x180012008"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_LogPrint",
+          "iatRva": "0x12010",
+          "iatVa": "0x180012010"
+        },
+        {
+          "module": "HSlog.dll",
+          "name": "HSlog_GetCurrentLevel",
+          "iatRva": "0x12018",
+          "iatVa": "0x180012018"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "MapViewOfFile",
+          "iatRva": "0x12028",
+          "iatVa": "0x180012028"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "DisableThreadLibraryCalls",
+          "iatRva": "0x12030",
+          "iatVa": "0x180012030"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetSystemTimeAsFileTime",
+          "iatRva": "0x12038",
+          "iatVa": "0x180012038"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetCurrentThreadId",
+          "iatRva": "0x12040",
+          "iatVa": "0x180012040"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "IsProcessorFeaturePresent",
+          "iatRva": "0x12048",
+          "iatVa": "0x180012048"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "IsDebuggerPresent",
+          "iatRva": "0x12050",
+          "iatVa": "0x180012050"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "DecodePointer",
+          "iatRva": "0x12058",
+          "iatVa": "0x180012058"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "EncodePointer",
+          "iatRva": "0x12060",
+          "iatVa": "0x180012060"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "QueryPerformanceFrequency",
+          "iatRva": "0x12068",
+          "iatVa": "0x180012068"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "UnmapViewOfFile",
+          "iatRva": "0x12070",
+          "iatVa": "0x180012070"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetLastError",
+          "iatRva": "0x12078",
+          "iatVa": "0x180012078"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetModuleFileNameW",
+          "iatRva": "0x12080",
+          "iatVa": "0x180012080"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "WideCharToMultiByte",
+          "iatRva": "0x12088",
+          "iatVa": "0x180012088"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetModuleHandleExW",
+          "iatRva": "0x12090",
+          "iatVa": "0x180012090"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "QueryPerformanceCounter",
+          "iatRva": "0x12098",
+          "iatVa": "0x180012098"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetModuleHandleExA",
+          "iatRva": "0x120a0",
+          "iatVa": "0x1800120a0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetCurrentProcessId",
+          "iatRva": "0x120a8",
+          "iatVa": "0x1800120a8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CreateFileMappingA",
+          "iatRva": "0x120b0",
+          "iatVa": "0x1800120b0"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "CloseHandle",
+          "iatRva": "0x120b8",
+          "iatVa": "0x1800120b8"
+        },
+        {
+          "module": "KERNEL32.dll",
+          "name": "GetModuleFileNameA",
+          "iatRva": "0x120c0",
+          "iatVa": "0x1800120c0"
+        },
+        {
+          "module": "ole32.dll",
+          "name": "CoCreateGuid",
+          "iatRva": "0x12370",
+          "iatVa": "0x180012370"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Orphan_all@_Container_base0@std@@QEAAXXZ",
+          "iatRva": "0x120d0",
+          "iatVa": "0x1800120d0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Winerror_map@std@@YAPEBDH@Z",
+          "iatRva": "0x120d8",
+          "iatVa": "0x1800120d8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Syserror_map@std@@YAPEBDH@Z",
+          "iatRva": "0x120e0",
+          "iatVa": "0x1800120e0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Xbad_alloc@std@@YAXXZ",
+          "iatRva": "0x120e8",
+          "iatVa": "0x1800120e8"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Xout_of_range@std@@YAXPEBD@Z",
+          "iatRva": "0x120f0",
+          "iatVa": "0x1800120f0"
+        },
+        {
+          "module": "MSVCP120.dll",
+          "name": "?_Xlength_error@std@@YAXPEBD@Z",
+          "iatRva": "0x120f8",
+          "iatVa": "0x1800120f8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crtUnhandledException",
+          "iatRva": "0x12108",
+          "iatVa": "0x180012108"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crtTerminateProcess",
+          "iatRva": "0x12110",
+          "iatVa": "0x180012110"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crtCapturePreviousContext",
+          "iatRva": "0x12118",
+          "iatVa": "0x180012118"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_vsnprintf_s",
+          "iatRva": "0x12120",
+          "iatVa": "0x180012120"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__CxxFrameHandler3",
+          "iatRva": "0x12128",
+          "iatVa": "0x180012128"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "?terminate@@YAXXZ",
+          "iatRva": "0x12130",
+          "iatVa": "0x180012130"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__CppXcptFilter",
+          "iatRva": "0x12138",
+          "iatVa": "0x180012138"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_amsg_exit",
+          "iatRva": "0x12140",
+          "iatVa": "0x180012140"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "free",
+          "iatRva": "0x12148",
+          "iatVa": "0x180012148"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_malloc_crt",
+          "iatRva": "0x12150",
+          "iatVa": "0x180012150"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_initterm",
+          "iatRva": "0x12158",
+          "iatVa": "0x180012158"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_initterm_e",
+          "iatRva": "0x12160",
+          "iatVa": "0x180012160"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strcmp",
+          "iatRva": "0x12168",
+          "iatVa": "0x180012168"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "?_type_info_dtor_internal_method@type_info@@QEAAXXZ",
+          "iatRva": "0x12170",
+          "iatVa": "0x180012170"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__clean_type_info_names_internal",
+          "iatRva": "0x12178",
+          "iatVa": "0x180012178"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_stricmp",
+          "iatRva": "0x12180",
+          "iatVa": "0x180012180"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_CxxThrowException",
+          "iatRva": "0x12188",
+          "iatVa": "0x180012188"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memcmp",
+          "iatRva": "0x12190",
+          "iatVa": "0x180012190"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memcpy",
+          "iatRva": "0x12198",
+          "iatVa": "0x180012198"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memset",
+          "iatRva": "0x121a0",
+          "iatVa": "0x1800121a0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__crt_debugger_hook",
+          "iatRva": "0x121a8",
+          "iatVa": "0x1800121a8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sprintf",
+          "iatRva": "0x121b0",
+          "iatVa": "0x1800121b0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memmove",
+          "iatRva": "0x121b8",
+          "iatVa": "0x1800121b8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_snprintf_s",
+          "iatRva": "0x121c0",
+          "iatVa": "0x1800121c0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memchr",
+          "iatRva": "0x121c8",
+          "iatVa": "0x1800121c8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_wfopen",
+          "iatRva": "0x121d0",
+          "iatVa": "0x1800121d0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "isalpha",
+          "iatRva": "0x121d8",
+          "iatVa": "0x1800121d8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??_V@YAXPEAX@Z",
+          "iatRva": "0x121e0",
+          "iatVa": "0x1800121e0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fread",
+          "iatRva": "0x121e8",
+          "iatVa": "0x1800121e8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "isdigit",
+          "iatRva": "0x121f0",
+          "iatVa": "0x1800121f0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_purecall",
+          "iatRva": "0x121f8",
+          "iatVa": "0x1800121f8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??3@YAXPEAX@Z",
+          "iatRva": "0x12200",
+          "iatVa": "0x180012200"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "memcpy_s",
+          "iatRva": "0x12208",
+          "iatVa": "0x180012208"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fwrite",
+          "iatRva": "0x12210",
+          "iatVa": "0x180012210"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fclose",
+          "iatRva": "0x12218",
+          "iatVa": "0x180012218"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??2@YAPEAX_K@Z",
+          "iatRva": "0x12220",
+          "iatVa": "0x180012220"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_ftelli64",
+          "iatRva": "0x12228",
+          "iatVa": "0x180012228"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_fseeki64",
+          "iatRva": "0x12230",
+          "iatVa": "0x180012230"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fputc",
+          "iatRva": "0x12238",
+          "iatVa": "0x180012238"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sscanf_s",
+          "iatRva": "0x12240",
+          "iatVa": "0x180012240"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strncmp",
+          "iatRva": "0x12248",
+          "iatVa": "0x180012248"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "isspace",
+          "iatRva": "0x12250",
+          "iatVa": "0x180012250"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "strchr",
+          "iatRva": "0x12258",
+          "iatVa": "0x180012258"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "fgetc",
+          "iatRva": "0x12260",
+          "iatVa": "0x180012260"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "ferror",
+          "iatRva": "0x12268",
+          "iatVa": "0x180012268"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "vfprintf",
+          "iatRva": "0x12270",
+          "iatVa": "0x180012270"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_vscprintf",
+          "iatRva": "0x12278",
+          "iatVa": "0x180012278"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sprintf_s",
+          "iatRva": "0x12280",
+          "iatVa": "0x180012280"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "vsprintf_s",
+          "iatRva": "0x12288",
+          "iatVa": "0x180012288"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "sscanf",
+          "iatRva": "0x12290",
+          "iatVa": "0x180012290"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_lock",
+          "iatRva": "0x12298",
+          "iatVa": "0x180012298"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_unlock",
+          "iatRva": "0x122a0",
+          "iatVa": "0x1800122a0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_calloc_crt",
+          "iatRva": "0x122a8",
+          "iatVa": "0x1800122a8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__dllonexit",
+          "iatRva": "0x122b0",
+          "iatVa": "0x1800122b0"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "__C_specific_handler",
+          "iatRva": "0x122b8",
+          "iatVa": "0x1800122b8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "_onexit",
+          "iatRva": "0x122c0",
+          "iatVa": "0x1800122c0"
+        }
+      ],
+      "sections": [
+        {
+          "name": ".text",
+          "virtualSize": 66451,
+          "rva": 4096,
+          "rawSize": 66560,
+          "rawOffset": 1024,
+          "flags": 1610612768
+        },
+        {
+          "name": ".rdata",
+          "virtualSize": 27100,
+          "rva": 73728,
+          "rawSize": 27136,
+          "rawOffset": 67584,
+          "flags": 1073741888
+        },
+        {
+          "name": ".data",
+          "virtualSize": 2968,
+          "rva": 102400,
+          "rawSize": 1536,
+          "rawOffset": 94720,
+          "flags": 3221225536
+        },
+        {
+          "name": ".pdata",
+          "virtualSize": 5328,
+          "rva": 106496,
+          "rawSize": 5632,
+          "rawOffset": 96256,
+          "flags": 1073741888
+        },
+        {
+          "name": ".rsrc",
+          "virtualSize": 480,
+          "rva": 114688,
+          "rawSize": 512,
+          "rawOffset": 101888,
+          "flags": 1073741888
+        },
+        {
+          "name": ".reloc",
+          "virtualSize": 688,
+          "rva": 118784,
+          "rawSize": 1024,
+          "rawOffset": 102400,
+          "flags": 1107296320
+        }
+      ],
+      "functions": [
+        {
+          "historicalLabel": "Process",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xde30",
+          "va": "0x18000de30",
+          "fileOffset": 53808,
+          "runtimeFunction": {
+            "startRva": "0xde30",
+            "endRvaExclusive": "0xe51b",
+            "unwindRva": "0x16d30",
+            "byteLength": 1771
+          },
+          "rangeBytesSha256": "6c6dc31a25862971e198cdd4c1b4824c6747e508d638381eeb5b390cf648b94f",
+          "entryBytes": "488bc45556574154415541564157488da888fcffff4881ec4004000048c74598",
+          "exportNames": [
+            "?Process@CImageBufferModule@@UEAAHPEAX0@Z"
+          ],
+          "pseudocode": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000de30.c",
+            "sha256": "af44118bdd66564bdb42098ea70642eab6d922c1cfcaaef955cd9282d7843175",
+            "byteLength": 10443
+          },
+          "assembly": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000de30.asm.txt",
+            "sha256": "d933d9eeb5a79eed271b73df0246a83b698d5b6f3a109a35bc96093f12cfb809",
+            "byteLength": 12585
+          },
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "GetInImage",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xe540",
+          "va": "0x18000e540",
+          "fileOffset": 55616,
+          "runtimeFunction": {
+            "startRva": "0xe540",
+            "endRvaExclusive": "0xe691",
+            "unwindRva": "0x16e08",
+            "byteLength": 337
+          },
+          "rangeBytesSha256": "29d1008b32838a455d98088b11adfbf8bc80401bb4da07c0e78bcfa455f18547",
+          "entryBytes": "48895c24084889742420574881ece0000000488b05a7aa00004833c448898424",
+          "exportNames": [
+            "?GetInImage@CImageBufferModule@@QEAAHPEAXAEAUImageData@@@Z"
+          ],
+          "pseudocode": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000e540.c",
+            "sha256": "9f52d1d0024e522d425334033339d476bcb1b50af70f12362da7ad2e3ee86d07",
+            "byteLength": 1733
+          },
+          "assembly": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000e540.asm.txt",
+            "sha256": "6da525c22710db77bf4ab77b8d39e8d52f4f4b235c3211dbd02ad0fcc10a4628",
+            "byteLength": 2536
+          },
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "CopyImage",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xe6a0",
+          "va": "0x18000e6a0",
+          "fileOffset": 55968,
+          "runtimeFunction": {
+            "startRva": "0xe6a0",
+            "endRvaExclusive": "0xe757",
+            "unwindRva": "0x16e24",
+            "byteLength": 183
+          },
+          "rangeBytesSha256": "cdc6b0656bc6cf55b1429546973a6767be4ba40b3ac611e88fc9fb093299be91",
+          "entryBytes": "48895c24104889742418574883ec30488b4150488bda4c8bd1488d5424404883",
+          "exportNames": [
+            "?CopyImage@CImageBufferModule@@QEAAHAEAUImageData@@AEBU2@@Z"
+          ],
+          "pseudocode": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000e6a0.c",
+            "sha256": "0205c98328ab697f1c71d9bc0a71013e2b7375cba47f1af50e15225446ee49cf",
+            "byteLength": 1246
+          },
+          "assembly": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000e6a0.asm.txt",
+            "sha256": "f5ba50af75edeecaede72cf146d84b99cbcaf9f7238303f7af0f0d72a4bfad1e",
+            "byteLength": 1647
+          },
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "SetOutImage",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xe760",
+          "va": "0x18000e760",
+          "fileOffset": 56160,
+          "runtimeFunction": {
+            "startRva": "0xe760",
+            "endRvaExclusive": "0xe96d",
+            "unwindRva": "0x16e34",
+            "byteLength": 525
+          },
+          "rangeBytesSha256": "1c556829a5537b08b09e3355a1d328f169b3163ebbe357148eac899bd62f341c",
+          "entryBytes": "4c8bdc5556574881ec0001000048c7442430feffffff49895b08488b057fa800",
+          "exportNames": [
+            "?SetOutImage@CImageBufferModule@@QEAAHPEAXUImageData@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z"
+          ],
+          "pseudocode": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000e760.c",
+            "sha256": "c885cd19fd8c54a19bfc7fbf0a63d9e75eb12426396423eaf7ad4486d734a309",
+            "byteLength": 2683
+          },
+          "assembly": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000e760.asm.txt",
+            "sha256": "54e3b58418b0aeeb36b28a665a78b977c986fb4650ffa21c63c427177739c8f1",
+            "byteLength": 3685
+          },
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "DeInit",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xdd20",
+          "va": "0x18000dd20",
+          "fileOffset": 53536,
+          "runtimeFunction": {
+            "startRva": "0xdd20",
+            "endRvaExclusive": "0xdd7e",
+            "unwindRva": "0x15180",
+            "byteLength": 94
+          },
+          "rangeBytesSha256": "b298bf769e91ad99d8b763dfaa39a271daa60231fd7489c8e5fc909b688198bc",
+          "entryBytes": "40534883ec204883b9d800000000488bd974430f1f4000660f1f840000000000",
+          "exportNames": [
+            "?DeInit@CImageBufferModule@@UEAAHXZ"
+          ],
+          "pseudocode": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000dd20.c",
+            "sha256": "312d59c19d29556511ef55cd980f8714826db0815e68da0114ac57fafdc8fbcd",
+            "byteLength": 638
+          },
+          "assembly": {
+            "path": "D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\buffer-native-ownership.resources\\18000dd20.asm.txt",
+            "sha256": "175346cb0206d7f15972b22aa22044e52c59bd670fb9e49a7b88d8a5fd405165",
+            "byteLength": 716
+          },
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "LoadModuleData",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xe9a0",
+          "va": "0x18000e9a0",
+          "fileOffset": 56736,
+          "runtimeFunction": {
+            "startRva": "0xe9a0",
+            "endRvaExclusive": "0xe9e1",
+            "unwindRva": "0x16e88",
+            "byteLength": 65
+          },
+          "rangeBytesSha256": "9001ea9c269e5ccf7b8df0170094dc4d7f67ea622197e46498f274b22b4e22ea",
+          "entryBytes": "488974242041564883ec204c8bf2488bf14885d27511b8010000e0488b742448",
+          "exportNames": [
+            "?LoadModuleData@CImageBufferModule@@UEAAHPEBULOAD_MODULE_DATA_PARAM@@@Z"
+          ],
+          "pseudocode": null,
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        },
+        {
+          "historicalLabel": "SaveModuleData",
+          "historicalLabelIsNotRecoveredSymbol": true,
+          "rva": "0xea80",
+          "va": "0x18000ea80",
+          "fileOffset": 56960,
+          "runtimeFunction": {
+            "startRva": "0xea80",
+            "endRvaExclusive": "0xeb8e",
+            "unwindRva": "0x1519c",
+            "byteLength": 270
+          },
+          "rangeBytesSha256": "7f09209c808d328c4e3b523394454685be797212ea55b8b4e4ab3d4bc5f54c59",
+          "entryBytes": "48895c2408574883ec20488bda488bf9ff153a3800004885db7510b8010000e0",
+          "exportNames": [
+            "?SaveModuleData@CImageBufferModule@@UEAAHPEAUSAVE_MODULE_DATA_PARAM@@@Z"
+          ],
+          "pseudocode": null,
+          "assembly": null,
+          "meaning": "RVA/PE runtime range binds bytes; Ghidra pseudocode is not original source and requires call/ABI/liveness checks."
+        }
+      ]
+    }
+  ],
+  "knownHistoricalArtifacts": [
+    {
+      "path": "analysis/full-audit/image-source-native-0.c",
+      "present": true,
+      "fileIdentity": {
+        "path": "analysis/full-audit/image-source-native-0.c",
+        "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+        "byteLength": 94098
+      },
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    },
+    {
+      "path": "analysis/full-audit/image-source-native-2.c",
+      "present": true,
+      "fileIdentity": {
+        "path": "analysis/full-audit/image-source-native-2.c",
+        "sha256": "08d2342587e278886925aaecea6ee5c9a45fc1c9b687a301bb896deef8d41b6c",
+        "byteLength": 51402
+      },
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    },
+    {
+      "path": "analysis/full-audit/image-source-native-3.c",
+      "present": true,
+      "fileIdentity": {
+        "path": "analysis/full-audit/image-source-native-3.c",
+        "sha256": "08b8dfcd958b692e5059ec895737202bd5731cd701912cba5f2ef2f8fd0b8f6e",
+        "byteLength": 63866
+      },
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    },
+    {
+      "path": "analysis/full-audit/image-source-native-7.c",
+      "present": true,
+      "fileIdentity": {
+        "path": "analysis/full-audit/image-source-native-7.c",
+        "sha256": "6fd48677973f78d10b066eab5bbe79486a98a89064698ea74b682177502b1721",
+        "byteLength": 9322
+      },
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    },
+    {
+      "path": "analysis/full-audit/image-source-native-9.c",
+      "present": true,
+      "fileIdentity": {
+        "path": "analysis/full-audit/image-source-native-9.c",
+        "sha256": "8d0213b8453f40e6c5f8fb141011e15053595f7f62a7f1bf3c8161882b606ca7",
+        "byteLength": 6068
+      },
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    },
+    {
+      "path": "analysis/full-audit/image-source-native-extra-25.c",
+      "present": true,
+      "fileIdentity": {
+        "path": "analysis/full-audit/image-source-native-extra-25.c",
+        "sha256": "e7f86d1f3cedf818710d36984d53155462ef82ad7ad089ff5a62e2550ed9314c",
+        "byteLength": 8233
+      },
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    },
+    {
+      "path": "analysis/full-audit/image-source-native-extra-26.c",
+      "present": true,
+      "fileIdentity": {
+        "path": "analysis/full-audit/image-source-native-extra-26.c",
+        "sha256": "e687d423394585ef6357e0aaf90eb57daa82bc29204c756b1953ab21e93ff540",
+        "byteLength": 15849
+      },
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    },
+    {
+      "path": "analysis/full-audit/image-buffer/native",
+      "present": false,
+      "fileIdentity": null,
+      "meaning": "本次逐项文件系统检查；present为真不替代正文/配套REA身份复核，已复核的body另列。"
+    }
+  ],
+  "offlineTools": {
+    "available": true,
+    "toolFiles": [
+      {
+        "path": ".tools/native-analysis/ghidra_12.1.4_PUBLIC/Ghidra/application.properties",
+        "sha256": "e84c26b08545eee63d24a1a8a4dd7905e4209538e2e7192093877c435c64eb67",
+        "byteLength": 659
+      },
+      {
+        "path": ".tools/native-analysis/ghidra_12.1.4_PUBLIC/Ghidra/Framework/Utility/lib/Utility.jar",
+        "sha256": "bb42a14285530c7d41373e1d130677bd2b90b34f32aedba5042f23663d652c7e",
+        "byteLength": 155933
+      },
+      {
+        "path": ".tools/native-analysis/ghidra_12.1.4_PUBLIC/Ghidra/Features/Decompiler/os/win_x86_64/decompile.exe",
+        "sha256": "ea42e06df2a64f95188a12422a35a36cd48fd4a6f621e62b001e82f1bbbe923b",
+        "byteLength": 2557440
+      },
+      {
+        "path": ".tools/native-analysis/jdk-21.0.12.1+1/bin/java.exe",
+        "sha256": "82051fdab26319d77d20cc0065045d05ec00b3e3d05f44935d7c06b96b621d55",
+        "byteLength": 50304
+      },
+      {
+        "path": ".tools/native-analysis/jdk-21.0.12.1+1/release",
+        "sha256": "07117c72ce033949c14878e07fbf2fe23f59a1f8c90a6d1351b5c89099847ce7",
+        "byteLength": 1664
+      },
+      {
+        "path": "tests/NativeEvidence/VmNativeCapability.java",
+        "sha256": "3f8146857fed4c06c4fbb94a3cbc35a0aacd971a6d8c2a6fc73f1fcd5a177f83",
+        "byteLength": 2377
+      }
+    ],
+    "provider": "Existing Ghidra CLI + existing JDK; not REA deep-provider output",
+    "persistentEnvironmentChanged": false
+  },
+  "nativeTasks": [
+    {
+      "id": "IU01a",
+      "target": "source:Process@0xd820",
+      "question": "追本地/相机/SDK生产、缓存准入与输出指针归属",
+      "state": "body-recovered-needs-semantic-review"
+    },
+    {
+      "id": "IU01b",
+      "target": "source:list helpers@0xb430/0xb4c0/0xb550/0xb8e0",
+      "question": "游标、路径选择、读失败消费位置与末项分支",
+      "state": "address-bound-body-recovery-task-with-existing-cli"
+    },
+    {
+      "id": "IU01c",
+      "target": "buffer:CopyImage@0xe6a0/Process@0xde30/DeInit@0xdd20",
+      "question": "分配复制、队列淘汰与释放配对",
+      "state": "body-recovered-needs-semantic-review"
+    },
+    {
+      "id": "IU01d",
+      "target": "source downstream callees / producer header stores",
+      "question": "共享内存写入、字节8/14/80协议与显示最后读者",
+      "state": "not-closed-call-chain-needed"
+    }
+  ],
+  "limitations": [
+    "Historical address labels are not recovered function names unless exact PE exports confirm them.",
+    "PE exception-directory ranges are compiler runtime-function ranges, not a proof of complete logical high-level body or all exception fragments.",
+    "No vendor DLL loading/execution, camera/device access, environment installation, persistent configuration changes or other worktree reads.",
+    "Absent historical .c/runtime files are not treated as read or revalidated.",
+    "Recovered pseudocode and assembly remain a static source-recovery state; native argument roles require assembly/register checks."
+  ]
+}

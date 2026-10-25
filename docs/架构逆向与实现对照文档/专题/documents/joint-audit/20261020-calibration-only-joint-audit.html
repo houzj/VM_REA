@@ -1,0 +1,188 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>当前目标：标定分类十工具的框架到工具完整代码链 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 当前目标：标定分类十工具的框架到工具完整代码链</p><h1>当前目标：标定分类十工具的框架到工具完整代码链</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>当前目标：标定分类十工具的框架到工具完整代码链</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="20261020-calibration-only-joint-audit.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="20261020-calibration-only-joint-audit.html#当前目标标定分类十工具的框架到工具完整代码链">当前目标：标定分类十工具的框架到工具完整代码链</a></p><p style="margin-left:14px"><a href="20261020-calibration-only-joint-audit.html#唯一归属与复用">唯一归属与复用</a></p><p style="margin-left:14px"><a href="20261020-calibration-only-joint-audit.html#当前基线和待闭边">当前基线和待闭边</a></p><p style="margin-left:14px"><a href="20261020-calibration-only-joint-audit.html#本轮新证据索引不重复计十次">本轮新证据索引（不重复计十次）</a></p></details><h1 id="当前目标标定分类十工具的框架到工具完整代码链">当前目标：标定分类十工具的框架到工具完整代码链</h1><p>用户于 2026-10-20 将<strong>当前目标</strong>限定为工具目录“标定”分类的十项。审核从原版入口、资源、绑定、参数/状态、算法调用、输出/错误/释放一直追到本地框架注册、真实连接、执行、显示、Group 边界、保存重开和撤销。人手/设备验收单列；工具算法仍在范围内，但不把二值化、位置修正、分支、光源等非标定工具的独有实现列为当前完成条件。上游图像源与 Group 只在它们给标定工具供值或承载标定链时核交接，不独立审完所有特有分支。其他工具留待用户的下一目标。</p>
+<h2 id="唯一归属与复用">唯一归属与复用</h2><table>
+<thead>
+<tr>
+<th>标定工具/ID</th>
+<th>此轮独有链路重点</th>
+<th>既有工具源审入口（供复核，不直接计联合审核已完成）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>N点标定 <code>vision.n-point-calibration</code></td>
+<td>点表编辑→参数写入→求解→标定结果；点数与单格成本</td>
+<td><code>docs/plugins/N-POINT-WHOLE-TOOL-SELF-AUDIT.md</code></td>
+</tr>
+<tr>
+<td>N图像标定 <code>vision.n-image-calibration</code></td>
+<td>多帧索引/图像来源→教学/运行→结果身份</td>
+<td><code>docs/plugins/N-IMAGE-WHOLE-TOOL-SELF-AUDIT.md</code></td>
+</tr>
+<tr>
+<td>标定板标定 <code>vision.calibration-board</code></td>
+<td>IMAGE/ROI→标定板检测/拟合→结果/异常释放</td>
+<td><code>docs/plugins/CALIBRATION-BOARD-WHOLE-TOOL-EXIT.md</code></td>
+</tr>
+<tr>
+<td>相机映射 <code>vision.camera-mapping</code></td>
+<td>点对/图像输入→映射求解→文件/结果</td>
+<td><code>docs/plugins/CAMERA-MAPPING-IMPLEMENTATION-EXIT.md</code></td>
+</tr>
+<tr>
+<td>映射标定 <code>vision.map-calibration</code></td>
+<td>锚点/ROI/图像→映射结果→文件状态</td>
+<td><code>docs/plugins/MAP-CALIBRATION-CURRENT-WHOLE-TOOL-EXIT-MATRIX.md</code></td>
+</tr>
+<tr>
+<td>畸变标定 <code>vision.distortion-calibration</code></td>
+<td>图像/ROI→拟合/畸变修正→输出/重开</td>
+<td><code>docs/plugins/DISTORTION-CALIBRATION-WHOLE-TOOL-CLOSURE.md</code></td>
+</tr>
+<tr>
+<td>平移旋转标定 <code>vision.translation-calibration</code></td>
+<td>上游标定数据/路径→变换→结果</td>
+<td><code>docs/plugins/TRANSLATION-IMPLEMENTATION-EXIT.md</code></td>
+</tr>
+<tr>
+<td>旋转标定 <code>vision.rotate-calibration</code></td>
+<td>轴心/点/类型输入→旋转结果→错误边</td>
+<td><code>docs/plugins/ROTATE-CALIBRATION-FINAL-SOURCE-IMPLEMENTATION-AUDIT.md</code></td>
+</tr>
+<tr>
+<td>坐标系 <code>vision.coordinate-module</code></td>
+<td>IMAGE/变量/夹具来源→坐标运输与显示</td>
+<td><code>docs/plugins/COORDINATE-MODULE-IMPLEMENTATION-MATRIX.md</code></td>
+</tr>
+<tr>
+<td>标定加载 <code>vision.read-calib-file</code></td>
+<td>文件/路径来源→动态端口→真实消费者</td>
+<td><code>docs/plugins/READ-CALIB-FILE-FINAL-SELF-AUDIT.md</code></td>
+</tr>
+</tbody></table>
+<p>每个 ID 只在本表出现一次。共同的 <code>目录/注册→创建→配置宿主→候选/绑定→调度→Group→存储</code> 由主线各取一条原版与当前证据，标定工具引用同一版本，不反复写十份。原版工具资源和算法按行分别核，不能因共享链通过而宣称十个算法相符。对每项维护 J01–J12 的已证边、未证的<strong>精确函数/资源/条件</strong>、当前差异和责任方；只有全链自审后才能标代码审核完成。</p>
+<p>第十一轮已把十工具映射到完整的 120 个 J 门：见 <a href="20261020-calibration-b-six-j-matrix.html">B 六工具矩阵</a>、<a href="20261020-calibration-c-four-j-matrix.html">C 四工具矩阵</a>和<a href="20261020-calibration-j-matrix-root-review.html">根线停止重复裁决</a>。各格只关闭具名证据边，原厂运行态与用户长期无响应等共同缺口只计一次，不用新报告重复增加进度。</p>
+<p>第十三轮又闭合了一个共用原始创建代码路径及两个工具特有结果/事件边：<a href="20261020-pass13-calibration-create-call-chain.html">工具箱拖放→SDK 请求</a>、<a href="20261020-pass13-readcalib-filepicker-dynamic-io.html">标定加载文件控件的动态输出歧义</a>、<a href="20261020-pass13-coordinate-terminal.html">坐标系终端输出→Group/显示</a>。这些是代码级具名边的新增证据，不代表十工具 J01–J12 全部门槛都已关闭。</p>
+<p>第十四轮新增 <a href="20261020-pass14-b-four-display.html">四工具显示链</a>、<a href="20261020-pass14-c-display-chain.html">旋转标定图/失败显示链</a> 及<a href="20261020-pass14-readcalib-parent-cil-bridge.html">标定加载文件按钮父类 CIL→写参/可选运行</a>；根线独立复跑见<a href="20261020-pass14-root-review.html">第十四轮复核</a>。原版同条件失败呈现、动态端口回调/Group 订阅及旋转图像四叶合同仍有限未闭；未因当前探针通过而将整个 J 门改为完成。</p>
+<p>第十五轮接续 <a href="20261020-pass15-npoint-display.html">N 点失败显示</a>、<a href="20261020-pass15-translation-display-chain.html">平移旋转 owned Group 失败显示</a> 与<a href="20261020-pass15-readcalib-dynamic-history-boundary.html">标定加载动态叶历史入口</a>，根线复跑及程序化 ClearRevision 边界裁决见<a href="20261020-pass15-root-review.html">第十五轮复核</a>。正常清空按钮与单独写入 ClearRevision 不能混作同一用户路径；原厂失败显示和文件刷新间接回调继续标未证。</p>
+<p>第十六轮补 <a href="20261020-pass16-nimage-display-recovery.html">N 图像待完成/空白失败/新批次显示</a>、<a href="20261020-pass16-readcalib-display-chain.html">标定加载文件刷新/动态 Group/状态记录</a> 与<a href="20261020-pass16-camera-mapping-display.html">相机映射文本结果/数组失配/恢复</a>；根线复验和原版/当前分界见<a href="20261020-pass16-root-review.html">第十六轮复核</a>。ReadCalib 当前有限值失败回灌上一轮成功记录登 FCR-036；原版 NaN/失败画面未推定。十工具具名当前显示边已有覆盖，但严格 J01–J12 全链仍未关。</p>
+<p>第十七轮追到<a href="20261020-pass17-readcalib-native-callback.html">标定加载 FilePath 托管写入→原生 LoadFile 与动态输出懒读边界</a>；SDK 通知已加载输出和 Group 迁移的中间回调尚无原始证据。<a href="20261020-pass17-readcalib-group-history.html">动态叶改名后的真实 Group 订阅历史</a>揭示 warm 旧矩阵继续输出、cold 安全失败，显式重绑后 Undo/Redo/重开闭合；<a href="20261020-pass17-calibration-lifecycle.html">标定板主窗删除/撤销/方案替换生命周期</a>实测 scoped 状态回收 6/6。根线独立复核见<a href="20261020-pass17-root-review.html">第十七轮复核</a>。这些只关闭具名边，不代表原厂 callback、CloseOneModule 等价或卡死根因；针对“已有反编译仍偏航”的<a href="CALIBRATION-PLUGIN-REVERSE-LESSONS-HANDOFF.html">逆向设计教训/插件交接</a>已立档。</p>
+<h2 id="当前基线和待闭边">当前基线和待闭边</h2><ul>
+<li>当前 WPF 主窗 <code>MainWindow.xaml.cs</code> 注册了十个插件类型；工作区 <code>tool-catalog.json</code> 的标定分类也有十个非空 ID。不过 <code>HEAD</code> 目录仅有其中八个，N图像标定和相机映射两项目录映射是用户已有未提交改动，<strong>暂不作为提交基线完成证据</strong>；主线只读核其现状，不覆盖该文件。</li>
+<li>原版 <code>VMControls.Data.ToolBoxData</code>、<code>VMControls.WPF.Base.ToolItemGrid</code>、<code>VM.Core.VmModuleSet.CreatModuleByInfo/CreateModuleToolRe</code> 提供工具箱到原模块实例的源码入口；十项 <code>ToolItemInfo</code>/主 XML/原生与 Cs 载体的静态身份已在<a href="20261020-pass6-calibration-original-identity.html">原件身份报告</a>逐项核对，SDK 动态实例 ID 尚未核。本地对应 <code>ToolNavigation.ReadCategoryTools/LoadToolCategory/CreateCatalogTile</code>、<code>MainWindow</code> 注册和 <code>GraphEditorDocument.AddNode</code>；真实主窗/目录/注册表十项探针见下表，作为 J01/J02 的<strong>一次共享宿主证据</strong>。</li>
+<li>结果链优先做一个真实标定生产者→同分类结果消费者→父流程/Group→保存重开闭环，再按不同载荷族补特有反例。历史插件 10/10 自审仅证明各自限定实施范围，<strong>不能直接代替本次跨框架联合审核</strong>。</li>
+<li>框架实施指标仍为 <code>41/96=42.71%</code>，与本次十工具审核对象数分开；人工验收不进分子。未获证据的边不因测试绿色、报告数量或目录映射存在而关闭。</li>
+</ul>
+<h2 id="本轮新证据索引不重复计十次">本轮新证据索引（不重复计十次）</h2><table>
+<thead>
+<tr>
+<th>共享或特有边</th>
+<th>当前取证状态</th>
+<th>仍未覆盖</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原安装十项静态身份</td>
+<td><a href="20261020-pass6-calibration-original-identity.html">十个 ToolItemInfo/主 XML/二进制逐件核对</a>；标定板 <code>ToolItemInfo.name</code> 与目录/主 XML 不同，分别保留</td>
+<td>SDK 动态实例 ID、选择→创建的逐项运行边</td>
+</tr>
+<tr>
+<td>共同目录→注册→工厂→新增图节点</td>
+<td><a href="20261020-pass6-calibration-catalog-host.html">真实 WPF 宿主十项探针</a> 全部通过；仅作为十工具共享的当前 J01/J02 边</td>
+<td>原安装版各 <code>ToolItemInfo</code> 身份逐件、实际用户拖放与配置窗</td>
+</tr>
+<tr>
+<td>N点独有点表初始化/单格编辑</td>
+<td><a href="20261020-pass6-npoint-ui.html">原 setter 与当前 Apply 成本</a> 有原体、真实图文档计数及 4/9/32 点负载</td>
+<td>原版/当前同机时延、初始化失败副作用、真实宿主历史/重开、长期卡死根因</td>
+</tr>
+<tr>
+<td>N点→XML→标定加载→Group→坐标系矩阵</td>
+<td><a href="20261020-pass6-calibration-result-chain.html">标定结果实际链</a> 首跑和保存重开均成功；原始模块体支持文件 float[9] 路径，直接 <code>CalibData</code> 连接被拒</td>
+<td>原厂同构整图运行、失败/短矩阵/其他生产者、坐标系全部分支</td>
+</tr>
+<tr>
+<td>Group 矩阵输出→坐标系输入的连接历史</td>
+<td><a href="20261020-pass7-calibration-history-chain.html">第七轮撤销/重做探针</a> 断开、撤销、重做、再撤销后四次实际执行（含保存重开）通过</td>
+<td>原版同构整图、参数叶订阅历史、多层 Group 和动态端口历史</td>
+</tr>
+<tr>
+<td>十工具共同配置宿主与两项参数写回</td>
+<td><a href="20261020-pass7-calibration-config-bridge.html">第七轮配置桥接</a> 实际 WPF 主窗十项普通配置窗分流通过；N图像/相机映射参数写入、历史及方案保存重开通过</td>
+<td>全部参数/订阅、工具专用导出、原厂同条件权限/关闭差分和原生 SetParam</td>
+</tr>
+<tr>
+<td>标定加载失败→Group→坐标系</td>
+<td><a href="20261020-pass7-calibration-failure-chain.html">第七轮失败链</a> 十四个真实图状态涵盖读失败保旧值、清输出失败传播、恢复、热/冷短矩阵</td>
+<td>原厂同构 Group 动态输出消失状态、原生冷短矩阵尾部及设备差分</td>
+</tr>
+<tr>
+<td>平移旋转标定→XML→标定加载→Group→坐标系</td>
+<td><a href="20261020-pass8-translation-result-chain.html">第八轮第二生产者结果链</a> 首跑和保存重开均成功；文件/Group/坐标系九项矩阵；独立 <code>CalibData</code> 直连拒绝</td>
+<td>原厂同构整图、组合标定/示教/失败文件、原生数值逐位差分</td>
+</tr>
+<tr>
+<td>双相机映射→映射标定文件模式→标定加载→Group→坐标系</td>
+<td><a href="20261020-pass8-camera-map-chain.html">第八轮双文件结果链</a> 两份 36B 文件→XML→九项矩阵首跑、删产物后保存重开均成功；错误文件格式与直接矩阵端口均被排除</td>
+<td>映射标定图像/ROI 模式、原版同构整图及本夹具逐项原生数值差分</td>
+</tr>
+<tr>
+<td>N图像 XML 与标定板 Gray8 两条独立生产者链</td>
+<td><a href="20261020-pass8-nimage-board-chain.html">第八轮图像生产者</a> 九帧真实主窗 N图像 XML→标定加载→坐标系；板 Gray8→99 点/36B <code>.iwcal</code>；跨格式拒绝有证</td>
+<td>原版同构整图、N图像其余算法分支、板其他板型/ROI/失败后状态及两链 Group 组合</td>
+</tr>
+<tr>
+<td>畸变修正图→N图像第 1 帧</td>
+<td><a href="20261020-pass9-distortion-chain.html">第九轮畸变链</a> 真实主窗 1000×1000 图像源→畸变 <code>PostCorrectionImage</code>→N图像，76B <code>.iccal</code>、保存重开及错误路径恢复 11/11</td>
+<td>原厂同构图、ROI/全部板型和数值、双图显示、N图像最终矩阵</td>
+</tr>
+<tr>
+<td>相机映射文件→旋转标定连续采样</td>
+<td><a href="20261020-pass9-rotate-consumer-chain.html">第九轮旋转链</a> 实际 <code>.iwcal</code> 同图 3 轮 <code>remainCount=2/1/0</code>，丢文件失败且同 scope 恢复；三个既有 XML 生产物只做读取兼容</td>
+<td>原厂同构整图、数值逐位差分、XML 三生产者本轮同图重跑及旋转结果后继</td>
+</tr>
+<tr>
+<td>平移旋转点数组→Group→坐标系 POINT</td>
+<td><a href="20261020-pass9-coordinate-point-chain.html">第九轮坐标系点链</a> <code>OutImagePointX/Y</code> 经 Group 到 <code>SrcPointX/Y</code>，首跑/保存重开两次实际 Success</td>
+<td>原厂同构图、坐标系 Draw/缺项异常/显示分支及数值逐位差分</td>
+</tr>
+<tr>
+<td>映射标定双 IMAGE→XML→标定加载/Group/坐标系</td>
+<td><a href="20261020-pass10-map-image-chain.html">第十轮双图模式</a> 两个真实图像源的原 SDK 夹具各 168 角点，首跑/重开后新 XML 均被九项矩阵消费者读入</td>
+<td>双 ROI、教学、原厂同构图及数值逐位差分</td>
+</tr>
+<tr>
+<td>标定板 <code>.iwcal</code>→旋转标定</td>
+<td><a href="20261020-pass10-board-rotate-chain.html">第十轮板到旋转</a> 原 SDK 导出与原模块 loader 对齐 9 float；真实图 3 帧连续采样、空白失败与同 scope 恢复 20/20</td>
+<td>原厂桌面同构图、设备/任意板型/旋转数值全域</td>
+</tr>
+<tr>
+<td>N 点单格编辑→参数历史→XML/标定加载</td>
+<td><a href="20261020-pass10-npoint-edit-chain.html">第十轮编辑链</a> 真实控件和同构回调四行开窗 20 次整节点图编辑，单格 +1；Undo/Redo、保存重开、求解/加载均成功；既有性能合同 FCR-033 追加证据</td>
+<td>原版历史/刷新次数、实际 MainWindow/原机同条件时延、长期未响应根因</td>
+</tr>
+<tr>
+<td>N 图像失败批次→恢复 XML→owned Group→坐标系</td>
+<td><a href="20261020-pass11-nimage-state-chain.html">第十一轮批次状态链</a> 真图八帧后第九空白帧失败、owned 数=9/无 XML，显式导出失败；下一帧重置并完成九帧，新 XML 经 Group 给坐标系，保存重开后消费再跑 26/26</td>
+<td>原厂同图失败码和数值、只 Clear 未 Run 的旧 SDK 结果、未完会话跨重开</td>
+</tr>
+<tr>
+<td>坐标系 Draw ROI→图像/显示→撤销/重开</td>
+<td><a href="20261020-pass11-coordinate-roi-chain.html">第十一轮 ROI 链</a> 真图 100×80→200×80 使当前 Normalized ROI 像素原点 25→50；缺 ROI 暖态保旧、Undo/保存重开复验</td>
+<td>原厂 ROI 序列化坐标空间与原机图执行；当前 Normalized 缩放仅是宿主适配</td>
+</tr>
+<tr>
+<td>N 点真实主窗打开/编辑点表</td>
+<td><a href="20261020-pass11-npoint-mainwindow-cost.html">第十一轮 MainWindow 探针</a> 4/12/32 行实际按钮开窗分别产生 20/60/160 次文档 Revision/Changed，单格各 +1；FCR-033 追加证据</td>
+<td>原版同机时延、字段写失败/重复打开副作用、长期未响应线程栈</td>
+</tr>
+<tr>
+<td>标定板/畸变成功→失败→切选的实际显示</td>
+<td><a href="20261020-pass12-board-distortion-display.html">第十二轮显示链</a> 主窗 11/11：板 NoMatch 清旧点图形，畸变坏导出失败保留两层旧图/170 图形但更新记录，切到源节点均清显示；FCR-034 登记风险</td>
+<td>原厂同图失败显示的 <code>GetDisplayList</code>/可见层，不能仅凭当前状态判缺陷</td>
+</tr>
+<tr>
+<td>标定加载动态叶改名/改型→Group/坐标系</td>
+<td><a href="20261020-pass12-readcalib-schema.html">第十二轮动态 schema 链</a> 原 FloatList 成功；刷新为新名或同名 int 后旧 Group 选择明确失败、坐标系跳过，重开不静默迁移；恢复原名/类型后同 scope 与重开均成功</td>
+<td>原厂文件刷新到 SDK IO 通知/托管对象复用或重建/Group 订阅的精确调用链</td>
+</tr>
+</tbody></table>
+<p class="meta">来源：docs/joint-audit/20261020-calibration-only-joint-audit.md · SHA256 b2568b8442da6c38f037d6bd6f17007d2cadf25a429d315cdb816b3fe77ba964<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

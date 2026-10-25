@@ -1,0 +1,77 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 02b4bb2681b5 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 02b4bb2681b5</p><h1>原文证据 02b4bb2681b5</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 02b4bb2681b556b7dfb5059a4f4564b3c0817952e77dceaba34e33afc9beb6eb。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>        foreach (var variable in solution.GlobalVariables ?? Enumerable.Empty&lt;GlobalVariable>())
+        {
+            // Invalid producer bindings remain unavailable at execution time; unrelated graphs still compile.
+            if (!string.IsNullOrEmpty(variable.RebindingReason) || !string.IsNullOrEmpty(variable.BindingValidationPending))
+                continue;
+            if (variable.ProducerBinding == null)
+                continue;
+
+            var producer = ResolveNode(variable.ProducerBinding.WorkflowId, variable.ProducerBinding.NodeId,
+                $&quot;全局变量 {variable.Name} 的输入来源&quot;);
+            if (producer == null) continue;
+
+            foreach (var consumer in variable.ConsumerBindings ?? Enumerable.Empty&lt;ConsumerBinding>())
+            {
+                var target = ResolveNode(consumer.WorkflowId, consumer.NodeId,
+                    $&quot;全局变量 {variable.Name} 的目标输出&quot;);
+                if (target == null) continue;
+                AddDependency(producer, target, SolutionDependencyKind.GlobalVariable,
+                    variable.Name, consumer.ParameterName);
+            }
+            foreach (var workflow in workflows)
+                foreach (var node in workflow.Nodes)
+                    foreach (var input in BindingRelationCatalog.Describe(node).Where(i => i.Active))
+                        if (SunEyeVision.Plugin.SDK.Execution.Parameters.BindingInputCatalog.TryReference(input.Read(), workflow.Nodes.Select(n => n.Id), input.ReferenceOnly, out var id, out var path) &amp;&amp;
+                            (id == &quot;__VariableId__&quot; &amp;&amp; path == variable.Id || id == &quot;__GlobalVars__&quot; &amp;&amp; SunEyeVision.Plugin.SDK.Execution.Parameters.PropertyPathParser.ExtractPropertyName(path) == variable.Name))
+                            AddDependency(producer, GetScopedNodeId(workflow.Id, node.Id), SolutionDependencyKind.GlobalVariable, variable.Name, input.Key);
+        }
+
+        var graph = new SolutionExecutionDependencyGraph(predecessors, dependencies);
+        graph.GetTopologicalLayers(nodeLookup.Keys);
+        return graph;
+
+        string? ResolveNode(string workflowId, string nodeId, string role)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(workflowId))
+            {
+                var scoped = GetScopedNodeId(workflowId, nodeId);
+                if (!nodeLookup.ContainsKey(scoped))
+                    return null;
+                return scoped;
+            }
+
+            // 兼容旧方案：旧 ConsumerBinding 未保存工作流 ID。节点 ID 全局唯一时可安全迁移；
+            // 若不唯一则拒绝猜测，提示用户重新保存该绑定。
+            if (!workflowByNodeId.TryGetValue(nodeId, out var owners) || owners.Count == 0)
+                return null;
+            if (owners.Count != 1)
+                return null;
+            return GetScopedNodeId(owners[0].Id, nodeId);
+        }
+
+        void AddDependency(string source, string target, SolutionDependencyKind kind, string? variableName, string? parameterName)
+        {
+            if (string.Equals(source, target, StringComparison.Ordinal))
+                throw new InvalidOperationException($&quot;解决方案依赖不能指向自身：{source}。&quot;);
+            if (predecessors[target].Add(source))
+                dependencies.Add(new SolutionExecutionDependency(source, target, kind, variableName, parameterName));
+        }
+    }
+}
+
+public enum SolutionDependencyKind
+{
+    Internal,
+    GlobalVariable
+}
+
+public sealed record SolutionExecutionDependency(
+    string SourceScopedNodeId,
+    string TargetScopedNodeId,
+    SolutionDependencyKind Kind,
+    string? GlobalVariableName,
+    string? ParameterName);
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis.html">数据/global-variable-analysis.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

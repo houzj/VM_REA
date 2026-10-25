@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RenderGraph · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>RenderGraph · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-CA05"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>RenderGraph → 自动路由缓存 / 手动路径显示</h2><p>缓存按流程+源目标身份，端口几何不变就保留路径；未命中才用全部其它节点障碍重算。手动 PathPoints 使用独立点集；删除/方案替换清缓存。</p><p><a href="../专题/canvas-viewport.html#edge-CA05">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/canvas-viewport.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/canvas-viewport.edges.json · SHA256 4fed170ca686179656302412fc5543a52af51554793d8d6c7bc3c26b3cd24409</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="a75b89ce7a58ede8b7775b37aca4725104630f2ab3921cffea450e5a8f868978">{
+  &quot;id&quot;: &quot;CA05&quot;,
+  &quot;route&quot;: &quot;当前 · 路由&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;RenderGraph&quot;,
+  &quot;to&quot;: &quot;自动路由缓存 / 手动路径显示&quot;,
+  &quot;behavior&quot;: &quot;缓存按流程+源目标身份，端口几何不变就保留路径；未命中才用全部其它节点障碍重算。手动 PathPoints 使用独立点集；删除/方案替换清缓存。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowCanvas.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.RenderGraph route cache&quot;,
+      &quot;sha256&quot;: &quot;123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f&quot;,
+      &quot;start&quot;: 107,
+      &quot;end&quot;: 143,
+      &quot;excerpt&quot;: &quot;        var boxes=procedure.Nodes.ToDictionary(n=>n.Id,n=>new RouteRect(n.X,n.Y,NodeWidth,NodeVisualHeight(n)));\n        var wires=ProcedureGraph.ExecutionEdges(procedure).ToArray();\n        var activeWires=wires.Select(w=>(w.FromNode,w.ToNode)).ToHashSet();\n        var liveProcedures=doc.Document.Procedures.Select(p=>p.Id).ToHashSet();\n        foreach(var old in automaticRoutes.Keys.Where(k=>!liveProcedures.Contains(k.Procedure)||(k.Procedure==procedure.Id&amp;&amp;!activeWires.Contains((k.From,k.To)))).ToArray())automaticRoutes.Remove(old);\n        foreach(var wire in wires)\n        {\n            if(!boxes.TryGetValue(wire.FromNode,out var sourceBox)||!boxes.TryGetValue(wire.ToNode,out var targetBox))continue;\n            var cacheKey=(procedure.Id,wire.FromNode,wire.ToNode);\n            IReadOnlyList&lt;RoutePoint> points;\n            if(wire.PathPoints is {Count:>1})\n            {\n                automaticRoutes.Remove(cacheKey);\n                points=wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray();\n            }\n            else\n            {\n                var source=Port(sourceBox,wire.SourceIndex);var target=Port(targetBox,wire.TargetIndex);\n                if(automaticRoutes.TryGetValue(cacheKey,out var previous)&amp;&amp;previous.Source==source&amp;&amp;previous.Target==target)points=previous.Points;\n                else\n                {\n                    // VM's DiagramPage constructor fixes Width/Height to DiagramPageWidth (5000).\n                    // GetPathMap allocates its AStar grid from those ActualWidth/ActualHeight values,\n                    // not from the current node bounds; preserve that map extent for every edge.\n                    double routeWidth=DiagramPageSize,routeHeight=DiagramPageSize;\n                    // Connection.OnPositionChanged invalidates only its own endpoint/port changes.\n                    // DiagramPage.GetPathMap is therefore rerun for those changes, not for an unrelated obstacle move.\n                    points=VmOrthogonalRouter.Route(source,target,boxes.Where(p=>p.Key!=wire.FromNode&amp;&amp;p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight,1_100_000).Points;\n                    if(points.Count>=2)automaticRoutes[cacheKey]=(source,target,points);else automaticRoutes.Remove(cacheKey);\n                }\n            }\n            if(points.Count&lt;2) { StatusText.Text=\&quot;有连线无法在当前画布范围内完成布线\&quot;;continue; }\n            string key=wire.FromNode+\&quot;>\&quot;+wire.ToNode;\n            var displayedPoints=wire.PathPoints is {Count:>1}?VmOrthogonalRouter.Passivate(points):points;\n            var path=new System.Windows.Shapes.Path {Data=LineGeometry(displayedPoints),Stroke=WireStroke(wire),StrokeThickness=2,IsHitTestVisible=false};\n            wireViews[key]=(wire,path,wire.PathPoints is {Count:>1}?points:CleanWirePoints(points));\n            GraphLayer.Children.Add(path);&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowCanvas.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.InitializeCanvasInput scope replacement&quot;,
+      &quot;sha256&quot;: &quot;123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f&quot;,
+      &quot;start&quot;: 67,
+      &quot;end&quot;: 73,
+      &quot;excerpt&quot;: &quot;            automaticRoutes.Clear();\n            canvasViews.Clear();canvasProcedure=null;\n            // Procedure IDs may recur in another solution; overview rendering also\n            // bypasses the normal per-procedure viewport switch.\n            scale=1;panX=panY=0;\n        };\n        CanvasScrollViewer.ScrollChanged+=(_,_)=> {if(!syncingViewport){panX=-CanvasScrollViewer.HorizontalOffset;panY=-CanvasScrollViewer.VerticalOffset;UpdateMiniMap();}};&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;这是单 GraphLayer/字典的独立适配，非原 Connection 依赖属性对象图。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

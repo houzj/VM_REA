@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>主菜单CameraSet · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>主菜单CameraSet · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-H01"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>主菜单CameraSet → SDK/用户门 → 相机清单同步 → GetAuthority → 新对话框</h2><p>非SDK且GetLoginUser数值3时直接返回。遍历方案模块快照，把FilterCameraModule命中且不在ItemsA的模块加入；再按ItemsA快照移除已不在方案的模块并清CurDeviceA。随后new GlobalCameraDlg、GetAuthority、ShowDialog；并非只显示一份缓存窗口。</p><p><a href="../专题/configuration-hosts.html#edge-H01">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/configuration-hosts.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/configuration-hosts.edges.json · SHA256 42d9ff5e82c1446b90b2e991b8fb374c00927cd6b4054f029298d5be7d45b9b7</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="7465a3fb3d368cffb73ea69eaac2905b419ef37d7acdcc71bf80980637929635">{
+  &quot;id&quot;: &quot;H01&quot;,
+  &quot;route&quot;: &quot;原版 · 配置宿主入口&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;主菜单CameraSet&quot;,
+  &quot;to&quot;: &quot;SDK/用户门 → 相机清单同步 → GetAuthority → 新对话框&quot;,
+  &quot;behavior&quot;: &quot;非SDK且GetLoginUser数值3时直接返回。遍历方案模块快照，把FilterCameraModule命中且不在ItemsA的模块加入；再按ItemsA快照移除已不在方案的模块并清CurDeviceA。随后new GlobalCameraDlg、GetAuthority、ShowDialog；并非只显示一份缓存窗口。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs&quot;,
+      &quot;member&quot;: &quot;CameraSet synchronization and entry&quot;,
+      &quot;sha256&quot;: &quot;b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187&quot;,
+      &quot;start&quot;: 918,
+      &quot;end&quot;: 969,
+      &quot;excerpt&quot;: &quot;\tpublic static void CameraSet()\n\t{\n\t\t//IL_000e: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0014: Invalid comparison between Unknown and I4\n\t\ttry\n\t\t{\n\t\t\tif (!Program.IsSdkMode() &amp;&amp; (int)CodeManager.Instance.GetLoginUser() == 3)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tList&lt;VmModule> list = VmSolution.Instance.Modules.ToList();\n\t\t\tforeach (VmModule item in list)\n\t\t\t{\n\t\t\t\tif (GlobalCameraManager.Instance.FilterCameraModule(item.StrModuleName) &amp;&amp; !GlobalCameraManager.Instance.ItemsA.Contains(item))\n\t\t\t\t{\n\t\t\t\t\tGlobalCameraManager.Instance.ItemsA.Add(item);\n\t\t\t\t}\n\t\t\t}\n\t\t\tList&lt;VmModule> list2 = GlobalCameraManager.Instance.ItemsA.ToList();\n\t\t\tforeach (VmModule item2 in list2)\n\t\t\t{\n\t\t\t\tif (!VmSolution.Instance.Modules.Contains(item2))\n\t\t\t\t{\n\t\t\t\t\tGlobalCameraManager.Instance.ItemsA.Remove(item2);\n\t\t\t\t\tGlobalCameraManager.Instance.CurDeviceA = null;\n\t\t\t\t}\n\t\t\t}\n\t\t\tglobalCameraDialog = new GlobalCameraDlg();\n\t\t\tGlobalCameraManager.Instance.GetAuthority();\n\t\t\tglobalCameraDialog.ShowDialog();\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tVmException ex2 = null;\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\n\t\t\t{\n\t\t\t\tex2 = ex as VmException;\n\t\t\t\tif (ex2 == null)\n\t\t\t\t{\n\t\t\t\t\tex2 = ex.InnerException as VmException;\n\t\t\t\t}\n\t\t\t\tShowMessage.ShowVmExceptionMessage(ex2);\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex.Message);\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic void CreateCalibGuide()&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/configuration-hosts-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::CameraSet&quot;,
+      &quot;sha256&quot;: &quot;d5f2749dff501d356fbae8c199cb4578ed1b98678fc8ddd8fe80df89704b941a&quot;,
+      &quot;start&quot;: 505,
+      &quot;end&quot;: 524,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002c8\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002c8\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;CameraSet\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 440,\n          \&quot;ilSha256\&quot;: \&quot;309c392518c19eb0830c823fec95f04ffa96f1e4be8d671d8ff61396af5532d9\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;000028270100062d0f284d03000a6f5700000a19fe012b01160c082c05dd95010000288800000a6feb00000a283800002b0a00066f5703000a0d2b521203285803000a130400285903000a11046f5a03000a6f5b03000a130511052c3000285903000a6f5c03000a11046f5d03000a16fe01130611062c1400285903000a6f5c03000a11046f5e03000a000000001203285f03000a2da5de0f1203fe165000001b6fa200000a00dc285903000a6f5c03000a283800002b0b00076f5703000a13072b451207285803000a130800288800000a6feb00000a11086f5d03000a16fe01130911092c2000285903000a6f5c03000a11086f6003000a26285903000a146f6103000a0000001207285f03000a2db2de0f1207fe165000001b6fa200000a00dc736203000a8001010004285903000a6f6303000a007e010100046fbf01000a2600de72130a0014130b110a75270000012d11110a6f9700000a752700000114fe032b0117130c110c2c3c00110a7527000001130b110b14fe01130d110d2c1000110a6f9700000a7527000001130b00110b289c00000a00110b6f7300000a289b00000a00de0f110a6f7c00000a289b00000a00de002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;清单匹配基于具体模块对象，运行修改/异常中断后的状态未验证；相机连接/采集/硬件释放不由此证明。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

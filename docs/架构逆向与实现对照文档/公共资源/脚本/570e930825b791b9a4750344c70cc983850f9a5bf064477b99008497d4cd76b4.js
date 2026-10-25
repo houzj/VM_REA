@@ -1,0 +1,1 @@
+document.getElementById('search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();for(const row of document.querySelectorAll('article'))row.hidden=!row.dataset.key.toLowerCase().includes(q)});

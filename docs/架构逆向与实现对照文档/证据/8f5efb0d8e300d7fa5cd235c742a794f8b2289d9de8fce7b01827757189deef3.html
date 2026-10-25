@@ -1,0 +1,74 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 8f5efb0d8e30 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 8f5efb0d8e30</p><h1>原文证据 8f5efb0d8e30</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 8f5efb0d8e300d7fa5cd235c742a794f8b2289d9de8fce7b01827757189deef3。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/GetSelectedDisplayFilterOperation.cs:26–97
+SHA256 0c475ef78bc75bc433f152b020b6f16738a2f52c2f976ecab145c7258ceaf589
+	public void Operate(object[] Params, string[] ExtraParams)
+	{
+		if (ExtraParams == null)
+		{
+			return;
+		}
+		NameValueItem parentNode = Executor.GetParentNode&lt;NameValueItem&gt;();
+		int num = 0;
+		if (parentNode is ButtonSelecter)
+		{
+			num = (parentNode as ButtonSelecter).Type;
+		}
+		string text = &quot;&quot;;
+		if (ExtraParams.Length != 0)
+		{
+			text = ExtraParams[0];
+		}
+		if (parentNode == null)
+		{
+			return;
+		}
+		BaseNode baseNode = parentNode.GetTopBaseNode() as BaseNode;
+		if ((baseNode as IOwner)?.Owner is VmModule vmModule)
+		{
+			VmIO vmIO = null;
+			vmIO = vmModule.Inputs.GetLeafIO(text);
+			if (vmIO == null &amp;&amp; baseNode is SubAlgorithmTabRoot subAlgorithmTabRoot)
+			{
+				vmIO = vmModule.Inputs.GetLeafIO(AppLocalizationService.UnDoTranslate(text + &quot;_&quot; + subAlgorithmTabRoot.HashCode));
+			}
+			if (vmIO == null)
+			{
+				vmIO = vmModule.Outputs.GetLeafIO(text);
+			}
+			if (vmIO == null)
+			{
+				vmIO = vmModule.Outputs.GetLeafIO(&quot;%&quot; + text + &quot;%&quot;);
+			}
+			if (vmIO == null)
+			{
+				GetDisplaySelectedFilter(vmModule, parentNode, TargetName);
+			}
+			else
+			{
+				GetOutputSelectedFilter(vmIO, parentNode, TargetName);
+			}
+		}
+	}
+
+	public static void GetDisplaySelectedFilter(VmModule node, NameValueItem parentItem, string TargetName)
+	{
+		try
+		{
+			Feature feature = ((VmSolution.Instance[((IVmFullPath)node).FullPath + &quot;.[Display]&quot;] is ParamRoot paramRoot) ? (from a in paramRoot.GetDisplayList().OfType&lt;Object&gt;()
+				where a.Name == &quot;Show Text&quot;
+				select a).FirstOrDefault() : null)?.Features.Where((FeatureBase a) =&gt; a.Name == parentItem.Name).FirstOrDefault() as Feature;
+			parentItem.SetPropertyValueByNameNotrigger(TargetName + &quot;A&quot;, (feature.Mapping == &quot;NULL&quot;) ? feature.Value : node.GetIO(feature.Mapping)?.ModulePathName);
+		}
+		catch (Exception ex)
+		{
+			throw new Exception(ex.Message);
+		}
+	}
+
+	public static void GetOutputSelectedFilter(VmIO thisFilter, NameValueItem parentItem, string TargetName)
+	{
+		if (parentItem == null || thisFilter == null)
+		{
+			return;
+		}
+		string value = null;
+		VmIO relateIO = thisFilter.RelateIO;</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../专题/tool-rendering-entry-audit.html">真实工具显示设置入口：Blob文字、Setter与[Display]供应</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

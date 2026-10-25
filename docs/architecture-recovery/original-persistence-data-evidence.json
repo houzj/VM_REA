@@ -1,0 +1,630 @@
+{
+  "schemaVersion": 1,
+  "facts": [
+    {
+      "id": "OP01",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原UserData[key]",
+      "to": "按Parent.ID普通键或动态复合键读写SDK界面数据",
+      "behavior": "UserData不是一个本地Dictionary。getter在Parent非活动或正在Dispose时返回null，否则调用SDK；setter在Parent为空或Dispose时直接返回。isUsedForDynamicUIParam决定路由：动态key用字面分隔符&?;?拆分，array[0]为名字、array[1]（若有）为optional，更多片段没有继续传递；普通路由传完整key和Parent.ID。Parent.IsDynamicModu控制撤销分支，是另一项判断，不能等同isUsedForDynamicUIParam。",
+      "representation": "对外载荷byte[]；键是字符串，具体编码/布局由每个生产者决定。getter的null还可能表示非活动/Dispose，不能只解释为文件缺键。",
+      "cache": "所选UserData索引器没有本地值字典缓存；具体模型另有nullable字段或数组持有。",
+      "release": "setter的Dispose门只阻止这次写入，不释放先前SDK值或撤销记录。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "UserData getter/setter lifecycle gate",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 26,
+          "end": 64,
+          "excerpt": "\tpublic virtual byte[] this[string key]\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!Parent.IsActive || Parent.IsOnDispose)\n\t\t\t{\n\t\t\t\treturn null;\n\t\t\t}\n\t\t\ttry\n\t\t\t{\n\t\t\t\tLogHelper.Info($\"获取userdata模块ID名为{Parent.ID} {Parent.Name},key为{key}\");\n\t\t\t\treturn GetUIParamValue(key);\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex.errorMessage);\n\t\t\t\tthrow ex;\n\t\t\t}\n\t\t\tcatch (Exception ex2)\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex2.Message);\n\t\t\t\tthrow VmSolution.GetVmException(ex2);\n\t\t\t}\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (Parent == null || Parent.IsOnDispose)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (Parent.IsGlobalModu || key == \"CheckedImages\" || key == \"DESIGNERBUFFER\" || key == \"ConfigAvailable\")\n\t\t\t{\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t}\n\t\t\telse if (Parent.IsDynamicModu)\n\t\t\t{\n\t\t\t\tIUnRedoService unRedoService = Ioc.Get<IUnRedoService>();\n\t\t\t\tif (unRedoService != null && unRedoService.ValiteType(\"ModifyConfig\"))\n\t\t\t\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "UserData dynamic key routing",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 136,
+          "end": 160,
+          "excerpt": "\tprivate byte[] GetUIParamValue(string key)\n\t{\n\t\tif (isUsedForDynamicUIParam)\n\t\t{\n\t\t\tstring[] array = key.Split(SplitStrs, StringSplitOptions.None);\n\t\t\treturn ServerSDKManager.serverSDKManager.mModuleManager.GetDynamicUIParamValue(Parent.ID, array[0], (array.Count() > 1) ? array[1] : \"\");\n\t\t}\n\t\treturn ServerSDKManager.serverSDKManager.mModuleManager.GetUIParamValueByKey(Parent.ID, key);\n\t}\n\n\tprivate void SetUIParamValue(string key, byte[] value)\n\t{\n\t\tif (isUsedForDynamicUIParam)\n\t\t{\n\t\t\tstring[] array = key.Split(SplitStrs, StringSplitOptions.None);\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetDynamicUIParamValue(Parent.ID, array[0], value, (array.Count() > 1) ? array[1] : \"\");\n\t\t}\n\t\telse\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetUIParamValue(Parent.ID, key, value);\n\t\t}\n\t}\n\n\tinternal bool CanRegisterUserData(IBuilder builder, IUnRedoOperation unRedoOperation)\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "UserData split delimiter",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 22,
+          "end": 24,
+          "excerpt": "\tpublic const string SplitStr = \"&?;?\";\n\n\tprivate static string[] SplitStrs = new string[1] { \"&?;?\" };",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "SDK界面数据的最终native容器/落盘结构不在这些托管体内；不把写入等同.sol保存完成。"
+      ]
+    },
+    {
+      "id": "OP02",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原ModuleManager.SetUIParamValue / SetDynamicUIParamValue",
+      "to": "临时非托管字节副本 → native setter；空载荷改走删除",
+      "behavior": "两setter对非null且Length非0的byte[]按实际Length分配HGlobal并Marshal.Copy，传pointer和uint Length调用native；调用正常返回后FreeHGlobal，再检查返回码抛错。null和空数组都走对应删除方法，不能保存为可区分的零长度值。普通路由另有IsForbidden特殊分支：非null载荷先BytesToStruct<bool>再EnableModule，绕过一般UI键存储。",
+      "representation": "管理数组→独立临时HGlobal按Length复制；key的UTF8 custom marshaler与payload任意bytes是不同合同。",
+      "cache": "托管体调用后不保留HGlobal；native是否复制、如何保留以及setter何时提交到方案存储仍未知。",
+      "release": "FreeHGlobal位于native正常返回后而非finally；native调用或Marshal.Copy抛异常时此体不保证走到Free。仅证明潜在异常路径，不宣称原机已泄漏。Delete成功只证明该SDK操作返回0，不证明所有历史副本已释放。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+          "member": "ModuleManager.SetUIParamValue",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 765,
+          "end": 803,
+          "excerpt": "\tpublic void SetUIParamValue(uint nObjectID, string strParamName, byte[] data, uint nRecvWaitTime = 10000u)\n\t{\n\t\tif (strParamName == \"IsForbidden\" && data != null)\n\t\t{\n\t\t\tuint nEnableFlag = ((!ExternalCallHelper.BytesToStruct<bool>(data, 0, data.Length)) ? 1u : 0u);\n\t\t\tEnableModule(nObjectID, nEnableFlag);\n\t\t\treturn;\n\t\t}\n\t\tint num = -536870657;\n\t\tif (data != null && data.Length != 0)\n\t\t{\n\t\t\tIntPtr intPtr = Marshal.AllocHGlobal(data.Length);\n\t\t\tMarshal.Copy(data, 0, intPtr, data.Length);\n\t\t\tnum = ServerSDKAPI.IMVS_SetUIParamValue(CVmObjectBase.mhandle, nObjectID, strParamName, intPtr, (uint)data.Length, nRecvWaitTime);\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t\telse\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tDeleteUIParamValue(nObjectID, strParamName);\n\t\t\t\tnum = 0;\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tnum = ex.errorCode;\n\t\t\t}\n\t\t}\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex2 = new VmException(num);\n\t\t\tthrow ex2;\n\t\t}\n\t}\n\n\tpublic bool CheckUIParamExist(uint nObjectID, string strParamName)\n\t{\n\t\tint num = -536870657;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+          "member": "ModuleManager.SetDynamicUIParamValue",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 2224,
+          "end": 2255,
+          "excerpt": "\tpublic void SetDynamicUIParamValue(uint nObjectId, string strName, byte[] data, string strOptionalParam = \"\")\n\t{\n\t\tint num = -536870657;\n\t\tif (data != null && data.Length != 0)\n\t\t{\n\t\t\tIntPtr intPtr = Marshal.AllocHGlobal(data.Length);\n\t\t\tMarshal.Copy(data, 0, intPtr, data.Length);\n\t\t\tnum = ServerSDKAPI.IMVS_SetDynamicUIParamValue(CVmObjectBase.mhandle, nObjectId, strName, intPtr, (uint)data.Length, strOptionalParam);\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t\telse\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tDeleteDynamicRelateUIParamValue(nObjectId, strName, strOptionalParam);\n\t\t\t\tnum = 0;\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tnum = ex.errorCode;\n\t\t\t}\n\t\t}\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex2 = new VmException(num);\n\t\t\tthrow ex2;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 获取动态UI参数值",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+          "member": "native UI setter byte length and key marshaler",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 317,
+          "end": 317,
+          "excerpt": "\tpublic static extern int IMVS_SetUIParamValue(IntPtr handle, uint nObjectID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strParamName, IntPtr pData, uint nDataLen, uint nRecvWaitTime);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "native setter保存副本或租用pointer的协议、删除最终析构、原.sol打包时点未闭合；本片不重新推断Writer/mdata。"
+      ]
+    },
+    {
+      "id": "OP03",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原普通/动态UserData读取",
+      "to": "native pointer+nDataLen → 新托管byte[]；正常尾请求释放返回块",
+      "behavior": "普通GetUIParamValueByKey成功时new byte[nDataLen]并在pData非0时Marshal.Copy；复制异常被吞，随后仍请求RELEASE_MEMORY_BASE_ARRAY，释放失败抛VmException。错误码-536870911返回null，其他非0抛错。动态ModuleManager getter经ServerSDKAPI展开：成功时同样按返回nDataLen新建数组及复制，但Release调用位于pData非0条件内，不能合并成同一无条件尾释放。动态wrapper将byte[]返回给调用者。",
+      "representation": "返回数组有nDataLen字节，是新分配的托管容器；这不证明内容语义正确，吞掉复制异常后仍可能返回未完整写入的数组。普通成功即使pData为0也会分配数组并请求Release；动态pData为0则不请求Release。",
+      "cache": "调用者可持有返回数组，SDK临时返回块与模型缓存不是同一持有者；重复读取可生成不同数组。",
+      "release": "正常尾Release仅针对native返回块；托管数组继续由引用/GC决定寿命。分配等先行步骤抛异常时没有finally承诺，Release实际递归范围须native原体。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+          "member": "GetUIParamValueByKey",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 808,
+          "end": 850,
+          "excerpt": "\tpublic byte[] GetUIParamValueByKey(uint nObjectID, string strParamName)\n\t{\n\t\tint num = -536870657;\n\t\tIntPtr pData = IntPtr.Zero;\n\t\tuint nDataLen = 0u;\n\t\tbyte[] array = null;\n\t\tnum = ServerSDKAPI.IMVS_GetUIParamValueByKey(CVmObjectBase.mhandle, nObjectID, strParamName, ref pData, ref nDataLen, 10000u);\n\t\tswitch (num)\n\t\t{\n\t\tcase -536870911:\n\t\t\treturn null;\n\t\tdefault:\n\t\t{\n\t\t\tVmException ex3 = new VmException(num);\n\t\t\tthrow ex3;\n\t\t}\n\t\tcase 0:\n\t\t\tarray = new byte[nDataLen];\n\t\t\tif (IntPtr.Zero != pData && array != null)\n\t\t\t{\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tMarshal.Copy(pData, array, 0, (int)nDataLen);\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t}\n\t\t\tnum = ServerSDKAPI.IMVS_ReleaseDynamicMemory(CVmObjectBase.mhandle, ImvsSdkDefine.IMVS_RELEASE_MEMORY_TYPE.RELEASE_MEMORY_BASE_ARRAY, pData);\n\t\t\tif (num != 0)\n\t\t\t{\n\t\t\t\tVmException ex2 = new VmException(num);\n\t\t\t\tthrow ex2;\n\t\t\t}\n\t\t\tpData = IntPtr.Zero;\n\t\t\treturn array;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 删除对象UI参数\n\t/// </summary>\n\t/// <param name=\"nObjectID\"> 对象ID </param>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+          "member": "GetDynamicUIParamValue",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 2259,
+          "end": 2281,
+          "excerpt": "\tpublic byte[] GetDynamicUIParamValue(uint nObjectId, string strName, string strOptionalParam = \"\")\n\t{\n\t\tint num = -536870657;\n\t\tbyte[] data = null;\n\t\tuint nDataLen = 0u;\n\t\tnum = ServerSDKAPI.IMVS_GetDynamicUIParamValue(CVmObjectBase.mhandle, nObjectId, strName, ref data, ref nDataLen, strOptionalParam);\n\t\tswitch (num)\n\t\t{\n\t\tcase -536870911:\n\t\t\treturn null;\n\t\tdefault:\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t\tcase 0:\n\t\t\treturn data;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 删除动态关联的Userdata\n\t/// </summary>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ServerSDKAPI.cs",
+          "member": "dynamic UI buffer expansion",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 837,
+          "end": 866,
+          "excerpt": "\tpublic static int IMVS_GetDynamicUIParamValue(IntPtr handle, uint nObjectId, string strName, ref byte[] data, ref uint nDataLen, string strOptionalParam)\n\t{\n\t\tint num = -536870657;\n\t\tIntPtr pData = IntPtr.Zero;\n\t\tnum = NativeMethods.IMVS_GetDynamicUIParamValue(handle, nObjectId, strName, ref pData, ref nDataLen, strOptionalParam);\n\t\tif (num == 0)\n\t\t{\n\t\t\tdata = new byte[nDataLen];\n\t\t\tif (IntPtr.Zero != pData && data != null)\n\t\t\t{\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tMarshal.Copy(pData, data, 0, (int)nDataLen);\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t\tnum = NativeMethods.IMVS_ReleaseDynamicMemory(handle, ImvsSdkDefine.IMVS_RELEASE_MEMORY_TYPE.RELEASE_MEMORY_BASE_ARRAY, pData);\n\t\t\t\tif (num != 0)\n\t\t\t\t{\n\t\t\t\t\treturn num;\n\t\t\t\t}\n\t\t\t\tpData = IntPtr.Zero;\n\t\t\t}\n\t\t}\n\t\treturn num;\n\t}\n\n\t/// <summary>\n\t/// 删除动态关联的Userdata",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "不能由Release成功推断SDK权威存储已删除；本slice未执行SDK，也未恢复该释放类型内部allocator。"
+      ]
+    },
+    {
+      "id": "OP04",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原UserData赋值",
+      "to": "分支化撤销载荷持有，不是统一原子保存事务",
+      "behavior": "全局模块以及CheckedImages/DESIGNERBUFFER/ConfigAvailable直接Set；动态ModifyConfig先登记AllUserData再Set，DynamicIO普通写绕过记录，其他动态分支有先记录或后记录差异。普通分支先Get旧byte[]、Set新值，再按引用不等及CheckItemParamReady特例登记。RecordSingleData将oldValue/newValue直接赋给UnRedo_UserData字段，没有该处数组深复制。AllUserData先保存表达式，CanRegister在允许的root操作且未重复时才Compile执行抓取；不能把表达式创建时点当快照完成时点。",
+      "representation": "单项撤销记录保存object载荷引用；字段PropertyKey、ModuleFullName、IsAllUserData是定位元数据。全量快照的内部复制深度不是RecordAllUserData本体定义。",
+      "cache": "撤销服务可延长旧/新数组可达性；UserData_Update另外查询全量并赋NewValue，Undo/Redo通过Dispatcher按模块全名重新定位后SetUserData。",
+      "release": "赋值替换/SDK删除不自动清撤销OldValue/NewValue。撤销服务栈清理及全量userdata内部副本释放没有在本条闭合。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "UserData setter history branches",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 56,
+          "end": 116,
+          "excerpt": "\t\t\tif (Parent.IsGlobalModu || key == \"CheckedImages\" || key == \"DESIGNERBUFFER\" || key == \"ConfigAvailable\")\n\t\t\t{\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t}\n\t\t\telse if (Parent.IsDynamicModu)\n\t\t\t{\n\t\t\t\tIUnRedoService unRedoService = Ioc.Get<IUnRedoService>();\n\t\t\t\tif (unRedoService != null && unRedoService.ValiteType(\"ModifyConfig\"))\n\t\t\t\t{\n\t\t\t\t\tRecordAllUserData();\n\t\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tIUnRedoService unRedoService2 = Ioc.Get<IUnRedoService>();\n\t\t\t\tif (unRedoService2 == null || !unRedoService2.ValiteType(\"DeleteModule\"))\n\t\t\t\t{\n\t\t\t\t\tIUnRedoService unRedoService3 = Ioc.Get<IUnRedoService>();\n\t\t\t\t\tif (unRedoService3 == null || !unRedoService3.ValiteType(\"CopyModule\"))\n\t\t\t\t\t{\n\t\t\t\t\t\tif (key.Contains(\"DynamicIO\"))\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tbyte[] uIParamValue = GetUIParamValue(key);\n\t\t\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\t\t\tRecordSingleData(uIParamValue, value, key);\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tif (key.Contains(\"SourceIndex\") || key.Contains(\"TargetIndex\") || key.Contains(\"Position\"))\n\t\t\t\t{\n\t\t\t\t\tbyte[] uIParamValue2 = GetUIParamValue(key);\n\t\t\t\t\tRecordSingleData(uIParamValue2, value, key);\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tRecordAllUserData();\n\t\t\t\t}\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tbyte[] uIParamValue3 = GetUIParamValue(key);\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\tif (uIParamValue3 != value && (!(key == \"CheckItemParamReady\") || (uIParamValue3 != null && (uIParamValue3 == null || value == null || !(Hik.Util.StringUtil.UTF8GetString(uIParamValue3) == Hik.Util.StringUtil.UTF8GetString(value))))))\n\t\t\t\t{\n\t\t\t\t\tRecordSingleData(uIParamValue3, value, key);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void RecordAllUserData()\n\t{\n\t\tExpression<Func<object>> oldValue = () => Parent.GetAllUserData();\n\t\tstring displayName = string.Format(\"{0}{1}:{2}ALL_USERDATA\", AppLocalizationService.GetLang(\"Lang_Edit\"), AppLocalizationService.GetLang(\"界面数据\"), Parent.FullName.Substring(Parent.FullName.LastIndexOf(',') + 1));\n\t\tIoc.Get<IUnRedoService>()?.Register(new UserDataUnRedoOperation(UserData_Redo, UserData_Undo, new UnRedo_UserData\n\t\t{\n\t\t\tModuleFullName = Parent.FullName,\n\t\t\tIsAllUserData = true,",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "RecordAllUserData",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 109,
+          "end": 125,
+          "excerpt": "\tprivate void RecordAllUserData()\n\t{\n\t\tExpression<Func<object>> oldValue = () => Parent.GetAllUserData();\n\t\tstring displayName = string.Format(\"{0}{1}:{2}ALL_USERDATA\", AppLocalizationService.GetLang(\"Lang_Edit\"), AppLocalizationService.GetLang(\"界面数据\"), Parent.FullName.Substring(Parent.FullName.LastIndexOf(',') + 1));\n\t\tIoc.Get<IUnRedoService>()?.Register(new UserDataUnRedoOperation(UserData_Redo, UserData_Undo, new UnRedo_UserData\n\t\t{\n\t\t\tModuleFullName = Parent.FullName,\n\t\t\tIsAllUserData = true,\n\t\t\tPropertyKey = \"ALL_USERDATA\",\n\t\t\tOldValue = oldValue,\n\t\t\tNewValue = null\n\t\t}, UserData_Update), displayName, (IBuilder builder, IUnRedoOperation operation) => CanRegisterUserData(builder, operation));\n\t}\n\n\tprivate void RecordSingleData(object oldValue, object newValue, string key)\n\t{\n\t\tstring displayName = string.Format(\"{0}{1}:{2}{3}\", AppLocalizationService.GetLang(\"Lang_Edit\"), AppLocalizationService.GetLang(\"界面数据\"), Parent.FullName.Substring(Parent.FullName.LastIndexOf(',') + 1), key);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "RecordSingleData",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 123,
+          "end": 136,
+          "excerpt": "\tprivate void RecordSingleData(object oldValue, object newValue, string key)\n\t{\n\t\tstring displayName = string.Format(\"{0}{1}:{2}{3}\", AppLocalizationService.GetLang(\"Lang_Edit\"), AppLocalizationService.GetLang(\"界面数据\"), Parent.FullName.Substring(Parent.FullName.LastIndexOf(',') + 1), key);\n\t\tIoc.Get<IUnRedoService>()?.Register(new UserDataUnRedoOperation(UserData_Redo, UserData_Undo, new UnRedo_UserData\n\t\t{\n\t\t\tModuleFullName = Parent.FullName,\n\t\t\tIsAllUserData = false,\n\t\t\tPropertyKey = key,\n\t\t\tOldValue = oldValue,\n\t\t\tNewValue = newValue\n\t\t}), displayName);\n\t}\n\n\tprivate byte[] GetUIParamValue(string key)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "CanRegisterUserData",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 159,
+          "end": 180,
+          "excerpt": "\tinternal bool CanRegisterUserData(IBuilder builder, IUnRedoOperation unRedoOperation)\n\t{\n\t\tIUnRedoDataDone<UnRedo_UserData> unRedoDone = unRedoOperation as IUnRedoDataDone<UnRedo_UserData>;\n\t\tif (builder.Actions.FirstOrDefault((IUnRedoActionOperation p) => p is IUnRedoDataDone<UnRedo_UserData> unRedoDataDone && unRedoDataDone.Data.IsAllUserData && unRedoDataDone.Data.ModuleFullName == unRedoDone.Data.ModuleFullName) != null)\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tIRootParam rootParam = builder as IRootParam;\n\t\tif (rootParam.RootOperType != \"ModifyConfig\" && rootParam.RootOperType != \"DeleteModule\" && rootParam.RootOperType != \"CopyModule\")\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tif (unRedoDone.Data.OldValue is Expression<Func<object>> expression)\n\t\t{\n\t\t\tunRedoDone.Data.OldValue = expression.Compile()();\n\t\t}\n\t\treturn true;\n\t}\n\n\tinternal void UserData_Undo(UnRedo_UserData data, IUnRedoParams unRedoParams)\n\t{\n\t\t(unRedoParams.Dispatcher as Dispatcher).Invoke(() =>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "Undo / Redo / Update",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 178,
+          "end": 210,
+          "excerpt": "\tinternal void UserData_Undo(UnRedo_UserData data, IUnRedoParams unRedoParams)\n\t{\n\t\t(unRedoParams.Dispatcher as Dispatcher).Invoke(() =>\n\t\t{\n\t\t\tUnRedo_UserData unRedo_UserData = data;\n\t\t\tobject obj = VmSolution.Instance[unRedo_UserData.ModuleFullName];\n\t\t\tif (obj != null)\n\t\t\t{\n\t\t\t\t(obj as VmModule).SetUserData(unRedo_UserData.PropertyKey, unRedo_UserData.OldValue, data.IsEnd);\n\t\t\t}\n\t\t});\n\t}\n\n\tinternal void UserData_Redo(UnRedo_UserData data, IUnRedoParams unRedoParams)\n\t{\n\t\t(unRedoParams.Dispatcher as Dispatcher).Invoke(() =>\n\t\t{\n\t\t\tUnRedo_UserData unRedo_UserData = data;\n\t\t\tobject obj = VmSolution.Instance[unRedo_UserData.ModuleFullName];\n\t\t\tif (obj != null)\n\t\t\t{\n\t\t\t\t(obj as VmModule).SetUserData(unRedo_UserData.PropertyKey, unRedo_UserData.NewValue, data.IsEnd);\n\t\t\t}\n\t\t});\n\t}\n\n\tinternal void UserData_Update(UnRedo_UserData data)\n\t{\n\t\tobject newValue = ((VmModule)VmSolution.Instance[data.ModuleFullName])?.GetAllUserData();\n\t\tdata.NewValue = newValue;\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "不把字节引用登记称深克隆；外部IUnRedoService是否接受/何时清记录、VmModule.GetAllUserData/SetUserData全量格式仍需独立追踪。"
+      ]
+    },
+    {
+      "id": "OP05",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原具体UI模型字段",
+      "to": "字段级布局、默认值与缓存规则必须分列",
+      "behavior": "IsReady使用1字节0/1，缺键保留nullable未知，null setter删除。GUID初始化先CheckUIParamExist，存在时new Guid(bytes)，不存在创建Guid.NewGuid().ToByteArray再写入。ProceZoomIndex缺键返回backing字段初值9；getter读取并int.Parse后不回填该字段，setter先改字段再尝试写入且吞为消息框，故字段与SDK值不必事务一致。IsSubscribeInWindow按nullable缓存首次读取，缺失或TryParse失败为false；setter先更新缓存和通知，再尝试写入且吞异常。",
+      "representation": "GUID是Guid.ToByteArray二进制，不是GUID文本；IsReady固定1字节。缩放调用Hik.Util.StringUtil.UTF8GetBytesPadZero/UTF8GetString；订阅窗口调用Hik.Util.ByteUtil.GetBytes/GetStringFromByte，不能拿SDK同名StringUtil源码替代Hik helper确切编码/补零。",
+      "cache": "IsReady与IsSubscribeInWindow存在模型字段缓存；ProceZoomIndex读SDK但缺失回退backing值。缓存与原生键存储分别持有。",
+      "release": "把IsReady设null经UserData删除键，不等于清除外部撤销副本；字段缓存更新可先于SDK写入成功。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.IsReady",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 248,
+          "end": 280,
+          "excerpt": "\tpublic virtual bool? IsReady\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!_IsReady.HasValue)\n\t\t\t{\n\t\t\t\tbyte[] array = UserData[\"IsReady\"];\n\t\t\t\tif (array != null)\n\t\t\t\t{\n\t\t\t\t\t_IsReady = array[0] == 1;\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn _IsReady;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (_IsReady != value)\n\t\t\t{\n\t\t\t\t_IsReady = value;\n\t\t\t\tif (!value.HasValue)\n\t\t\t\t{\n\t\t\t\t\tUserData[\"IsReady\"] = null;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tUserData[\"IsReady\"] = ((!_IsReady.Value) ? new byte[1] : new byte[1] { 1 });\n\t\t\t\t}\n\t\t\t\tNotifyReadyStateToParent();\n\t\t\t\tOnPropertyChanged(\"IsReady\");\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.Init GUID",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 1764,
+          "end": 1773,
+          "excerpt": "\t\tif (ServerSDKManager.serverSDKManager.mModuleManager.CheckUIParamExist(ID, \"GUID\"))\n\t\t{\n\t\t\tGUID = new Guid(UserData[\"GUID\"]).ToString();\n\t\t\treturn;\n\t\t}\n\t\tGuid guid = Guid.NewGuid();\n\t\tUserData[\"GUID\"] = guid.ToByteArray();\n\t\tGUID = guid.ToString();\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution zoom backing default",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 131,
+          "end": 131,
+          "excerpt": "\tprivate int proceZoomIndex = 9;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.ProceZoomIndex",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 273,
+          "end": 303,
+          "excerpt": "\tinternal int ProceZoomIndex\n\t{\n\t\tget\n\t\t{\n\t\t\tbyte[] array = ((IVmModule)this).UserData[\"ProceZoomIndex\"];\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn proceZoomIndex;\n\t\t\t}\n\t\t\treturn int.Parse(Hik.Util.StringUtil.UTF8GetString(array));\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (proceZoomIndex != value)\n\t\t\t{\n\t\t\t\tproceZoomIndex = value;\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\t((IVmModule)this).UserData[\"ProceZoomIndex\"] = Hik.Util.StringUtil.UTF8GetBytesPadZero(proceZoomIndex.ToString());\n\t\t\t\t}\n\t\t\t\tcatch (Exception ex)\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(ex.Message);\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"PartentZoomIndex\");\n\t\t\t}\n\t\t}\n\t}\n\n\tinternal static bool FailReflashFlag => _failReflashFlag;\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.IsSubscribeInWindow",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 841,
+          "end": 885,
+          "excerpt": "\tbool IVmSolution.IsSubscribeInWindow\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!isSubscribeInWindow.HasValue)\n\t\t\t{\n\t\t\t\tbyte[] array = null;\n\t\t\t\tbool result = false;\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tarray = Instance.UserData[\"IsSubscribeInWindow\"];\n\t\t\t\t\tif (array != null)\n\t\t\t\t\t{\n\t\t\t\t\t\tbool.TryParse(ByteUtil.GetStringFromByte(array), out result);\n\t\t\t\t\t}\n\t\t\t\t\tisSubscribeInWindow = result;\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn isSubscribeInWindow ?? false;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tisSubscribeInWindow = value;\n\t\t\tOnPropertyChanged(\"IsSubscribeInWindow\");\n\t\t\ttry\n\t\t\t{\n\t\t\t\tbyte[] value2 = null;\n\t\t\t\tif (isSubscribeInWindow.HasValue)\n\t\t\t\t{\n\t\t\t\t\tvalue2 = ByteUtil.GetBytes(isSubscribeInWindow.ToString());\n\t\t\t\t}\n\t\t\t\tInstance.UserData[\"IsSubscribeInWindow\"] = value2;\n\t\t\t}\n\t\t\tcatch (Exception)\n\t\t\t{\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic event ContinuousRunStatusCallBack OnContinuousRunStatusCallBack;\n\n\tpublic static event EventHandler InstanceChanged;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "Hik.Util两个编码helper完整体未在本片取得，因此缩放/订阅确切字节长度及尾零不宣称已证；异常载荷（空数组IsReady、无效GUID、不可解析缩放）不伪造容错。"
+      ]
+    },
+    {
+      "id": "OP06",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原CalibrationGuideData / VmProcedure.CalibData",
+      "to": "保存前UI flush到UserData，再进入独立方案Export阶段",
+      "behavior": "VmProcedure恢复时将UserData[CalibData]数组直接赋calibrationData；缺失则清该字段返回，存在则isBootMode=true。SaveCalibData在calibrationData为null时写null删除，否则仅调用可空delegate，不能保证必有写入。CalibrationGuideData.Parent为VmProcedure时去重追加SaveData，SaveData将ToXmlStringWithHead()经ByteUtil.GetBytes写入该键。ProjectManager.SaveSolution在Dispatcher同步遍历各流程SaveCalibData后，才调用VmSolution.Export；仅Export为true后才更新路径通知/启动后续Task。",
+      "representation": "CalibData是XML字符串经Hik.Util.ByteUtil形成的byte[]，不是原.sol/mdata格式；读取数组与calibrationData字段在这条赋值处共享引用。",
+      "cache": "calibrationData字段和SaveCalibDataToUserData delegate持有不同状态；缺少delegate时非null数据并不触发重新序列化。本条flush是保存前步骤，非磁盘提交确认。",
+      "release": "calibrationData为null的SaveCalibData请求删除SDK键；Export失败并无本段回滚已flush UserData的操作。不把XML生成、SDK键写入、异步保存回调和文件最终写入混成同一事务。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "VmProcedure CalibData restore",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 698,
+          "end": 712,
+          "excerpt": "\t\t\tbyte[] array = UserData[\"CalibData\"];\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\tcalibrationData = null;\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tcalibrationData = array;\n\t\t\tisBootMode = true;\n\t\t}\n\t\tcatch\n\t\t{\n\t\t}\n\t}\n\n\t/// <summary>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "IVmProcedure.SaveCalibData",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 1792,
+          "end": 1803,
+          "excerpt": "\tvoid IVmProcedure.SaveCalibData()\n\t{\n\t\tif (calibrationData == null)\n\t\t{\n\t\t\tUserData[\"CalibData\"] = null;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tSaveCalibDataToUserData?.Invoke();\n\t\t}\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.CalibGuide/CalibrationGuideData.cs",
+          "member": "CalibrationGuideData.Parent hook",
+          "sha256": "d140b44e4fa7aa0c03565dc82b71784b933a9379b42f40857608469330b50c55",
+          "start": 536,
+          "end": 537,
+          "excerpt": "\t\t\t\t\tvmProcedure.SaveCalibDataToUserData = (VmProcedure.SaveCalibrationData)Delegate.Remove(vmProcedure.SaveCalibDataToUserData, new VmProcedure.SaveCalibrationData(SaveData));\n\t\t\t\t\tvmProcedure.SaveCalibDataToUserData = (VmProcedure.SaveCalibrationData)Delegate.Combine(vmProcedure.SaveCalibDataToUserData, new VmProcedure.SaveCalibrationData(SaveData));",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.CalibGuide/CalibrationGuideData.cs",
+          "member": "CalibrationGuideData.SaveData",
+          "sha256": "d140b44e4fa7aa0c03565dc82b71784b933a9379b42f40857608469330b50c55",
+          "start": 543,
+          "end": 549,
+          "excerpt": "\tprivate void SaveData()\n\t{\n\t\tif (Parent != null && Parent is VmProcedure vmProcedure)\n\t\t{\n\t\t\tvmProcedure.UserData[\"CalibData\"] = ByteUtil.GetBytes(ToXmlStringWithHead());\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs",
+          "member": "ProjectManager.SaveCalibUserData + SaveSolution",
+          "sha256": "1ae41a0841dd65f5dfa7461078c370822e61826877c42e299939af1fd47f9370",
+          "start": 189,
+          "end": 219,
+          "excerpt": "\tprivate void SaveCalibUserData()\n\t{\n\t\tforeach (VmProcedure item in VmSolution.Instance.Modules.OfType<VmProcedure>())\n\t\t{\n\t\t\t((IVmProcedure)item).SaveCalibData();\n\t\t}\n\t}\n\n\tpublic bool SaveSolution(string strPath, string strPassWord = null, Task afterSaveTask = null)\n\t{\n\t\tif (!VmSolution.Instance.IsHasPassword && strPassWord == null)\n\t\t{\n\t\t\tstrPassWord = \"\";\n\t\t}\n\t\tApplication.Current.Dispatcher.Invoke(() =>\n\t\t{\n\t\t\tSaveCalibUserData();\n\t\t});\n\t\tif (VmSolution.Export(strPath, strPassWord))\n\t\t{\n\t\t\tProgram.MainData.OnPropertyChanged(\"SolutionPath\");\n\t\t\tProgram.MainData.OnPropertyChanged(\"SolutionName\");\n\t\t\tafterSaveTask?.Start();\n\t\t\tstrCurrentSolutionFileName = strPath;\n\t\t\treturn true;\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic bool AnotherSaveSolution(Task afterSaveTask = null, bool bDisplayProgress = true, bool isRemoteSave = false)\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "CalibData XML schema、ByteUtil具体编码和长度、delegate在全部关闭路径的解除以及原native writer对userdata的磁盘打包仍未知；既有S01–S06与save-native-boundary保持独立。"
+      ]
+    }
+  ],
+  "knownFields": [
+    {
+      "key": "IsReady",
+      "owner": "VmModule",
+      "encoding": "1字节：0=false、1=true",
+      "length": "写入固定1；getter直接读array[0]，未先验空数组",
+      "missingDefault": "nullable字段未赋值，保持null",
+      "read": "getter在_IsReady无值时读取",
+      "write": "setter状态改变时；null删除",
+      "saveTiming": "属性写入即SDK操作，非.sol成功",
+      "factIds": [
+        "OP02",
+        "OP03",
+        "OP05"
+      ],
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.IsReady",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 248,
+          "end": 280,
+          "excerpt": "\tpublic virtual bool? IsReady\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!_IsReady.HasValue)\n\t\t\t{\n\t\t\t\tbyte[] array = UserData[\"IsReady\"];\n\t\t\t\tif (array != null)\n\t\t\t\t{\n\t\t\t\t\t_IsReady = array[0] == 1;\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn _IsReady;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (_IsReady != value)\n\t\t\t{\n\t\t\t\t_IsReady = value;\n\t\t\t\tif (!value.HasValue)\n\t\t\t\t{\n\t\t\t\t\tUserData[\"IsReady\"] = null;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tUserData[\"IsReady\"] = ((!_IsReady.Value) ? new byte[1] : new byte[1] { 1 });\n\t\t\t\t}\n\t\t\t\tNotifyReadyStateToParent();\n\t\t\t\tOnPropertyChanged(\"IsReady\");\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "外部旧数组/撤销记录不随删除自动释放"
+      ]
+    },
+    {
+      "key": "GUID",
+      "owner": "VmModule.Init",
+      "encoding": "Guid.ToByteArray二进制 / new Guid(bytes)",
+      "length": "System.Guid.ToByteArray约定16字节；本片未运行",
+      "missingDefault": "CheckUIParamExist为false时新建GUID并写回",
+      "read": "模块Init且存在键",
+      "write": "模块Init且键不存在",
+      "saveTiming": "初始化写入，不代表磁盘保存",
+      "factIds": [
+        "OP05"
+      ],
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.Init GUID",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 1764,
+          "end": 1773,
+          "excerpt": "\t\tif (ServerSDKManager.serverSDKManager.mModuleManager.CheckUIParamExist(ID, \"GUID\"))\n\t\t{\n\t\t\tGUID = new Guid(UserData[\"GUID\"]).ToString();\n\t\t\treturn;\n\t\t}\n\t\tGuid guid = Guid.NewGuid();\n\t\tUserData[\"GUID\"] = guid.ToByteArray();\n\t\tGUID = guid.ToString();\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "存在键却返回null或畸形长度的原运行结果未测"
+      ]
+    },
+    {
+      "key": "ProceZoomIndex",
+      "owner": "VmSolution",
+      "encoding": "Hik.Util.StringUtil.UTF8GetBytesPadZero(value.ToString())；helper内部尚未取",
+      "length": "未证确切长度/尾零，不能借SDK同名helper代替",
+      "missingDefault": "当前proceZoomIndex；初值9",
+      "read": "每次getter查UserData；成功解析不回填backing",
+      "write": "setter值不同先改字段再尝试写入",
+      "saveTiming": "属性修改时；写失败字段可能已改",
+      "factIds": [
+        "OP05"
+      ],
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution zoom backing default",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 131,
+          "end": 131,
+          "excerpt": "\tprivate int proceZoomIndex = 9;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.ProceZoomIndex",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 273,
+          "end": 303,
+          "excerpt": "\tinternal int ProceZoomIndex\n\t{\n\t\tget\n\t\t{\n\t\t\tbyte[] array = ((IVmModule)this).UserData[\"ProceZoomIndex\"];\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn proceZoomIndex;\n\t\t\t}\n\t\t\treturn int.Parse(Hik.Util.StringUtil.UTF8GetString(array));\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (proceZoomIndex != value)\n\t\t\t{\n\t\t\t\tproceZoomIndex = value;\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\t((IVmModule)this).UserData[\"ProceZoomIndex\"] = Hik.Util.StringUtil.UTF8GetBytesPadZero(proceZoomIndex.ToString());\n\t\t\t\t}\n\t\t\t\tcatch (Exception ex)\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(ex.Message);\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"PartentZoomIndex\");\n\t\t\t}\n\t\t}\n\t}\n\n\tinternal static bool FailReflashFlag => _failReflashFlag;\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "int.Parse异常和helper内部格式不在本片运行验证"
+      ]
+    },
+    {
+      "key": "IsSubscribeInWindow",
+      "owner": "VmSolution",
+      "encoding": "ByteUtil.GetBytes(nullable bool.ToString()) / GetStringFromByte后TryParse",
+      "length": "ByteUtil未取，长度未知",
+      "missingDefault": "false；异常路径返回nullable ?? false",
+      "read": "首次nullable缓存无值时；成功路径缓存结果",
+      "write": "先缓存和OnPropertyChanged再try写入；异常吞掉",
+      "saveTiming": "属性修改时，与.sol保存阶段分离",
+      "factIds": [
+        "OP05"
+      ],
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.IsSubscribeInWindow",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 841,
+          "end": 885,
+          "excerpt": "\tbool IVmSolution.IsSubscribeInWindow\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!isSubscribeInWindow.HasValue)\n\t\t\t{\n\t\t\t\tbyte[] array = null;\n\t\t\t\tbool result = false;\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tarray = Instance.UserData[\"IsSubscribeInWindow\"];\n\t\t\t\t\tif (array != null)\n\t\t\t\t\t{\n\t\t\t\t\t\tbool.TryParse(ByteUtil.GetStringFromByte(array), out result);\n\t\t\t\t\t}\n\t\t\t\t\tisSubscribeInWindow = result;\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn isSubscribeInWindow ?? false;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tisSubscribeInWindow = value;\n\t\t\tOnPropertyChanged(\"IsSubscribeInWindow\");\n\t\t\ttry\n\t\t\t{\n\t\t\t\tbyte[] value2 = null;\n\t\t\t\tif (isSubscribeInWindow.HasValue)\n\t\t\t\t{\n\t\t\t\t\tvalue2 = ByteUtil.GetBytes(isSubscribeInWindow.ToString());\n\t\t\t\t}\n\t\t\t\tInstance.UserData[\"IsSubscribeInWindow\"] = value2;\n\t\t\t}\n\t\t\tcatch (Exception)\n\t\t\t{\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic event ContinuousRunStatusCallBack OnContinuousRunStatusCallBack;\n\n\tpublic static event EventHandler InstanceChanged;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "编码/尾零未确认；catch后cache是否仍为空按该分支解释"
+      ]
+    },
+    {
+      "key": "CalibData",
+      "owner": "VmProcedure + CalibrationGuideData",
+      "encoding": "ByteUtil.GetBytes(ToXmlStringWithHead())",
+      "length": "XML与helper决定，未固定",
+      "missingDefault": "calibrationData=null并返回",
+      "read": "流程恢复时直接保存所取数组",
+      "write": "SaveCalibData空字段删除；非空经可空delegate触发SaveData",
+      "saveTiming": "ProjectManager.SaveSolution在Export前Dispatcher flush",
+      "factIds": [
+        "OP06"
+      ],
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "VmProcedure CalibData restore",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 698,
+          "end": 712,
+          "excerpt": "\t\t\tbyte[] array = UserData[\"CalibData\"];\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\tcalibrationData = null;\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tcalibrationData = array;\n\t\t\tisBootMode = true;\n\t\t}\n\t\tcatch\n\t\t{\n\t\t}\n\t}\n\n\t/// <summary>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "IVmProcedure.SaveCalibData",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 1792,
+          "end": 1803,
+          "excerpt": "\tvoid IVmProcedure.SaveCalibData()\n\t{\n\t\tif (calibrationData == null)\n\t\t{\n\t\t\tUserData[\"CalibData\"] = null;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tSaveCalibDataToUserData?.Invoke();\n\t\t}\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.CalibGuide/CalibrationGuideData.cs",
+          "member": "CalibrationGuideData.Parent hook",
+          "sha256": "d140b44e4fa7aa0c03565dc82b71784b933a9379b42f40857608469330b50c55",
+          "start": 536,
+          "end": 537,
+          "excerpt": "\t\t\t\t\tvmProcedure.SaveCalibDataToUserData = (VmProcedure.SaveCalibrationData)Delegate.Remove(vmProcedure.SaveCalibDataToUserData, new VmProcedure.SaveCalibrationData(SaveData));\n\t\t\t\t\tvmProcedure.SaveCalibDataToUserData = (VmProcedure.SaveCalibrationData)Delegate.Combine(vmProcedure.SaveCalibDataToUserData, new VmProcedure.SaveCalibrationData(SaveData));",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.CalibGuide/CalibrationGuideData.cs",
+          "member": "CalibrationGuideData.SaveData",
+          "sha256": "d140b44e4fa7aa0c03565dc82b71784b933a9379b42f40857608469330b50c55",
+          "start": 543,
+          "end": 549,
+          "excerpt": "\tprivate void SaveData()\n\t{\n\t\tif (Parent != null && Parent is VmProcedure vmProcedure)\n\t\t{\n\t\t\tvmProcedure.UserData[\"CalibData\"] = ByteUtil.GetBytes(ToXmlStringWithHead());\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "XML完整schema/ByteUtil字节与native落盘均未闭合"
+      ]
+    }
+  ],
+  "unknowns": [
+    "SDK界面数据的最终native容器/落盘结构不在这些托管体内；不把写入等同.sol保存完成。",
+    "native setter保存副本或租用pointer的协议、删除最终析构、原.sol打包时点未闭合；本片不重新推断Writer/mdata。",
+    "不能由Release成功推断SDK权威存储已删除；本slice未执行SDK，也未恢复该释放类型内部allocator。",
+    "不把字节引用登记称深克隆；外部IUnRedoService是否接受/何时清记录、VmModule.GetAllUserData/SetUserData全量格式仍需独立追踪。",
+    "Hik.Util两个编码helper完整体未在本片取得，因此缩放/订阅确切字节长度及尾零不宣称已证；异常载荷（空数组IsReady、无效GUID、不可解析缩放）不伪造容错。",
+    "CalibData XML schema、ByteUtil具体编码和长度、delegate在全部关闭路径的解除以及原native writer对userdata的磁盘打包仍未知；既有S01–S06与save-native-boundary保持独立。"
+  ],
+  "provenance": {
+    "scope": "原版F18/F19有限UserData载荷和保存前flush；不定义.sol writer/mdata，不是全量键目录。",
+    "originalRuntimeExecuted": false,
+    "vendorAssembliesLoaded": false,
+    "productModified": false,
+    "sourceInspection": true,
+    "newCilDecoded": false,
+    "artifacts": [
+      {
+        "key": "parser",
+        "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\Apps.XmlParser.dll",
+        "sha256": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1",
+        "mvid": "d0604401-ab61-48a4-938b-faad16d74e7c",
+        "reaEvidence": "ev_b3a71726ac88c3bfa26cb2a7f52cae18a1c0b089aa5306d29d074a63ad2ee5f7"
+      },
+      {
+        "key": "core",
+        "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VM.Core.dll",
+        "sha256": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+        "mvid": "290025bc-e040-4cd5-94dd-cd49b9af9c99",
+        "reaEvidence": "ev_758f593356d11c17370747b341d4b1992a0fe8ab3fd3176f70d4a6831c3d8517"
+      },
+      {
+        "key": "sdk-x64",
+        "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\PublicFile\\x64\\VM.PlatformSDKCS.dll",
+        "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+        "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2",
+        "reaEvidence": "ev_f7be1556d1c1f0da99dd1b08f8123e6bc1998e5194f19d85c28edfc0b6aca764"
+      },
+      {
+        "key": "exe",
+        "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\VisionMaster.exe",
+        "sha256": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23",
+        "mvid": "77c739a5-b0ec-4834-8a1e-64dd9b618ae5",
+        "reaEvidence": "ev_28799e9ae7b84eff33c0567024d27f82b7465ce2c36d0a4e735befa1b883ae25"
+      },
+      {
+        "key": "wpf",
+        "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VMControls.WPF.dll",
+        "sha256": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d",
+        "mvid": "d144317f-3992-4275-9b0f-13fb6163e07d",
+        "reaEvidence": "ev_3eb1fd75ae8c1c32c6ae332a1cf0b6d1ea816b3794cf22eee230719d5af4dcd6"
+      }
+    ],
+    "inputs": [
+      {
+        "path": "docs/architecture-recovery/display-userdata-cil.json",
+        "sha256": "46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8"
+      },
+      {
+        "path": "docs/architecture-recovery/configuration-hosts-artifact-identities.json",
+        "sha256": "1b5b6b82fcda88b15759ffef4f89c8deb04e035418e06441cd9c90b9449ba306"
+      }
+    ],
+    "limits": [
+      "原件SHA重核与源码摘录SHA分别保留，不冒称本片所有方法都已新解码CIL。",
+      "字段表并非所有工具userdata枚举；字段编码helper缺体明确留空。",
+      "既有execution-storage S/J和solution-save-native-boundary只作边界背景，不新增writer假设。"
+    ],
+    "implementationProgress": "41/96 = 42.71%; unchanged"
+  }
+}

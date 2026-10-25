@@ -1,0 +1,1123 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "title": "改名撤销重做：名称快照、路径身份与失败边界",
+  "runtimeExecuted": false,
+  "browserRendered": false,
+  "entryCompletenessProved": false,
+  "fullBehaviorClosed": false,
+  "closedEntryChains": 0,
+  "counts": {
+    "findings": 13,
+    "sourceConfirmed": 10,
+    "independent": 2,
+    "unknown": 1,
+    "originalTypes": 18,
+    "originalBodies": 73,
+    "validatedBranchTargets": 197,
+    "references": 86
+  },
+  "artifacts": [
+    {
+      "key": "wpf",
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VMControls.WPF.dll",
+      "sha256": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d",
+      "mvid": "d144317f-3992-4275-9b0f-13fb6163e07d",
+      "reaEvidence": "ev_3eb1fd75ae8c1c32c6ae332a1cf0b6d1ea816b3794cf22eee230719d5af4dcd6"
+    },
+    {
+      "key": "core",
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VM.Core.dll",
+      "sha256": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+      "mvid": "290025bc-e040-4cd5-94dd-cd49b9af9c99",
+      "reaEvidence": "ev_758f593356d11c17370747b341d4b1992a0fe8ab3fd3176f70d4a6831c3d8517"
+    },
+    {
+      "key": "undo",
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VM.UnRedo.dll",
+      "sha256": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2",
+      "mvid": "05297188-764c-48da-a387-1ca4029dd9b8",
+      "reaEvidence": "ev_dfa8463577a4a813c34d018a98de91a35493282640a53ca9f68b3e15b3c0b8aa"
+    },
+    {
+      "key": "exe",
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\VisionMaster.exe",
+      "sha256": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23",
+      "mvid": "77c739a5-b0ec-4834-8a1e-64dd9b618ae5",
+      "reaEvidence": "ev_28799e9ae7b84eff33c0567024d27f82b7465ce2c36d0a4e735befa1b883ae25"
+    }
+  ],
+  "newOriginalIdentity": {
+    "path": "docs/architecture-recovery/workflow-rename-history-audit.undo-rea.json",
+    "evidenceId": "ev_dfa8463577a4a813c34d018a98de91a35493282640a53ca9f68b3e15b3c0b8aa"
+  },
+  "methodBodyAuthority": "Selected original managed CIL independent decoding; new VM.UnRedo artifact has REA identity, not claimed per-member raw-IL corroboration.",
+  "decompileProvenance": "docs/architecture-recovery/workflow-rename-history-audit.decompile.json",
+  "configCandidate": {
+    "path": "D:/Program Files/VisionMaster4.4.0/Applications/VisionMaster.exe.config",
+    "sha256": "9c5dbc6b41d66ec4e902400299808f5a68356fe35438fbc621444b053f4fea9d",
+    "selections": [
+      {
+        "start": 62,
+        "end": 62,
+        "excerpt": "    <add key=\"UnRedoStackCount\" value=\"15\" />"
+      },
+      {
+        "start": 63,
+        "end": 63,
+        "excerpt": "    <add key=\"UnRedoServiceImplement\" value=\"myLibs\\VM.UnRedo.dll\" />"
+      }
+    ],
+    "scope": "Explicit installed config candidate; actual ConfigurationHelper source/priority remains separate."
+  },
+  "findings": [
+    {
+      "id": "RH01",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "VmModuleBaseDecorator.IsReName / Name",
+      "to": "空root标记与改名part的注册时机",
+      "behavior": "IsReName从不同值改true先写字段，再Ioc.Get<IUnRedoService>()?.Register(new WPF.RootOperation,改名标题)。Name不同且字符检查通过时，在SDK赋名之前注册ReNameUnRedoOperation(SetNewName,SetOldName,new UnRedo_NameData(VMModule.FullName,VMModule.Name,value))；相同名只调用RemoveEmptyOperation。字符拒绝提前return与VmException catch均没有同名分支的RemoveEmptyOperation，不能说每种失败/取消自动删空root或回滚已注册part。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_IsReName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 3618,
+          "end": 3637,
+          "excerpt": "          \"token\": \"0x060009d1\",\n          \"symbol\": {\n            \"token\": \"0x060009d1\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"set_IsReName\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 93,\n          \"ilSha256\": \"ec8f6a6d20be5d11a99240667a492fcc7a45430523979cbba8d3d7e26ffe87b3\",\n          \"ilBytes\": \"00027b2c05000403fe0116fe010a062c4b0002037d2c050004027b2c0500040b072c2c00280500002b252d03262b1f731809000672828d0070283800000a252d06267229000070146faa00000a00000272636000706f7c02000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_Name",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 1559,
+          "end": 1578,
+          "excerpt": "          \"token\": \"0x060009cb\",\n          \"symbol\": {\n            \"token\": \"0x060009cb\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"set_Name\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 564,\n          \"ilSha256\": \"0657b0e1af7327ab71f5d5c758cb7293c7e89bca39a1e944f78c054139527207\",\n          \"ilBytes\": \"000228a10900066fa900000a03285100000a0a0639070200000000031f3f285900002b2d6f031f3b285900002b2d65031f2e285900002b2d5b0372148d00706f9904000a2d4e0372217000706f9904000a2d410372188d00706f9904000a2d340372250000706f9904000a2d270372bd2d00706f9904000a2d1a0372c12d00706f9904000a2d0d03721c8d00706f9904000a2b01170c082c270072303f0070283800000a28b004000a72208d0070283a00000a1916282e01000a26dd730100001b8dd1010001251672828d0070283800000aa2251772b0070070a225180228a10900066fa900000aa22519729a870070a2251a03a228db00000a0b280500002b252d03262b4102fe06d5090006735708000a02fe06d4090006735708000a0228a10900066f7307000a0228a10900066fa900000a0373f509000673f009000607146faa00000a0072981600701d8dd1010001251672828d0070283800000aa2251772d5360070287207000aa225180228a10900066fa900000aa2251972e5000070a2251a72a28d0070283800000aa2251b72e5000070a2251c03a228db00000a1617286c07000a260228a1090006036f5808000a0000de480d0003283900000a130411042c1600726f700070283800000a1916282e01000a26002b090009283304000a000072d4150070096fd300000a28d400000a1617286c07000a2600de0002722d3c00706f7c02000a000228a109000672aa8d00706f5008000a00002b1300280500002b252d03262b066fb000000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.RootOperation::.ctor",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 1309,
+          "end": 1328,
+          "excerpt": "          \"token\": \"0x06000918\",\n          \"symbol\": {\n            \"token\": \"0x06000918\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.RootOperation\",\n            \"name\": \".ctor\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"e17d47fa9533a32fbc0cc2185707ae5f8687f682861dee7807bfd6d42a4921e2\",\n          \"ilBytes\": \"02167de60400040228a007000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "Rename root registration",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 443,
+          "end": 464,
+          "excerpt": "\tpublic bool IsReName\n\t{\n\t\tget\n\t\t{\n\t\t\treturn _IsReName;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (_IsReName != value)\n\t\t\t{\n\t\t\t\t_IsReName = value;\n\t\t\t\tif (_IsReName)\n\t\t\t\t{\n\t\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new RootOperation(), AppLocalizationService.GetLang(\"Lang_ModuRename\") ?? \"\");\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"IsReName\");\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic ICommand SkipToModuleCommand\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "Part captured before native name write",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 359,
+          "end": 411,
+          "excerpt": "\tpublic string Name\n\t{\n\t\tget\n\t\t{\n\t\t\treturn VMModule.Name;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (VMModule.Name != value)\n\t\t\t{\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tif (value.Contains('?') || value.Contains(';') || value.Contains('.') || value.Contains(\"[\") || value.Contains(\"]\") || value.Contains(\"<\") || value.Contains(\">\") || value.Contains(\"(\") || value.Contains(\")\") || value.Contains(\"`\"))\n\t\t\t\t\t{\n\t\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_ModuleNameErrorInclude\") + Environment.NewLine + \"                             ? ; . [ ] < > ( ) `\", MessageIcons.Error);\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t\tstring displayName = AppLocalizationService.GetLang(\"Lang_ModuRename\") + \":\" + VMModule.Name + \", \" + value;\n\t\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new ReNameUnRedoOperation(SetNewName, SetOldName, new UnRedo_NameData(VMModule.FullName, VMModule.Name, value)), displayName);\n\t\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"Lang_ModuRename\") + AppLocalizationService.GetPunctuation(\"：\") + VMModule.Name + \" \" + AppLocalizationService.GetLang(\"修改为\") + \" \" + value, ifLang: false);\n\t\t\t\t\tVMModule.Name = value;\n\t\t\t\t}\n\t\t\t\tcatch (VmException ex)\n\t\t\t\t{\n\t\t\t\t\tif (string.IsNullOrEmpty(value))\n\t\t\t\t\t{\n\t\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_NameEmpty\"), MessageIcons.Error);\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t{\n\t\t\t\t\t\tShowMessage.ShowVmExceptionMessage(ex);\n\t\t\t\t\t}\n\t\t\t\t\tUILogManager.logCreate(\"错误\", ErrorCodeInfo.GetErrorInfo(ex.errorCode), ifLang: false);\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"Name\");\n\t\t\t\tVMModule.OnPropertyChanged(\"FullName\");\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tIoc.Get<IUnRedoService>()?.RemoveEmptyOperation();\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic ICommand RenameWindowCommand\n\t{\n\t\tget\n\t\t{\n\t\t\t//IL_0017: Unknown result type (might be due to invalid IL or missing references)\n\t\t\t//IL_001c: Unknown result type (might be due to invalid IL or missing references)\n\t\t\t//IL_001e: Expected Obj, but got Unknown\n\t\t\t//IL_0023: Expected Obj, but got Unknown\n\t\t\tDelegateCommand val = _RenameWindowCommand;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/RootOperation.cs",
+          "member": "WPF root marker defaults",
+          "sha256": "94a8cb37f2235e15e526592acd7194ce399612281f353c40ab66fc5fdf21df27",
+          "start": 6,
+          "end": 26,
+          "excerpt": "public class RootOperation : DisplayNotify, IUnRedoOperation, IDisposable, IRootParam\n{\n\tpublic bool IsPart { get; set; } = false;\n\n\tpublic bool ForbidBuild { get; set; }\n\n\tpublic string RootOperType { get; set; }\n\n\tpublic void Redo()\n\t{\n\t}\n\n\tpublic void Undo()\n\t{\n\t}\n\n\tpublic void Dispose()\n\t{\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Ioc实例、失败前后其它part加入、所有编辑退出和删除空操作调用者未闭合；注册动作不是原生赋名成功证明。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH02",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "UnRedo_NameData / ReNameUnRedoOperation",
+      "to": "字符串快照与委托执行合同",
+      "behavior": "UnRedo_NameData保存ModuleFullName/OldName/NewName三个string字段，不保存模块ID/GUID或模块对象。ReName操作构造保存RedoAction/UndoAction/Data，默认IsPart=true、IsDataComplete=true；Redo/Undo直接调用对应Action(Data,Params)，没有null门/catch/恢复逻辑，Update为空。Dispose清三个Action和Data，未清Params/ParentNode。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.UnRedo_NameData::.ctor",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 265,
+          "end": 284,
+          "excerpt": "          \"token\": \"0x060009f5\",\n          \"symbol\": {\n            \"token\": \"0x060009f5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.UnRedo_NameData\",\n            \"name\": \".ctor\",\n            \"parameters\": 3,\n            \"attributes\": \"Public, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"2003010e0e0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 30,\n          \"ilSha256\": \"721fd79ee3348aa198fe2c76d76af7637a4dc5fd421ea39f2824fc69b45da82f\",\n          \"ilBytes\": \"02283100000a000002037d3805000402047d3905000402057d3a0500042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.ReNameUnRedoOperation::.ctor",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 496,
+          "end": 515,
+          "excerpt": "          \"token\": \"0x060009f0\",\n          \"symbol\": {\n            \"token\": \"0x060009f0\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.ReNameUnRedoOperation\",\n            \"name\": \".ctor\",\n            \"parameters\": 3,\n            \"attributes\": \"Public, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"200301151286390212827c128629151286390212827c12862912827c\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 47,\n          \"ilSha256\": \"35f2774fb31053dd25c588e5dcb1fdcb7c8ecb2a17c47cabc8496dfb4d1b89db\",\n          \"ilBytes\": \"02177d2f05000402177d360500040228a007000a0000020328e709000600020428e909000600020528e1090006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.ReNameUnRedoOperation::Redo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 721,
+          "end": 740,
+          "excerpt": "          \"token\": \"0x060009f1\",\n          \"symbol\": {\n            \"token\": \"0x060009f1\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.ReNameUnRedoOperation\",\n            \"name\": \"Redo\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 25,\n          \"ilSha256\": \"82136b9583960f241f595f61db3776e50f6cb5ac3458d173b61a00e4574cb941\",\n          \"ilBytes\": \"0228e60900060228e00900060228e20900066f5e08000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.ReNameUnRedoOperation::Undo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 836,
+          "end": 855,
+          "excerpt": "          \"token\": \"0x060009f2\",\n          \"symbol\": {\n            \"token\": \"0x060009f2\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.ReNameUnRedoOperation\",\n            \"name\": \"Undo\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 25,\n          \"ilSha256\": \"620d89b3978796c8f8cca0c55cdc9e0257c54b72ace9c7cdd9c3d373b16ac5af\",\n          \"ilBytes\": \"0228e80900060228e00900060228e20900066f5e08000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.ReNameUnRedoOperation::Update",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 951,
+          "end": 970,
+          "excerpt": "          \"token\": \"0x060009f3\",\n          \"symbol\": {\n            \"token\": \"0x060009f3\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.ReNameUnRedoOperation\",\n            \"name\": \"Update\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 2,\n          \"ilSha256\": \"587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe\",\n          \"ilBytes\": \"002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.ReNameUnRedoOperation::Dispose",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 986,
+          "end": 1005,
+          "excerpt": "          \"token\": \"0x060009f4\",\n          \"symbol\": {\n            \"token\": \"0x060009f4\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.ReNameUnRedoOperation\",\n            \"name\": \"Dispose\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 34,\n          \"ilSha256\": \"7fa44c96e3ad8e842a74bba451cdb4633e73291942acc8d0c36a306af091d0ed\",\n          \"ilBytes\": \"00021428e709000600021428e909000600021428eb09000600021428e1090006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/UnRedo_NameData.cs",
+          "member": "Captured names only",
+          "sha256": "6e59cfa8607c26a98bb040b42391eae1bce6856a081260824c00b0c0f5723d0c",
+          "start": 3,
+          "end": 27,
+          "excerpt": "public class UnRedo_NameData\n{\n\t/// <summary>\n\t/// 模块对象名称\n\t/// </summary>\n\tpublic string ModuleFullName;\n\n\t/// <summary>\n\t/// 旧名称\n\t/// </summary>\n\tpublic string OldName;\n\n\t/// <summary>\n\t/// 新名称\n\t/// </summary>\n\tpublic string NewName;\n\n\tpublic UnRedo_NameData(string fullName, string oldName, string newName)\n\t{\n\t\tModuleFullName = fullName;\n\t\tOldName = oldName;\n\t\tNewName = newName;\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ReNameUnRedoOperation.cs",
+          "member": "Rename actions and lifecycle",
+          "sha256": "0d1c4043b6339eda89464301d9f42b78acd2be53f67681b7546c8afd332aeda4",
+          "start": 6,
+          "end": 55,
+          "excerpt": "public class ReNameUnRedoOperation : DisplayNotify, IUnRedoActionOperation, IUnRedoOperation, IDisposable, IUnRedoDataDone<UnRedo_NameData>\n{\n\tpublic bool IsPart { get; set; } = true;\n\n\tpublic UnRedo_NameData Data { get; set; }\n\n\tpublic IUnRedoParams Params { get; set; }\n\n\tpublic IBuilder ParentNode { get; set; }\n\n\tpublic Action<UnRedo_NameData, IUnRedoParams> RedoAction { get; set; }\n\n\tpublic Action<UnRedo_NameData, IUnRedoParams> UndoAction { get; set; }\n\n\tpublic Action<UnRedo_NameData> UpdateAction { get; set; }\n\n\tpublic bool IsDataComplete { get; set; } = true;\n\n\tpublic ExecutePriority ExecutePriority { get; set; }\n\n\tpublic ReNameUnRedoOperation(Action<UnRedo_NameData, IUnRedoParams> redoAction, Action<UnRedo_NameData, IUnRedoParams> undoAction, UnRedo_NameData data)\n\t{\n\t\tRedoAction = redoAction;\n\t\tUndoAction = undoAction;\n\t\tData = data;\n\t}\n\n\tpublic void Redo()\n\t{\n\t\tRedoAction(Data, Params);\n\t}\n\n\tpublic void Undo()\n\t{\n\t\tUndoAction(Data, Params);\n\t}\n\n\tpublic void Update()\n\t{\n\t}\n\n\tpublic void Dispose()\n\t{\n\t\tRedoAction = null;\n\t\tUndoAction = null;\n\t\tUpdateAction = null;\n\t\tData = null;\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "外部修改Data/委托/优先级、Dispose后重用及Params/ParentNode引用生命期未知；该对象不是事务或稳定实体句柄。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH03",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "SetOldName / SetNewName",
+      "to": "原名称路径与改名后末段路径再解析",
+      "behavior": "Undo目标SetOldName取ModuleFullName最后一个点之前的前缀，再拼点和NewName，用VmSolution.Instance[拼接路径]查找后as IVmModule写OldName。Redo目标SetNewName用最初ModuleFullName查找后写NewName；两者不使用unRedoParams、不验证对象ID/GUID、查找为空或类型不符都无保护。SetOldName也未检查LastIndexOf结果，单段路径会在Substring门失败；实际顶层/嵌套场景是否走到该输入仍单列。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetOldName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 4004,
+          "end": 4023,
+          "excerpt": "          \"token\": \"0x060009d4\",\n          \"symbol\": {\n            \"token\": \"0x060009d4\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"SetOldName\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20020112827c128629\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 73,\n          \"ilSha256\": \"fd53f742e8b4432e9da0cbda98192e8e63799f99f2e40da52f8251c1c5b2aed9\",\n          \"ilBytes\": \"00037b380500040a0616061f2e6f3400000a6ff800000a0b077221000070037b3a050004283a00000a0c28b401000a086f9900000a0d09753f000001037b390500046f5808000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetNewName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 4289,
+          "end": 4308,
+          "excerpt": "          \"token\": \"0x060009d5\",\n          \"symbol\": {\n            \"token\": \"0x060009d5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"SetNewName\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20020112827c128629\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 37,\n          \"ilSha256\": \"dbe95b5357d48a36d3d9342fcfe48b45b9b6b9a75ead0646150bf76c089735d2\",\n          \"ilBytes\": \"0028b401000a037b380500046f9900000a0a06753f000001037b3a0500046f5808000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "Undo and redo name-path identity",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 1176,
+          "end": 1191,
+          "excerpt": "\tprivate void SetOldName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)\n\t{\n\t\tstring moduleFullName = nameData.ModuleFullName;\n\t\tstring text = moduleFullName.Substring(0, moduleFullName.LastIndexOf('.'));\n\t\tstring sub = text + \".\" + nameData.NewName;\n\t\tobject obj = VmSolution.Instance[sub];\n\t\t(obj as IVmModule).Name = nameData.OldName;\n\t}\n\n\tprivate void SetNewName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)\n\t{\n\t\tobject obj = VmSolution.Instance[nameData.ModuleFullName];\n\t\t(obj as IVmModule).Name = nameData.NewName;\n\t}\n\n\tprivate void SkipToModuleCommandExecute()",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "父Group/流程随后改名、对象删除重建、同名遮蔽/冲突、无点路径与重复撤销的实际可达性未知；不能把重新按名字查找说成稳定身份恢复。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH04",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "VmFrameTreeBase.FullName / IVmFullPath",
+      "to": "沿Parent或VmIO.Root组成名称路径",
+      "behavior": "FullName从当前节点沿树上行到null或Name为空；普通节点拼UniqueName，ModuleType25换[UserVar]，VmIO按Parent存在与否加括号并转Root；最后去末尾点。VmModule.UniqueName返回Name，VmModule.FullName委托base，改名快照因此是当时名称树路径，不是GUID路径；父链后续变化不会自动重写UnRedo_NameData字符串。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmFrameTreeBase::get_FullName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 4501,
+          "end": 4520,
+          "excerpt": "          \"token\": \"0x060004e7\",\n          \"symbol\": {\n            \"token\": \"0x060004e7\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmFrameTreeBase\",\n            \"name\": \"get_FullName\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Virtual, HideBySig, VtableLayoutMask, SpecialName\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 242,\n          \"ilSha256\": \"22d6ac351231531bfaafb57658ccd68bff135136b181c94c5e75703a8450acdd\",\n          \"ilBytes\": \"0072350200700a020b38a00000000007753300000214fe030c082c3d00076fe00400062d13722e2a0070076fe604000606284202000a2b11723e2a0070076fe604000606284202000a0a0775330000026f030500060b002b5400077552000001250d2c0c096f4a00000a1f19fe012b0116130411042c1500722e2a007072ad08007006284202000a0a002b1400722e2a0070076fe604000606284202000a0a00076fe0040006752b0000020b0000072c10076fe204000628a200000a16fe012b0116130511053a43ffffff061f2e281200002b130611062c110006061f2e6f5e02000a6f8a03000a0a000613072b0011072a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmFrameTreeBase::VMControls.Interface.IVmFullPath.get_FullPath",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 5414,
+          "end": 5433,
+          "excerpt": "          \"token\": \"0x060004eb\",\n          \"symbol\": {\n            \"token\": \"0x060004eb\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmFrameTreeBase\",\n            \"name\": \"VMControls.Interface.IVmFullPath.get_FullPath\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 7,\n          \"ilSha256\": \"f03c756aced431de1b13f9b4e7ccc817d289a80bb1ffb046b81ef16298868ff1\",\n          \"ilBytes\": \"026fe70400062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmModule::get_UniqueName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 11843,
+          "end": 11862,
+          "excerpt": "          \"token\": \"0x0600028e\",\n          \"symbol\": {\n            \"token\": \"0x0600028e\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModule\",\n            \"name\": \"get_UniqueName\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 12,\n          \"ilSha256\": \"d70b18eda5959af54ec8970bfbc96c035d44914a464df99b9091087e0dd4da36\",\n          \"ilBytes\": \"00026fe20400060a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmModule::get_FullName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 11765,
+          "end": 11784,
+          "excerpt": "          \"token\": \"0x0600024e\",\n          \"symbol\": {\n            \"token\": \"0x0600024e\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModule\",\n            \"name\": \"get_FullName\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 12,\n          \"ilSha256\": \"64e8c23444b66ecf716e15bed1aebec08bb58e0ffbf59f9dd08b493aaa01498e\",\n          \"ilBytes\": \"000228e70400060a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmFrameTreeBase.cs",
+          "member": "FullName construction",
+          "sha256": "e1464d00357b690eec97a7ed0a8c7fc5c6c14066779bcac65e52c280059784f0",
+          "start": 43,
+          "end": 73,
+          "excerpt": "\tpublic virtual string FullName\n\t{\n\t\tget\n\t\t{\n\t\t\tstring text = \"\";\n\t\t\tVmFrameTreeBase vmFrameTreeBase = this;\n\t\t\twhile (vmFrameTreeBase != null && !string.IsNullOrEmpty(vmFrameTreeBase.Name))\n\t\t\t{\n\t\t\t\tif (vmFrameTreeBase is VmIO)\n\t\t\t\t{\n\t\t\t\t\ttext = ((vmFrameTreeBase.Parent != null) ? $\"({vmFrameTreeBase.UniqueName}).{text}\" : $\"{vmFrameTreeBase.UniqueName}.{text}\");\n\t\t\t\t\tvmFrameTreeBase = (vmFrameTreeBase as VmIO).Root;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\ttext = ((!(vmFrameTreeBase is IVmModule { ModuleType: 25u })) ? $\"{vmFrameTreeBase.UniqueName}.{text}\" : string.Format(\"{0}.{1}\", \"[UserVar]\", text));\n\t\t\t\t\tvmFrameTreeBase = vmFrameTreeBase.Parent as VmFrameTreeBase;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (text.Contains('.'))\n\t\t\t{\n\t\t\t\ttext = text.Remove(text.LastIndexOf('.'));\n\t\t\t}\n\t\t\treturn text;\n\t\t}\n\t}\n\n\tpublic virtual string UniqueGUID { get; }\n\n\tpublic virtual string FullGUID\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "Module unique name identity",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 720,
+          "end": 720,
+          "excerpt": "\tpublic override string UniqueName => Name;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "所有节点UniqueName/Parent/Root变更、循环父链和GUID路径消费者不在改名有限片内；未以当前实例验证路径。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH05",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "VmSolution[string] → VmFrameTreeBase[string]",
+      "to": "流程首段及嵌套Group/模块逐段名字解析",
+      "behavior": "方案indexer null返回null、空串返回自身，含[Params]直接返回字符串；首段在Modules按Name FirstOrDefault，另有VirtualPro/[UserVar]分支，有点递归vmModule剩余路径。基类空/NULL返回自身；方括号首段可交IVmExternPath，其余GetNode首段再试%包裹名；后续按VmFrameTreeBase、VmIOCollection或IList继续。VmModuleSet.GetNode非括号名优先GetModuleByProtocol按本层Modules.FirstOrDefault(Name)，再base；不是全方案按ID唯一搜索，嵌套Group只是同样逐层解析。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmSolution::get_Item",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 8151,
+          "end": 8170,
+          "excerpt": "          \"token\": \"0x06000062\",\n          \"symbol\": {\n            \"token\": \"0x06000062\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"get_Item\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20011c0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 300,\n          \"ilSha256\": \"c40d9df7c2a5e9745c3a05e5ff2a2a588f02c3523c3b57f4651b339704573bee\",\n          \"ilBytes\": \"73240700060a000314fe010d092c09001413043811010000036f3201000a16fe01130511052c090002130438f900000003729b0800706fba01000a130611062c090003130438df00000003178d3501000125161f2e9d6ff501000a0b0607169a7def02000402280f06000606fe062507000673ae01000a281100002b0c082d17067bef020004284b0000066fe204000628b800000a2b0116130711072c06284b0000060c067bef02000472ad08007028b800000a130811082c3900027b250000046fdf01000a252d0426142b247ed0020004252d17267ecd020004fe060107000673ae01000a2580d0020004281100002b0c00031f2e281200002b130911092c2200082d03142b1708031607169a6f3201000a17586fa101000a6fec04000613042b06000813042b0011042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmFrameTreeBase::get_Item",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 5464,
+          "end": 5483,
+          "excerpt": "          \"token\": \"0x060004ec\",\n          \"symbol\": {\n            \"token\": \"0x060004ec\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmFrameTreeBase\",\n            \"name\": \"get_Item\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, VtableLayoutMask, SpecialName\",\n            \"signatureBytes\": \"20011c0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 402,\n          \"ilSha256\": \"84d87adde7a7781e97b504a94433c31ef432a82edf0975f5b82918cabe47dd69\",\n          \"ilBytes\": \"00032c0b036f3201000a16fe012b0117130411042c0900021305387001000003178d3501000125161f2e9d6ff501000a0a140b06169a286700002b1f5b331906169a286800002b1f5d330d0275ca000001250c14fe032b0116130611062c0f0008036f6200000a13053821010000000206169a6fed0400060b0714fe01130711072c160002722829007006169a28b501000a6fed0400060b0000031f2e6f9403000a17580d0916fe031308110839d8000000732008000613090003096f5f02000a130a1109110a178d3501000125161f2e9d6ff501000a7d9d03000411097b9d0300048e69173003142b0911097b9d030004179a130b07752b00000225130c14fe03130d110d2c0e00110c110a6fec04000613052b7907753400000225130e14fe03130f110f2c2300110e11097b9d030004169a6f6e050006252d0426142b07110b6fec04000613052b4407754e00000125131014fe03131111112c2c001110286900002b1109fe0621080006738c04000a286a00002b252d0426142b07110b6fec04000613052b06000713052b0011052a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmModuleSet::GetNode",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 9420,
+          "end": 9439,
+          "excerpt": "          \"token\": \"0x0600062b\",\n          \"symbol\": {\n            \"token\": \"0x0600062b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModuleSet\",\n            \"name\": \"GetNode\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig\",\n            \"signatureBytes\": \"20011c0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 84,\n          \"ilSha256\": \"4bb4d9f2dfca5b1eee9948ff6f89377b1d476f508e0d5eea03c1434318e9ef40\",\n          \"ilBytes\": \"00140a0328a200000a2d1603286700002b1f28330c03286800002b1f29fe012b01160b072c0c000203281a0300060a002b1c000203282c0600060a0614fe010c082c0a000203281a0300060a0000060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmModuleSet::GetModuleByProtocol",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 9839,
+          "end": 9858,
+          "excerpt": "          \"token\": \"0x0600062c\",\n          \"symbol\": {\n            \"token\": \"0x0600062c\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModuleSet\",\n            \"name\": \"GetModuleByProtocol\",\n            \"parameters\": 1,\n            \"attributes\": \"Family, HideBySig\",\n            \"signatureBytes\": \"200112440e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 62,\n          \"ilSha256\": \"9bf18f6870086bda70c8c591ebe515289b564f7e486fb9ebadb070ba9bd67aa1\",\n          \"ilBytes\": \"737e0800060a06037dd903000400067bd903000428a200000a0b072c0500140c2b1a02280f06000606fe067f08000673ae01000a281100002b0c2b00082a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.Core.VmModule::GetNode",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 11921,
+          "end": 11940,
+          "excerpt": "          \"token\": \"0x0600031a\",\n          \"symbol\": {\n            \"token\": \"0x0600031a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModule\",\n            \"name\": \"GetNode\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig\",\n            \"signatureBytes\": \"20011c0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 61,\n          \"ilSha256\": \"a90fab742b48097834a48aec1e9c224df7ddb8cc627a0bc91070eaae7d3776e8\",\n          \"ilBytes\": \"00030a06722e28007028b800000a2d0f06723e28007028b800000a2d0b2b12026f620200060b2b13026f640200060b2b0a020328250300060b2b00072a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "Solution name path first segment",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 460,
+          "end": 494,
+          "excerpt": "\tpublic override object this[string sub]\n\t{\n\t\tget\n\t\t{\n\t\t\tif (sub == null)\n\t\t\t{\n\t\t\t\treturn null;\n\t\t\t}\n\t\t\tif (sub.Length == 0)\n\t\t\t{\n\t\t\t\treturn this;\n\t\t\t}\n\t\t\tif (sub.Contains(\"[Params]\"))\n\t\t\t{\n\t\t\t\treturn sub;\n\t\t\t}\n\t\t\tstring[] array = sub.Split('.');\n\t\t\tstring procInfo = array[0];\n\t\t\tVmModule vmModule = Modules.FirstOrDefault((VmModule p) => p.Name == procInfo);\n\t\t\tif (vmModule == null && procInfo == VirtualPro.Name)\n\t\t\t{\n\t\t\t\tvmModule = VirtualPro;\n\t\t\t}\n\t\t\tif (procInfo == \"[UserVar]\")\n\t\t\t{\n\t\t\t\tvmModule = AllModules.Values?.FirstOrDefault((VmModule p) => p != null && ((IVmModule)p).ModuleType == 5);\n\t\t\t}\n\t\t\tif (sub.Contains('.'))\n\t\t\t{\n\t\t\t\treturn vmModule?[sub.Remove(0, array[0].Length + 1)];\n\t\t\t}\n\t\t\treturn vmModule;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmFrameTreeBase.cs",
+          "member": "Recursive frame path resolution",
+          "sha256": "e1464d00357b690eec97a7ed0a8c7fc5c6c14066779bcac65e52c280059784f0",
+          "start": 101,
+          "end": 142,
+          "excerpt": "\tpublic virtual object this[string sub]\n\t{\n\t\tget\n\t\t{\n\t\t\tif (sub == null || sub.Length == 0)\n\t\t\t{\n\t\t\t\treturn this;\n\t\t\t}\n\t\t\tstring[] array = sub.Split('.');\n\t\t\tobject obj = null;\n\t\t\tif (array[0].First() == '[' && array[0].Last() == ']' && this is IVmExternPath vmExternPath)\n\t\t\t{\n\t\t\t\treturn vmExternPath.GetExternNode(sub);\n\t\t\t}\n\t\t\tobj = GetNode(array[0]);\n\t\t\tif (obj == null)\n\t\t\t{\n\t\t\t\tobj = GetNode($\"%{array[0]}%\");\n\t\t\t}\n\t\t\tint num = sub.IndexOf('.') + 1;\n\t\t\tif (num != 0)\n\t\t\t{\n\t\t\t\tstring text = sub.Substring(num);\n\t\t\t\tstring[] nextSplit = text.Split('.');\n\t\t\t\tstring sub2 = ((nextSplit.Length > 1) ? nextSplit[1] : null);\n\t\t\t\tif (obj is VmFrameTreeBase vmFrameTreeBase)\n\t\t\t\t{\n\t\t\t\t\treturn vmFrameTreeBase[text];\n\t\t\t\t}\n\t\t\t\tif (obj is VmIOCollection vmIOCollection)\n\t\t\t\t{\n\t\t\t\t\treturn vmIOCollection.GetIO(nextSplit[0])?[sub2];\n\t\t\t\t}\n\t\t\t\tif (obj is IList source)\n\t\t\t\t{\n\t\t\t\t\treturn source.Cast<VmFrameTreeBase>().FirstOrDefault((VmFrameTreeBase p) => p.Name == nextSplit[0])?[sub2];\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn obj;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs",
+          "member": "Module-set path lookup",
+          "sha256": "f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346",
+          "start": 852,
+          "end": 878,
+          "excerpt": "\tpublic override object GetNode(string key)\n\t{\n\t\tobject obj = null;\n\t\tif (!string.IsNullOrEmpty(key) && key.First() == '(' && key.Last() == ')')\n\t\t{\n\t\t\tobj = base.GetNode(key);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tobj = GetModuleByProtocol(key);\n\t\t\tif (obj == null)\n\t\t\t{\n\t\t\t\tobj = base.GetNode(key);\n\t\t\t}\n\t\t}\n\t\treturn obj;\n\t}\n\n\tprotected VmModule GetModuleByProtocol(string moduleInfo)\n\t{\n\t\tif (string.IsNullOrEmpty(moduleInfo))\n\t\t{\n\t\t\treturn null;\n\t\t}\n\t\treturn Modules.FirstOrDefault((VmModule p) => p != null && p.Name == moduleInfo);\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "模糊/空段/外部路径/虚拟流程、Modules懒加载和重复Name的真实组合未闭合；函数可返回非模块对象，最终as转换不能被省略。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH06",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "原config候选 / App.OnStartup",
+      "to": "IUnRedoService类型注入与服务转发",
+      "behavior": "安装config候选中UnRedoServiceImplement指myLibs\\VM.UnRedo.dll、UnRedoStackCount=15。原App.OnStartup以BaseDirectory+ConfigurationHelper.GetConfig得到路径，Assembly.LoadFrom后选首个实现IUnRedoService的类型Ioc.Set。新取原VM.UnRedo身份及离线源表明UnRedoService构造new UnRedoSchedule，Register/Undo/Redo/RemoveEmptyOperation直接转发；本审计只静态取证，不执行LoadFrom、服务构造或其临时文件清理。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VisionMaster.App::OnStartup",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 23992,
+          "end": 24011,
+          "excerpt": "          \"token\": \"0x06000011\",\n          \"symbol\": {\n            \"token\": \"0x06000011\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.App\",\n            \"name\": \"OnStartup\",\n            \"parameters\": 1,\n            \"attributes\": \"Family, Virtual, HideBySig\",\n            \"signatureBytes\": \"200101128085\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 916,\n          \"ilSha256\": \"da4f058445b98c5b2f4edc697daca095b3706cef352d3b514d64afc414ca7d07\",\n          \"ilBytes\": \"0072b3010070284400000a284500000a0a06130a110a2c4673f9020006130b110b027d1001000400110b147d0f010004110bfe06fa020006734e00000a734f00000a25176f5000000a00130c110c166f5100000a00110c6f5200000a0000140b02fe0623000006734e00000a734f00000a25176f5000000a00251a6f5300000a000c08166f5100000a00086f5200000a000072c9010070283700000a00280f0100060072e7010070283700000a00735400000a0b7213020070283700000a00723b020070283700000a0000de0f130d0002110d28140000060000de00027b090000046f5500000a267247020070283700000a00027b0a00000414fe03130e110e2c0f0002027b0a00000428140000060000027b080000046f5600000a267275020070283700000a0028130100060072b9020070283700000a00282200000a6f5700000a0d72fd020070283700000a000919fe0116fe01130f110f2c45007219030070284400000a284500000a13101110131111112c0a00281200000600002b1e007235030070283700000a002817000006007269030070283700000a0000002b0800281200000600007299030070283700000a007e7a00000414fe03131211122c56007e7a00000417285b01000616fe01131311132c3a0072d1030070282d00000a72f1030070282d00000a17191617285800000a17fe01131411142c12007e7a0000046f83010006285c01000600000014807a000004007e12010004252d17267e11010004fe06fd020006734e00000a258012010004734f00000a13041104166f5100000a001104176f5000000a0011046f5200000a00283f00000a6f5900000a7219040070284400000a283600000a130572470400701105283600000a283700000a001105285a00000a130611066f5b00000a7e13010004252d17267e11010004fe06fe020006735c00000a258013010004280100002b1307d0ea000001285e00000a1107171414285f00000a00282a01000600726f040070284400000a284500000a13087291040070284400000a284500000a130911082c17286000000a6f6100000a6f6200000a18fe0116fe012b0116131511152c1300286000000a6f6100000a186f6300000a00001109131611162c5e00286000000a6f6100000a2300000000000000006f6400000a00286000000a6f6100000a2300000000000000006f6500000a00286000000a6f6100000a286600000a6f6700000a00286000000a6f6100000a286800000a6f6900000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoService::.ctor",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 12200,
+          "end": 12219,
+          "excerpt": "          \"token\": \"0x06000071\",\n          \"symbol\": {\n            \"token\": \"0x06000071\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoService\",\n            \"name\": \".ctor\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 20,\n          \"ilSha256\": \"269c6d616c15b1ab0b6f59a7764abbccc0648b7445c7a4f1bdd075720128c256\",\n          \"ilBytes\": \"02282100000a00000273400000067d1c0000042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoService::Register",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 12381,
+          "end": 12400,
+          "excerpt": "          \"token\": \"0x06000073\",\n          \"symbol\": {\n            \"token\": \"0x06000073\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoService\",\n            \"name\": \"Register\",\n            \"parameters\": 3,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2003011280d10e151280e501151280e9031280e11280d102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 17,\n          \"ilSha256\": \"43ae440d589e3de13c62b9b776fc74a4922229a4ad8f6a7239ddbebeeb80def1\",\n          \"ilBytes\": \"00027b1c0000040304056fa600000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoService::Undo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 12478,
+          "end": 12497,
+          "excerpt": "          \"token\": \"0x06000078\",\n          \"symbol\": {\n            \"token\": \"0x06000078\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoService\",\n            \"name\": \"Undo\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2001011c\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"61140071878aaeed6399b84f293582625cfc02a2744c72f29cc48309e45d3170\",\n          \"ilBytes\": \"00027b1c000004036f5300000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoService::Redo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 12298,
+          "end": 12317,
+          "excerpt": "          \"token\": \"0x06000072\",\n          \"symbol\": {\n            \"token\": \"0x06000072\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoService\",\n            \"name\": \"Redo\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2001011c\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"8974e9acc36e7d171bf3daec075d3537c379fb77bcc999afbc2b65639392e040\",\n          \"ilBytes\": \"00027b1c000004036f5400000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoService::RemoveEmptyOperation",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 12561,
+          "end": 12580,
+          "excerpt": "          \"token\": \"0x0600007c\",\n          \"symbol\": {\n            \"token\": \"0x0600007c\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoService\",\n            \"name\": \"RemoveEmptyOperation\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"b1a2a945d0622a69c723034f12a8c8e8dce4ba67035e2426b8111e2024cee46e\",\n          \"ilBytes\": \"00027b1c0000046fae00000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.config-selection.json",
+          "member": "Explicit installed config candidate",
+          "sha256": "cb884839e4de57a02f0ac23271d43db0ca224001523ab226a963f14cab0be0ff",
+          "start": 4,
+          "end": 16,
+          "excerpt": "  \"selections\": [\n    {\n      \"start\": 62,\n      \"end\": 62,\n      \"excerpt\": \"    <add key=\\\"UnRedoStackCount\\\" value=\\\"15\\\" />\"\n    },\n    {\n      \"start\": 63,\n      \"end\": 63,\n      \"excerpt\": \"    <add key=\\\"UnRedoServiceImplement\\\" value=\\\"myLibs\\\\VM.UnRedo.dll\\\" />\"\n    }\n  ],\n  \"scope\": \"Explicit installed config candidate; actual ConfigurationHelper source/priority remains separate.\"",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs",
+          "member": "Configured original service injection",
+          "sha256": "babebf8e2bef407d7d06105aa4540bb844e32644a25d9a8c8c7faebfe57cf3f7",
+          "start": 210,
+          "end": 215,
+          "excerpt": "\t\tstring text = AppDomain.CurrentDomain.BaseDirectory + ConfigurationHelper.GetConfig(\"UnRedoServiceImplement\");\n\t\tLogHelper.Info(\"撤销重做注入ioc,准备的dll路径为\" + text);\n\t\tAssembly assembly = Assembly.LoadFrom(text);\n\t\tType typeto = assembly.GetTypes().FirstOrDefault((Type c) => c.GetInterfaces().Contains(typeof(IUnRedoService)));\n\t\tIoc.Set(typeof(IUnRedoService), typeto);\n\t\tProgram.UpdateTitleBinding();",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoService.decompiled.cs",
+          "member": "Service creation and forwarding",
+          "sha256": "d139eaffdd22d07b27dac23206f13575f006343b7e808584256c11cc24fe5c01",
+          "start": 12,
+          "end": 29,
+          "excerpt": "\tpublic UnRedoService()\n\t{\n\t\t_unRedoSchedule = new UnRedoSchedule();\n\t}\n\n\tpublic void Redo(object dispatcher)\n\t{\n\t\t_unRedoSchedule.Redo(dispatcher);\n\t}\n\n\tpublic void Register(IUnRedoOperation unRedoOperation, string displayName, Expression<Func<IBuilder, IUnRedoOperation, bool>> CanRegister = null)\n\t{\n\t\t_unRedoSchedule.Register(unRedoOperation, displayName, CanRegister);\n\t}\n\n\tpublic void SetIsLaziLoading(bool isLaziLoading)\n\t{\n\t\t_unRedoSchedule.SetIsLaziLoading(isLaziLoading);",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        }
+      ],
+      "unknowns": [
+        "ConfigurationHelper配置优先级、实际Assembly/Ioc实例、泛型/反射运行绑定未知；路径候选存在不证明原机采用了该服务。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH07",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "UnRedoSchedule.Register",
+      "to": "录制条件、part与root构建",
+      "behavior": "Register仅当_unRedoing<=0、_nLaziLoading<=0、可选CanRegister允许且必要栈非空、IsPart要求栈非空且top.ForbidBuild=false才构建；不满足时本体不加入/不Dispose传入对象。part经BuildPart，非part经BuildRoot，再通知。Root新建RootUnRedoOperation+SafeObservableCollection，复制IRootParam类型/ForbidBuild并TryPush；溢出时Dispose移出root。part先清redo栈，设ParentNode/top、显示名/IsUndoStack，再追加Actions。当前Register体没有按IsRunning/LockAreaStatus/IsOpenParam统一拒绝；外层入口权限不能由该体臆造。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::Register",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 13533,
+          "end": 13552,
+          "excerpt": "          \"token\": \"0x06000046\",\n          \"symbol\": {\n            \"token\": \"0x06000046\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"Register\",\n            \"parameters\": 3,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2003011280d10e151280e501151280e9031280e11280d102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 235,\n          \"ilSha256\": \"165869bceb7a762cb20fc99b5a79b284750dfd4a693ce8fbb3ef7b495285ad53\",\n          \"ilBytes\": \"00027b1500000416fe020a062c0538d7000000027b1000000416fe020b072c0538c5000000052c10027b0d0000046f6700000a16fe012b01160c082c0538a8000000036f7800000a2c10027b0d0000046f6700000a16fe012b01160d092c053886000000036f7800000a2c17027b0d0000046f6e00000a75360000016f7900000a2b0116130411042c022b5e052c21056f7a00000a027b0d0000046f6e00000a7538000001036f7b00000a16fe012b0116130511052c022b31036f7800000a130611062c100203753e000001042856000006002b0e0204037536000001285500000600022845000006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::BuildRoot",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 16617,
+          "end": 16636,
+          "excerpt": "          \"token\": \"0x06000055\",\n          \"symbol\": {\n            \"token\": \"0x06000055\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"BuildRoot\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2002010e1280d9\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 81,\n          \"ilSha256\": \"be791bb96c1175979ff65212dd5f7299117f28160d9c1701ef8534085dded554\",\n          \"ilBytes\": \"00736b0000060a06739a00000a6f9b00000a0006036f9c00000a0006176f8700000a0006046f9d00000a00027b0d00000406753400000112016f9e00000a0c080d092c0c07753c0000016f8e00000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::BuildPart",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 16954,
+          "end": 16973,
+          "excerpt": "          \"token\": \"0x06000056\",\n          \"symbol\": {\n            \"token\": \"0x06000056\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"BuildPart\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2002011280f90e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 113,\n          \"ilSha256\": \"cf545ff4190dc5ac89d80aa9a0deaa2dc2e04af863c1fdfcab63af997c1c120e\",\n          \"ilBytes\": \"00027b0d0000046f6700000a16fe010c082c022b5b037537000001250a14fe030d092c0a02062842000006002b0702284400000600027b0d0000046f6e00000a75380000010b03076f9f00000a0003753d000001046f9200000a0003753d000001176fa000000a0007036fa100000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::RedoStackClear",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 13063,
+          "end": 13082,
+          "excerpt": "          \"token\": \"0x06000044\",\n          \"symbol\": {\n            \"token\": \"0x06000044\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"RedoStackClear\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 82,\n          \"ilSha256\": \"7f9f05e003159d0993d7591d2396db0a58a0f2f9e05ae5b38234f4636b3b9c5c\",\n          \"ilBytes\": \"00027b0e0000046f6700000a16fe030a062c3e00027b0e000004280700002b7e24000004252d17267e22000004fe068f000006737000000a2580240000046f7100000a00027b0e0000046f7200000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.PoolStack`1::TryPush",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 21207,
+          "end": 21226,
+          "excerpt": "          \"token\": \"0x0600000d\",\n          \"symbol\": {\n            \"token\": \"0x0600000d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.PoolStack\\u00601\",\n            \"name\": \"TryPush\",\n            \"parameters\": 2,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"2002021300101c\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 112,\n          \"ilSha256\": \"60efa50555858d29a52b031f581865df84d72a9b95913f7f6ed851a02e7cc581\",\n          \"ilBytes\": \"00027b1e00000a16036f2600000a00160a02282700000a6a027b2000000a6efe020b072c340004027b1e00000a02282700000a17596f2a00000a8c0500001b51027b1e00000a02282700000a17596f2800000a00170a002b050004145100027201000070282300000a00060c2b00082a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.RootUnRedoOperation::BuildPart",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 19981,
+          "end": 20000,
+          "excerpt": "          \"token\": \"0x06000065\",\n          \"symbol\": {\n            \"token\": \"0x06000065\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.RootUnRedoOperation\",\n            \"name\": \"BuildPart\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2001011280f9\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"e0a2c34ba8b73a6aed978aa917a726e365028691de02496ec267c6d4b07c36b0\",\n          \"ilBytes\": \"02285b000006036fa400000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.RootUnRedoOperation::BuildOperType",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 20491,
+          "end": 20510,
+          "excerpt": "          \"token\": \"0x06000069\",\n          \"symbol\": {\n            \"token\": \"0x06000069\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.RootUnRedoOperation\",\n            \"name\": \"BuildOperType\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2001011280d9\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 28,\n          \"ilSha256\": \"b0b0ac3a1c28849ca2d516c4c3fea0cf2d74792bc802e178e7b5a499275ebf60\",\n          \"ilBytes\": \"0002036f9800000a28620000060002036f7900000a2860000006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs",
+          "member": "Register gates and root-versus-part",
+          "sha256": "920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407",
+          "start": 142,
+          "end": 156,
+          "excerpt": "\tpublic void Register(IUnRedoOperation unRedoOperation, string displayStr, Expression<Func<IBuilder, IUnRedoOperation, bool>> CanRegister = null)\n\t{\n\t\tif (_unRedoing <= 0 && _nLaziLoading <= 0 && (CanRegister == null || _undoStack.Count != 0) && (!unRedoOperation.IsPart || _undoStack.Count != 0) && (!unRedoOperation.IsPart || !(_undoStack.Peek() as IRootParam).ForbidBuild) && (CanRegister == null || CanRegister.Compile()(_undoStack.Peek() as IBuilder, unRedoOperation)))\n\t\t{\n\t\t\tif (unRedoOperation.IsPart)\n\t\t\t{\n\t\t\t\tBuildPart(unRedoOperation as IUnRedoActionOperation, displayStr);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tBuildRoot(displayStr, unRedoOperation as IRootParam);\n\t\t\t}\n\t\t\tNotifyProperty();\n\t\t}\n\t}",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs",
+          "member": "Root and action construction",
+          "sha256": "920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407",
+          "start": 342,
+          "end": 378,
+          "excerpt": "\tprivate void BuildRoot(string displayName, IRootParam param)\n\t{\n\t\tIBuilder builder = new RootUnRedoOperation();\n\t\tbuilder.Actions = new SafeObservableCollection<IUnRedoActionOperation>();\n\t\tbuilder.BuildDispalyName(displayName);\n\t\tbuilder.BuildInStack(isUndoStack: true);\n\t\tbuilder.BuildOperType(param);\n\t\tif (_undoStack.TryPush(builder as IUnRedoOperation, out var removeItem))\n\t\t{\n\t\t\t(removeItem as IDisposable).Dispose();\n\t\t}\n\t}\n\n\tprivate void BuildPart(IUnRedoActionOperation unRedoOperation, string displayStr)\n\t{\n\t\tif (_undoStack.Count != 0)\n\t\t{\n\t\t\tif (unRedoOperation is IDisposeTempFile compareObject)\n\t\t\t{\n\t\t\t\tRedoStackClear(compareObject);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tRedoStackClear();\n\t\t\t}\n\t\t\tIBuilder builder = (unRedoOperation.ParentNode = _undoStack.Peek() as IBuilder);\n\t\t\t(unRedoOperation as DisplayNotify).DisplayNameA = displayStr;\n\t\t\t(unRedoOperation as DisplayNotify).IsUndoStack = true;\n\t\t\tbuilder.BuildPart(unRedoOperation);\n\t\t}\n\t}\n\n\tprivate void UpdateActionData()\n\t{\n\t\tIBuilder builder = _undoStack.Peek() as IBuilder;\n\t\tbuilder.Actions?.Where((IUnRedoActionOperation x) => !x.IsDataComplete).ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t{",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.PoolStack-1.decompiled.cs",
+          "member": "Bounded root insertion",
+          "sha256": "ad79427ff203f606d9dc2a091887d6c3dbfba2da5c4fab45720187c9d4ab4d1c",
+          "start": 68,
+          "end": 87,
+          "excerpt": "\tpublic bool TryPush(T item, out object removeItem)\n\t{\n\t\tsl.Insert(0, item);\n\t\tbool result = false;\n\t\tif (Count > length)\n\t\t{\n\t\t\tremoveItem = sl[Count - 1];\n\t\t\tsl.RemoveAt(Count - 1);\n\t\t\tresult = true;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tremoveItem = null;\n\t\t}\n\t\tOnPropertyChanged(\"EnumEntrysA\");\n\t\treturn result;\n\t}\n\n\tpublic T TryRemoveLast()\n\t{",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        }
+      ],
+      "unknowns": [
+        "SafeObservableCollection跨线程、CanRegister动态表达式/空参数失败和所有root并发创建者未知；未加入并不等于撤销了调用方后续原生操作。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH08",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "UnRedoSchedule.Undo / Redo",
+      "to": "移动栈后构建Params，再执行，异常吞掉",
+      "behavior": "Undo先增_unRedoing；undo非空则UpdateActionData，对未完成part先置IsDataComplete=true再Update；随后Pop undo并Push redo、BuildParams(dispatcher,RecoverStack表达式)、BuildInStack(false)后执行Undo。Redo同样先把redo搬回undo再Params/标记/Redo。两者catch Exception为空，finally减_unRedoing再NotifyProperty；finally通知异常不在此前catch保护。失败发生时栈已经可能移动，不是先成功再提交；PoolStack.Push超容量只移除末项不Dispose。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::Undo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 14386,
+          "end": 14405,
+          "excerpt": "          \"token\": \"0x06000047\",\n          \"symbol\": {\n            \"token\": \"0x06000047\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"Undo\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2001011c\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 255,\n          \"ilSha256\": \"237f011a048fae0998f81b7adad06c20a1e08ca030ad107890fba9e63d5cb461\",\n          \"ilBytes\": \"0000027c15000004287c00000a26027b0d0000046f6700000a16fe010b072c05ddd900000002285700000600027b0d0000046f7d00000a0a027b0e000004066f7e00000a000675380000010302d007000002287f00000a288000000ad04a000006288100000a7463000001188d5f000001251602d007000002287f00000a288000000ad00e000004288200000a288300000aa2251702d007000002287f00000a288000000ad00d000004288200000a288300000aa2288400000a280a00002b280b00002b6f8600000a00067538000001166f8700000a00066f8800000a0000de050c0000de00de1600027c15000004288900000a260228450000060000dc2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::Redo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 15312,
+          "end": 15331,
+          "excerpt": "          \"token\": \"0x06000048\",\n          \"symbol\": {\n            \"token\": \"0x06000048\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"Redo\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2001011c\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 248,\n          \"ilSha256\": \"b3f31667acda424ff96163e2e96a5a9145157b68dd0b22586aa80bdb9552dcdd\",\n          \"ilBytes\": \"0000027c15000004287c00000a26027b0e0000046f6700000a16fe010b072c05ddd2000000027b0e0000046f7d00000a0a027b0d000004066f7e00000a000675380000010302d007000002287f00000a288000000ad04a000006288100000a7463000001188d5f000001251602d007000002287f00000a288000000ad00d000004288200000a288300000aa2251702d007000002287f00000a288000000ad00e000004288200000a288300000aa2288400000a280a00002b280b00002b6f8600000a00067538000001176f8700000a00066f8a00000a0000de050c0000de00de1600027c15000004288900000a260228450000060000dc2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::UpdateActionData",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 17418,
+          "end": 17437,
+          "excerpt": "          \"token\": \"0x06000057\",\n          \"symbol\": {\n            \"token\": \"0x06000057\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"UpdateActionData\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 109,\n          \"ilSha256\": \"995f5f7e901e460922e473a441b90fa6c8213c172a6f120e70c1b515a4d22b72\",\n          \"ilBytes\": \"00027b0d0000046f6e00000a75380000010a066f7300000a252d03262b4e7e25000004252d17267e22000004fe0690000006737400000a258025000004280800002b280900002b7e26000004252d17267e22000004fe0691000006737600000a2580260000046f7700000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::NotifyProperty",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 13378,
+          "end": 13397,
+          "excerpt": "          \"token\": \"0x06000045\",\n          \"symbol\": {\n            \"token\": \"0x06000045\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"NotifyProperty\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 38,\n          \"ilSha256\": \"5b8b52dd2fc54b0264fca15e08bad9665275b8ae0f297d0015886031f358cfeb\",\n          \"ilBytes\": \"000272f30000702832000006000272030100702832000006000272010000702832000006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.PoolStack`1::Push",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 20902,
+          "end": 20921,
+          "excerpt": "          \"token\": \"0x0600000b\",\n          \"symbol\": {\n            \"token\": \"0x0600000b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.PoolStack\\u00601\",\n            \"name\": \"Push\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"2001011300\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 70,\n          \"ilSha256\": \"928154ba391e4cf37cebbb27ea9e9ffaa1d7bd6072ec6608698e1aa553d87a34\",\n          \"ilBytes\": \"00027b1e00000a16036f2600000a0002282700000a6a027b2000000a6efe020a062c1600027b1e00000a02282700000a17596f2800000a0000027201000070282300000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.PoolStack`1::Pop",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 21705,
+          "end": 21724,
+          "excerpt": "          \"token\": \"0x0600000f\",\n          \"symbol\": {\n            \"token\": \"0x0600000f\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.PoolStack\\u00601\",\n            \"name\": \"Pop\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"20001300\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 66,\n          \"ilSha256\": \"feda21fe9f1f45705797ececef2bad3910b1e83c97eead73433b54f4a324dbb5\",\n          \"ilBytes\": \"0002282700000a16fe010a062c0700732b00000a7a00027b1e00000a166f2a00000a0b027b1e00000a166f2800000a00027201000070282300000a00070c2b00082a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs",
+          "member": "Replay ordering and exception/finally",
+          "sha256": "920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407",
+          "start": 158,
+          "end": 208,
+          "excerpt": "\tpublic void Undo(object dispatcher)\n\t{\n\t\ttry\n\t\t{\n\t\t\tInterlocked.Increment(ref _unRedoing);\n\t\t\tif (_undoStack.Count != 0)\n\t\t\t{\n\t\t\t\tUpdateActionData();\n\t\t\t\tIUnRedoOperation unRedoOperation = _undoStack.Pop();\n\t\t\t\t_redoStack.Push(unRedoOperation);\n\t\t\t\t(unRedoOperation as IBuilder).BuildParams(dispatcher, () => RecoverStack(_redoStack, _undoStack));\n\t\t\t\t(unRedoOperation as IBuilder).BuildInStack(isUndoStack: false);\n\t\t\t\tunRedoOperation.Undo();\n\t\t\t}\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tInterlocked.Decrement(ref _unRedoing);\n\t\t\tNotifyProperty();\n\t\t}\n\t}\n\n\tpublic void Redo(object dispatcher)\n\t{\n\t\ttry\n\t\t{\n\t\t\tInterlocked.Increment(ref _unRedoing);\n\t\t\tif (_redoStack.Count != 0)\n\t\t\t{\n\t\t\t\tIUnRedoOperation unRedoOperation = _redoStack.Pop();\n\t\t\t\t_undoStack.Push(unRedoOperation);\n\t\t\t\t(unRedoOperation as IBuilder).BuildParams(dispatcher, () => RecoverStack(_undoStack, _redoStack));\n\t\t\t\t(unRedoOperation as IBuilder).BuildInStack(isUndoStack: true);\n\t\t\t\tunRedoOperation.Redo();\n\t\t\t}\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tInterlocked.Decrement(ref _unRedoing);\n\t\t\tNotifyProperty();\n\t\t}\n\t}\n\n\tpublic void UpdateUnRedoStep(double size)\n\t{",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs",
+          "member": "Incomplete action update",
+          "sha256": "920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407",
+          "start": 374,
+          "end": 382,
+          "excerpt": "\tprivate void UpdateActionData()\n\t{\n\t\tIBuilder builder = _undoStack.Peek() as IBuilder;\n\t\tbuilder.Actions?.Where((IUnRedoActionOperation x) => !x.IsDataComplete).ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t{\n\t\t\tx.IsDataComplete = true;\n\t\t\tx.Update();\n\t\t});\n\t}",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.PoolStack-1.decompiled.cs",
+          "member": "Push capacity behavior",
+          "sha256": "ad79427ff203f606d9dc2a091887d6c3dbfba2da5c4fab45720187c9d4ab4d1c",
+          "start": 53,
+          "end": 62,
+          "excerpt": "\tpublic void Push(T item)\n\t{\n\t\tsl.Insert(0, item);\n\t\tif (Count > length)\n\t\t{\n\t\t\tsl.RemoveAt(Count - 1);\n\t\t}\n\t\tOnPropertyChanged(\"EnumEntrysA\");\n\t}\n",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        }
+      ],
+      "unknowns": [
+        "部分Action已执行后异常、事件订阅者失败、容量裁剪副作用和重试时真实对象状态未知；不声称异常原子性或自动回滚。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH09",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "RootUnRedoOperation / Rename part Params",
+      "to": "优先级排序与RecoverStack是可用回调而非保证回滚",
+      "behavior": "普通RootOperType分支Redo先Heigher再其它，Undo先Heigher逆序再其它逆序；另有CopyModule专用分支，本片不扩大其语义。BuildParams将dispatcher和recover表达式交每个part的新UnRedoParams。RecoverStack仅Pop来源并Push目标；改名part虽收到Params，SetOldName/SetNewName不读取、不调用recover，Rename Undo/Redo也无catch，因此不能说路径解析失败会自动把root搬回。Root执行循环一个Action抛错可跳过后续Action。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.RootUnRedoOperation::Redo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 17852,
+          "end": 17871,
+          "excerpt": "          \"token\": \"0x06000063\",\n          \"symbol\": {\n            \"token\": \"0x06000063\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.RootUnRedoOperation\",\n            \"name\": \"Redo\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 370,\n          \"ilSha256\": \"652eeec1f05dc2a9e66891c4be61859dd6297a6bfb91b3b7ffa20a64bc1f6acc\",\n          \"ilBytes\": \"00022861000006723b01007028a300000a0a0639af0000000002285b0000067e28000004252d17267e27000004fe0694000006737400000a258028000004280800002b280900002b7e29000004252d17267e27000004fe0695000006737600000a2580290000046f7700000a0002285b0000067e2a000004252d17267e27000004fe0696000006737400000a25802a000004280800002b280900002b7e2b000004252d17267e27000004fe0697000006737600000a25802b0000046f7700000a000038aa0000000002285b0000067e2c000004252d17267e27000004fe0698000006737400000a25802c000004280800002b280900002b7e2d000004252d17267e27000004fe0699000006737600000a25802d0000046f7700000a0002285b0000067e2e000004252d17267e27000004fe069a000006737400000a25802e000004280800002b280900002b7e2f000004252d17267e27000004fe069b000006737600000a25802f0000046f7700000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.RootUnRedoOperation::Undo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 19082,
+          "end": 19101,
+          "excerpt": "          \"token\": \"0x06000064\",\n          \"symbol\": {\n            \"token\": \"0x06000064\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.RootUnRedoOperation\",\n            \"name\": \"Undo\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 262,\n          \"ilSha256\": \"db60ffa4cfcc86e4695e9b6c2cd7feed463226519923c590f5a4f50670073991\",\n          \"ilBytes\": \"00022861000006723b01007028a300000a0a062c3c0002285b000006280c00002b280900002b7e30000004252d17267e27000004fe069c000006737600000a2580300000046f7700000a000038b40000000002285b0000067e31000004252d17267e27000004fe069d000006737400000a258031000004280800002b280c00002b280900002b7e32000004252d17267e27000004fe069e000006737600000a2580320000046f7700000a0002285b0000067e33000004252d17267e27000004fe069f000006737400000a258033000004280800002b280c00002b280900002b7e34000004252d17267e27000004fe06a0000006737600000a2580340000046f7700000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.RootUnRedoOperation::BuildParams",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 20059,
+          "end": 20078,
+          "excerpt": "          \"token\": \"0x06000066\",\n          \"symbol\": {\n            \"token\": \"0x06000066\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.RootUnRedoOperation\",\n            \"name\": \"BuildParams\",\n            \"parameters\": 2,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"2002011c151280e501128105\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 50,\n          \"ilSha256\": \"4427dfe565fa9ec23c53dd2d7b0308a81985aececc3eac5d30d6edafe37eaa3c\",\n          \"ilBytes\": \"73a20000060a06037d3600000406047d3700000402285b000006280900002b06fe06a3000006737600000a6f7700000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::RecoverStack",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 16209,
+          "end": 16228,
+          "excerpt": "          \"token\": \"0x0600004a\",\n          \"symbol\": {\n            \"token\": \"0x0600004a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"RecoverStack\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"200201151208011280d1151208011280d1\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 17,\n          \"ilSha256\": \"4e8211e9132019d31b9d90f6bba035fc16dc2191f466d26a60775de2ce87d443\",\n          \"ilBytes\": \"00036f7d00000a0a04066f7e00000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetOldName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 4004,
+          "end": 4023,
+          "excerpt": "          \"token\": \"0x060009d4\",\n          \"symbol\": {\n            \"token\": \"0x060009d4\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"SetOldName\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20020112827c128629\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 73,\n          \"ilSha256\": \"fd53f742e8b4432e9da0cbda98192e8e63799f99f2e40da52f8251c1c5b2aed9\",\n          \"ilBytes\": \"00037b380500040a0616061f2e6f3400000a6ff800000a0b077221000070037b3a050004283a00000a0c28b401000a086f9900000a0d09753f000001037b390500046f5808000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetNewName",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 4289,
+          "end": 4308,
+          "excerpt": "          \"token\": \"0x060009d5\",\n          \"symbol\": {\n            \"token\": \"0x060009d5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"SetNewName\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20020112827c128629\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 37,\n          \"ilSha256\": \"dbe95b5357d48a36d3d9342fcfe48b45b9b6b9a75ead0646150bf76c089735d2\",\n          \"ilBytes\": \"0028b401000a037b380500046f9900000a0a06753f000001037b3a0500046f5808000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.RootUnRedoOperation.decompiled.cs",
+          "member": "Priority-based redo and undo",
+          "sha256": "fe4dd19fb059b1f6ea6fe9dc16feb70f63d271251d38d7db5a23907d9770317d",
+          "start": 35,
+          "end": 95,
+          "excerpt": "\tpublic void Redo()\n\t{\n\t\tif (RootOperType == \"CopyModule\")\n\t\t{\n\t\t\tActions.Where((IUnRedoActionOperation x) => x.ExecutePriority != ExecutePriority.Lower).ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t\t{\n\t\t\t\tx.Redo();\n\t\t\t});\n\t\t\tActions.Where((IUnRedoActionOperation x) => x.ExecutePriority == ExecutePriority.Lower).ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t\t{\n\t\t\t\tx.Redo();\n\t\t\t});\n\t\t}\n\t\telse\n\t\t{\n\t\t\tActions.Where((IUnRedoActionOperation x) => x.ExecutePriority == ExecutePriority.Heigher).ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t\t{\n\t\t\t\tx.Redo();\n\t\t\t});\n\t\t\tActions.Where((IUnRedoActionOperation x) => x.ExecutePriority != ExecutePriority.Heigher).ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t\t{\n\t\t\t\tx.Redo();\n\t\t\t});\n\t\t}\n\t}\n\n\tpublic void Undo()\n\t{\n\t\tif (RootOperType == \"CopyModule\")\n\t\t{\n\t\t\tActions.Reverse().ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t\t{\n\t\t\t\tx.Undo();\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tActions.Where((IUnRedoActionOperation x) => x.ExecutePriority == ExecutePriority.Heigher).Reverse().ToList()\n\t\t\t.ForEach((IUnRedoActionOperation x) =>\n\t\t\t{\n\t\t\t\tx.Undo();\n\t\t\t});\n\t\tActions.Where((IUnRedoActionOperation x) => x.ExecutePriority != ExecutePriority.Heigher).Reverse().ToList()\n\t\t\t.ForEach((IUnRedoActionOperation x) =>\n\t\t\t{\n\t\t\t\tx.Undo();\n\t\t\t});\n\t}\n\n\tpublic void BuildPart(IUnRedoActionOperation unRedoOperation)\n\t{\n\t\tActions.Add(unRedoOperation);\n\t}\n\n\tpublic void BuildParams(object dispatcher, Expression<Action> recover)\n\t{\n\t\tActions.ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t{\n\t\t\tx.Params = new UnRedoParams\n\t\t\t{\n\t\t\t\tDispatcher = dispatcher,\n\t\t\t\tRecoverCallBack = recover",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.RootUnRedoOperation.decompiled.cs",
+          "member": "Per-part recovery parameter creation",
+          "sha256": "fe4dd19fb059b1f6ea6fe9dc16feb70f63d271251d38d7db5a23907d9770317d",
+          "start": 88,
+          "end": 99,
+          "excerpt": "\tpublic void BuildParams(object dispatcher, Expression<Action> recover)\n\t{\n\t\tActions.ToList().ForEach((IUnRedoActionOperation x) =>\n\t\t{\n\t\t\tx.Params = new UnRedoParams\n\t\t\t{\n\t\t\t\tDispatcher = dispatcher,\n\t\t\t\tRecoverCallBack = recover\n\t\t\t};\n\t\t});\n\t}\n",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs",
+          "member": "Recovery expression target",
+          "sha256": "920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407",
+          "start": 225,
+          "end": 229,
+          "excerpt": "\tprivate void RecoverStack(PoolStack<IUnRedoOperation> source, PoolStack<IUnRedoOperation> target)\n\t{\n\t\tIUnRedoOperation item = source.Pop();\n\t\ttarget.Push(item);\n\t}",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        }
+      ],
+      "unknowns": [
+        "完整Params合同、其它part何时执行recover、混合优先级/嵌套Group实际异常序列未知；不扩展其它历史操作闭环。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RH10",
+      "classification": "source-confirmed",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "RemoveEmptyOperation / RootOperation",
+      "to": "仅top.Actions为空才弹栈，非通用失败清理",
+      "behavior": "WPF.RootOperation是IsPart=false的标记，其Undo/Redo/Dispose均空；真实root由Schedule构建。RemoveEmptyOperation只在undo栈非空且(top as IBuilder).Actions.Count==0时Pop并通知，无Dispose、无_unRedoing/_nLaziLoading门，也不验证cast/Actions非空。对已注册改名part即使SDK写名失败，该root也不是空Actions；不能把RemoveEmptyOperation描述为撤销失败操作或完整取消。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.RootOperation::Redo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 1204,
+          "end": 1223,
+          "excerpt": "          \"token\": \"0x06000915\",\n          \"symbol\": {\n            \"token\": \"0x06000915\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.RootOperation\",\n            \"name\": \"Redo\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 2,\n          \"ilSha256\": \"587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe\",\n          \"ilBytes\": \"002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.RootOperation::Undo",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 1239,
+          "end": 1258,
+          "excerpt": "          \"token\": \"0x06000916\",\n          \"symbol\": {\n            \"token\": \"0x06000916\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.RootOperation\",\n            \"name\": \"Undo\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 2,\n          \"ilSha256\": \"587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe\",\n          \"ilBytes\": \"002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.RootOperation::Dispose",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 1274,
+          "end": 1293,
+          "excerpt": "          \"token\": \"0x06000917\",\n          \"symbol\": {\n            \"token\": \"0x06000917\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.RootOperation\",\n            \"name\": \"Dispose\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 2,\n          \"ilSha256\": \"587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe\",\n          \"ilBytes\": \"002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.UnRedoSchedule::RemoveEmptyOperation",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 16307,
+          "end": 16326,
+          "excerpt": "          \"token\": \"0x0600004f\",\n          \"symbol\": {\n            \"token\": \"0x0600004f\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.UnRedoSchedule\",\n            \"name\": \"RemoveEmptyOperation\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 78,\n          \"ilSha256\": \"b765f86c590e2713cbe924646d095e7e84616bd3e63e20785ac5e1a49a40b181\",\n          \"ilBytes\": \"00027b0d0000046f6700000a16fe010b072c022b38027b0d0000046f6e00000a0a0675380000016f7300000a6f9300000a16fe030c082c022b13027b0d0000046f7d00000a26022845000006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.PoolStack`1::Peek",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 21996,
+          "end": 22015,
+          "excerpt": "          \"token\": \"0x06000011\",\n          \"symbol\": {\n            \"token\": \"0x06000011\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.PoolStack\\u00601\",\n            \"name\": \"Peek\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"20001300\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 37,\n          \"ilSha256\": \"a8dd99dd9f11545762e94d2de7167daa449729da7837d78d26ce6355df340210\",\n          \"ilBytes\": \"0002282700000a16fe010a062c06732b00000a7a027b1e00000a166f2a00000a0b2b00072a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.cil.json",
+          "member": "VM.UnRedo.PoolStack`1::Pop",
+          "sha256": "33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0",
+          "start": 21705,
+          "end": 21724,
+          "excerpt": "          \"token\": \"0x0600000f\",\n          \"symbol\": {\n            \"token\": \"0x0600000f\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.UnRedo.PoolStack\\u00601\",\n            \"name\": \"Pop\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"20001300\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 66,\n          \"ilSha256\": \"feda21fe9f1f45705797ececef2bad3910b1e83c97eead73433b54f4a324dbb5\",\n          \"ilBytes\": \"0002282700000a16fe010a062c0700732b00000a7a00027b1e00000a166f2a00000a0b027b1e00000a166f2800000a00027201000070282300000a00070c2b00082a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/RootOperation.cs",
+          "member": "Marker operation defaults and empty methods",
+          "sha256": "94a8cb37f2235e15e526592acd7194ce399612281f353c40ab66fc5fdf21df27",
+          "start": 6,
+          "end": 26,
+          "excerpt": "public class RootOperation : DisplayNotify, IUnRedoOperation, IDisposable, IRootParam\n{\n\tpublic bool IsPart { get; set; } = false;\n\n\tpublic bool ForbidBuild { get; set; }\n\n\tpublic string RootOperType { get; set; }\n\n\tpublic void Redo()\n\t{\n\t}\n\n\tpublic void Undo()\n\t{\n\t}\n\n\tpublic void Dispose()\n\t{\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs",
+          "member": "Empty-root removal scope",
+          "sha256": "920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407",
+          "start": 258,
+          "end": 270,
+          "excerpt": "\tpublic void RemoveEmptyOperation()\n\t{\n\t\tif (_undoStack.Count != 0)\n\t\t{\n\t\t\tIUnRedoOperation unRedoOperation = _undoStack.Peek();\n\t\t\tif ((unRedoOperation as IBuilder).Actions.Count == 0)\n\t\t\t{\n\t\t\t\t_undoStack.Pop();\n\t\t\t\tNotifyProperty();\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "original-managed-offline-decompilation",
+          "binaryIdentity": "aa719d093c948e8e6573d20c0198b60ef493f2bed8c029caab95ed5621a7aaa2 / MVID 05297188-764c-48da-a387-1ca4029dd9b8"
+        }
+      ],
+      "unknowns": [
+        "其它调用者是否补救失败root、空root存续、资源释放与历史UI验收仍未知。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RC01",
+      "classification": "independent-implementation",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "当前DocumentHistoryEngine / GraphEditorDocument",
+      "to": "独立快照历史与错误记录",
+      "behavior": "当前DocumentHistoryEngine.Replay先对尚未完成part调用CompleteNewValue，再将root从source移至destination，按Ordered执行；异常记录LastError并false返回，finally减replayDepth，无默认回滚。GraphEditorDocument.Undo/Redo在重放前调整快照视口合并。当前Parts恢复委托/文档值，不是原名称字符串再索引模块；不能用共同的栈次序证明身份解析或嵌套Group改名等价。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "Current independent replay",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 82,
+          "end": 111,
+          "excerpt": "    bool Replay(bool isUndo)\n    {\n        LastError = null;\n        replayDepth++;\n        try\n        {\n            var source = isUndo ? undo : redo;\n            var destination = isUndo ? redo : undo;\n            if (source.Count == 0) return false;\n            var root = source[^1];\n            if (isUndo)\n                foreach (var part in root.Parts.Where(part => !part.IsDataComplete).ToArray()) part.CompleteNewValue();\n            source.RemoveAt(source.Count - 1);\n            destination.Add(root);\n            Trim(destination);\n            foreach (var part in Ordered(root, isUndo))\n                if (isUndo) part.Undo(); else part.Redo();\n            return true;\n        }\n        catch (Exception error)\n        {\n            // Original service catches failures: no implicit rollback or safe retry is invented.\n            LastError = error;\n            return false;\n        }\n        finally { replayDepth--; }\n    }\n\n    static IEnumerable<DocumentHistoryPart<T>> Ordered(DocumentHistoryRoot<T> root, bool undo)\n    {",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Current document replay entry",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 282,
+          "end": 291,
+          "excerpt": "    public void Undo() {\n        if (history.CurrentRoot is { } root)\n            foreach (var part in root.Parts.Where(p=>p.IsDataComplete)) part.AdaptNewValue(MergeCurrentView);\n        history.Undo();\n    }\n    public void Redo() {\n        if (history.NextRedoRoot is { } root)\n            foreach (var part in root.Parts) part.AdaptOldValue(MergeCurrentView);\n        history.Redo();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原生模块状态、操作级撤销/重做差分尚未闭合；当前名称编辑payload见RC02，不再将该已取得源码路径列作未知。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RC02",
+      "classification": "independent-implementation",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "当前WPF流程改名 → 文档Edit → history document part",
+      "to": "快照载荷、首次Undo与恢复的确切路径",
+      "behavior": "WorkflowTabs.RenameProcedure在Enter或LostKeyboardFocus仅提交一次，Trim文本后再次CanEditProcedure并经Safe调用doc.RenameProcedure，随后RefreshAll。文档RequireName/禁用字符/同名返回后按procedure Id改Name；若为Group子流程，亦按GroupOwner的ProcedureId/NodeId同步拥有者节点名。Edit先计算并验证next，RecordEditHistory在document=next前执行。普通编辑BeginRoot/RegisterPart(document,Capture,RestoreSnapshot)捕获旧SolutionDocument副本、ProcedureId及BaseDirectory；不是三字符串改名part。无指定payload目录且序列化小于64KiB存内存，否则交HistoryPayloadStore持有文件。首次Undo的CompleteNewValue先置完成标志再调用capture；Replay之后移栈并restore旧值，Redo恢复所存new值。RestoreSnapshot经Rebase后替换文档和当前流程，设dirty/增Revision/发Changed；FilePath不在Snapshot字段中。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowTabs.cs",
+          "member": "Current WPF procedure commit",
+          "sha256": "24a398d5cd2a16ba2ea01ce980df4b7a3c4f4b9afe27c34720195bcd0b48cb45",
+          "start": 324,
+          "end": 345,
+          "excerpt": "    void RenameProcedure(string id)\n    {\n        if (!CanEditProcedure(id) || !procedureHeaders.TryGetValue(id, out var holder)) return;\n        var procedure = doc.Document.Procedures.First(p => p.Id == id);\n        var editor = new TextBox { Text = procedure.Name, MaxLength = 64, MinWidth = 65, MaxWidth = 240, FontSize = 14, Foreground = Brushes.White, Background = new SolidColorBrush(Color.FromRgb(40, 42, 44)), BorderThickness = new Thickness(0), ContextMenu = null };\n        bool finished = false;\n        void Commit()\n        {\n            if (finished) return;\n            finished = true;\n            string name = editor.Text.Trim();\n            workflowHeaderStates.Remove(id);\n            if (CanEditProcedure(id)) Safe(() => doc.RenameProcedure(id, name));\n            RefreshAll();\n        }\n        editor.LostKeyboardFocus += (_, _) => Commit();\n        editor.KeyDown += (_, e) => { if (e.Key == Key.Return) { e.Handled = true; Commit(); } };\n        holder.Child = editor;\n        Dispatcher.BeginInvoke(new Action(() => { editor.Focus(); editor.SelectAll(); }));\n    }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Current rename and owner ID updates",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 110,
+          "end": 116,
+          "excerpt": "    public void RenameProcedure(string id,string name) {\n        RequireName(name);\n        // VmModuleBaseDecorator.Name rejects these characters before invoking the SDK.\n        if(name.IndexOfAny(\"?;.[]<>()`\".ToCharArray())>=0)throw new ArgumentException(\"名称不能包含 ? ; . [ ] < > ( ) `。\",nameof(name));\n        var procedure=Procedure(id); if(procedure.Name==name)return;\n        Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==id?p with {Name=name}:procedure.GroupOwner is {} owner&&p.Id==owner.ProcedureId?p with{Nodes=p.Nodes.Select(n=>n.Id==owner.NodeId?n with{Name=name}:n).ToArray()}:p).ToArray()});\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Current snapshot payload contract",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 15,
+          "end": 22,
+          "excerpt": "    sealed record Snapshot(SolutionDocument? MemoryDocument, string ProcedureId, string BaseDirectory,\n        [property:System.Text.Json.Serialization.JsonIgnore] HistoryPayloadLease? Payload = null) : IDisposable\n    {\n        public SolutionDocument Document => MemoryDocument ?? JsonSerializer.Deserialize<SolutionDocument>(Payload!.ReadBytes())\n            ?? throw new InvalidDataException(\"Invalid owned history document payload.\");\n        public void Dispose() => Payload?.Dispose();\n    }\n    public GraphEditorDocument(ModuleRegistry registry, string? historyPayloadParentDirectory=null)",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Current edit ordering and snapshot capture",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 296,
+          "end": 323,
+          "excerpt": "    void Edit(Func<SolutionDocument,SolutionDocument> action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document))))));\n        if(PrepareExecutionTopologyChange is { } prepare){\n            var before=document.Procedures.ToDictionary(p=>p.Id,StringComparer.Ordinal);\n            next=next with{Procedures=next.Procedures.Select(after=>{\n                if(!before.TryGetValue(after.Id,out var old))return after;\n                var oldEdges=ProcedureGraph.ExecutionEdges(old).Select(e=>(e.FromNode,e.ToNode));\n                var newEdges=ProcedureGraph.ExecutionEdges(after).Select(e=>(e.FromNode,e.ToNode));\n                return oldEdges.SequenceEqual(newEdges)?after:prepare(old,after);\n            }).ToArray()};\n        }\n        SolutionStore.ValidateStructure(next); RecordEditHistory();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??\"\";IsDirty=true;Revision++;Changed?.Invoke(); }\n    Snapshot Capture()=>CaptureSnapshot(Copy(document),CurrentProcedureId,BaseDirectory);\n    Snapshot CaptureSnapshot(SolutionDocument value,string procedure,string directory)\n    {\n        ObjectDisposedException.ThrowIf(disposed,this);\n        var bytes=JsonSerializer.SerializeToUtf8Bytes(value);\n        if(historyPayloadParentDirectory is null && bytes.Length<64*1024)return new(value,procedure,directory);\n        historyPayloadStore??=new(historyPayloadParentDirectory??Path.Combine(Path.GetTempPath(),\"VisionEditor-History\"));\n        return new(null,procedure,directory,historyPayloadStore.CreateFile(bytes));\n    }\n    void RestoreSnapshot(Snapshot snapshot) {\n        var next=Rebase(snapshot.Document,snapshot.BaseDirectory,BaseDirectory);\n        document=next;CurrentProcedureId=snapshot.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke();\n    }\n    Snapshot MergeCurrentView(Snapshot snapshot) {\n        // Independent main view-data adapter: retain A03.3 zoom changes made\n        // between replays without altering the action's structural old/new data.\n        if(snapshot is null)return snapshot!; // Preserve an original failed-completion payload; do not invent one.",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.History.cs",
+          "member": "Current history root/part registration",
+          "sha256": "d4a3f13130e6c9334547ecaf567c5cbf34e122e976166990fa02bb796522411f",
+          "start": 50,
+          "end": 68,
+          "excerpt": "    void RecordEditHistory()\n    {\n        if (configurationHistory is { NeedsRoot: true } session && session.Generation == solutionGeneration)\n        {\n            BeginDocumentHistoryRoot();\n            session.NeedsRoot = false;\n            SetHistoryRecordingForbidden(session.ForbidBuild);\n        }\n        else if (history.CurrentRoot is not { ForbidBuild: true })\n            BeginDocumentHistoryRoot();\n    }\n\n    void BeginDocumentHistoryRoot()\n    {\n        if (!history.BeginRoot()) return;\n        history.RegisterPart(\"document\",Capture,RestoreSnapshot,\n            canRegister:(root,key)=>!root.Parts.Any(part=>part.Key==key));\n    }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "Current old-payload admission",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 57,
+          "end": 72,
+          "excerpt": "    public bool RegisterPart(string key, Func<T> capture, Action<T> restore, int priority = 0,\n        Func<DocumentHistoryRoot<T>, string, bool>? canRegister = null)\n    {\n        ArgumentNullException.ThrowIfNull(key);\n        ArgumentNullException.ThrowIfNull(capture);\n        ArgumentNullException.ThrowIfNull(restore);\n        var root = CurrentRoot;\n        if (IsReplaying || lazyLoadingDepth > 0 || root is null || root.ForbidBuild || (canRegister is not null && !canRegister(root, key))) return false;\n        T oldValue = capture();\n        // BuildPart invalidates redo only after a new part passed registration.\n        ReleaseStack(redo);\n        root.Add(new(key, priority, oldValue, capture, restore, releasePayload));\n        return true;\n    }\n\n    public bool Undo() => Replay(isUndo: true);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "Current first undo captures new payload",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 197,
+          "end": 203,
+          "excerpt": "    internal void CompleteNewValue()\n    {\n        IsDataComplete = true; // Source sets this before Update, including when capture throws.\n        newValue = capture();\n        hasNewValue = true;\n    }\n    void ReleaseReplaced(T value)",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "Current restore delegates",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 218,
+          "end": 219,
+          "excerpt": "    internal void Undo() => restore(OldValue);\n    internal void Redo() => restore(newValue);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "仅追当前流程/Group子流程改名支路，不能扩为所有模块标题编辑器或原SDK载荷。外层Safe异常处理、文件写入失败与生命周期详见各独立专题，未运行窗口或厂商程序。",
+        "原版改名使用名称路径与三个字符串，当前以完整文档及ID结构恢复；不从该独立快照机制推导原版同名/父改名失败行为。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "RU01",
+      "classification": "unknown",
+      "relation": "research: selected rename history and name-path resolution",
+      "from": "按名称解析的改名历史",
+      "to": "稳定身份、嵌套Group及异常事务仍未知",
+      "behavior": "已知part记录旧路径及新旧名、撤销重做重新查路径并写IVmModule.Name；已知服务在Action前移动栈而局部吞异常。仍未证明父容器改名、同名重建/删除或失败后所有Action均可恢复，也未以GUI/原SDK运行验证。",
+      "refs": [],
+      "unknowns": [
+        "下一原边：可观察的实例ID/GUID与父链变化；用户撤销/重做按钮到实际Ioc实例；嵌套Group索引与懒加载；失败后补偿调用者；名称及方案保存/加载历史往返。"
+      ],
+      "operationComplete": false
+    }
+  ],
+  "implementationProgress": {
+    "completed": 41,
+    "total": 96,
+    "percent": 42.71,
+    "architectureDelta": 0
+  }
+}

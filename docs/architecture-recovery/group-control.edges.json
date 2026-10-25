@@ -1,0 +1,906 @@
+{
+  "schemaVersion": 2,
+  "modelVersion": "0.2",
+  "scope": {
+    "domains": [
+      "F-10",
+      "F-12",
+      "F-13",
+      "F-14",
+      "F-15",
+      "F-16",
+      "F-17",
+      "F-21",
+      "F-23"
+    ],
+    "completeFramework": false,
+    "implementationProgress": "41/96 = 42.71%; no change",
+    "manualAcceptanceExcluded": true
+  },
+  "baseline": "da853b5c386f04aba7634b09b2d1716a04f67103",
+  "generatedUtc": "2026-10-21T05:39:26.244Z",
+  "provenance": "Direct inspection of cited source/resources and explicitly labeled metadata/CIL evidence. Artifact identity is limited to each cited manifest; source hashes and binary identities are distinct. No vendor runtime execution or parity claim.",
+  "introduction": "配置资源、托管包装与当前 typed 执行分层；隐藏参数、native 伪代码和未知分支显式保留，不能以当前安全保护冒称原版规则。",
+  "edges": [
+    {
+      "id": "G01",
+      "route": "原版 · 循环资源与参数",
+      "classification": "source-confirmed",
+      "from": "IMVSGroupAlgorithmTab.Loop Params",
+      "to": "EnableLoop → 声明可见性操作",
+      "behavior": "EnableLoop 默认 false，true 触发器声明对 Start/End/TimeGap/EnableBreak 的 VisibleOperation。此边只证明资源声明，操作执行器与 false 时复原生命周期仍需另外追踪。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/subprogram-evidence/IMVSGroupAlgorithmTab.xml",
+          "member": "Group loop enable visibility declarations",
+          "sha256": "2e15b6a20e2ab2e5ed40a12d943001dbc531cf28adc9763821840505c2679c7b",
+          "start": 74,
+          "end": 108,
+          "excerpt": "            <Boolean Name=\"EnableLoop\">\n              <AlgorithmIndex>0</AlgorithmIndex>\n              <CurValue>False</CurValue>\n              <DefaultValue>False</DefaultValue>\n              <Description>Loop Enable</Description>\n              <DisplayName>Loop Enable</DisplayName>\n              <AccessMode>RW</AccessMode>\n              <Triggers>\n                <Trigger>\n                  <Property>CurValue</Property>\n                  <Value>True</Value>\n                  <Setters>\n                    <Setter>\n                      <TargetName>LoopStartCount</TargetName>\n                      <OperationName>VisibleOperation</OperationName>\n                    </Setter>\n                    <Setter>\n                      <TargetName>LoopEndCount</TargetName>\n                      <OperationName>VisibleOperation</OperationName>\n                    </Setter>\n                    <Setter>\n                      <TargetName>LoopTimeGap</TargetName>\n                      <OperationName>VisibleOperation</OperationName>\n                    </Setter>\n                    <Setter>\n                      <TargetName>EnableBreak</TargetName>\n                      <OperationName>VisibleOperation</OperationName>\n                    </Setter>\n                  </Setters>\n                </Trigger>\n              </Triggers>\n            </Boolean>\n            <ButtonSelecter Name=\"LoopStartCount\">\n              <Description>Cycle Start Value</Description>\n              <DisplayName>Cycle Start Value</DisplayName>",
+          "evidenceType": "local-shipped-resource-copy",
+          "binaryIdentity": "existing local resource copy; installed resource identity not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G02",
+      "route": "原版 · 循环资源与参数",
+      "classification": "source-confirmed",
+      "from": "LoopStartCount / LoopEndCount",
+      "to": "来源查询 / StartIndex 与 EndIndex 订阅",
+      "behavior": "两个 ButtonSelecter 均不是直接数值输入：DropOpen 查询 int 前置树，CurValue 变更声明 SetFilterSourceOperation，初始化声明 GetSelectedFilterOperation，分别用 StartIndex/EndIndex。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/subprogram-evidence/IMVSGroupAlgorithmTab.xml",
+          "member": "Group start source binding",
+          "sha256": "2e15b6a20e2ab2e5ed40a12d943001dbc531cf28adc9763821840505c2679c7b",
+          "start": 106,
+          "end": 134,
+          "excerpt": "            <ButtonSelecter Name=\"LoopStartCount\">\n              <Description>Cycle Start Value</Description>\n              <DisplayName>Cycle Start Value</DisplayName>\n              <CustomVisible>false</CustomVisible>\n              <AccessMode>O</AccessMode>\n              <DropOpenSetter>\n                <TargetName>EnumEntrys</TargetName>\n                <OperationName>GetFrontFilterTreeOperation</OperationName>\n                <OperationParams>int</OperationParams>\n              </DropOpenSetter>\n              <Triggers>\n                <Trigger>\n                  <Property>CurValue</Property>\n                  <Setters>\n                    <Setter>\n                      <OperationName>SetFilterSourceOperation</OperationName>\n                      <OperationParams>StartIndex</OperationParams>\n                    </Setter>\n                  </Setters>\n                </Trigger>\n              </Triggers>\n              <Initers>\n                <Setter>\n                  <TargetName>CurValue</TargetName>\n                  <OperationName>GetSelectedFilterOperation</OperationName>\n                  <OperationParams>StartIndex</OperationParams>\n                </Setter>\n              </Initers>\n            </ButtonSelecter>",
+          "evidenceType": "local-shipped-resource-copy",
+          "binaryIdentity": "existing local resource copy; installed resource identity not revalidated in this slice"
+        },
+        {
+          "path": "analysis/full-audit/subprogram-evidence/IMVSGroupAlgorithmTab.xml",
+          "member": "Group end source binding",
+          "sha256": "2e15b6a20e2ab2e5ed40a12d943001dbc531cf28adc9763821840505c2679c7b",
+          "start": 135,
+          "end": 163,
+          "excerpt": "            <ButtonSelecter Name=\"LoopEndCount\">\n              <Description>Cycle End Value</Description>\n              <DisplayName>Cycle End Value</DisplayName>\n              <CustomVisible>false</CustomVisible>\n              <AccessMode>O</AccessMode>\n              <DropOpenSetter>\n                <TargetName>EnumEntrys</TargetName>\n                <OperationName>GetFrontFilterTreeOperation</OperationName>\n                <OperationParams>int</OperationParams>\n              </DropOpenSetter>\n              <Triggers>\n                <Trigger>\n                  <Property>CurValue</Property>\n                  <Setters>\n                    <Setter>\n                      <OperationName>SetFilterSourceOperation</OperationName>\n                      <OperationParams>EndIndex</OperationParams>\n                    </Setter>\n                  </Setters>\n                </Trigger>\n              </Triggers>\n              <Initers>\n                <Setter>\n                  <TargetName>CurValue</TargetName>\n                  <OperationName>GetSelectedFilterOperation</OperationName>\n                  <OperationParams>EndIndex</OperationParams>\n                </Setter>\n              </Initers>\n            </ButtonSelecter>",
+          "evidenceType": "local-shipped-resource-copy",
+          "binaryIdentity": "existing local resource copy; installed resource identity not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G03",
+      "route": "原版 · 循环资源与参数",
+      "classification": "source-confirmed",
+      "from": "LoopTimeGap",
+      "to": "0..10000 ms 资源约束",
+      "behavior": "Integer 声明 RW、默认0、范围0..10000、步幅1且 SubscribeVisible=false。XML 未声明 LoopStep 控件；不据此否定引擎隐藏参数。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/subprogram-evidence/IMVSGroupAlgorithmTab.xml",
+          "member": "Group interval resource",
+          "sha256": "2e15b6a20e2ab2e5ed40a12d943001dbc531cf28adc9763821840505c2679c7b",
+          "start": 164,
+          "end": 176,
+          "excerpt": "            <Integer Name=\"LoopTimeGap\">\n              <Description>Cycle Time(ms)</Description>\n              <DisplayName>Cycle Time(ms)</DisplayName>\n              <CustomVisible>false</CustomVisible>\n\t\t\t  <SubscribeVisible>false</SubscribeVisible>\n              <AccessMode>RW</AccessMode>\n              <AlgorithmIndex>0</AlgorithmIndex>\n              <CurValue>0</CurValue>\n              <DefaultValue>0</DefaultValue>\n              <MinValue>0</MinValue>\n              <MaxValue>10000</MaxValue>\n              <IncValue>1</IncValue>\n            </Integer>",
+          "evidenceType": "local-shipped-resource-copy",
+          "binaryIdentity": "existing local resource copy; installed resource identity not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G04",
+      "route": "原版 · 循环资源与参数",
+      "classification": "source-confirmed",
+      "from": "GroupParam 构造与属性",
+      "to": "ParamItem 读取/写入",
+      "behavior": "构造以 EnableLoop、LoopTimeGap、EnableBreak、DataType、CmpType 建 ParamItem；属性分别使用 Bool/Int/Enum 读写。该包装体不包含完整循环算法。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupParam.cs",
+          "member": "GroupParam property wrapper",
+          "sha256": "24665fdd58d9c2cf474b0d1f665de84f2aadaa2a36732a5f2dc199323f23d2c8",
+          "start": 71,
+          "end": 144,
+          "excerpt": "\tpublic bool EnableLoop\n\t{\n\t\tget\n\t\t{\n\t\t\treturn enableLoop.GetBoolValue();\n\t\t}\n\t\tset\n\t\t{\n\t\t\tenableLoop.SetBoolValue(value);\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// CH: 循环间隔(ms) | EN: Cycle Time(ms)\n\t/// </summary>\n\tpublic int LoopTimeGap\n\t{\n\t\tget\n\t\t{\n\t\t\treturn loopTimeGap.GetIntValue();\n\t\t}\n\t\tset\n\t\t{\n\t\t\tloopTimeGap.SetIntValue(value);\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// CH: 中断循环 | EN: Break Loop\n\t/// </summary>\n\tpublic bool EnableBreak\n\t{\n\t\tget\n\t\t{\n\t\t\treturn enableBreak.GetBoolValue();\n\t\t}\n\t\tset\n\t\t{\n\t\t\tenableBreak.SetBoolValue(value);\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// CH: 数据类型 | EN: Data Type\n\t/// </summary>\n\tpublic DataTypeEnum DataType\n\t{\n\t\tget\n\t\t{\n\t\t\treturn (DataTypeEnum)dataType.GetEnumValue();\n\t\t}\n\t\tset\n\t\t{\n\t\t\tdataType.SetEnumValue((int)value);\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// CH: 比较运算 | EN: Compare Operate\n\t/// </summary>\n\tpublic CmpTypeEnum CmpType\n\t{\n\t\tget\n\t\t{\n\t\t\treturn (CmpTypeEnum)cmpType.GetEnumValue();\n\t\t}\n\t\tset\n\t\t{\n\t\t\tcmpType.SetEnumValue((int)value);\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// CH: 构造函数 | EN: Constructor",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupParam.cs",
+          "member": "GroupParam constructor",
+          "sha256": "24665fdd58d9c2cf474b0d1f665de84f2aadaa2a36732a5f2dc199323f23d2c8",
+          "start": 146,
+          "end": 156,
+          "excerpt": "\tpublic GroupParam(uint moduleID)\n\t\t: base(moduleID)\n\t{\n\t\tenableLoop = new ParamItem(this, \"EnableLoop\");\n\t\tloopTimeGap = new ParamItem(this, \"LoopTimeGap\", 10000.0);\n\t\tenableBreak = new ParamItem(this, \"EnableBreak\");\n\t\tdataType = new ParamItem(this, \"DataType\");\n\t\tcmpType = new ParamItem(this, \"CmpType\");\n\t\tmoduTool = null;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G05",
+      "route": "原版 · 循环资源与参数",
+      "classification": "source-confirmed",
+      "from": "IMVSGroup.IsEnableLoop",
+      "to": "装载延迟通知 / 参数读写",
+      "behavior": "装载中启动 Task 等待 IsLoading 结束再通知，先返回 false 缓存；已 Dispose 则返回缓存；正常读取 Params[EnableLoop]，setter 仅值不同时写 Params。不是每次 get 都同步获得最终状态。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs",
+          "member": "IMVSGroup.IsEnableLoop",
+          "sha256": "dc772aaba433316b7d0f4dc3b0b3c80c3c63769334d7d013896afe7b54c367d3",
+          "start": 29,
+          "end": 67,
+          "excerpt": "\tpublic bool IsEnableLoop\n\t{\n\t\tget\n\t\t{\n\t\t\tif (VmSolution.IsLoading)\n\t\t\t{\n\t\t\t\tTask.Run(() =>\n\t\t\t\t{\n\t\t\t\t\twhile (VmSolution.IsLoading)\n\t\t\t\t\t{\n\t\t\t\t\t\tThread.Sleep(100);\n\t\t\t\t\t}\n\t\t\t\t\tOnPropertyChanged(\"IsEnableLoop\");\n\t\t\t\t});\n\t\t\t\tisEnableLoop = false;\n\t\t\t\treturn isEnableLoop;\n\t\t\t}\n\t\t\tif (IsOnDispose)\n\t\t\t{\n\t\t\t\treturn isEnableLoop;\n\t\t\t}\n\t\t\tisEnableLoop = bool.Parse(Params[\"EnableLoop\"]);\n\t\t\treturn isEnableLoop;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (value != bool.Parse(Params[\"EnableLoop\"]))\n\t\t\t{\n\t\t\t\tParams[\"EnableLoop\"] = value.ToString();\n\t\t\t\tisEnableLoop = value;\n\t\t\t}\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 内部使用\n\t/// </summary>\n\tpublic override bool IsDynamicModu => true;\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G06",
+      "route": "原版 · 中断与结果包装",
+      "classification": "source-confirmed",
+      "from": "EnableBreak / DataType",
+      "to": "中断配置可见性与类型声明",
+      "behavior": "EnableBreak 的 MultiTrigger 同时要求 CurValue=true 与 CustomVisible=true 才声明显示 DataType；DataType 声明 int/float/string 值1/2/3。完整类型切换清值操作不由这条边概括。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/subprogram-evidence/IMVSGroupAlgorithmTab.xml",
+          "member": "Group break enable conditions",
+          "sha256": "2e15b6a20e2ab2e5ed40a12d943001dbc531cf28adc9763821840505c2679c7b",
+          "start": 177,
+          "end": 205,
+          "excerpt": "            <Boolean Name=\"EnableBreak\">\n              <AlgorithmIndex>0</AlgorithmIndex>\n              <CurValue>False</CurValue>\n              <DefaultValue>False</DefaultValue>\n              <Description>RunParam_Break Loop</Description>\n              <DisplayName>RunParam_Break Loop</DisplayName>\n              <AccessMode>RW</AccessMode>\n              <CustomVisible>false</CustomVisible>\n              <Triggers>\n                <MultiTrigger>\n                  <Conditions>\n                    <Condition>\n                      <Property>CurValue</Property>\n                      <Value>True</Value>\n                    </Condition>\n                    <Condition>\n                      <Property>CustomVisible</Property>\n                      <Value>True</Value>\n                    </Condition>\n                  </Conditions>\n                  <Setters>\n                    <Setter>\n                      <TargetName>DataType</TargetName>\n                      <OperationName>VisibleOperation</OperationName>\n                    </Setter>\n                  </Setters>\n                </MultiTrigger>\n              </Triggers>\n            </Boolean>",
+          "evidenceType": "local-shipped-resource-copy",
+          "binaryIdentity": "existing local resource copy; installed resource identity not revalidated in this slice"
+        },
+        {
+          "path": "analysis/full-audit/subprogram-evidence/IMVSGroupAlgorithmTab.xml",
+          "member": "Group break type enum",
+          "sha256": "2e15b6a20e2ab2e5ed40a12d943001dbc531cf28adc9763821840505c2679c7b",
+          "start": 206,
+          "end": 235,
+          "excerpt": "            <Enumeration Name=\"DataType\">\n              <Description>LabelValueType</Description>\n              <DisplayName>LabelValueType</DisplayName>\n              <AccessMode>RW</AccessMode>\n              <CustomVisible>false</CustomVisible>\n              <EnumEntrys>\n                <EnumEntry Name=\"Int\">\n                  <Description>Least Square</Description>\n                  <DisplayName>int</DisplayName>\n                  <IsImplemented>0x1</IsImplemented>\n                  <Value>0x1</Value>\n                </EnumEntry>\n                <EnumEntry Name=\"Float\">\n                  <Description>Local Least Square</Description>\n                  <DisplayName>float</DisplayName>\n                  <IsImplemented>0x2</IsImplemented>\n                  <Value>0x2</Value>\n                </EnumEntry>\n                <EnumEntry Name=\"String\">\n                  <Description>Local Least Square</Description>\n                  <DisplayName>string</DisplayName>\n                  <IsImplemented>0x3</IsImplemented>\n                  <Value>0x3</Value>\n                </EnumEntry>\n              </EnumEntrys>\n              <Triggers>\n                <MultiTrigger>\n                  <Conditions>\n                    <Condition>\n                      <Property>CurValue</Property>",
+          "evidenceType": "local-shipped-resource-copy",
+          "binaryIdentity": "existing local resource copy; installed resource identity not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G07",
+      "route": "原版 · 中断与结果包装",
+      "classification": "source-confirmed",
+      "from": "GroupParam.DataTypeEnum / CmpTypeEnum",
+      "to": "数据类型1..3 / 比较符1..6",
+      "behavior": "托管枚举确认为 Int/Float/String，GT/LT/EQ/NE/GE/LE；名称和值并不能证明 native 浮点容差或字符串比较算法。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupParam.cs",
+          "member": "GroupParam comparison enums",
+          "sha256": "24665fdd58d9c2cf474b0d1f665de84f2aadaa2a36732a5f2dc199323f23d2c8",
+          "start": 16,
+          "end": 55,
+          "excerpt": "\tpublic enum DataTypeEnum\n\t{\n\t\t/// <summary>\n\t\t/// CH: int | EN: int\n\t\t/// </summary>\n\t\tInt = 1,\n\t\t/// <summary>\n\t\t/// CH: float | EN: float\n\t\t/// </summary>\n\t\tFloat,\n\t\t/// <summary>\n\t\t/// CH: string | EN: string\n\t\t/// </summary>\n\t\tString\n\t}\n\n\tpublic enum CmpTypeEnum\n\t{\n\t\t/// <summary>\n\t\t/// %&gt;%\n\t\t/// </summary>\n\t\tGT = 1,\n\t\tLT,\n\t\t/// <summary>\n\t\t/// %=%\n\t\t/// </summary>\n\t\tEQ,\n\t\t/// <summary>\n\t\t/// %!=%\n\t\t/// </summary>\n\t\tNE,\n\t\t/// <summary>\n\t\t/// %&gt;=%\n\t\t/// </summary>\n\t\tGE,\n\t\tLE\n\t}\n\n\tprivate ParamItem enableLoop;\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G08",
+      "route": "原版 · 中断与结果包装",
+      "classification": "source-confirmed",
+      "from": "GroupParam.AddGroupSpecifyChar",
+      "to": "内建循环/比较输入保持原名",
+      "behavior": "LoopIndex、StartIndex、EndIndex、CmpSrc/Dst 的三类型名字原样返回，其余动态输入名包裹百分号。须保留内建参数与用户动态项的命名差异。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupParam.cs",
+          "member": "GroupParam.AddGroupSpecifyChar",
+          "sha256": "24665fdd58d9c2cf474b0d1f665de84f2aadaa2a36732a5f2dc199323f23d2c8",
+          "start": 198,
+          "end": 205,
+          "excerpt": "\tprivate string AddGroupSpecifyChar(string strInput)\n\t{\n\t\tif (\"LoopIndex\" == strInput || \"StartIndex\" == strInput || \"EndIndex\" == strInput || \"CmpSrcInt\" == strInput || \"CmpSrcFloat\" == strInput || \"CmpSrcStr\" == strInput || \"CmpDstInt\" == strInput || \"CmpDstFloat\" == strInput || \"CmpDstStr\" == strInput)\n\t\t{\n\t\t\treturn strInput;\n\t\t}\n\t\treturn \"%\" + strInput + \"%\";\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G09",
+      "route": "原版 · 中断与结果包装",
+      "classification": "source-confirmed",
+      "from": "IMVSGroupTool.Run",
+      "to": "mModuleManager.SyncSelfRun(ID,bIsRespondToUI)",
+      "behavior": "Group 专用工具 Run 默认响应 UI=true，直交 SyncSelfRun；不是主工具栏的全局脚本运行，也不能把此包装当完整内部节点调度体。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/IMVSGroupTool.cs",
+          "member": "IMVSGroupTool.Run",
+          "sha256": "36e77b8d24caca2a2e101e052c0b4f5857403f1a8b563f3c803fff9a7ce0966c",
+          "start": 74,
+          "end": 78,
+          "excerpt": "\tpublic void Run(bool bIsRespondToUI = true)\n\t{\n\t\tServerSDKManager.serverSDKManager.mModuleManager.SyncSelfRun(ID, bIsRespondToUI);\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "G10",
+      "route": "原版 · 中断与结果包装",
+      "classification": "source-confirmed",
+      "from": "IMVSGroupTool.ModuResult / GroupResult",
+      "to": "查询结果 / DynamicOutput getter",
+      "behavior": "ModuResult 每次新建 GroupResult(ID,this) 并 QueryModuleOneResult；GroupResult 指定模块对象时创建 DynamicOutput，整型 getter 有对象才委托，否则返回 default。不要把动态 getter 与实际累积算法混为一体。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/IMVSGroupTool.cs",
+          "member": "IMVSGroupTool.ModuResult",
+          "sha256": "36e77b8d24caca2a2e101e052c0b4f5857403f1a8b563f3c803fff9a7ce0966c",
+          "start": 20,
+          "end": 37,
+          "excerpt": "\tpublic GroupResult ModuResult\n\t{\n\t\tget\n\t\t{\n\t\t\t_result = new GroupResult(ID, this);\n\t\t\tImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX? iMVS_MODULE_RESULT_INFO_LIST_EX = ServerSDKManager.serverSDKManager.mModuleManager.QueryModuleOneResult(ID);\n\t\t\tif (iMVS_MODULE_RESULT_INFO_LIST_EX.HasValue)\n\t\t\t{\n\t\t\t\tImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX stModuleResult = iMVS_MODULE_RESULT_INFO_LIST_EX.Value;\n\t\t\t\tServerSDKManager.serverSDKManager.mModuleResultManager.SetModuleResult(ref stModuleResult, ref _result, ModuResultMemType);\n\t\t\t}\n\t\t\treturn (GroupResult)_result;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// CH: 模块参数对象 | EN: Module Param Object\n\t/// </summary>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupResult.cs",
+          "member": "GroupResult dynamic output construction",
+          "sha256": "2eb076561aa0b13de31110d88d24e62514fc9cb58d162d28c6943b9ab069fa17",
+          "start": 49,
+          "end": 56,
+          "excerpt": "\tpublic GroupResult(uint nModuId, VmModule ModuTool)\n\t{\n\t\tm_nModuleId = nModuId;\n\t\tModuStatus = 0;\n\t\tmoduTool = ModuTool;\n\t\tdynamicOutput = new DynamicOutput(ModuTool);\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupResult.cs",
+          "member": "GroupResult.GetOutputInt",
+          "sha256": "2eb076561aa0b13de31110d88d24e62514fc9cb58d162d28c6943b9ab069fa17",
+          "start": 62,
+          "end": 65,
+          "excerpt": "\tpublic IntDataArray GetOutputInt(string strParam)\n\t{\n\t\treturn (dynamicOutput != null) ? dynamicOutput.GetOutputInt(strParam) : default(IntDataArray);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "U01",
+      "route": "原生 · 缺口与歧义",
+      "classification": "unknown",
+      "from": "资源未声明 LoopStep / 回收 setter",
+      "to": "隐藏步长与 native 循环",
+      "behavior": "历史伪代码可见 LoopStep 经 atoi 后只拒绝0，并写 this+0x234；DoWork 片段可见方向选择、末尾累加及 index<end。这里保留精确锚点，尚不将伪代码本身升级为完整 ABI/边界语义证明。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/group-native-audit/group-set-param-native.c",
+          "member": "FUN_1800a3200 LoopStep branch",
+          "sha256": "be2860ef33c1d3fbdc5048fd98f055886e1ccd3f9729ab18126e343bbae25f9f",
+          "start": 59,
+          "end": 70,
+          "excerpt": "              iVar4 = _stricmp(param_2,\"LoopStep\");\n              if (iVar4 == 0) {\n                iVar4 = atoi(param_3);\n                if (iVar4 == 0) {\n                  uVar6 = 0xe0000001;\n                }\n                else {\n                  *(int *)(param_1 + 0x234) = iVar4;\n                }\n              }\n              else {\n                iVar4 = _stricmp(param_2,\"DynamicInData\");",
+          "evidenceType": "historical-native-decompiler-pseudocode",
+          "binaryIdentity": "historical native recovery; no new binary/assembly/ABI audit in this slice"
+        },
+        {
+          "path": "analysis/full-audit/group-native-audit/group-run.c",
+          "member": "CGroupNode::DoWork step direction",
+          "sha256": "d2ff2dd4dd61a2ec42952b7e68d0b9f8390620daaf77dcbd97540d00923ccff0",
+          "start": 314,
+          "end": 320,
+          "excerpt": "    if (*(int *)(param_1 + 0x21c) < *(int *)(param_1 + 0x220)) {\n      local_2e4 = *(int *)(param_1 + 0x234);\n    }\n    else {\n      local_2e4 = -*(int *)(param_1 + 0x234);\n    }\n    cVar14 = FUN_18001dbc0(1);",
+          "evidenceType": "historical-native-decompiler-pseudocode",
+          "binaryIdentity": "historical native recovery; no new binary/assembly/ABI audit in this slice"
+        },
+        {
+          "path": "analysis/full-audit/group-native-audit/group-run.c",
+          "member": "CGroupNode::DoWork index increment",
+          "sha256": "d2ff2dd4dd61a2ec42952b7e68d0b9f8390620daaf77dcbd97540d00923ccff0",
+          "start": 1007,
+          "end": 1009,
+          "excerpt": "        iVar15 = iVar15 + local_2e4;\n      } while (iVar15 < *(int *)(param_1 + 0x220));\n      bVar6 = false;",
+          "evidenceType": "historical-native-decompiler-pseudocode",
+          "binaryIdentity": "historical native recovery; no new binary/assembly/ABI audit in this slice"
+        }
+      ],
+      "unknowns": [
+        "负步长、int32 溢出、atoi 超范围、空范围状态码与终止/释放需要原件身份和汇编/运行差分，不从 C 有符号表达式猜测。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "U02",
+      "route": "原生 · 缺口与歧义",
+      "classification": "unknown",
+      "from": "中断比较 / native 输出累积",
+      "to": "原生全域行为",
+      "behavior": "本图尚未逐分支接入 native IsBreakLoop 与 ProcessGroupOutput 的汇编、调用实参和所有类型内存布局；现有回收文件不是空缺的替代规格。",
+      "refs": [],
+      "unknowns": [
+        "复合输出、首轮内部来源保护、失败后结果归属、native 取消/异常及堆生命周期仍按分支补证。",
+        "资源操作执行器和循环入口到 native DoWork 的完整生产调用链未在本页闭合。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C01",
+      "route": "当前 · 配置与循环执行",
+      "classification": "independent-implementation",
+      "from": "Group 配置循环区",
+      "to": "当前 setLoopParameter / 来源选择器",
+      "behavior": "当前 UI 的 EnableLoop 点击调用 setLoopParameter；循环关闭时不创建后续循环控件。间隔用 slider/textbox 提交；这属于当前 WPF 配置实现，未重用原资源解释器。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/SubprogramCallWindow.xaml.cs",
+          "member": "Group current loop UI",
+          "sha256": "1978f46a3a08eabc58b29517e36bd8917b3367805f2389b3996cf7367d46e3c2",
+          "start": 48,
+          "end": 72,
+          "excerpt": " void BuildLoopPanel(StackPanel panel,bool owned)\n {\n  panel.IsEnabled=owned&&setLoopParameter is not null;\n  var settings=GroupLoop.Read(node());var enabled=new System.Windows.Controls.CheckBox{Content=\"循环使能\",IsChecked=settings.Enabled,Margin=new Thickness(0,12,0,12)};\n  enabled.Click+=(_,_)=>Safe(()=>setLoopParameter!(\"EnableLoop\",System.Text.Json.JsonSerializer.SerializeToElement(enabled.IsChecked==true)));NativeGroupSwitch(enabled);panel.Children.Add(Labeled(\"循环使能\",enabled));\n  if(!settings.Enabled)return;\n  foreach(var item in new[]{(\"StartIndex\",\"循环起始值\",settings.Start),(\"EndIndex\",\"循环结束值\",settings.End)}){\n   var row=new DockPanel{Margin=new Thickness(0,6,0,6)};row.Children.Add(new TextBlock{Text=item.Item2,Width=89,VerticalAlignment=VerticalAlignment.Center});\n   var subscription=owner().Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==node().Id&&b.IsParameter&&b.Target==item.Item1);\n   var button=new Button{Content=subscription is null?item.Item3.ToString():sources(DataKind.Integer).FirstOrDefault(s=>s.Reference==subscription.Source)?.Label??\"------\"};\n   button.Click+=(_,_)=>{var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption(\"\",\"\",DataKind.Integer,\"解除订阅\")}.Concat(sources(DataKind.Integer))){Owner=this};if(picker.ShowDialog()==true&&picker.Selection is {} chosen)Safe(()=>bindLoopParameter!(item.Item1,chosen.Reference));};row.Children.Add(button);panel.Children.Add(row);\n  }\n  var gap=new DockPanel{Margin=new Thickness(0,6,0,6)};gap.Children.Add(new TextBlock{Text=\"循环间隔(ms)\",Width=89,VerticalAlignment=VerticalAlignment.Center});\n  var input=new TextBox{Text=settings.IntervalMs.ToString(),Width=70,Tag=\"GroupLoopTimeGapValue\"};DockPanel.SetDock(input,Dock.Right);gap.Children.Add(input);\n  var slider=new Slider{Minimum=0,Maximum=10000,TickFrequency=1,IsSnapToTickEnabled=true,Value=settings.IntervalMs,Tag=\"GroupLoopTimeGapSlider\",VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,8,0)};\n  gap.Children.Add(slider);bool updating=false;int committedGap=settings.IntervalMs;\n  void CommitGap(int value){if(value==committedGap)return;Safe(()=>{setLoopParameter!(\"LoopTimeGap\",System.Text.Json.JsonSerializer.SerializeToElement(value));committedGap=value;});}\n  slider.ValueChanged+=(_,_)=>{if(!updating)input.Text=((int)slider.Value).ToString();};\n  slider.AddHandler(System.Windows.Controls.Primitives.Thumb.DragCompletedEvent,new System.Windows.Controls.Primitives.DragCompletedEventHandler((_,_)=>CommitGap((int)slider.Value)));\n  slider.PreviewMouseLeftButtonUp+=(_,_)=>CommitGap((int)slider.Value);\n  slider.LostKeyboardFocus+=(_,_)=>CommitGap((int)slider.Value);\n  input.LostKeyboardFocus+=(_,_)=>{if(!int.TryParse(input.Text,out var value)||value is <0 or >10000){Safe(()=>throw new ArgumentException(\"循环间隔范围为0～10000ms。\"));return;}if(value==settings.IntervalMs)return;updating=true;slider.Value=value;updating=false;CommitGap(value);};\n  panel.Children.Add(gap);BuildBreakPanel(panel);\n }\n static string TypeName(DataKind kind)=>kind switch{DataKind.GrayImage=>\"图像\",DataKind.Integer=>\"int\",DataKind.Number=>\"float\",DataKind.Text=>\"string\",DataKind.Circle=>\"圆\",DataKind.Point=>\"点\",DataKind.Fixture=>\"位置修正\",DataKind.Components=>\"连通域\",DataKind.Region=>\"区域\",_=>kind.ToString()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C02",
+      "route": "当前 · 配置与循环执行",
+      "classification": "independent-implementation",
+      "from": "GroupLoop.Read",
+      "to": "独立范围/间隔/步长规范",
+      "behavior": "读取0..10000间隔，拒绝0步长；缺失步长兼容默认1。关闭循环同时规范范围[0,1)和 Step=1，避免保存负步长使独立单次重复。启用保留非零负步长；Increment 用 long。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupLoop.cs",
+          "member": "GroupLoop range and increment",
+          "sha256": "533b3e2d80d767cdde186fc7d6a7437223ab97d9be7a7d88f19af87a3935531c",
+          "start": 9,
+          "end": 11,
+          "excerpt": " public int Step {get;init;}=1;\n public long Increment=>Start<End?Step:-(long)Step;\n public static IReadOnlyList<ParameterDescriptor> Parameters {get;} = [",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupLoop.cs",
+          "member": "GroupLoop.Read",
+          "sha256": "533b3e2d80d767cdde186fc7d6a7437223ab97d9be7a7d88f19af87a3935531c",
+          "start": 20,
+          "end": 32,
+          "excerpt": " public static GroupLoop Read(NodeDocument node)\n {\n  int Integer(string name,int fallback)=>node.Parameters.TryGetValue(name,out var v)?v.GetInt32():fallback;\n  var enabled=node.Parameters.TryGetValue(\"EnableLoop\",out var value)&&value.GetBoolean();\n  var interval=Integer(\"LoopTimeGap\",0);\n  if(interval is <0 or >10000)throw new InvalidDataException(\"Group loop interval must be 0..10000 ms.\");\n  var step=Integer(\"LoopStep\",1);\n  if(step==0)throw new InvalidDataException(\"Group LoopStep must be nonzero.\");\n  // The independent one-shot mode normalizes its range to [0,1); the hidden\n  // step must be normalized with that range or a negative saved step reruns it.\n  return new(enabled,enabled?Integer(\"StartIndex\",0):0,enabled?Integer(\"EndIndex\",1):1,interval){Step=enabled?step:1};\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C03",
+      "route": "当前 · 配置与循环执行",
+      "classification": "independent-implementation",
+      "from": "SolutionExecutor.Call",
+      "to": "拥有 Group body 才运行循环",
+      "behavior": "无 GroupOwner 的旧跨流程调用直接单次 Execute；有 owner 才建循环/累积器。开始前结构、调用、break 约束与资源验证分别执行，不把可调用当 Group 所有权成立。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor group ownership branch",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 26,
+          "end": 32,
+          "excerpt": "                var body=document.Procedures.Single(p=>p.Id==node.Call!.ProcedureId);\n                // Legacy cross-flow calls retain one-shot behavior. Native Group loops own their body.\n                if(body.GroupOwner is null)return await Execute(body.Id,values,childToken,depth+1);\n                return await Task.Run(async()=>{\n                var loop=GroupLoop.Read(node);ExecutionSessionResult? last=null;int completed=0;bool broke=false;int? breakIndex=null;var diagnostics=new List<string>();var accumulator=new GroupOutputAccumulator(body);\n                for(long index=loop.Start;index<loop.End;index+=loop.Increment){\n                    childToken.ThrowIfCancellationRequested();",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C04",
+      "route": "当前 · 配置与循环执行",
+      "classification": "independent-implementation",
+      "from": "独立 Group 循环轮体",
+      "to": "取消/边界保护 → break → Execute → 累积/等待",
+      "behavior": "每轮先取消、int32范围及10000轮独立守卫，再判断中断，之后执行并加 completed；仅 Success 加累积，非成功退出；成功后有间隔就等待，包括末轮。completed 包含已执行的失败轮，不能称成功轮数。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor Group loop body",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 31,
+          "end": 43,
+          "excerpt": "                for(long index=loop.Start;index<loop.End;index+=loop.Increment){\n                    childToken.ThrowIfCancellationRequested();\n                    if(index<int.MinValue||index>int.MaxValue)throw new InvalidOperationException(\"Independent Group index overflow guard.\");\n                    // Independent resource guard; this is not a recovered VM iteration limit.\n                    if(completed>=10000)throw new InvalidOperationException(\"Independent Group iteration limit is 10000.\");\n                    if(GroupBreak.Evaluate(node,body,last,(int)index,diagnostics,values,(name,element)=>accumulator.ReadSelfElement(name,element,last))){broke=true;breakIndex=(int)index;break;}\n                    last=await Execute(body.Id,values,childToken,depth+1,(int)index);completed++;\n                    if(last.Status==SessionStatus.Success)accumulator.Add(last);\n                    if(last.Status!=SessionStatus.Success)break;\n                    if(loop.IntervalMs>0)await Task.Delay(loop.IntervalMs,childToken);\n                }\n                return (last??new ExecutionSessionResult(SessionStatus.Success,[])) with{CompletedGroupIterations=completed,GroupBroke=broke,GroupBreakIndex=breakIndex,GroupDiagnostics=diagnostics.AsReadOnly(),WorkflowOutputs=accumulator.Finish(last),WorkflowDisplays=accumulator.FinishDisplays()};\n                },childToken);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C05",
+      "route": "当前 · 中断数据流",
+      "classification": "independent-implementation",
+      "from": "GroupBreak.Validate / Capture",
+      "to": "拥有关系、类型与索引 / 父来源快照",
+      "behavior": "验证 GroupOwnership、来源类型/基数、索引为前置标量整数，禁止不合法自订阅；Capture 将动态索引与外部值解为常量，准备失败留 PreparationError。它是独立 typed 合同。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Validate",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 20,
+          "end": 29,
+          "excerpt": " public static void Validate(ProcedureDocument parent,NodeDocument node,ProcedureDocument body,ModuleRegistry registry){\n  if(node.GroupBreak is null)return;if(body.GroupOwner!=new GroupOwnership(parent.Id,node.Id))throw new InvalidDataException(\"Break bindings require an owned Group.\");var kind=Kind(node);\n  foreach(var operand in new[]{node.GroupBreak.Left,node.GroupBreak.Right}){if(operand is null)continue;if(operand.IndexSource is {} indexSource){if(operand.Source is null||WorkflowSubscriptions.SourceType(parent,registry,indexSource)!=DataKind.Integer||WorkflowSubscriptions.SourceCardinality(parent,registry,indexSource)!=ValueCardinality.Scalar||WorkflowSubscriptions.Producer(parent,indexSource)==node.Id)throw new InvalidDataException(\"Group array index requires a preceding scalar integer source.\");}\n   if(operand.Index<0||operand.Source is not null&&operand.Constant is not null)throw new InvalidDataException(\"Invalid Group break operand.\");\n   if(operand.Self&&(operand.Source is not {Kind:WorkflowSourceKind.NodeOutput} own||own.Id!=node.Id||operand.Inside))throw new InvalidDataException(\"Invalid Group self-output source.\");if(operand.Source is {} source){var scope=operand.Inside?body:parent;if(WorkflowSubscriptions.SourceCardinality(scope,registry,source)==ValueCardinality.Scalar&&(operand.Index!=0||operand.IndexSource is not null))throw new InvalidDataException(\"Scalar break source index must be zero.\");if(WorkflowSubscriptions.SourceType(scope,registry,source)!=kind)throw new InvalidDataException(\"Group break operand type mismatch.\");if(!operand.Inside&&!operand.Self&&WorkflowSubscriptions.Producer(parent,source)==node.Id)throw new InvalidDataException(\"Group cannot subscribe to its own result.\");}\n   else if(operand.Constant is {} literal){_=Literal(kind,literal);}\n  }\n }\n public static PortValue Literal(DataKind kind,JsonElement value){try{return kind switch{DataKind.Integer=>PortValue.Integer(value.GetInt32()),DataKind.Number=>PortValue.Number(value.GetSingle()),DataKind.Text=>PortValue.Text(value.GetString()??throw new InvalidDataException(\"Missing string operand.\")),_=>throw new InvalidDataException(\"Invalid Group comparison kind.\")};}catch(Exception e)when(e is InvalidOperationException or FormatException or OverflowException or ArgumentOutOfRangeException){throw new InvalidDataException(\"Invalid Group comparison literal.\",e);}}\n internal static GroupBreakBindings? Capture(NodeDocument node,Func<WorkflowValueReference,PortValue> resolve){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Capture",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 29,
+          "end": 40,
+          "excerpt": " internal static GroupBreakBindings? Capture(NodeDocument node,Func<WorkflowValueReference,PortValue> resolve){\n  GroupOperand? CaptureOperand(GroupOperand? operand){\n   if(operand is null)return null;\n   try{\n    if(operand.IndexSource is {} indexSource){var value=resolve(indexSource);if(value.Kind!=DataKind.Integer||value.Cardinality!=ValueCardinality.Scalar||value.As<long>() is <0 or >int.MaxValue)throw new InvalidDataException(\"Group array index must be a nonnegative int32 scalar.\");operand=operand with{Index=(int)value.As<long>(),IndexSource=null};}\n    if(operand is {Inside:false,Self:false,Source:{} source}){var value=Element(resolve(source),operand.Index);return new(Constant:JsonSerializer.SerializeToElement(value.Value));}\n    return operand;\n   }catch(InvalidDataException error){return new(){PreparationError=error.Message};}\n  }\n  return node.GroupBreak is {} bindings?new(CaptureOperand(bindings.Left),CaptureOperand(bindings.Right)):null;\n }\n internal static PortValue Element(PortValue value,int index){if(value.Cardinality==ValueCardinality.Scalar){if(index!=0)throw new InvalidDataException(\"Scalar index must be zero.\");return value;}try{return value.Kind switch{DataKind.Integer=>PortValue.Integer(value.As<IReadOnlyList<long>>()[index]),DataKind.Number=>PortValue.Number(value.As<IReadOnlyList<double>>()[index]),DataKind.Text=>PortValue.Text(value.As<IReadOnlyList<string>>()[index]),_=>throw new InvalidDataException(\"Unsupported comparison array.\")};}catch(Exception e)when(e is ArgumentOutOfRangeException or IndexOutOfRangeException){throw new InvalidDataException(\"Break comparison array index is unavailable.\");}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C06",
+      "route": "当前 · 中断数据流",
+      "classification": "independent-implementation",
+      "from": "GroupBreak.Evaluate",
+      "to": "首轮内部来源跳过 / 诊断限流",
+      "behavior": "未启用直接false；首轮没有 previous 且依赖内部生产者或 Self 时跳过比较；捕获 InvalidDataException 将去重诊断最多保留32条，并返回false继续执行。不能把解析失败写成必定中断。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Evaluate",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 46,
+          "end": 52,
+          "excerpt": " internal static bool Evaluate(NodeDocument node,ProcedureDocument body,ExecutionSessionResult? previous,int index,List<string> diagnostics,IReadOnlyDictionary<string,PortValue> inputs,Func<string,int,PortValue> selfOutput){\n  if(!Enabled(node))return false;var bindings=node.GroupBreak;\n  // Native first-round guard excludes values produced by the internal graph.\n  if(previous is null&&new[]{bindings?.Left,bindings?.Right}.Any(o=>o is {Self:true}||(o is {Inside:true,Source:{} source}&&WorkflowSubscriptions.Producer(body,source) is not null)))return false;\n  try{var kind=Kind(node);return Compare(kind,Integer(node,\"CmpType\",1),Resolve(body,previous,index,bindings?.Left??new(),kind,inputs,selfOutput),Resolve(body,previous,index,bindings?.Right??new(),kind,inputs,selfOutput));}catch(InvalidDataException e){if(diagnostics.Count<32&&!diagnostics.Contains(e.Message))diagnostics.Add(e.Message);return false;}\n }\n public static bool Compare(DataKind kind,int operation,PortValue left,PortValue right){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C07",
+      "route": "当前 · 中断数据流",
+      "classification": "independent-implementation",
+      "from": "GroupBreak.Compare",
+      "to": "UTF-8 / float / int32 独立消费者",
+      "behavior": "当前字符串按 UTF-8 字节排序；浮点压到float，等号用epsilon而不等号用直接!=；整数限制int32。此边只证明当前实现，不以注释或单元测试替代 native 汇编证据。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Compare",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 52,
+          "end": 64,
+          "excerpt": " public static bool Compare(DataKind kind,int operation,PortValue left,PortValue right){\n  if(left.Kind!=kind||right.Kind!=kind||left.Cardinality!=ValueCardinality.Scalar||right.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException(\"Break comparison type mismatch.\");int order;bool equal;\n  if(kind==DataKind.Text){var a=Encoding.UTF8.GetBytes(left.As<string>());var b=Encoding.UTF8.GetBytes(right.As<string>());order=a.AsSpan().SequenceCompareTo(b);equal=order==0;}\n  else if(kind==DataKind.Number){float a=(float)left.As<double>(),b=(float)right.As<double>();if(!float.IsFinite(a)||!float.IsFinite(b))throw new InvalidDataException(\"Break float operand exceeds native range.\");order=a.CompareTo(b);equal=MathF.Abs(a-b)<1.1920929E-07f;}\n  else{if(left.As<long>() is <int.MinValue or >int.MaxValue||right.As<long>() is <int.MinValue or >int.MaxValue)throw new InvalidDataException(\"Break integer operand exceeds native int32 range.\");\n   // IsBreakLoop compares the two int32 registers directly with CMP/SETcc.\n   // Floating-point decompiler output for this branch is misleading.\n   var a=(int)left.As<long>();var b=(int)right.As<long>();\n   order=a.CompareTo(b);equal=a==b;}\n  return operation switch{1=>order>0,2=>order<0,3=>equal,4=>kind==DataKind.Number?(float)left.As<double>()!=(float)right.As<double>():!equal,5=>order>=0,6=>order<=0,_=>throw new InvalidDataException(\"Unknown Group comparison operator.\")};\n }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C08",
+      "route": "当前 · 累积与发布",
+      "classification": "independent-implementation",
+      "from": "GroupOutputAccumulator.Add",
+      "to": "输出累积 / display 图像替换",
+      "behavior": "仅配置 Accumulate 且属支持类型的 workflow 输出进入累积列表；display 在不累积或 GrayImage 时先清再加。输出和 display 分别有1000000元素独立上限。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.Add",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 9,
+          "end": 9,
+          "excerpt": " public void Add(ExecutionSessionResult iteration){foreach(var spec in body.Configuration.Displays){if(!iteration.WorkflowDisplays.TryGetValue(spec.Name,out var values))continue;if(!displays.TryGetValue(spec.Name,out var frames))displays[spec.Name]=frames=new();if(!spec.Accumulate||spec.Kind==DataKind.GrayImage){displayCount-=frames.Sum(v=>v.ElementCount);frames.Clear();}if(values.Sum(v=>(long)v.ElementCount)>1000000-displayCount)throw new InvalidOperationException(\"Independent display frame limit is 1000000.\");displayCount+=values.Sum(v=>v.ElementCount);frames.AddRange(values);}foreach(var spec in body.Configuration.Outputs.Where(o=>o.Accumulate&&GroupBreak.Accumulatable(o.Kind))){if(!iteration.WorkflowOutputs.TryGetValue(spec.Name,out var value))continue;int length=value.ElementCount;if(length>1000000-count)throw new InvalidOperationException(\"Independent accumulated output element limit is 1000000.\");count+=length;elementCounts[spec.Name]=elementCounts.GetValueOrDefault(spec.Name)+length;if(!accumulated.TryGetValue(spec.Name,out var list))accumulated[spec.Name]=list=new();list.Add(value);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Accumulatable",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 19,
+          "end": 19,
+          "excerpt": " public static bool Accumulatable(DataKind kind)=>kind is DataKind.Integer or DataKind.Number or DataKind.Text or DataKind.Circle or DataKind.Point or DataKind.Fixture;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C09",
+      "route": "当前 · 累积与发布",
+      "classification": "independent-implementation",
+      "from": "ReadSelfElement / Finish",
+      "to": "按逻辑元素索引读 self / JoinArray 发布",
+      "behavior": "非累积读取 last 的输出元素；累积按各轮 ElementCount 找元素。Finish 先复制 last 输出，再用 JoinArray 覆盖配置累积项；没有 last 时从空字典开始，零轮不虚造图像。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.ReadSelfElement",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 10,
+          "end": 15,
+          "excerpt": " public PortValue ReadSelfElement(string name,int index,ExecutionSessionResult? last){\n  var spec=body.Configuration.Outputs.SingleOrDefault(o=>o.Name==name)??throw new InvalidDataException(\"Group self output no longer exists.\");\n  if(!spec.Accumulate||!GroupBreak.Accumulatable(spec.Kind))return (last?.WorkflowOutputs.GetValueOrDefault(name)??throw new InvalidDataException(\"Group self output unavailable.\")).Element(index);\n  if(index<0||index>=elementCounts.GetValueOrDefault(name))throw new InvalidDataException(\"Group self output element is unavailable.\");\n  foreach(var value in accumulated[name]){int length=value.ElementCount;if(index<length)return value.Element(index);index-=length;}throw new InvalidDataException(\"Group self output unavailable.\");\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.Finish",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 17,
+          "end": 17,
+          "excerpt": " public IReadOnlyDictionary<string,PortValue> Finish(ExecutionSessionResult? last){var outputs=last?.WorkflowOutputs.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);foreach(var spec in body.Configuration.Outputs.Where(o=>o.Accumulate&&GroupBreak.Accumulatable(o.Kind))){var values=accumulated.GetValueOrDefault(spec.Name)??[];outputs[spec.Name]=PortValue.JoinArray(spec.Kind,values);}return new ReadOnlyDictionary<string,PortValue>(outputs);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C10",
+      "route": "当前 · 累积与发布",
+      "classification": "independent-implementation",
+      "from": "Group UI break/accumulate 控件",
+      "to": "WriteBreak / SaveOutputs",
+      "behavior": "类型切换清 break bindings，比较符写1..6；输出累积 checkbox 可编辑支持的累积类型或 GrayImage，并保存输出配置。控件可勾选图像不等于图像跨轮堆叠，消费规则仍见 C08。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/GroupConfigurationControls.cs",
+          "member": "Group current break controls",
+          "sha256": "c5635a8491574a4633f6da14b955e399623bcc7c0d88ec4790a2ceb91f2f0d12",
+          "start": 26,
+          "end": 30,
+          "excerpt": " void BuildBreakPanel(StackPanel panel){\n  var enabled=new CheckBox{Content=\"中断循环\",Tag=\"GroupBreakEnabled\",IsChecked=GroupBreak.Enabled(node()),Margin=new Thickness(0,12,0,10),IsEnabled=setBreak is not null};enabled.Click+=(_,_)=>Safe(()=>WriteBreak(enabled:enabled.IsChecked==true));NativeGroupSwitch(enabled);panel.Children.Add(Labeled(\"中断循环\",enabled));if(!GroupBreak.Enabled(node()))return;\n  var type=new ComboBox{Tag=\"GroupBreakType\",ItemsSource=new[]{\"int\",\"float\",\"string\"},SelectedIndex=GroupBreak.Integer(node(),\"DataType\",1)-1};type.SelectionChanged+=(_,_)=>{if(type.SelectedIndex>=0)Safe(()=>WriteBreak(type:type.SelectedIndex+1,bindings:null,replace:true));};panel.Children.Add(Labeled(\"数据类型\",type));\n  panel.Children.Add(BuildOperand(true));var comparison=new ComboBox{Tag=\"GroupBreakOperator\",ItemsSource=new[]{\">\",\"<\",\"=\",\"!=\",\">=\",\"<=\"},SelectedIndex=GroupBreak.Integer(node(),\"CmpType\",1)-1};comparison.SelectionChanged+=(_,_)=>{if(comparison.SelectedIndex>=0)Safe(()=>WriteBreak(comparison:comparison.SelectedIndex+1));};panel.Children.Add(Labeled(\"比较运算\",comparison));panel.Children.Add(BuildOperand(false));\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/GroupConfigurationControls.cs",
+          "member": "Group output accumulate checkbox",
+          "sha256": "c5635a8491574a4633f6da14b955e399623bcc7c0d88ec4790a2ceb91f2f0d12",
+          "start": 58,
+          "end": 58,
+          "excerpt": "   var accumulated=new CheckBox{IsChecked=item.Accumulate,Tag=\"GroupOutputAccumulate:\"+item.Id,HorizontalAlignment=System.Windows.HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,IsEnabled=GroupBreak.Accumulatable(item.Kind)||item.Kind==DataKind.GrayImage};NativeGroupSwitch(accumulated);Grid.SetColumn(accumulated,3);accumulated.Click+=(_,_)=>Safe(()=>SaveOutputs(GroupBody().Configuration.Outputs.Select(o=>o.Id==item.Id?o with{Accumulate=accumulated.IsChecked==true}:o)));row.Children.Add(accumulated);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    }
+  ],
+  "hierarchy": {
+    "title": "主界面",
+    "kind": "ui-root",
+    "organization": "independent-reading-organization",
+    "meaning": "按主界面子系统组织证据；成员调用由叶节点对应的证据边表达。",
+    "children": [
+      {
+        "title": "原版 Group 配置",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "循环资源、参数与状态",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "IMVSGroupAlgorithmTab.Loop Params → EnableLoop → 声明可见性操作",
+                "kind": "edge",
+                "edgeId": "G01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "LoopStartCount / LoopEndCount → 来源查询 / StartIndex 与 EndIndex 订阅",
+                "kind": "edge",
+                "edgeId": "G02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "LoopTimeGap → 0..10000 ms 资源约束",
+                "kind": "edge",
+                "edgeId": "G03",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "GroupParam 构造与属性 → ParamItem 读取/写入",
+                "kind": "edge",
+                "edgeId": "G04",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "IMVSGroup.IsEnableLoop → 装载延迟通知 / 参数读写",
+                "kind": "edge",
+                "edgeId": "G05",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "中断类型与运行/结果包装",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "EnableBreak / DataType → 中断配置可见性与类型声明",
+                "kind": "edge",
+                "edgeId": "G06",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "GroupParam.DataTypeEnum / CmpTypeEnum → 数据类型1..3 / 比较符1..6",
+                "kind": "edge",
+                "edgeId": "G07",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "GroupParam.AddGroupSpecifyChar → 内建循环/比较输入保持原名",
+                "kind": "edge",
+                "edgeId": "G08",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "IMVSGroupTool.Run → mModuleManager.SyncSelfRun(ID,bIsRespondToUI)",
+                "kind": "edge",
+                "edgeId": "G09",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "IMVSGroupTool.ModuResult / GroupResult → 查询结果 / DynamicOutput getter",
+                "kind": "edge",
+                "edgeId": "G10",
+                "classification": "source-confirmed"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "原生边界",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "隐藏步长、ABI 与输出缺口",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "资源未声明 LoopStep / 回收 setter → 隐藏步长与 native 循环",
+                "kind": "edge",
+                "edgeId": "U01",
+                "classification": "unknown"
+              },
+              {
+                "title": "中断比较 / native 输出累积 → 原生全域行为",
+                "kind": "edge",
+                "edgeId": "U02",
+                "classification": "unknown"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "当前独立 Group",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "配置、所有权与循环轮体",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "Group 配置循环区 → 当前 setLoopParameter / 来源选择器",
+                "kind": "edge",
+                "edgeId": "C01",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "GroupLoop.Read → 独立范围/间隔/步长规范",
+                "kind": "edge",
+                "edgeId": "C02",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "SolutionExecutor.Call → 拥有 Group body 才运行循环",
+                "kind": "edge",
+                "edgeId": "C03",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "独立 Group 循环轮体 → 取消/边界保护 → break → Execute → 累积/等待",
+                "kind": "edge",
+                "edgeId": "C04",
+                "classification": "independent-implementation"
+              }
+            ]
+          },
+          {
+            "title": "中断来源、首轮及比较",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "GroupBreak.Validate / Capture → 拥有关系、类型与索引 / 父来源快照",
+                "kind": "edge",
+                "edgeId": "C05",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "GroupBreak.Evaluate → 首轮内部来源跳过 / 诊断限流",
+                "kind": "edge",
+                "edgeId": "C06",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "GroupBreak.Compare → UTF-8 / float / int32 独立消费者",
+                "kind": "edge",
+                "edgeId": "C07",
+                "classification": "independent-implementation"
+              }
+            ]
+          },
+          {
+            "title": "累积、self 索引与配置发布",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "GroupOutputAccumulator.Add → 输出累积 / display 图像替换",
+                "kind": "edge",
+                "edgeId": "C08",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "ReadSelfElement / Finish → 按逻辑元素索引读 self / JoinArray 发布",
+                "kind": "edge",
+                "edgeId": "C09",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "Group UI break/accumulate 控件 → WriteBreak / SaveOutputs",
+                "kind": "edge",
+                "edgeId": "C10",
+                "classification": "independent-implementation"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

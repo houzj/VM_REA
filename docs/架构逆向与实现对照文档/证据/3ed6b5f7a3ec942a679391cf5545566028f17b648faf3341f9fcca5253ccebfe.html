@@ -1,0 +1,367 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 3ed6b5f7a3ec · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 3ed6b5f7a3ec</p><h1>原文证据 3ed6b5f7a3ec</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 3ed6b5f7a3ec942a679391cf5545566028f17b648faf3341f9fcca5253ccebfe。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using VisionCore;
+using VisionFramework;
+using VisionPluginContracts;
+
+namespace VisionPlugins.DistortionCalibration;
+
+/// &lt;summary&gt;Production node adapter. Native component lifecycle evidence is recorded separately
+/// from the independently reconstructed detector, solver, evaluation and image remap.&lt;/summary&gt;
+public sealed class DistortionCalibrationPlugin : IVisionToolPlugin, IWpfToolEditorFactory,
+    IToolConfigurationProvider, IToolDisplayProvider, IToolPointInputAliasProvider
+{
+    public const string Id = DistortionCalibrationMetadata.ModuleId;
+    public ToolManifest Manifest { get; } = new(Id, &quot;1.0.0&quot;, &quot;畸变标定&quot;, &quot;calibration&quot;, &quot;catalog/IMVSImageCalibModuImageEnable.png&quot;);
+    public ModuleDescriptor Descriptor =&gt; DistortionCalibrationMetadata.Descriptor;
+    public IReadOnlyList&lt;ToolPointInputAlias&gt; PointInputAliases { get; } = [new(&quot;CorrectCenterPoint&quot;, &quot;CorrectCenterPointX&quot;, &quot;CorrectCenterPointY&quot;)];
+    public ToolDisplayDefinition DisplayDefinition =&gt; DistortionCalibrationMetadata.DisplayDefinition;
+
+    sealed class State : IDisposable
+    {
+        internal readonly object Gate = new();
+        internal readonly DistortionCalibrationArtifactSession Artifacts = new();
+        internal readonly DistortionCalibrationCenterState Center = new();
+        internal string? AppliedPath;
+        internal IReadOnlyDictionary&lt;string, PortValue&gt;? Inputs, Outputs;
+        internal ToolDisplayDiagnostic? Diagnostic;
+        public void Dispose()
+        {
+            lock (Gate)
+            {
+                Artifacts.Dispose();
+                Inputs = Outputs = null;
+                Diagnostic = null;
+            }
+        }
+    }
+
+    readonly Dictionary&lt;string, State&gt; fallback = new(StringComparer.Ordinal);
+    readonly object fallbackGate = new();
+    State GetState(string node, string directory, ModuleExecutionScope? scope)
+    {
+        if (scope is not null) return scope.State(Id, node, () =&gt; new State());
+        string key = Path.GetFullPath(directory) + &quot;|&quot; + node;
+        lock (fallbackGate)
+        {
+            if (!fallback.TryGetValue(key, out var state)) fallback[key] = state = new State();
+            return state;
+        }
+    }
+
+    public void Reset(string nodeId)
+    {
+        lock (fallbackGate)
+            foreach (string key in fallback.Keys.Where(k =&gt; k.EndsWith(&quot;|&quot; + nodeId, StringComparison.Ordinal)).ToArray())
+            {
+                fallback[key].Dispose();
+                fallback.Remove(key);
+            }
+    }
+
+    public IModule CreateRuntime() =&gt; new Runtime(this);
+    public System.Windows.Forms.Form CreateEditor(ToolEditorContext context) =&gt; throw new InvalidOperationException(&quot;使用公共 WPF 配置宿主。&quot;);
+    public System.Windows.Window CreateWpfEditor(ToolEditorContext context) =&gt; new ToolConfigurationModelWindow(context, CreateConfiguration(context));
+    public ToolConfigurationSession CreateConfiguration(ToolEditorContext context) =&gt;
+        new DistortionCalibrationConfigurationProvider(Export).CreateConfiguration(context);
+
+    void Export(ToolEditorContext context, string path)
+    {
+        var state = GetState(context.Node.Id, context.BaseDirectory, context.Scope);
+        lock (state.Gate) state.Artifacts.Export(Path.GetFullPath(path, context.BaseDirectory));
+    }
+
+    public ToolDisplayFrame? LastDisplay(NodeDocument node, string baseDirectory, ModuleExecutionScope? scope)
+    {
+        var state = GetState(node.Id, baseDirectory, scope);
+        lock (state.Gate)
+        {
+            if (state.Inputs is null || state.Outputs is null) return null;
+            // The shipped Display.xml bridge names this object PostCorrectionImageData;
+            // the module output contract publishes the same image as PostCorrectionImage.
+            var displayOutputs = state.Outputs.ToDictionary(pair =&gt; pair.Key, pair =&gt; pair.Value, StringComparer.Ordinal);
+            if (displayOutputs.TryGetValue(&quot;PostCorrectionImage&quot;, out var corrected))
+                displayOutputs[&quot;PostCorrectionImageData&quot;] = corrected;
+            var frame = ToolDisplayService.Build(DisplayDefinition, ToolDisplayService.Read(node.Parameters, DisplayDefinition),
+                state.Inputs, displayOutputs, diagnostic: state.Diagnostic);
+            return frame with
+            {
+                // The source Display.xml objects, including their own visibility settings,
+                // now own this tool's image surface instead of the legacy single-image flag.
+                ImageVisible = false,
+                ImageLayers = ToolDisplayImageLayers.Build(DistortionCalibrationMetadata.DisplayObjects, node.Parameters, state.Inputs, displayOutputs),
+                Graphics = DistortionCalibrationDisplay.BuildGraphics(node.Parameters, state.Inputs, displayOutputs)
+            };
+        }
+    }
+
+    static GrayImage OwnedMono(IImageData source)
+    {
+        if (source.Format != ImagePixelFormat.Mono8)
+            throw new DistortionCalibrationRuntimeException(0xe0000503, &quot;畸变标定只接受 Mono8 图像（0xe0000503）。&quot;);
+        if (source is GrayImage gray) return gray;
+        int stride = source.Stride == 0 ? source.Width : source.Stride;
+        if (stride &lt; source.Width || source.Pixels.Length &lt; checked(stride * source.Height))
+            throw new DistortionCalibrationRuntimeException(0xe0000503, &quot;Mono8 图像步长或缓冲区无效（0xe0000503）。&quot;);
+        var data = new byte[checked(source.Width * source.Height)];
+        for (int y = 0; y &lt; source.Height; y++) source.Pixels.Slice(y * stride, source.Width).CopyTo(data.AsSpan(y * source.Width, source.Width));
+        return new(source.Width, source.Height, data);
+    }
+
+    static (GrayImage Image, int X, int Y, RoiDocument Output, RectangleRoiMask? Mask) Crop(GrayImage image, IReadOnlyList&lt;RoiDocument&gt; rois)
+    {
+        var full = new RoiDocument(&quot;distortion-roi&quot;, RoiKind.Rectangle, image.Width / 2d, image.Height / 2d, image.Width, image.Height);
+        if (rois.Count == 0 || rois[0].Kind == RoiKind.FullImage) return (image, 0, 0, full, null);
+        if (rois.Count != 1 || rois[0].Kind != RoiKind.Rectangle || rois[0].Exclusion || rois[0].CoordinateSpace != RoiCoordinateSpace.ImagePixels)
+            throw new DistortionCalibrationRuntimeException(0x1000002d, &quot;畸变标定仅确认单个图像坐标矩形 ROI。 &quot;);
+        var roi = rois[0];
+        if (Math.Abs((double)(float)roi.AngleDegrees) &gt; .0001d)
+        {
+            // SDK Run routes rotated rectangles through PreproMask. Recognition
+            // keeps original bbox pixels and applies the mask before tag decoding.
+            var mask = RectangleRoiMaskRasterizer.Create(image.Width, image.Height,
+                (float)roi.CenterX, (float)roi.CenterY, (float)roi.Width, (float)roi.Height, (float)roi.AngleDegrees);
+            if (mask.Width &lt;= 0 || mask.Height &lt;= 0)
+                throw new DistortionCalibrationRuntimeException(0x80100025, &quot;ROI 位于图像之外（0x80100025）。&quot;);
+            return (image, mask.Left, mask.Top, roi, mask);
+        }
+        float width = (float)roi.Width, height = (float)roi.Height;
+        float left = (float)((float)roi.CenterX - width * .5f), top = (float)((float)roi.CenterY - height * .5f);
+        float right = (float)(left + width), bottom = (float)(top + height);
+        if (left &gt;= image.Width || top &gt;= image.Height || right &lt; 0 || bottom &lt; 0)
+            throw new DistortionCalibrationRuntimeException(0x80100025, &quot;ROI 位于图像之外（0x80100025）。&quot;);
+        int x = Math.Max(0, (int)((double)left + .5)), y = Math.Max(0, (int)((double)top + .5));
+        int r = (int)Math.Clamp((long)((double)right + .5), 0, image.Width), b = (int)Math.Clamp((long)((double)bottom + .5), 0, image.Height);
+        int cropWidth = r - x, cropHeight = b - y;
+        if (cropWidth &lt;= 0 || cropHeight &lt;= 0) throw new DistortionCalibrationRuntimeException(0x1000002d, &quot;ROI 无有效像素（0x1000002d）。&quot;);
+        byte[] pixels = new byte[checked(cropWidth * cropHeight)];
+        for (int row = 0; row &lt; cropHeight; row++) image.Pixels.Slice((y + row) * image.Width + x, cropWidth).CopyTo(pixels.AsSpan(row * cropWidth, cropWidth));
+        return (new(cropWidth, cropHeight, pixels), x, y, roi, null);
+    }
+
+    static DistortionCalibrationRecognitionResult Recognize(GrayImage source,
+        (GrayImage Image, int X, int Y, RoiDocument Output, RectangleRoiMask? Mask) region,
+        ModuleExecutionContext c, CancellationToken token) =&gt; region.Mask is { } mask
+        ? DistortionCalibrationRecognition.RecognizeMasked(source, mask, c.Integer(&quot;CalibBoardType&quot;), c.Integer(&quot;FilterStatus&quot;),
+            c.Integer(&quot;Circularity&quot;), c.Integer(&quot;CircleBoardCircleMode&quot;), c.Integer(&quot;EdgeThreshLow&quot;), c.Integer(&quot;EdgeThreshHigh&quot;), token)
+        : DistortionCalibrationRecognition.RecognizeCropped(source, region.Image, region.X, region.Y, c.Integer(&quot;CalibBoardType&quot;), c.Integer(&quot;FilterStatus&quot;),
+            c.Integer(&quot;Circularity&quot;), c.Integer(&quot;CircleBoardCircleMode&quot;), c.Integer(&quot;EdgeThreshLow&quot;), c.Integer(&quot;EdgeThreshHigh&quot;), token);
+
+    static (double X, double Y) Center(ModuleExecutionContext c, State state)
+    {
+        // Process20550 reads X, then Y. Only e000031b is missing; all other
+        // read failures stop the round with e0000314, without updating SDK center.
+        const uint missing = 0xe000031b;
+        (uint Error, double Value) Axis(string name, bool horizontal)
+        {
+            if (c.Scope?.Service&lt;IToolNumericInputReader&gt;() is { } provider)
+            {
+                var supplied = provider.Read(c, name, 0);
+                return (supplied.ErrorCode, supplied.Value);
+            }
+            if (c.ReadNumericInput?.Invoke(name, 0) is { } deferred)
+                return (deferred.ErrorCode, deferred.Value);
+            if (c.Inputs.TryGetValue(name, out var leaf))
+                return leaf.Kind switch
+                {
+                    DataKind.Number =&gt; (0, leaf.As&lt;double&gt;()),
+                    DataKind.Integer =&gt; (0, leaf.As&lt;long&gt;()),
+                    DataKind.NumberArray =&gt; leaf.As&lt;IReadOnlyList&lt;double&gt;&gt;() is { Count: &gt; 0 } values ? (0, values[0]) : (0xe0000314, 0),
+                    _ =&gt; (0xe0000314, 0)
+                };
+            // Independent direct-context compatibility only. Actual alias-backed
+            // documents store the same two leaves, never a second stale POINT.
+            // An explicit empty/error leaf remains authoritative over this fallback.
+            if (c.Inputs.TryGetValue(&quot;CorrectCenterPoint&quot;, out var combined))
+            {
+                Point2? point = null;
+                if (combined.Kind == DataKind.Point)
+                {
+                    if (combined.Cardinality == ValueCardinality.Array)
+                    {
+                        var points = combined.As&lt;IReadOnlyList&lt;Point2&gt;&gt;();
+                        if (points.Count &gt; 0) point = points[0];
+                    }
+                    else point = combined.As&lt;Point2&gt;();
+                }
+                return point is { } value ? (0, horizontal ? value.X : value.Y) : (0xe0000314, 0);
+            }
+            return (missing, 0);
+        }
+        var x = Axis(&quot;CorrectCenterPointX&quot;, true);
+        if (x.Error != 0 &amp;&amp; x.Error != missing)
+            throw new DistortionCalibrationRuntimeException(0xe0000314, &quot;CorrectCenterPointX 读取失败（0xe0000314）。&quot;);
+        var y = Axis(&quot;CorrectCenterPointY&quot;, false);
+        if (y.Error != 0 &amp;&amp; y.Error != missing)
+            throw new DistortionCalibrationRuntimeException(0xe0000314, &quot;CorrectCenterPointY 读取失败（0xe0000314）。&quot;);
+        var center = state.Center.Update(x.Error == 0 ? x.Value : null, y.Error == 0 ? y.Value : null);
+        return (center.X, center.Y);
+    }
+    static PortValue Numbers(IEnumerable&lt;float&gt; values) =&gt; PortValue.Numbers(values.Select(v =&gt; (double)v));
+    static Dictionary&lt;string, PortValue&gt; PointOutputs(IReadOnlyList&lt;DistortionCalibrationPoint&gt; points, IReadOnlyList&lt;float&gt; statuses)
+    {
+        var output = new Dictionary&lt;string, PortValue&gt;
+        {
+            [&quot;CalibPointNum&quot;] = PortValue.Integer(points.Count),
+            [&quot;Calibration Point&quot;] = PortValue.PointArray(points.Select(p =&gt; new Point2(p.X, p.Y))),
+            [&quot;CalibPointX&quot;] = Numbers(points.Select(p =&gt; p.X)),
+            [&quot;CalibPointY&quot;] = Numbers(points.Select(p =&gt; p.Y)),
+            [&quot;CalibPointStatus&quot;] = Numbers(statuses)
+        };
+        return output;
+    }
+
+    sealed class Runtime(DistortionCalibrationPlugin owner) : IModule
+    {
+        public ModuleDescriptor Descriptor =&gt; owner.Descriptor;
+
+        public ValueTask&lt;ModuleResult&gt; ExecuteAsync(ModuleExecutionContext c, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            var clock = Stopwatch.StartNew();
+            var state = owner.GetState(c.NodeId, c.BaseDirectory, c.Scope);
+            lock (state.Gate)
+            {
+                try
+                {
+                    foreach (var spec in Descriptor.Parameters)
+                        if (!c.Parameters.TryGetValue(spec.Name, out var value) || !GraphValidator.ValidParameter(spec, value))
+                            throw new DistortionCalibrationRuntimeException(0xe0000314, &quot;标定参数无效：&quot; + spec.Name);
+                    if (!c.Inputs.TryGetValue(&quot;InputImage&quot;, out var input) || input.Value is not IImageData imageData)
+                        throw new DistortionCalibrationRuntimeException(0xe000031c, &quot;未绑定畸变标定输入图像（0xe000031c）。&quot;);
+                    var source = OwnedMono(imageData);
+                    var capturedInputs = c.Inputs.ToDictionary(p =&gt; p.Key, p =&gt; p.Value);
+                    capturedInputs[&quot;InImage&quot;] = PortValue.Image(source);
+                    state.Inputs = capturedInputs;
+                    // Process20550 applies center before ProcessAlg/SDK recognition.
+                    var center = Center(c, state);
+                    if (source.Width &lt; 64 || source.Height &lt; 64)
+                        throw new DistortionCalibrationRuntimeException(0x10103054, &quot;输入图像的宽和高均须至少64像素。&quot;);
+
+                    string path = c.Text(&quot;CalibPathName&quot;);
+                    if (path.Length &gt; 0 &amp;&amp; !string.Equals(path, state.AppliedPath, StringComparison.Ordinal))
+                    {
+                        DistortionCalibrationPath.Prepare(path);
+                        state.AppliedPath = path;
+                    }
+                    var cropped = Crop(source, c.Rois);
+                    var detected = Recognize(source, cropped, c, token);
+                    if (detected.ErrorCode != 0)
+                        return Fail(state, detected.ErrorCode, detected.Diagnostic ?? &quot;未识别到有效的畸变标定板。&quot;, ModuleStatus.NoMatch, clock);
+
+                    var solved = DistortionCalibrationSolver.SolveFromPointsNativeDetailed(detected.Points,
+                        source.Width, source.Height, c.Integer(&quot;CorrectModel&quot;), c.Integer(&quot;HomoFreedom&quot;),
+                        c.Integer(&quot;CalibBoardWeightFun&quot;), c.Number(&quot;WeightFactor&quot;), new(center.X, center.Y), token);
+                    if (solved.ErrorCode != 0 || solved.File is null)
+                        return Fail(state, solved.ErrorCode == 0 ? 0x10103002u : solved.ErrorCode,
+                            &quot;畸变标定拟合失败。&quot;, ModuleStatus.Failed, clock);
+
+                    bool evaluate = c.Boolean(&quot;DistortionEvaluationEnable&quot;);
+                    bool correctedPoints = evaluate &amp;&amp; c.Boolean(&quot;OutputPostCorrectionEnable&quot;);
+                    GrayImage? correctedImage = null;
+                    IReadOnlyList&lt;DistortionCalibrationPoint&gt; publishedPoints = detected.Points;
+                    float evalError = float.NaN;
+                    float[]? pointErrors = null;
+                    if (evaluate)
+                    {
+                        correctedImage = (GrayImage)new DistortionCalibrationWarp(solved.File).Correct(source, token);
+                        if (correctedPoints)
+                        {
+                            var correctedDetection = Recognize(correctedImage, Crop(correctedImage, c.Rois), c, token);
+                            if (correctedDetection.ErrorCode != 0)
+                                return Fail(state, correctedDetection.ErrorCode, correctedDetection.Diagnostic ?? &quot;矫正图像重检测失败。&quot;, ModuleStatus.NoMatch, clock);
+                            publishedPoints = correctedDetection.Points;
+                            var evaluation = DistortionCalibrationPointErrorEstimator.Estimate(publishedPoints,
+                                c.Integer(&quot;HomoFreedom&quot;), c.Integer(&quot;CalibBoardWeightFun&quot;), c.Integer(&quot;WeightFactor&quot;));
+                            if (evaluation.ErrorCode != 0)
+                                return Fail(state, evaluation.ErrorCode, &quot;矫正点误差评估失败。&quot;, ModuleStatus.Failed, clock);
+                            evalError = evaluation.EvaluationError;
+                            pointErrors = evaluation.PointErrors;
+                        }
+                        else
+                        {
+                            var evaluation = DistortionCalibrationPointErrorEstimator.Estimate(detected.Points,
+                                c.Integer(&quot;HomoFreedom&quot;), c.Integer(&quot;CalibBoardWeightFun&quot;), c.Integer(&quot;WeightFactor&quot;));
+                            if (evaluation.ErrorCode != 0 || evaluation.PointErrors.Length != detected.Points.Count)
+                                return Fail(state, 0x10103002, &quot;原标定拟合未返回对应的点误差。&quot;, ModuleStatus.Failed, clock);
+                            evalError = evaluation.EvaluationError;
+                            pointErrors = evaluation.PointErrors;
+                        }
+                    }
+
+                    var output = PointOutputs(publishedPoints,
+                        pointErrors is null ? Enumerable.Repeat(1f, publishedPoints.Count).ToArray() : DistortionCalibrationPointEvaluation.Project(pointErrors, (float)c.Number(&quot;PointErrorThreshold&quot;)).Statuses);
+                    output[&quot;ModuStatus&quot;] = PortValue.Integer(1);
+                    output[&quot;EstimationError&quot;] = PortValue.Number(solved.EstimationError);
+                    output[&quot;ModuRunTime&quot;] = PortValue.Number(clock.Elapsed.TotalMilliseconds);
+                    output[&quot;ROI&quot;] = PortValue.Region([cropped.Output]);
+                    output[&quot;DetectCenterX&quot;] = PortValue.Number(cropped.Output.CenterX);
+                    output[&quot;DetectCenterY&quot;] = PortValue.Number(cropped.Output.CenterY);
+                    output[&quot;DetectWidth&quot;] = PortValue.Number(cropped.Output.Width);
+                    output[&quot;DetectHeight&quot;] = PortValue.Number(cropped.Output.Height);
+                    output[&quot;DetectAngle&quot;] = PortValue.Number(cropped.Output.AngleDegrees);
+                    if (evaluate)
+                    {
+                        var projected = DistortionCalibrationPointEvaluation.Project(pointErrors!, (float)c.Number(&quot;PointErrorThreshold&quot;));
+                        output[&quot;EvaluationError&quot;] = PortValue.Number(evalError);
+                        output[&quot;CalibPointError&quot;] = Numbers(projected.Errors);
+                        output[&quot;CalibPointStatus&quot;] = Numbers(projected.Statuses);
+                        output[&quot;PostCorrectionImage&quot;] = PortValue.Image(correctedImage!);
+                    }
+
+                    if (path.Length &gt; 0)
+                    {
+                        var target = c.ResolvePath(path);
+                        try { DistortionCalibrationFileLifecycle.WriteAutomatic(solved.File, target, c.Boolean(&quot;RefreshFileEnable&quot;)); }
+                        catch (DistortionCalibrationFileFailure error) { return Fail(state, error.NativeErrorCode, error.Message, ModuleStatus.Failed, clock); }
+                        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException)
+                        { return Fail(state, 0x8010000e, error.Message, ModuleStatus.Failed, clock); }
+                    }
+
+                    state.Artifacts.AcceptFit(solved.File);
+                    state.Diagnostic = null;
+                    state.Outputs = output.ToDictionary(p =&gt; p.Key, p =&gt; p.Value);
+                    return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success, output) { NativeErrorCode = 0 });
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (DistortionCalibrationRuntimeException error)
+                {
+                    return Fail(state, error.NativeErrorCode, error.Message, ModuleStatus.Failed, clock);
+                }
+                catch (Exception error) when (error is ArgumentException or InvalidOperationException or InvalidDataException or IOException or OverflowException or NotSupportedException)
+                {
+                    return Fail(state, 0x10000019, error.Message, ModuleStatus.Failed, clock);
+                }
+            }
+        }
+
+        static ValueTask&lt;ModuleResult&gt; Fail(State state, uint code, string message, ModuleStatus status, Stopwatch clock)
+        {
+            state.Artifacts.Fail(code == 0 ? 0x10000019 : code);
+            state.Diagnostic = new(code, message);
+            var output = new Dictionary&lt;string, PortValue&gt;
+            {
+                [&quot;ModuStatus&quot;] = PortValue.Integer(0),
+                [&quot;ModuRunTime&quot;] = PortValue.Number(clock.Elapsed.TotalMilliseconds)
+            };
+            // ProcessOutput publishes this round's status/runtime before its success gate.
+            // Retain fields not published by the failed round; do not invent native rollback.
+            var snapshot = state.Outputs?.ToDictionary(p =&gt; p.Key, p =&gt; p.Value) ?? new Dictionary&lt;string, PortValue&gt;();
+            foreach (var pair in output) snapshot[pair.Key] = pair.Value;
+            state.Outputs = snapshot;
+            return ValueTask.FromResult(new ModuleResult(status, output,
+                &quot;DistortionCalibration&quot;, message) { NativeErrorCode = code });
+        }
+    }
+}
+
+sealed class DistortionCalibrationRuntimeException(uint nativeErrorCode, string message) : Exception(message)
+{
+    public uint NativeErrorCode { get; } = nativeErrorCode;
+}
+
+
+
+
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Calibration-IMVSImageCalibModu-bbe82a86.html">畸变标定 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

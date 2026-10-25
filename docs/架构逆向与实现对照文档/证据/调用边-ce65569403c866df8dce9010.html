@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GroupLoop.Read · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GroupLoop.Read · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C02"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GroupLoop.Read → 独立范围/间隔/步长规范</h2><p>读取0..10000间隔，拒绝0步长；缺失步长兼容默认1。关闭循环同时规范范围[0,1)和 Step=1，避免保存负步长使独立单次重复。启用保留非零负步长；Increment 用 long。</p><p><a href="../专题/group-control.html#edge-C02">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/group-control.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/group-control.edges.json · SHA256 c6dc5708e08f496256f3b1f356107d578039de6c3ec9fb98c139daabc3c89bed</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="b225814c46265f78eb1c24a248b0787f0b9a36be20b6fa5662efb505c8ffd518">{
+  &quot;id&quot;: &quot;C02&quot;,
+  &quot;route&quot;: &quot;当前 · 配置与循环执行&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;GroupLoop.Read&quot;,
+  &quot;to&quot;: &quot;独立范围/间隔/步长规范&quot;,
+  &quot;behavior&quot;: &quot;读取0..10000间隔，拒绝0步长；缺失步长兼容默认1。关闭循环同时规范范围[0,1)和 Step=1，避免保存负步长使独立单次重复。启用保留非零负步长；Increment 用 long。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/GroupLoop.cs&quot;,
+      &quot;member&quot;: &quot;GroupLoop range and increment&quot;,
+      &quot;sha256&quot;: &quot;533b3e2d80d767cdde186fc7d6a7437223ab97d9be7a7d88f19af87a3935531c&quot;,
+      &quot;start&quot;: 9,
+      &quot;end&quot;: 11,
+      &quot;excerpt&quot;: &quot; public int Step {get;init;}=1;\n public long Increment=>Start&lt;End?Step:-(long)Step;\n public static IReadOnlyList&lt;ParameterDescriptor> Parameters {get;} = [&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/GroupLoop.cs&quot;,
+      &quot;member&quot;: &quot;GroupLoop.Read&quot;,
+      &quot;sha256&quot;: &quot;533b3e2d80d767cdde186fc7d6a7437223ab97d9be7a7d88f19af87a3935531c&quot;,
+      &quot;start&quot;: 20,
+      &quot;end&quot;: 32,
+      &quot;excerpt&quot;: &quot; public static GroupLoop Read(NodeDocument node)\n {\n  int Integer(string name,int fallback)=>node.Parameters.TryGetValue(name,out var v)?v.GetInt32():fallback;\n  var enabled=node.Parameters.TryGetValue(\&quot;EnableLoop\&quot;,out var value)&amp;&amp;value.GetBoolean();\n  var interval=Integer(\&quot;LoopTimeGap\&quot;,0);\n  if(interval is &lt;0 or >10000)throw new InvalidDataException(\&quot;Group loop interval must be 0..10000 ms.\&quot;);\n  var step=Integer(\&quot;LoopStep\&quot;,1);\n  if(step==0)throw new InvalidDataException(\&quot;Group LoopStep must be nonzero.\&quot;);\n  // The independent one-shot mode normalizes its range to [0,1); the hidden\n  // step must be normalized with that range or a negative saved step reruns it.\n  return new(enabled,enabled?Integer(\&quot;StartIndex\&quot;,0):0,enabled?Integer(\&quot;EndIndex\&quot;,1):1,interval){Step=enabled?step:1};\n }\n}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

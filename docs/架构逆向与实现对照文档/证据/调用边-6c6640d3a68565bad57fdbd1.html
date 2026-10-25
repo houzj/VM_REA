@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GetAllVar(ref IMVS_VARIABLE[]) · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GetAllVar(ref IMVS_VARIABLE[]) · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-G10"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GetAllVar(ref IMVS_VARIABLE[]) → VarCount门 / GlobalValueList结构数组 / 保留传入ref</h2><p>先读DataSource.Params的VarCount，只有TryParse且>0才读GlobalValueList；非null且长度整除Marshal.SizeOf(IMVS_VARIABLE)才转结构并覆盖ref。没有保证VarCount等于解析记录数，其余分支不清空传入数组。迁移调用者初始给空数组，不能据无异常认定已读取全部变量或嵌入链接指针已复制/释放。</p><p><a href="../专题/compatibility-tool.html#edge-G10">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/compatibility-tool.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/compatibility-tool.edges.json · SHA256 6498d618a4b576d430f952a5aa8d65e3e378d653e8429b2b5cd14a4609e3c7ba</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="4a044e2f816cbd52abf997157e0c8f3e324090cf7b35cb8418907a93d89aeb15">{
+  &quot;id&quot;: &quot;G10&quot;,
+  &quot;route&quot;: &quot;原版 · VariableManager依赖&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;GetAllVar(ref IMVS_VARIABLE[])&quot;,
+  &quot;to&quot;: &quot;VarCount门 / GlobalValueList结构数组 / 保留传入ref&quot;,
+  &quot;behavior&quot;: &quot;先读DataSource.Params的VarCount，只有TryParse且>0才读GlobalValueList；非null且长度整除Marshal.SizeOf(IMVS_VARIABLE)才转结构并覆盖ref。没有保证VarCount等于解析记录数，其余分支不清空传入数组。迁移调用者初始给空数组，不能据无异常认定已读取全部变量或嵌入链接指针已复制/释放。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VariableManager.cs&quot;,
+      &quot;member&quot;: &quot;VariableManager.GetAllVar array overload&quot;,
+      &quot;sha256&quot;: &quot;1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38&quot;,
+      &quot;start&quot;: 1024,
+      &quot;end&quot;: 1037,
+      &quot;excerpt&quot;: &quot;\tpublic void GetAllVar(ref IMVS_VARIABLE[] vARIABLEs)\n\t{\n\t\tstring s = ((IUserStringData)DataSource.Params)[\&quot;VarCount\&quot;];\n\t\tint result = 0;\n\t\tif (int.TryParse(s, out result) &amp;&amp; result > 0)\n\t\t{\n\t\t\tbyte[] array = ((IUserBytesData)DataSource.Params)[\&quot;GlobalValueList\&quot;];\n\t\t\tif (array != null &amp;&amp; array.Length % Marshal.SizeOf(typeof(IMVS_VARIABLE)) == 0)\n\t\t\t{\n\t\t\t\tList&lt;IMVS_VARIABLE> list = ExternalCallHelper.BytesToStructs&lt;IMVS_VARIABLE>(array);\n\t\t\t\tvARIABLEs = list.ToArray();\n\t\t\t}\n\t\t}\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/variable-manager-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;Apps.XmlParser.Variable.VariableManager::GetAllVar&quot;,
+      &quot;sha256&quot;: &quot;170401e09c583555e71c45d423b9fd40a8c3b13c9e0bc0d9363c6da9878c6e04&quot;,
+      &quot;start&quot;: 754,
+      &quot;end&quot;: 773,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000223\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000223\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;Apps.XmlParser.Variable.VariableManager\&quot;,\n            \&quot;name\&quot;: \&quot;GetAllVar\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200101101d118694\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 124,\n          \&quot;ilSha256\&quot;: \&quot;7b9389679e35c19061f084a07b2c69964afa58419340aef2d9a1eef051d3ad08\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00027b050100046fc502000a72bc1d00706fde02000a0a160b061201281c01000a2c060716fe022b01160c082c4d00027b050100046fc502000a72ce1d00706fdf02000a0d092c18098e69d0a5010002285f01000a28d902000a5d16fe012b0116130411042c130009286b00002b13050311056fe102000a5100002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1 / MVID d0604401-ab61-48a4-938b-faad16d74e7c&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;结构字节转换、嵌入pLinkModuleList的所有权/寿命、Params读取及实际ABI未验证；List&lt;VarItem>重载未接成迁移调用。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

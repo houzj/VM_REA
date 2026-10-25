@@ -1,0 +1,573 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "VN01",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原GlobalVariableModule key分发体RVA0x1f8c0",
+      "to": "ModifyVar载荷字段读取与动作跳表",
+      "behavior": "原PE字符串ModifyVar/DeleteVar的RIP-LEA候选落同一runtime范围0x1f8c0..0x25b80；本轮实际取得对应伪码和解码汇编后，确认其比较参数key并进入ModifyVar分支。入口汇编保存RCX=context、RDX=key、R8=payload、R9D=第四整数参数，分支把payload作为描述读取：名称+4、目标文本+0x204、动作+0、数量+0x304、数据pointer+0x308。动作跳表位于RVA0x25b58，原字节直接确认1→0x245bd、3→0x249ea，与托管VAR_TYPE=1/VAR_VALUE=3的描述枚举相对照。",
+      "representation": "描述byte[]被native解释为带pointer的结构，不是自动深拷贝嵌套数据；只证这个实际分支，不虚构所有动作合法域。",
+      "cache": "所选分支查context+0xf8的名称容器并取得共享记录；未在此证明全局/局部作用域的所有建表规则。",
+      "release": "入口判空与名称存在门不代表payload长度/指针范围已验证；第四参数对整个ModifyVar结构的充分长度检查本轮未证。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.asm.txt",
+          "member": "18001f8c0",
+          "sha256": "d750c90ba92275ea108bab06576b8dd873f642c20b402d12082965e7efb2cadd",
+          "start": 1,
+          "end": 4,
+          "excerpt": "18001f8c0\tMOV dword ptr [RSP + 0x20],R9D\n18001f8c5\tMOV qword ptr [RSP + 0x18],R8\n18001f8ca\tMOV qword ptr [RSP + 0x10],RDX\n18001f8cf\tMOV qword ptr [RSP + 0x8],RCX",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.asm.txt",
+          "member": "18001f8c0",
+          "sha256": "d750c90ba92275ea108bab06576b8dd873f642c20b402d12082965e7efb2cadd",
+          "start": 3285,
+          "end": 3301,
+          "excerpt": "18002404f\tLEA RCX,[0x1800582a8]\n180024056\tSUB RCX,RAX\n180024059\tMOVZX EDX,byte ptr [RAX]\n18002405c\tCMP DL,byte ptr [RAX + RCX*0x1]\n18002405f\tJNZ 0x18002406c\n180024061\tINC RAX\n180024064\tTEST DL,DL\n180024066\tJNZ 0x180024059\n180024068\tXOR EAX,EAX\n18002406a\tJMP 0x180024071\n18002406c\tSBB EAX,EAX\n18002406e\tOR EAX,0x1\n180024071\tTEST EAX,EAX\n180024073\tJNZ 0x1800259d9\n180024079\tMOV dword ptr [RSP + 0x60],0x0\n180024081\tMOV RAX,qword ptr [RSP + 0x19c0]\n180024089\tMOV qword ptr [RSP + 0x58],RAX",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.asm.txt",
+          "member": "18001f8c0",
+          "sha256": "d750c90ba92275ea108bab06576b8dd873f642c20b402d12082965e7efb2cadd",
+          "start": 3300,
+          "end": 3307,
+          "excerpt": "180024081\tMOV RAX,qword ptr [RSP + 0x19c0]\n180024089\tMOV qword ptr [RSP + 0x58],RAX\n18002408e\tMOV RAX,qword ptr [RSP + 0x58]\n180024093\tADD RAX,0x4\n180024097\tMOV RDX,RAX\n18002409a\tLEA RCX,[RSP + 0x1060]\n1800240a2\tCALL 0x180003a20\n1800240a7\tNOP",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.asm.txt",
+          "member": "18001f8c0",
+          "sha256": "d750c90ba92275ea108bab06576b8dd873f642c20b402d12082965e7efb2cadd",
+          "start": 3422,
+          "end": 3429,
+          "excerpt": "1800242f3\tMOV RAX,qword ptr [RSP + 0x58]\n1800242f8\tMOV EAX,dword ptr [RAX]\n1800242fa\tMOV dword ptr [RSP + 0x158],EAX\n180024301\tCMP dword ptr [RSP + 0x158],0x9\n180024309\tJA 0x18002597e\n18002430f\tMOVSXD RAX,dword ptr [RSP + 0x158]\n180024317\tLEA RCX,[0x180000000]\n18002431e\tMOV EAX,dword ptr [RCX + RAX*0x4 + 0x25b58]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "原SDK/ModuleFrame如何选到此虚成员、该成员正式符号和实际进程DLL解析未闭合；不因key一致宣称端到端调用已证。"
+      ]
+    },
+    {
+      "id": "VN02",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原VAR_VALUE动作3",
+      "to": "已有类型核验 → pBinaryValue/数量传入typed值分发",
+      "behavior": "case3从payload+0x304读数量，记录+0x448非0时将payload+0x308与数量直接交0x28250；另一分支核目标类型文本：payload+0x204非空且与记录+0x129类型不符时返回0xe000030f。通过门后调用0x28c30，汇编明确RDX=记录名称+0x29、R8=类型文本、R9=payload+0x308内的pointer，第五栈参数为数量；还在调用前stack+0x28写入字节1，不能按伪码五参数显示丢掉这个调用点事实。0x28c30原体按int/float/string分别向0x295b0/0x29eb0/0x2a7b0转发；本轮没取这些最终存储体。",
+      "representation": "标量/字符串数组的payload地址确实进入native值接收链；这个转发不是值已完成深拷贝的证据。",
+      "cache": "原记录已有类型与组合标志决定接收分支，不能将所有typed输入按相同存储处理。",
+      "release": "既未在所选case释放调用者pBinaryValue，也未证明callee已完成复制；托管finally回收临时块前的安全性仍需最终存储体。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800249ea.asm.txt",
+          "member": "1800249ea",
+          "sha256": "ac9d4b36b789c2a5bf7523c036abf99a9d74952e8a20652224e34cfb399e1e0f",
+          "start": 8,
+          "end": 25,
+          "excerpt": "180024a0b\tMOV RAX,qword ptr [RSP + 0x58]\n180024a10\tMOV EAX,dword ptr [RAX + 0x304]\n180024a16\tMOV dword ptr [RSP + 0x168],EAX\n180024a1d\tLEA RCX,[RSP + 0x48]\n180024a22\tCALL 0x180009510\n180024a27\tMOVZX EAX,byte ptr [RAX + 0x448]\n180024a2e\tTEST EAX,EAX\n180024a30\tJZ 0x180024a5c\n180024a32\tMOV R8D,dword ptr [RSP + 0x168]\n180024a3a\tMOV RAX,qword ptr [RSP + 0x58]\n180024a3f\tMOV RDX,qword ptr [RAX + 0x308]\n180024a46\tMOV RCX,qword ptr [RSP + 0x19b0]\n180024a4e\tCALL 0x180028250\n180024a53\tMOV dword ptr [RSP + 0x60],EAX\n180024a57\tJMP 0x180024bb5\n180024a5c\tMOV RAX,qword ptr [RSP + 0x58]\n180024a61\tADD RAX,0x204\n180024a67\tMOV RDX,RAX",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800249ea.asm.txt",
+          "member": "1800249ea",
+          "sha256": "ac9d4b36b789c2a5bf7523c036abf99a9d74952e8a20652224e34cfb399e1e0f",
+          "start": 50,
+          "end": 55,
+          "excerpt": "180024ad3\tTEST EAX,EAX\n180024ad5\tJZ 0x180024b49\n180024ad7\tMOV dword ptr [RSP + 0x314],0xe000030f\n180024ae2\tLEA RCX,[RSP + 0x11a0]\n180024aea\tCALL 0x180003c20\n180024aef\tNOP",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800249ea.asm.txt",
+          "member": "1800249ea",
+          "sha256": "ac9d4b36b789c2a5bf7523c036abf99a9d74952e8a20652224e34cfb399e1e0f",
+          "start": 75,
+          "end": 94,
+          "excerpt": "180024b49\tLEA RCX,[RSP + 0x11c0]\n180024b51\tCALL 0x180003ec0\n180024b56\tMOV qword ptr [RSP + 0x748],RAX\n180024b5e\tLEA RCX,[RSP + 0x48]\n180024b63\tCALL 0x180009510\n180024b68\tADD RAX,0x29\n180024b6c\tMOV byte ptr [RSP + 0x28],0x1\n180024b71\tMOV ECX,dword ptr [RSP + 0x168]\n180024b78\tMOV dword ptr [RSP + 0x20],ECX\n180024b7c\tMOV RCX,qword ptr [RSP + 0x58]\n180024b81\tMOV R9,qword ptr [RCX + 0x308]\n180024b88\tMOV RCX,qword ptr [RSP + 0x748]\n180024b90\tMOV R8,RCX\n180024b93\tMOV RDX,RAX\n180024b96\tMOV RCX,qword ptr [RSP + 0x19b0]\n180024b9e\tCALL 0x180028c30\n180024ba3\tMOV dword ptr [RSP + 0x60],EAX\n180024ba7\tLEA RCX,[RSP + 0x11a0]\n180024baf\tCALL 0x180003c20\n180024bb4\tNOP",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.c",
+          "member": "180028c30",
+          "sha256": "33f79075e8cdab42f78cc43ccb74e4c74e5db2c3e0ad25d67ba058ea76ba8579",
+          "start": 2,
+          "end": 67,
+          "excerpt": "int FUN_180028c30(longlong param_1,char *param_2,byte *param_3,float *param_4,int param_5)\n\n{\n  byte bVar1;\n  undefined1 uVar2;\n  uint uVar3;\n  byte *pbVar4;\n  longlong lVar5;\n  int local_14;\n  \n  if (((param_2 == (char *)0x0) || (param_2 == (char *)0x0)) || (param_4 == (float *)0x0)) {\n    local_14 = -0x1fffffff;\n  }\n  else {\n    local_14 = 0;\n    uVar2 = VM_M_SetGlobalVarLockStatus\n                      (*(undefined4 *)(param_1 + 0x48),*(undefined4 *)(param_1 + 0x48),1);\n    pbVar4 = param_3;\n    do {\n      bVar1 = *pbVar4;\n      if (bVar1 != pbVar4[(longlong)&DAT_180057a8c - (longlong)param_3]) {\n        uVar3 = -(uint)(bVar1 < pbVar4[(longlong)&DAT_180057a8c - (longlong)param_3]) | 1;\n        goto LAB_180028cb6;\n      }\n      pbVar4 = pbVar4 + 1;\n    } while (bVar1 != 0);\n    uVar3 = 0;\nLAB_180028cb6:\n    if (uVar3 == 0) {\n      local_14 = FUN_1800295b0(param_1,param_2,(longlong)param_4,param_5,uVar2,'\\0');\n    }\n    else {\n      pbVar4 = param_3;\n      do {\n        bVar1 = *pbVar4;\n        if (bVar1 != pbVar4[(longlong)\"float\" - (longlong)param_3]) {\n          uVar3 = -(uint)(bVar1 < pbVar4[(longlong)\"float\" - (longlong)param_3]) | 1;\n          goto LAB_180028d11;\n        }\n        pbVar4 = pbVar4 + 1;\n      } while (bVar1 != 0);\n      uVar3 = 0;\nLAB_180028d11:\n      if (uVar3 == 0) {\n        local_14 = FUN_180029eb0(param_1,param_2,param_4,param_5,uVar2,'\\0');\n      }\n      else {\n        pbVar4 = param_3;\n        do {\n          bVar1 = *pbVar4;\n          if (bVar1 != pbVar4[(longlong)\"string\" - (longlong)param_3]) {\n            uVar3 = -(uint)(bVar1 < pbVar4[(longlong)\"string\" - (longlong)param_3]) | 1;\n            goto LAB_180028d6c;\n          }\n          pbVar4 = pbVar4 + 1;\n        } while (bVar1 != 0);\n        uVar3 = 0;\nLAB_180028d6c:\n        if (uVar3 == 0) {\n          local_14 = FUN_18002a7b0(param_1,param_2,(longlong)param_4,param_5,uVar2,'\\0');\n        }\n        else {\n          pbVar4 = param_3;\n          do {\n            bVar1 = *pbVar4;\n            if (bVar1 != pbVar4[(longlong)&DAT_1800588a0 - (longlong)param_3]) {",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "0x28250组合值体及0x295b0/0x29eb0/0x2a7b0 typed存储体尚未取得；copy、旧值释放和越界行为不推测。",
+        "额外第六字节的业务含义未取得原符号，不将其命名成copy/ownership标志。"
+      ]
+    },
+    {
+      "id": "VN03",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原VAR_TYPE动作1",
+      "to": "删除旧值成功门 → 新类型文本与0x130子描述复制",
+      "behavior": "case1先调用0x28110，返回0才继续；随后清记录+0x139的0x100字节与+0x129的0x10字节，并将payload+0x204的类型文本写入记录。数量非0时按nValueNum×0x130构造数组并保存在记录+0x470，目标为空则返回0xe0000002；分配非空时清数组并调用memcpy_s，从payload+0x308指向区域请求复制同样字节数；所选代码未分支检查其返回值，随后设记录+0x448=1、+0x450=数量。数量0分支另调用0x27080并置+0x448=0。原IAT0x180055568绑定MSVCR120.dll::memcpy_s，原汇编核到RCX目标、RDX容量、R8源pointer、R9长度。",
+      "representation": "此处复制的是0x130字节子变量描述数组；描述中的pointer目标不因此自动成为深拷贝，不能称整套新变量payload都已复制。",
+      "cache": "旧值删除成功门位于类型更新/分配前；本切片不证明分配或后续失败时恢复原类型和旧值。",
+      "release": "所选新描述复制不释放调用者pBinaryValue；记录+0x470未来退役、描述内嵌pointer所有权及0x25c40的完整旧存储清理仍待取体。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800245bd.asm.txt",
+          "member": "1800245bd",
+          "sha256": "c52a0ee613fd4e93d3aebb0449c96030dc25c2c0bbe04e8e0a79e5e4397a8699",
+          "start": 1,
+          "end": 12,
+          "excerpt": "1800245bd\tLEA RAX,[RSP + 0xe30]\n1800245c5\tMOV qword ptr [RSP + 0x678],RAX\n1800245cd\tLEA RDX,[RSP + 0x48]\n1800245d2\tMOV RCX,qword ptr [RSP + 0x678]\n1800245da\tCALL 0x180016a00\n1800245df\tMOV qword ptr [RSP + 0x688],RAX\n1800245e7\tMOV RDX,qword ptr [RSP + 0x688]\n1800245ef\tMOV RCX,qword ptr [RSP + 0x19b0]\n1800245f7\tCALL 0x180028110\n1800245fc\tMOV dword ptr [RSP + 0x60],EAX\n180024600\tCMP dword ptr [RSP + 0x60],0x0\n180024605\tJNZ 0x180024925",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800245bd.asm.txt",
+          "member": "1800245bd",
+          "sha256": "c52a0ee613fd4e93d3aebb0449c96030dc25c2c0bbe04e8e0a79e5e4397a8699",
+          "start": 27,
+          "end": 38,
+          "excerpt": "180024643\tMOV RAX,qword ptr [RSP + 0x58]\n180024648\tADD RAX,0x204\n18002464e\tMOV qword ptr [RSP + 0x698],RAX\n180024656\tLEA RCX,[RSP + 0x48]\n18002465b\tCALL 0x180009510\n180024660\tADD RAX,0x129\n180024666\tMOV RCX,qword ptr [RSP + 0x698]\n18002466e\tMOV qword ptr [RSP + 0x20],RCX\n180024673\tLEA R9,[0x180057844]\n18002467a\tMOV R8D,0xf\n180024680\tMOV EDX,0x10\n180024685\tMOV RCX,RAX",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800245bd.asm.txt",
+          "member": "1800245bd",
+          "sha256": "c52a0ee613fd4e93d3aebb0449c96030dc25c2c0bbe04e8e0a79e5e4397a8699",
+          "start": 56,
+          "end": 67,
+          "excerpt": "1800246e9\tMOV RAX,qword ptr [RSP + 0x58]\n1800246ee\tCMP dword ptr [RAX + 0x304],0x0\n1800246f5\tJBE 0x1800248d5\n1800246fb\tMOV RAX,qword ptr [RSP + 0x58]\n180024700\tMOV EAX,dword ptr [RAX + 0x304]\n180024706\tMOV qword ptr [RSP + 0x298],RAX\n18002470e\tMOV EAX,0x130\n180024713\tMUL qword ptr [RSP + 0x298]\n18002471b\tMOV RCX,-0x1\n180024722\tCMOVO RAX,RCX\n180024726\tADD RAX,0x8\n18002472a\tMOV RCX,-0x1",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800245bd.asm.txt",
+          "member": "1800245bd",
+          "sha256": "c52a0ee613fd4e93d3aebb0449c96030dc25c2c0bbe04e8e0a79e5e4397a8699",
+          "start": 123,
+          "end": 134,
+          "excerpt": "180024880\tMOV R9,RCX\n180024883\tMOV RCX,qword ptr [RSP + 0x58]\n180024888\tMOV R8,qword ptr [RCX + 0x308]\n18002488f\tMOV RCX,qword ptr [RSP + 0x6f8]\n180024897\tMOV RDX,RCX\n18002489a\tMOV RCX,qword ptr [RAX + 0x470]\n1800248a1\tCALL qword ptr [0x180055568]\n1800248a7\tLEA RCX,[RSP + 0x48]\n1800248ac\tCALL 0x180009510\n1800248b1\tMOV byte ptr [RAX + 0x448],0x1\n1800248b8\tLEA RCX,[RSP + 0x48]\n1800248bd\tCALL 0x180009510",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.c",
+          "member": "18001f8c0",
+          "sha256": "9f4c53a80c806cefde4c7aff9c26cd128f4ff8a2371ce833b7cfcfc9f4126a64",
+          "start": 2104,
+          "end": 2147,
+          "excerpt": "            piStack_17d0 = (int *)thunk_FUN_1800502a4(_Var19);\n            if (piStack_17d0 == (int *)0x0) {\n              piStack_1580 = (int *)0x0;\n            }\n            else {\n              *piStack_17d0 = (int)uStack_1710;\n              FUN_180050228((longlong)(piStack_17d0 + 2),0x130,(int)uStack_1710,FUN_18001b890);\n              piStack_1580 = piStack_17d0 + 2;\n            }\n            piStack_12e0 = piStack_1580;\n            lVar18 = FUN_180009510((undefined8 *)local_1960);\n            *(int **)(lVar18 + 0x470) = piStack_12e0;\n            lVar18 = FUN_180009510((undefined8 *)local_1960);\n            if (*(longlong *)(lVar18 + 0x470) == 0) {\n              local_1948 = -0x1ffffffe;\n            }\n            else {\n              iStack_18a0 = *(int *)(local_1950 + 0x304) * 0x130;\n              lStack_12d0 = (longlong)iStack_18a0;\n              lVar28 = FUN_180009510((undefined8 *)local_1960);\n              puVar29 = *(undefined1 **)(lVar28 + 0x470);\n              for (lVar18 = lStack_12d0; lVar18 != 0; lVar18 = lVar18 + -1) {\n                *puVar29 = 0;\n                puVar29 = puVar29 + 1;\n              }\n              rStack_12c0 = (rsize_t)iStack_18a0;\n              rStack_12b0 = (rsize_t)iStack_18a0;\n              lVar18 = FUN_180009510((undefined8 *)local_1960);\n              memcpy_s(*(void **)(lVar18 + 0x470),rStack_12b0,*(void **)(local_1950 + 0x308),\n                       rStack_12c0);\n              lVar18 = FUN_180009510((undefined8 *)local_1960);\n              *(undefined1 *)(lVar18 + 0x448) = 1;\n              lVar18 = FUN_180009510((undefined8 *)local_1960);\n              *(undefined4 *)(lVar18 + 0x450) = *(undefined4 *)(local_1950 + 0x304);\n            }\n          }\n        }\n        break;\n      case 2:\n        lVar18 = FUN_180009510((undefined8 *)local_1960);\n        puVar29 = (undefined1 *)(lVar18 + 0x239);\n        for (lVar28 = 0x100; lVar28 != 0; lVar28 = lVar28 + -1) {\n          *puVar29 = 0;\n          puVar29 = puVar29 + 1;",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "0x25c40/0x27080初始化清理体、数组构造失败与回滚、嵌套数据深拷贝仍未闭合。"
+      ]
+    },
+    {
+      "id": "VN04",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原DeleteVar分支与0x28110 DeleteVarValue体",
+      "to": "ModuleFrame删除通知 → 成功才移除名称记录",
+      "behavior": "DeleteVar先按payload字符串查名称容器，未找到返回0xe000001f；找到后保存原索引，调用0x28110，只有返回0才擦除名称记录并递减其他记录中更大索引。0x28110对记录+0x448为0调用VM_M_DelGlobalVar(context+8,记录+0x29名称)，组合记录则按+0x450数量、+0x470数组0x130步长逐项调用同一导出；返回码在循环中逐项覆盖，返回的是最终保存值，不能说已聚合所有子项失败。原PE IAT0x1800556f0核为ModuleFrame.dll::VM_M_DelGlobalVar。",
+      "representation": "变量存储删除命令与本模块map记录退役分开，组合变量由子描述数组逐项通知。",
+      "cache": "擦除名称容器不等于所有既有托管数组或订阅消费者同时清空；共享记录的其他引用仍须分别追踪。",
+      "release": "真正删除payload发生在尚未取得的ModuleFrame导出内部，不能把VM_M_DelGlobalVar调用或shared_ptr局部释放直接写成已free数值/字符串。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.c",
+          "member": "18001f8c0",
+          "sha256": "9f4c53a80c806cefde4c7aff9c26cd128f4ff8a2371ce833b7cfcfc9f4126a64",
+          "start": 1816,
+          "end": 1888,
+          "excerpt": "        if (bVar1 != pbVar27[(longlong)\"DeleteVar\" - (longlong)param_2]) {\n          uVar11 = -(uint)(bVar1 < pbVar27[(longlong)\"DeleteVar\" - (longlong)param_2]) | 1;\n          goto LAB_180023d78;\n        }\n        pbVar27 = pbVar27 + 1;\n      } while (bVar1 != 0);\n      uVar11 = 0;\nLAB_180023d78:\n      if (uVar11 == 0) {\n        basic_string<>(local_888,(char *)param_3);\n        FUN_180035ca0((longlong *)(param_1 + 0xf8),&local_1560,\n                      (_String_val<std::_Simple_types<char>_> *)local_888);\n        plVar14 = FUN_180006d70((undefined8 *)(param_1 + 0xf8),&local_dd8);\n        bVar9 = FUN_180007050(&local_1560,plVar14);\n        if (bVar9) {\n          local_1758 = -0x1fffffe1;\n          ~basic_string<>((basic_string<char,std::char_traits<char>,std::allocator<char>_> *)\n                          local_888);\n          ~basic_string<>((basic_string<char,std::char_traits<char>,std::allocator<char>_> *)\n                          local_988);\n          FUN_18001b230(local_1938);\n          return local_1758;\n        }\n        puVar23 = (undefined8 *)\n                  FUN_180035a50((longlong *)(param_1 + 0xf8),\n                                (_String_val<std::_Simple_types<char>_> *)local_888);\n        piVar21 = (int *)FUN_180009510(puVar23);\n        local_16a4 = *piVar21;\n        local_18a8 = 0;\n        local_1420 = local_b38;\n        lVar18 = FUN_1800166f0(&local_1560);\n        local_1410 = (undefined8 *)\n                     std::shared_ptr<__ExceptionPtr>::shared_ptr<__ExceptionPtr>\n                               (local_1420,(shared_ptr<class___ExceptionPtr> *)(lVar18 + 0x20));\n        local_18a8 = FUN_180028110(param_1,local_1410);\n        if (local_18a8 == 0) {\n          FUN_180035ba0((longlong *)(param_1 + 0xf8),\n                        (_String_val<std::_Simple_types<char>_> *)local_888);\n          local_15a0 = (undefined8 *)(param_1 + 0xf8);\n          plVar14 = FUN_180006d70(local_15a0,&local_d28);\n          local_1400 = *plVar14;\n          plVar14 = FUN_18000b560(local_15a0,&local_dc8);\n          local_1720 = *plVar14;\n          while (bVar9 = FUN_180016070(&local_1720,&local_1400), bVar9) {\n            pbVar15 = (basic_string<char,struct_std::char_traits<char>,class_std::allocator<char>_>\n                       *)FUN_180016710(&local_1720);\n            FUN_18001f840(local_c8,pbVar15);\n            std::shared_ptr<__ExceptionPtr>::shared_ptr<__ExceptionPtr>(local_f60,local_a8);\n            piVar21 = (int *)FUN_180009510((undefined8 *)local_f60);\n            if (local_16a4 < *piVar21) {\n              local_1510 = (int *)FUN_180009510((undefined8 *)local_f60);\n              *local_1510 = *local_1510 + -1;\n            }\n            FUN_180016480((longlong)local_f60);\n            FUN_18001f890((basic_string<char,std::char_traits<char>,std::allocator<char>_> *)\n                          local_c8);\n            FUN_18000b860(&local_1720);\n          }\n        }\n        local_1748 = local_18a8;\n        ~basic_string<>((basic_string<char,std::char_traits<char>,std::allocator<char>_> *)local_888\n                       );\n        ~basic_string<>((basic_string<char,std::char_traits<char>,std::allocator<char>_> *)local_988\n                       );\n        FUN_18001b230(local_1938);\n        return local_1748;\n      }\n      pbVar27 = param_2;\n      do {\n        bVar1 = *pbVar27;\n        if (bVar1 != pbVar27[(longlong)\"ModifyVar\" - (longlong)param_2]) {\n          uVar11 = -(uint)(bVar1 < pbVar27[(longlong)\"ModifyVar\" - (longlong)param_2]) | 1;\n          goto LAB_180024071;",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028110.c",
+          "member": "180028110",
+          "sha256": "ff18b92b033f799ebecd24756a05e233bcbf640727dd43e0633a43c9c86da473",
+          "start": 2,
+          "end": 37,
+          "excerpt": "int FUN_180028110(longlong param_1,undefined8 *param_2)\n\n{\n  char cVar1;\n  longlong lVar2;\n  _String_val<std::_Simple_types<char>_> *p_Var3;\n  undefined8 uVar4;\n  int local_28;\n  ulonglong local_20;\n  \n  local_28 = 0;\n  lVar2 = FUN_180009510(param_2);\n  if (*(char *)(lVar2 + 0x448) == '\\0') {\n    lVar2 = FUN_180009510(param_2);\n    local_28 = VM_M_DelGlobalVar(*(undefined8 *)(param_1 + 8),lVar2 + 0x29);\n  }\n  else {\n    for (local_20 = 0; lVar2 = FUN_180009510(param_2), local_20 < *(uint *)(lVar2 + 0x450);\n        local_20 = local_20 + 1) {\n      lVar2 = FUN_180009510(param_2);\n      local_28 = VM_M_DelGlobalVar(*(undefined8 *)(param_1 + 8),\n                                   *(longlong *)(lVar2 + 0x470) + local_20 * 0x130);\n    }\n  }\n  if ((local_28 != 0) && (cVar1 = HSlog_ShouldLog(4), cVar1 != '\\0')) {\n    p_Var3 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n    uVar4 = FUN_180003ec0(p_Var3);\n    HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] DeleteVarValue is error:[%x]\",uVar4,\n                   *(undefined4 *)(param_1 + 0x48),\"CVariableModuBase::DeleteVarValue\",0x6a8,\n                   local_28);\n  }\n  FUN_180016480((longlong)param_2);\n  return local_28;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028110.asm.txt",
+          "member": "180028110",
+          "sha256": "b648ea5b3f7678266aaf0617a8a9ccaea8796d0dd11f220b6faa14b2f4f410de",
+          "start": 1,
+          "end": 18,
+          "excerpt": "180028110\tMOV qword ptr [RSP + 0x10],RDX\n180028115\tMOV qword ptr [RSP + 0x8],RCX\n18002811a\tSUB RSP,0x68\n18002811e\tMOV qword ptr [RSP + 0x50],-0x2\n180028127\tMOV dword ptr [RSP + 0x40],0x0\n18002812f\tMOV RCX,qword ptr [RSP + 0x78]\n180028134\tCALL 0x180009510\n180028139\tMOVZX EAX,byte ptr [RAX + 0x448]\n180028140\tTEST EAX,EAX\n180028142\tJZ 0x1800281aa\n180028144\tMOV qword ptr [RSP + 0x48],0x0\n18002814d\tJMP 0x18002815c\n18002814f\tMOV RAX,qword ptr [RSP + 0x48]\n180028154\tINC RAX\n180028157\tMOV qword ptr [RSP + 0x48],RAX\n18002815c\tMOV RCX,qword ptr [RSP + 0x78]\n180028161\tCALL 0x180009510\n180028166\tMOV EAX,dword ptr [RAX + 0x450]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "ModuleFrame.VM_M_DelGlobalVar原体与保留结果/绑定最后读者未恢复；最终码0不证明组合每个子项都成功。"
+      ]
+    },
+    {
+      "id": "VN05",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原0x28c30值类型包装的额外参数与锁状态调用",
+      "to": "显式覆盖后续callee栈字节，不由显示签名推ABI",
+      "behavior": "0x28c30汇编保存前四入参并读取第五数量；先调用VM_M_SetGlobalVarLockStatus(moduleID,moduleID,1)，保存返回AL，分发int/float/string时将该AL作为第五字节参数、显式把第六字节参数写0，再把原数量置R9D、原payload置R8。所选体结束处调用同一锁状态导出(moduleID,moduleID,0)。因此case3调用前写入的第六字节1不能直接当作最终typed存储callee接收到1；包装有具体覆盖写。这个事实只限已读分支，不能从函数名断言它建立了完整线程互斥。",
+      "representation": "原入口参数、wrapper局部状态与typedcallee参数位置分开记录；字节flag值与业务语义分开。",
+      "cache": "该wrapper不维护长期payload副本；具体存储和锁状态导出行为在下层。",
+      "release": "末尾unlock样调用只证正常控制流，无完整异常/early return并发安全结论。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.asm.txt",
+          "member": "180028c30",
+          "sha256": "7c1d74b3e621124363ab0cbd23de96f739a7da480e0715183c39a68ca637c5a6",
+          "start": 1,
+          "end": 20,
+          "excerpt": "180028c30\tMOV qword ptr [RSP + 0x20],R9\n180028c35\tMOV qword ptr [RSP + 0x18],R8\n180028c3a\tMOV qword ptr [RSP + 0x10],RDX\n180028c3f\tMOV qword ptr [RSP + 0x8],RCX\n180028c44\tSUB RSP,0x48\n180028c48\tCMP qword ptr [RSP + 0x58],0x0\n180028c4e\tJZ 0x180028c60\n180028c50\tCMP qword ptr [RSP + 0x58],0x0\n180028c56\tJZ 0x180028c60\n180028c58\tCMP qword ptr [RSP + 0x68],0x0\n180028c5e\tJNZ 0x180028c6a\n180028c60\tMOV EAX,0xe0000001\n180028c65\tJMP 0x180028ed0\n180028c6a\tMOV dword ptr [RSP + 0x34],0x0\n180028c72\tMOV R8B,0x1\n180028c75\tMOV RAX,qword ptr [RSP + 0x50]\n180028c7a\tMOV EDX,dword ptr [RAX + 0x48]\n180028c7d\tMOV RAX,qword ptr [RSP + 0x50]\n180028c82\tMOV ECX,dword ptr [RAX + 0x48]\n180028c85\tCALL qword ptr [0x1800556e0]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.asm.txt",
+          "member": "180028c30",
+          "sha256": "7c1d74b3e621124363ab0cbd23de96f739a7da480e0715183c39a68ca637c5a6",
+          "start": 37,
+          "end": 46,
+          "excerpt": "180028cba\tMOV byte ptr [RSP + 0x28],0x0\n180028cbf\tMOVZX EAX,byte ptr [RSP + 0x30]\n180028cc4\tMOV byte ptr [RSP + 0x20],AL\n180028cc8\tMOV R9D,dword ptr [RSP + 0x70]\n180028ccd\tMOV R8,qword ptr [RSP + 0x68]\n180028cd2\tMOV RDX,qword ptr [RSP + 0x58]\n180028cd7\tMOV RCX,qword ptr [RSP + 0x50]\n180028cdc\tCALL 0x1800295b0\n180028ce1\tMOV dword ptr [RSP + 0x34],EAX\n180028ce5\tJMP 0x180028eaf",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.asm.txt",
+          "member": "180028c30",
+          "sha256": "7c1d74b3e621124363ab0cbd23de96f739a7da480e0715183c39a68ca637c5a6",
+          "start": 62,
+          "end": 71,
+          "excerpt": "180028d15\tMOV byte ptr [RSP + 0x28],0x0\n180028d1a\tMOVZX EAX,byte ptr [RSP + 0x30]\n180028d1f\tMOV byte ptr [RSP + 0x20],AL\n180028d23\tMOV R9D,dword ptr [RSP + 0x70]\n180028d28\tMOV R8,qword ptr [RSP + 0x68]\n180028d2d\tMOV RDX,qword ptr [RSP + 0x58]\n180028d32\tMOV RCX,qword ptr [RSP + 0x50]\n180028d37\tCALL 0x180029eb0\n180028d3c\tMOV dword ptr [RSP + 0x34],EAX\n180028d40\tJMP 0x180028eaf",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.asm.txt",
+          "member": "180028c30",
+          "sha256": "7c1d74b3e621124363ab0cbd23de96f739a7da480e0715183c39a68ca637c5a6",
+          "start": 87,
+          "end": 96,
+          "excerpt": "180028d70\tMOV byte ptr [RSP + 0x28],0x0\n180028d75\tMOVZX EAX,byte ptr [RSP + 0x30]\n180028d7a\tMOV byte ptr [RSP + 0x20],AL\n180028d7e\tMOV R9D,dword ptr [RSP + 0x70]\n180028d83\tMOV R8,qword ptr [RSP + 0x68]\n180028d88\tMOV RDX,qword ptr [RSP + 0x58]\n180028d8d\tMOV RCX,qword ptr [RSP + 0x50]\n180028d92\tCALL 0x18002a7b0\n180028d97\tMOV dword ptr [RSP + 0x34],EAX\n180028d9b\tJMP 0x180028eaf",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.asm.txt",
+          "member": "180028c30",
+          "sha256": "7c1d74b3e621124363ab0cbd23de96f739a7da480e0715183c39a68ca637c5a6",
+          "start": 171,
+          "end": 179,
+          "excerpt": "180028eaf\tXOR R8D,R8D\n180028eb2\tMOV RAX,qword ptr [RSP + 0x50]\n180028eb7\tMOV EDX,dword ptr [RAX + 0x48]\n180028eba\tMOV RAX,qword ptr [RSP + 0x50]\n180028ebf\tMOV ECX,dword ptr [RAX + 0x48]\n180028ec2\tCALL qword ptr [0x1800556e0]\n180028ec8\tMOV byte ptr [RSP + 0x30],AL\n180028ecc\tMOV EAX,dword ptr [RSP + 0x34]\n180028ed0\tADD RSP,0x48",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "existing offline Ghidra CLI, not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "VM_M_SetGlobalVarLockStatus返回值语义及typedcallee的额外字节含义未取得原体/符号；不造copy标志解释。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "VNU01",
+      "target": "ModuleFrame/SDK → GlobalVariableModule dispatch",
+      "question": "未取得正式虚表映射/实际调用者，当前证明的是原DLL具体key分支，不宣称入口运行链完整。"
+    },
+    {
+      "id": "VNU02",
+      "target": "0x295b0/0x29eb0/0x2a7b0 and 0x28250",
+      "question": "typed值与组合值最终分配/复制/替换/free尚待读取，不能据入口pointer转发声称深复制完成。"
+    },
+    {
+      "id": "VNU03",
+      "target": "VM_M_DelGlobalVar / old descriptor retirement",
+      "question": "实际底层存储销毁、订阅和结果最后读者仍缺ModuleFrame原体；不将map擦除当payload释放。"
+    }
+  ],
+  "provenance": {
+    "original": {
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+      "sha256": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+      "byteLength": 442880
+    },
+    "selection": {
+      "method": "original string bytes → RIP-LEA candidate → PE runtime range → actual selected Ghidra body/decoded assembly",
+      "cases": [
+        {
+          "action": 0,
+          "tableRva": "0x25b58",
+          "targetRva": "0x2432a",
+          "rawBytes": "2a430200"
+        },
+        {
+          "action": 1,
+          "tableRva": "0x25b58",
+          "targetRva": "0x245bd",
+          "rawBytes": "bd450200"
+        },
+        {
+          "action": 2,
+          "tableRva": "0x25b58",
+          "targetRva": "0x2492a",
+          "rawBytes": "2a490200"
+        },
+        {
+          "action": 3,
+          "tableRva": "0x25b58",
+          "targetRva": "0x249ea",
+          "rawBytes": "ea490200"
+        },
+        {
+          "action": 4,
+          "tableRva": "0x25b58",
+          "targetRva": "0x24cd0",
+          "rawBytes": "d04c0200"
+        },
+        {
+          "action": 5,
+          "tableRva": "0x25b58",
+          "targetRva": "0x24f28",
+          "rawBytes": "284f0200"
+        },
+        {
+          "action": 6,
+          "tableRva": "0x25b58",
+          "targetRva": "0x24996",
+          "rawBytes": "96490200"
+        },
+        {
+          "action": 7,
+          "tableRva": "0x25b58",
+          "targetRva": "0x256c6",
+          "rawBytes": "c6560200"
+        },
+        {
+          "action": 8,
+          "tableRva": "0x25b58",
+          "targetRva": "0x256f9",
+          "rawBytes": "f9560200"
+        },
+        {
+          "action": 9,
+          "tableRva": "0x25b58",
+          "targetRva": "0x24bc7",
+          "rawBytes": "c74b0200"
+        }
+      ],
+      "rawCandidatesAreNotFacts": true
+    },
+    "selectedProcedures": 3,
+    "selectedCaseFragments": 2,
+    "initialAnalysisTimeoutSeconds": 90,
+    "wholeBinaryAnalysisComplete": false,
+    "sourceProvider": "existing offline Ghidra CLI; not REA retained evidence",
+    "files": [
+      {
+        "path": "tests/ArchitectureRecovery/Recover-GlobalVariableReceiver.ps1",
+        "sha256": "2a90eccc57c4fe1ce27335aeffb3613d7b0fa0a65472106d87db8fdf19bb7daa",
+        "byteLength": 3006
+      },
+      {
+        "path": "tests/NativeEvidence/VmNativeCapability.java",
+        "sha256": "3f8146857fed4c06c4fbb94a3cbc35a0aacd971a6d8c2a6fc73f1fcd5a177f83",
+        "byteLength": 2377
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.asm.txt",
+        "sha256": "d750c90ba92275ea108bab06576b8dd873f642c20b402d12082965e7efb2cadd",
+        "byteLength": 107531
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/18001f8c0.c",
+        "sha256": "9f4c53a80c806cefde4c7aff9c26cd128f4ff8a2371ce833b7cfcfc9f4126a64",
+        "byteLength": 138644
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/1800245bd.asm.txt",
+        "sha256": "c52a0ee613fd4e93d3aebb0449c96030dc25c2c0bbe04e8e0a79e5e4397a8699",
+        "byteLength": 5661
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/1800245bd.c",
+        "sha256": "0a02e1c54378c1768420dcbf73a17d80d90f9704eccc957d5ddaad13feb9ad37",
+        "byteLength": 4819
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/1800249ea.asm.txt",
+        "sha256": "ac9d4b36b789c2a5bf7523c036abf99a9d74952e8a20652224e34cfb399e1e0f",
+        "byteLength": 3530
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/1800249ea.c",
+        "sha256": "9cf8a66e7bd754dfc34943b5bf0b278ef7b319104e781891bcf438afb0af6cdf",
+        "byteLength": 3574
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/180028110.asm.txt",
+        "sha256": "b648ea5b3f7678266aaf0617a8a9ccaea8796d0dd11f220b6faa14b2f4f410de",
+        "byteLength": 2275
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/180028110.c",
+        "sha256": "ff18b92b033f799ebecd24756a05e233bcbf640727dd43e0633a43c9c86da473",
+        "byteLength": 1232
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.asm.txt",
+        "sha256": "7c1d74b3e621124363ab0cbd23de96f739a7da480e0715183c39a68ca637c5a6",
+        "byteLength": 5747
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/180028c30.c",
+        "sha256": "33f79075e8cdab42f78cc43ccb74e4c74e5db2c3e0ad25d67ba058ea76ba8579",
+        "byteLength": 3899
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/completion-details.json",
+        "sha256": "216f9eb89a76580c6b3ab7c24dfa3e0e15ad4e70f35718ba6fdf0dc87564e28e",
+        "byteLength": 131
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/completion-initial.json",
+        "sha256": "397d54b9fc806507013cec8b7a352ea5c41d48de62dc13df40a4f4154e21cde4",
+        "byteLength": 131
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/functions-1792583673368.tsv",
+        "sha256": "ba2c38bc99c66bb73d22a5ef69fe02d6d9311258dc5f1b4fb3202ad14a10418c",
+        "byteLength": 1382
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/functions-1792583814962.tsv",
+        "sha256": "8996bf2759ca0a9286cadea702097a168890e77958f2655d2a405439495267c5",
+        "byteLength": 577
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/invocation-details.json",
+        "sha256": "1f2a8c62c362bf4a6d2cf7b84780b348cb111d3dcd40af2d16b4b7dd5cf46858",
+        "byteLength": 2384
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/invocation-initial.json",
+        "sha256": "156290cf3ef6c7a50b04992c742a9c5a60179b6e35ccf59170f3e9acb2b3081d",
+        "byteLength": 2444
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/pe-layout.json",
+        "sha256": "4e9f1383eb791c7c8056ee9bf1983cd8fffce20976f5b4cfdd42f6a3753028d9",
+        "byteLength": 194875
+      }
+    ],
+    "completions": [
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/completion-initial.json",
+        "exitCode": 0,
+        "liveProcessHandle": null,
+        "vendorExecuted": false,
+        "finishedUtc": "2026-10-21T11:54:33.7528451Z"
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-receiver.resources/completion-details.json",
+        "liveProcessHandle": null,
+        "vendorExecuted": false,
+        "finishedUtc": "2026-10-21T11:56:55.2671490Z",
+        "exitCode": 0
+      }
+    ],
+    "liveProcessHandle": null,
+    "originalRuntimeExecuted": false,
+    "targetCodeExecuted": false,
+    "deviceCalled": false,
+    "anotherWorktreeRead": false,
+    "implementationChanges": false,
+    "fullOriginalChainClosed": false
+  }
+}

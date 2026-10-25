@@ -1,0 +1,32 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>J04 候选范围小探针：独立 C 出现在通用来源表，却不能订阅到 B</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass5-candidate-scope-probe.md">下载原始文件</a></nav><main><h1 id="j04-候选范围小探针独立-c-出现在通用来源表却不能订阅到-b">J04 候选范围小探针：独立 C 出现在通用来源表，却不能订阅到 B</h1><p>范围仅为一个 A→B、C 独立的输入候选/执行前驱差异；没有修改产品或 <code>tool-plugins</code>。运行命令：</p>
+<pre><code class="language-powershell">dotnet run --project tests/WorkflowCandidateScope.Checks/WorkflowCandidateScope.Checks.csproj -c Release
+</code></pre>
+<p>探针使用实际 <code>GraphEditorDocument</code> 建立 A=ImageSource、B=ImageBinary、C=ImageSource，<code>Connect(A.Image,B.Image)</code> 生成 A→B 执行边，C 无执行边。反射调用现有 <code>MainWindow.WorkflowSources(&quot;main&quot;, GrayImage)</code>，再调用真实 <code>WorkflowConfigurationSubscriptionService.Enumerate(Combination/Image/IMAGE)</code>；最后提出 <code>C.Image</code> 对 <code>B.Image</code> 的订阅，既直接检查 <code>GraphValidator</code>，又调用实际 <code>GraphEditorDocument.SetProcedureInputSubscription</code>。结果四项全部通过：</p>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th>观察</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>WorkflowSources</code></td>
+<td>返回 A 与独立 C 的可流入图像输出；这个通用方法按当前流程全部节点枚举，没有执行祖先过滤，也包含 B 自己的输出。<code>EditToolInput</code> 随后排除自己，但仍不排除 C。</td>
+</tr>
+<tr>
+<td>类型化订阅桥 <code>Enumerate</code></td>
+<td>只列执行祖先 A，排除 C。</td>
+</tr>
+<tr>
+<td><code>GraphValidator</code></td>
+<td>将 B 输入改提为 C 输出时报 <code>DataExecutionOrder / Subscribed source must precede consumer</code>。</td>
+</tr>
+<tr>
+<td><code>GraphEditorDocument</code></td>
+<td>同一改动抛出该错误，A→B 旧连线仍保留，未写入错误订阅。</td>
+</tr>
+</tbody></table>
+<p>当前源码调用点：<code>src/VisionEditor/WorkflowConfigurationHost.cs:15</code> 的 <code>WorkflowSources</code>；<code>src/VisionEditor/ToolEditorHost.cs:46</code> 的普通工具输入选择；<code>src/VisionPluginContracts/WorkflowConfigurationSubscriptionService.cs:33,107</code> 的候选及执行祖先；<code>src/VisionFramework/GraphValidator.cs:30-31</code> 的执行先后判定；<code>src/VisionEditor.Core/GraphEditorDocument.cs:159</code> 的编辑前拦截。因此 <strong>同一 B 输入存在两条当前候选路径，范围并不一致</strong>；通用工具输入选择器可能展示最终不允许写入的 C，当前确认会拒绝而非静默生成坏图。探针未打开实际下拉窗口，也未证明所有插件使用哪一种编辑器入口。</p>
+<p>原版证据边界：安装 <code>VM.Core.dll</code> 的 <code>VmModule.GetFrontIOWithLeafItemsByName</code> 本体 CIL 为 <code>analysis/joint-audit/VM.Core.GetFrontIOWithLeafItemsByName.il</code>（SHA-256 <code>A442D5B02176056DC4BC2BA972713B87CF12916BF54F58A1F9ECF8916C79F71C</code>），对照 <code>analysis/decompiled/VM.Core/VM.Core/VmModule.cs:3961-3994,4049</code>（SHA-256 <code>53E2F0F9032C4631B59CF0EB2A00E06D50469D94706E7E370E9CC7E1059C72CE</code>）。<code>GetFrontParamItems</code> 从 <code>PreModules</code> 递归取执行前驱，并可加父模块；随后 <code>GetFrontIOWithLeafItemsByName</code> 加变量模块、按类型及 <code>CanSubscribeA &amp;&amp; Visible</code> 过滤。这支持“仅拓扑前驱的普通模块候选”规则，但 <strong>未复验原版在此具体 A/B/C 图中的 <code>PreModules</code> 维护、编辑器列表或显示文案</strong>；本探针不代替原机差分。</p>
+<p>审计文件：<code>tests/WorkflowCandidateScope.Checks/Program.cs</code> SHA-256 <code>FD1C83D506694A6F848E9EABA9F3A22BFF9B3563328CA802ED41B3E1AC3DDB44</code>；<code>analysis/joint-audit/candidate-scope/checks.log</code> SHA-256 <code>1BA8DBF1AD50740919F206463619BD2059ADCD212E74CD41B56B7230E771FB88</code>；<code>analysis/joint-audit/candidate-scope/candidate-scope.json</code> SHA-256 <code>9BCB6DDFF6743D05B7D26963A435D736BEC6662F431808BBA48736242AAB1827</code>。JSON 包含本次随机节点 ID、两组实际候选及验证器错误；重新运行会生成新 ID 与新哈希。仅代码级可复验，人工宿主验收另计。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass5-candidate-scope-probe.md · SHA256 04177b30aa12f33b907b84ee6240ca2ef626f916a075067681ab4435f7b35680<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

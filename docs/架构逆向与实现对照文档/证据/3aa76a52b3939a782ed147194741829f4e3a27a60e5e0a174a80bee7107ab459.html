@@ -1,0 +1,87 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 3aa76a52b393 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 3aa76a52b393</p><h1>原文证据 3aa76a52b393</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 3aa76a52b3939a782ed147194741829f4e3a27a60e5e0a174a80bee7107ab459。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/result-image-selection.resources/VMControls.WPF.DataForUI.ModuleDisplayDecorator.decompiled.cs:1039–1123
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+	public void Dispose()
+	{
+		DeInit();
+		ModuleDisplayInfoList.Clear();
+		AlgorithmItems = null;
+		ModuleParams = null;
+		DecorateSource = null;
+		LogHelper.Info(&quot;模块装饰器数据清空结束&quot;);
+	}
+
+	internal void DeInit()
+	{
+		LogHelper.Info(&quot;模块&quot; + VMModule?.Name + &quot;装饰器数据清空开始&quot;);
+		WeakEventManager&lt;IVmModule, EventArgs>.RemoveHandler(VMModule, &quot;AsyncModuleResultCallBackArrived&quot;, ParentUI.OnModuleCallBackArrived);
+		if (ModuleParams != null)
+		{
+			WeakEventManager&lt;ParamRoot, EventArgs>.RemoveHandler(ModuleParams, &quot;ParamRootReloadEnd&quot;, OnParamRootReloadEnd);
+		}
+		IVmModule vmModule = VMModule;
+		while (!(vmModule is IVmProcedure))
+		{
+			vmModule = vmModule.Parent as IVmModule;
+			if (vmModule == null)
+			{
+				break;
+			}
+		}
+		if (vmModule is IVmProcedure)
+		{
+			WeakEventManager&lt;IVmProcedure, EventArgs>.RemoveHandler(vmModule as IVmProcedure, &quot;AsyncWorkStatusCallBack&quot;, ParentUI.OnPreduceResultCallBackArrived);
+		}
+		WeakEventManager&lt;ObservableCollection&lt;VmModule>, NotifyCollectionChangedEventArgs>.RemoveHandler(VMModule.PreModules as ObservableCollection&lt;VmModule>, &quot;CollectionChanged&quot;, OnPreModulesChanged);
+		UnRefreshShapeList();
+		groupOfImageDynamicObject.ForEach((DynamicObject p) =>
+		{
+			WeakEventManager&lt;DynamicObject, EventArgs>.RemoveHandler(p, &quot;MappingChanged&quot;, ModuleDisplayDecorator_MappingChanged);
+		});
+		if (ModuleParams != null)
+		{
+			IList&lt;object> displayList = ModuleParams.GetDisplayList();
+			if (displayList != null)
+			{
+				foreach (Apps.XmlParser.Object item in displayList)
+				{
+					if (item.Type != &quot;image&quot; &amp;&amp; item.Type != &quot;pixelinfoimage&quot;)
+					{
+						item.RemoveOutputFilter();
+						WeakEventManager&lt;Apps.XmlParser.Object, EventArgs>.RemoveHandler(item, &quot;ValueChanged&quot;, ParentUI.P_ValueChanged);
+					}
+				}
+				WeakEventManager&lt;INotifyCollectionChanged, NotifyCollectionChangedEventArgs>.RemoveHandler(displayList as INotifyCollectionChanged, &quot;CollectionChanged&quot;, OnPreModulesChanged);
+			}
+		}
+		curRelatedDisplayList = null;
+		if (VMModule?.Inputs != null)
+		{
+			foreach (object input in VMModule.Inputs)
+			{
+				if (input is IVmIO { TypeName: &quot;IMAGE&quot; } vmIO)
+				{
+					WeakEventManager&lt;IVmIO, EventArgs>.RemoveHandler(vmIO, &quot;RelatedIOChanged&quot;, ParentUI.OnRelatedIOChanged);
+				}
+			}
+			if (VMModule is IVmModuleSet)
+			{
+				WeakEventManager&lt;VmIOCollection, NotifyCollectionChangedEventArgs>.RemoveHandler(VMModule.Inputs as VmIOCollection, &quot;CollectionChanged&quot;, DynamicInputs_CollectionChanged);
+			}
+		}
+		ParentUI.Dispatcher.Invoke(() =>
+		{
+			ParentUI.ClearModuleView();
+		});
+		dataRecords.Clear();
+		ShapeList.Clear();
+		MosuleDecoratorAddition?.DeInit();
+		ResultData.Clear();
+		DeInitImageList();
+		ErrorInfo = null;
+		SelectedItemPath = null;
+		RecordTimer.Tick -= RefreshRecordTimerTick;
+		RecordTimer.Stop();
+		RecordTimer = null;
+		renderDataCenter.DeInit();
+		IsShowCoordinate = false;
+	}</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/image-pipeline--display.html">数据/image-pipeline--display.html</a></li><li><a href="../数据/image-pipeline--retirement.html">数据/image-pipeline--retirement.html</a></li><li><a href="../数据/retirement-operation-map--config.html">数据/retirement-operation-map--config.html</a></li><li><a href="../数据/retirement-operation-map--delete.html">数据/retirement-operation-map--delete.html</a></li><li><a href="../数据/retirement-operation-map--window.html">数据/retirement-operation-map--window.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

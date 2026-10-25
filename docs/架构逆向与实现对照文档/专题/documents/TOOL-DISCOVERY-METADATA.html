@@ -1,0 +1,41 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>工具目录元数据发现：原生证据与独立实现 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 工具目录元数据发现：原生证据与独立实现</p><h1>工具目录元数据发现：原生证据与独立实现</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>工具目录元数据发现：原生证据与独立实现</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="TOOL-DISCOVERY-METADATA.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="TOOL-DISCOVERY-METADATA.html#工具目录元数据发现原生证据与独立实现">工具目录元数据发现：原生证据与独立实现</a></p><p style="margin-left:14px"><a href="TOOL-DISCOVERY-METADATA.html#原生证据">原生证据</a></p><p style="margin-left:14px"><a href="TOOL-DISCOVERY-METADATA.html#当前独立实现">当前独立实现</a></p><p style="margin-left:14px"><a href="TOOL-DISCOVERY-METADATA.html#后续合流">后续合流</a></p></details><h1 id="工具目录元数据发现原生证据与独立实现">工具目录元数据发现：原生证据与独立实现</h1><p>2026-10-19补充：策略改为最后匹配项覆盖，专项11项通过；UserTools/GroupTools原生首次仅首个有效条目，本地全量是独立差异。第二轮闭合悬停/展开/右键共享缓存、扫描前IsInit置位与失败残留、Group完成回调早于托管模型落地，见 <a href="LOADER-ROUND2-20261019.html">加载第二轮</a>。本地扫描器仍未接入主宿主，不复制原生失败残留或宣称插件生命周期完成。</p>
+<p>更新：2026-10-17。范围仅为工具目录元数据，不包含程序集自动加载或主窗口工具箱接入；不能据此声明 NFI-07 完成。</p>
+<h2 id="原生证据">原生证据</h2><table>
+<thead>
+<tr>
+<th>行为</th>
+<th>原生入口</th>
+<th>确认程度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AppData.ModulesDir</code> 一级目录中有 <code>ToolGroup.xml</code> 或目录名为 <code>Global</code> 才建分类</td>
+<td><code>analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs</code> <code>LoadData</code></td>
+<td>托管源码确认</td>
+</tr>
+<tr>
+<td>普通分类先插入代理条目，展开时 <code>UpdateLoad</code> 扫描子目录 <code>ToolItemInfo.xml</code> 并按 Priority 排序；<code>UserTools</code>、<code>GroupTools</code> 初次直接读取</td>
+<td>同上 <code>LoadData</code>、<code>UpdateLoad</code></td>
+<td>托管源码确认</td>
+</tr>
+<tr>
+<td>全局工具单独筛选 <code>ProcedureModule</code>、<code>GlobalCameraModule</code>、<code>DataQueueModule</code>；<code>Reload</code> 清缓存并通知视图</td>
+<td>同上 <code>GetItems</code>、<code>Reload</code></td>
+<td>托管源码确认</td>
+</tr>
+<tr>
+<td>拖放节点携带 <code>ModuleDir</code>、<code>ModuleTypeName</code>、<code>DisplayType</code>；鼠标按下后首次移动开始拖放</td>
+<td><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ToolItemGrid.cs</code></td>
+<td>托管源码确认</td>
+</tr>
+<tr>
+<td>Group 的程序集搜索/装载属于专门路径，不能外推成所有工具的加载器</td>
+<td><code>analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs</code> <code>LoadAssemblies</code></td>
+<td>托管源码确认</td>
+</tr>
+</tbody></table>
+<p>真实安装样本 <code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ToolGroup.xml</code>、<code>Collection/ImageSourceModule/ToolItemInfo.xml</code> 已只读核对，包含 <code>name</code>、<code>priority</code>、<code>displayType</code>、<code>toolTip</code> 字段。</p>
+<h2 id="当前独立实现">当前独立实现</h2><p><code>src/VisionEditor/ToolDirectoryCatalog.cs</code> 只解析 XML、分类及优先级策略；普通分类延迟展开，全局工具按原生白名单过滤，损坏 XML 产生诊断且不阻断其他工具。为避免读取外部实体，独立读取器拒绝 DTD。它没有加载 DLL、建立 <code>ModuleRegistry</code> 工厂或激活工具。与原生代码的具体差异：当前对同 Priority 使用目录名作稳定次排序；原生比较器相等时返回 0，最终顺序依赖枚举和列表排序。独立扫描器在缺失目录时返回诊断，原生相应异常路径未做桌面对照。</p>
+<p><code>tests/ToolDirectoryCatalog.Checks</code> 验证分类延迟加载、策略优先级、全局白名单、无效 XML/DTD 诊断、缺目录、重复展开以及展示类型。受控目录专项结果：9 项检查通过。以原厂已安装目录只读运行：16 分类、<code>Collection</code> 展开后 5 工具、初始扫描 0 诊断。此为<strong>元数据读取对照</strong>，不是原厂 UI/拖放/插件生命周期验收。</p>
+<h2 id="后续合流">后续合流</h2><p>插件线提供经过审计的工具身份、版本、资源及工厂清单后，框架线需确定“目录条目 → 已注册工具”的显式映射，并处理缺失、版本冲突、禁用及 Reload。待插件线交付正在修改的共享入口后，再把扫描结果接入 WPF <code>ToolNavigation</code>；不可扫描未知 DLL 后直接执行。完成主窗口展开、拖放、配置、运行、保存重开和关闭释放的实际操作验证后，才可更新 NFI-07 的完成状态。</p>
+<p class="meta">来源：docs/TOOL-DISCOVERY-METADATA.md · SHA256 52d51f206f1a2b56abb90ecc7f591c35968924ac10798bda951ead24499c6a24<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

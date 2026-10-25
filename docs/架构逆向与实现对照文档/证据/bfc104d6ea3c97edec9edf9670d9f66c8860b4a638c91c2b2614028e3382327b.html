@@ -1,0 +1,82 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 bfc104d6ea3c · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 bfc104d6ea3c</p><h1>原文证据 bfc104d6ea3c</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 bfc104d6ea3c97edec9edf9670d9f66c8860b4a638c91c2b2614028e3382327b。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>        public async Task RunSolutionAsync(
+            IEnumerable&lt;WorkflowTabViewModel> workflows,
+            Solution solution,
+            CancellationToken cancellationToken = default)
+        {
+            if (workflows == null)
+                throw new ArgumentNullException(nameof(workflows));
+            if (solution == null)
+                throw new ArgumentNullException(nameof(solution));
+
+            using var solutionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            lock (_lock)
+            {
+                if (_transitionBlocked || _solutionRunCts != null ||
+                    (_communicationOperation &amp;&amp; !_communicationOwner.Value))
+                    throw new InvalidOperationException(&quot;已有方案执行、通讯操作或切换操作。&quot;);
+                _solutionRunCts = solutionCancellation;
+            }
+            try
+            {
+            cancellationToken = solutionCancellation.Token;
+            var tabs = workflows.Where(tab => tab != null).ToList();
+            if (!_communicationOwner.Value)
+                await InvokeOnUIAsync(() => CommitPendingEditors(null));
+            var tabsById = tabs.ToDictionary(tab => tab.RootWorkflowId, StringComparer.Ordinal);
+            var plan = SolutionExecutionDependencyGraph.Compile(solution);
+            var runtimeGlobals = solution.GlobalVariables.Where(variable => variable.ProducerBinding == null &amp;&amp; string.IsNullOrEmpty(variable.RebindingReason) &amp;&amp; string.IsNullOrEmpty(variable.BindingValidationPending))
+                .ToDictionary(variable => variable.Name, variable => variable.Value, StringComparer.Ordinal);
+            var workflowPredecessors = BuildWorkflowPredecessors(plan, tabsById.Keys);
+            var completed = new HashSet&lt;string>(StringComparer.Ordinal);
+            var failed = new HashSet&lt;string>(StringComparer.Ordinal);
+            var pending = new HashSet&lt;string>(tabsById.Keys, StringComparer.Ordinal);
+
+            while (pending.Count > 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var ready = pending
+                    .Where(id => workflowPredecessors[id].All(predecessor =>
+                        completed.Contains(predecessor) || failed.Contains(predecessor)))
+                    .OrderBy(id => tabs.FindIndex(tab => tab.RootWorkflowId == id))
+                    .ToList();
+                if (ready.Count == 0)
+                    throw new InvalidOperationException(&quot;存在未完成的跨流程依赖，无法继续解决方案运行。&quot;);
+
+                // WorkflowExecutionEngine 当前根会话互斥；此处按已推导的顺序提交。
+                var workflowId = ready[0];
+                var tab = tabsById[workflowId];
+                // A failed workflow may still have successful producers. Let the next workflow
+                // execute its independent nodes; missing producer values fail only their consumers.
+
+                if (!TryAcquireExecution(workflowId))
+                    throw new InvalidOperationException($&quot;流程 {tab.Name} 已在运行，不能加入本次解决方案运行。&quot;);
+
+                try
+                {
+                    tab.IsRunning = true;
+                    OnWorkflowExecutionStarted(workflowId);
+                    var executionResult = await ExecuteSingleTriggeredAsync(tab, cancellationToken, runtimeGlobals);
+                    ApplyProducedGlobalValues(solution, workflowId, executionResult, runtimeGlobals);
+                    if (executionResult.Success)
+                    {
+                        completed.Add(workflowId);
+                        OnWorkflowExecutionCompleted(workflowId);
+                    }
+                    else
+                    {
+                        failed.Add(workflowId);
+                        OnWorkflowExecutionError(workflowId, string.Join(&quot;; &quot;, executionResult.Errors));
+                    }
+                }
+                finally
+                {
+                    tab.IsRunning = false;
+                    pending.Remove(workflowId);
+                    ReleaseExecution(workflowId);
+                }
+            }
+            }
+            finally { lock (_lock) _solutionRunCts = null; }
+        }
+
+        /// &lt;summary></pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis.html">数据/global-variable-analysis.html</a></li><li><a href="../数据/global-variable-analysis--GEX12.html">数据/global-variable-analysis--GEX12.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

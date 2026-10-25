@@ -1,0 +1,128 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenSolution / OpenSolutionNative / OpenSolutionRemote · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>OpenSolution / OpenSolutionNative / OpenSolutionRemote · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-O01"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>OpenSolution / OpenSolutionNative / OpenSolutionRemote → 忙状态门 → StopRun → LoadSolution调用</h2><p>三入口都检查非创建/保存/加载才继续。StopRun只调用MutiOrStopRun(false)，设置ContinuousRunEnable=false；本地/Native用LoadSolution默认参数，Remote传isRemoteMode=true。三者日志不同；此包装没有等待Task/当前轮结束的显式代码。 所选下游VmSolution停止路径还会逐流程RefreshUIStopExecute，后者Task.Run后SyncWaitor.Wait，不能把包装无显式等待解释为保证非阻塞。</p><p><a href="../专题/solution-lifecycle.html#edge-O01">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/solution-lifecycle.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/solution-lifecycle.edges.json · SHA256 7944a8626b4f9828308bb58d1f46d6db6017593b9a73415f49f26bbad9517eef</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="9fc06f8dcf994b29889024b38c473610816456a822d20f7e295f449243e14678">{
+  &quot;id&quot;: &quot;O01&quot;,
+  &quot;route&quot;: &quot;原版 · 打开方案&quot;,
+  &quot;from&quot;: &quot;OpenSolution / OpenSolutionNative / OpenSolutionRemote&quot;,
+  &quot;to&quot;: &quot;忙状态门 → StopRun → LoadSolution调用&quot;,
+  &quot;behavior&quot;: &quot;三入口都检查非创建/保存/加载才继续。StopRun只调用MutiOrStopRun(false)，设置ContinuousRunEnable=false；本地/Native用LoadSolution默认参数，Remote传isRemoteMode=true。三者日志不同；此包装没有等待Task/当前轮结束的显式代码。 所选下游VmSolution停止路径还会逐流程RefreshUIStopExecute，后者Task.Run后SyncWaitor.Wait，不能把包装无显式等待解释为保证非阻塞。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs&quot;,
+      &quot;member&quot;: &quot;open solution wrappers&quot;,
+      &quot;sha256&quot;: &quot;b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187&quot;,
+      &quot;start&quot;: 444,
+      &quot;end&quot;: 477,
+      &quot;excerpt&quot;: &quot;\tpublic static void OpenSolution()\n\t{\n\t\tif (!ProjectManager.GetInstance().IsCreating &amp;&amp; !((IVmSolution)VmSolution.Instance).IsSaving &amp;&amp; !((IVmSolution)VmSolution.Instance).IsLoading)\n\t\t{\n\t\t\tStopRun();\n\t\t\tLogHelper.Info(\&quot;OpenSolution\&quot;);\n\t\t\tUILogManager.logCreate(\&quot;信息\&quot;, \&quot;Lang_OpenSol\&quot;, true, true);\n\t\t\tProjectManager.GetInstance().LoadSolution();\n\t\t}\n\t}\n\n\tpublic static void OpenSolutionNative()\n\t{\n\t\tif (!ProjectManager.GetInstance().IsCreating &amp;&amp; !((IVmSolution)VmSolution.Instance).IsSaving &amp;&amp; !((IVmSolution)VmSolution.Instance).IsLoading)\n\t\t{\n\t\t\tStopRun();\n\t\t\tLogHelper.Info(\&quot;OpenSolution\&quot;);\n\t\t\tProjectManager.GetInstance().LoadSolution();\n\t\t}\n\t}\n\n\tpublic static void OpenSolutionRemote()\n\t{\n\t\tif (!ProjectManager.GetInstance().IsCreating &amp;&amp; !((IVmSolution)VmSolution.Instance).IsSaving &amp;&amp; !((IVmSolution)VmSolution.Instance).IsLoading)\n\t\t{\n\t\t\tStopRun();\n\t\t\tLogHelper.Info(\&quot;OpenSolution\&quot;);\n\t\t\tUILogManager.logCreate(\&quot;信息\&quot;, \&quot;远程打开方案\&quot;, true, true);\n\t\t\tProjectManager.GetInstance().LoadSolution(null, isGuid: false, null, null, isRemoteMode: true);\n\t\t}\n\t}\n\n\tpublic void OpenRecentlySolution()\n\t{&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs&quot;,
+      &quot;member&quot;: &quot;StopRun setter wrapper&quot;,
+      &quot;sha256&quot;: &quot;b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187&quot;,
+      &quot;start&quot;: 1500,
+      &quot;end&quot;: 1508,
+      &quot;excerpt&quot;: &quot;\tprivate static void MutiOrStopRun(bool isContinousRunEnable)\n\t{\n\t\t((IVMRun)VmSolution.Instance).ContinuousRunEnable = isContinousRunEnable;\n\t}\n\n\tpublic static void StopRun()\n\t{\n\t\tMutiOrStopRun(isContinousRunEnable: false);\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/menuitems.xml&quot;,
+      &quot;member&quot;: &quot;open solution menu&quot;,
+      &quot;sha256&quot;: &quot;d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959&quot;,
+      &quot;start&quot;: 16,
+      &quot;end&quot;: 20,
+      &quot;excerpt&quot;: &quot;\t\t\t\t\t&lt;name>Lang_OpenSol&lt;/name>\n\t\t\t\t\t&lt;methodName>OpenSolution&lt;/methodName>\n\t\t\t\t\t&lt;toolGroupItemInfo>\n\t\t\t\t\t\t&lt;groupName>group0&lt;/groupName>\n\t\t\t\t\t\t&lt;priority>1&lt;/priority>&quot;,
+      &quot;evidenceType&quot;: &quot;local-extracted-resource&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/solution-lifecycle-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::OpenSolution&quot;,
+      &quot;sha256&quot;: &quot;5e54d6e844424474319b7ff6af3370ade0cc39cc396f847dfa2407b8b8bc186e&quot;,
+      &quot;start&quot;: 1572,
+      &quot;end&quot;: 1591,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002a7\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002a7\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;OpenSolution\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 99,\n          \&quot;ilSha256\&quot;: \&quot;c56d6d571b60c4c8a719b87be20be0c34e92f793e60db5e914e650c2b16a1a3a\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0028430100066f380100062d18288800000a6f2703000a2d0c288800000a6f5e01000a2b01170a062c022b3628e9020006007207380070283700000a007255000070720d2400701717282e00000a26284301000614161414161616176f53010006262a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/solution-lifecycle-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::OpenSolutionNative&quot;,
+      &quot;sha256&quot;: &quot;5e54d6e844424474319b7ff6af3370ade0cc39cc396f847dfa2407b8b8bc186e&quot;,
+      &quot;start&quot;: 1953,
+      &quot;end&quot;: 1972,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002a8\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002a8\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;OpenSolutionNative\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 81,\n          \&quot;ilSha256\&quot;: \&quot;360928bf087a011e205f171565acad9a02b540c2925326328f0f57200f81dab6\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0028430100066f380100062d18288800000a6f2703000a2d0c288800000a6f5e01000a2b01170a062c022b2428e9020006007207380070283700000a00284301000614161414161616176f53010006262a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/solution-lifecycle-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::OpenSolutionRemote&quot;,
+      &quot;sha256&quot;: &quot;5e54d6e844424474319b7ff6af3370ade0cc39cc396f847dfa2407b8b8bc186e&quot;,
+      &quot;start&quot;: 2277,
+      &quot;end&quot;: 2296,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002a9\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002a9\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;OpenSolutionRemote\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 99,\n          \&quot;ilSha256\&quot;: \&quot;0e8df6030ef0d122241ecb3f76c594d9322675d25c475d564f1cc19e478451d7\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0028430100066f380100062d18288800000a6f2703000a2d0c288800000a6f5e01000a2b01170a062c022b3628e9020006007207380070283700000a00725500007072213800701717282e00000a26284301000614161414171616176f53010006262a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/solution-lifecycle-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::MutiOrStopRun&quot;,
+      &quot;sha256&quot;: &quot;5e54d6e844424474319b7ff6af3370ade0cc39cc396f847dfa2407b8b8bc186e&quot;,
+      &quot;start&quot;: 2658,
+      &quot;end&quot;: 2677,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002e8\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002e8\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;MutiOrStopRun\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Private, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;00010102\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 14,\n          \&quot;ilSha256\&quot;: \&quot;6f4df35d3841c93da713f625246bf50e72097945548cbfc33ac192e5945c014b\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00288800000a026f9b03000a002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/solution-lifecycle-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::StopRun&quot;,
+      &quot;sha256&quot;: &quot;5e54d6e844424474319b7ff6af3370ade0cc39cc396f847dfa2407b8b8bc186e&quot;,
+      &quot;start&quot;: 2735,
+      &quot;end&quot;: 2754,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002e9\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002e9\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;StopRun\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 9,\n          \&quot;ilSha256\&quot;: \&quot;9ce082e7e268d6eebde2451c0553606d98ab7b5c24f8844f8a95f94d6d11f0cf\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;001628e8020006002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/run-exit-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Core.VmSolution::set_ContinuousRunEnable&quot;,
+      &quot;sha256&quot;: &quot;daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304&quot;,
+      &quot;start&quot;: 3853,
+      &quot;end&quot;: 3872,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x0600005b\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x0600005b\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Core.VmSolution\&quot;,\n            \&quot;name\&quot;: \&quot;set_ContinuousRunEnable\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Public, Virtual, HideBySig, SpecialName\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;20010102\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 128,\n          \&quot;ilSha256\&quot;: \&quot;eaa5768b488331ad29b2a6b512764a12726c3cb171e5f1bf576f932f6a63e4a4\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;731e0700060a06037dec0200040002285c000006067bec020004fe0116fe010b072c0f0002067bec020004285d0000060000067bec02000416fe010c082c0f0002067bec0200046f1a00000a0000067bec02000416fe010d092c240002280f060006280d00002b281000002b06fe061f07000673ea01000a6feb01000a00002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;newobj\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/run-exit-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.PlatformSDKCS.ProcessManager::RefreshUIStopExecute&quot;,
+      &quot;sha256&quot;: &quot;daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304&quot;,
+      &quot;start&quot;: 7389,
+      &quot;end&quot;: 7408,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000281\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000281\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.PlatformSDKCS.ProcessManager\&quot;,\n            \&quot;name\&quot;: \&quot;RefreshUIStopExecute\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;20010109\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 52,\n          \&quot;ilSha256\&quot;: \&quot;2243703171a6de4be81e3ee74f669e4949f424281fe11403095d2dde6ddce11c\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;73760700060a06037d781100040006167d7911000406fe0677070006732701000a282801000a26067c79110004281d00000a002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;newobj\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/sync-wait-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;Hik.Util.SyncWaitor::Wait&quot;,
+      &quot;sha256&quot;: &quot;784e94d027d54140067746df8e0254d3ba720bc0ee91d77caef5a78d3fb9b216&quot;,
+      &quot;start&quot;: 43,
+      &quot;end&quot;: 62,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060000a8\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060000a8\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;Hik.Util.SyncWaitor\&quot;,\n            \&quot;name\&quot;: \&quot;Wait\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;0001011002\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 78,\n          \&quot;ilSha256\&quot;: \&quot;f968505e5f834911e59a84b4feaebbc8ffb23bfb712fd7f9ad66ab03a8d8a4c9\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0002470a160c2b400002470a060d092c03002b3912011616161728a20000060c0816fe02130411042c1400120128a400000626120128a300000626002b090017283301000a0000001713052bbb2a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;26b90443046fb2cb7f4cda3d4ef364a93c9a9ba65b492ba90da98abe01b2c3a0 / MVID 96462886-0dfe-4999-8e3b-5d9df578645f&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;停止调用/标志路径见execution-storage Q01–Q06；单参Wait会分发消息、无本地超时（Q09），实际重入、内存可见性及native完成仍未知。&quot;
+  ],
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

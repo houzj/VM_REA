@@ -1,0 +1,44 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D02 batch2：独立方案多次另存、历史与资源身份</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/D02-storage-batch2.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#d02-batch2独立方案多次另存历史与资源身份">D02 batch2：独立方案多次另存、历史与资源身份</a></p><p style="margin-left:14px"><a href="#本轮问题与源码">本轮问题与源码</a></p><p style="margin-left:14px"><a href="#操作级检查">操作级检查</a></p><p style="margin-left:14px"><a href="#结论和未关闭范围">结论和未关闭范围</a></p></details><h1 id="d02-batch2独立方案多次另存历史与资源身份">D02 batch2：独立方案多次另存、历史与资源身份</h1><p>2026-10-19；main基线 <code>6e5b05c</code>。这是独立 <code>.vmx.json</code> 的源代码/操作验证，不是原厂 <code>.sol</code>、SDK保存事务或VM撤销模型取证。原始格式仍由D01等任务追踪。本批未修改产品或tool-plugins。</p>
+<h2 id="本轮问题与源码">本轮问题与源码</h2><p>历史检查覆盖单次另存、准备失败、锁定写入失败及损坏加载，但没有组合验证“另存改变资源基目录后，多次Undo/Redo仍保持同一资源”。先读当前完整调用链，避免凭常规意图认定缺陷：</p>
+<ul>
+<li><code>src/VisionEditor.Core/GraphEditorDocument.cs::Save</code>：准备独立文档副本，Rebase到新目录，SolutionStore.Save成功后才更新document/BaseDirectory/FilePath/脏状态和Revision。</li>
+<li><code>Capture/Restore</code>：Snapshot同时保存Document、ProcedureId和BaseDirectory；Restore先将历史文档从其快照基目录重定位到当前基目录，才转移历史栈。未采用“恢复旧路径但保留新目录”的不完整模型，本轮没有发现该疑似缺口。</li>
+<li><code>Rebase</code>：重定位ResourceDocument.Path，以及明确支持的内置 <code>vision.image-file</code> 字符串Path；不推断其他插件私有参数路径。</li>
+<li><code>src/VisionFramework/SolutionStore.cs::Save</code>：结构/编码/大小校验、同目录独占临时文件、Flush、替换、finally清理；<code>Load</code>校验版本、重复及未知属性等。</li>
+<li><code>src/VisionFramework/GeometryResources.cs::ResourceCatalog.OpenVerified</code>：磁盘与嵌入字节分别打开，有摘要时完整哈希验证并复位流位置，调用方持有流所有权。</li>
+</ul>
+<p>以上为本地重构源码事实，不是REA原程序证据。按REA技能的范围规则，普通完整源代码审查不重复调用原生引擎。仅在将来对照原厂实现时使用其原始成员/指令证据。</p>
+<h2 id="操作级检查">操作级检查</h2><p>新增 <code>tests/VisionEditor.SaveHistoryChecks</code>，引用真实main Core/Framework/Modules；不用镜像实现或mock存储器。为每次运行建立独占GUID目录并保留实际文件和result.json，无递归清理。资源使用固定二进制字节及SHA256，不运行图像算法。</p>
+<table>
+<thead>
+<tr>
+<th>操作序列</th>
+<th>验证内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原目录加载→改名→另存到first</td>
+<td>磁盘/嵌入资源完整字节，内置图像Path仍解析到原资产</td>
+</tr>
+<tr>
+<td>Undo跨原目录历史快照</td>
+<td>恢复改名前名称但保持当前first文件/目录，脏状态及redo保留，资源身份一致</td>
+</tr>
+<tr>
+<td>再另存到second→Redo跨first历史快照</td>
+<td>文件/目录仍为second，名称恢复编辑值，资源和内置路径均正确</td>
+</tr>
+<tr>
+<td>Undo→锁住first目标→尝试另存first</td>
+<td>实际写入失败，当前second文档/基目录/修订/脏状态/redo及目标字节不变，临时文件清除</td>
+</tr>
+<tr>
+<td>解除锁→Redo→保存second→重开</td>
+<td>redo仍有效、最终存储名称正确、资源可校验读取；原方案和资产字节不变</td>
+</tr>
+</tbody></table>
+<p>命令：<code>dotnet run --project tests/VisionEditor.SaveHistoryChecks/VisionEditor.SaveHistoryChecks.csproj -p:BuildInParallel=false -p:UseSharedCompilation=false -- analysis/full-audit/batch2-20261019/D02</code>。</p>
+<p>退出0，23项具名检查通过。日志 <code>analysis/full-audit/batch2-20261019/D02/save-history.log</code>；本次产物 <code>save-history-f1af2a7dae404d29b57c5c035af90187/result.json</code> 及所有原始/first/second文件保留。根任务串行运行此dotnet构建，其他子任务仅做各自源码或独占Framework探针。</p>
+<h2 id="结论和未关闭范围">结论和未关闭范围</h2><p>本切片验证了独立格式的跨基目录历史及失败另存事务，没有产品补丁。仅一个改名历史项跨两次另存，不证明任意深度、多种编辑历史；未设置PrepareSave，也未验证实际插件准备器资源重写。独立复核见 <a href="D02-review-batch2.html">D02-review-batch2.md</a>。D02整包不关闭：32MiB/深度边界、跨版本/未知字段策略、全部插件私有资源、复杂准备器写外部文件的副作用、跨卷/断电/真实进程中断仍未由本探针证明。当前Load显式拒绝未知属性，不能宣称保留未来字段。Save后的Changed事件异常属于提交后通知边界，未当作写盘失败原子性保证。</p>
+<p>下一步按实际使用需求拆分资源种类/准备器副作用/版本矩阵，源确认后补必要操作；不为增加测试数重复已有30项基础持久化或28项流程检查。原生格式与其未知字段保存需原始writer/reader证据，不能从本地JSON规则推导。</p>
+<p class="meta">来源：docs/reverse/D02-storage-batch2.md · SHA256 03ed3ee85cfe49c161c44a6376ba93eb3b0f63c7facad69353911aeebb70f67c<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,119 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C1：畸变工具 workspace 生命周期源码索引 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / C1：畸变工具 workspace 生命周期源码索引</p><h1>C1：畸变工具 workspace 生命周期源码索引</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C1：畸变工具 workspace 生命周期源码索引</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.html#c1畸变工具-workspace-生命周期源码索引">C1：畸变工具 workspace 生命周期源码索引</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.html#身份源码与获取边界">身份、源码与获取边界</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.html#按实际操作的源码覆盖表">按实际操作的源码覆盖表</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.html#尺寸及拟合子块">尺寸及拟合子块</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.html#池的真正所有者复用与crt释放">池的真正所有者、复用与CRT释放</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.html#产品选择验证与精确剩余项">产品选择、验证与精确剩余项</a></p></details><h1 id="c1畸变工具-workspace-生命周期源码索引">C1：畸变工具 workspace 生命周期源码索引</h1><p>2026-10-19。本轮完成有限S1/S2切片：实际模块→SDK→core对象→每轮临时descriptor→MVDCommon池的所有者、分配、复用、归还与CRT释放路径。没有运行新算法探针、没有产品补丁，也没有据此决定安全托管兼容策略。S3运行、S4实现、S6宿主验收不因此完成。</p>
+<h2 id="身份源码与获取边界">身份、源码与获取边界</h2><p>SDK为<code>MVDImageCalibCpp.dll</code>，core为<code>MVD_Algorithm.dll</code>，池为<code>MVDCommon.dll</code>，上层模块为<code>IMVSImageCalibModu.dll</code>。原文件路径、SHA256、每个方法及汇编导出哈希见<code>distortion-calibration-c1-workspace-source-index.json</code>。本轮新源码均位于本worktree <code>analysis/distortion-calibration/c1-workspace-source/{module,wrapper,core,common}/output/</code>；既有<code>7ed0c0</code>等源码另在索引标复用。</p>
+<p>REA本轮<code>binary_session</code>观察为open=false、Ghidra provider not_configured（未设GHIDRA_INSTALL_DIR），没有切换共享目标或改全局配置。经根线授权改用现有私有Ghidra项目和隔离进程补缺；来源记为私有Ghidra导出，无REA Evidence ID，不补造。common首次导入的自动分析报两条DemangledVariable建Data错误，文件导入及所选方法/汇编导出成功；不据此声称全部binary已恢复。</p>
+<h2 id="按实际操作的源码覆盖表">按实际操作的源码覆盖表</h2><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>具体方法/地址</th>
+<th>字段、分支、生命周期</th>
+<th>当前状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模块持有SDK工具</td>
+<td>Module <code>CIMVSImageCalibModu::Init</code> RVA203f0、<code>ProcessAlg</code>20820</td>
+<td><code>this+15d98</code>为空才Create；Init汇编2044e明确<code>LEA RCX,[RBX+15d98]</code>，不是无参创建。Run复用同一槽</td>
+<td>源码及ABI已闭合</td>
+</tr>
+<tr>
+<td>模块Reset/销毁</td>
+<td>Module <code>ResetMember</code>21530、<code>DeInit</code>1f9f0、析构1f470</td>
+<td>ResetMember只清结果状态；另两者取槽到RCX调用Destroy，再清槽0。析构继续基类清理</td>
+<td>源码及ABI已闭合</td>
+</tr>
+<tr>
+<td>SDK对象创建/初始化</td>
+<td>wrapper Create1000→3fe0</td>
+<td>分配68 bytes对象；句柄槽+20。4018调用前RCX=&amp;slot、EDX=69、R8D=0</td>
+<td>源码及ABI已闭合</td>
+</tr>
+<tr>
+<td>SDK Run/销毁</td>
+<td>wrapper2a70→core Process；Destroy1070→scalar deleting destructor2590→cleanup41c0</td>
+<td>Process使用operation67；41cd先把句柄槽装RCX，41d8 DestroyHandle后清槽；其它SDK子对象分别销毁，最终delete SDK对象</td>
+<td>源码及ABI已闭合</td>
+</tr>
+<tr>
+<td>core工厂/ctor</td>
+<td>core CreateHandle14930→allocator1571c30→ctor1bff0</td>
+<td>algorithm69进入608-byte calibration family；allocator保留传入RCX调用operator new。ctor设虚表181ead878、algorithm字段+130=69、descriptor区+1b0初始清零</td>
+<td>源码已闭合</td>
+</tr>
+<tr>
+<td>core Init</td>
+<td>虚表+8→1c210→1cdc0</td>
+<td>参数/句柄/descriptor初始化；旧persistent容量足够时保留type1/2，只分配type0；首次或容量增长按mask7分配；成功后替换并释放旧type1/2</td>
+<td>已取并追主路径；异常回滚细节仍逐分支开放</td>
+</tr>
+<tr>
+<td>core Process分派</td>
+<td>152b0→虚表+18→1c4e0</td>
+<td>null/许可检查；配置准备007120成功后，释放旧+600缓存，operation67→1e330。各switch返回后736c0(mask1)，包括callee错误返回；不把前置准备失败说成执行了该释放</td>
+<td>源码及ABI已闭合正常/返回错误路径</td>
+</tr>
+<tr>
+<td>descriptor请求</td>
+<td>7c4750，8项、每项78 bytes</td>
+<td>+0 size64，+8 alignment，+10 type，+18/+20地址，+28 owned。descriptor0 type1、descriptor1 type0，二者alignment128/owned1</td>
+<td>源码已闭合</td>
+</tr>
+<tr>
+<td>descriptor分配</td>
+<td>735f0→72ec0→61f0</td>
+<td>依type0/1/2映射mask1/2/4；非零请求且owned1才<code>AllocateAlignedPoolMemory(size,align,&amp;pointer)</code>，写回descriptor地址；失败回滚已分配项</td>
+<td>源码已闭合；没有清scratch</td>
+</tr>
+<tr>
+<td>descriptor每轮归还</td>
+<td>1c4e0末尾1c6ab设置R9D=1→736c0→73030</td>
+<td>只命中type0；owned1且地址非0才FreePoolMemory，再清descriptor+18。算法context旧地址值不等于仍busy或仍归该工具所有</td>
+<td>源码及ABI已闭合</td>
+</tr>
+<tr>
+<td>算法context/子块</td>
+<td>7c5340、7c7360、7c7470</td>
+<td>descriptor0的+18承载context；descriptor1底部先留alignment后的公共区，context+1e0记录该基址，按算法功能推进后context+1e8记录共享scratch尾区</td>
+<td>源码已闭合布局主链</td>
+</tr>
+<tr>
+<td>畸变调用scratch</td>
+<td>op67的1e330→7c6ba0(opf)→7f7050→7ecea0→7ed0c0→7ff3c0</td>
+<td>7f7050取context+1e8，沿包装栈参数传为7ed0c0 workspace；具体模型/点数改变内部子块，不能用一个捕获偏移外推所有n</td>
+<td>源码已闭合到已复用拟合布局</td>
+</tr>
+<tr>
+<td>core析构</td>
+<td>Destroy15270→虚表[0]1c140→1c170→1d890→1d550</td>
+<td>释放算法context，736c0(mask6)归还persistent type1/2，释放结果malloc数组，再清对象字段；另处理+600。不是仅把指针置0</td>
+<td>源码及关键ABI已闭合</td>
+</tr>
+<tr>
+<td>独立ReleaseWorkingMemory</td>
+<td>导出156e0→虚表+50→22c90</td>
+<td>只对对象+600调用FreePoolMemory并清0；不是全部descriptor scratch的统一释放入口</td>
+<td>源码已闭合</td>
+</tr>
+<tr>
+<td>独立ReleaseResultMemory</td>
+<td>导出156c0→虚表+48→bef0</td>
+<td>实际空操作返回0；不能从API名称推测释放了结果数组</td>
+<td>源码已闭合</td>
+</tr>
+</tbody></table>
+<h2 id="尺寸及拟合子块">尺寸及拟合子块</h2><p>令<code>A(x)=Align128(x)</code>。<code>7ecd50(n,&amp;size)</code>要求n≥4，使用<code>5*A(8n)+max(8n,A(max(A(8n),F_7ff240(n),F_800580(n),F_853360,F_8535a0(n),F_857920)))</code>，对总大小最高位做溢出失败检查。具体helper含原生参数保留，本文保留函数名形式，不把未展开helper常数猜成固定容量。该项作为畸变需求参与<code>7c4750</code>/<code>7c5340</code>按功能取最大scratch，descriptor1还含前部公共子区，因此不能将其总size等同7ed0c0可用尾区size。</p>
+<p>已恢复7ed0c0把outer中的前5个<code>A(8*capacityX*capacityY)</code>子区用于工具阶段，固定fit内层再按实际n布局。7ff3c0内部依次为：normalizedSource=<code>2*A(8n)</code>、normalizedTarget=<code>3*A(8n)</code>、designA=<code>4*A(8n)</code>、rhs追加<code>A(64n)</code>、Ti追加<code>A(8n)</code>、Tw追加128、pointErrors追加128、weights追加<code>A(4n)</code>、medianSort追加<code>A(16n)</code>。medianSort[-1]位于weights预留尾部，具体写来源已由前两轮n99→n80以及seq46→56、seq63→67确认。这里只把这些现象接到分配/归还链，不修改数值核。</p>
+<h2 id="池的真正所有者复用与crt释放">池的真正所有者、复用与CRT释放</h2><p>MVDCommon导出<code>AllocateAlignedPoolMemory</code> RVA8150、<code>FreePoolMemory</code>81a0共同使用DLL全局<code>DAT18001a780</code>，不是每个IImageCalibTool一份池。全局初始化13020调用15f0并注册atexit13070；池建立退出event及后台线程。</p>
+<ul>
+<li><code>18f0</code>在锁内按alignment和size桶寻找未busy且capacity≥request、差额≤30MiB的块。复用分支只返回原指针、busy=1、更新时间、减少空闲计数，没有payload memset。无可用块才malloc；alignment&gt;0时malloc(request+alignment+8)，向前对齐并在返回指针前8字节保存原malloc地址。首次系统malloc同样没有清payload承诺。</li>
+<li><code>1e40</code>找到对应块后仅busy=0、记录释放时间、增加空闲字节计数；没有CRT free。失败/非法指针返回80100006并日志。这里的“FreePoolMemory”准确含义是归还池。</li>
+<li><code>2630(pool,ageSeconds)</code>遍历未busy且空闲时间达到门槛的块，再对未对齐指针直接free，或对<code>aligned[-8]</code>中的原地址free，并从池记录移除。分配malloc失败时<code>18f0</code>调用<code>2630(pool,0)</code>清空闲块后重试一次。</li>
+<li>后台清理方法<code>24f0</code>每轮WaitForSingleObject15000ms；正常timeout累计4轮后，在空闲总量大于<code>0x12c00000</code>（300MiB）时调用<code>2630(pool,30)</code>。这是源码策略，未在真实宿主观测其触发；线程入口1570由1710以函数指针交给线程创建helper；1570的15d7汇编明确CALL24f0，不用计时推断替代调用证据。</li>
+<li>atexit13070→1800先2110遍历清理池内块，再SetEvent、等待线程结束、关闭event和互斥资源，随后销毁容器。2110对非零块使用与alignment一致的CRT free；这一层仍不是Windows VirtualFree证据，CRT/系统heap最终何时归还OS在本任务范围外。</li>
+</ul>
+<p>因此可从源码解释：每轮type0被归还后，旧payload仍可能留在进程全局池，再被同/另一工具实例重新领取。工具Destroy和pool归还均不构成payload清零；但也不能保证下一次同址或同旧值，池压力清理、容量/对齐/桶选择及其它消费者都会改变它。</p>
+<h2 id="产品选择验证与精确剩余项">产品选择、验证与精确剩余项</h2><p>没有产品修改。当前托管运行会话与artifact缓存不等同上述进程池；不把捕获prefix写进方案，也不将native越界写推广到安全托管核。</p>
+<p>可供用户另行选择的独立策略：①保持内存安全且确定的数学核，并公开历史scratch差异；②仅在隔离兼容测试中给定完整显式workspace上下文，越界超过受控buffer立即失败；③原生隔离进程兼容模式依赖同版本原库和真实池生命周期。三者均不是本轮已实施方案，②也不等于重建了真实宿主默认值。</p>
+<p>验证为静态获取和一致性审查：核对四个binary身份；导出方法体、完整原始汇编和虚表88 bytes；明确检查Init/Create/Destroy的RCX保留、正常返回后mask1、析构mask6以及池归还路径无CRT free。没有新算法运行或设备测试。源码索引记录hash及所查方法状态。</p>
+<p>剩余项：1cdc0容量增长/分配失败的所有回滚及C++异常路径尚未逐分支闭合；core尺寸query中未展开helper与所有功能组合上限；global pool线程创建失败、event/等待失败等完整错误分支尚未逐项闭合；其它插件对同一全局池的所有调用集合未枚举；真实VisionMaster进程实际加载的DLL路径/哈希、并发/配置/长时内存压力尚无运行确认。C2排序起始索引、偶奇点数和越界前提保持独立任务，不因C1解释了来源而关闭。</p>
+<p class="meta">来源：docs/plugins/DISTORTION-CALIBRATION-C1-WORKSPACE-LIFECYCLE.md · SHA256 1b717260ebac17be73f0f88547eff3e3634958e3f545b35c4d9d246c659a0d31<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

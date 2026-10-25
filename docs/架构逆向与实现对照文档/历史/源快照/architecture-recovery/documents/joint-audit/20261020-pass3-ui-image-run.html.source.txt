@@ -1,0 +1,29 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第三轮 J12：真实图像流程的受控 WPF 响应性检查</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass3-ui-image-run.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第三轮-j12真实图像流程的受控-wpf-响应性检查">第三轮 J12：真实图像流程的受控 WPF 响应性检查</a></p><p style="margin-left:14px"><a href="#源码边与原版限度">源码边与原版限度</a></p><p style="margin-left:14px"><a href="#可复验测试与结果">可复验测试与结果</a></p><p style="margin-left:14px"><a href="#结论与仍需证据">结论与仍需证据</a></p></details><h1 id="第三轮-j12真实图像流程的受控-wpf-响应性检查">第三轮 J12：真实图像流程的受控 WPF 响应性检查</h1><p>2026-10-20。审核基线：<code>main</code> <code>d7a8741482df16b02ce2d24030852703daf6d715</code>，加主线尚未提交的 <code>DynamicOutputPresentation.cs</code> / <code>WorkflowExecution.cs</code> owner/序号保护（本线未写这两个文件；本次实际编译的 <code>WorkflowExecution.cs</code> SHA-256 <code>62DFE19E6836DE7C116F3C89A6C17521D64B252D14DD137116987AADC9A666D4</code>）。只在独占 <code>tests/WorkflowImageResponsiveness.Checks</code> 与 ignored <code>analysis/joint-audit/ui-image-run/</code> 写测试/审计；未使用用户桌面窗口、进程、设备或 <code>tool-plugins</code>。</p>
+<h2 id="源码边与原版限度">源码边与原版限度</h2><p>当前 <code>MainWindow.StartRunCore → RunCore</code>（<code>src/VisionEditor/WorkflowExecution.cs:19–59</code>）先在 Dispatcher 捕获 <code>Progress&lt;ExecutionEvent&gt;</code>，然后 <code>Task.Run</code> 把 <code>SolutionExecutor.RunAsync</code> 移到后台；完成、<code>IsCurrentExecutionOwner</code>、结果/历史发布、<code>FinishWorkflowRun</code> 回 Dispatcher。<code>MainWindow.DrainWorkflowBeforeClose</code>（<code>src/VisionEditor/MainWindow.xaml.cs:88–106</code>）在运行中第一次关闭时取消流程并等待 <code>activeRun</code> 清空，再发第二次关闭；<code>OnClosed</code>（<code>WorkflowExecution.cs:91–99</code>）失效 owner、取消并释放 scope。<code>ModuleExecutionScope.Dispose</code> 在租约退出后释放资源；其 <code>Stopping</code> 令牌须在关闭前捕获，不能在已释放的 CTS 上再读取属性。</p>
+<p>原版 UI <code>VMControls.WPF.DataForUI.VmProcedureDecorator.RunOnceCommandExe</code> 调 <code>VmProcedure.Run(null,bIsWait:false)</code>；原 <code>VM.PlatformSDKCS.ProcessManager.SyncExecuteOnce</code>（<code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ProcessManager.cs:277–299</code>，SHA-256 <code>06FEE7C7B5387FEA086ABE5073BE5DD2606AD121D9BC64B0AB9335BACE100414</code>）先调 <code>ServerSDKAPI.IMVS_ExecuteOnce_V30</code>，只在 <code>bIsWait=true</code> 时调用 <code>SyncWaitor.PrecisionWait</code>。这证实原 UI 命令<strong>不在托管层等待流程完成</strong>；原生 P/Invoke 本身返回前的耗时和实际线程/回调仍未知。当前 <code>Task.Run</code> 是本地宿主响应性实现，不冒称原版线程拓扑逐指令一致。</p>
+<h2 id="可复验测试与结果">可复验测试与结果</h2><p><code>tests/WorkflowImageResponsiveness.Checks/Program.cs</code> SHA-256 <code>8F4D0FB7B47EF7E1884099943F32E1A32A58D184E23179BF46DC0F74F2BC3F04</code>。使用独立 <code>MainWindow</code>、<code>ShowInTaskbar=false</code>、离屏位置，禁自动相机发现；真实 <code>ImageSourcePlugin</code> SDK 提交 4096×4096 GrayImage，再连接真实 <code>ImageBinaryPlugin</code>，通过实际主窗 <code>StartRunCore</code> 执行。<code>DispatcherTimer</code> 10 ms 采样心跳；同宿主分别做正常运行、运行中取消、运行中关闭及闭窗后一次 Dispatcher 脉冲。没有调用原厂或设备。取消必须断言 <code>SessionStatus.Cancelled</code>；关闭必须断言 <code>windowClosed=true</code> 且关闭前的 <code>ExecutionOwnerStamp</code> 已失效。</p>
+<p>复验命令：<code>dotnet run --project tests/WorkflowImageResponsiveness.Checks/WorkflowImageResponsiveness.Checks.csproj -c Release --no-build</code>。日志 <code>analysis/joint-audit/ui-image-run/4096-image-ui-check.json</code> SHA-256 <code>65997757C9A05D6091B482973DA878462DC09D62124D5B8F5C58E5E96805531C</code>，退出码 0。该次：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>操作级结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>正常</td>
+<td>UI 入口返回 <strong>40.55 ms</strong>，当时 Task 未完成；全次 <strong>337.65 ms</strong>，未完成期间 8 次 Dispatcher timer tick，真实 Binary 节点 Success。另一次有效样本入口 161.01 ms、全次 659.32 ms、14 tick。心跳能运行，不要求 10 ms 准点。</td>
+</tr>
+<tr>
+<td>取消</td>
+<td>等待约 5 次 UI tick 后取消仍在运行的流程，约 <strong>262.02 ms</strong> 完成，session 被断言为 <code>Cancelled</code>。此测试不能精确证明取消指令落在二值化像素循环内；可能在图执行的其他阶段。</td>
+</tr>
+<tr>
+<td>关闭</td>
+<td>等待约 2 次 UI tick 后对运行中窗请求关闭；约 <strong>222.42 ms</strong> 后真实窗口关闭、scope 令牌已取消、旧 owner stamp 被断言失效；闭窗后的另一次 Dispatcher 脉冲未观察到迟到 session 覆写。第一次 <code>Close()</code> 因 <code>DrainWorkflowBeforeClose</code> 延迟关闭，探针按两阶段生命周期判断。</td>
+</tr>
+</tbody></table>
+<p>探针开发中三次失败及修正完整保留在 <code>analysis/joint-audit/ui-image-run/prior-failures.md</code>。它们分别是测试用错静态 ID、释放后读取 CTS、误以为第一次 Close 即已关闭；最终通过不能抹去这些历史。</p>
+<h2 id="结论与仍需证据">结论与仍需证据</h2><p>此检查实际证实 d7a8741 工作线程修复在大帧真实 ImageSource→Binary 的<strong>正常、取消、关闭</strong>三条当前宿主链可运行，UI 能在流程未完成时处理 Dispatcher 工作。它也证实该条受控链未在本次离屏宿主重现永久无响应。用户先前空闲后 Windows 弹出的 Hang 仍无 UI 线程栈/等待链，不能宣布根因已修好；测试窗没有用户可见桌面验收资格。</p>
+<p>J12 仍缺：用户同构方案/图像及 EXE 身份、空闲触发时序、真实卡住时 UI 线程栈；相机/文件夹事件、Group、其他已接入插件在工作线程上的 UI 亲和副作用未由本夹具覆盖。下一探针应在自有受控实例固定这些输入并在超阈值心跳间隔捕获该进程线程栈；原厂 <code>IMVS_ExecuteOnce_V30</code> 的本地线程/回调时序需另取原生指令或受控差分。不要用本地测试通过给原厂行为或全部插件打等价标签。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass3-ui-image-run.md · SHA256 df4bcb6e9a8e71c0a7f0087bf0fd06c5e318a58d85df4b8e73d49fd106bb4afd<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

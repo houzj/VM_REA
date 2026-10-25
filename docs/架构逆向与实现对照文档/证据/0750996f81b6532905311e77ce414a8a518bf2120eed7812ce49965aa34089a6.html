@@ -1,0 +1,93 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 0750996f81b6 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 0750996f81b6</p><h1>原文证据 0750996f81b6</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 0750996f81b6532905311e77ce414a8a518bf2120eed7812ce49965aa34089a6。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>	public virtual byte[] this[string key]
+	{
+		get
+		{
+			if (!Parent.IsActive || Parent.IsOnDispose)
+			{
+				return null;
+			}
+			try
+			{
+				LogHelper.Info($&quot;获取userdata模块ID名为{Parent.ID} {Parent.Name},key为{key}&quot;);
+				return GetUIParamValue(key);
+			}
+			catch (VmException ex)
+			{
+				LogHelper.Error(ex.errorMessage);
+				throw ex;
+			}
+			catch (Exception ex2)
+			{
+				LogHelper.Error(ex2.Message);
+				throw VmSolution.GetVmException(ex2);
+			}
+		}
+		set
+		{
+			if (Parent == null || Parent.IsOnDispose)
+			{
+				return;
+			}
+			if (Parent.IsGlobalModu || key == &quot;CheckedImages&quot; || key == &quot;DESIGNERBUFFER&quot; || key == &quot;ConfigAvailable&quot;)
+			{
+				SetUIParamValue(key, value);
+			}
+			else if (Parent.IsDynamicModu)
+			{
+				IUnRedoService unRedoService = Ioc.Get&lt;IUnRedoService&gt;();
+				if (unRedoService != null &amp;&amp; unRedoService.ValiteType(&quot;ModifyConfig&quot;))
+				{
+					RecordAllUserData();
+					SetUIParamValue(key, value);
+					return;
+				}
+				IUnRedoService unRedoService2 = Ioc.Get&lt;IUnRedoService&gt;();
+				if (unRedoService2 == null || !unRedoService2.ValiteType(&quot;DeleteModule&quot;))
+				{
+					IUnRedoService unRedoService3 = Ioc.Get&lt;IUnRedoService&gt;();
+					if (unRedoService3 == null || !unRedoService3.ValiteType(&quot;CopyModule&quot;))
+					{
+						if (key.Contains(&quot;DynamicIO&quot;))
+						{
+							SetUIParamValue(key, value);
+							return;
+						}
+						byte[] uIParamValue = GetUIParamValue(key);
+						SetUIParamValue(key, value);
+						RecordSingleData(uIParamValue, value, key);
+						return;
+					}
+				}
+				if (key.Contains(&quot;SourceIndex&quot;) || key.Contains(&quot;TargetIndex&quot;) || key.Contains(&quot;Position&quot;))
+				{
+					byte[] uIParamValue2 = GetUIParamValue(key);
+					RecordSingleData(uIParamValue2, value, key);
+				}
+				else
+				{
+					RecordAllUserData();
+				}
+				SetUIParamValue(key, value);
+			}
+			else
+			{
+				byte[] uIParamValue3 = GetUIParamValue(key);
+				SetUIParamValue(key, value);
+				if (uIParamValue3 != value &amp;&amp; (!(key == &quot;CheckItemParamReady&quot;) || (uIParamValue3 != null &amp;&amp; (uIParamValue3 == null || value == null || !(Hik.Util.StringUtil.UTF8GetString(uIParamValue3) == Hik.Util.StringUtil.UTF8GetString(value))))))
+				{
+					RecordSingleData(uIParamValue3, value, key);
+				}
+			}
+		}
+	}
+
+	private void RecordAllUserData()
+	{
+		Expression&lt;Func&lt;object&gt;&gt; oldValue = () =&gt; Parent.GetAllUserData();
+		string displayName = string.Format(&quot;{0}{1}:{2}ALL_USERDATA&quot;, AppLocalizationService.GetLang(&quot;Lang_Edit&quot;), AppLocalizationService.GetLang(&quot;界面数据&quot;), Parent.FullName.Substring(Parent.FullName.LastIndexOf(&#39;,&#39;) + 1));
+		Ioc.Get&lt;IUnRedoService&gt;()?.Register(new UserDataUnRedoOperation(UserData_Redo, UserData_Undo, new UnRedo_UserData
+		{
+			ModuleFullName = Parent.FullName,
+			IsAllUserData = true,
+			PropertyKey = &quot;ALL_USERDATA&quot;,
+			OldValue = oldValue,</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../专题/algorithm-binary-comparison-audit.html">P0-A 图像二值化代表链：算法与数值基线对比</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

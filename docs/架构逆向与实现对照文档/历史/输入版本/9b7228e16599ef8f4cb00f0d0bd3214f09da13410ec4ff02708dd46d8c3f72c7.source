@@ -1,0 +1,1870 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>改名撤销重做：名称快照、路径身份与失败边界</title><style>body{max-width:1320px;margin:auto;padding:24px;background:#101d2e;color:#e4eefb;font:15px/1.7 Microsoft YaHei,sans-serif}a{color:#a3d8ff}article{background:#1b2e43;padding:18px;margin:16px 0;border:1px solid #48637c}.unknown{border-style:dashed}.notice{padding:15px;border-left:4px solid #dfa969;background:#25384d}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 Consolas,monospace}</style><a href="workflow-title-commit-audit.html">标题提交</a> · <a href="main-ui-map.html">主架构</a><h1>改名撤销重做：名称快照、路径身份与失败边界</h1><p class="notice">原改名历史记录名称字符串，不保存稳定模块句柄；Undo/Redo按当时方案树再次解析路径。服务先移动历史root再调用动作，吞异常不代表回滚。本文只恢复该有限改名支路，不覆盖所有历史操作。</p><p>新VM.UnRedo原件REA身份＋离线源与73个所选原CIL体；未运行服务构造、厂商程序或设备。</p><article id="RH01" class="source-confirmed"><h2>RH01 · VmModuleBaseDecorator.IsReName / Name → 空root标记与改名part的注册时机</h2><p>source-confirmed：IsReName从不同值改true先写字段，再Ioc.Get&lt;IUnRedoService&gt;()?.Register(new WPF.RootOperation,改名标题)。Name不同且字符检查通过时，在SDK赋名之前注册ReNameUnRedoOperation(SetNewName,SetOldName,new UnRedo_NameData(VMModule.FullName,VMModule.Name,value))；相同名只调用RemoveEmptyOperation。字符拒绝提前return与VmException catch均没有同名分支的RemoveEmptyOperation，不能说每种失败/取消自动删空root或回滚已注册part。</p><p>待追：Ioc实例、失败前后其它part加入、所有编辑退出和删除空操作调用者未闭合；注册动作不是原生赋名成功证明。</p><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_IsReName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:3618–3637
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009d1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;set_IsReName&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 93,
+          &quot;ilSha256&quot;: &quot;ec8f6a6d20be5d11a99240667a492fcc7a45430523979cbba8d3d7e26ffe87b3&quot;,
+          &quot;ilBytes&quot;: &quot;00027b2c05000403fe0116fe010a062c4b0002037d2c050004027b2c0500040b072c2c00280500002b252d03262b1f731809000672828d0070283800000a252d06267229000070146faa00000a00000272636000706f7c02000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_Name · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:1559–1578
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009cb&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009cb&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;set_Name&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 564,
+          &quot;ilSha256&quot;: &quot;0657b0e1af7327ab71f5d5c758cb7293c7e89bca39a1e944f78c054139527207&quot;,
+          &quot;ilBytes&quot;: &quot;000228a10900066fa900000a03285100000a0a0639070200000000031f3f285900002b2d6f031f3b285900002b2d65031f2e285900002b2d5b0372148d00706f9904000a2d4e0372217000706f9904000a2d410372188d00706f9904000a2d340372250000706f9904000a2d270372bd2d00706f9904000a2d1a0372c12d00706f9904000a2d0d03721c8d00706f9904000a2b01170c082c270072303f0070283800000a28b004000a72208d0070283a00000a1916282e01000a26dd730100001b8dd1010001251672828d0070283800000aa2251772b0070070a225180228a10900066fa900000aa22519729a870070a2251a03a228db00000a0b280500002b252d03262b4102fe06d5090006735708000a02fe06d4090006735708000a0228a10900066f7307000a0228a10900066fa900000a0373f509000673f009000607146faa00000a0072981600701d8dd1010001251672828d0070283800000aa2251772d5360070287207000aa225180228a10900066fa900000aa2251972e5000070a2251a72a28d0070283800000aa2251b72e5000070a2251c03a228db00000a1617286c07000a260228a1090006036f5808000a0000de480d0003283900000a130411042c1600726f700070283800000a1916282e01000a26002b090009283304000a000072d4150070096fd300000a28d400000a1617286c07000a2600de0002722d3c00706f7c02000a000228a109000672aa8d00706f5008000a00002b1300280500002b252d03262b066fb000000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.RootOperation::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:1309–1328
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000918&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000918&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.RootOperation&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 15,
+          &quot;ilSha256&quot;: &quot;e17d47fa9533a32fbc0cc2185707ae5f8687f682861dee7807bfd6d42a4921e2&quot;,
+          &quot;ilBytes&quot;: &quot;02167de60400040228a007000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Rename root registration · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:443–464
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	public bool IsReName
+	{
+		get
+		{
+			return _IsReName;
+		}
+		set
+		{
+			if (_IsReName != value)
+			{
+				_IsReName = value;
+				if (_IsReName)
+				{
+					Ioc.Get&lt;IUnRedoService&gt;()?.Register(new RootOperation(), AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) ?? &quot;&quot;);
+				}
+				OnPropertyChanged(&quot;IsReName&quot;);
+			}
+		}
+	}
+
+	public ICommand SkipToModuleCommand
+	{</pre></details><details><summary>Part captured before native name write · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:359–411
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	public string Name
+	{
+		get
+		{
+			return VMModule.Name;
+		}
+		set
+		{
+			if (VMModule.Name != value)
+			{
+				try
+				{
+					if (value.Contains(&#39;?&#39;) || value.Contains(&#39;;&#39;) || value.Contains(&#39;.&#39;) || value.Contains(&quot;[&quot;) || value.Contains(&quot;]&quot;) || value.Contains(&quot;&lt;&quot;) || value.Contains(&quot;&gt;&quot;) || value.Contains(&quot;(&quot;) || value.Contains(&quot;)&quot;) || value.Contains(&quot;`&quot;))
+					{
+						HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_ModuleNameErrorInclude&quot;) + Environment.NewLine + &quot;                             ? ; . [ ] &lt; &gt; ( ) `&quot;, MessageIcons.Error);
+						return;
+					}
+					string displayName = AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) + &quot;:&quot; + VMModule.Name + &quot;, &quot; + value;
+					Ioc.Get&lt;IUnRedoService&gt;()?.Register(new ReNameUnRedoOperation(SetNewName, SetOldName, new UnRedo_NameData(VMModule.FullName, VMModule.Name, value)), displayName);
+					UILogManager.logCreate(&quot;信息&quot;, AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) + AppLocalizationService.GetPunctuation(&quot;：&quot;) + VMModule.Name + &quot; &quot; + AppLocalizationService.GetLang(&quot;修改为&quot;) + &quot; &quot; + value, ifLang: false);
+					VMModule.Name = value;
+				}
+				catch (VmException ex)
+				{
+					if (string.IsNullOrEmpty(value))
+					{
+						HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_NameEmpty&quot;), MessageIcons.Error);
+					}
+					else
+					{
+						ShowMessage.ShowVmExceptionMessage(ex);
+					}
+					UILogManager.logCreate(&quot;错误&quot;, ErrorCodeInfo.GetErrorInfo(ex.errorCode), ifLang: false);
+				}
+				OnPropertyChanged(&quot;Name&quot;);
+				VMModule.OnPropertyChanged(&quot;FullName&quot;);
+			}
+			else
+			{
+				Ioc.Get&lt;IUnRedoService&gt;()?.RemoveEmptyOperation();
+			}
+		}
+	}
+
+	public ICommand RenameWindowCommand
+	{
+		get
+		{
+			//IL_0017: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001e: Expected Obj, but got Unknown
+			//IL_0023: Expected Obj, but got Unknown
+			DelegateCommand val = _RenameWindowCommand;</pre></details><details><summary>WPF root marker defaults · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/RootOperation.cs:6–26
+SHA256 94a8cb37f2235e15e526592acd7194ce399612281f353c40ab66fc5fdf21df27
+public class RootOperation : DisplayNotify, IUnRedoOperation, IDisposable, IRootParam
+{
+	public bool IsPart { get; set; } = false;
+
+	public bool ForbidBuild { get; set; }
+
+	public string RootOperType { get; set; }
+
+	public void Redo()
+	{
+	}
+
+	public void Undo()
+	{
+	}
+
+	public void Dispose()
+	{
+	}
+}
+</pre></details></article><article id="RH02" class="source-confirmed"><h2>RH02 · UnRedo_NameData / ReNameUnRedoOperation → 字符串快照与委托执行合同</h2><p>source-confirmed：UnRedo_NameData保存ModuleFullName/OldName/NewName三个string字段，不保存模块ID/GUID或模块对象。ReName操作构造保存RedoAction/UndoAction/Data，默认IsPart=true、IsDataComplete=true；Redo/Undo直接调用对应Action(Data,Params)，没有null门/catch/恢复逻辑，Update为空。Dispose清三个Action和Data，未清Params/ParentNode。</p><p>待追：外部修改Data/委托/优先级、Dispose后重用及Params/ParentNode引用生命期未知；该对象不是事务或稳定实体句柄。</p><details><summary>VMControls.WPF.DataForUI.UnRedo_NameData::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:265–284
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009f5&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009f5&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.UnRedo_NameData&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2003010e0e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 30,
+          &quot;ilSha256&quot;: &quot;721fd79ee3348aa198fe2c76d76af7637a4dc5fd421ea39f2824fc69b45da82f&quot;,
+          &quot;ilBytes&quot;: &quot;02283100000a000002037d3805000402047d3905000402057d3a0500042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ReNameUnRedoOperation::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:496–515
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009f0&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009f0&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ReNameUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200301151286390212827c128629151286390212827c12862912827c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 47,
+          &quot;ilSha256&quot;: &quot;35f2774fb31053dd25c588e5dcb1fdcb7c8ecb2a17c47cabc8496dfb4d1b89db&quot;,
+          &quot;ilBytes&quot;: &quot;02177d2f05000402177d360500040228a007000a0000020328e709000600020428e909000600020528e1090006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ReNameUnRedoOperation::Redo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:721–740
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009f1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009f1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ReNameUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;Redo&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 25,
+          &quot;ilSha256&quot;: &quot;82136b9583960f241f595f61db3776e50f6cb5ac3458d173b61a00e4574cb941&quot;,
+          &quot;ilBytes&quot;: &quot;0228e60900060228e00900060228e20900066f5e08000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ReNameUnRedoOperation::Undo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:836–855
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009f2&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009f2&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ReNameUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;Undo&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 25,
+          &quot;ilSha256&quot;: &quot;620d89b3978796c8f8cca0c55cdc9e0257c54b72ace9c7cdd9c3d373b16ac5af&quot;,
+          &quot;ilBytes&quot;: &quot;0228e80900060228e00900060228e20900066f5e08000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ReNameUnRedoOperation::Update · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:951–970
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009f3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009f3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ReNameUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;Update&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 2,
+          &quot;ilSha256&quot;: &quot;587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe&quot;,
+          &quot;ilBytes&quot;: &quot;002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ReNameUnRedoOperation::Dispose · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:986–1005
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009f4&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009f4&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ReNameUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;Dispose&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 34,
+          &quot;ilSha256&quot;: &quot;7fa44c96e3ad8e842a74bba451cdb4633e73291942acc8d0c36a306af091d0ed&quot;,
+          &quot;ilBytes&quot;: &quot;00021428e709000600021428e909000600021428eb09000600021428e1090006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Captured names only · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/UnRedo_NameData.cs:3–27
+SHA256 6e59cfa8607c26a98bb040b42391eae1bce6856a081260824c00b0c0f5723d0c
+public class UnRedo_NameData
+{
+	/// &lt;summary&gt;
+	/// 模块对象名称
+	/// &lt;/summary&gt;
+	public string ModuleFullName;
+
+	/// &lt;summary&gt;
+	/// 旧名称
+	/// &lt;/summary&gt;
+	public string OldName;
+
+	/// &lt;summary&gt;
+	/// 新名称
+	/// &lt;/summary&gt;
+	public string NewName;
+
+	public UnRedo_NameData(string fullName, string oldName, string newName)
+	{
+		ModuleFullName = fullName;
+		OldName = oldName;
+		NewName = newName;
+	}
+}
+</pre></details><details><summary>Rename actions and lifecycle · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ReNameUnRedoOperation.cs:6–55
+SHA256 0d1c4043b6339eda89464301d9f42b78acd2be53f67681b7546c8afd332aeda4
+public class ReNameUnRedoOperation : DisplayNotify, IUnRedoActionOperation, IUnRedoOperation, IDisposable, IUnRedoDataDone&lt;UnRedo_NameData&gt;
+{
+	public bool IsPart { get; set; } = true;
+
+	public UnRedo_NameData Data { get; set; }
+
+	public IUnRedoParams Params { get; set; }
+
+	public IBuilder ParentNode { get; set; }
+
+	public Action&lt;UnRedo_NameData, IUnRedoParams&gt; RedoAction { get; set; }
+
+	public Action&lt;UnRedo_NameData, IUnRedoParams&gt; UndoAction { get; set; }
+
+	public Action&lt;UnRedo_NameData&gt; UpdateAction { get; set; }
+
+	public bool IsDataComplete { get; set; } = true;
+
+	public ExecutePriority ExecutePriority { get; set; }
+
+	public ReNameUnRedoOperation(Action&lt;UnRedo_NameData, IUnRedoParams&gt; redoAction, Action&lt;UnRedo_NameData, IUnRedoParams&gt; undoAction, UnRedo_NameData data)
+	{
+		RedoAction = redoAction;
+		UndoAction = undoAction;
+		Data = data;
+	}
+
+	public void Redo()
+	{
+		RedoAction(Data, Params);
+	}
+
+	public void Undo()
+	{
+		UndoAction(Data, Params);
+	}
+
+	public void Update()
+	{
+	}
+
+	public void Dispose()
+	{
+		RedoAction = null;
+		UndoAction = null;
+		UpdateAction = null;
+		Data = null;
+	}
+}
+</pre></details></article><article id="RH03" class="source-confirmed"><h2>RH03 · SetOldName / SetNewName → 原名称路径与改名后末段路径再解析</h2><p>source-confirmed：Undo目标SetOldName取ModuleFullName最后一个点之前的前缀，再拼点和NewName，用VmSolution.Instance[拼接路径]查找后as IVmModule写OldName。Redo目标SetNewName用最初ModuleFullName查找后写NewName；两者不使用unRedoParams、不验证对象ID/GUID、查找为空或类型不符都无保护。SetOldName也未检查LastIndexOf结果，单段路径会在Substring门失败；实际顶层/嵌套场景是否走到该输入仍单列。</p><p>待追：父Group/流程随后改名、对象删除重建、同名遮蔽/冲突、无点路径与重复撤销的实际可达性未知；不能把重新按名字查找说成稳定身份恢复。</p><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetOldName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:4004–4023
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009d4&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d4&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;SetOldName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020112827c128629&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 73,
+          &quot;ilSha256&quot;: &quot;fd53f742e8b4432e9da0cbda98192e8e63799f99f2e40da52f8251c1c5b2aed9&quot;,
+          &quot;ilBytes&quot;: &quot;00037b380500040a0616061f2e6f3400000a6ff800000a0b077221000070037b3a050004283a00000a0c28b401000a086f9900000a0d09753f000001037b390500046f5808000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetNewName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:4289–4308
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009d5&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d5&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;SetNewName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020112827c128629&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 37,
+          &quot;ilSha256&quot;: &quot;dbe95b5357d48a36d3d9342fcfe48b45b9b6b9a75ead0646150bf76c089735d2&quot;,
+          &quot;ilBytes&quot;: &quot;0028b401000a037b380500046f9900000a0a06753f000001037b3a0500046f5808000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Undo and redo name-path identity · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:1176–1191
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	private void SetOldName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)
+	{
+		string moduleFullName = nameData.ModuleFullName;
+		string text = moduleFullName.Substring(0, moduleFullName.LastIndexOf(&#39;.&#39;));
+		string sub = text + &quot;.&quot; + nameData.NewName;
+		object obj = VmSolution.Instance[sub];
+		(obj as IVmModule).Name = nameData.OldName;
+	}
+
+	private void SetNewName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)
+	{
+		object obj = VmSolution.Instance[nameData.ModuleFullName];
+		(obj as IVmModule).Name = nameData.NewName;
+	}
+
+	private void SkipToModuleCommandExecute()</pre></details></article><article id="RH04" class="source-confirmed"><h2>RH04 · VmFrameTreeBase.FullName / IVmFullPath → 沿Parent或VmIO.Root组成名称路径</h2><p>source-confirmed：FullName从当前节点沿树上行到null或Name为空；普通节点拼UniqueName，ModuleType25换[UserVar]，VmIO按Parent存在与否加括号并转Root；最后去末尾点。VmModule.UniqueName返回Name，VmModule.FullName委托base，改名快照因此是当时名称树路径，不是GUID路径；父链后续变化不会自动重写UnRedo_NameData字符串。</p><p>待追：所有节点UniqueName/Parent/Root变更、循环父链和GUID路径消费者不在改名有限片内；未以当前实例验证路径。</p><details><summary>VM.Core.VmFrameTreeBase::get_FullName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:4501–4520
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060004e7&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060004e7&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmFrameTreeBase&quot;,
+            &quot;name&quot;: &quot;get_FullName&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 242,
+          &quot;ilSha256&quot;: &quot;22d6ac351231531bfaafb57658ccd68bff135136b181c94c5e75703a8450acdd&quot;,
+          &quot;ilBytes&quot;: &quot;0072350200700a020b38a00000000007753300000214fe030c082c3d00076fe00400062d13722e2a0070076fe604000606284202000a2b11723e2a0070076fe604000606284202000a0a0775330000026f030500060b002b5400077552000001250d2c0c096f4a00000a1f19fe012b0116130411042c1500722e2a007072ad08007006284202000a0a002b1400722e2a0070076fe604000606284202000a0a00076fe0040006752b0000020b0000072c10076fe204000628a200000a16fe012b0116130511053a43ffffff061f2e281200002b130611062c110006061f2e6f5e02000a6f8a03000a0a000613072b0011072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.VmFrameTreeBase::VMControls.Interface.IVmFullPath.get_FullPath · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:5414–5433
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060004eb&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060004eb&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmFrameTreeBase&quot;,
+            &quot;name&quot;: &quot;VMControls.Interface.IVmFullPath.get_FullPath&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;f03c756aced431de1b13f9b4e7ccc817d289a80bb1ffb046b81ef16298868ff1&quot;,
+          &quot;ilBytes&quot;: &quot;026fe70400062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.Core.VmModule::get_UniqueName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:11843–11862
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600028e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600028e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModule&quot;,
+            &quot;name&quot;: &quot;get_UniqueName&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;d70b18eda5959af54ec8970bfbc96c035d44914a464df99b9091087e0dd4da36&quot;,
+          &quot;ilBytes&quot;: &quot;00026fe20400060a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.VmModule::get_FullName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:11765–11784
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600024e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600024e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModule&quot;,
+            &quot;name&quot;: &quot;get_FullName&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;64e8c23444b66ecf716e15bed1aebec08bb58e0ffbf59f9dd08b493aaa01498e&quot;,
+          &quot;ilBytes&quot;: &quot;000228e70400060a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>FullName construction · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmFrameTreeBase.cs:43–73
+SHA256 e1464d00357b690eec97a7ed0a8c7fc5c6c14066779bcac65e52c280059784f0
+	public virtual string FullName
+	{
+		get
+		{
+			string text = &quot;&quot;;
+			VmFrameTreeBase vmFrameTreeBase = this;
+			while (vmFrameTreeBase != null &amp;&amp; !string.IsNullOrEmpty(vmFrameTreeBase.Name))
+			{
+				if (vmFrameTreeBase is VmIO)
+				{
+					text = ((vmFrameTreeBase.Parent != null) ? $&quot;({vmFrameTreeBase.UniqueName}).{text}&quot; : $&quot;{vmFrameTreeBase.UniqueName}.{text}&quot;);
+					vmFrameTreeBase = (vmFrameTreeBase as VmIO).Root;
+				}
+				else
+				{
+					text = ((!(vmFrameTreeBase is IVmModule { ModuleType: 25u })) ? $&quot;{vmFrameTreeBase.UniqueName}.{text}&quot; : string.Format(&quot;{0}.{1}&quot;, &quot;[UserVar]&quot;, text));
+					vmFrameTreeBase = vmFrameTreeBase.Parent as VmFrameTreeBase;
+				}
+			}
+			if (text.Contains(&#39;.&#39;))
+			{
+				text = text.Remove(text.LastIndexOf(&#39;.&#39;));
+			}
+			return text;
+		}
+	}
+
+	public virtual string UniqueGUID { get; }
+
+	public virtual string FullGUID
+	{</pre></details><details><summary>Module unique name identity · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmModule.cs:720–720
+SHA256 53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce
+	public override string UniqueName =&gt; Name;</pre></details></article><article id="RH05" class="source-confirmed"><h2>RH05 · VmSolution[string] → VmFrameTreeBase[string] → 流程首段及嵌套Group/模块逐段名字解析</h2><p>source-confirmed：方案indexer null返回null、空串返回自身，含[Params]直接返回字符串；首段在Modules按Name FirstOrDefault，另有VirtualPro/[UserVar]分支，有点递归vmModule剩余路径。基类空/NULL返回自身；方括号首段可交IVmExternPath，其余GetNode首段再试%包裹名；后续按VmFrameTreeBase、VmIOCollection或IList继续。VmModuleSet.GetNode非括号名优先GetModuleByProtocol按本层Modules.FirstOrDefault(Name)，再base；不是全方案按ID唯一搜索，嵌套Group只是同样逐层解析。</p><p>待追：模糊/空段/外部路径/虚拟流程、Modules懒加载和重复Name的真实组合未闭合；函数可返回非模块对象，最终as转换不能被省略。</p><details><summary>VM.Core.VmSolution::get_Item · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:8151–8170
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000062&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000062&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmSolution&quot;,
+            &quot;name&quot;: &quot;get_Item&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20011c0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 300,
+          &quot;ilSha256&quot;: &quot;c40d9df7c2a5e9745c3a05e5ff2a2a588f02c3523c3b57f4651b339704573bee&quot;,
+          &quot;ilBytes&quot;: &quot;73240700060a000314fe010d092c09001413043811010000036f3201000a16fe01130511052c090002130438f900000003729b0800706fba01000a130611062c090003130438df00000003178d3501000125161f2e9d6ff501000a0b0607169a7def02000402280f06000606fe062507000673ae01000a281100002b0c082d17067bef020004284b0000066fe204000628b800000a2b0116130711072c06284b0000060c067bef02000472ad08007028b800000a130811082c3900027b250000046fdf01000a252d0426142b247ed0020004252d17267ecd020004fe060107000673ae01000a2580d0020004281100002b0c00031f2e281200002b130911092c2200082d03142b1708031607169a6f3201000a17586fa101000a6fec04000613042b06000813042b0011042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>VM.Core.VmFrameTreeBase::get_Item · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:5464–5483
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060004ec&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060004ec&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmFrameTreeBase&quot;,
+            &quot;name&quot;: &quot;get_Item&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20011c0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 402,
+          &quot;ilSha256&quot;: &quot;84d87adde7a7781e97b504a94433c31ef432a82edf0975f5b82918cabe47dd69&quot;,
+          &quot;ilBytes&quot;: &quot;00032c0b036f3201000a16fe012b0117130411042c0900021305387001000003178d3501000125161f2e9d6ff501000a0a140b06169a286700002b1f5b331906169a286800002b1f5d330d0275ca000001250c14fe032b0116130611062c0f0008036f6200000a13053821010000000206169a6fed0400060b0714fe01130711072c160002722829007006169a28b501000a6fed0400060b0000031f2e6f9403000a17580d0916fe031308110839d8000000732008000613090003096f5f02000a130a1109110a178d3501000125161f2e9d6ff501000a7d9d03000411097b9d0300048e69173003142b0911097b9d030004179a130b07752b00000225130c14fe03130d110d2c0e00110c110a6fec04000613052b7907753400000225130e14fe03130f110f2c2300110e11097b9d030004169a6f6e050006252d0426142b07110b6fec04000613052b4407754e00000125131014fe03131111112c2c001110286900002b1109fe0621080006738c04000a286a00002b252d0426142b07110b6fec04000613052b06000713052b0011052a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.VmModuleSet::GetNode · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:9420–9439
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600062b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600062b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModuleSet&quot;,
+            &quot;name&quot;: &quot;GetNode&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011c0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 84,
+          &quot;ilSha256&quot;: &quot;4bb4d9f2dfca5b1eee9948ff6f89377b1d476f508e0d5eea03c1434318e9ef40&quot;,
+          &quot;ilBytes&quot;: &quot;00140a0328a200000a2d1603286700002b1f28330c03286800002b1f29fe012b01160b072c0c000203281a0300060a002b1c000203282c0600060a0614fe010c082c0a000203281a0300060a0000060d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.VmModuleSet::GetModuleByProtocol · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:9839–9858
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600062c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600062c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModuleSet&quot;,
+            &quot;name&quot;: &quot;GetModuleByProtocol&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200112440e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 62,
+          &quot;ilSha256&quot;: &quot;9bf18f6870086bda70c8c591ebe515289b564f7e486fb9ebadb070ba9bd67aa1&quot;,
+          &quot;ilBytes&quot;: &quot;737e0800060a06037dd903000400067bd903000428a200000a0b072c0500140c2b1a02280f06000606fe067f08000673ae01000a281100002b0c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>VM.Core.VmModule::GetNode · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:11921–11940
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600031a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600031a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModule&quot;,
+            &quot;name&quot;: &quot;GetNode&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011c0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 61,
+          &quot;ilSha256&quot;: &quot;a90fab742b48097834a48aec1e9c224df7ddb8cc627a0bc91070eaae7d3776e8&quot;,
+          &quot;ilBytes&quot;: &quot;00030a06722e28007028b800000a2d0f06723e28007028b800000a2d0b2b12026f620200060b2b13026f640200060b2b0a020328250300060b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Solution name path first segment · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs:460–494
+SHA256 c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e
+	public override object this[string sub]
+	{
+		get
+		{
+			if (sub == null)
+			{
+				return null;
+			}
+			if (sub.Length == 0)
+			{
+				return this;
+			}
+			if (sub.Contains(&quot;[Params]&quot;))
+			{
+				return sub;
+			}
+			string[] array = sub.Split(&#39;.&#39;);
+			string procInfo = array[0];
+			VmModule vmModule = Modules.FirstOrDefault((VmModule p) =&gt; p.Name == procInfo);
+			if (vmModule == null &amp;&amp; procInfo == VirtualPro.Name)
+			{
+				vmModule = VirtualPro;
+			}
+			if (procInfo == &quot;[UserVar]&quot;)
+			{
+				vmModule = AllModules.Values?.FirstOrDefault((VmModule p) =&gt; p != null &amp;&amp; ((IVmModule)p).ModuleType == 5);
+			}
+			if (sub.Contains(&#39;.&#39;))
+			{
+				return vmModule?[sub.Remove(0, array[0].Length + 1)];
+			}
+			return vmModule;
+		}
+	}
+</pre></details><details><summary>Recursive frame path resolution · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmFrameTreeBase.cs:101–142
+SHA256 e1464d00357b690eec97a7ed0a8c7fc5c6c14066779bcac65e52c280059784f0
+	public virtual object this[string sub]
+	{
+		get
+		{
+			if (sub == null || sub.Length == 0)
+			{
+				return this;
+			}
+			string[] array = sub.Split(&#39;.&#39;);
+			object obj = null;
+			if (array[0].First() == &#39;[&#39; &amp;&amp; array[0].Last() == &#39;]&#39; &amp;&amp; this is IVmExternPath vmExternPath)
+			{
+				return vmExternPath.GetExternNode(sub);
+			}
+			obj = GetNode(array[0]);
+			if (obj == null)
+			{
+				obj = GetNode($&quot;%{array[0]}%&quot;);
+			}
+			int num = sub.IndexOf(&#39;.&#39;) + 1;
+			if (num != 0)
+			{
+				string text = sub.Substring(num);
+				string[] nextSplit = text.Split(&#39;.&#39;);
+				string sub2 = ((nextSplit.Length &gt; 1) ? nextSplit[1] : null);
+				if (obj is VmFrameTreeBase vmFrameTreeBase)
+				{
+					return vmFrameTreeBase[text];
+				}
+				if (obj is VmIOCollection vmIOCollection)
+				{
+					return vmIOCollection.GetIO(nextSplit[0])?[sub2];
+				}
+				if (obj is IList source)
+				{
+					return source.Cast&lt;VmFrameTreeBase&gt;().FirstOrDefault((VmFrameTreeBase p) =&gt; p.Name == nextSplit[0])?[sub2];
+				}
+			}
+			return obj;
+		}
+	}
+</pre></details><details><summary>Module-set path lookup · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs:852–878
+SHA256 f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346
+	public override object GetNode(string key)
+	{
+		object obj = null;
+		if (!string.IsNullOrEmpty(key) &amp;&amp; key.First() == &#39;(&#39; &amp;&amp; key.Last() == &#39;)&#39;)
+		{
+			obj = base.GetNode(key);
+		}
+		else
+		{
+			obj = GetModuleByProtocol(key);
+			if (obj == null)
+			{
+				obj = base.GetNode(key);
+			}
+		}
+		return obj;
+	}
+
+	protected VmModule GetModuleByProtocol(string moduleInfo)
+	{
+		if (string.IsNullOrEmpty(moduleInfo))
+		{
+			return null;
+		}
+		return Modules.FirstOrDefault((VmModule p) =&gt; p != null &amp;&amp; p.Name == moduleInfo);
+	}
+</pre></details></article><article id="RH06" class="source-confirmed"><h2>RH06 · 原config候选 / App.OnStartup → IUnRedoService类型注入与服务转发</h2><p>source-confirmed：安装config候选中UnRedoServiceImplement指myLibs\VM.UnRedo.dll、UnRedoStackCount=15。原App.OnStartup以BaseDirectory+ConfigurationHelper.GetConfig得到路径，Assembly.LoadFrom后选首个实现IUnRedoService的类型Ioc.Set。新取原VM.UnRedo身份及离线源表明UnRedoService构造new UnRedoSchedule，Register/Undo/Redo/RemoveEmptyOperation直接转发；本审计只静态取证，不执行LoadFrom、服务构造或其临时文件清理。</p><p>待追：ConfigurationHelper配置优先级、实际Assembly/Ioc实例、泛型/反射运行绑定未知；路径候选存在不证明原机采用了该服务。</p><details><summary>VisionMaster.App::OnStartup · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:23992–24011
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000011&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000011&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.App&quot;,
+            &quot;name&quot;: &quot;OnStartup&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200101128085&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 916,
+          &quot;ilSha256&quot;: &quot;da4f058445b98c5b2f4edc697daca095b3706cef352d3b514d64afc414ca7d07&quot;,
+          &quot;ilBytes&quot;: &quot;0072b3010070284400000a284500000a0a06130a110a2c4673f9020006130b110b027d1001000400110b147d0f010004110bfe06fa020006734e00000a734f00000a25176f5000000a00130c110c166f5100000a00110c6f5200000a0000140b02fe0623000006734e00000a734f00000a25176f5000000a00251a6f5300000a000c08166f5100000a00086f5200000a000072c9010070283700000a00280f0100060072e7010070283700000a00735400000a0b7213020070283700000a00723b020070283700000a0000de0f130d0002110d28140000060000de00027b090000046f5500000a267247020070283700000a00027b0a00000414fe03130e110e2c0f0002027b0a00000428140000060000027b080000046f5600000a267275020070283700000a0028130100060072b9020070283700000a00282200000a6f5700000a0d72fd020070283700000a000919fe0116fe01130f110f2c45007219030070284400000a284500000a13101110131111112c0a00281200000600002b1e007235030070283700000a002817000006007269030070283700000a0000002b0800281200000600007299030070283700000a007e7a00000414fe03131211122c56007e7a00000417285b01000616fe01131311132c3a0072d1030070282d00000a72f1030070282d00000a17191617285800000a17fe01131411142c12007e7a0000046f83010006285c01000600000014807a000004007e12010004252d17267e11010004fe06fd020006734e00000a258012010004734f00000a13041104166f5100000a001104176f5000000a0011046f5200000a00283f00000a6f5900000a7219040070284400000a283600000a130572470400701105283600000a283700000a001105285a00000a130611066f5b00000a7e13010004252d17267e11010004fe06fe020006735c00000a258013010004280100002b1307d0ea000001285e00000a1107171414285f00000a00282a01000600726f040070284400000a284500000a13087291040070284400000a284500000a130911082c17286000000a6f6100000a6f6200000a18fe0116fe012b0116131511152c1300286000000a6f6100000a186f6300000a00001109131611162c5e00286000000a6f6100000a2300000000000000006f6400000a00286000000a6f6100000a2300000000000000006f6500000a00286000000a6f6100000a286600000a6f6700000a00286000000a6f6100000a286800000a6f6900000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoService::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:12200–12219
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000071&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000071&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoService&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 20,
+          &quot;ilSha256&quot;: &quot;269c6d616c15b1ab0b6f59a7764abbccc0648b7445c7a4f1bdd075720128c256&quot;,
+          &quot;ilBytes&quot;: &quot;02282100000a00000273400000067d1c0000042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoService::Register · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:12381–12400
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000073&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000073&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoService&quot;,
+            &quot;name&quot;: &quot;Register&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2003011280d10e151280e501151280e9031280e11280d102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;43ae440d589e3de13c62b9b776fc74a4922229a4ad8f6a7239ddbebeeb80def1&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1c0000040304056fa600000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoService::Undo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:12478–12497
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000078&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000078&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoService&quot;,
+            &quot;name&quot;: &quot;Undo&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 15,
+          &quot;ilSha256&quot;: &quot;61140071878aaeed6399b84f293582625cfc02a2744c72f29cc48309e45d3170&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1c000004036f5300000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoService::Redo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:12298–12317
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000072&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000072&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoService&quot;,
+            &quot;name&quot;: &quot;Redo&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 15,
+          &quot;ilSha256&quot;: &quot;8974e9acc36e7d171bf3daec075d3537c379fb77bcc999afbc2b65639392e040&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1c000004036f5400000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoService::RemoveEmptyOperation · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:12561–12580
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600007c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600007c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoService&quot;,
+            &quot;name&quot;: &quot;RemoveEmptyOperation&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;b1a2a945d0622a69c723034f12a8c8e8dce4ba67035e2426b8111e2024cee46e&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1c0000046fae00000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Explicit installed config candidate · local-decompiled-source</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.config-selection.json:4–16
+SHA256 cb884839e4de57a02f0ac23271d43db0ca224001523ab226a963f14cab0be0ff
+  &quot;selections&quot;: [
+    {
+      &quot;start&quot;: 62,
+      &quot;end&quot;: 62,
+      &quot;excerpt&quot;: &quot;    &lt;add key=\&quot;UnRedoStackCount\&quot; value=\&quot;15\&quot; /&gt;&quot;
+    },
+    {
+      &quot;start&quot;: 63,
+      &quot;end&quot;: 63,
+      &quot;excerpt&quot;: &quot;    &lt;add key=\&quot;UnRedoServiceImplement\&quot; value=\&quot;myLibs\\VM.UnRedo.dll\&quot; /&gt;&quot;
+    }
+  ],
+  &quot;scope&quot;: &quot;Explicit installed config candidate; actual ConfigurationHelper source/priority remains separate.&quot;</pre></details><details><summary>Configured original service injection · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs:210–215
+SHA256 babebf8e2bef407d7d06105aa4540bb844e32644a25d9a8c8c7faebfe57cf3f7
+		string text = AppDomain.CurrentDomain.BaseDirectory + ConfigurationHelper.GetConfig(&quot;UnRedoServiceImplement&quot;);
+		LogHelper.Info(&quot;撤销重做注入ioc,准备的dll路径为&quot; + text);
+		Assembly assembly = Assembly.LoadFrom(text);
+		Type typeto = assembly.GetTypes().FirstOrDefault((Type c) =&gt; c.GetInterfaces().Contains(typeof(IUnRedoService)));
+		Ioc.Set(typeof(IUnRedoService), typeto);
+		Program.UpdateTitleBinding();</pre></details><details><summary>Service creation and forwarding · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoService.decompiled.cs:12–29
+SHA256 d139eaffdd22d07b27dac23206f13575f006343b7e808584256c11cc24fe5c01
+	public UnRedoService()
+	{
+		_unRedoSchedule = new UnRedoSchedule();
+	}
+
+	public void Redo(object dispatcher)
+	{
+		_unRedoSchedule.Redo(dispatcher);
+	}
+
+	public void Register(IUnRedoOperation unRedoOperation, string displayName, Expression&lt;Func&lt;IBuilder, IUnRedoOperation, bool&gt;&gt; CanRegister = null)
+	{
+		_unRedoSchedule.Register(unRedoOperation, displayName, CanRegister);
+	}
+
+	public void SetIsLaziLoading(bool isLaziLoading)
+	{
+		_unRedoSchedule.SetIsLaziLoading(isLaziLoading);</pre></details></article><article id="RH07" class="source-confirmed"><h2>RH07 · UnRedoSchedule.Register → 录制条件、part与root构建</h2><p>source-confirmed：Register仅当_unRedoing&lt;=0、_nLaziLoading&lt;=0、可选CanRegister允许且必要栈非空、IsPart要求栈非空且top.ForbidBuild=false才构建；不满足时本体不加入/不Dispose传入对象。part经BuildPart，非part经BuildRoot，再通知。Root新建RootUnRedoOperation+SafeObservableCollection，复制IRootParam类型/ForbidBuild并TryPush；溢出时Dispose移出root。part先清redo栈，设ParentNode/top、显示名/IsUndoStack，再追加Actions。当前Register体没有按IsRunning/LockAreaStatus/IsOpenParam统一拒绝；外层入口权限不能由该体臆造。</p><p>待追：SafeObservableCollection跨线程、CanRegister动态表达式/空参数失败和所有root并发创建者未知；未加入并不等于撤销了调用方后续原生操作。</p><details><summary>VM.UnRedo.UnRedoSchedule::Register · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:13533–13552
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000046&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000046&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;Register&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2003011280d10e151280e501151280e9031280e11280d102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 235,
+          &quot;ilSha256&quot;: &quot;165869bceb7a762cb20fc99b5a79b284750dfd4a693ce8fbb3ef7b495285ad53&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1500000416fe020a062c0538d7000000027b1000000416fe020b072c0538c5000000052c10027b0d0000046f6700000a16fe012b01160c082c0538a8000000036f7800000a2c10027b0d0000046f6700000a16fe012b01160d092c053886000000036f7800000a2c17027b0d0000046f6e00000a75360000016f7900000a2b0116130411042c022b5e052c21056f7a00000a027b0d0000046f6e00000a7538000001036f7b00000a16fe012b0116130511052c022b31036f7800000a130611062c100203753e000001042856000006002b0e0204037536000001285500000600022845000006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::BuildRoot · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:16617–16636
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000055&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000055&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;BuildRoot&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e1280d9&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 81,
+          &quot;ilSha256&quot;: &quot;be791bb96c1175979ff65212dd5f7299117f28160d9c1701ef8534085dded554&quot;,
+          &quot;ilBytes&quot;: &quot;00736b0000060a06739a00000a6f9b00000a0006036f9c00000a0006176f8700000a0006046f9d00000a00027b0d00000406753400000112016f9e00000a0c080d092c0c07753c0000016f8e00000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::BuildPart · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:16954–16973
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000056&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000056&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;BuildPart&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011280f90e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 113,
+          &quot;ilSha256&quot;: &quot;cf545ff4190dc5ac89d80aa9a0deaa2dc2e04af863c1fdfcab63af997c1c120e&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0d0000046f6700000a16fe010c082c022b5b037537000001250a14fe030d092c0a02062842000006002b0702284400000600027b0d0000046f6e00000a75380000010b03076f9f00000a0003753d000001046f9200000a0003753d000001176fa000000a0007036fa100000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::RedoStackClear · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:13063–13082
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000044&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000044&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;RedoStackClear&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 82,
+          &quot;ilSha256&quot;: &quot;7f9f05e003159d0993d7591d2396db0a58a0f2f9e05ae5b38234f4636b3b9c5c&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0e0000046f6700000a16fe030a062c3e00027b0e000004280700002b7e24000004252d17267e22000004fe068f000006737000000a2580240000046f7100000a00027b0e0000046f7200000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.PoolStack`1::TryPush · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:21207–21226
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600000d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.PoolStack\u00601&quot;,
+            &quot;name&quot;: &quot;TryPush&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002021300101c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 112,
+          &quot;ilSha256&quot;: &quot;60efa50555858d29a52b031f581865df84d72a9b95913f7f6ed851a02e7cc581&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1e00000a16036f2600000a00160a02282700000a6a027b2000000a6efe020b072c340004027b1e00000a02282700000a17596f2a00000a8c0500001b51027b1e00000a02282700000a17596f2800000a00170a002b050004145100027201000070282300000a00060c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.RootUnRedoOperation::BuildPart · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:19981–20000
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000065&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000065&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.RootUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;BuildPart&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011280f9&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;e0a2c34ba8b73a6aed978aa917a726e365028691de02496ec267c6d4b07c36b0&quot;,
+          &quot;ilBytes&quot;: &quot;02285b000006036fa400000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.UnRedo.RootUnRedoOperation::BuildOperType · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:20491–20510
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000069&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000069&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.RootUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;BuildOperType&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011280d9&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 28,
+          &quot;ilSha256&quot;: &quot;b0b0ac3a1c28849ca2d516c4c3fea0cf2d74792bc802e178e7b5a499275ebf60&quot;,
+          &quot;ilBytes&quot;: &quot;0002036f9800000a28620000060002036f7900000a2860000006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Register gates and root-versus-part · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs:142–156
+SHA256 920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407
+	public void Register(IUnRedoOperation unRedoOperation, string displayStr, Expression&lt;Func&lt;IBuilder, IUnRedoOperation, bool&gt;&gt; CanRegister = null)
+	{
+		if (_unRedoing &lt;= 0 &amp;&amp; _nLaziLoading &lt;= 0 &amp;&amp; (CanRegister == null || _undoStack.Count != 0) &amp;&amp; (!unRedoOperation.IsPart || _undoStack.Count != 0) &amp;&amp; (!unRedoOperation.IsPart || !(_undoStack.Peek() as IRootParam).ForbidBuild) &amp;&amp; (CanRegister == null || CanRegister.Compile()(_undoStack.Peek() as IBuilder, unRedoOperation)))
+		{
+			if (unRedoOperation.IsPart)
+			{
+				BuildPart(unRedoOperation as IUnRedoActionOperation, displayStr);
+			}
+			else
+			{
+				BuildRoot(displayStr, unRedoOperation as IRootParam);
+			}
+			NotifyProperty();
+		}
+	}</pre></details><details><summary>Root and action construction · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs:342–378
+SHA256 920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407
+	private void BuildRoot(string displayName, IRootParam param)
+	{
+		IBuilder builder = new RootUnRedoOperation();
+		builder.Actions = new SafeObservableCollection&lt;IUnRedoActionOperation&gt;();
+		builder.BuildDispalyName(displayName);
+		builder.BuildInStack(isUndoStack: true);
+		builder.BuildOperType(param);
+		if (_undoStack.TryPush(builder as IUnRedoOperation, out var removeItem))
+		{
+			(removeItem as IDisposable).Dispose();
+		}
+	}
+
+	private void BuildPart(IUnRedoActionOperation unRedoOperation, string displayStr)
+	{
+		if (_undoStack.Count != 0)
+		{
+			if (unRedoOperation is IDisposeTempFile compareObject)
+			{
+				RedoStackClear(compareObject);
+			}
+			else
+			{
+				RedoStackClear();
+			}
+			IBuilder builder = (unRedoOperation.ParentNode = _undoStack.Peek() as IBuilder);
+			(unRedoOperation as DisplayNotify).DisplayNameA = displayStr;
+			(unRedoOperation as DisplayNotify).IsUndoStack = true;
+			builder.BuildPart(unRedoOperation);
+		}
+	}
+
+	private void UpdateActionData()
+	{
+		IBuilder builder = _undoStack.Peek() as IBuilder;
+		builder.Actions?.Where((IUnRedoActionOperation x) =&gt; !x.IsDataComplete).ToList().ForEach((IUnRedoActionOperation x) =&gt;
+		{</pre></details><details><summary>Bounded root insertion · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.PoolStack-1.decompiled.cs:68–87
+SHA256 ad79427ff203f606d9dc2a091887d6c3dbfba2da5c4fab45720187c9d4ab4d1c
+	public bool TryPush(T item, out object removeItem)
+	{
+		sl.Insert(0, item);
+		bool result = false;
+		if (Count &gt; length)
+		{
+			removeItem = sl[Count - 1];
+			sl.RemoveAt(Count - 1);
+			result = true;
+		}
+		else
+		{
+			removeItem = null;
+		}
+		OnPropertyChanged(&quot;EnumEntrysA&quot;);
+		return result;
+	}
+
+	public T TryRemoveLast()
+	{</pre></details></article><article id="RH08" class="source-confirmed"><h2>RH08 · UnRedoSchedule.Undo / Redo → 移动栈后构建Params，再执行，异常吞掉</h2><p>source-confirmed：Undo先增_unRedoing；undo非空则UpdateActionData，对未完成part先置IsDataComplete=true再Update；随后Pop undo并Push redo、BuildParams(dispatcher,RecoverStack表达式)、BuildInStack(false)后执行Undo。Redo同样先把redo搬回undo再Params/标记/Redo。两者catch Exception为空，finally减_unRedoing再NotifyProperty；finally通知异常不在此前catch保护。失败发生时栈已经可能移动，不是先成功再提交；PoolStack.Push超容量只移除末项不Dispose。</p><p>待追：部分Action已执行后异常、事件订阅者失败、容量裁剪副作用和重试时真实对象状态未知；不声称异常原子性或自动回滚。</p><details><summary>VM.UnRedo.UnRedoSchedule::Undo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:14386–14405
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000047&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000047&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;Undo&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 255,
+          &quot;ilSha256&quot;: &quot;237f011a048fae0998f81b7adad06c20a1e08ca030ad107890fba9e63d5cb461&quot;,
+          &quot;ilBytes&quot;: &quot;0000027c15000004287c00000a26027b0d0000046f6700000a16fe010b072c05ddd900000002285700000600027b0d0000046f7d00000a0a027b0e000004066f7e00000a000675380000010302d007000002287f00000a288000000ad04a000006288100000a7463000001188d5f000001251602d007000002287f00000a288000000ad00e000004288200000a288300000aa2251702d007000002287f00000a288000000ad00d000004288200000a288300000aa2288400000a280a00002b280b00002b6f8600000a00067538000001166f8700000a00066f8800000a0000de050c0000de00de1600027c15000004288900000a260228450000060000dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::Redo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:15312–15331
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000048&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000048&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;Redo&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 248,
+          &quot;ilSha256&quot;: &quot;b3f31667acda424ff96163e2e96a5a9145157b68dd0b22586aa80bdb9552dcdd&quot;,
+          &quot;ilBytes&quot;: &quot;0000027c15000004287c00000a26027b0e0000046f6700000a16fe010b072c05ddd2000000027b0e0000046f7d00000a0a027b0d000004066f7e00000a000675380000010302d007000002287f00000a288000000ad04a000006288100000a7463000001188d5f000001251602d007000002287f00000a288000000ad00d000004288200000a288300000aa2251702d007000002287f00000a288000000ad00e000004288200000a288300000aa2288400000a280a00002b280b00002b6f8600000a00067538000001176f8700000a00066f8a00000a0000de050c0000de00de1600027c15000004288900000a260228450000060000dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::UpdateActionData · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:17418–17437
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000057&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000057&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;UpdateActionData&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 109,
+          &quot;ilSha256&quot;: &quot;995f5f7e901e460922e473a441b90fa6c8213c172a6f120e70c1b515a4d22b72&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0d0000046f6e00000a75380000010a066f7300000a252d03262b4e7e25000004252d17267e22000004fe0690000006737400000a258025000004280800002b280900002b7e26000004252d17267e22000004fe0691000006737600000a2580260000046f7700000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::NotifyProperty · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:13378–13397
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000045&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000045&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;NotifyProperty&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 38,
+          &quot;ilSha256&quot;: &quot;5b8b52dd2fc54b0264fca15e08bad9665275b8ae0f297d0015886031f358cfeb&quot;,
+          &quot;ilBytes&quot;: &quot;000272f30000702832000006000272030100702832000006000272010000702832000006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.PoolStack`1::Push · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:20902–20921
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600000b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.PoolStack\u00601&quot;,
+            &quot;name&quot;: &quot;Push&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011300&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 70,
+          &quot;ilSha256&quot;: &quot;928154ba391e4cf37cebbb27ea9e9ffaa1d7bd6072ec6608698e1aa553d87a34&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1e00000a16036f2600000a0002282700000a6a027b2000000a6efe020a062c1600027b1e00000a02282700000a17596f2800000a0000027201000070282300000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.PoolStack`1::Pop · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:21705–21724
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600000f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.PoolStack\u00601&quot;,
+            &quot;name&quot;: &quot;Pop&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20001300&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 66,
+          &quot;ilSha256&quot;: &quot;feda21fe9f1f45705797ececef2bad3910b1e83c97eead73433b54f4a324dbb5&quot;,
+          &quot;ilBytes&quot;: &quot;0002282700000a16fe010a062c0700732b00000a7a00027b1e00000a166f2a00000a0b027b1e00000a166f2800000a00027201000070282300000a00070c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Replay ordering and exception/finally · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs:158–208
+SHA256 920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407
+	public void Undo(object dispatcher)
+	{
+		try
+		{
+			Interlocked.Increment(ref _unRedoing);
+			if (_undoStack.Count != 0)
+			{
+				UpdateActionData();
+				IUnRedoOperation unRedoOperation = _undoStack.Pop();
+				_redoStack.Push(unRedoOperation);
+				(unRedoOperation as IBuilder).BuildParams(dispatcher, () =&gt; RecoverStack(_redoStack, _undoStack));
+				(unRedoOperation as IBuilder).BuildInStack(isUndoStack: false);
+				unRedoOperation.Undo();
+			}
+		}
+		catch (Exception)
+		{
+		}
+		finally
+		{
+			Interlocked.Decrement(ref _unRedoing);
+			NotifyProperty();
+		}
+	}
+
+	public void Redo(object dispatcher)
+	{
+		try
+		{
+			Interlocked.Increment(ref _unRedoing);
+			if (_redoStack.Count != 0)
+			{
+				IUnRedoOperation unRedoOperation = _redoStack.Pop();
+				_undoStack.Push(unRedoOperation);
+				(unRedoOperation as IBuilder).BuildParams(dispatcher, () =&gt; RecoverStack(_undoStack, _redoStack));
+				(unRedoOperation as IBuilder).BuildInStack(isUndoStack: true);
+				unRedoOperation.Redo();
+			}
+		}
+		catch (Exception)
+		{
+		}
+		finally
+		{
+			Interlocked.Decrement(ref _unRedoing);
+			NotifyProperty();
+		}
+	}
+
+	public void UpdateUnRedoStep(double size)
+	{</pre></details><details><summary>Incomplete action update · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs:374–382
+SHA256 920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407
+	private void UpdateActionData()
+	{
+		IBuilder builder = _undoStack.Peek() as IBuilder;
+		builder.Actions?.Where((IUnRedoActionOperation x) =&gt; !x.IsDataComplete).ToList().ForEach((IUnRedoActionOperation x) =&gt;
+		{
+			x.IsDataComplete = true;
+			x.Update();
+		});
+	}</pre></details><details><summary>Push capacity behavior · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.PoolStack-1.decompiled.cs:53–62
+SHA256 ad79427ff203f606d9dc2a091887d6c3dbfba2da5c4fab45720187c9d4ab4d1c
+	public void Push(T item)
+	{
+		sl.Insert(0, item);
+		if (Count &gt; length)
+		{
+			sl.RemoveAt(Count - 1);
+		}
+		OnPropertyChanged(&quot;EnumEntrysA&quot;);
+	}
+</pre></details></article><article id="RH09" class="source-confirmed"><h2>RH09 · RootUnRedoOperation / Rename part Params → 优先级排序与RecoverStack是可用回调而非保证回滚</h2><p>source-confirmed：普通RootOperType分支Redo先Heigher再其它，Undo先Heigher逆序再其它逆序；另有CopyModule专用分支，本片不扩大其语义。BuildParams将dispatcher和recover表达式交每个part的新UnRedoParams。RecoverStack仅Pop来源并Push目标；改名part虽收到Params，SetOldName/SetNewName不读取、不调用recover，Rename Undo/Redo也无catch，因此不能说路径解析失败会自动把root搬回。Root执行循环一个Action抛错可跳过后续Action。</p><p>待追：完整Params合同、其它part何时执行recover、混合优先级/嵌套Group实际异常序列未知；不扩展其它历史操作闭环。</p><details><summary>VM.UnRedo.RootUnRedoOperation::Redo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:17852–17871
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000063&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000063&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.RootUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;Redo&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 370,
+          &quot;ilSha256&quot;: &quot;652eeec1f05dc2a9e66891c4be61859dd6297a6bfb91b3b7ffa20a64bc1f6acc&quot;,
+          &quot;ilBytes&quot;: &quot;00022861000006723b01007028a300000a0a0639af0000000002285b0000067e28000004252d17267e27000004fe0694000006737400000a258028000004280800002b280900002b7e29000004252d17267e27000004fe0695000006737600000a2580290000046f7700000a0002285b0000067e2a000004252d17267e27000004fe0696000006737400000a25802a000004280800002b280900002b7e2b000004252d17267e27000004fe0697000006737600000a25802b0000046f7700000a000038aa0000000002285b0000067e2c000004252d17267e27000004fe0698000006737400000a25802c000004280800002b280900002b7e2d000004252d17267e27000004fe0699000006737600000a25802d0000046f7700000a0002285b0000067e2e000004252d17267e27000004fe069a000006737400000a25802e000004280800002b280900002b7e2f000004252d17267e27000004fe069b000006737600000a25802f0000046f7700000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.RootUnRedoOperation::Undo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:19082–19101
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000064&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000064&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.RootUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;Undo&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 262,
+          &quot;ilSha256&quot;: &quot;db60ffa4cfcc86e4695e9b6c2cd7feed463226519923c590f5a4f50670073991&quot;,
+          &quot;ilBytes&quot;: &quot;00022861000006723b01007028a300000a0a062c3c0002285b000006280c00002b280900002b7e30000004252d17267e27000004fe069c000006737600000a2580300000046f7700000a000038b40000000002285b0000067e31000004252d17267e27000004fe069d000006737400000a258031000004280800002b280c00002b280900002b7e32000004252d17267e27000004fe069e000006737600000a2580320000046f7700000a0002285b0000067e33000004252d17267e27000004fe069f000006737400000a258033000004280800002b280c00002b280900002b7e34000004252d17267e27000004fe06a0000006737600000a2580340000046f7700000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.RootUnRedoOperation::BuildParams · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:20059–20078
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000066&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000066&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.RootUnRedoOperation&quot;,
+            &quot;name&quot;: &quot;BuildParams&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c151280e501128105&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 50,
+          &quot;ilSha256&quot;: &quot;4427dfe565fa9ec23c53dd2d7b0308a81985aececc3eac5d30d6edafe37eaa3c&quot;,
+          &quot;ilBytes&quot;: &quot;73a20000060a06037d3600000406047d3700000402285b000006280900002b06fe06a3000006737600000a6f7700000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::RecoverStack · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:16209–16228
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600004a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600004a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;RecoverStack&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200201151208011280d1151208011280d1&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;4e8211e9132019d31b9d90f6bba035fc16dc2191f466d26a60775de2ce87d443&quot;,
+          &quot;ilBytes&quot;: &quot;00036f7d00000a0a04066f7e00000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetOldName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:4004–4023
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009d4&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d4&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;SetOldName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020112827c128629&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 73,
+          &quot;ilSha256&quot;: &quot;fd53f742e8b4432e9da0cbda98192e8e63799f99f2e40da52f8251c1c5b2aed9&quot;,
+          &quot;ilBytes&quot;: &quot;00037b380500040a0616061f2e6f3400000a6ff800000a0b077221000070037b3a050004283a00000a0c28b401000a086f9900000a0d09753f000001037b390500046f5808000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetNewName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:4289–4308
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x060009d5&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d5&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;SetNewName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020112827c128629&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 37,
+          &quot;ilSha256&quot;: &quot;dbe95b5357d48a36d3d9342fcfe48b45b9b6b9a75ead0646150bf76c089735d2&quot;,
+          &quot;ilBytes&quot;: &quot;0028b401000a037b380500046f9900000a0a06753f000001037b3a0500046f5808000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Priority-based redo and undo · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.RootUnRedoOperation.decompiled.cs:35–95
+SHA256 fe4dd19fb059b1f6ea6fe9dc16feb70f63d271251d38d7db5a23907d9770317d
+	public void Redo()
+	{
+		if (RootOperType == &quot;CopyModule&quot;)
+		{
+			Actions.Where((IUnRedoActionOperation x) =&gt; x.ExecutePriority != ExecutePriority.Lower).ToList().ForEach((IUnRedoActionOperation x) =&gt;
+			{
+				x.Redo();
+			});
+			Actions.Where((IUnRedoActionOperation x) =&gt; x.ExecutePriority == ExecutePriority.Lower).ToList().ForEach((IUnRedoActionOperation x) =&gt;
+			{
+				x.Redo();
+			});
+		}
+		else
+		{
+			Actions.Where((IUnRedoActionOperation x) =&gt; x.ExecutePriority == ExecutePriority.Heigher).ToList().ForEach((IUnRedoActionOperation x) =&gt;
+			{
+				x.Redo();
+			});
+			Actions.Where((IUnRedoActionOperation x) =&gt; x.ExecutePriority != ExecutePriority.Heigher).ToList().ForEach((IUnRedoActionOperation x) =&gt;
+			{
+				x.Redo();
+			});
+		}
+	}
+
+	public void Undo()
+	{
+		if (RootOperType == &quot;CopyModule&quot;)
+		{
+			Actions.Reverse().ToList().ForEach((IUnRedoActionOperation x) =&gt;
+			{
+				x.Undo();
+			});
+			return;
+		}
+		Actions.Where((IUnRedoActionOperation x) =&gt; x.ExecutePriority == ExecutePriority.Heigher).Reverse().ToList()
+			.ForEach((IUnRedoActionOperation x) =&gt;
+			{
+				x.Undo();
+			});
+		Actions.Where((IUnRedoActionOperation x) =&gt; x.ExecutePriority != ExecutePriority.Heigher).Reverse().ToList()
+			.ForEach((IUnRedoActionOperation x) =&gt;
+			{
+				x.Undo();
+			});
+	}
+
+	public void BuildPart(IUnRedoActionOperation unRedoOperation)
+	{
+		Actions.Add(unRedoOperation);
+	}
+
+	public void BuildParams(object dispatcher, Expression&lt;Action&gt; recover)
+	{
+		Actions.ToList().ForEach((IUnRedoActionOperation x) =&gt;
+		{
+			x.Params = new UnRedoParams
+			{
+				Dispatcher = dispatcher,
+				RecoverCallBack = recover</pre></details><details><summary>Per-part recovery parameter creation · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.RootUnRedoOperation.decompiled.cs:88–99
+SHA256 fe4dd19fb059b1f6ea6fe9dc16feb70f63d271251d38d7db5a23907d9770317d
+	public void BuildParams(object dispatcher, Expression&lt;Action&gt; recover)
+	{
+		Actions.ToList().ForEach((IUnRedoActionOperation x) =&gt;
+		{
+			x.Params = new UnRedoParams
+			{
+				Dispatcher = dispatcher,
+				RecoverCallBack = recover
+			};
+		});
+	}
+</pre></details><details><summary>Recovery expression target · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs:225–229
+SHA256 920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407
+	private void RecoverStack(PoolStack&lt;IUnRedoOperation&gt; source, PoolStack&lt;IUnRedoOperation&gt; target)
+	{
+		IUnRedoOperation item = source.Pop();
+		target.Push(item);
+	}</pre></details></article><article id="RH10" class="source-confirmed"><h2>RH10 · RemoveEmptyOperation / RootOperation → 仅top.Actions为空才弹栈，非通用失败清理</h2><p>source-confirmed：WPF.RootOperation是IsPart=false的标记，其Undo/Redo/Dispose均空；真实root由Schedule构建。RemoveEmptyOperation只在undo栈非空且(top as IBuilder).Actions.Count==0时Pop并通知，无Dispose、无_unRedoing/_nLaziLoading门，也不验证cast/Actions非空。对已注册改名part即使SDK写名失败，该root也不是空Actions；不能把RemoveEmptyOperation描述为撤销失败操作或完整取消。</p><p>待追：其它调用者是否补救失败root、空root存续、资源释放与历史UI验收仍未知。</p><details><summary>VMControls.WPF.DataForUI.RootOperation::Redo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:1204–1223
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000915&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000915&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.RootOperation&quot;,
+            &quot;name&quot;: &quot;Redo&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 2,
+          &quot;ilSha256&quot;: &quot;587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe&quot;,
+          &quot;ilBytes&quot;: &quot;002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.RootOperation::Undo · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:1239–1258
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000916&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000916&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.RootOperation&quot;,
+            &quot;name&quot;: &quot;Undo&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 2,
+          &quot;ilSha256&quot;: &quot;587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe&quot;,
+          &quot;ilBytes&quot;: &quot;002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.RootOperation::Dispose · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:1274–1293
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000917&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000917&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.RootOperation&quot;,
+            &quot;name&quot;: &quot;Dispose&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 2,
+          &quot;ilSha256&quot;: &quot;587bae728805519c3542d21766295396bd01087b6c47765ae3cadbf679813bbe&quot;,
+          &quot;ilBytes&quot;: &quot;002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.UnRedoSchedule::RemoveEmptyOperation · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:16307–16326
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600004f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600004f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.UnRedoSchedule&quot;,
+            &quot;name&quot;: &quot;RemoveEmptyOperation&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 78,
+          &quot;ilSha256&quot;: &quot;b765f86c590e2713cbe924646d095e7e84616bd3e63e20785ac5e1a49a40b181&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0d0000046f6700000a16fe010b072c022b38027b0d0000046f6e00000a0a0675380000016f7300000a6f9300000a16fe030c082c022b13027b0d0000046f7d00000a26022845000006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.PoolStack`1::Peek · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:21996–22015
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x06000011&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000011&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.PoolStack\u00601&quot;,
+            &quot;name&quot;: &quot;Peek&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20001300&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 37,
+          &quot;ilSha256&quot;: &quot;a8dd99dd9f11545762e94d2de7167daa449729da7837d78d26ce6355df340210&quot;,
+          &quot;ilBytes&quot;: &quot;0002282700000a16fe010a062c06732b00000a7a027b1e00000a166f2a00000a0b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.UnRedo.PoolStack`1::Pop · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.cil.json:21705–21724
+SHA256 33881737950160d38543ede125b2b2b8d93c246bb3684f5ef5b19742cb8907a0
+          &quot;token&quot;: &quot;0x0600000f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.UnRedo.PoolStack\u00601&quot;,
+            &quot;name&quot;: &quot;Pop&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20001300&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 66,
+          &quot;ilSha256&quot;: &quot;feda21fe9f1f45705797ececef2bad3910b1e83c97eead73433b54f4a324dbb5&quot;,
+          &quot;ilBytes&quot;: &quot;0002282700000a16fe010a062c0700732b00000a7a00027b1e00000a166f2a00000a0b027b1e00000a166f2800000a00027201000070282300000a00070c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Marker operation defaults and empty methods · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/RootOperation.cs:6–26
+SHA256 94a8cb37f2235e15e526592acd7194ce399612281f353c40ab66fc5fdf21df27
+public class RootOperation : DisplayNotify, IUnRedoOperation, IDisposable, IRootParam
+{
+	public bool IsPart { get; set; } = false;
+
+	public bool ForbidBuild { get; set; }
+
+	public string RootOperType { get; set; }
+
+	public void Redo()
+	{
+	}
+
+	public void Undo()
+	{
+	}
+
+	public void Dispose()
+	{
+	}
+}
+</pre></details><details><summary>Empty-root removal scope · original-managed-offline-decompilation</summary><pre>docs/architecture-recovery/workflow-rename-history-audit.original/VM.UnRedo.UnRedoSchedule.decompiled.cs:258–270
+SHA256 920fe4239369a12521c0b23cb0fcf9e30d2f25193a67e10a50c03ac51fd9c407
+	public void RemoveEmptyOperation()
+	{
+		if (_undoStack.Count != 0)
+		{
+			IUnRedoOperation unRedoOperation = _undoStack.Peek();
+			if ((unRedoOperation as IBuilder).Actions.Count == 0)
+			{
+				_undoStack.Pop();
+				NotifyProperty();
+			}
+		}
+	}
+</pre></details></article><article id="RC01" class="independent-implementation"><h2>RC01 · 当前DocumentHistoryEngine / GraphEditorDocument → 独立快照历史与错误记录</h2><p>independent-implementation：当前DocumentHistoryEngine.Replay先对尚未完成part调用CompleteNewValue，再将root从source移至destination，按Ordered执行；异常记录LastError并false返回，finally减replayDepth，无默认回滚。GraphEditorDocument.Undo/Redo在重放前调整快照视口合并。当前Parts恢复委托/文档值，不是原名称字符串再索引模块；不能用共同的栈次序证明身份解析或嵌套Group改名等价。</p><p>待追：原生模块状态、操作级撤销/重做差分尚未闭合；当前名称编辑payload见RC02，不再将该已取得源码路径列作未知。</p><details><summary>Current independent replay · current-source</summary><pre>src/VisionEditor.Core/DocumentHistoryEngine.cs:82–111
+SHA256 4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa
+    bool Replay(bool isUndo)
+    {
+        LastError = null;
+        replayDepth++;
+        try
+        {
+            var source = isUndo ? undo : redo;
+            var destination = isUndo ? redo : undo;
+            if (source.Count == 0) return false;
+            var root = source[^1];
+            if (isUndo)
+                foreach (var part in root.Parts.Where(part =&gt; !part.IsDataComplete).ToArray()) part.CompleteNewValue();
+            source.RemoveAt(source.Count - 1);
+            destination.Add(root);
+            Trim(destination);
+            foreach (var part in Ordered(root, isUndo))
+                if (isUndo) part.Undo(); else part.Redo();
+            return true;
+        }
+        catch (Exception error)
+        {
+            // Original service catches failures: no implicit rollback or safe retry is invented.
+            LastError = error;
+            return false;
+        }
+        finally { replayDepth--; }
+    }
+
+    static IEnumerable&lt;DocumentHistoryPart&lt;T&gt;&gt; Ordered(DocumentHistoryRoot&lt;T&gt; root, bool undo)
+    {</pre></details><details><summary>Current document replay entry · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.cs:282–291
+SHA256 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558
+    public void Undo() {
+        if (history.CurrentRoot is { } root)
+            foreach (var part in root.Parts.Where(p=&gt;p.IsDataComplete)) part.AdaptNewValue(MergeCurrentView);
+        history.Undo();
+    }
+    public void Redo() {
+        if (history.NextRedoRoot is { } root)
+            foreach (var part in root.Parts) part.AdaptOldValue(MergeCurrentView);
+        history.Redo();
+    }</pre></details></article><article id="RC02" class="independent-implementation"><h2>RC02 · 当前WPF流程改名 → 文档Edit → history document part → 快照载荷、首次Undo与恢复的确切路径</h2><p>independent-implementation：WorkflowTabs.RenameProcedure在Enter或LostKeyboardFocus仅提交一次，Trim文本后再次CanEditProcedure并经Safe调用doc.RenameProcedure，随后RefreshAll。文档RequireName/禁用字符/同名返回后按procedure Id改Name；若为Group子流程，亦按GroupOwner的ProcedureId/NodeId同步拥有者节点名。Edit先计算并验证next，RecordEditHistory在document=next前执行。普通编辑BeginRoot/RegisterPart(document,Capture,RestoreSnapshot)捕获旧SolutionDocument副本、ProcedureId及BaseDirectory；不是三字符串改名part。无指定payload目录且序列化小于64KiB存内存，否则交HistoryPayloadStore持有文件。首次Undo的CompleteNewValue先置完成标志再调用capture；Replay之后移栈并restore旧值，Redo恢复所存new值。RestoreSnapshot经Rebase后替换文档和当前流程，设dirty/增Revision/发Changed；FilePath不在Snapshot字段中。</p><p>待追：仅追当前流程/Group子流程改名支路，不能扩为所有模块标题编辑器或原SDK载荷。外层Safe异常处理、文件写入失败与生命周期详见各独立专题，未运行窗口或厂商程序。</p><p>待追：原版改名使用名称路径与三个字符串，当前以完整文档及ID结构恢复；不从该独立快照机制推导原版同名/父改名失败行为。</p><details><summary>Current WPF procedure commit · current-source</summary><pre>src/VisionEditor/WorkflowTabs.cs:324–345
+SHA256 24a398d5cd2a16ba2ea01ce980df4b7a3c4f4b9afe27c34720195bcd0b48cb45
+    void RenameProcedure(string id)
+    {
+        if (!CanEditProcedure(id) || !procedureHeaders.TryGetValue(id, out var holder)) return;
+        var procedure = doc.Document.Procedures.First(p =&gt; p.Id == id);
+        var editor = new TextBox { Text = procedure.Name, MaxLength = 64, MinWidth = 65, MaxWidth = 240, FontSize = 14, Foreground = Brushes.White, Background = new SolidColorBrush(Color.FromRgb(40, 42, 44)), BorderThickness = new Thickness(0), ContextMenu = null };
+        bool finished = false;
+        void Commit()
+        {
+            if (finished) return;
+            finished = true;
+            string name = editor.Text.Trim();
+            workflowHeaderStates.Remove(id);
+            if (CanEditProcedure(id)) Safe(() =&gt; doc.RenameProcedure(id, name));
+            RefreshAll();
+        }
+        editor.LostKeyboardFocus += (_, _) =&gt; Commit();
+        editor.KeyDown += (_, e) =&gt; { if (e.Key == Key.Return) { e.Handled = true; Commit(); } };
+        holder.Child = editor;
+        Dispatcher.BeginInvoke(new Action(() =&gt; { editor.Focus(); editor.SelectAll(); }));
+    }
+}
+</pre></details><details><summary>Current rename and owner ID updates · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.cs:110–116
+SHA256 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558
+    public void RenameProcedure(string id,string name) {
+        RequireName(name);
+        // VmModuleBaseDecorator.Name rejects these characters before invoking the SDK.
+        if(name.IndexOfAny(&quot;?;.[]&lt;&gt;()`&quot;.ToCharArray())&gt;=0)throw new ArgumentException(&quot;名称不能包含 ? ; . [ ] &lt; &gt; ( ) `。&quot;,nameof(name));
+        var procedure=Procedure(id); if(procedure.Name==name)return;
+        Edit(d=&gt;d with {Procedures=d.Procedures.Select(p=&gt;p.Id==id?p with {Name=name}:procedure.GroupOwner is {} owner&amp;&amp;p.Id==owner.ProcedureId?p with{Nodes=p.Nodes.Select(n=&gt;n.Id==owner.NodeId?n with{Name=name}:n).ToArray()}:p).ToArray()});
+    }</pre></details><details><summary>Current snapshot payload contract · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.cs:15–22
+SHA256 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558
+    sealed record Snapshot(SolutionDocument? MemoryDocument, string ProcedureId, string BaseDirectory,
+        [property:System.Text.Json.Serialization.JsonIgnore] HistoryPayloadLease? Payload = null) : IDisposable
+    {
+        public SolutionDocument Document =&gt; MemoryDocument ?? JsonSerializer.Deserialize&lt;SolutionDocument&gt;(Payload!.ReadBytes())
+            ?? throw new InvalidDataException(&quot;Invalid owned history document payload.&quot;);
+        public void Dispose() =&gt; Payload?.Dispose();
+    }
+    public GraphEditorDocument(ModuleRegistry registry, string? historyPayloadParentDirectory=null)</pre></details><details><summary>Current edit ordering and snapshot capture · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.cs:296–323
+SHA256 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558
+    void Edit(Func&lt;SolutionDocument,SolutionDocument&gt; action,string? selectedProcedure=null) { var next=Copy(SynchronizeGroupNames(PruneOwnedGroups(CloneOwnedCopies(action(Copy(document))))));
+        if(PrepareExecutionTopologyChange is { } prepare){
+            var before=document.Procedures.ToDictionary(p=&gt;p.Id,StringComparer.Ordinal);
+            next=next with{Procedures=next.Procedures.Select(after=&gt;{
+                if(!before.TryGetValue(after.Id,out var old))return after;
+                var oldEdges=ProcedureGraph.ExecutionEdges(old).Select(e=&gt;(e.FromNode,e.ToNode));
+                var newEdges=ProcedureGraph.ExecutionEdges(after).Select(e=&gt;(e.FromNode,e.ToNode));
+                return oldEdges.SequenceEqual(newEdges)?after:prepare(old,after);
+            }).ToArray()};
+        }
+        SolutionStore.ValidateStructure(next); RecordEditHistory();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=&gt;p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=&gt;p.GroupOwner is null)?.Id??&quot;&quot;;IsDirty=true;Revision++;Changed?.Invoke(); }
+    Snapshot Capture()=&gt;CaptureSnapshot(Copy(document),CurrentProcedureId,BaseDirectory);
+    Snapshot CaptureSnapshot(SolutionDocument value,string procedure,string directory)
+    {
+        ObjectDisposedException.ThrowIf(disposed,this);
+        var bytes=JsonSerializer.SerializeToUtf8Bytes(value);
+        if(historyPayloadParentDirectory is null &amp;&amp; bytes.Length&lt;64*1024)return new(value,procedure,directory);
+        historyPayloadStore??=new(historyPayloadParentDirectory??Path.Combine(Path.GetTempPath(),&quot;VisionEditor-History&quot;));
+        return new(null,procedure,directory,historyPayloadStore.CreateFile(bytes));
+    }
+    void RestoreSnapshot(Snapshot snapshot) {
+        var next=Rebase(snapshot.Document,snapshot.BaseDirectory,BaseDirectory);
+        document=next;CurrentProcedureId=snapshot.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke();
+    }
+    Snapshot MergeCurrentView(Snapshot snapshot) {
+        // Independent main view-data adapter: retain A03.3 zoom changes made
+        // between replays without altering the action&#39;s structural old/new data.
+        if(snapshot is null)return snapshot!; // Preserve an original failed-completion payload; do not invent one.</pre></details><details><summary>Current history root/part registration · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.History.cs:50–68
+SHA256 d4a3f13130e6c9334547ecaf567c5cbf34e122e976166990fa02bb796522411f
+    void RecordEditHistory()
+    {
+        if (configurationHistory is { NeedsRoot: true } session &amp;&amp; session.Generation == solutionGeneration)
+        {
+            BeginDocumentHistoryRoot();
+            session.NeedsRoot = false;
+            SetHistoryRecordingForbidden(session.ForbidBuild);
+        }
+        else if (history.CurrentRoot is not { ForbidBuild: true })
+            BeginDocumentHistoryRoot();
+    }
+
+    void BeginDocumentHistoryRoot()
+    {
+        if (!history.BeginRoot()) return;
+        history.RegisterPart(&quot;document&quot;,Capture,RestoreSnapshot,
+            canRegister:(root,key)=&gt;!root.Parts.Any(part=&gt;part.Key==key));
+    }
+}</pre></details><details><summary>Current old-payload admission · current-source</summary><pre>src/VisionEditor.Core/DocumentHistoryEngine.cs:57–72
+SHA256 4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa
+    public bool RegisterPart(string key, Func&lt;T&gt; capture, Action&lt;T&gt; restore, int priority = 0,
+        Func&lt;DocumentHistoryRoot&lt;T&gt;, string, bool&gt;? canRegister = null)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(capture);
+        ArgumentNullException.ThrowIfNull(restore);
+        var root = CurrentRoot;
+        if (IsReplaying || lazyLoadingDepth &gt; 0 || root is null || root.ForbidBuild || (canRegister is not null &amp;&amp; !canRegister(root, key))) return false;
+        T oldValue = capture();
+        // BuildPart invalidates redo only after a new part passed registration.
+        ReleaseStack(redo);
+        root.Add(new(key, priority, oldValue, capture, restore, releasePayload));
+        return true;
+    }
+
+    public bool Undo() =&gt; Replay(isUndo: true);</pre></details><details><summary>Current first undo captures new payload · current-source</summary><pre>src/VisionEditor.Core/DocumentHistoryEngine.cs:197–203
+SHA256 4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa
+    internal void CompleteNewValue()
+    {
+        IsDataComplete = true; // Source sets this before Update, including when capture throws.
+        newValue = capture();
+        hasNewValue = true;
+    }
+    void ReleaseReplaced(T value)</pre></details><details><summary>Current restore delegates · current-source</summary><pre>src/VisionEditor.Core/DocumentHistoryEngine.cs:218–219
+SHA256 4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa
+    internal void Undo() =&gt; restore(OldValue);
+    internal void Redo() =&gt; restore(newValue);</pre></details></article><article id="RU01" class="unknown"><h2>RU01 · 按名称解析的改名历史 → 稳定身份、嵌套Group及异常事务仍未知</h2><p>unknown：已知part记录旧路径及新旧名、撤销重做重新查路径并写IVmModule.Name；已知服务在Action前移动栈而局部吞异常。仍未证明父容器改名、同名重建/删除或失败后所有Action均可恢复，也未以GUI/原SDK运行验证。</p><p>待追：下一原边：可观察的实例ID/GUID与父链变化；用户撤销/重做按钮到实际Ioc实例；嵌套Group索引与懒加载；失败后补偿调用者；名称及方案保存/加载历史往返。</p></article><p class="notice">主框架实施41/96＝42.71%（32包×3具名单元）；本专题新增0。嵌套Group身份及异常事务未闭合。</p><a href="workflow-rename-history-audit.json">机器清单</a></html><script data-document-web src="document-web-links.js"></script>

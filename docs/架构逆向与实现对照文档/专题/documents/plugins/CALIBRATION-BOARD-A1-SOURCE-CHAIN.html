@@ -1,0 +1,91 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A1 标定板参数分派的源码与指令核对 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / A1 标定板参数分派的源码与指令核对</p><h1>A1 标定板参数分派的源码与指令核对</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A1 标定板参数分派的源码与指令核对</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="CALIBRATION-BOARD-A1-SOURCE-CHAIN.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="CALIBRATION-BOARD-A1-SOURCE-CHAIN.html#a1-标定板参数分派的源码与指令核对">A1 标定板参数分派的源码与指令核对</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-A1-SOURCE-CHAIN.html#已确认链">已确认链</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-A1-SOURCE-CHAIN.html#汇编纠正873de0两个字段是float读取">汇编纠正：873de0两个字段是float读取</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-A1-SOURCE-CHAIN.html#圆点自动精修的可达前提">圆点自动精修的可达前提</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-A1-SOURCE-CHAIN.html#导出与剩余项">导出与剩余项</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-A1-SOURCE-CHAIN.html#a1接续四caller栈abi与字段消费矩阵">A1接续：四caller栈ABI与字段消费矩阵</a></p></details><h1 id="a1-标定板参数分派的源码与指令核对">A1 标定板参数分派的源码与指令核对</h1><p>最新整卡源码自审（2026-10-19）：按总计划A1原范围“公共字段→六板型初始/精修投影→Low/High实际读取点”复核末表、四caller栈ABI及a1-source-audit-manifest.json所有哈希，通过S1/S2。下文进行中/下一断点保留历史，已补的编码入口不再重复列缺体。候选、精修、排序算法细节属A2，不以其未全部还原阻挡A1字段卡；A1尚不等于整工具实施完成，整体计数仍0/10，人工验收不参与计分。</p>
+<p>2026-10-19，进行中（S1/S2）。本轮优先复用既有原厂导出，并补原指令；没有新增识别样本或修改产品算法。REA MCP的Ghidra provider当前未配置，子线已报告具体限制；根线使用已有本工作树只读Ghidra工程导出，不将其标作REA Evidence ID。</p>
+<h2 id="已确认链">已确认链</h2><p><code>7f69e0</code>从engine构造0x50字节公共options，进入<code>7e4ff0</code>再到<code>815560</code>。六板型阈值传入公共块的运行证据仍见BOARD-TYPE-OPTIONS报告。本轮追踪下游，不能把公共传入等同于下游读取。</p>
+<table>
+<thead>
+<tr>
+<th>公共options偏移</th>
+<th>原厂构造来源</th>
+<th>已查下游</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0x24</td>
+<td>engine+0x1ac整数乘0.01，圆度</td>
+<td>圆点812930及自动精修7dda50复制到候选参数</td>
+</tr>
+<tr>
+<td>0x28/0x2c</td>
+<td>engine+0x1b0/+0x1b4，具名EdgeThreshLow/High已有运行桥接证明</td>
+<td>圆点812930/7dda50读取；棋盘/编码板不能据此推广</td>
+</tr>
+<tr>
+<td>0x48/0x4c</td>
+<td>engine+0x18c/+0x190整数转float</td>
+<td>棋盘873de0路线构造compact+0x10/+0x14；与EdgeThresh字段不同</td>
+</tr>
+<tr>
+<td>0x44</td>
+<td>engine+0x188</td>
+<td>1走80b720，2走873de0；编码板另有else路线也走873de0</td>
+</tr>
+</tbody></table>
+<p>各板型实际核心分支：XML1→kind1；XML2→kind3；XML6/7/8/9→对应kind。815560中kind1按0x44选80b720或873de0，kind3进812930；kind6/7/8/9分别进80f9a0/80e690/80cfc0/80bcd0。四编码入口再次按公共+0x44分支：1保留公共指针进入80b720；2及其他分支构造紧凑块进入873de0。尚不外推80b720整个内部都不使用EdgeThresh，需沿具体投影继续追。</p>
+<h2 id="汇编纠正873de0两个字段是float读取">汇编纠正：873de0两个字段是float读取</h2><p>既有伪代码把<code>param8[4]/[5]</code>显示为int，再在验证式转float；原指令明确是：</p>
+<ul>
+<li><code>180873eff MOVSS XMM1,[RDI+0x10]</code>；随后COMISS比较；</li>
+<li><code>180873f24 MOVSS XMM2,[RDI+0x14]</code>；随后COMISS比较；</li>
+<li><code>181644a14</code>常量原始4字节为float180；检查两个float在0..180且第一个不大于第二个。</li>
+</ul>
+<p>因此不能把伪代码的整数转换直接翻译进产品。本轮导出80f9a0汇编<code>18080fb65/69</code>从公共+0x48/+0x4c读取位值，后续写入紧凑+0x10/+0x14；<code>18080fd2c</code>把该紧凑地址置于第8参数栈槽，<code>18080fd5d</code>调用873de0。紧凑字段与公共EdgeThreshLow/High的+0x28/+0x2c不是同一字段。字段业务名称尚未完成setter/资源追踪，暂不命名为其他阈值。</p>
+<h2 id="圆点自动精修的可达前提">圆点自动精修的可达前提</h2><p><code>7e4ff0</code>在初始分派后调用<code>7e33c0</code>。后者先要求点数&gt;3，调用7ff3c0，成功且输出标志为1后估算新的步长；仅当与旧步长的相对变化达到原厂float常量约0.2时重新分派。这里分母另含小常量，必须按实际源码/原指令保留。core kind3再进入7dda50，后者读取公共+0x24/+0x28/+0x2c并传817c50。默认样本未命中7dda50不能证明该路径不可达，亦不能归因于板型不适用。</p>
+<h2 id="导出与剩余项">导出与剩余项</h2><p>复用：<code>analysis/calibration-board/core-live/output/{1807f69e0,1807e4ff0,180815560,1807e33c0,18080b720,180873de0}.c</code>；四编码入口位于<code>core-live-93e5dec0a8ab4550843ccedc08eabf51/output/</code>；圆点812930位于<code>core-live-5754bc9f7fa647bba66bf03b9f4d783c/output/</code>。</p>
+<p>新增函数体/汇编：<code>core-live-dfb4329a7e054a9ca931beaac831764f/output/</code>；原始常量和地址区间：<code>core-live-864adaf7fb874e59bef11f2fc9ff8f02/output/</code>。新专属只读导出器为<code>BoardThresholdSourceAudit.java</code>与<code>RunThresholdSourceAudit.ps1</code>。Ghidra函数体/已定义指令列表可能漏跳转表分支，正在增加九路表目标解析后补反汇编，未把首次导出称作完整汇编覆盖。</p>
+<p>九路表补证已完成：<code>core-live-add84ffbd31840f49c6ab72421850a2f/output/switch-targets.tsv</code>逐字解析<code>181642f38</code>的9个uint16相对偏移，目标依次为815ca6、815c15、815b84、815af3、81596d、8158c9、815825、815781、8156dd。补反汇编后的815560-range.asm为24728字节（原已定义指令列表只有7927字节）；已确认XML六板型对应调用点分别为815d09/815e2d、815bde、815936、815892、8157ee、81574a。只读工程修改已丢弃，没有写原DLL或保存分析项目。</p>
+<p>下一断点：逐一核对编码四入口的投影原指令；追80b720→874db0/875cb0的紧凑字段及其消费者；为每种板型形成字段读取与分支表，再决定是否需要最小运行补证。当前A1尚未闭合，无新宿主验收、无提交推送。</p>
+<p>接续已补：<code>core-live-344f25b3346042c5a5b4d3fce40425b0/output/</code>含80b720及7e33c0汇编、874db0/874fc0/875cb0函数体。80b720汇编首次读取公共字段仅为+0/+4/+14/+18/+1c/+20/+3c/+40，随后丢弃公共指针，将这些字段放入自己的紧凑块；该边界没有携带EdgeThresh+28/+2c。未屏蔽路径874db0转874fc0；屏蔽路径875cb0转875ef0，两个wrapper均有参数边界与失败码，尚未完成整个候选核还原。</p>
+<p>重要范围限定：7e33c0除圆点和棋盘外，仍有编码kind6/7/8/9的自动精修分支，分别为7de3b0/7df4f0/7dec40/7e0480，正在补取四体。不能依据初始识别投影不带EdgeThresh就宣称编码板整个生命周期不使用该字段。</p>
+<p>四精修体已补至<code>core-live-e6d7a996af8746f2961a921dfb9c166e/output/</code>，源码均先调用7dce20；其公共参数投影仅读取+0/+4/+14/+18/+1c/+20，不携带EdgeThresh+28/+2c。7dce20汇编已取，但四caller仍有签名传播警告（显示部分调用实参丢失），后续需核其stack参数，而不把自动签名作为最终ABI。当前结论仅限定已查的投影边界，不将其扩大为整个算法全部行为已闭合。</p>
+<h2 id="a1接续四caller栈abi与字段消费矩阵">A1接续：四caller栈ABI与字段消费矩阵</h2><p><code>core-live-63304388575e4664877506a747516f63/output/</code>补齐四caller汇编和875ef0方法体。已核四caller把原公共参数作为7dce20第10参数放在call前<code>[RSP+0x48]</code>：调用点分别<code>1807de4e3/1807df66b/1807ded78/1807e05f2</code>。其中7df4f0和7e0480伪代码仅显示5参数；实际公共参数仍从其第12参数栈位传来，不能照伪代码省掉。7dce20先读取自己的第10参数，再做上文有限字段投影。</p>
+<table>
+<thead>
+<tr>
+<th>XML板型</th>
+<th>初始识别入口与字段边界</th>
+<th>自动精修入口与字段边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>options+44=1→80b720，投影不带+28/+2c；=2→873de0，使用另两float+48/+4c；其余值815d43直接跳815fe2，不调用这两个候选器</td>
+<td>7dce20，投影不带+28/+2c</td>
+</tr>
+<tr>
+<td>2（core3）</td>
+<td>812930读取+24/+28/+2c→候选参数→877230（前轮运行桥接已证）</td>
+<td>7dda50读取同三字段→817c50；受7e33c0条件门控</td>
+</tr>
+<tr>
+<td>6</td>
+<td>80f9a0内按+44投影80b720或873de0，已读函数体不把EdgeThresh投给候选器</td>
+<td>7de3b0→7dce20，已核栈指针和投影</td>
+</tr>
+<tr>
+<td>7</td>
+<td>80e690，同上两候选投影</td>
+<td>7df4f0→7dce20，已核栈指针和投影</td>
+</tr>
+<tr>
+<td>8</td>
+<td>80cfc0，同上两候选投影</td>
+<td>7dec40→7dce20，已核栈指针和投影</td>
+</tr>
+<tr>
+<td>9</td>
+<td>80bcd0，同上两候选投影</td>
+<td>7e0480→7dce20，已核栈指针和投影</td>
+</tr>
+</tbody></table>
+<p>此表关闭“公共参数块传到哪里、初始及精修候选接口是否携带EdgeThresh”的有限源码问题，不把候选器全部算法、任意板图、所有错误输出或其他共享状态宣称完成。编码初始四入口的投影来源已核源码，其中80f9a0有本轮原指令对照，其余三入口完整逐指令核对继续开放。后续A2从具体候选/精修算法与排序工作区继续，不再依赖板型名称推测。</p>
+<p>余三入口指令已补至<code>core-live-b5620172324b481d90818dac2d2cdd92/output/</code>。此轮只请求asm，旧RunCoreLive退出条件强制要求.c，导致脚本退出1；headless已完成并写stopped、三asm均存在且无error文件。现修正测试helper允许真实指令/常量/引用导出，同时要求stopped和无error；没有把旧脚本失败报成通过。三入口的相应compact投影和候选调用已核原指令，A1字段边界切片可交接；后续A2继续算法细节。</p>
+<p class="meta">来源：docs/plugins/CALIBRATION-BOARD-A1-SOURCE-CHAIN.md · SHA256 f512a6d30d10dc7a39180c54270f255df54cf5c73e3ba56785b90466bc1a3c46<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

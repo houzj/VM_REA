@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GetInnerDecryptedData · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GetInnerDecryptedData · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-P10"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GetInnerDecryptedData → 检测isEncrypted → 取key → keyBuff非null门</h2><p>非空数据先CheckDataEncryptByDongle，返回int未被消费；isEncrypted为true才取key，此返回int也未读取。随后判断keyBuff!=null，未按bIsContainKey决定是否调用解密；DataDecryptByDongle非零抛VmException，否则采用dataOut。此门与加密分支不同，不能合并成同一个“有key才加解密”判断。</p><p><a href="../专题/communication-protection.html#edge-P10">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-protection.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-protection.edges.json · SHA256 78cdc1eaa90290bfce0f1009a8bdde609e5f46002e27f42770a3f3f12b6bb046</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="b324b154ce2663e402998516c2df9708129c96fbc47dc6f9af15d8bafd750434">{
+  &quot;id&quot;: &quot;P10&quot;,
+  &quot;route&quot;: &quot;原版 · 变换与字节写回&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;GetInnerDecryptedData&quot;,
+  &quot;to&quot;: &quot;检测isEncrypted → 取key → keyBuff非null门&quot;,
+  &quot;behavior&quot;: &quot;非空数据先CheckDataEncryptByDongle，返回int未被消费；isEncrypted为true才取key，此返回int也未读取。随后判断keyBuff!=null，未按bIsContainKey决定是否调用解密；DataDecryptByDongle非零抛VmException，否则采用dataOut。此门与加密分支不同，不能合并成同一个“有key才加解密”判断。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/CommunicationEncryService.cs&quot;,
+      &quot;member&quot;: &quot;CommunicationEncryService.GetInnerDecryptedData&quot;,
+      &quot;sha256&quot;: &quot;a1a98bf19b95958cf2b49b96d0f3dfd95e0c5336a6fa89afa85e3b6e675c4aba&quot;,
+      &quot;start&quot;: 176,
+      &quot;end&quot;: 207,
+      &quot;excerpt&quot;: &quot;\tprivate static byte[] GetInnerDecryptedData(byte[] source)\n\t{\n\t\tbyte[] array = source;\n\t\tif (array != null &amp;&amp; array.Length != 0)\n\t\t{\n\t\t\tbyte[] keyBuff = null;\n\t\t\tbool isEncrypted = false;\n\t\t\tbyte[] dataOut = null;\n\t\t\tServerSDKManager.serverSDKManager.mSolutionManager.CheckDataEncryptByDongle(array, ref isEncrypted);\n\t\t\tif (isEncrypted)\n\t\t\t{\n\t\t\t\tbool bIsContainKey = false;\n\t\t\t\tServerSDKManager.serverSDKManager.mSolutionManager.GetEncryptionFromDongle(ref keyBuff, ref bIsContainKey);\n\t\t\t\tif (keyBuff != null)\n\t\t\t\t{\n\t\t\t\t\tint num = ServerSDKManager.serverSDKManager.mSolutionManager.DataDecryptByDongle(array, keyBuff, ref dataOut);\n\t\t\t\t\tif (num != 0)\n\t\t\t\t\t{\n\t\t\t\t\t\tthrow new VmException(num);\n\t\t\t\t\t}\n\t\t\t\t\tarray = dataOut;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn array;\n\t}\n\n\t/// &lt;summary>\n\t/// 获取指定数据加密后的数据\n\t/// &lt;/summary>\n\t/// &lt;param name=\&quot;source\&quot;>&lt;/param>\n\t/// &lt;returns>&lt;/returns>&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-protection-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VMControls.WPF.GlobalUI.CommunicationEncryService::GetInnerDecryptedData&quot;,
+      &quot;sha256&quot;: &quot;092ee644f1e760b48ff5ef5727fcc7237a7d09a862137215d9403da5ad54e72a&quot;,
+      &quot;start&quot;: 14556,
+      &quot;end&quot;: 14575,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x0600057e\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x0600057e\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VMControls.WPF.GlobalUI.CommunicationEncryService\&quot;,\n            \&quot;name\&quot;: \&quot;GetInnerDecryptedData\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Private, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;00011d051d05\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 142,\n          \&quot;ilSha256\&quot;: \&quot;9f6d5badd91c5251dbc973d4e00ed2fdfa9926cc9e61ee53c2f32d95d457d23a\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00020a062c07068e16fe032b01160b072c7400140c160d141304288701000a7b8801000a0612036f2105000a2609130511052c5100161306288701000a7b8801000a120212066f2205000a260814fe03130711072c2e00288701000a7b8801000a060812046f2305000a1308110816fe03130911092c0900110873c201000a7a11040a00000006130a2b00110a2a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;实际错误码/布尔输出组合、native密钥与算法、无key时结果未知；keyBuff分配不证明取到了有效密钥。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

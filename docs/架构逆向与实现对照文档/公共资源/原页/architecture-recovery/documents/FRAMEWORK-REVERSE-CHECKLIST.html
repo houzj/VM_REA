@@ -1,0 +1,208 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>框架逆向与验收清单</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../FRAMEWORK-REVERSE-CHECKLIST.md">下载原始文件</a></nav><main><h1 id="框架逆向与验收清单">框架逆向与验收清单</h1><p>执行路线见 <a href="FRAMEWORK-REVERSE-MASTER-PLAN.html">框架层源码级逆向总计划</a> 和 <a href="framework-reverse-plan.html">分组任务台账</a>。本页记录能力及验收事实；总计划记录待做范围、分组、依赖、证据与退出条件，两者不能互相替代。</p>
+<p>更新：2026-10-19。以framework-acceptance.json作为逐项状态源，HTML见<a href="../../framework-acceptance.html">验收表</a>。</p>
+<p>跨项目任务分配与文件锁现以<a href="PLUGIN-FRAMEWORK-BOUNDARY.html">节点插件/框架边界</a>、<a href="TWO-PROJECT-WORKLISTS.html">双项目独立清单</a>和<a href="TWO-PROJECT-BASELINE.html">开发基线</a>为准。用户分别管控两项目：主线负责与工具无关的画布、Group、流程、方案、工具发现和按指令最终集成；插件线负责具体工具及其所需的公共节点配置/调试/显示框架。交叉文件每项只设一个提交所有者。插件线当前有未提交共享改动，本表下述能力仅统计已合入 main 的子集，不把另一工作树在制实现算进来。</p>
+<p>当前23个领域均有未关闭范围；已完成子集不代表完整原生等价。窗口事件、截图目检、桌面输入及原生差分分别记录。</p>
+<p>计划第二批配置证据更正：C02已找到VM.Utility.ConfigurationHelper.GetConfigValue，通过ApplicationName拼接相对CWD的.cfg并缓存XML；安装VisionMaster.cfg当前IsClearLastExecuteResult/CurValue为0，原helper复制配置及等待叶20断言通过。下表旧“有效默认/入口未找到”由此缩小为实际运行进程CWD/读取值及编辑入口仍未验，不能继续称helper实现缺失。main无条件清结果差异仍在，见 <a href="reverse/C02-scheduling-batch2.html">C02第二批</a>。</p>
+<p>2026-10-19第二轮增量：工具加载缓存/Group回调时序见 <a href="LOADER-ROUND2-20261019.html">加载报告</a>，撤销root/part捕获和恢复载荷见 <a href="UNDO-ROUND2-20261019.html">撤销报告</a>，8个原厂sol的122条外层记录见 <a href="SOL-ROUND2-20261019.html">持久化报告</a>。VM.UnRedo.dll已取得并完成静态追踪，下表旧“未逆出”只剩实际运行/完整历史界面等未关闭部分；不再表示程序集缺失。FCR-019的准确谓词是运行Tab、DisplayName、动态展开和订阅类型条件，非统一SubscribeVisible过滤。以上均不关闭原机差分或插件集成状态。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>领域</th>
+<th>已完成子集</th>
+<th>未完成及原生差异</th>
+<th>本轮结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F-01</td>
+<td>公共数据契约</td>
+<td>标量、数值/字符串数组，以及圆/点/Fixture强类型数组；元素枚举、验证、只读快照、跨Group输入输出和嵌套展开；Components部分Blob字段和像素矩形/环形Region可选叶投影，原始聚合根保留；Polygon新增独立托管结果容器，尚未接端口</td>
+<td>完整原生类型、float精度与ABI；Region混合/Polygon端口与真实工具、排除/坐标变换、Fixture十叶与零尺度、Components缺失原生指标、复合根混合报告模式及完整模板未完成</td>
+<td>42项数组契约及21项Polygon容器检查；既有93项调用检查含实际BMP阈值连通域叶面积两轮累积、改名/删除传播和保存重开；416项实际WPF事件通过</td>
+</tr>
+<tr>
+<td>F-02</td>
+<td>插件宿主及调试会话</td>
+<td>WPF工厂、隔离单次/连续/停止、缓存输入、预览、关闭等待</td>
+<td>原生首次上游准备、设备取消回调及全部插件联调未完成；旧Form路径仍存在</td>
+<td>本轮宿主事件操作已覆盖；原生差分待验收</td>
+</tr>
+<tr>
+<td>F-03</td>
+<td>WPF主窗口</td>
+<td>自定义边框、工作区最大化修正、分隔与状态栏</td>
+<td>多屏/DPI矩阵和全状态原生截图差分未完成</td>
+<td>修复状态栏文字间距并截图目检通过；最大化两轮事件检查通过；桌面输入及多屏DPI未验收</td>
+</tr>
+<tr>
+<td>F-04</td>
+<td>菜单与工具栏</td>
+<td>保存、打开、撤销重做、锁定、运行/连续/停止已接命令；撤销/重做按源声明的normal/disable资源随WPF按钮IsEnabled切换（MF-01实现，6项实际WPF操作/状态检查通过）</td>
+<td>相机管理、全局变量、通信、全局触发、脚本、综合配置未实现；运行策略两模式编辑器已按原生状态链实现，3项WPF操作通过；右上角静态运行模式文字与原生入口映射未证实；运行界面 <code>Lang_FrontEdit → EditFrontendUI</code> 主窗口调用及独立插件反射入口已源确认，并用现成 <code>dotnet-ildasm</code> 导出 <code>EditFrontendWindow</code>、<code>FrontendWindowData</code>、<code>FrontendEdit</code> 目标类 IL：构造、DisplayMode、<code>FrontendEdit.Close(true)</code> 关闭保存/取消边界、VM保存/加载进度事件、部分控件和按钮事件可追踪；XAML/BAML资源内部视觉树/完整命令绑定与运行界面数据运行时消费仍未知；详见 MF01-FRONTEND-UI-SOURCE-AUDIT.md。菜单仍为简化独立实现，VM.UnRedo.dll具体历史服务/下拉记录窗口未逆出；图标精细像素及VM实机差分未确认</td>
+<td>MF-01ShellChecks累计42项PASS，第40处Recent Popup在离屏宿主失败，运行策略3项通过，详见MF01-TOOLBAR-UNDO-REDO.md、MF01-RUNNING-MODE-SOURCE-AUDIT.md 与 MF01-FRONTEND-UI-SOURCE-AUDIT.md；本项有独立操作证据，Recent Popup仍受测试宿主无设备焦点限制；本次 Frontend UI 为静态 IL 分析，未做 VM 界面操作验收；完整操作验收未关闭</td>
+</tr>
+<tr>
+<td>F-05</td>
+<td>工作流Tab</td>
+<td>增删改名复制切换、列表定位、间隔和NG停止、空方案；Group Tab按当前模块集打开配置、移除顶层菜单，运行/停止所属根流程并保留内部视图</td>
+<td>原生流程/算法代码导出、流程等待超时尚未完成；非活动Tab的全部历史显示状态及VM差分仍未验收</td>
+<td>本轮新增实际Group Tab配置、单次/连续/停止及旧菜单失效检查；MF-05普通运行调用链及native边界见<a href="MF05-PROCEDURE-RUN-CALLCHAIN.html">流程执行调用链逆向</a>；截图与运行值另列</td>
+</tr>
+<tr>
+<td>F-06</td>
+<td>工具导航</td>
+<td>15分类、折叠展开、悬停弹层、注册工具可用状态、拖放预览及提交；去除自定120ms延时，分类交接、锁定和失效拖放清理，Group插入原子创建内部图</td>
+<td>多数工具插件未实现；右侧布局、全部动画/原生警告窗、注册热刷新、自定义工具包库尚未完成</td>
+<td>按ToolBox触发器对照并操作；三层限制在插入时执行，不擅自禁用Group工具</td>
+</tr>
+<tr>
+<td>F-07</td>
+<td>节点交互</td>
+<td>端点悬停、框选多选、临时拖影、提交、吸附对齐、复制粘贴、撤销及输入边界；复制时重新解析当前源参数，同父级合法上游/订阅保留；源失效跳过；Group40px边界与混合对齐</td>
+<td>全部原生组合类型/输入边界与真实鼠标差分未关闭；跨方案及同名替换等源身份边界未验收</td>
+<td>真实上游BMP消费者复制输出像素一致；40px拖影、对齐、底部完整边界有事件和目检记录</td>
+</tr>
+<tr>
+<td>F-08</td>
+<td>连线和避障</td>
+<td>正交路径、箭头、命中选中删除、连接拖动、中点拖动、节点插入及保存</td>
+<td>原生全路由策略未完整恢复；重叠/逆向/极端布局仍须差分</td>
+<td>中点拖动与插入事件操作及截图目检；实际鼠标拖动阻塞；原生避障差分未关闭</td>
+</tr>
+<tr>
+<td>F-09</td>
+<td>视口和小地图</td>
+<td>缩放滚动、鹰眼点击拖动、收起展开、流程独立视口；源码对照Shift横滚和Ctrl组合事件路由</td>
+<td>极端坐标、DPI、空图及全原生公式行为差分未完成</td>
+<td>本轮宿主事件操作已覆盖；原生差分待验收</td>
+</tr>
+<tr>
+<td>F-10</td>
+<td>Group所有权</td>
+<td>内部模块集、双击进入、嵌套、复制删除及保存；Group内部图、代理目标独立复制，复制/改名后名称同步；工具箱新增一次创建节点和内部图</td>
+<td>原生.gro/全部复杂引用、全名同名替换、跨方案剪贴板及实例生命周期仍未全验收；历史顶层调用保留独立兼容</td>
+<td>多层实际图像Group复制、一次撤销重做、保存重开运行；非法超深插入/粘贴无修改</td>
+</tr>
+<tr>
+<td>F-11</td>
+<td>Group返回</td>
+<td>Tab Up逐层返回、根层隐藏、面包屑返回、再进入；运行根流程时保留内部Group画布，当前配置编辑也不改变导航</td>
+<td>VM焦点/视口/全部运行状态视觉差分仍未完成</td>
+<td>实际返回与再进入，内部Tab单次/连续/停止均保留当前作用域</td>
+</tr>
+<tr>
+<td>F-12</td>
+<td>Group循环</td>
+<td>起止订阅、[start,end)、私有LoopIndex、嵌套隔离、间隔和取消；按原生字段LoopStep推进，零步长写入拒绝，未臆造XML中不存在的步长控件</td>
+<td>每轮持续实例/局部状态、原生状态回调、负步长无中断及溢出原生差分未完成；long推进/溢出和10000轮上限为独立策略</td>
+<td>真实图像按20/70/120/170运行并逐项对照独立单轮；实际窗口step2与终值5运行0/2/4；停止、禁用重启及保存复制运行复验通过</td>
+</tr>
+<tr>
+<td>F-13</td>
+<td>Group中断</td>
+<td>int/float/string六比较，常量索引及父级前置标量整数动态索引；依赖调度、当前运行数据准备、越界诊断、复制重映射和失效引用清理；Group索引光标方括号打开180×180整数来源树，叶双击写入实际索引订阅</td>
+<td>通用插件端口索引、原生独立订阅窗/完整来源路径、缓存时序及全部状态码差分未完成</td>
+<td>实际图像源SN[0,1]按变量索引1在LoopIndex2前中断；弹层双击、数值编辑解除订阅、撤销恢复、保存重开通过；缺值/越界不读旧数据</td>
+</tr>
+<tr>
+<td>F-14</td>
+<td>Group累积和显示</td>
+<td>数值/字符串累积；圆/点/Fixture记录数组跨轮追加、嵌套展开和签名传播；图像保持最终标量；复合结果换行与逐元素显示</td>
+<td>全原生组合字段树、混合叶模式、Region/Components与pointset映射、其他原生复合类型及ABI未完成</td>
+<td>真实BMP找圆经内3外2轮得到6圆，半径逐项一致；点/Fixture由测试字段投影跨两层调用；关闭内层累积后实际改为2圆；窗口切换累积返回最终标量</td>
+</tr>
+<tr>
+<td>F-15</td>
+<td>Group配置器</td>
+<td>输入批量增删改名绑定、双栏配置、类别排序、多目标关联同步、专用编辑器入口；显示设置表格列和按钮锚定式订阅树；内部Tab打开真实Group五页窗口，父级编辑事务与工具专用编辑器共享正确作用域</td>
+<td><code>ROISelecter</code>运行专属 <code>RoiConfigControl</code> 未接入；真实VM鼠标/像素差分、完整复杂/训练控件及原生警告窗未完成</td>
+<td>180×180树形Popup实际选择/取消订阅WPF操作通过；<code>连通域 &gt; Components/Area</code>与<code>CentroidPoint/CentroidX</code>层级按源构建并双击写回；历史目标树夹具阻塞已解除，最新456项完整回归及新增20项审查通过；FCR-018/019/021/022保持开放，详见<a href="GROUP-NATIVE-EDITORS.html">Group原生编辑器证据</a></td>
+</tr>
+<tr>
+<td>F-16</td>
+<td>执行调度</td>
+<td>图执行、Group隔离SelfRun、连续停止、参数准备、失败清理与并发守卫；本轮新增原生连续运行入口、停止状态回调及每轮输出清空的托管调用链</td>
+<td>原生引擎完整调度、单步、流程超时、设备回调/状态码不等价；方案替换后的方案级运行历史/底部耗时清理尚无原生托管证据和真实VM操作差分；本地每轮无条件清理结果，VM受<code>IsClearLastExecuteResult</code>配置控制（核心字段初值false，但应用启动配置的有效默认值/设置入口未找到），本地尚未复刻该分支</td>
+<td>本轮宿主事件操作已覆盖；连续运行 native/managed 调度时序仍待差分，见<a href="MF05-CONTINUOUS-RUN-CALLCHAIN.html">连续运行与停止调用链</a>；新建/加载方案后结果视图重绑与独立方案级历史表现待VM验收，详见<a href="MF05-RESULT-LIFECYCLE.html">方案替换结果生命周期</a></td>
+</tr>
+<tr>
+<td>F-17</td>
+<td>局部变量和流程IO</td>
+<td>初始化、订阅、父子传参、代理编辑、稳定ID及事务撤销</td>
+<td>.gvar导入导出、全部类型与原生生命周期未完成；非全局变量服务</td>
+<td>本轮宿主事件操作已覆盖；原生差分待验收</td>
+</tr>
+<tr>
+<td>F-18</td>
+<td>独立方案存储</td>
+<td>.vmx.json图/Group/订阅/ROI/显示样式保存重开及引用重映射；Group内部图、实时复制后引用和名称支持保存重开；原生 <code>.sol</code> 保存/加载的 <code>VmSolution → SolutionManager → SDK → end callback</code> 托管调用链已单独追踪</td>
+<td>异常写入/资源目录迁移及全版本矩阵仍未关闭；原生.sol仍不兼容，native保存语义和等待器内部未证实</td>
+<td>88项调用/Group专项含动态索引、类型拒绝、复制删除、越界、保存重开与真实复合输出；既有23项持久化记录保留；原生 <code>.sol</code> 源码链及和 <code>.vmx.json</code> 的格式边界见<a href="MF05-PROCEDURE-RUN-CALLCHAIN.html">MF-05执行与持久化调用链</a></td>
+</tr>
+<tr>
+<td>F-19</td>
+<td>原生.sol兼容</td>
+<td>方案/流程/Group 版本查询与 CompatibleTool 迁移调度链已从托管反编译源码追踪；三个随包 V4.4 <code>.sol</code> 样本静态观察为 ZIP-compatible 容器，其中一个解析出 VmServer.xml、UiParamData、MoudleFrame 与附件；详见<a href="COMPATIBLETOOL-VERSION-MIGRATION.html">迁移与样本容器逆向记录</a></td>
+<td>完整读写实现/未知字段往返/密码及跨版本容器规则未完成；native SDK 函数体当前不可反编译；原生迁移运行、旧版成对样本、异常回滚与版本矩阵均未验证</td>
+<td>托管迁移链与安装样本目录结构为静态证据；没有 VM 迁移运行或原生 <code>.sol</code> 往返，F-19 仍未通过</td>
+</tr>
+<tr>
+<td>F-20</td>
+<td>图像结果与ROI服务</td>
+<td>端口预览、ROI编辑模板、显示样式、继承区域、Fixture传输及实工具运行</td>
+<td>分屏/布局未实现；Fixture原生变换与舍入、变换坐标编辑、部分模板未完成</td>
+<td>既有ROI宿主24项记录保留，本轮未重跑；新增Group专用图像源作用域联调，Fixture原生差分仍开放</td>
+</tr>
+<tr>
+<td>F-21</td>
+<td>生命周期</td>
+<td>会话关闭等待、取消、定时任务及拖放引用释放，受控退出检查；工具弹层不再创建延迟关闭定时器；拖放取消解除事件与payload；主框架产品源码静态审计未发现显式子进程启动路径（见<a href="MF05-PROCESS-LIFETIME-AUDIT.html">进程生命周期审计</a>）</td>
+<td>长稳、真实设备、原生SDK进程/线程及全部异常路径仍未验收；静态未发现不等于全项目无泄漏</td>
+<td>最新受控Core/插件/WPF/主窗关闭记录见证据；已失败和超时的中间轮次没有标成通过；CompatibleTool 管道风险见迁移审计</td>
+</tr>
+<tr>
+<td>F-22</td>
+<td>首批真实工具集成</td>
+<td>图像源及硬阈值二值化贯通导航/配置/订阅/Group/预览/保存/释放；内部画布通过Group Tab进入专用图像源编辑器并消费实际修改</td>
+<td>全相机、其余二值化模式及工具库未完成；本轮没有改插件实现</td>
+<td>本批真实图像源和径向找圆在Group内联调；6个实际圆跨两层累积。点/Fixture的投影模块用于类型传递验证，不冒充原生算法插件</td>
+</tr>
+<tr>
+<td>F-23</td>
+<td>全库部署和SDK</td>
+<td>当前子集独立win-x64发布，不依赖原VM SDK运行</td>
+<td>全工具库、设备SDK/API/ABI、干净机器及性能长稳未完成</td>
+<td>只验当前子集发布启动/关闭；全库和干净机器验收未执行</td>
+</tr>
+</tbody></table>
+<h2 id="验证方法">验证方法</h2><p>2026-10-17流程等待超时增量：F-05原始菜单/窗口读写链已有证据，main接入配置窗口、独立方案保存及协作式运行时限。该运行语义属于独立实现，原生SDK后端及真实VM状态差分仍未关闭；见<a href="PROCEDURE-WAIT-TIME.html">PROCEDURE-WAIT-TIME.md</a>。F-05、F-16、F-18的整领域状态保持未完成。</p>
+<ul>
+<li>events：真实WPF窗口、控件事件及部分宿主方法；复制后流程通过实际Tab运行按钮执行。逐条操作记录可展开；不是桌面鼠标全链路</li>
+<li>visual：人工查看重建程序渲染截图，检查文字、布局与预览；不是原VM截图</li>
+<li>desktop：既有Computer Use截图超时/点击缺几何信息记录保留；本批使用真实WPF窗口事件、部分宿主方法与截图目检，未重新完成桌面鼠标输入验收</li>
+<li>native：静态核对RelateIndex、前置整数索引树、组合输出遍历叶字段和原生V44分支。三种复合数组为独立强类型传输；原生叶字段/ABI/缓存时序及真实VM差分未完成</li>
+</ul>
+<h2 id="修复与复验">修复与复验</h2><ul>
+<li>状态提示与流程耗时紧贴；StatusText右侧12像素间距；修复后截图目检分离；独立布局修复</li>
+<li>Group双栏根容器透明且前景未明确，渲染黑底及文字不可读；内容根容器明确#f2f3f5背景；前景#4c4c4c；修复后表头、数据源、类型与关联文字可读</li>
+<li>Group Tab配置按钮指向普通流程窗口，运行还会跳回根画布；按DisplayModuleSet绑定Group专用窗口；运行目标与显示模块集分离；实际配置、运行、停止、撤销时保持内部画布</li>
+<li>工具箱用自定120ms延迟且旧分类事件可影响替换弹层；按鼠标状态触发关闭，旧实例事件加身份校验；拖放修订失效取消；分类交接、锁定、层级插入边界逐项操作</li>
+<li>Group剪贴板依赖复制时旧参数及内部图状态；按ProcedurePaste实时查源；同父级保留合法上游与订阅；重映射内部图和代理；实际图像与42/43/44独立序号输出，源删除跳过</li>
+<li>Group新增后没有内部图，复制后的节点与画布名称不同步；工具箱新增节点/内部图/执行关系合并事务；同一Group名称双向同步；一次撤销完整移除，改名/复制/保存后保持一致</li>
+<li>Group拖影、对齐和底部限制误用普通节点30px高度；使用Group40px实际尺寸，按半高20px定位并计算热区/对齐；混合高度对齐和5000画布完整边界操作验证</li>
+<li>实际运行图像已显示，列表计数仍为(0/1)；按ImageListPanelBase的CurImagePath同步当前项，刷新期间抑制选择事件；运行后(1/1)，不改方案修订，不触发额外运行；操作339及截图复验</li>
+<li>Group执行器忽略原生LoopStep，始终index++；恢复非零有符号步长、原生less-than范围及执行前中断；保留末轮等待；67项调用专项，真实四轮图像及保存/复制运行通过；溢出策略与原生未知明确分开</li>
+<li>单参数写入零步长后直到运行才失败；按原生SetParam在写入前拒绝，整组验证与运行读取也拒绝零值；两种写入均无方案修订和历史污染</li>
+<li>成功重跑结果已更新，底部仍显示旧中断红字；Group结果刷新在无当前错误/中断/诊断时明确清空汇总文字；最终窗口378项通过，截图确认单轮SN22且底部无旧提示</li>
+<li>Group数组比较仅支持固定索引，复制及调度没有独立索引身份；新增IndexSource、标量整数类型与前置依赖验证、当前数据准备及引用重映射/清理；实际SN数组、界面选择/解除/撤销/重开和缺值诊断通过；不推广为全端口索引恢复</li>
+<li>复合输出不能跨轮累积，嵌套类型无法传递；按数值叶追加语义恢复当前圆/点/Fixture记录数组及签名传播；图像仍替换，未映射类型继续拒绝；真实找圆内3外2轮6项，关闭内累积后2项；点/Fixture使用明确的测试投影验证传输</li>
+<li>复合数组第二项在结果表被裁切，来源绑定后出现空白常量框；结果文本换行且提供完整提示；只在未订阅时显示常量编辑器；修复后目检两项完整可读，392项窗口操作含实际行高、完整提示和两圆绘制</li>
+<li>复合输出只能读根值，订阅选择器丢失多级字段结构；增加有依据的可选叶端口及运行投影，按完整路径构建选择树；目检后修正模块标题；实现字段子集真实参与订阅及Group累积；原生完整树/模板及全类型仍开放</li>
+</ul>
+<p>2026-10-18 源码级复核补充：Group 运行 ROISelecter 需分别追踪 <code>RoiConfigControl</code> 参数模板和 <code>ROISelecter_GroupControl</code> 装饰器模板，完整源代码链及可见/编辑/复制/写回状态见 <a href="GROUP-NATIVE-EDITORS.html">GROUP-NATIVE-EDITORS.md</a> 与 FCR-018。2026-10-18复验：全量WPF序列自然结束，456项检查通过；修正验收脚本对Group复合订阅控件和树叶双击的误用后重跑。人工查看<code>wpf-workflow-variable-targets.png</code>确认StitchEnable关闭时仍显示起始/拼接高度，FCR-018（Group原生参数装饰器/ROI模板）和FCR-019（目标参数动态可见/可订阅）仍为真实未闭合跨项目差异；Group累积结果截图人工确认输出[0,1]及两个圆叠加。此结果仅证明重建WPF控件事件及数据链，不等于真实VM桌面等价或源码全覆盖。真实ROISelecter插件和VM差分仍未验收。</p>
+<p>完整原始依据/当前代码入口、操作步骤、未关闭范围、逐项事件记录、实际运行输出及退出证据见HTML和结构化JSON。没有把目录图标、窗口可打开或测试数当作原生验收。截图与报告生成器只在tests；插件工作树未修改。</p>
+<p>2026-10-19 framework工作树收尾：Group数量配置、候选资格、撤销边界、循环异常与复合输出审计已合入；FCR-021/022仍未闭合。原始工作树清单及全部证据保全，最新验证与已知限制见 FRAMEWORK-WORKTREE-RETIREMENT.md，不把历史失败或部分通过写成完整验收。</p>
+<p>2026-10-19 main剩余在制审查：完整采纳/修正/排除清单、源路径及哈希、验证与限制见 <a href="MAIN-PENDING-REVIEW.html">MAIN-PENDING-REVIEW.md</a>。类型菜单不再将pointset映射为POINT数组，也不将POLYGON映射为Region。
+FCR-019结论修订：局部变量目标按Tab_Run Params及SubscribeVisible资格枚举，不能仅凭CustomVisible=False认定隐藏；Group候选另按CustomVisible过滤。原始XML默认StitchEnable=True，运行态Tab装配和真实目标集合未验证。旧截图推定不作为实现合同，详见MAIN-PENDING-REVIEW.md。</p>
+<p class="meta">来源：docs/FRAMEWORK-REVERSE-CHECKLIST.md · SHA256 a9da71c02c08a9e360435f000f256f1611809b963306f395b9af93b1bb9b3736<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

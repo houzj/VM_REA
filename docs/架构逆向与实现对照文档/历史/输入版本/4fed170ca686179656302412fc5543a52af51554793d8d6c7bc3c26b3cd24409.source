@@ -1,0 +1,1228 @@
+{
+  "schemaVersion": 2,
+  "modelVersion": "0.2",
+  "scope": {
+    "domains": [
+      "F-05",
+      "F-07",
+      "F-08",
+      "F-09",
+      "F-18",
+      "F-21"
+    ],
+    "completeFramework": false,
+    "implementationProgress": "41/96 = 42.71%; no change",
+    "manualAcceptanceExcluded": true
+  },
+  "baseline": "da853b5c386f04aba7634b09b2d1716a04f67103",
+  "generatedUtc": "2026-10-21T05:39:24.745Z",
+  "provenance": "Direct inspection of cited source/resources and explicitly labeled metadata/CIL evidence. Artifact identity is limited to each cited manifest; source hashes and binary identities are distinct. No vendor runtime execution or parity claim.",
+  "introduction": "从点击/框选、端口拖动、路由缓存、滚轮和鹰眼出发，追踪输入、显示几何、文档写入及存储边界。与原版控件树不同的适配始终列为当前独立实现。",
+  "edges": [
+    {
+      "id": "A01",
+      "route": "原版 · 节点与选择",
+      "classification": "source-confirmed",
+      "from": "DiagramItem.OnPreviewMouseLeftButtonDown",
+      "to": "IsOpenParams 下的单击拦截",
+      "behavior": "参数窗打开时，ClickCount<2 且 OriginalSource.Tag 不是 Button 才把事件标为 Handled；其它情况令 IsSelected=true。不是参数窗打开就拦截所有输入。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramItem.xaml.cs",
+          "member": "DiagramItem.OnPreviewMouseLeftButtonDown",
+          "sha256": "19d967cb454fa6ba9aae63a53c2b394b318ce9dd1391d7c5ec8a00a77f683ce3",
+          "start": 471,
+          "end": 486,
+          "excerpt": "\tprotected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)\n\t{\n\t\tif (IsOpenParams)\n\t\t{\n\t\t\tif (e.ClickCount < 2 && !((e.OriginalSource as FrameworkElement)?.Tag is Button))\n\t\t\t{\n\t\t\t\te.Handled = true;\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tIsSelected = true;\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic DiagramItem()",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A02",
+      "route": "原版 · 节点与选择",
+      "classification": "source-confirmed",
+      "from": "DiagramPage.GetItemsByRect",
+      "to": "全矩形包含才选入",
+      "behavior": "框选读取画布中的 DiagramItem，要求选择 Rect 完整包含 Position/ActualWidth/ActualHeight 构成的节点矩形，不是相交即选。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml.cs",
+          "member": "DiagramPage.GetItemsByRect",
+          "sha256": "35fda4306245515f4dfb6dbf20e7b8479bbae56830b2f76549b63e9d456699d3",
+          "start": 382,
+          "end": 389,
+          "excerpt": "\tprotected override List<DiagramItem> GetItemsByRect(Rect rect)\n\t{\n\t\tItemsPresenter reference = (Child as Panel).Children.OfType<ItemsPresenter>().First();\n\t\tCanvas canvas = VisualTreeHelper.GetChild(reference, 0) as Canvas;\n\t\treturn (from p in canvas.Children.OfType<DiagramItem>()\n\t\t\twhere rect.Contains(new Rect(p.Position, new Vector(p.ActualWidth, p.ActualHeight)))\n\t\t\tselect p).ToList();\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A03",
+      "route": "原版 · 节点与选择",
+      "classification": "source-confirmed",
+      "from": "ItemsPage.GetDropItems",
+      "to": "5 像素吸附 / 每节点独立夹边",
+      "behavior": "拖放坐标 Math.Round(value/5)*5；按每个节点相对最小 X/Y 的偏移算位置，再分别夹到 0..DiagramPageWidth-ActualWidth/Height。DoDropItems 将列表作为 OnDropItems 参数。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ItemsPage.cs",
+          "member": "ItemsPage.GetDropItems / DoDropItems",
+          "sha256": "bc3a7a487a75be202162bbe4ba6d6202b9b0e6ee9b618a9db9373a299091491b",
+          "start": 322,
+          "end": 351,
+          "excerpt": "\tprotected List<object[]> GetDropItems(Point point, List<DiagramItem> diagramItems, DiagramItem module = null)\n\t{\n\t\tdouble num = diagramItems.Min((DiagramItem p) => p.Position.X);\n\t\tdouble num2 = diagramItems.Min((DiagramItem p) => p.Position.Y);\n\t\tList<object[]> list = new List<object[]>();\n\t\tforeach (DiagramItem diagramItem in diagramItems)\n\t\t{\n\t\t\tPoint point2 = default;\n\t\t\tpoint.X = Math.Round(point.X / 5.0) * 5.0;\n\t\t\tpoint.Y = Math.Round(point.Y / 5.0) * 5.0;\n\t\t\tPoint point3 = new Point(Math.Min(Math.Max(point.X - point2.X + (diagramItem.Position.X - num), 0.0), (int)(DiagramPage.DiagramPageWidth - diagramItem.ActualWidth)), Math.Min(Math.Max(point.Y - point2.Y + (diagramItem.Position.Y - num2), 0.0), (int)(DiagramPage.DiagramPageWidth - diagramItem.ActualHeight)));\n\t\t\tif (module != null)\n\t\t\t{\n\t\t\t\tlist.Add(new object[3] { diagramItem.DataContext, point3, module.DataContext });\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tlist.Add(new object[2] { diagramItem.DataContext, point3 });\n\t\t\t}\n\t\t}\n\t\treturn list;\n\t}\n\n\tprotected void DoDropItems(List<object[]> res)\n\t{\n\t\tOnDropItems?.Invoke(this, new ObjectEventArgs\n\t\t{\n\t\t\tParam = res\n\t\t});\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "后续模型位置、复制与插入分支未由这个坐标函数一并证明。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A04",
+      "route": "原版 · 节点与选择",
+      "classification": "unknown",
+      "from": "完整手势/OLE 拖放",
+      "to": "模型位置 / 历史 / 插入 / 取消",
+      "behavior": "本页只确认部分预览、选中与坐标生成；完整拖放资源绑定到各复制/移动/插入/撤销分支还须逐段展开。",
+      "refs": [],
+      "unknowns": [
+        "失焦、窗口关闭、跨画布、锁定期间的全部 OLE 取消时序未运行确认。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W01",
+      "route": "原版 · 建连",
+      "classification": "source-confirmed",
+      "from": "Connector.PreviewMouseMove",
+      "to": "预览路径 / oldItem 命中",
+      "behavior": "移动时按当前指针生成 PathFinder.GetConnectionLine，转换到 ZoomArea 坐标，再 HitTesting 并高亮最近端口。预览目标选择与实际建连分开。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connector.xaml.cs",
+          "member": "Connector.AttachedDiagramItem_PreviewMouseMove",
+          "sha256": "9373e798eeb5a5f9d51be2a41c86c729233dd46cb8f56c5f39d6f9542364befc",
+          "start": 177,
+          "end": 188,
+          "excerpt": "\tprivate void AttachedDiagramItem_PreviewMouseMove(object sender, MouseEventArgs e)\n\t{\n\t\tfigure.Segments.Clear();\n\t\tList<Point> connectionLine = PathFinder.GetConnectionLine(DragStartItem, e.GetPosition(DragStartItem.GetParent<ItemsPage>()), Index);\n\t\tItemsPage page = DragStartItem.GetParent<ItemsPage>();\n\t\tZoomArea view = DragStartItem.GetParent<ZoomArea>();\n\t\tconnectionLine = connectionLine.Select((Point p) => page.TranslatePoint(p, view)).ToList();\n\t\tfigure.StartPoint = connectionLine[0];\n\t\tfigure.Segments.Add(new PolyLineSegment(connectionLine.Skip(1), isStroked: true));\n\t\tHitTesting(e);\n\t\tSetNearestConnector(oldItem);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W02",
+      "route": "原版 · 建连",
+      "classification": "source-confirmed",
+      "from": "Connector.ToolItemGrid_PreviewMouseUp",
+      "to": "已有 oldItem → DiagramItem.Connect",
+      "behavior": "松手复用移动时记录的 oldItem，仅按松手位置求最近端口；解绑事件、释放捕获和 adorner；finally 清 figure/context/oldItem/DragStartItem 与 IsMouseDown。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connector.xaml.cs",
+          "member": "Connector.ToolItemGrid_PreviewMouseUp",
+          "sha256": "9373e798eeb5a5f9d51be2a41c86c729233dd46cb8f56c5f39d6f9542364befc",
+          "start": 90,
+          "end": 126,
+          "excerpt": "\tprivate void ToolItemGrid_PreviewMouseUp(object sender, MouseButtonEventArgs e)\n\t{\n\t\ttry\n\t\t{\n\t\t\tPreviewMouseMove -= ToolItemGrid_PreviewMouseMove;\n\t\t\tPreviewMouseLeftButtonUp -= ToolItemGrid_PreviewMouseUp;\n\t\t\tif (context != null)\n\t\t\t{\n\t\t\t\tcontext.PreviewMouseLeftButtonUp -= ToolItemGrid_PreviewMouseUp;\n\t\t\t\tcontext.PreviewMouseMove -= AttachedDiagramItem_PreviewMouseMove;\n\t\t\t\tcontext.ReleaseMouseCapture();\n\t\t\t\t(context as IExtensionProvidePanel)?.AdornerLayer?.Children?.Remove(adornerPanel);\n\t\t\t}\n\t\t\tif (oldItem != null && e != null)\n\t\t\t{\n\t\t\t\tint nearestConnectorIndex = GetNearestConnectorIndex(e.GetPosition(oldItem));\n\t\t\t\tDragStartItem?.Connect(oldItem, Index, nearestConnectorIndex);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Info(ex.Message + ex.StackTrace);\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tadornerPanel = null;\n\t\t\tfigure = null;\n\t\t\tcontext = null;\n\t\t\toldItem = null;\n\t\t\tDragStartItem = null;\n\t\t\tif (IsMouseDown)\n\t\t\t{\n\t\t\t\tIsMouseDown = false;\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W03",
+      "route": "原版 · 建连",
+      "classification": "source-confirmed",
+      "from": "DiagramItem.Connect / OnConnect 资源",
+      "to": "VmModuleBaseDecorator.ConnectCommandExecute",
+      "behavior": "Connect 发送 target.DataContext、源端口和目标端口；XAML 的 ParamsEventCommand 绑定 ConnectCommand；处理体把三项传给 VMAddConnection。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramItem.xaml.cs",
+          "member": "DiagramItem.Connect",
+          "sha256": "19d967cb454fa6ba9aae63a53c2b394b318ce9dd1391d7c5ec8a00a77f683ce3",
+          "start": 295,
+          "end": 301,
+          "excerpt": "\tinternal void Connect(DiagramItem targetItem, int index, int hitIndex)\n\t{\n\t\tOnConnect?.Invoke(this, new ObjectEventArgs\n\t\t{\n\t\t\tParam = new object[3] { targetItem.DataContext, index, hitIndex }\n\t\t});\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramItem.xaml",
+          "member": "DiagramItem OnConnect resource",
+          "sha256": "2b3e7ddc997bd3aec7a4bfadbff4edd4753e29e92c208ca7aaeabc489a854943",
+          "start": 24,
+          "end": 26,
+          "excerpt": "    <i:EventTrigger EventName=\"OnConnect\">\n      <UIHelper:ParamsEventCommand Command=\"{Binding ConnectCommand}\" />\n    </i:EventTrigger>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "VmModuleBaseDecorator.ConnectCommandExecute",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 1032,
+          "end": 1047,
+          "excerpt": "\tprivate void ConnectCommandExecute(ObjectEventArgs ts)\n\t{\n\t\tobject[] array = (ts.Param as IList) as object[];\n\t\tVmModuleBaseDecorator vmModuleBaseDecorator = array[0] as VmModuleBaseDecorator;\n\t\tint index = (int)array[1];\n\t\tint targetIndex = (int)array[2];\n\t\ttry\n\t\t{\n\t\t\tVMAddConnection(DecorateSource as IVmModule, vmModuleBaseDecorator.DecorateSource as IVmModule, index, targetIndex);\n\t\t}\n\t\tcatch (VmException vmException)\n\t\t{\n\t\t\tShowMessage.ShowVmExceptionMessage(vmException);\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W04",
+      "route": "原版 · 建连",
+      "classification": "source-confirmed",
+      "from": "VMAddConnection",
+      "to": "运行检查 / 历史 / 已有边端口更新 / 新增",
+      "behavior": "拒绝 null 或运行检查失败；非全局且非过滤时注册 RootOperation。已有 NextModules 边时更新端口并发属性通知；新边检查环和 SpModuleCheck 后 AddConnection。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "VmModuleBaseDecorator.VMAddConnection",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 1048,
+          "end": 1107,
+          "excerpt": "\tpublic static bool VMAddConnection(IVmModule source, IVmModule target, int index, int targetIndex, bool isFilterUnReDo = false, bool isAutoLink = true)\n\t{\n\t\tif (source == null || target == null)\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tif (!DecoratorBase.CheckRunning(source as IVMRun) || !DecoratorBase.CheckRunning(target as IVMRun))\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tstring text = source.Name + \", \" + target.Name;\n\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"增加连线\") + AppLocalizationService.GetPunctuation(\"：\") + source.FullName + \",\" + target.FullName, ifLang: false);\n\t\tif (!source.IsGlobalModu && !target.IsGlobalModu && !isFilterUnReDo)\n\t\t{\n\t\t\tIoc.Get<IUnRedoService>()?.Register(new RootOperation(), AppLocalizationService.GetLang(\"增加连线\") + AppLocalizationService.GetPunctuation(\"：\") + text);\n\t\t}\n\t\tLogHelper.Info(\"连接：\" + source.FullName + \",\" + target.FullName);\n\t\tif (source.NextModules.Contains(target))\n\t\t{\n\t\t\tVmConnectionDecorator vmConnectionDecorator = new VmConnectionDecorator\n\t\t\t{\n\t\t\t\tConnectionSource = source,\n\t\t\t\tDecorateSource = target\n\t\t\t};\n\t\t\tvmConnectionDecorator.SourceIndex = index;\n\t\t\tvmConnectionDecorator.TargetIndex = targetIndex;\n\t\t\ttarget.OnPropertyChanged(\"SourceIndex\");\n\t\t\ttarget.OnPropertyChanged(\"TargetIndex\");\n\t\t}\n\t\telse\n\t\t{\n\t\t\tHasCheckPath = new Dictionary<uint, uint>();\n\t\t\tif (CheckPathByModule(target, source))\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_ModuLink\"), AppLocalizationService.GetLang(\"Lang_FlowNoLoop\"), MessageIcons.Warning);\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tif (!source.SpModuleCheck(true))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tAddConnection(source, target, isAutoLink);\n\t\t\tVmConnectionDecorator vmConnectionDecorator2 = new VmConnectionDecorator\n\t\t\t{\n\t\t\t\tConnectionSource = source,\n\t\t\t\tDecorateSource = target\n\t\t\t};\n\t\t\tvmConnectionDecorator2.SourceIndex = index;\n\t\t\tvmConnectionDecorator2.TargetIndex = targetIndex;\n\t\t}\n\t\treturn true;\n\t}\n\n\t/// <summary>\n\t/// 增加连接\n\t/// </summary>\n\tpublic static void AddConnection(IVmModule source, IVmModule target, bool isAutoLink = true)\n\t{\n\t\tif (source.NextModules.Count >= source.MaxConnecion)\n\t\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "RootOperation 实际快照及 CheckPathByModule 完整递归策略在历史/模型视图另列。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W05",
+      "route": "原版 · 建连",
+      "classification": "source-confirmed",
+      "from": "AddConnection",
+      "to": "NextModules.Add / 可选 AutoLinkData",
+      "behavior": "达到 MaxConnecion 时只提示；不存在目标时加入 NextModules；isAutoLink 且目标不是流程时 AutoLinkData。画布执行连线可能连带数据自动关联，不能只画一条无副作用关系。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "VmModuleBaseDecorator.AddConnection",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 1104,
+          "end": 1118,
+          "excerpt": "\tpublic static void AddConnection(IVmModule source, IVmModule target, bool isAutoLink = true)\n\t{\n\t\tif (source.NextModules.Count >= source.MaxConnecion)\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Connection Exceed UL\"), MessageIcons.Warning);\n\t\t}\n\t\telse if (!source.NextModules.Contains(target))\n\t\t{\n\t\t\tsource.NextModules.Add(target);\n\t\t\tif (isAutoLink && !(target is IVmProcedure))\n\t\t\t{\n\t\t\t\tDecoratorBase.AutoLinkData(source, target);\n\t\t\t}\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "NextModules 的原生同步、AutoLinkData 的具体数据选择与订阅写入尚需进一步取证。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W06",
+      "route": "原版 · 路由",
+      "classification": "source-confirmed",
+      "from": "Connection.OnItemChanged",
+      "to": "端点 Position / ActualWidth 绑定",
+      "behavior": "仅连接源/目标的 Position 和 ActualWidth 绑定至本 Connection。第三方节点不属于本方法的这组绑定源。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connection.xaml.cs",
+          "member": "Connection.OnItemChanged",
+          "sha256": "cc185a2b2b8a30013b3914d6abf8fbe02f59ff0a590660f3a292d8dcfd2f25a7",
+          "start": 224,
+          "end": 251,
+          "excerpt": "\tprivate static void OnItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)\n\t{\n\t\tConnection connection = (Connection)d;\n\t\tif (connection.SourceItem != null && connection.TargetItem != null)\n\t\t{\n\t\t\tconnection.SetBinding(StartPositionProperty, new Binding(\"Position\")\n\t\t\t{\n\t\t\t\tSource = connection.SourceItem,\n\t\t\t\tMode = BindingMode.OneWay\n\t\t\t});\n\t\t\tconnection.SetBinding(EndPositionProperty, new Binding(\"Position\")\n\t\t\t{\n\t\t\t\tSource = connection.TargetItem,\n\t\t\t\tMode = BindingMode.OneWay\n\t\t\t});\n\t\t\tconnection.SetBinding(SourceActualWidthProperty, new Binding(\"ActualWidth\")\n\t\t\t{\n\t\t\t\tSource = connection.SourceItem,\n\t\t\t\tMode = BindingMode.OneWay\n\t\t\t});\n\t\t\tconnection.SetBinding(TargetActualWidthProperty, new Binding(\"ActualWidth\")\n\t\t\t{\n\t\t\t\tSource = connection.TargetItem,\n\t\t\t\tMode = BindingMode.OneWay\n\t\t\t});\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W07",
+      "route": "原版 · 路由",
+      "classification": "source-confirmed",
+      "from": "OnPositionChanged / SetPath",
+      "to": "有条件清 PathPoints → Page.GetPath",
+      "behavior": "初始化后只有 StartPosition/EndPosition/SourceIndex/TargetIndex 改变才清 PathPoints；宽度变化也调用本回调但不因此清点集。仅无点集且端口有效、两宽非零才寻路。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connection.xaml.cs",
+          "member": "Connection.OnPositionChanged / SetPath",
+          "sha256": "cc185a2b2b8a30013b3914d6abf8fbe02f59ff0a590660f3a292d8dcfd2f25a7",
+          "start": 252,
+          "end": 273,
+          "excerpt": "\tprivate static void OnPositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)\n\t{\n\t\tConnection connection = (Connection)d;\n\t\tif (connection.isInited && (e.Property == StartPositionProperty || e.Property == EndPositionProperty || e.Property == SourceIndexProperty || e.Property == TargetIndexProperty))\n\t\t{\n\t\t\tconnection.PathPoints = null;\n\t\t}\n\t\tif (connection.IsFocused && (e.Property == SourceIndexProperty || e.Property == TargetIndexProperty))\n\t\t{\n\t\t\tconnection.MidPoints.Clear();\n\t\t}\n\t\tconnection.SetPath();\n\t}\n\n\tprivate void SetPath()\n\t{\n\t\tif ((PathPoints == null || PathPoints.Count == 0) && SourceIndex >= 0 && TargetIndex >= 0 && SourceActualWidth != 0.0 && TargetActualWidth != 0.0)\n\t\t{\n\t\t\tSetPath(Page.GetPath(SourceItem, TargetItem, SourceIndex, TargetIndex));\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "条件中的 initialized 与完整依赖属性注册已见，不代表所有 WPF 布局/尺寸变化的原机差分已验收。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W08",
+      "route": "原版 · 路由",
+      "classification": "source-confirmed",
+      "from": "DiagramPage.GetPath",
+      "to": "全障碍 A* → 端点重试 → 后处理",
+      "behavior": "先按全部矩形构图，以 5 像素偏移端点寻路；少于 3 点改为只用端点矩形重试；仍短则构建回退拐点。最后 OptimizeLinePoints、加实际锚点、GetTurnPoints 与 RechargeLinePoints。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml.cs",
+          "member": "DiagramPage.GetPath",
+          "sha256": "35fda4306245515f4dfb6dbf20e7b8479bbae56830b2f76549b63e9d456699d3",
+          "start": 438,
+          "end": 481,
+          "excerpt": "\tinternal IList<Point> GetPath(DiagramItem sourceItem, DiagramItem targetItem, int sourceIndex, int targetIndex)\n\t{\n\t\tList<Point> list = new List<Point>();\n\t\tPoint item = sourceItem.AnchorPoint(sourceIndex);\n\t\tPoint item2 = targetItem.AnchorPoint(targetIndex);\n\t\tdouble num = 5.0;\n\t\tRect rectWithMargin = sourceItem.GetRectWithMargin(num);\n\t\tRect rectWithMargin2 = targetItem.GetRectWithMargin(num);\n\t\tPoint offsetPoint = sourceItem.GetOffsetPoint(sourceIndex, num);\n\t\tPoint offsetPoint2 = targetItem.GetOffsetPoint(targetIndex, num);\n\t\tList<Rect> allRects = GetAllRect();\n\t\tList<Rect> list2 = new List<Rect> { rectWithMargin, rectWithMargin2 };\n\t\tAPoint[,] pathMap = GetPathMap(list2);\n\t\tList<APoint> list3 = AStar.FindPath(new APoint((int)offsetPoint.X / 5 + 1, (int)offsetPoint.Y / 5 + 1), new APoint((int)offsetPoint2.X / 5 + 1, (int)offsetPoint2.Y / 5 + 1), pathMap);\n\t\tif (list3.Count < 3)\n\t\t{\n\t\t\tpathMap = GetPathMap(list2, list2);\n\t\t\tallRects = list2;\n\t\t\tlist3 = AStar.FindPath(new APoint((int)offsetPoint.X / 5 + 1, (int)offsetPoint.Y / 5 + 1), new APoint((int)offsetPoint2.X / 5 + 1, (int)offsetPoint2.Y / 5 + 1), pathMap);\n\t\t}\n\t\tif (list3.Count < 3)\n\t\t{\n\t\t\tif (offsetPoint.X != offsetPoint2.X && offsetPoint.Y != offsetPoint2.Y)\n\t\t\t{\n\t\t\t\tlist.Add(new Point(offsetPoint.X, offsetPoint2.Y));\n\t\t\t}\n\t\t\tlist.Insert(0, offsetPoint);\n\t\t\tlist.Add(offsetPoint2);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tfor (int i = 0; i < list3.Count; i++)\n\t\t\t{\n\t\t\t\tlist.Add(new Point((list3[i].X - 1) * 5, (list3[i].Y - 1) * 5));\n\t\t\t}\n\t\t}\n\t\tlist = PathFinder.OptimizeLinePoints(list, list2, allRects, DiagramItem.GetOrientation(sourceIndex), DiagramItem.GetOrientation(targetIndex));\n\t\tlist.Insert(0, item);\n\t\tlist.Add(item2);\n\t\tList<Point> turnPoints = PathFinder.GetTurnPoints(list);\n\t\tPathFinder.RechargeLinePoints(turnPoints, allRects);\n\t\treturn turnPoints;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "W09",
+      "route": "原版 · 路由",
+      "classification": "unknown",
+      "from": "自动寻路 / 手动折线编辑",
+      "to": "全部退化布局和持久化",
+      "behavior": "本页有自动路由入口和局部生命周期，不将全部重叠、DPI、手动折线重写及 SDK/存储语义推断为完成。",
+      "refs": [],
+      "unknowns": [
+        "手动拖线/插入/保存原生 UserData、极端 A* 路径与原机事件顺序待细化。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "V01",
+      "route": "原版 · 缩放与鹰眼",
+      "classification": "source-confirmed",
+      "from": "ZoomArea.OnPreviewMouseWheel",
+      "to": "Shift 横滚 → Ctrl 缩放",
+      "behavior": "先 OnHoriScroll 再 OnChangeZoom；Shift 按 Delta 正负 LineLeft/Right 并 Handled=true；Ctrl 在非零 Delta 改一档后 DoChangeZoom。Ctrl+Shift 两支都执行。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs",
+          "member": "ZoomArea.OnPreviewMouseWheel / OnChangeZoom / OnHoriScroll",
+          "sha256": "61120e13aae9f048ff3340d09c44db2fa642369c29f4de1dee43f5535f4efc91",
+          "start": 462,
+          "end": 501,
+          "excerpt": "\tprivate void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)\n\t{\n\t\tIsWheelRoll = true;\n\t\tOnHoriScroll(sender, e);\n\t\tOnChangeZoom(e, e.GetPosition(grid));\n\t}\n\n\tprivate void OnChangeZoom(MouseWheelEventArgs e, Point pos)\n\t{\n\t\tif ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)\n\t\t{\n\t\t\tif (e.Delta < 0 && DiagramZoomIndex > 0)\n\t\t\t{\n\t\t\t\tDiagramZoomIndex--;\n\t\t\t}\n\t\t\tif (e.Delta > 0 && DiagramZoomIndex < _ZoomTicks.Count - 1)\n\t\t\t{\n\t\t\t\tDiagramZoomIndex++;\n\t\t\t}\n\t\t\tDoChangeZoom(pos);\n\t\t}\n\t}\n\n\tprivate static void OnHoriScroll(object sender, MouseWheelEventArgs e)\n\t{\n\t\tif ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift && sender is ScrollViewer scrollViewer)\n\t\t{\n\t\t\tint delta = e.Delta;\n\t\t\tif (delta < 0)\n\t\t\t{\n\t\t\t\tscrollViewer.LineRight();\n\t\t\t}\n\t\t\tif (delta > 0)\n\t\t\t{\n\t\t\t\tscrollViewer.LineLeft();\n\t\t\t}\n\t\t\te.Handled = true;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "V02",
+      "route": "原版 · 缩放与鹰眼",
+      "classification": "source-confirmed",
+      "from": "DoChangeZoom / OnDiagramZoomIndexChange",
+      "to": "锚点比例与 ViewArea",
+      "behavior": "缩放根据旧 ViewArea 宽高与 Scale/newTick 求新尺寸，再按锚点在矩形内比例移动 X/Y。非滚轮变更用当前视口中心；刻度是 0.1..2.0 的 20 项。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs",
+          "member": "ZoomArea.DoChangeZoom",
+          "sha256": "61120e13aae9f048ff3340d09c44db2fa642369c29f4de1dee43f5535f4efc91",
+          "start": 502,
+          "end": 518,
+          "excerpt": "\tprivate void DoChangeZoom(Point pos)\n\t{\n\t\tdouble num = _ZoomTicks[DiagramZoomIndex];\n\t\tRect rect = ViewArea;\n\t\tdouble num2 = rect.Width * Scale / num;\n\t\tdouble num3 = rect.Height * Scale / num;\n\t\tdouble num4 = (pos.X - rect.X) / rect.Width;\n\t\trect.X -= (num2 - rect.Width) * num4;\n\t\tdouble num5 = (pos.Y - rect.Y) / rect.Height;\n\t\trect.Y -= (num3 - rect.Height) * num5;\n\t\trect.Width = num2;\n\t\trect.Height = num3;\n\t\tviewAreaCopy = rect;\n\t\tViewArea = rect;\n\t}\n\n\tprivate void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs",
+          "member": "ZoomArea.OnDiagramZoomIndexChange",
+          "sha256": "61120e13aae9f048ff3340d09c44db2fa642369c29f4de1dee43f5535f4efc91",
+          "start": 393,
+          "end": 400,
+          "excerpt": "\tprivate void OnDiagramZoomIndexChange()\n\t{\n\t\tif (!IsWheelRoll)\n\t\t{\n\t\t\tDoChangeZoom(new Point(ViewArea.X + ViewArea.Width / 2.0, ViewArea.Y + ViewArea.Height / 2.0));\n\t\t}\n\t\tIsWheelRoll = false;\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs",
+          "member": "ZoomArea._ZoomTicks",
+          "sha256": "61120e13aae9f048ff3340d09c44db2fa642369c29f4de1dee43f5535f4efc91",
+          "start": 23,
+          "end": 29,
+          "excerpt": "\tpublic static List<double> _ZoomTicks = new List<double>\n\t{\n\t\t0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0,\n\t\t1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0\n\t};\n\n\tpublic static readonly DependencyProperty DiagramZoomIndexProperty = DependencyProperty.Register(\"DiagramZoomIndex\", typeof(int), typeof(ZoomArea), new PropertyMetadata(_ZoomTicks.IndexOf(1.0), DiagramZoomIndexChanged));",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "V03",
+      "route": "原版 · 缩放与鹰眼",
+      "classification": "source-confirmed",
+      "from": "DiagramArea 双向 Zoom 绑定",
+      "to": "IZoomIndex.PartentZoomIndex → ProceZoomIndex",
+      "behavior": "ZoomArea 与 StatusBar 双向绑定 PartentZoomIndex；VmModuleSetDecorator 显式接口转到 ProceZoomIndex，后者读 UTF-8 UserData，值变化时写零填充 UTF-8 字节并通知。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramArea.xaml",
+          "member": "DiagramArea Zoom binding",
+          "sha256": "29b52fd53515ac86343e24a670b54daac56849ced4c088b28b502ddd200e6297",
+          "start": 56,
+          "end": 56,
+          "excerpt": "          <local:ZoomArea x:Name=\"zoom\" SearchModuleInfo=\"{Binding SearchModuleInfo, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:DiagramArea}}\" DiagramZoomIndex=\"{Binding Path=(VMInterface:IZoomIndex.PartentZoomIndex), Mode=TwoWay}\">",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleSetDecorator.cs",
+          "member": "VmModuleSetDecorator.IZoomIndex.PartentZoomIndex",
+          "sha256": "1278289f8d78b61443edae604e1c5d77ff301df578f67ad9ac877b2b1e6d8bc6",
+          "start": 162,
+          "end": 173,
+          "excerpt": "\tint IZoomIndex.PartentZoomIndex\n\t{\n\t\tget\n\t\t{\n\t\t\treturn ProceZoomIndex;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tProceZoomIndex = value;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleSetDecorator.cs",
+          "member": "VmModuleSetDecorator.ProceZoomIndex",
+          "sha256": "1278289f8d78b61443edae604e1c5d77ff301df578f67ad9ac877b2b1e6d8bc6",
+          "start": 33,
+          "end": 79,
+          "excerpt": "\tpublic int ProceZoomIndex\n\t{\n\t\tget\n\t\t{\n\t\t\tbyte[] array = (DecorateSource as IVmModule).UserData[\"ProceZoomIndex\"];\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn proceZoomIndex;\n\t\t\t}\n\t\t\treturn int.Parse(StringUtil.UTF8GetString(array));\n\t\t}\n\t\tset\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tbyte[] array = (DecorateSource as IVmModule).UserData[\"ProceZoomIndex\"];\n\t\t\t\tif (array != null)\n\t\t\t\t{\n\t\t\t\t\tproceZoomIndex = int.Parse(StringUtil.UTF8GetString(array));\n\t\t\t\t}\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tLogHelper.Error($\"Get ProceZoomIndex Failed,ErrorCode:{ex.errorCode}, ErrorMessage:{ex.errorMessage}\");\n\t\t\t}\n\t\t\tcatch (Exception ex2)\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"Get proceZoomIndex Failed, Message:\" + ex2.Message + \"StackTrace:\" + ex2.StackTrace);\n\t\t\t}\n\t\t\tif (proceZoomIndex != value)\n\t\t\t{\n\t\t\t\tproceZoomIndex = value;\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\t(DecorateSource as IVmModule).UserData[\"ProceZoomIndex\"] = StringUtil.UTF8GetBytesPadZero(proceZoomIndex.ToString());\n\t\t\t\t}\n\t\t\t\tcatch (Exception ex3)\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(ex3.Message);\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"ProceZoomIndex\");\n\t\t\t\tOnPropertyChanged(\"PartentZoomIndex\");\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic bool IsCollapsedEnableItems",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "UserData 到 native 方案文件的 writer/reader 与同版本往返仍未证明。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "V04",
+      "route": "原版 · 缩放与鹰眼",
+      "classification": "source-confirmed",
+      "from": "鹰眼 XAML 事件/绑定",
+      "to": "SelectRegion* 与 ScrollViewer 比例",
+      "behavior": "187×150 的 GridEagleEye 绑定四种鼠标事件；选框宽高取 viewport/extent 比例、限制到鹰眼尺寸；左上角读写按 offset/extent 与鹰眼尺寸互换。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml",
+          "member": "ZoomArea GridEagleEye events",
+          "sha256": "37dd4da10633bcf55e785fea8682a38165e613b68f82389002c13b1ef053cf96",
+          "start": 26,
+          "end": 26,
+          "excerpt": "    <Grid Name=\"GridEagleEye\" AllowDrop=\"True\" Margin=\"0,0,11,11\" Height=\"150\" Width=\"187\" SnapsToDevicePixels=\"True\" VerticalAlignment=\"Bottom\" HorizontalAlignment=\"Right\" PreviewMouseWheel=\"GridEagleEye_PreviewMouseWheel\" MouseMove=\"GridEagleEye_MouseMove\" MouseUp=\"GridEagleEye_MouseUp\" MouseDown=\"GridEagleEye_MouseDown\">",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml",
+          "member": "ZoomArea RectSelectRegion resource",
+          "sha256": "37dd4da10633bcf55e785fea8682a38165e613b68f82389002c13b1ef053cf96",
+          "start": 40,
+          "end": 40,
+          "excerpt": "        <Rectangle Name=\"RectSelectRegion\" Stroke=\"{DynamicResource Col_EagleEye_Small_BorderBrush}\" Fill=\"#00FFFFFF\" StrokeThickness=\"2\" Width=\"{Binding SelectRegionWidth, ElementName=us}\" Height=\"{Binding SelectRegionHeight, ElementName=us}\" Canvas.Top=\"{Binding SelectRegionTop, ElementName=us}\" Canvas.Left=\"{Binding SelectRegionLeft, ElementName=us}\" MouseDown=\"SelectRegionRect_MouseDown\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs",
+          "member": "ZoomArea.SelectRegionWidth/Height/Top/Left",
+          "sha256": "61120e13aae9f048ff3340d09c44db2fa642369c29f4de1dee43f5535f4efc91",
+          "start": 324,
+          "end": 382,
+          "excerpt": "\tpublic double SelectRegionWidth\n\t{\n\t\tget\n\t\t{\n\t\t\treturn Math.Min(scrollViewer.ActualWidth / scrollViewer.ExtentWidth * RectEagleEye.ActualWidth, GridEagleEye.Width);\n\t\t}\n\t\tset\n\t\t{\n\t\t}\n\t}\n\n\tpublic double SelectRegionHeight\n\t{\n\t\tget\n\t\t{\n\t\t\treturn Math.Min(scrollViewer.ActualHeight / scrollViewer.ExtentHeight * RectEagleEye.ActualHeight, GridEagleEye.Height);\n\t\t}\n\t\tset\n\t\t{\n\t\t}\n\t}\n\n\tpublic double SelectRegionTop\n\t{\n\t\tget\n\t\t{\n\t\t\treturn scrollViewer.VerticalOffset / scrollViewer.ExtentHeight * RectEagleEye.ActualHeight;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (needScroll)\n\t\t\t{\n\t\t\t\tscrollViewer.ScrollToVerticalOffset(value / RectEagleEye.ActualHeight * scrollViewer.ExtentHeight);\n\t\t\t}\n\t\t\tOnPropertyChanged(\"SelectRegionTop\");\n\t\t}\n\t}\n\n\tpublic double SelectRegionLeft\n\t{\n\t\tget\n\t\t{\n\t\t\treturn scrollViewer.HorizontalOffset / scrollViewer.ExtentWidth * RectEagleEye.ActualWidth;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (needScroll)\n\t\t\t{\n\t\t\t\tscrollViewer.ScrollToHorizontalOffset(value / RectEagleEye.ActualWidth * scrollViewer.ExtentWidth);\n\t\t\t}\n\t\t\tOnPropertyChanged(\"SelectRegionLeft\");\n\t\t}\n\t}\n\n\tpublic event PropertyChangedEventHandler PropertyChanged;\n\n\tprotected virtual void OnPropertyChanged(string proName)\n\t{\n\t\tif (PropertyChanged != null)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "V05",
+      "route": "原版 · 缩放与鹰眼",
+      "classification": "source-confirmed",
+      "from": "鹰眼 Down / Move / Up / Wheel",
+      "to": "点击重定位 / 按初始位置拖动 / 释放",
+      "behavior": "点在选框外先把选框中心移到指针并记请求坐标；Move 用初始鼠标/区域位置求总差量，按下且移动后捕获；Up 清标志并释放。鹰眼滚轮先 Shift 横滚，再转换网格锚点给 Ctrl 缩放。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs",
+          "member": "ZoomArea.GridEagleEye handlers",
+          "sha256": "61120e13aae9f048ff3340d09c44db2fa642369c29f4de1dee43f5535f4efc91",
+          "start": 563,
+          "end": 609,
+          "excerpt": "\tprivate void GridEagleEye_MouseDown(object sender, MouseButtonEventArgs e)\n\t{\n\t\tisMouseDown = true;\n\t\tPoint position = e.GetPosition(GridEagleEye);\n\t\tRect rect = new Rect(new Point(SelectRegionLeft, SelectRegionTop), new Size(SelectRegionWidth, SelectRegionHeight));\n\t\tif (!rect.Contains(position))\n\t\t{\n\t\t\trect.X = position.X - rect.Width / 2.0;\n\t\t\trect.Y = position.Y - rect.Height / 2.0;\n\t\t\tMoveSelectRegion(rect.Location);\n\t\t\tRecordCurPos(position, rect.Location);\n\t\t}\n\t}\n\n\tprivate void GridEagleEye_MouseUp(object sender, MouseButtonEventArgs e)\n\t{\n\t\tisMouseDown = false;\n\t\t(sender as Grid)?.ReleaseMouseCapture();\n\t}\n\n\tprivate void GridEagleEye_MouseMove(object sender, MouseEventArgs e)\n\t{\n\t\tPoint position = e.GetPosition(GridEagleEye);\n\t\tif (e.LeftButton == MouseButtonState.Pressed && !startMousePoint.Equals(position) && isMouseDown)\n\t\t{\n\t\t\t(sender as Grid)?.CaptureMouse();\n\t\t\tMoveSelectRegionByPosChange(position, startMousePoint);\n\t\t}\n\t}\n\n\tprivate void MoveSelectRegionByPosChange(Point curPos, Point LastPos)\n\t{\n\t\tcurPos.Offset(0.0 - LastPos.X, 0.0 - LastPos.Y);\n\t\tMoveSelectRegion(new Point(startRegionLeft + curPos.X, startRegionTop + curPos.Y));\n\t}\n\n\tprivate void MoveSelectRegion(Point selectRegionLeftTop)\n\t{\n\t\tSelectRegionLeft = selectRegionLeftTop.X;\n\t\tSelectRegionTop = selectRegionLeftTop.Y;\n\t}\n\n\tprivate void GridEagleEye_PreviewMouseWheel(object sender, MouseWheelEventArgs e)\n\t{\n\t\tOnHoriScroll(scrollViewer, e);\n\t\tOnChangeZoom(e, new Point(e.GetPosition(GridEagleEye).X * grid.ActualWidth / GridEagleEye.ActualWidth, e.GetPosition(GridEagleEye).Y * grid.ActualHeight / GridEagleEye.ActualHeight));\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "V06",
+      "route": "原版 · 缩放与鹰眼",
+      "classification": "unknown",
+      "from": "原版视口状态",
+      "to": "跨方案 / 多 DPI / 渲染与线程",
+      "behavior": "本页恢复 UserData 写入及鼠标几何，不将它等同为所有视口偏移和皮肤已持久化/差分一致。",
+      "refs": [],
+      "unknowns": [
+        "原文件字节持久化、独立控件状态恢复、零 extent/多屏 DPI/路由事件竞争和实际渲染仍开放。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CA01",
+      "route": "当前 · 节点/建连",
+      "classification": "independent-implementation",
+      "from": "NodeDown / SetBoxSelection",
+      "to": "选中、双击与可编辑边界",
+      "behavior": "当前参数窗只拦 ClickCount<2；双击 Group 进入、其它节点开配置；框选用 NodeBounds 完全包含。EditableCanvas 另有 windowClosed/lock/run/overview/currentProcedure 等守卫。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.NodeDown fragment",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 242,
+          "end": 248,
+          "excerpt": "        if(parameterEditorOpen&&e.ClickCount<2){e.Handled=true;return;}\n        GraphLayer.Focus();selectedWire=null;\n        if(e.ClickCount==2){if(doc.CurrentProcedure.Nodes.Single(n=>n.Id==id).ModuleId==WorkflowCalls.ModuleId)EnterSubprogram(id);else OpenNode(id);e.Handled=true;return;}\n        if(!selectedNodes.Contains(id)){selectedNodes.Clear();selectedNodes.Add(id);boxSelectionActive=false;}\n        selected=id;RefreshNodeSelection();RefreshRight();\n        if(!isLocked&&activeRun is null)BeginNodeMove(e.GetPosition(GraphLayer));\n        e.Handled=true;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowGestures.cs",
+          "member": "MainWindow.SetBoxSelection",
+          "sha256": "9f40f3513f3c1667d6671ab025b2e1c4c31f975b63af4e8186061a987c4f9737",
+          "start": 67,
+          "end": 71,
+          "excerpt": " void SetBoxSelection(Rect rect)\n {\n  selectedNodes.Clear();foreach(var n in doc.CurrentProcedure.Nodes)if(rect.Contains(NodeBounds(n)))selectedNodes.Add(n.Id);\n  boxSelectionActive=selectedNodes.Count>0;selected=selectedNodes.FirstOrDefault();selectedWire=null;RenderGraph();DrawSelectionGroup();RefreshRight();\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowGestures.cs",
+          "member": "MainWindow.EditableCanvas",
+          "sha256": "9f40f3513f3c1667d6671ab025b2e1c4c31f975b63af4e8186061a987c4f9737",
+          "start": 44,
+          "end": 44,
+          "excerpt": " bool EditableCanvas=>!windowClosed&&!parameterEditorOpen&&!isLocked&&activeRun is null&&!workflowOverview&&doc.HasCurrentProcedure;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原版 Tag is Button 例外不能从当前 ClickCount 分支推断为同构。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CA02",
+      "route": "当前 · 节点/建连",
+      "classification": "independent-implementation",
+      "from": "PreviewNodeMove / CommitNodeMove",
+      "to": "拖影坐标 → 文档移动/复制/插入",
+      "behavior": "预览按初始位置/指针差吸附并逐节点夹边；提交必须可编辑且 Revision 未变；依据复制/插入/热区分支调用 PasteNodes、InsertExecutionNode 或 MoveNodes，清拖动状态。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.PreviewNodeMove",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 261,
+          "end": 291,
+          "excerpt": "    void PreviewNodeMove(Point point)\n    {\n        if(movingNodes is null||movingNodes.Count==0)return;Vector delta=point-nodePointerStart;\n        if(Math.Abs(delta.X)<=3&&Math.Abs(delta.Y)<=3&&movingGhosts.Count==0)return;\n        double left=movingNodes.Values.Min(p=>p.X),top=movingNodes.Values.Min(p=>p.Y);\n        double dx=Snap(left+delta.X)-left,dy=Snap(top+delta.Y)-top;\n        // ItemsPage.GetDropItems clamps each selected DiagramItem separately.\n        // A group-wide limit would freeze all items when just one reaches an edge.\n        if(movingNodes.Count==1)\n        {\n            dx=Math.Clamp(dx,-left,Math.Max(-left,DiagramPageSize-NodeWidth-movingNodes.Values.Max(p=>p.X)));\n            double bottom=movingNodes.Max(entry=>entry.Value.Y+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key)));\n            dy=Math.Clamp(dy,-top,Math.Max(-top,DiagramPageSize-bottom));\n        }\n        foreach(var entry in movingNodes)\n        {\n            if(!movingGhosts.TryGetValue(entry.Key,out var ghost))\n            {\n                var node=doc.CurrentProcedure.Nodes.First(n=>n.Id==entry.Key);ghost=CreateNodeCard(node,doc.CurrentProcedure.Nodes.ToList().FindIndex(n=>n.Id==entry.Key),true);ghost.Opacity=.7;ghost.IsHitTestVisible=false;Panel.SetZIndex(ghost,60);movingGhosts[entry.Key]=ghost;GraphLayer.Children.Add(ghost);\n            }\n            var height=NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==entry.Key));\n            Canvas.SetLeft(ghost,Math.Clamp(entry.Value.X+dx,0,DiagramPageSize-NodeWidth)-10);\n            Canvas.SetTop(ghost,Math.Clamp(entry.Value.Y+dy,0,DiagramPageSize-height)-10);\n        }\n        if(boxSelectionActive)\n        {\n            if(groupMoveFrame is not null)GraphLayer.Children.Remove(groupMoveFrame);\n            var leftEdge=movingGhosts.Values.Min(g=>Canvas.GetLeft(g)+10);\n            var topEdge=movingGhosts.Values.Min(g=>Canvas.GetTop(g)+10);\n            var rightEdge=movingGhosts.Values.Max(g=>Canvas.GetLeft(g)+10+NodeWidth);\n            var bottomEdge=movingGhosts.Max(g=>Canvas.GetTop(g.Value)+10+NodeVisualHeight(doc.CurrentProcedure.Nodes.Single(n=>n.Id==g.Key)));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.CommitNodeMove",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 302,
+          "end": 328,
+          "excerpt": "    void CommitNodeMove()\n    {\n        if(!EditableCanvas||canvasGestureRevision!=doc.Revision){CancelCanvasGesture();return;}\n        var positions=movingGhosts.ToDictionary(p=>p.Key,p=>(Canvas.GetLeft(p.Value)+10,Canvas.GetTop(p.Value)+10));\n        if(positions.Count==1&&ActiveNodeHotPoint is {} hot)positions[positions.Keys.Single()]=(hot.X,hot.Y);\n        // Connection.Shape_Drop passes the original DiagramItem.DataContext to\n        // VmConnectionDecorator.InsertModule even when DiagramItem started an OLE\n        // Copy drag. The VM rewires that existing module and does not paste a clone.\n        var copyInsertion=nodeCopyDrag&&positions.Count==1&&movingNodes is {Count:1}?insertWire:null;\n        string? copyInsertionNode=copyInsertion is null?null:movingNodes!.Keys.Single();\n        Point copyInsertionPosition=copyInsertionNode is null?default:movingNodes!.Values.Single();\n        var fragment=nodeCopyDrag&&copyInsertion is null&&movingNodes is not null&&positions.Count>0?doc.CopyNodes(movingNodes.Keys):null;\n        // ItemsPage.OnDrop clamps each dragged item but CopyItemsByDropCommand\n        // uses only the first drop item as PasteItemsCommandExecute's anchor.\n        // PasteNodes anchors its fragment at the minimum source coordinate, so\n        // translate the call point to make the fragment's first item land on the\n        // first dragged item's clamped preview location.\n        var copyPastePoint=fragment is {Nodes.Count:>0}&&positions.TryGetValue(fragment.Nodes[0].Id,out var firstDrop)\n            ?(firstDrop.Item1+fragment.Nodes.Min(n=>n.X)-fragment.Nodes[0].X,firstDrop.Item2+fragment.Nodes.Min(n=>n.Y)-fragment.Nodes[0].Y)\n            :(positions.Count>0?(positions.Values.Min(p=>p.Item1),positions.Values.Min(p=>p.Item2)):(0d,0d));\n        var insertion=positions.Count==1&&!nodeCopyDrag?insertWire:null;\n        CancelNodeMove();Safe(()=>{if(copyInsertion is not null&&copyInsertionNode is not null){if(copyInsertion.FromNode==copyInsertionNode||copyInsertion.ToNode==copyInsertionNode)RenderGraph();else doc.InsertExecutionNode(copyInsertion,copyInsertionNode,copyInsertionPosition.X,copyInsertionPosition.Y);}\n        else if(fragment is not null){graphClipboard=fragment;graphClipboardSolution=doc.Document.Id;SelectPasted(doc.PasteNodes(fragment,copyPastePoint.Item1,copyPastePoint.Item2));}\n        else if(insertion is not null){var position=positions.Single();doc.InsertExecutionNode(insertion,position.Key,position.Value.Item1,position.Value.Item2);}\n        else if(positions.Count>0)doc.MoveNodes(positions);else RenderGraph();});\n    }\n    void CancelNodeMove(){nodeOleArmed=false;HideNodePreview();movingNodes=null;nodeCopyDrag=false;CanvasViewport.ReleaseMouseCapture();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "OLE 输入和各分支与原版操作级差分未在此重跑；不以注释代替原证据。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CA03",
+      "route": "当前 · 节点/建连",
+      "classification": "independent-implementation",
+      "from": "UpdateConnectionPreview / FinishConnection",
+      "to": "保留预览目标 → ConnectExecution",
+      "behavior": "预览路径按指针生成；松手保留上一命中节点、重新选最近端口，不在 Up 临时发现新节点；清捕获与 preview 后在 EditableCanvas 下提交。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowGestures.cs",
+          "member": "MainWindow.UpdateConnectionPreview",
+          "sha256": "9f40f3513f3c1667d6671ab025b2e1c4c31f975b63af4e8186061a987c4f9737",
+          "start": 180,
+          "end": 194,
+          "excerpt": " void UpdateConnectionPreview(Point point)\n {\n  if(pendingConnection is not {} source)return;\n  connectionTarget=FindConnectionTarget(point);\n  foreach(var pair in executionPorts){bool target=connectionTarget is {} hit&&pair.Key.Node==hit.Node;pair.Value.Visibility=pair.Key.Node==source.Node||target?Visibility.Visible:Visibility.Collapsed;SetPortHit(pair.Value,connectionTarget==pair.Key);}\n  var node=doc.CurrentProcedure.Nodes.Single(n=>n.Id==source.Node);\n  // Connector.AttachedDiagramItem_PreviewMouseMove always draws\n  // GetConnectionLine(source, current pointer). Target hit testing only\n  // highlights its nearest connector; the routed connection is made on up.\n  IReadOnlyList<RoutePoint> route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Preview(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),new(point.X,point.Y));\n  if(connectionPreview is not null)GraphLayer.Children.Remove(connectionPreview);\n  connectionPreview=new System.Windows.Shapes.Path {Data=LineGeometry(route),Stroke=new SolidColorBrush(Color.FromRgb(255,167,15)),StrokeThickness=2,StrokeDashArray=new DoubleCollection {5,2.5},StrokeLineJoin=PenLineJoin.Round,IsHitTestVisible=false};Panel.SetZIndex(connectionPreview,60);GraphLayer.Children.Add(connectionPreview);\n }\n void FinishConnection(Point point)\n {",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowGestures.cs",
+          "member": "MainWindow.FinishConnection",
+          "sha256": "9f40f3513f3c1667d6671ab025b2e1c4c31f975b63af4e8186061a987c4f9737",
+          "start": 193,
+          "end": 216,
+          "excerpt": " void FinishConnection(Point point)\n {\n  // Connector.ToolItemGrid_PreviewMouseUp consumes oldItem recorded by\n  // AttachedDiagramItem_PreviewMouseMove; mouse-up cannot discover a new item.\n  // Only the nearest connector index is computed from the release position.\n  var source=pendingConnection;var previewTarget=connectionTarget;\n  (string Node,int Port)? target=null;\n  if(previewTarget is {} previous&&doc.CurrentProcedure.Nodes.FirstOrDefault(n=>n.Id==previous.Node) is {} node)\n  {\n   int index=Enumerable.Range(0,4).OrderBy(i=>{var p=Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),i).Anchor;return Math.Pow(p.X-point.X,2)+Math.Pow(p.Y-point.Y,2);}).First();\n   target=(node.Id,index);\n  }\n  pendingConnection=null;connectionTarget=null;\n  CanvasViewport.ReleaseMouseCapture();\n  // Connector.ToolItemGrid_PreviewMouseUp removes the adorner and clears its\n  // path/context fields after every drag. RenderGraph clears the visual child\n  // collection during a successful commit, so clear this retained reference too;\n  // otherwise the next drag mistakes the detached preview for an active one and\n  // skips its first-move mouse capture.\n  if(connectionPreview is not null)GraphLayer.Children.Remove(connectionPreview);connectionPreview=null;\n  if(source is {} from&&target is {} to&&EditableCanvas)Safe(()=>doc.ConnectExecution(from.Node,to.Node,from.Port,to.Port));\n  RenderGraph();\n }\n void CancelCanvasGesture()",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CA04",
+      "route": "当前 · 节点/建连",
+      "classification": "independent-implementation",
+      "from": "GraphEditorDocument.ConnectExecution",
+      "to": "独立 ExecutionLinks 文档事务",
+      "behavior": "端口限 0..3；节点须存在；重复边拒绝；候选图有 Cycle 问题即拒绝；ChangeProcedure 提交。此方法没有原 AddConnection 的 AutoLinkData 调用，不因此断言其它宿主不存在数据处理。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "GraphEditorDocument.ConnectExecution",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 278,
+          "end": 278,
+          "excerpt": "    public void ConnectExecution(string fromNode,string toNode,int sourceIndex=3,int targetIndex=1){if(sourceIndex is <0 or >3||targetIndex is <0 or >3)throw new ArgumentOutOfRangeException(nameof(sourceIndex));_=Node(fromNode);_=Node(toNode);var p=CurrentProcedure;var edge=new ExecutionLinkDocument(fromNode,toNode){SourceIndex=sourceIndex,TargetIndex=targetIndex};var links=ProcedureGraph.ExecutionEdges(p);if(links.Any(e=>e.FromNode==fromNode&&e.ToNode==toNode))throw new InvalidOperationException(\"Execution link already exists.\");var candidate=p with{ExecutionLinks=links.Append(edge).ToArray()};if(GraphValidator.Validate(candidate,registry).Issues.Any(i=>i.Code==\"Cycle\"))throw new InvalidOperationException(\"Execution link creates a cycle.\");ChangeProcedure(_=>candidate);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "执行边与 IMAGE/变量等数据订阅属于不同合同；完整跨入口自动关联须另追。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CA05",
+      "route": "当前 · 路由",
+      "classification": "independent-implementation",
+      "from": "RenderGraph",
+      "to": "自动路由缓存 / 手动路径显示",
+      "behavior": "缓存按流程+源目标身份，端口几何不变就保留路径；未命中才用全部其它节点障碍重算。手动 PathPoints 使用独立点集；删除/方案替换清缓存。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.RenderGraph route cache",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 107,
+          "end": 143,
+          "excerpt": "        var boxes=procedure.Nodes.ToDictionary(n=>n.Id,n=>new RouteRect(n.X,n.Y,NodeWidth,NodeVisualHeight(n)));\n        var wires=ProcedureGraph.ExecutionEdges(procedure).ToArray();\n        var activeWires=wires.Select(w=>(w.FromNode,w.ToNode)).ToHashSet();\n        var liveProcedures=doc.Document.Procedures.Select(p=>p.Id).ToHashSet();\n        foreach(var old in automaticRoutes.Keys.Where(k=>!liveProcedures.Contains(k.Procedure)||(k.Procedure==procedure.Id&&!activeWires.Contains((k.From,k.To)))).ToArray())automaticRoutes.Remove(old);\n        foreach(var wire in wires)\n        {\n            if(!boxes.TryGetValue(wire.FromNode,out var sourceBox)||!boxes.TryGetValue(wire.ToNode,out var targetBox))continue;\n            var cacheKey=(procedure.Id,wire.FromNode,wire.ToNode);\n            IReadOnlyList<RoutePoint> points;\n            if(wire.PathPoints is {Count:>1})\n            {\n                automaticRoutes.Remove(cacheKey);\n                points=wire.PathPoints.Select(p=>new RoutePoint(p.X,p.Y)).ToArray();\n            }\n            else\n            {\n                var source=Port(sourceBox,wire.SourceIndex);var target=Port(targetBox,wire.TargetIndex);\n                if(automaticRoutes.TryGetValue(cacheKey,out var previous)&&previous.Source==source&&previous.Target==target)points=previous.Points;\n                else\n                {\n                    // VM's DiagramPage constructor fixes Width/Height to DiagramPageWidth (5000).\n                    // GetPathMap allocates its AStar grid from those ActualWidth/ActualHeight values,\n                    // not from the current node bounds; preserve that map extent for every edge.\n                    double routeWidth=DiagramPageSize,routeHeight=DiagramPageSize;\n                    // Connection.OnPositionChanged invalidates only its own endpoint/port changes.\n                    // DiagramPage.GetPathMap is therefore rerun for those changes, not for an unrelated obstacle move.\n                    points=VmOrthogonalRouter.Route(source,target,boxes.Where(p=>p.Key!=wire.FromNode&&p.Key!=wire.ToNode).Select(p=>p.Value),routeWidth,routeHeight,1_100_000).Points;\n                    if(points.Count>=2)automaticRoutes[cacheKey]=(source,target,points);else automaticRoutes.Remove(cacheKey);\n                }\n            }\n            if(points.Count<2) { StatusText.Text=\"有连线无法在当前画布范围内完成布线\";continue; }\n            string key=wire.FromNode+\">\"+wire.ToNode;\n            var displayedPoints=wire.PathPoints is {Count:>1}?VmOrthogonalRouter.Passivate(points):points;\n            var path=new System.Windows.Shapes.Path {Data=LineGeometry(displayedPoints),Stroke=WireStroke(wire),StrokeThickness=2,IsHitTestVisible=false};\n            wireViews[key]=(wire,path,wire.PathPoints is {Count:>1}?points:CleanWirePoints(points));\n            GraphLayer.Children.Add(path);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.InitializeCanvasInput scope replacement",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 67,
+          "end": 73,
+          "excerpt": "            automaticRoutes.Clear();\n            canvasViews.Clear();canvasProcedure=null;\n            // Procedure IDs may recur in another solution; overview rendering also\n            // bypasses the normal per-procedure viewport switch.\n            scale=1;panX=panY=0;\n        };\n        CanvasScrollViewer.ScrollChanged+=(_,_)=> {if(!syncingViewport){panX=-CanvasScrollViewer.HorizontalOffset;panY=-CanvasScrollViewer.VerticalOffset;UpdateMiniMap();}};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "这是单 GraphLayer/字典的独立适配，非原 Connection 依赖属性对象图。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CA06",
+      "route": "当前 · 路由",
+      "classification": "independent-implementation",
+      "from": "FinishWireDrag",
+      "to": "SetExecutionPath → 文档点集",
+      "behavior": "有变化、commit 且可编辑才写手动折线；文档检查点数/坐标/正交后提交，未变则返回。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowWireEditing.cs",
+          "member": "MainWindow.FinishWireDrag",
+          "sha256": "5c9dc9be71f343d4c4ae4a497d6e20468c033bf83617231744d3c8c5a43a12eb",
+          "start": 73,
+          "end": 78,
+          "excerpt": " void FinishWireDrag(bool commit)\n {\n  var link=draggedWire;bool changed=wireDrag is not null&&wireDragOriginalPoints is not null&&!wireDrag.PathPoints.SequenceEqual(wireDragOriginalPoints);var points=wireDrag?.PathPoints.Select(p=>new WirePointDocument(p.X,p.Y)).ToArray();\n  wireDrag=null;draggedWire=null;wireDragOriginalPoints=null;CanvasViewport.ReleaseMouseCapture();\n  if(commit&&changed&&EditableCanvas&&link is not null&&points is not null)Safe(()=>doc.SetExecutionPath(link,points));RenderGraph();\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "GraphEditorDocument.SetExecutionPath",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 222,
+          "end": 227,
+          "excerpt": "    public void SetExecutionPath(ExecutionLinkDocument link,IReadOnlyList<WirePointDocument>? points){\n        var current=ProcedureGraph.ExecutionEdges(CurrentProcedure).Single(e=>e.FromNode==link.FromNode&&e.ToNode==link.ToNode);\n        if(points is not null){if(points.Count<2||points.Count>10000)throw new ArgumentException(\"Invalid path length.\");foreach(var point in points)Position(point.X,point.Y);for(int i=1;i<points.Count;i++)if(points[i].X!=points[i-1].X&&points[i].Y!=points[i-1].Y)throw new ArgumentException(\"Path must be orthogonal.\");}\n        if((current.PathPoints is null&&points is null)||(current.PathPoints is not null&&points is not null&&current.PathPoints.SequenceEqual(points)))return;\n        ChangeProcedure(p=>p with{ExecutionLinks=ProcedureGraph.ExecutionEdges(p).Select(e=>e.FromNode==link.FromNode&&e.ToNode==link.ToNode?e with{PathPoints=points?.ToArray()}:e).ToArray()});\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原版手动路径写入链和每个反向拖动分支仍未在此展开。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CV01",
+      "route": "当前 · 缩放与鹰眼",
+      "classification": "independent-implementation",
+      "from": "CanvasWheel / SetCanvasZoom",
+      "to": "离散缩放 → PersistContainerZoom → 图变换",
+      "behavior": "Shift 横滚可与 Ctrl 缩放同时发生；离散 scale 限 0.1..2.0；按锚点保世界坐标。非总览时写容器索引，随后应用缩放/滚动和小地图。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.CanvasWheel / SetCanvasZoom / PersistContainerZoom",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 432,
+          "end": 460,
+          "excerpt": "    void CanvasWheel(object sender,MouseWheelEventArgs e)\n    {\n        // ZoomArea.OnPreviewMouseWheel calls OnHoriScroll, then OnChangeZoom.\n        // Unmodified wheel is left to WPF ScrollViewer's native wheel policy.\n        if((Keyboard.Modifiers&ModifierKeys.Shift)!=0){if(e.Delta<0)CanvasScrollViewer.LineRight();else if(e.Delta>0)CanvasScrollViewer.LineLeft();e.Handled=true;}\n        if((Keyboard.Modifiers&ModifierKeys.Control)!=0)\n        {\n            // ZoomArea.OnChangeZoom changes DiagramZoomIndex only for a nonzero delta.\n            MoveCanvasZoomByWheel(e.Delta,e.GetPosition(CanvasViewport));\n            // ZoomArea.OnPreviewMouseWheel does not consume Ctrl zoom; only\n            // OnHoriScroll's Shift branch marks the routed event handled.\n        }\n    }\n    void MoveCanvasZoomByWheel(int delta,Point anchor)\n    {\n        if(delta!=0)SetCanvasZoom(scale+(delta>0?.1:-.1),anchor);\n    }\n    void SetCanvasZoom(double value,Point anchor)\n    {\n        Point world=World(anchor);scale=Math.Clamp(Math.Round(value,1),.1,2);panX=anchor.X-world.X*scale;panY=anchor.Y-world.Y*scale;PersistContainerZoom();ApplyCanvasTransform();\n    }\n    void PersistContainerZoom()\n    {\n        // The solution overview and scroll offsets remain session view state.\n        // The independent solution format stores the original 20-tick index,\n        // rather than claiming to serialize native ProceZoomIndex UserData.\n        if(!workflowOverview&&doc.HasCurrentProcedure)\n            doc.SetContainerZoomIndex(doc.CurrentProcedureId,(int)Math.Round(scale*10)-1);\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CV02",
+      "route": "当前 · 缩放与鹰眼",
+      "classification": "independent-implementation",
+      "from": "SetContainerZoomIndex",
+      "to": "CanvasZoomIndex / Dirty / Changed",
+      "behavior": "索引限 0..19；无变化返回；替换目标 Procedure 的 CanvasZoomIndex，置 Dirty 并发 Changed，不增结构历史根或 Revision。字段默认 9，并随独立方案序列化。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.Viewport.cs",
+          "member": "GraphEditorDocument.SetContainerZoomIndex",
+          "sha256": "5a349c47a1cb9f3ba23774ff58364057af999869b47cb47e2d8c5d3738644b1a",
+          "start": 8,
+          "end": 24,
+          "excerpt": "    public void SetContainerZoomIndex(string procedureId, int index)\n    {\n        if (index is < 0 or > 19) throw new ArgumentOutOfRangeException(nameof(index));\n        var procedure = Procedure(procedureId);\n        if (procedure.CanvasZoomIndex == index) return;\n        document = document with\n        {\n            Procedures = document.Procedures.Select(p => p.Id == procedureId\n                ? p with { CanvasZoomIndex = index } : p).ToArray()\n        };\n        // UserData belongs to the current view, rather than a new structural edit.\n        // Existing document snapshots carry it; redo and canvas gesture revisions survive.\n        IsDirty = true;\n        Changed?.Invoke();\n    }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "ProcedureDocument.CanvasZoomIndex",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 27,
+          "end": 27,
+          "excerpt": "public sealed record ProcedureDocument(string Id,string Name,IReadOnlyList<NodeDocument> Nodes,IReadOnlyList<ConnectionDocument> Connections,IReadOnlyList<ExecutionLinkDocument>? ExecutionLinks=null){public GroupOwnership? GroupOwner{get;init;}public int CanvasZoomIndex{get;init;}=9;public double? OverviewX{get;init;}public double? OverviewY{get;init;}public int ContinuousRunIntervalMs{get;init;}=80;public int WaitTimeMs{get;init;}public bool StopOnNg{get;init;}public WorkflowConfiguration Configuration{get;init;}=new();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "SolutionStore.Save serialization",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 18,
+          "end": 18,
+          "excerpt": "        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "不写原版 ProceZoomIndex UserData 字节；不是 .sol 兼容声明。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CV03",
+      "route": "当前 · 缩放与鹰眼",
+      "classification": "independent-implementation",
+      "from": "总览切换 / 进入流程",
+      "to": "保存视口会话 → 清当前画布身份 → RenderGraph",
+      "behavior": "总览切换保存 scale/pan；从总览进流程前保存 __solution、清 canvasProcedure。RenderGraph 切目标恢复会话偏移，并始终从当前容器 CanvasZoomIndex 重读缩放。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowOverview.cs",
+          "member": "MainWindow.WorkflowViewClick / OpenWorkflowFromOverview",
+          "sha256": "9c90a76438efb001debeb3c5c9d89a2c884ea51c5a6ffeaf7811697b36767488",
+          "start": 22,
+          "end": 44,
+          "excerpt": " void WorkflowViewClick(object sender,RoutedEventArgs e)\n {\n  if(workflowListPopup is not null)workflowListPopup.IsOpen=false;\n  if(toolPopup is not null)toolPopup.IsOpen=false;\n  ResetEditingGesture();\n  canvasViews[workflowOverview?\"__solution\":doc.CurrentProcedureId]=(scale,panX,panY);\n  workflowOverview=!workflowOverview;\n  var view=canvasViews.GetValueOrDefault(workflowOverview?\"__solution\":doc.CurrentProcedureId,(1d,0d,0d));\n  scale=view.Item1;panX=view.Item2;panY=view.Item3;canvasProcedure=doc.CurrentProcedureId;\n  selected=null;selectedNodes.Clear();RefreshAll();\n }\n void OpenWorkflowFromOverview(string id)\n {\n  // The solution DiagramArea and each procedure DiagramArea are separate native views.\n  // Capture the overview viewport before SelectWorkflow triggers its first graph render.\n  canvasViews[\"__solution\"]=(scale,panX,panY);\n  workflowOverview=false;\n  canvasProcedure=null;\n  SelectWorkflow(id);\n  RefreshAll();\n }\n void RenderWorkflowOverview()\n {",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.RenderGraph viewport switch",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 87,
+          "end": 101,
+          "excerpt": "        if(canvasProcedure!=doc.CurrentProcedureId)\n        {\n            wireDrag=null;draggedWire=null;wireDragOriginalPoints=null;\n            pendingConnection=null;connectionTarget=null;boxSelecting=false;boxSelectionActive=false;panning=false;CancelNodeMove();\n            if(canvasProcedure is not null)canvasViews[canvasProcedure]=(scale,panX,panY);\n            canvasProcedure=doc.CurrentProcedureId;\n            var saved=canvasViews.GetValueOrDefault(canvasProcedure,(1d,0d,0d));panX=saved.Item2;panY=saved.Item3;\n            selectedNodes.Clear();selectedWire=null;pendingConnection=null;\n        }\n        // The displayed container owns its discrete zoom value. Re-read even on\n        // the same page so history restored while another tab was active is shown.\n        scale=(doc.CurrentProcedure.CanvasZoomIndex+1)/10d;\n        if(HasEditingGesture){ApplyCanvasTransform();return;}\n        var procedure=doc.CurrentProcedure;\n        selectedNodes.RemoveWhere(id=>procedure.Nodes.All(n=>n.Id!=id));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "一个 GraphLayer 换视口是独立实现，不是原版两套 ZoomArea 控件树。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CV04",
+      "route": "当前 · 缩放与鹰眼",
+      "classification": "independent-implementation",
+      "from": "MiniMap XAML / UpdateMiniMap / NavigateMiniMap",
+      "to": "187×150 比例 → ScrollViewer",
+      "behavior": "本地 XAML 绑定 Down/Move/Up/Wheel；选框尺寸与 offset 按 extent 比例读取，导航把鹰眼位置换回滚动偏移，再更新小地图。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/MainWindow.xaml",
+          "member": "MainWindow MiniMap resource",
+          "sha256": "3789565bf6bc28b21c4c59a51ba30a0f121328f068cfe4995daea900d5b25c59",
+          "start": 65,
+          "end": 65,
+          "excerpt": "  <Grid x:Name=\"MiniMapPanel\" Width=\"187\" Height=\"150\" HorizontalAlignment=\"Right\" VerticalAlignment=\"Bottom\" Margin=\"0,0,11,11\" Background=\"Transparent\"><Canvas x:Name=\"MiniMapCanvas\" Width=\"187\" Height=\"150\" Background=\"Transparent\" MouseDown=\"MiniMapDown\" MouseMove=\"MiniMapMove\" MouseUp=\"MiniMapUp\" PreviewMouseWheel=\"MiniMapWheel\"><Rectangle x:Name=\"MiniMapPreview\" Width=\"187\" Height=\"150\" Stroke=\"Black\" IsHitTestVisible=\"False\"/><Rectangle x:Name=\"MiniMapViewport\" Stroke=\"#FA6212\" Fill=\"Transparent\" StrokeThickness=\"2\" IsHitTestVisible=\"False\"/></Canvas></Grid>",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.UpdateMiniMap / NavigateMiniMap",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 486,
+          "end": 502,
+          "excerpt": "    void UpdateMiniMap()\n    {\n        if(doc is null||CanvasScrollViewer.ExtentWidth<=0||CanvasScrollViewer.ExtentHeight<=0)return;\n        // Direct ZoomArea.SelectRegion* formulas, using ActualSize (not node bounds).\n        MiniMapViewport.Width=Math.Min(CanvasScrollViewer.ActualWidth/CanvasScrollViewer.ExtentWidth*187,187);\n        MiniMapViewport.Height=Math.Min(CanvasScrollViewer.ActualHeight/CanvasScrollViewer.ExtentHeight*150,150);\n        Canvas.SetLeft(MiniMapViewport,CanvasScrollViewer.HorizontalOffset/CanvasScrollViewer.ExtentWidth*187);\n        Canvas.SetTop(MiniMapViewport,CanvasScrollViewer.VerticalOffset/CanvasScrollViewer.ExtentHeight*150);\n    }\n    void NavigateMiniMap(Point regionTopLeft)\n    {\n        CanvasScrollViewer.ScrollToHorizontalOffset(regionTopLeft.X/187*CanvasScrollViewer.ExtentWidth);\n        CanvasScrollViewer.ScrollToVerticalOffset(regionTopLeft.Y/150*CanvasScrollViewer.ExtentHeight);\n        CanvasScrollViewer.UpdateLayout();panX=-CanvasScrollViewer.HorizontalOffset;panY=-CanvasScrollViewer.VerticalOffset;UpdateMiniMap();\n    }\n    void MiniMapDown(object sender,MouseButtonEventArgs e)\n    {",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "CV05",
+      "route": "当前 · 缩放与鹰眼",
+      "classification": "independent-implementation",
+      "from": "BeginMiniMapDrag / Move / Up / Wheel",
+      "to": "请求坐标、捕获及缩放锚点",
+      "behavior": "点选框外按中心导航；记请求区域而非夹边后区域；Move 用初始鼠标差；Up 清拖动并释放；Wheel 保留 Shift 后 Ctrl 两支。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow.BeginMiniMapDrag / MiniMapMove / MiniMapUp / MiniMapWheel",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 505,
+          "end": 528,
+          "excerpt": "    void BeginMiniMapDrag(Point point)\n    {\n        var rect=new Rect(Canvas.GetLeft(MiniMapViewport),Canvas.GetTop(MiniMapViewport),MiniMapViewport.Width,MiniMapViewport.Height);\n        eyeDragging=true;\n        // ZoomArea.GridEagleEye_MouseDown records the requested rect.Location, even\n        // when ScrollViewer clamps the viewport at the canvas boundary.\n        var requested=rect.Contains(point)?rect.Location:new Point(point.X-rect.Width/2,point.Y-rect.Height/2);\n        if(!rect.Contains(point))NavigateMiniMap(requested);\n        eyePointerStart=point;eyeRegionStart=requested;\n    }\n    void MiniMapMove(object sender,MouseEventArgs e){if(!eyeDragging||e.LeftButton!=MouseButtonState.Pressed)return;var point=e.GetPosition(MiniMapCanvas);if(point==eyePointerStart)return;if(!MiniMapCanvas.IsMouseCaptured)MiniMapCanvas.CaptureMouse();MoveMiniMapDrag(point);}\n    void MoveMiniMapDrag(Point point){if(eyeDragging)NavigateMiniMap(eyeRegionStart+(point-eyePointerStart));}\n    void MiniMapUp(object sender,MouseButtonEventArgs e){eyeDragging=false;MiniMapCanvas.ReleaseMouseCapture();UpdateMiniMap();}\n    void MiniMapWheel(object sender,MouseWheelEventArgs e)\n    {\n        // ZoomArea.GridEagleEye_PreviewMouseWheel uses the same Shift policy as the main canvas,\n        // before its Ctrl zoom branch (both branches run for Ctrl+Shift).\n        if((Keyboard.Modifiers&ModifierKeys.Shift)!=0){if(e.Delta<0)CanvasScrollViewer.LineRight();else if(e.Delta>0)CanvasScrollViewer.LineLeft();e.Handled=true;}\n        if((Keyboard.Modifiers&ModifierKeys.Control)!=0){var point=e.GetPosition(MiniMapCanvas);var world=new Point(point.X/187*DiagramPageSize,point.Y/150*DiagramPageSize);SetCanvasZoom(scale+(e.Delta>0?.1:e.Delta<0?-.1:0),new Point(world.X*scale+panX,world.Y*scale+panY));}\n    }\n    void MiniMapToggleClick(object sender,RoutedEventArgs e){eyeExpanded=!eyeExpanded;MiniMapPanel.Visibility=eyeExpanded?Visibility.Visible:Visibility.Collapsed;SetEyeIcon(false);}\n    void SetEyeIcon(bool hover)=>((Image)MiniMapToggle.Content).Source=Asset((eyeExpanded?\"ic_retract_\":\"ic_expand_\")+(hover?\"click.png\":\"normal.png\"));\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    }
+  ],
+  "hierarchy": {
+    "title": "主界面",
+    "kind": "ui-root",
+    "organization": "independent-reading-organization",
+    "meaning": "按主界面子系统组织证据；成员调用由叶节点对应的证据边表达。",
+    "children": [
+      {
+        "title": "节点交互",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "原版 · 输入、框选与拖放",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "DiagramItem.OnPreviewMouseLeftButtonDown → IsOpenParams 下的单击拦截",
+                "kind": "edge",
+                "edgeId": "A01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "DiagramPage.GetItemsByRect → 全矩形包含才选入",
+                "kind": "edge",
+                "edgeId": "A02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "ItemsPage.GetDropItems → 5 像素吸附 / 每节点独立夹边",
+                "kind": "edge",
+                "edgeId": "A03",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "完整手势/OLE 拖放 → 模型位置 / 历史 / 插入 / 取消",
+                "kind": "edge",
+                "edgeId": "A04",
+                "classification": "unknown"
+              }
+            ]
+          },
+          {
+            "title": "当前实现 · 选择与移动",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "NodeDown / SetBoxSelection → 选中、双击与可编辑边界",
+                "kind": "edge",
+                "edgeId": "CA01",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "PreviewNodeMove / CommitNodeMove → 拖影坐标 → 文档移动/复制/插入",
+                "kind": "edge",
+                "edgeId": "CA02",
+                "classification": "independent-implementation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "流程连线",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "原版 · 建连与数据关联",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "Connector.PreviewMouseMove → 预览路径 / oldItem 命中",
+                "kind": "edge",
+                "edgeId": "W01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "Connector.ToolItemGrid_PreviewMouseUp → 已有 oldItem → DiagramItem.Connect",
+                "kind": "edge",
+                "edgeId": "W02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "DiagramItem.Connect / OnConnect 资源 → VmModuleBaseDecorator.ConnectCommandExecute",
+                "kind": "edge",
+                "edgeId": "W03",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "VMAddConnection → 运行检查 / 历史 / 已有边端口更新 / 新增",
+                "kind": "edge",
+                "edgeId": "W04",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "AddConnection → NextModules.Add / 可选 AutoLinkData",
+                "kind": "edge",
+                "edgeId": "W05",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "原版 · 路由与路径更新",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "Connection.OnItemChanged → 端点 Position / ActualWidth 绑定",
+                "kind": "edge",
+                "edgeId": "W06",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "OnPositionChanged / SetPath → 有条件清 PathPoints → Page.GetPath",
+                "kind": "edge",
+                "edgeId": "W07",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "DiagramPage.GetPath → 全障碍 A* → 端点重试 → 后处理",
+                "kind": "edge",
+                "edgeId": "W08",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "自动寻路 / 手动折线编辑 → 全部退化布局和持久化",
+                "kind": "edge",
+                "edgeId": "W09",
+                "classification": "unknown"
+              }
+            ]
+          },
+          {
+            "title": "当前实现 · 连线与路径文档",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "UpdateConnectionPreview / FinishConnection → 保留预览目标 → ConnectExecution",
+                "kind": "edge",
+                "edgeId": "CA03",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "GraphEditorDocument.ConnectExecution → 独立 ExecutionLinks 文档事务",
+                "kind": "edge",
+                "edgeId": "CA04",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "RenderGraph → 自动路由缓存 / 手动路径显示",
+                "kind": "edge",
+                "edgeId": "CA05",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "FinishWireDrag → SetExecutionPath → 文档点集",
+                "kind": "edge",
+                "edgeId": "CA06",
+                "classification": "independent-implementation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "视口与小地图",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "原版 · 缩放、UserData 与鹰眼",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "ZoomArea.OnPreviewMouseWheel → Shift 横滚 → Ctrl 缩放",
+                "kind": "edge",
+                "edgeId": "V01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "DoChangeZoom / OnDiagramZoomIndexChange → 锚点比例与 ViewArea",
+                "kind": "edge",
+                "edgeId": "V02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "DiagramArea 双向 Zoom 绑定 → IZoomIndex.PartentZoomIndex → ProceZoomIndex",
+                "kind": "edge",
+                "edgeId": "V03",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "鹰眼 XAML 事件/绑定 → SelectRegion* 与 ScrollViewer 比例",
+                "kind": "edge",
+                "edgeId": "V04",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "鹰眼 Down / Move / Up / Wheel → 点击重定位 / 按初始位置拖动 / 释放",
+                "kind": "edge",
+                "edgeId": "V05",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "原版视口状态 → 跨方案 / 多 DPI / 渲染与线程",
+                "kind": "edge",
+                "edgeId": "V06",
+                "classification": "unknown"
+              }
+            ]
+          },
+          {
+            "title": "当前实现 · 缩放、会话与持久化",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "CanvasWheel / SetCanvasZoom → 离散缩放 → PersistContainerZoom → 图变换",
+                "kind": "edge",
+                "edgeId": "CV01",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "SetContainerZoomIndex → CanvasZoomIndex / Dirty / Changed",
+                "kind": "edge",
+                "edgeId": "CV02",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "总览切换 / 进入流程 → 保存视口会话 → 清当前画布身份 → RenderGraph",
+                "kind": "edge",
+                "edgeId": "CV03",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "MiniMap XAML / UpdateMiniMap / NavigateMiniMap → 187×150 比例 → ScrollViewer",
+                "kind": "edge",
+                "edgeId": "CV04",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "BeginMiniMapDrag / Move / Up / Wheel → 请求坐标、捕获及缩放锚点",
+                "kind": "edge",
+                "edgeId": "CV05",
+                "classification": "independent-implementation"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

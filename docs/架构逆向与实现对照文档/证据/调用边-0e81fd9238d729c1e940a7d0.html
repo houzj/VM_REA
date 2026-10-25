@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GetVmModulesByIDArray / GetAllModuleByIDs · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GetVmModulesByIDArray / GetAllModuleByIDs · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-G11"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GetVmModulesByIDArray / GetAllModuleByIDs → 链接栈 / RootID过滤 → CreateLinkModuleTrans</h2><p>ID列表转数组后走VmSolution.GetAllModuleByIDs；后者从GetAllLinkStack查首ID匹配，仅RootID非0加入，逐项CreateLinkModuleTrans。CreateLinkModule缺缓存时加锁再查，可能CreatModuleByInfo、PreAdd与_preGenerateModules登记，并切历史记录禁止标志；这不是纯AllModules字典查询。</p><p><a href="../专题/compatibility-tool.html#edge-G11">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/compatibility-tool.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/compatibility-tool.edges.json · SHA256 6498d618a4b576d430f952a5aa8d65e3e378d653e8429b2b5cd14a4609e3c7ba</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="f07784191f5634031a6168b744c60ed7b37867c2b731e0edf6e663ef3d5f783d">{
+  &quot;id&quot;: &quot;G11&quot;,
+  &quot;route&quot;: &quot;原版 · VariableManager依赖&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;GetVmModulesByIDArray / GetAllModuleByIDs&quot;,
+  &quot;to&quot;: &quot;链接栈 / RootID过滤 → CreateLinkModuleTrans&quot;,
+  &quot;behavior&quot;: &quot;ID列表转数组后走VmSolution.GetAllModuleByIDs；后者从GetAllLinkStack查首ID匹配，仅RootID非0加入，逐项CreateLinkModuleTrans。CreateLinkModule缺缓存时加锁再查，可能CreatModuleByInfo、PreAdd与_preGenerateModules登记，并切历史记录禁止标志；这不是纯AllModules字典查询。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VariableManager.cs&quot;,
+      &quot;member&quot;: &quot;VariableManager.GetVmModulesByIDArray&quot;,
+      &quot;sha256&quot;: &quot;1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38&quot;,
+      &quot;start&quot;: 601,
+      &quot;end&quot;: 606,
+      &quot;excerpt&quot;: &quot;\tpublic List&lt;VmModule> GetVmModulesByIDArray(List&lt;int> nModuleID)\n\t{\n\t\tList&lt;VmModule> list = new List&lt;VmModule>();\n\t\tVmSolution.Instance.GetAllModuleByIDs(list, nModuleID.ToArray());\n\t\treturn list;\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs&quot;,
+      &quot;member&quot;: &quot;VmModuleSet.GetAllModuleByIDs&quot;,
+      &quot;sha256&quot;: &quot;f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346&quot;,
+      &quot;start&quot;: 933,
+      &quot;end&quot;: 957,
+      &quot;excerpt&quot;: &quot;\tpublic void GetAllModuleByIDs(List&lt;VmModule> allModules, int[] ids)\n\t{\n\t\tif (ids == null || ids.Length == 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tList&lt;LinkModuleInfo> allLinkStack = GetAllLinkStack();\n\t\tList&lt;LinkModuleInfo> list = new List&lt;LinkModuleInfo>();\n\t\tforeach (int item in ids)\n\t\t{\n\t\t\tLinkModuleInfo item2 = allLinkStack.FirstOrDefault((LinkModuleInfo x) => x.ID == item);\n\t\t\tif (item2.RootID != 0)\n\t\t\t{\n\t\t\t\tlist.Add(item2);\n\t\t\t}\n\t\t}\n\t\tlist.ForEach((LinkModuleInfo x) =>\n\t\t{\n\t\t\tVmModule vmModule = CreateLinkModuleTrans(x, x.astStackModuleInfo.Count - 1);\n\t\t\tif (vmModule != null)\n\t\t\t{\n\t\t\t\tallModules.Add(vmModule);\n\t\t\t}\n\t\t});\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs&quot;,
+      &quot;member&quot;: &quot;VmModuleSet.CreateLinkModule&quot;,
+      &quot;sha256&quot;: &quot;f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346&quot;,
+      &quot;start&quot;: 964,
+      &quot;end&quot;: 989,
+      &quot;excerpt&quot;: &quot;\tinternal VmModule CreateLinkModule(LinkModuleInfo moduleInfo, int index)\n\t{\n\t\tImvsSdkDefine.IMVS_MODULE_INFO proInfo = moduleInfo.astStackModuleInfo[index];\n\t\tVmSolution.Instance.AllModules.TryGetValue(proInfo.nNodeID, out var value);\n\t\tif (value == null)\n\t\t{\n\t\t\tlock (syncObject)\n\t\t\t{\n\t\t\t\tVmSolution.Instance.AllModules.TryGetValue(proInfo.nNodeID, out value);\n\t\t\t\tif (value == null)\n\t\t\t\t{\n\t\t\t\t\tIoc.Get&lt;IUnRedoService>()?.SetForbidRecord(isForbid: true);\n\t\t\t\t\tvalue = CreatModuleByInfo(proInfo);\n\t\t\t\t\tvalue.PreAddModuleTo(this);\n\t\t\t\t\t_preGenerateModules.Add(value.ID, value);\n\t\t\t\t\tIoc.Get&lt;IUnRedoService>()?.SetForbidRecord(isForbid: false);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tif (index == 0)\n\t\t{\n\t\t\treturn value;\n\t\t}\n\t\treturn (value as VmModuleSet).CreateLinkModule(moduleInfo, index - 1);\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;链接栈生成、CreateLinkModuleTrans覆写、构造失败与历史禁止标志恢复仍开放；不执行模型创建。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

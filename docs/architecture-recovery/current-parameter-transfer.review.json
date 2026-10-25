@@ -1,0 +1,464 @@
+{
+  "provenance": {
+    "schemaVersion": 1,
+    "scope": "Current main-tree parameter edit, request snapshots, node binding, self-run, effective cache and save projection; static source evidence only.",
+    "sourceFiles": [
+      {
+        "path": "src/VisionEditor/ToolConfigurationHost.cs",
+        "sha256": "2b1f110a2ab7b4cbf55b973109f6a99db56e111d90bfead811854d98d018b5b1"
+      },
+      {
+        "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558"
+      },
+      {
+        "path": "src/VisionEditor/WorkflowExecution.cs",
+        "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4"
+      },
+      {
+        "path": "src/VisionFramework/SolutionExecutor.cs",
+        "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b"
+      },
+      {
+        "path": "src/VisionFramework/GraphExecutor.cs",
+        "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c"
+      },
+      {
+        "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+        "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01"
+      },
+      {
+        "path": "src/VisionFramework/Contracts.cs",
+        "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269"
+      },
+      {
+        "path": "src/VisionEditor/ToolExecutionScope.cs",
+        "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a"
+      },
+      {
+        "path": "src/VisionFramework/ModuleExecutionScope.Parameters.cs",
+        "sha256": "ec53ae0a59eff823eaf5f7db488fb9db11f8e33d9763fc9a817704f6d99275e3"
+      },
+      {
+        "path": "src/VisionFramework/ModuleExecutionScope.cs",
+        "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b"
+      },
+      {
+        "path": "src/VisionEditor/MainWindow.xaml.cs",
+        "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a"
+      },
+      {
+        "path": "src/VisionPluginContracts/Contracts.cs",
+        "sha256": "a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f"
+      },
+      {
+        "path": "src/VisionFramework/SolutionStore.cs",
+        "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365"
+      }
+    ],
+    "factCount": 6,
+    "referenceCount": 25,
+    "productModified": false,
+    "otherWorktreeRead": false,
+    "guiStarted": false,
+    "runtimeExecuted": false,
+    "nativeEquivalent": false,
+    "implementationProgress": "41/96 = 42.71%; analysis adds no implementation units"
+  },
+  "facts": [
+    {
+      "id": "CP01",
+      "stages": [
+        "input",
+        "processing"
+      ],
+      "modes": [
+        "all"
+      ],
+      "classification": "independent-implementation",
+      "from": "工具配置Apply与编辑文档",
+      "to": "经校验的JSON参数副本",
+      "behavior": "常规工具配置窗口的Apply先核方案/目录/窗口与执行所有者，并在activeRun非null时拒绝修改，再取before、调用SetProcedureNodeParameters并更新有效参数缓存。CheckedParameters为每个JsonElement调用Clone，校验参数错误后交给文档编辑；Document getter又调用Copy，Copy重新分配节点参数字典并Clone各JSON值。因此正常全流程运行中不能把此Apply描述为允许实时修改本轮参数。",
+      "representation": "Dictionary<string,JsonElement>；Clone隔离JSON值的文档存储，字典替换与历史编辑也有自己的文档副本。它不代表任意插件状态、服务、图像对象的深复制。",
+      "cache": "编辑文档持有已提交参数；配置窗口上下文的Node来自打开时的CurrentProcedure副本。",
+      "release": "JSON副本没有显式像素释放协议；文档/历史生命周期与运行scope分开，不能用参数Clone解释图像buffer退役。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolConfigurationHost.cs",
+          "member": "OpenToolConfiguration.Apply",
+          "sha256": "2b1f110a2ab7b4cbf55b973109f6a99db56e111d90bfead811854d98d018b5b1",
+          "start": 28,
+          "end": 37,
+          "excerpt": "   void Apply(Dictionary<string,JsonElement> values){\n    if(!IsCurrentExecutionOwner(owner)||!active||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||!StringComparer.OrdinalIgnoreCase.Equals(ownerDirectory,doc.BaseDirectory))throw new InvalidOperationException(\"当前模块不可编辑。\");\n    if(!doc.Document.Procedures.Any(p=>p.Id==procedure.Id&&p.Nodes.Any(n=>n.Id==id)))throw new InvalidOperationException(\"模块已移除。\");\n    var before=doc.Document.Procedures.Single(p=>p.Id==procedure.Id).Nodes.Single(n=>n.Id==id).Parameters;\n    doc.SetProcedureNodeParameters(procedure.Id,id,values);\n    executionScope.ForProcedure(procedure.Id).RememberConfigurationParameters(node.ModuleId,id,before,values);\n   }\n   var context=new ToolEditorContext(node,ownerDirectory,Apply,_=>throw new NotSupportedException(\"配置执行服务尚未连接。\"),procedure.Nodes.ToList().FindIndex(n=>n.Id==id)){ConfigurationActive=()=>active&&IsCurrentExecutionOwner(owner)};\n   context=ConnectToolEditorServices(context,id);\n   context=ConnectConfigurationRoi(context,procedure.Id,id,solution);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "SetProcedureNodeParameters",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 106,
+          "end": 109,
+          "excerpt": "    public void SetProcedureNodeParameters(string procedureId,string nodeId,Dictionary<string,JsonElement> values) {\n        var p=Procedure(procedureId);var node=p.Nodes.FirstOrDefault(n=>n.Id==nodeId)??throw new KeyNotFoundException(nodeId);var parameters=CheckedParameters(node,values);\n        Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==procedureId?p with{Nodes=p.Nodes.Select(n=>n.Id==nodeId?n with{Parameters=parameters}:n).ToArray()}:p).ToArray()});\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "CheckedParameters",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 254,
+          "end": 262,
+          "excerpt": "    Dictionary<string,JsonElement> CheckedParameters(NodeDocument node,Dictionary<string,JsonElement> values) {\n        ArgumentNullException.ThrowIfNull(values);\n        var copied=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());\n        var test=node with {Parameters=copied};\n        var validation=GraphValidator.Validate(new(\"validation\",\"validation\",[test],[]),registry);\n        var errors=validation.Issues.Where(i=>i.Code is \"UnknownParameter\" or \"ParameterValue\" or \"MissingParameter\").ToArray();\n        if(errors.Length>0)throw new ArgumentException(string.Join(\"; \",errors.Select(i=>i.Code+\": \"+i.Message)));\n        return copied;\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Document",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 34,
+          "end": 37,
+          "excerpt": "    public SolutionDocument Document => Copy(document);\n    public string SolutionId=>document.Id;\n    public bool HasCurrentProcedure => document.Procedures.Count>0;\n    public ProcedureDocument CurrentProcedure => HasCurrentProcedure?Document.Procedures.Single(p => p.Id == CurrentProcedureId):new(\"\",\"\",[],[],[]);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Copy",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 331,
+          "end": 331,
+          "excerpt": "    static SolutionDocument Copy(SolutionDocument d)=>d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=>p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with {Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "此门只证明所选常规配置Apply路径；不能扩称所有API、插件内部状态和配置自执行期间都具有同一禁改门。"
+      ]
+    },
+    {
+      "id": "CP02",
+      "stages": [
+        "input",
+        "processing"
+      ],
+      "modes": [
+        "all"
+      ],
+      "classification": "independent-implementation",
+      "from": "主流程启动与子流程调用",
+      "to": "本次请求的JSON配置快照",
+      "behavior": "MainWindow.RunCore先在调用线程用doc.Document构建SolutionWorkspace，再将workspace交Task.Run。SolutionExecutor.RunAsync再复制全部过程/节点参数，内部Execute和Group循环从这个document查子流程；GraphExecutor入口再复制目标图的参数。编辑文档后来替换JSON字段，不会替换已经捕获的本轮参数字典。ContinuousRun每次重新调用RunCore，故各轮具有各自的配置获取点；这不解除CP01的UI禁改门。",
+      "representation": "编辑文档副本→SolutionWorkspace.Document→SolutionExecutor局部document→GraphExecutor局部p；每层显式ToDictionary+JsonElement.Clone，而Resources仅数组复制。",
+      "cache": "当前请求及子调用持有局部快照；持续运行没有一次捕获后永久复用同一份方案JSON。",
+      "release": "局部快照随异步方法与其子调用生命周期保留；不等于Scope.State或输入图像也被复制或在返回时释放。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "RunCore",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 31,
+          "end": 39,
+          "excerpt": "  var workspace=new SolutionWorkspace(doc.Document,doc.BaseDirectory);\n  try\n  {\n   BeginWorkflowResults(procedureId);if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();\n   if(!IsCurrentExecutionOwner(owner))return false;\n   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};\n   var progress=CreateExecutionProgress(procedureId,owner,workflowExecuteCounts.GetValueOrDefault(procedureId)); // Capture the UI dispatcher before the graph moves to a worker.\n   var session=await Task.Run(()=>new SolutionExecutor(modules).RunAsync(workspace,procedureId,progress:progress,cancellationToken:token,scope:ownerScope,control:control),token);\n   if(!IsCurrentExecutionOwner(owner))return false;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "ContinuousRun",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 80,
+          "end": 85,
+          "excerpt": " async Task ContinuousRun(string procedureId,CancellationTokenSource owner)\n {\n  var stamp=CaptureExecutionOwner();\n  try{while(!owner.IsCancellationRequested&&continuousRun&&IsCurrentExecutionOwner(stamp)){bool ok=await RunCore(procedureId,owner.Token);if(!IsCurrentExecutionOwner(stamp))break;var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){StatusText.Text=\"流程 NG，已停止连续运行\";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}\n  catch(OperationCanceledException){if(IsCurrentExecutionOwner(stamp))StatusText.Text=\"连续运行已停止\";}\n  catch(Exception error){if(IsCurrentExecutionOwner(stamp))StatusText.Text=\"连续运行失败：\"+error.Message;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "RunAsync.snapshot",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 13,
+          "end": 21,
+          "excerpt": "        var document=workspace.Document with{Resources=workspace.Document.Resources.ToArray(),Procedures=workspace.Document.Procedures.Select(p=>p with{Configuration=(p.GroupOwner is not null?GroupDisplayLinks.Synchronize(p.Configuration,p.Configuration):p.Configuration).Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(v=>v.Key,v=>v.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};\n        WorkflowCalls.Validate(document,procedureId);\n        var checkedProcedures=new HashSet<string>();void ValidateBreaks(string id){if(!checkedProcedures.Add(id))return;var parent=document.Procedures.Single(p=>p.Id==id);foreach(var node in parent.Nodes){if(node.GroupBreak is not null){var body=document.Procedures.SingleOrDefault(p=>p.Id==node.Call?.ProcedureId)??throw new InvalidDataException(\"Break metadata requires a Group body.\");GroupBreak.Validate(parent,node,body,registry);}if(node.Enabled&&node.Call is {} call)ValidateBreaks(call.ProcedureId);}}ValidateBreaks(procedureId);\n        var resources=document.Resources.ToArray();var catalog=new ResourceCatalog(workspace.BaseDirectory,resources);\n        foreach(var resource in resources){if(cancellationToken.IsCancellationRequested)break;using var stream=catalog.OpenVerified(resource.Id);}\n        async Task<ExecutionSessionResult> Execute(string id,IReadOnlyDictionary<string,PortValue>? arguments,CancellationToken token,int depth,int? groupLoopIndex=null){\n            if(depth>32)throw new InvalidDataException(\"Independent subprogram depth limit is 32.\");\n            var procedure=document.Procedures.SingleOrDefault(p=>p.Id==id)??throw new InvalidDataException(\"Unknown procedure: \"+id);\n            using var wait=new CancellationTokenSource();",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "RunAsync.snapshot",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 9,
+          "end": 12,
+          "excerpt": "  var p=procedure with{Nodes=procedure.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(x=>x.Key,x=>x.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices is null?null:Array.AsReadOnly(r.Vertices.ToArray())}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray(),Connections=procedure.Connections.ToArray(),ExecutionLinks=procedure.ExecutionLinks?.ToArray(),Configuration=procedure.Configuration.Snapshot()};\n  var validation=GraphValidator.Validate(p,registry);if(!validation.IsValid)throw new InvalidDataException(string.Join(\"; \",validation.Issues.Select(i=>i.Code+\": \"+i.Message)));\n  var calls=new Dictionary<string,ExecutionSessionResult>();var records=new Dictionary<string,NodeRunRecord>();var descriptors=p.Nodes.ToDictionary(n=>n.Id,registry.GetDescriptor,StringComparer.Ordinal);var suppressed=new HashSet<string>(StringComparer.Ordinal);var selectedSuccessors=new Dictionary<string,HashSet<string>>(StringComparer.Ordinal);var executionEdges=ProcedureGraph.ExecutionEdges(p);var workflow=new WorkflowRunContext(p,inputs,records,groupLoopIndex);\n  void Report(string id,NodeRunStatus s,string? m=null,ModuleDescriptor? updatedDescriptor=null){try{progress?.Report(new ExecutionEvent(id,s,m){UpdatedDescriptor=updatedDescriptor});}catch{}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "插件还可读取scope服务、运行状态、延迟输入读取器；这里只闭合JSON配置隔离，不能宣称整个执行环境不可变。",
+        "未执行线程竞争探针；不把静态复制链称为所有并发插件行为的运行证明。"
+      ]
+    },
+    {
+      "id": "CP03",
+      "stages": [
+        "input",
+        "processing"
+      ],
+      "modes": [
+        "all"
+      ],
+      "classification": "independent-implementation",
+      "from": "节点开始前解析默认值和订阅",
+      "to": "ModuleExecutionContext.Parameters与Inputs",
+      "behavior": "每个节点先从已复制n.Parameters建立新的字典，补Clone后的默认JSON值，再在执行到此节点时通过workflow.Resolve解析订阅；参数订阅经WorkflowSubscriptions.Parameter检查标量种类并SerializeToElement，覆盖该节点参数。普通连线则直接把上游PortValue赋入nodeInputs。ExecuteAsync收到两套ReadOnlyDictionary包装；ModuleExecutionContext构造器直接持有这两套只读接口。只读包装没有复制PortValue中图像/对象的含义。",
+      "representation": "参数种类仅Number/Integer/Boolean/Text；图像是PortValue输入，不是把一张图像深克隆进JSON参数。节点字典ToDictionary本身是浅复制，JSON数据隔离来自前述Clone和绑定序列化。",
+      "cache": "配置种子在请求开始冻结，但订阅所得值在各节点执行时解析，不能称全图所有有效参数同时于启动时冻结。",
+      "release": "参数只读视图不授予图像所有权；模块Dispose与参数缓存退役是不同步骤。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "RunAsync.inputs-and-parameters",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 24,
+          "end": 35,
+          "excerpt": "    nodeInputs[c.ToPort]=v;\n   }\n   if(invalidDynamicConnection){Record(NodeRunStatus.Failed,code:\"DynamicConnectionInvalid\",message:dynamicConnectionMessage);continue;}\n   if(blocked){Record(NodeRunStatus.Skipped,code:\"UpstreamUnavailable\");continue;}\n   var parameters=n.Parameters.ToDictionary(x=>x.Key,x=>x.Value);foreach(var spec in d.Parameters)if(!parameters.ContainsKey(spec.Name)&&spec.DefaultValue is {} def)parameters[spec.Name]=def.Clone();\n   var numericIndices=new Dictionary<string,WorkflowArrayIndex?>(StringComparer.Ordinal);\n   try{foreach(var binding in p.Configuration.Subscriptions.Where(b=>b.NodeId==id)){PortValue value;if(!binding.IsParameter&&d.Inputs.Single(port=>port.Name==binding.Target) is {} deferred&&(deferred.SupportsDeferredNumericRead||deferred.SupportsDeferredIntegerRead||deferred.SupportsDeferredTextRead)){numericIndices.Add(binding.Target,binding.Source.ArrayIndex);try{value=workflow.Resolve(binding.Source with{ArrayIndex=null});}catch(InvalidDataException)when(workflow.CanDeferNumericRead(binding.Source)){continue;}}else value=workflow.Resolve(binding.Source);if(binding.IsParameter)parameters[binding.Target]=WorkflowSubscriptions.Parameter(d.Parameters.Single(p=>p.Name==binding.Target),value);else nodeInputs[binding.Target]=value;}}catch(Exception ex)when(ex is InvalidDataException or OverflowException){Record(NodeRunStatus.Failed,code:\"SubscriptionUnavailable\",message:ex.Message);continue;}\n   try{foreach(var input in nodeInputs.ToArray()){var port=d.Inputs.Single(p=>p.Name==input.Key);if(!PortTypes.AcceptsInput(port,input.Value.Kind,input.Value.Cardinality))throw new InvalidDataException(\"Input cardinality mismatch: \"+input.Key);nodeInputs[input.Key]=DataKinds.Coerce(input.Value,port);}}catch(Exception ex)when(ex is InvalidDataException or InvalidOperationException){Record(NodeRunStatus.Failed,code:\"InputTypeMismatch\",message:ex.Message);continue;}\n   var numericReader=numericIndices.Count==0?null:new WorkflowNumericInputRead(nodeInputs,numericIndices,workflow.Resolve);\n   var visibleSuccessors=executionSuccessorRead?.Invoke(id)??Array.AsReadOnly(executionEdges.Where(e=>e.FromNode==id).Select(e=>new ExecutionSuccessor(e.ToNode)).ToArray());\n   IModule? module=null;ModuleResult? result=null;Exception? error=null;using var timeout=new CancellationTokenSource();if(n.TimeoutMs>0)timeout.CancelAfter(n.TimeoutMs);using var linked=CancellationTokenSource.CreateLinkedTokenSource(timeout.Token,cancellationToken,scope?.Stopping??CancellationToken.None);Report(id,NodeRunStatus.Running);\n   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "RunAsync.ExecuteAsync",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 35,
+          "end": 37,
+          "excerpt": "   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}\n   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}\n   if(result.UpdatedDescriptor is not null&&!d.SupportsDynamicOutputs){Record(NodeRunStatus.Failed,code:\"InvalidDynamicDescriptor\",message:\"Static module returned an updated descriptor.\");continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": "Parameter",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 74,
+          "end": 81,
+          "excerpt": " public static JsonElement Parameter(ParameterDescriptor spec,PortValue value)\n {\n  if(ParameterType(spec.Kind)!=value.Kind||value.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException(\"Parameter subscription type mismatch.\");\n  JsonElement json=spec.Kind==ParameterKind.Integer?JsonSerializer.SerializeToElement(checked((int)value.As<long>())):JsonSerializer.SerializeToElement(value.Value);\n  if(!GraphValidator.ValidParameter(spec,json))throw new InvalidDataException(\"Subscribed parameter outside declared range: \"+spec.Name);return json;\n }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "ParameterKind",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 12,
+          "end": 13,
+          "excerpt": "public enum ParameterKind { Number, Integer, Boolean, Text }\npublic sealed record PortDescriptor(string Name,DataKind Kind,bool Required=true,bool AcceptInteger=false){public ValueCardinality Cardinality{get;init;}=ValueCardinality.Scalar;public bool SupportsDeferredNumericRead{get;init;}public bool SupportsDeferredIntegerRead{get;init;}public bool SupportsDeferredTextRead{get;init;}public bool CanSubscribe{get;init;}=true;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "ModuleExecutionContext.constructor",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 77,
+          "end": 81,
+          "excerpt": "    public ModuleExecutionContext(string nodeId,string baseDirectory,IReadOnlyDictionary<string,PortValue> inputs,IReadOnlyDictionary<string,JsonElement> parameters,IReadOnlyList<RoiDocument>? rois=null,IReadOnlyDictionary<string,IReadOnlyList<RoiDocument>>? roiGroups=null){NodeId=nodeId;BaseDirectory=baseDirectory;Inputs=inputs;Parameters=parameters;Rois=Array.AsReadOnly(SnapshotRois(rois??Array.Empty<RoiDocument>()));RoiGroups=new System.Collections.ObjectModel.ReadOnlyDictionary<string,IReadOnlyList<RoiDocument>>((roiGroups??new Dictionary<string,IReadOnlyList<RoiDocument>>()).ToDictionary(p=>p.Key,p=>(IReadOnlyList<RoiDocument>)Array.AsReadOnly(SnapshotRois(p.Value)),StringComparer.Ordinal));}\n    static RoiDocument[] SnapshotRois(IEnumerable<RoiDocument> rois)=>rois.Select(r=>r with{Vertices=r.Vertices is null?null:Array.AsReadOnly(r.Vertices.ToArray())}).ToArray();\n    public T Input<T>(string name)=>Inputs.TryGetValue(name,out var value)?value.As<T>():throw new InvalidOperationException(\"Missing input: \"+name);\n    public string Text(string name)=>Parameters[name].GetString()??throw new InvalidDataException(\"Null text parameter: \"+name);\n    public double Number(string name)=>Parameters[name].GetDouble();",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "DataKinds.Coerce及插件执行可有自己的转换/复制规则；仅凭框架字典不能推定任意具体图像在工具内零复制或深复制。",
+        "下游动态读取服务与原生参数setter认可状态不在这条托管参数传递事实内。"
+      ]
+    },
+    {
+      "id": "CP04",
+      "stages": [
+        "input",
+        "processing",
+        "results"
+      ],
+      "modes": [
+        "all"
+      ],
+      "classification": "independent-implementation",
+      "from": "工具配置自执行RunConfiguredTool",
+      "to": "本次配置参数副本与独立节点请求",
+      "behavior": "配置自执行在调度前取得doc.Document中的procedure/node，Clone传入values；已解析参数订阅和默认值后建立isolated节点，再交GraphExecutor。ParameterSeed显式返回这次捕获node.Parameters，applied则是传入编辑值加本次绑定解析后的parameters，二者不可混称同一个快照。上游available重新建字典但里面仍为NodeRunRecord/PortValue引用；图像没有随JSON参数Clone自动复制。",
+      "representation": "配置种子、传入参数、绑定后参数、上游记录视图四种对象分别持有；自执行也走GraphExecutor的JSON复制/校验与scope租约。",
+      "cache": "CanPublish及结束条件核执行所有者、配置存活、方案/scope/节点身份，再缓存record；这些是发布门，不是将所有运行数据倒写文档。",
+      "release": "配置关闭可抑制发布，但此片段未以关闭配置窗口建立专属取消源；ownerScope.Stopping才传入执行请求。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "RunConfiguredTool.capture",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 154,
+          "end": 171,
+          "excerpt": " async Task<NodeRunRecord> RunConfiguredTool(string procedureId,string nodeId,Dictionary<string,System.Text.Json.JsonElement> values,Func<bool>? configurationAlive=null){\n  var runOwner=CaptureExecutionOwner();\n  bool CanPublish()=>IsCurrentExecutionOwner(runOwner)&&(configurationAlive?.Invoke()??true);\n  if(!CanPublish())throw new InvalidOperationException(\"配置会话已失效。\");\n  var procedure=doc.Document.Procedures.Single(p=>p.Id==procedureId);var node=procedure.Nodes.Single(n=>n.Id==nodeId);var descriptor=modules.GetDescriptor(node);var inputs=new Dictionary<string,PortValue>();var parameters=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());\n  // Capture this self-run's upstream records before dispatch; dynamic selectors read this\n  // invocation's snapshot, never a mutable latest-result dictionary from another round.\n  var available=(workflowSessions.TryGetValue(procedureId,out var priorSession)?priorSession.Nodes:[]).ToDictionary(r=>r.NodeId,StringComparer.Ordinal);\n  if(configurationResults.TryGetValue(procedureId,out var configured))foreach(var cached in configured)available[cached.Key]=cached.Value;\n  PortValue Output(string id,string port){\n   NodeRunRecord? record=available.GetValueOrDefault(id);\n   return record is not null&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&CompoundOutputFields.Expand(record.Outputs).TryGetValue(port,out var value)?value:throw new InvalidDataException(\"订阅图像或数据尚无运行结果。\");\n  }\n  PortValue Resolve(WorkflowValueReference source)=>source.Kind switch{\n   WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),\n   WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),\n   WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),\n   WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "RunConfiguredTool.resolve",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 181,
+          "end": 189,
+          "excerpt": "   var boundParameters=new HashSet<string>(StringComparer.Ordinal);\n   var numericIndices=new Dictionary<string,WorkflowArrayIndex?>(StringComparer.Ordinal);\n   foreach(var binding in procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId)){PortValue value;if(!binding.IsParameter&&descriptor.Inputs.Single(port=>port.Name==binding.Target) is {} deferred&&(deferred.SupportsDeferredNumericRead||deferred.SupportsDeferredIntegerRead||deferred.SupportsDeferredTextRead)){numericIndices.Add(binding.Target,binding.Source.ArrayIndex);try{value=Resolve(binding.Source with{ArrayIndex=null});}catch(InvalidDataException)when(binding.Source.Kind==WorkflowSourceKind.NodeOutput&&available.TryGetValue(binding.Source.Id,out var producer)&&producer.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch){continue;}}else value=Resolve(binding.Source);if(binding.IsParameter){if(!boundParameters.Add(binding.Target))throw new InvalidDataException(\"配置参数存在重复绑定。\");parameters[binding.Target]=WorkflowSubscriptions.Parameter(descriptor.Parameters.Single(p=>p.Name==binding.Target),value);}else if(!inputs.TryAdd(binding.Target,value))throw new InvalidDataException(\"配置输入存在重复绑定。\");}\n   foreach(var spec in descriptor.Parameters)if(!parameters.ContainsKey(spec.Name)&&spec.DefaultValue is {} def)parameters[spec.Name]=def.Clone();\n   foreach(var port in descriptor.Inputs)if(inputs.TryGetValue(port.Name,out var supplied))inputs[port.Name]=DataKinds.Coerce(supplied,port);\n   // Reuse the graph runtime's parameter/input/output/status/timeout checks for\n   // an isolated node. Configuration dispatch must not bypass those contracts.\n   var inputSpecs=inputs.Select(p=>new WorkflowInterfaceItem(p.Key,p.Key,p.Value.Kind){Cardinality=p.Value.Cardinality}).ToArray();\n   var numericReader=numericIndices.Count==0?null:new WorkflowNumericInputRead(inputs,numericIndices,Resolve);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "RunConfiguredTool.dispatch",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 190,
+          "end": 202,
+          "excerpt": "   var isolated=new ProcedureDocument(procedureId,procedure.Name,[node with{Parameters=parameters}],[],[]){Configuration=new(){Inputs=inputSpecs,Subscriptions=inputSpecs.Select(p=>new WorkflowSubscription(nodeId,p.Name,false,new(WorkflowSourceKind.WorkflowInput,p.Id))).ToArray()}};\n   var baseDirectory=doc.BaseDirectory;var resources=new ResourceCatalog(baseDirectory,doc.Document.Resources);\n   var originalSuccessors=Array.AsReadOnly(ProcedureGraph.ExecutionEdges(procedure).Where(edge=>edge.FromNode==nodeId).Select(edge=>new ExecutionSuccessor(edge.ToNode)).ToArray());\n   var run=await Task.Run(()=>new GraphExecutor(modules).RunAsync(isolated,baseDirectory,cancellationToken:ownerScope.Stopping,inputs:inputs,scope:ownerScope,control:new ModuleRunControl{Mode=ExecutionMode.SelfRun,ParameterSeed=id=>id==nodeId?node.Parameters:null},resources:resources,numericInputRead:(id,name,index)=>id==nodeId?numericReader?.Read(name,index):null,integerInputRead:(id,name,index)=>id==nodeId?numericReader?.ReadInteger(name,index):null,textInputRead:(id,name,index,capacity)=>id==nodeId?numericReader?.ReadText(name,index,capacity):null,executionSuccessorRead:id=>id==nodeId?originalSuccessors:null));\n   record=run.Nodes.Single();\n  }catch(Exception ex){record=new(nodeId,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),clock.Elapsed.TotalMilliseconds,\"SelfRunFailed\",ex.Message);}\n  finally{if(IsCurrentExecutionOwner(runOwner)){activeConfigurationRuns--;if(configurationRunsByProcedure.TryGetValue(procedureId,out int count)){if(count<=1)configurationRunsByProcedure.Remove(procedureId);else configurationRunsByProcedure[procedureId]=count-1;}}}\n  if(CanPublish()&&doc.SolutionId==ownerSolution&&ReferenceEquals(executionScope,ownerScope)&&doc.Document.Procedures.Any(p=>p.Id==procedureId&&p.Nodes.Any(n=>n.Id==nodeId&&n.ModuleId==node.ModuleId&&n.ModuleVersion==node.ModuleVersion))){\n   if(!configurationResults.TryGetValue(procedureId,out var cached))configurationResults[procedureId]=cached=new(StringComparer.Ordinal);\n   cached[nodeId]=record;\n   if(doc.CurrentProcedureId==procedureId){\n    results[nodeId]=record;RefreshRight();RenderGraph();\n    StatusText.Text=\"模块执行：\"+node.Name+\" · \"+record.Status+(record.Message is null?\"\":\" · \"+record.Message);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "不能把全流程activeRun门移植成配置自执行期间全部编辑必被拒绝；各配置操作门不同。",
+        "此处记录复用不是图像生产者生命周期或插件缓存释放的完整证明。"
+      ]
+    },
+    {
+      "id": "CP05",
+      "stages": [
+        "processing",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "classification": "independent-implementation",
+      "from": "进入ExecuteAsync前的有效参数",
+      "to": "scope按过程/模块/节点保存Seed和Values",
+      "behavior": "GraphExecutor在ExecuteAsync之前调用RememberExecutionParameters；该方法分别Clone seed与applied，所以缓存不依赖模块执行结束才写入，失败/取消也可能留下本次入参。ReadEffectiveParameters先Clone缓存Values，再把当前配置中与Seed的GetRawText不同的字段覆盖进去；RememberConfigurationParameters又可更新已变字段。因此“有效参数”是供编辑器继续配置的托管视图，不能直接标成上次成功算法实际使用的精确历史记录或原生setter确认。",
+      "representation": "root.effectiveParameters以(Procedure,Module,Node)为键，每项有Gate、Seed字典、Values字典；读取返回新的JSON副本。",
+      "cache": "正常单次运行返回、单模块runtime Dispose不清除此scope级缓存；后续执行覆盖它，配置读可叠加当前值。",
+      "release": "RemoveNode与RetainProcedureNodes移除相应条目；scope Dispose先closing并取消，等待已Enter租约退出才Release，Release清空effectiveParameters。这是托管引用退役，不证明GC时刻或原生像素释放。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "RunAsync.RememberExecutionParameters-before-ExecuteAsync",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 35,
+          "end": 36,
+          "excerpt": "   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}\n   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.Parameters.cs",
+          "member": "EffectiveParameters and copy/overlay",
+          "sha256": "ec53ae0a59eff823eaf5f7db488fb9db11f8e33d9763fc9a817704f6d99275e3",
+          "start": 5,
+          "end": 11,
+          "excerpt": " sealed class EffectiveParameters {public readonly object Gate=new();public Dictionary<string,JsonElement>? Seed,Values;}\n readonly Dictionary<(string Procedure,string Module,string Node),EffectiveParameters> effectiveParameters=new();\n EffectiveParameters Parameters(string module,string node){var root=Root;lock(root.gate){ObjectDisposedException.ThrowIf(root.closing,this);var key=(ProcedureId,module,node);if(!root.effectiveParameters.TryGetValue(key,out var value))root.effectiveParameters[key]=value=new();return value;}}\n /// <summary>Managed module-entry parameters, after binding resolution. Not an acknowledgement of native SDK setters.</summary>\n public void RememberExecutionParameters(string module,string node,IReadOnlyDictionary<string,JsonElement> seed,IReadOnlyDictionary<string,JsonElement> applied){var state=Parameters(module,node);lock(state.Gate){state.Seed=seed.ToDictionary(p=>p.Key,p=>p.Value.Clone());state.Values=applied.ToDictionary(p=>p.Key,p=>p.Value.Clone());}}\n public IReadOnlyDictionary<string,JsonElement>? ReadEffectiveParameters(string module,string node,IReadOnlyDictionary<string,JsonElement> current){var state=Parameters(module,node);lock(state.Gate){if(state.Values is null)return null;var result=state.Values.ToDictionary(p=>p.Key,p=>p.Value.Clone());foreach(var pair in current)if(state.Seed is null||!state.Seed.TryGetValue(pair.Key,out var old)||old.GetRawText()!=pair.Value.GetRawText())result[pair.Key]=pair.Value.Clone();return result;}}\n public void RememberConfigurationParameters(string module,string node,IReadOnlyDictionary<string,JsonElement> before,IReadOnlyDictionary<string,JsonElement> after,bool reset=false){var state=Parameters(module,node);lock(state.Gate){if(state.Values is null&&!reset)return;state.Seed??=before.ToDictionary(p=>p.Key,p=>p.Value.Clone());state.Values??=new();foreach(var pair in after)if(reset||!before.TryGetValue(pair.Key,out var old)||old.GetRawText()!=pair.Value.GetRawText()){state.Seed[pair.Key]=pair.Value.Clone();state.Values[pair.Key]=pair.Value.Clone();}}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "RemoveNode and scope retirement",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 41,
+          "end": 49,
+          "excerpt": " public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){root.effectiveParameters.Remove((ProcedureId,module,node));if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}\n public void RetainNodes(IEnumerable<(string Module,string Node)> current){var keep=current.Select(k=>(ProcedureId,k.Module,k.Node));RetainProcedureNodes(keep,ProcedureId);}\n public void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current)=>RetainProcedureNodes(current,null);\n void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current,string? only){var root=Root;var keep=current.ToHashSet();lock(root.gate){foreach(var key in root.effectiveParameters.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray())root.effectiveParameters.Remove(key);}(string Procedure,string Module,string Node)[] removed;lock(root.gate)removed=root.states.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray();foreach(var key in removed){if(key.Procedure.Length==0)root.RemoveNode(key.Module,key.Node);else root.ForProcedure(key.Procedure).RemoveNode(key.Module,key.Node);}}\n public void Dispose(){if(owner is not null)return;lock(gate){if(closing)return;closing=true;}try{stopping.Cancel();}catch(Exception error){RecordCleanupFailure(\"cancel\",stopping,error);}finally{bool release;lock(gate){cancellationComplete=true;release=TryRelease();}if(release)Release();}}\n bool TryRelease(){if(!closing||!cancellationComplete||leases!=0||releaseStarted)return false;releaseStarted=true;return true;}\n void Exit(){bool release;lock(gate){leases--;release=TryRelease();}if(release)Release();}\n void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}\n sealed class Lease(ModuleExecutionScope scope):IDisposable {ModuleExecutionScope? owner=scope;public void Dispose()=>Interlocked.Exchange(ref owner,null)?.Exit();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "ConnectToolEditorServices.ReadEffectiveParameters",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 81,
+          "end": 81,
+          "excerpt": "  return context with{ReadEffectiveParameters=()=>{if(!Alive()||windowClosed||doc.SolutionId!=solution)return null;var target=Flow().Nodes.Single(n=>n.Id==node);return executionScope.ForProcedure(procedure).ReadEffectiveParameters(target.ModuleId,node,target.Parameters);},ConfigurationFolders=new WpfConfigurationFolderService(),ConfigurationPresentation=presentation,ConfigurationSubscriptions=completeSubscriptions,ConfigurationFiles=new WpfConfigurationFileService(),ConfigurationSaveFiles=new WpfConfigurationSaveFileService(),ConfigurationConfirmations=new WpfConfigurationConfirmationService(),ResetConfigurationParameters=next=>{if(!Alive()||windowClosed||isLocked||activeRun is not null||activeConfigurationRuns>0||doc.SolutionId!=solution)throw new InvalidOperationException(\"当前模块不可编辑。\");var target=Flow().Nodes.Single(n=>n.Id==node);doc.ResetProcedureNodeParameters(procedure,node,next);executionScope.ForProcedure(procedure).RememberConfigurationParameters(target.ModuleId,node,target.Parameters,next,true);},ConfigurationNotifications=new WpfConfigurationNotificationService(),ConfigurationExecutionStatus=ConfigurationStatus,Resources=()=>{if(!Alive()||windowClosed||doc.SolutionId!=solution)throw new InvalidOperationException(\"配置资源所属方案已失效。\");return new ResourceCatalog(doc.BaseDirectory,doc.Document.Resources);},Scope=executionScope.ForProcedure(procedure),Run=values=>{if(!Alive())throw new InvalidOperationException(\"配置会话已关闭。\");return RunConfiguredTool(procedure,node,values,Alive);},Cameras=()=>{RequireAlive();return executionScope.Service<IImageAcquisitionService>()?.Cameras??[];},ConfigureCameras=()=>{RequireAlive();RefreshCameraProvider(true);},SubscriptionLabel=Label,",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "没有逐工具核其如何消费每个参数、是否忽略字段、何时复制到native；这些不能从托管入参缓存替代取证。",
+        "删除节点与旧在飞请求的全部竞争仍需具体调用时序验证，缓存删除不等于全局排空。"
+      ]
+    },
+    {
+      "id": "CP06",
+      "stages": [
+        "input",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "classification": "independent-implementation",
+      "from": "用户保存方案",
+      "to": "插件持久化投影→JSON方案文件→编辑器提交",
+      "behavior": "MainWindow将doc.PrepareSave接到plugins.PrepareSave(document,baseDirectory,executionScope)。GraphEditorDocument.Save向PrepareSave传入Copy(document)，插件注册表只对IToolAssetPersistence参与者调用其PrepareSave(node,catalog,procedureScope)，回收这些插件前缀资源并采用返回Node/Resources。随后重基路径、SolutionStore验证和序列化方案，经同目录临时文件Flush(true)+Move覆盖成功后编辑器才提交rebased文档。框架没有把scope有效参数或运行结果字典统一自动拷回所有节点。",
+      "representation": "被保存的是SolutionDocument及插件显式返回的ToolAssetSnapshot；不是整个运行scope、图像对象或原生指针堆的序列化。",
+      "cache": "参与者可通过传入scope选择保留的工具状态；实际保存哪些有效参数/资产取决于各工具PrepareSave实现。",
+      "release": "临时方案文件在finally中清理；写出JSON不会主动清空scope有效参数、运行缓存或释放其图像。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": "MainWindow.PrepareSave wiring",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 48,
+          "end": 48,
+          "excerpt": " public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new NImagePlugin(),modules);plugins.Register(new VisionPlugins.CameraMapping.CameraMappingPlugin(),modules);plugins.Register(new VisionPlugins.CalibrationBoard.CalibrationBoardPlugin(),modules);plugins.Register(new VisionPlugins.DistortionCalibration.DistortionCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.MapCalibration.MapCalibrationPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new CoordinateModulePlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);plugins.Register(new VisionPlugins.BranchModule.BranchModulePlugin(),modules);plugins.Register(new VisionPlugins.BranchString.BranchStringPlugin(),modules);plugins.Register(new VisionPlugins.Fixture.FixturePlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=>plugins.PrepareSave(document,baseDirectory,executionScope)};InitializeFrameworkResultHistory();Logo.Source=Asset(\"logo_vm.png\");StatusIcon.Source=Asset(\"bottombar_run.png\");ZoomIcon.Source=Asset(\"zoom_magnifier.png\");Resources[\"WorkflowNgOff\"]=Asset(\"workflow-ng-off.png\");Resources[\"WorkflowNgOn\"]=Asset(\"workflow-ng-on.png\");Resources[\"ToolboxCategoryClosed\"]=Asset(\"toolbox-category-closed.png\");Resources[\"ToolboxCategoryOpen\"]=Asset(\"toolbox-category-open.png\");Resources[\"ToolboxExpandNormal\"]=Asset(\"toolbox-expand-normal.png\");Resources[\"ToolboxExpandHover\"]=Asset(\"toolbox-expand-hover.png\");BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=>RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=>{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshConfigurationRoi();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count>0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=>RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=>{if(DisplayTabs.SelectedIndex==0&&Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Save",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 68,
+          "end": 74,
+          "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPluginContracts/Contracts.cs",
+          "member": "ToolPluginRegistry.PrepareSave",
+          "sha256": "a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f",
+          "start": 64,
+          "end": 70,
+          "excerpt": " public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){\n  var catalog=new ResourceCatalog(baseDirectory,document.Resources);var resources=document.Resources.Where(r=>!plugins.Values.Any(p=>p is IToolAssetPersistence&&r.Id.StartsWith(\"plugin:\"+p.Manifest.Id+\":\",StringComparison.Ordinal))).ToDictionary(r=>r.Id,StringComparer.Ordinal);\n  var procedures=document.Procedures.Select(procedure=>procedure with{Nodes=procedure.Nodes.Select(node=>{\n   if(Find(node.ModuleId) is not IToolAssetPersistence participant)return node;\n   var snapshot=participant.PrepareSave(node,baseDirectory,catalog,scope?.ForProcedure(procedure.Id));foreach(var resource in snapshot.Resources)resources[resource.Id]=resource;return snapshot.Node;\n  }).ToArray()}).ToArray();return document with{Procedures=procedures,Resources=resources.Values.ToArray()};\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "Save",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 17,
+          "end": 25,
+          "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }\n    public static void ValidateStructure(SolutionDocument solution){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本片段不展开每个IToolAssetPersistence参与者；不能宣称所有最后运行参数、缓存图像、SDK内部状态都能保存和重开恢复。",
+        "插件PrepareSave在最终方案文件提交前可能有自身资产写入副作用；此处只证明方案文件提交顺序，不宣称全资产跨文件事务。"
+      ]
+    }
+  ],
+  "unknowns": [
+    "托管JSON参数副本不等于所有图像/服务/插件状态深复制。",
+    "每工具native setter确认、持久化投影和动态服务行为需按工具继续证实。"
+  ]
+}

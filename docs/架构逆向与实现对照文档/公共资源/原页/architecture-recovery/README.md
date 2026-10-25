@@ -1,0 +1,1680 @@
+# 主架构与工具插件逆向核心
+
+2026-10-21；共同核心文件为 [主架构与工具插件逆向核心](main-ui-map.html#main)，保留 `main-ui-map.html` 路径。主界面是[架构向下分析入口](main-ui-map.html#main)，插件工具 UI 是[向上追溯入口](main-ui-map.html#plugin-ui)；两方向在确切类型、对象身份、参数、状态与生命周期证据处汇合。页面中的研究组织关系不冒充原版运行调用。原件确认、当前独立实现和未知必须分开；运行模式本批仅登记待分析入口。
+
+本目录的局部证据图、机器清单、入口完整性账本和范围核查为核心文件提供明细。[统一架构入口](../framework-architecture.html)提供全景、入口、数据、执行、领域与证据六个页签。两个项目职责与用户控制的集成边界继续有效；本批未编辑产品源码或另一工作树，未提交推送。
+
+## 全域导航
+
+<!-- architecture-current:start -->
+[共用核心：主界面向下](main-ui-map.html#main) · [插件UI向上](main-ui-map.html#plugin-ui) · [23 领域证据导航](index.html) · [机器范围清单](coverage.json) · [入口完整性](entry-inventory.html) · [数据结构与传递专题](data-architecture.html)。当前 35 张局部图、919 条边、2593 个引用（可重复引用同一文件，不等于不同文件数）。F-01～F-23 均有关联局部图，所有领域仍为 `completion=not-established`；完整入口与行为链尚未证明。浏览器呈现未验收，原件CIL/资源、当前独立实现和未知分别保留。主框架实施 41/96＝42.71%，模型与静态取证增量计分为0。
+<!-- architecture-current:end -->
+
+## 数据页签：图像源到显示的持有与退役对照
+
+[非图像数据链](../framework-architecture.html#data-design/nonimage-pipeline)补充数值、文本、数组、PointSet/当前几何、变量作用域和改型/删除。VD01～08是原托管入口，VN01～05是原GlobalVariableModule选定接收/转发分支，VS01～04是typed桥接，VZ01～07是ModuleFrame存储与删除，VX01～06补复合描述，VP01～06补值对象/控制块，VB01～04补有条件分派，CD01～08是当前独立实现；先看五个问题的白话对照，再展开完整类型、持有、复制、缓存、释放和源码证据。变量、节点/连线、运行、结果入口按显式选择表直接呈现对应事实；主菜单GlobalVariable、SigRun/MutiRun也有原文上下文，方法名关联不视为新调用边。保存、关闭或撤销不会因名称相近批量挂上变量删除事实。
+
+当前非GUI探针调用真实框架方法，13项有限观察核实际DLL/PDB与49份源码身份：两种数组合同不同；Integer数组通过特定端口准入后，单独Coerce调用会抛异常；标量16777217经float中间转换为16777216。该历史13项只运行方法，报告 `current-nonimage-data-probe.json` 保留。另新增9项合成两节点流程，实际执行当前GraphExecutor：Integer数组在消费者创建前记录InputTypeMismatch、模块Dispose后session仍持有值、字典复制与参数快照分别观察。新报告 `current-nonimage-graph-probe.json` 经独立原字节PE/PDB及49份编译源checksum核验；未运行真实工具算法、原版、完整方案或WPF显示。
+
+原生补证现包括typed桥接及ModuleFrame选定存储/删除分支：数值Batch复制4字节元素，字符串桥先建描述数组，接收方再复制字符；map删除、名称释放和共享控制块条件析构分开取证。值对象+8槽已确认为逻辑清空并保留分配；包装对象及控制块真实delete已取到，callable/payload最终free与最后读者仍未知。复合0x25c40是清理、0x27080是发布，0x470嵌套数组按条件析构；type4是图像，不能当PointSet。ModuleFrame一般key通过已注册factory pointer的虚槽条件静态接到VN接收者；SDK opcode0xbd2回调桥仍未接通。失败的选址捕获单独保留，不计为有效函数。非图像专题48条事实、217处引用；[逐族持有/复制/缓存/释放矩阵](../framework-architecture.html#data-design/variable-exit-matrix)直接展开原版/当前两栏完整证据，页面出现次数不当作新增事实。
+
+[直接打开数据页签](../framework-architecture.html#data-design)；[完整图像链](../framework-architecture.html#data-design/image-pipeline)；[参数链](../framework-architecture.html#data-design/parameter-pipeline)。先看六步数据流和持有者示例，再展开每层的原版／当前实现、类型、复制、缓存、释放与源码摘录。主界面和具体工具入口也直接呈现对应数据事实，不要求先到目录寻找。
+
+当前图像专题 107 条事实、504 个源码引用，参数专题 15 条事实、65 个引用；包括复用片段与明确未知，数量不代表链已完整。数据页签的事实均有可展开锚点，另有 23 个领域的数据义务面板、五项后续优先级。领域面板保留每条具体未决项及证据身份，不将计划要求当作已实现行为。
+
+本轮补证区分 SDK 公开图像模式 `0x110` 与内部释放字 `0x114`；结果头的执行计数写入不证明它与图像映射头计数一致。同步读取、历史查询、异步回调的同调用关联和最终读者仍分别列为未知。当前实现也明确区分清空显示、替换会话、节点删除、停止、关工具窗、切方案和主窗关闭；空白显示不代表旧图像已释放。
+
+原版补证使用本机离线静态工具：ModuleFrame 新读取 6 个选定函数，SDK 新读取 9 个选定函数及 1 个分派分支，并核对 6 个托管线布局。SDK 初始整件分析超时，后续选定成员恢复成功，不能称整件分析完成。反射只读载入用于元数据布局，未执行原版代码或设备。页面源码、实际事件处理器的替身 DOM 校验及证据哈希已通过；浏览器真实呈现仍未验收。本轮只更新恢复模型，不增加主框架实施分数。
+
+## 按结束操作检查数据寿命
+
+[数据页签的图像链](../framework-architecture.html#data-design/image-pipeline)增加停止、关工具窗、删除节点、切方案、关主窗五项原版/当前对照，每项直接展开持有者、已确认收尾、剩余引用和源码。新增OR01–06共12处引用，将方案属性变化、集合移除、参数窗Closed、模块/IO Dispose、方案Dispose(bool)与MainViewControl.Dispose分开；不把尚未定位的调用者写成必经路径。图像专题现为119条事实；此前113/107为历史批次。原版Release包装控件到MainViewControl.Dispose的直接调用已由原PE/CIL闭合，IsDisposeNotify已定位的消费者仅退搜索事件；更外层调用时机与最后读者仍分列。
+
+执行图的节点和箭头另按24条显式关系关联26项数据事实、152处引用，可直接读类型、缓存与释放。关联表示调查上下文，不增加原图调用边，也不凭名称认定同一实例。
+
+停止入口现从主窗StopRun(false)开始，经全局门、单流程连续标志与停止接收者展开；相机设置、通信设置直接显示原菜单声明和候选接收者全文，与当前刷新相机/通信占位实现分列。不能把相机设置按钮与图像源camera模式混作同一调用。
+
+当前scope异常补充CSR01–04，并以实际已编译框架执行12项合成检查，分别观察服务替换失败、节点/批量裁剪中断、closing入口差异和失败资源不自动重试。未重建产品项目；原件、GUI、设备和完整五种用户操作均未执行。
+
+## 运行职责场景图
+
+[执行架构页签](../framework-architecture.html#execution)将六条执行场景画成原版与当前两栏，共12张职责图。55条关系保留原成员、分支条件和92处引用。点击角色查看相关关系，点击箭头查看源码；调用、数据、状态、声明绑定及未知分别标色。职责别名不代表同一运行实例，静态工程引用与运行调用分开。当前逐节点await、工具调试与主流程的不同取消域、停止请求不等于已排空等边界直接保留。源码与交互脚本已核，浏览器实际呈现尚未验收。
+
+## Group完整能力与逐轮数据对照
+
+[数据页签：Group完整能力与逐轮数据](../framework-architecture.html#data-design/group-data-pipeline)先按创建身份、进入返回、接口绑定、内部编辑、调用嵌套、循环中断、复制保存、退出释放八项能力，原版VM、REA恢复实现、SunEyeVision_V2采集源码三栏对照，再按准备、轮次、执行、保留、退役五阶段内联展开。八项对照保留完整关系和源码摘录，主界面Group入口与具体Group工具内直接可读。SunEye资料仅作为第三项目对照，不作为原版证据；三者中断时点、图像累积和拥有关系差异明确列出。OG01～07为原版选定原生体，CG01～10为当前独立实现，共17条事实、82处引用。仅Logic/IMVSGroup具体工具入口与地图Group入口关联这些事实，名称含Group的其它工具不冒领。
+
+三组当前合成场景经过真实SolutionExecutor/GraphExecutor：两轮成功后轮前中断、第二轮失败、零轮。21项观察与完整实际session树均保留；累积片段、last、显示替换和父调用输出过滤分别说明。零轮子Group成功不代表父调用成功；该场景因必需输出缺失使父节点InvalidOutput。首例只有Loop0/1的真实工具事件，GroupBreakIndex=2为返回元数据，不画出未执行的第三轮。实际DLL/PDB与49份编译源checksum已独立核验。
+
+原版16个选定体与汇编、4次静态CLI终态独立保留。动态目标绑定、图像/复合全类型、全部异常与最后读者仍未知，不用当前三例替代原版证明。
+
+## 执行架构与工程依赖总览
+
+[执行架构页签](../framework-architecture.html#execution)先展示11个节点的工程总览，将14个工具插件与6个辅助工程折叠为两组，可展开全部29个工程。62条直接引用完整保留；箭头从引用者指向被引用者，分组与坐标是阅读组织，不是运行分层。9个主工程节点先显示带源码的中文职责；点击节点查看职责、引用它的工程和它直接引用的工程。支持只看选中工程一跳邻居、相关线高亮、缩放及适应宽度；点击线展开每条声明和条件。一跳子集与全部29工程清单分开标注。下方六条入口执行关系按原版/当前两栏展开，共55条关系、92处引用。当前执行器按ExecutionOrder逐节点await，与工程依赖图分开。
+
+## 入口完整性：先登记全集，再关闭分析链
+
+主地图现已直接展示原版四份菜单资源的完整具名声明层级及工具栏投影，取代“只有九个分析分组”的呈现。默认 `MenuItems.xml` 为 53 个具名声明、15 个工具栏声明；另三种模式分别独立切换，共 214 次具名声明、58 次工具栏声明，不相加冒称当前可见入口数。四个未命名工具栏载体也保留，稳定键采用资源名＋原 ID，重复名称不合并。原九项另标“按分析主题快速查看”。
+
+点击菜单或工具栏条目会在当前地图直接展开原 XML、选择条件、resolver、精确方法体、条件/调用语句及未决项；特殊模板的静态子操作可逐项进入。`hidden` 是菜单隐藏声明，不用于删掉工具栏投影。模式选择是查看原资源，不是探测到原版当前模式。动态最近方案、权限与状态、模板实际绑定和完整操作链仍开放；另宿主 GlobalToolItems 不混入主标题工具栏。实现见 `build-menu-map-inline.cjs`，独立校验见 `menu-map-inline-review.json`；真实浏览器呈现尚未验收。
+
+MT01～MT06 将所选原 BAML 的单次、连续、锁定、撤销、重做及 Linux 模板差异直接展示在对应条目内。特别保留撤销主按钮与并列弹出入口不同的局部状态门，以及连续运行 `Items[0]/Items[1]` 切换；不能把它们画成一个永远调用同一方法的按钮。运行模式单独可点开查看入口来源，内部仍按用户要求延期。
+
+用户进一步要求入口一定完整，避免分析链因入口遗漏而缺失。新增[入口完整性账本](entry-inventory.html)与[机器数据](entry-inventory.json)，并设为目标完成的必要核查项。入口清点本身不计实施完成。
+
+- 独立解析原 `menuitems.xml`，与历史已审资源的 hash、53 个具名节点/ID/名字对照一致；源 handler 锚点的文件 hash 重新核对。保留其中 15 个工具栏声明、16 个隐藏具名项、动态 resolver 和全部原条件字段。53 是资源声明数，不是 53 条已完成执行链。
+- 菜单层级按原完整路径建立，包括没有具名父节点的隐藏工具栏容器；生成器检查每个具名声明在层级中恰好一次，防止视觉层遗漏隐藏项。中文标签来自原 zh-cn 资源，未翻译项保留原键。
+- 对当前本地 `analysis/decompiled` 28 个树的 3176 个 `.cs/.xaml` 源文件进行只读候选扫描，排除 bin/obj：4175 条包含命令绑定、键/鼠标/生命周期、事件挂接/解除、动态注册、命令构造及 callback 方法边界的候选，逐条记录源路径、行、摘要及原片段。候选全部留在 JSON；页面分页显示不删减数据。
+- 状态独立区分资源声明、词法候选、已有调用边片段和入口完整链关闭。全链关闭计数当前为 0，表示**本新入口账本未逐项完成全链核查**，不撤销历史局部源码或主框架 41 个实施单元。
+- E0–E7 核查原件/程序集范围、资源全集、局部输入、后台反向入口、真实 handler、状态/持久化/执行/错误释放、入口与链双向对账以及范围自审；任何一项开放都不声明入口完整。
+
+已知扫描边界明确保留：逐行 XAML 匹配可能遗漏跨行属性；代码命中含生成物与普通控制语句；未取出的 BAML、native、动态插件、`analysis/full-audit` 里的补充反编译不在本扫描全集。旧批次已发现五树输入扫描的遗漏与 BAML 歧义，见 `docs/reverse/A05-input-registration-batch31.md`。因此 3176 文件或 4175 命中都不能被用作“完整入口已证明”。下一步以此账本驱动逐载体补证及入口→命令/事件→状态/身份→持久化/执行→回调/失败/释放，而不是继续只按方便的按钮补图。
+
+重建顺序：先生成原三个局部视图，执行 `Export-MenuVariants.ps1`，运行 `build-entry-routing-security.cjs`，运行下文的 MemberInventory 与 `build-menu-member-map.cjs`，最后运行 `build-entry-inventory.cjs` 和 `build-index.cjs`。索引将入口完整性开放状态同步到 coverage.json；HTML 实际渲染仍未验收。
+
+## 四份菜单的逐声明成员定位
+
+[逐入口成员对照](menu-member-map.html) · [完整机器映射](menu-member-map.json)。本轮直接使用本机 .NET 10 SDK 中的 Roslyn 解析现有 TitleMenueItemData/ExternTitleMenueItemData 源文本；未加载或执行原程序集。项目无 NuGet 包，独立 NuGet.Config 清空外部包源；输出与构建留在本工作树的专属工具目录。
+
+四份资源的 214 个声明全部保留；其 222 个 resolver 引用均在已知声明类型/继承源码中定位到公开零参数方法，去重为 57 个方法体。动态子项、初始化和自定义 DataContext 工厂按 resolver 字段角色单列。每个体带源路径/行/完整文件 hash/UTF-16 span、方法签名、完整成员文本，以及调用表达式、if 条件、赋值左值、throw/catch 语法记录。生成器重新检查源 hash、span 与正文完全一致，并核对四资源全部 ID/名称不遗漏；HTML 内嵌 JSON 与独立账本逐字数据一致。
+
+**222/222 是静态成员定位，不是入口链完成率。** 运行时 XML 类型实例化、反射最终绑定、IsEnabled/权限/焦点、全条件与失败/持久化/执行效果、动态工厂产生的额外入口仍需继续证明。9 个方法体含反编译 IL 警告；语法可解析不消除 CIL/ABI 歧义。调用表达式未做语义符号解析，赋值左值不自动视为确切字段写入；完整行为链关闭数继续为 0，既有 103 条证据边和实施 41/96 计数不变。
+
+重建命令：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj -- 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-menu-member-map.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+```
+
+入口清单增加成员定位入口，支持按资源/类型/方法搜索和仅看 IL 警告；尚未完成浏览器实际交互/渲染验收。
+
+## 菜单分派、密码与加密入口
+
+[层级明细](entry-routing-security.html) · [四份原菜单资源账本](menu-variants.json)。用户明确要求加密相关不得遗漏；密码/授权入口族与普通菜单、局部窗口、后台反向入口共同列为目标完成的必要范围，不能通过隐藏或未接入状态排除。
+
+本轮 27 条边：22 条源码/资源确认、2 条当前独立实现、3 条未知；34 个源码/资源引用。菜单来源选择、工具栏全后代投影、样式命令绑定、反射 dispatch、动态最近文件、语言/方案重置分别拆边，避免“资源有方法名”就称已经追到执行效果。
+
+**菜单范围更正：** 主窗 `CheckIsNeutral` 有四种模式资源选择。只读解析原安装目录 `Applications/Resources` 下四份 XML，DTD 禁止且不执行厂商代码，逐份保存绝对源路径与 SHA-256：
+
+|资源|具名声明|工具栏声明|隐藏具名声明|
+|---|---:|---:|---:|
+|MenuItems.xml|53|15|16|
+|MenuItemsLinux.xml|58|14|14|
+|NeutralMenuItems.xml|48|15|16|
+|NeutralMenuItemsLinux.xml|55|14|14|
+
+这四份合计 214 个**按资源计的声明记录**，不是 214 个唯一功能/已闭入口。默认资源原件 hash 与原反编译资源相同；远程变体新增 Remote/Local、远程升级/日志收集及运行设置等声明，完整原条件/类型/resolver 均保留。来源选择、动态/扩展类型及 BAML 仍有开放门，不能把四份静态 XML 视作全软件入口闭合。
+
+加密/密码/授权按下列相互不同的入口链保留：
+
+- 方案 CheckSol/CheckPassword，已有密码另存的解密门；原生算法/文件读写另列 unknown。
+- 本地另存对话框附加 `encryptButton` → `ProjectManager.button_Click` → `Encryption` → `tempStrPassWord` → SaveAs/BeginSave。设置密码窗取消时 true+空值；调用者以非空过滤。Decryption 窗的取消则为 false，不统一假定两窗规则。
+- Group 内部画布密码门、全局脚本窗口密码门；不是方案文件解密的替代链。
+- 历史恢复 `ValitPassWord` 的格式/密码检查及取消返回；各 Undo/Redo 恢复调用者仍须进一步核。
+- BaseNode 加密 XML / ZIP 读取、Init 与静态状态；该方法有文件 Attributes 写入，不实际调用它做只读验证。AesCryptHelper 字段名称不证明所有文件/原生 .sol 的算法相同。
+- EncryptAPI 授权时间/试用包装、VmSolution 加密狗查询的调用边；完整授权状态/失效回调、权限及 native 函数/编码/所有权仍开放。未执行授权、硬件或密码操作。
+
+入口清单新增独立加密族链接，四份菜单声明明细可从同页打开；默认资源的 53 项现在明确标为**默认资源**。本轮复核原件资源摘要、103 条边的 140 个引用快照/片段、层级 ID、所有内联脚本语法和链接（包括 edge fragment）。这些仍非浏览器渲染或原机运行验收，也不增加实施分子。
+
+## 层级阅读 v0.2
+
+用户要求补充层级结构后，三张明细页统一新增默认层级视图：**主界面 → 子系统 → 原版/当前实现 → 成员与调用边**。运行与保存分为运行调度、方案保存；工具箱页分为装载、Group 画布；画布页分为节点交互、流程连线、视口与小地图。支持展开/收起、切换路线列表、叶节点选择、证据面板层级路径和 `#edge-ID` 定位。
+
+组织层级由 `tests/ArchitectureRecovery/hierarchy.cjs` 显式维护，每个叶节点引用既有稳定 edge ID，原有 76 条边的分类和行为不变。它是独立阅读组织，不把分组连线当成新确认的原版调用、类继承或对象所有权。原版未知边仍以粉色虚线显示。
+
+生成器拒绝未知/重复/漏放的 edge ID；索引核查每页全部边在树中恰好出现一次且分类一致。层级也写入 JSON（schemaVersion=2/modelVersion=0.2），方便继续扩展。此次静态检查通过，不含浏览器展开/折叠的实际交互验收；此前 `file:` 策略限制仍保留。
+
+## 执行与保存 v0.1
+
+[交互明细](execution-storage.html) · [机器台账](execution-storage.edges.json)
+
+本轮直接检查本地原始反编译文本及当前生产源码，新增 22 条有稳定编号的边：12 条源码确认、7 条当前独立实现、3 条未知。每个有证据的边附具体类型/成员、文件路径、文本 SHA-256、行范围、源码片段、条件及状态变化。摘要用于重现本次文本快照；没有重新核验原始程序集身份，不把该摘要称为 DLL 身份。原始 .NET 方法体没有本轮新做 CIL 验证，也没有新增 REA 提取或原版运行证据。
+
+### 相对总览需要细化的区别
+
+- **G01–G04：全局单次。** `TitleMenueItemData.SigRun → VmSolution.Run → GlobalModuleManager.GlobalScriptStartRunOnce → IMVS_ExecuteOnce4GlobalScript`。入口设置 `IsGlobalRuning`，不是直接调用普通流程 `VmProcedure.Run`。原生全局脚本如何派发流程仍未知。
+- **P01–P05：流程 Tab 单次。** `VmProcedureDecorator.RunOnceCommandExe` 传 `null, bIsWait:false`。`SyncExecuteOnce` 有等待分支，但此入口不走该分支，不能把同步等待画作 Tab 单次的必经边。工作完成回调处理体另列，native 生产路径未知。
+- **M01–M04：当前运行。** 当前工具栏 `Run` 与 Tab `RunProcedure(id)` 最终调用 `StartRunCore/RunCore`，经捕获的工作区、执行所有者和作用域进入 `SolutionExecutor/GraphExecutor`。这是当前独立实现，不是全局脚本 ABI 的还原。所有者校验、回调队列、GraphExecutor 内部生命周期仍需各自展开。
+- **S01–S06：原版保存。** `InternalExport → SyncSaveSolution`；`TempVmSolution` 静态构造注册完成事件。`GetSolutionSaveEndCallBackInfo` 先同步派发事件，再写错误码和完成旗标；`VmSolution` 的订阅者先派发可选 UI 事件，再清 `_isSaving`。抛异常的订阅者不能被假定总能完成这些后续写入。`.sol` writer/reader 未由托管边证明。
+- **J01–J03：当前保存。** `MainWindow.Save → GraphEditorDocument.Save → SolutionStore.Save`；成功落盘后提交编辑器状态。32MiB 限制、JSON 重复键检查、临时文件、Flush 与 Move 是当前格式规则，不是原版磁盘格式证据。跨插件资源及历史一致性另项保留。
+
+总览中相邻责任层的连续箭头只能当阅读顺序，不能代替上述函数调用、条件、异步回调和数据传递。本轮保留总览箭头，只在其页脚加入本明细页链接；后续可逐步采用稳定 edge ID。
+
+## 验证与可重建性
+
+从仓库根运行：
+
+```powershell
+node tests/ArchitectureRecovery/build-execution-storage.cjs
+node tests/ArchitectureRecovery/build-loading-navigation.cjs
+node tests/ArchitectureRecovery/build-canvas-viewport.cjs
+& tests/ArchitectureRecovery/Export-MenuVariants.ps1
+node tests/ArchitectureRecovery/build-entry-routing-security.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+node --check tests/ArchitectureRecovery/build-execution-storage.cjs
+```
+
+生成器读取本地证据、检查定位锚点唯一性、计算每个引用文件的 SHA-256，并生成离线 HTML 与 JSON。读取的现有文件均不修改；缺少本地原始反编译文件时会失败，而不是降级生成无证据的结论。台账包含生成时 HEAD；未提交源码以每条引用的实际 hash 为准。
+
+本轮已实际运行生成器、检查生成器及内联脚本语法，逐个重新核对 20 个引用的文件 hash，检查 git diff 空白规则。上述检查不是原版运行或产品操作验收。
+
+## 工具箱与 Group 导航 v0.1
+
+[交互明细](loading-navigation.html) · [机器台账](loading-navigation.edges.json)
+
+新增 24 条边：14 条源码/资源确认、8 条当前独立实现、2 条未知；41 个引用覆盖本地反编译成员、抽取 XAML 与当前代码。本轮没有重新解包或经 REA 获取新体；原件二进制身份仍独立待核。
+
+- L01–L04：资源的 Expanded、附加属性注册、悬停回调汇入同一 UpdateLoad；IsInit 在目录/XML 读取之前写入，Refresh/Reload 是缓存失效入口。源码控制流与原机故障恢复实测分开。
+- L05–L11：普通 AddNewItem 的自定义构造/Cs 类型路径与 GroupTools 导入分列。Group 导入公共 End 事件、AddModuleByInfo、Parent/Ready 和完成旗标按具体回调体顺序展开；原生导入及回调生产仍未知。
+- N01–N04：GROUP 模板专用 MouseDoubleClick 绑定 SubSource.OpenGroupCommand；命令检查禁用、加载失败、密码后设置 DisplayModuleSet。返回按钮取父对象。画布集合与配置目标均读取 DisplayModuleSet，不能推断为根流程执行目标也随之改变。
+- C01–C08：当前 JSON 分类、显式插件加载合同、失败状态、GroupOwnership、会话显示记忆、父图返回及配置窗归属均列为独立实现。原版密码/加载失败与当前 enabled/lock/run 检查不能合并成相同保护策略。
+- N05：树/搜索跳转、输入竞争、密码副作用、集合替换/释放与原机操作仍未穷尽；不以双击/返回两条路径关闭整个 F-11。
+
+`build-index.cjs` 本轮实际核对全部 61 个引用的当前文件 hash 及行范围片段，检查两张生成页和索引的内联脚本语法、全部 HTML 相对链接，再生成领域范围清单。验证范围仍为静态数据/语法检查，不包括实际浏览器点击、CSS 布局或 native 时序。
+
+## 节点、连线与视口 v0.1
+
+[交互明细](canvas-viewport.html) · [机器台账](canvas-viewport.edges.json)
+
+新增 30 条边：16 条源码/资源确认、11 条当前独立实现、3 条未知；45 个引用直接关联原版成员/资源和当前代码。
+
+- A01–A04：参数窗打开后的单击过滤、整矩形框选、5 像素吸附和按每节点实际宽高夹边。完整 OLE 拖放到移动/复制/插入/历史分支仍未关闭。
+- W01–W05：端口移动预览、松手复用 oldItem、OnConnect 资源绑定、ConnectCommandExecute、VMAddConnection 和 NextModules.Add。原版 AddConnection 还可能调用 AutoLinkData，因此图中保留执行边的潜在数据关联副作用；当前 ConnectExecution 没有这一调用，跨入口策略仍需单独审查。
+- W06–W09：端点 Position/ActualWidth 绑定、清 PathPoints 的四条件、全障碍寻路与短路径回退、原版手动路径和极端布局未知。ActualWidth 也可进入 OnPositionChanged，但不在清点集的四条件内；不能把“进入回调”混成“必定重新寻路”。
+- V01–V06：Shift 横滚先于 Ctrl 缩放，两支可同时执行；20 个刻度、锚点公式、双向 PartentZoomIndex 绑定、ProceZoomIndex UserData 写入、鹰眼资源/比例/捕获与拖动。
+- CA01–CA06：当前选择、节点拖影/提交、连接预览/提交、独立 ExecutionLinks、自动路由缓存及手动路径文档写入。所有者/Revision 与编辑守卫均按当前代码记为独立适配，不冒充原版对象树。
+- CV01–CV05：当前离散缩放、容器索引保存、总览/流程会话偏移、小地图比例与请求坐标拖动。`SetContainerZoomIndex` 写 Dirty 并通知，但不新建结构历史根或递增 Revision；与只读缩放显示不是同一状态边。
+
+**旧报告与当前代码的时间边界：** `MF02-OVERVIEW-VIEWPORT-HANDOFF.md` 的历史“方案不保存 UI 视口”不能覆盖当前实现。现 `ProcedureDocument.CanvasZoomIndex` 随独立 JSON 保存；滚动偏移/总览视口仍是会话字典。原版 `VmModuleSetDecorator.ProceZoomIndex` 写的是 UTF-8 UserData，其到 native 文件的持久化与往返不由该 setter 证明。此轮记录差异，没有修改历史报告或产品行为。
+
+本轮生成器及索引静态检查通过：76 条边对应的全部 106 个引用文件 hash 和行范围片段一致，三张明细及索引的内联脚本语法、HTML 相对链接通过；没有运行原版或产品、没有新做 CIL/ABI 取证。建图本身不增加实施进度。
+
+**可视化尚未验收：** Browser Use 已拒绝 `file:` 本地页面协议；没有通过本地 HTTP、其它浏览器或命令绕过该策略，本轮也未重复尝试被拒动作。页面布局、按钮操作及不同屏宽的实际渲染仍未验证。
+
+## 菜单警告方法的原件 CIL 核验
+
+已通过 REA `inspect_managed_members` 静态读取安装原件 `VisionMaster.exe`，没有加载或执行目标。选中证据保存于 [menu-warning-cil.json](menu-warning-cil.json)，并接入 [菜单成员页](menu-member-map.html)。原件 SHA-256 为 `42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23`，MVID 为 `77c739a5-b0ec-4834-8a1e-64dd9b618ae5`；token 只在该身份内有效。
+
+9 个带反编译警告的方法均取回 present、0 截断的指令解码：OpenModuleParamTool、LogShow、CommSet、CameraSet、CreateCalibGuide、VerInfo、AreaLocking、GlobalScript、EditFrontendUI。生成器按方法头长度和 il_size 重读原件 CIL 字节，逐体核验 SHA-256，并核对源码警告成员。全程序集 coverage 仍为 partial，选中体完整不能外推到整个程序集。
+
+GlobalScript 的密码启用/原密码/校验结果调用、AreaLocking 的锁状态读写，以及 OpenModuleParamTool 的 IsDongleLowerThanConfig 调用均保留元数据 token 和指令锚点。调用名称不单独证明接收者类型、实参或完整分支语义；原生授权算法、实际授权状态、动态绑定和运行行为仍未闭合。原来的 IL 警告不删除。
+
+本轮菜单成员生成、入口清单生成、索引源引用/语法/链接检查及 diff 空白检查通过；浏览器呈现仍未验证。本轮不新增产品实施完成单元。
+
+## 快捷键与局部上下文
+
+[层级视图](keyboard-context.html) · [逐边账本](keyboard-context.edges.json)。新增 18 条边（15 条源码/资源与历史标准回放证据，2 条当前独立实现，1 条未知），28 个引用。重建命令为 `node tests/ArchitectureRecovery/build-keyboard-context.cjs`，应在入口清单与索引生成前执行。
+
+节点目录/复制/禁用/日志、页面粘贴与搜索、搜索结果 popup、框选输入、全局通信日志和当前画布焦点守卫分别建链。特别保留同键异义、节点删除独有管理员守卫、键盘粘贴 (0,0) 哨兵与两轴均使用 Width 的原分支。既有 DiagramItem BAML 顺序/标准 WPF 回放只覆盖节点资源，不能外推给 GlobalCommunication 的双赋值资源。后者另有六条资源声明，其 switch 包含未找到键声明的 LevelT；写入固定模块 11000，不是当前节点 ID。
+
+所有新边引用已核文件哈希和实际行片段，层级恰好覆盖每条边，HTML 内联脚本与本地链接检查通过。没有执行键盘操作、原 SDK 或浏览器呈现验收。壳/动态资源/native 注册全集和实际事件竞争仍未知；入口完整性不因此关闭。
+
+## 主窗口启动、关闭与释放
+
+[层级视图](shell-lifecycle.html) · [逐边账本](shell-lifecycle.edges.json)。新增 26 条边（21 条原版源码/资源、4 条当前独立实现、1 条未知），39 个引用。重建命令为 `node tests/ArchitectureRecovery/build-shell-lifecycle.cjs`，在入口清单与索引生成前运行。
+
+原版从 Program.Main 的多实例/单实例分支、二次实例参数、双线程初始化与事件屏障，到 MainWindowData 构造订阅/模式选择/PreLoad、主窗或前台注册、Closing 取消和 Dispose 逐边展开。MainWindow.xaml 的空 BaseWindow_Closing 不能覆盖 App 另行订阅的真实关闭消费者。
+
+补登记独立关闭密码族：SDK 模式先隐藏并取消，原用户数值 3 先返回，之后才检查 CloseSoftwarePasswordEnabled；对话框 ShowDialog()==false 才在此拒绝，不能擅自写成 !=true。关闭密码、保存询问、后台配置和第三方运行条件保持源码顺序；原用户枚举未核名称则保留数值。入口完整性与加密页均接入该密码入口。
+
+清理区分 DoClose 所列解绑、看门狗、屏蔽回调、RunSyncWithEvent 的锁/DoEvents、native DestoryHandle 和 CompatibleTool 清理。同步 helper 在 function 抛错时没有 finally 写完成标志；构造与 DoClose 的事件列表不对称仍作为未知生命周期缺口，不凭静态观察宣称实际泄漏。仅记录源码，没有执行任何进程清理、原件或设备操作。
+
+当前 main 的运行排空、Group/调试会话异步关闭和 OnClosed 所有者失效/文档/scope 释放分别作为独立合同。原版 IL 警告、native 接管销毁、事件竞争及全部生命周期载体尚未验证；本轮源码引用、层级、内联脚本、链接与 diff 空白检查通过，浏览器呈现未验收，不计产品实施单元。
+
+## Group 循环、中断与累积
+
+[层级视图](group-control.html) · [逐边账本](group-control.edges.json)。新增 22 条边，10 条原资源/托管包装确认、10 条当前独立实现、2 条原生缺口；33 个引用。重建 `node tests/ArchitectureRecovery/build-group-control.cjs` 后再生成索引。
+
+覆盖 F-12～F-14 的首批明细：EnableLoop 可见性声明、起止值来源选择器、间隔、break 类型、内建输入命名、单模块运行/结果包装，与当前 UI、所有权、循环轮体、break 捕获/首轮保护/比较、输出累积/self 索引/发布分别建链。资源声明的操作尚不代表解释器及完整生命周期已追齐。
+
+隐藏步长单列：资源未声明 LoopStep 控件，现有 native setter 伪代码有对应分支。伪代码的非零接受、步进及严格上界只作为保留锚点的 unknown，不借当前实现或历史报告替代本图的 ABI/汇编/边界证明。当前 long、10000 轮、int32 越界、1000000 元素限制是独立保护；不能扩称 native 规则。当前 completed 加计失败的已执行轮，只有 Success 才加入累积；图像显示每轮替换，不因 UI 可勾选而虚构跨轮图像堆叠。
+
+本轮直接检查现有源码/资源/回收伪代码，未新执行原件、SDK、设备或产品测试。全部引用哈希/行片段、层级恰好覆盖、内联脚本、本地链接和 diff 空白检查通过。原件身份、native 中断和累积布局、循环生产调用链、控件解释器与浏览器呈现仍开放；不计实施单元。
+
+## 流程 IO、变量与订阅数据流
+
+[层级视图](workflow-data.html) · [逐边账本](workflow-data.edges.json)。新增 20 条边（7 条原版托管源码、11 条当前独立实现、2 条未知），28 个引用。重建命令为 `node tests/ArchitectureRecovery/build-workflow-data.cjs`，在索引生成前执行。
+
+原版来源树的查询结果实际写 TargetName+A；订阅目标经过 owner、子算法名字、ProcedureCommunicaitonModule 回退，来源解析失败可能恢复选择器旧值。RelateIO setter 先登记历史、解旧再订新，失败仅见清新字段，没有据此假定恢复旧订阅。普通模块 SubscribeResult 与流程 SetCustomOutputSubscribeInfo 分列；source/target 的英语名字不作为生产/消费方向依据。
+
+当前窗口入口、编辑所有者、文档配置传播、typed 来源/基数/索引校验与每轮 WorkflowRunContext 分开建链。节点记录更新会先删除关联变量旧值，再尝试本轮取值；不可用时不挪用历史成功结果。Complete 区分输出错误导致成功 session 转失败与 display 错误单独记录；返回的 WorkflowInputs 只是实参快照，不虚构所有绑定输入已物化到该字典。
+
+静态引用哈希/片段、层级覆盖、HTML 脚本/链接及 diff 空白检查通过。未运行原版或当前产品；native 实际准备/生产/回调、变量内存、索引、持久化往返和全部变量入口仍未知，浏览器呈现未验收。F-01/F-17 只增加已核切片，不宣称整个领域完成，也不增加产品实施单元。
+
+## 参数窗口、插件宿主与调试会话
+
+[层级视图](plugin-sessions.html) · [逐边账本](plugin-sessions.edges.json)。新增 22 条边（7 条原版源码、13 条当前独立实现、2 条未知），30 个引用。重建 `node tests/ArchitectureRecovery/build-plugin-sessions.cjs` 后再生成索引。
+
+两种原版窗口路径保持独立：ProcedureConfigControl 会检查资源完整性，发现扩展 Control 程序集/TabWinBase，再回退通用窗口；VmModuleDecorator 则直接通用窗口，并对同 ParamsConfig 提前返回。原角色权限、ModifyConfig 历史、Owner/ROI、Show 后状态及 Closed 清理分别留锚点；未把直接装饰器路径伪造成经过扩展查找。
+
+当前普通配置 identity、Apply 所有者/目录守卫、provider 入口与显式 debug context 区分。调试使用合并缓存并按执行/连线/订阅后继失效；NodeDebugExecutor 隔离目标节点，不自动执行上游。状态机记录单次/连续、参数快照、默认300ms、Stop/Dispose异常传播，scope 则记录借用流程视图、lease、取消后延迟释放与清理失败。它们是独立合同，不因类注释有重构来源就整体标成原版语义。
+
+源码引用/片段、全部层级叶、内联脚本和链接、diff 空白检查通过。没有产品或原机运行、没有触碰另一工作树。原版所有动态扩展/调用者/native SelfRun准备、设备及ROI完整会话仍开放；九张关联局部图不证明23领域完成，入口完整性仍未闭合，实施分子不变。
+
+## 撤销重做、密码与历史生命周期
+
+[层级视图](history-replay.html) · [逐边账本](history-replay.edges.json)。新增 20 条边（10 条原版源码、8 条当前独立实现、2 条未知），25 个引用。重建 `node tests/ArchitectureRecovery/build-history-replay.cjs` 后再生成索引。
+
+原菜单 Undo 有空 catch 而 Redo 仅 finally；下层 UnRedoSchedule 两者都 catch。服务先迁移栈再执行动作，异常不能自动解释为回滚；方案密码取消则显式通过 RecoverCallBack 复原栈。记录入口还包括工具栏 schedule 数据和 UndoList 视图，而不是只看两个按钮。
+
+原 Register 的 replay/lazy/root/ForbidBuild/谓词门、BuildRoot 与 BuildPart 的 redo 清理时机、RemoveEmptyOperation 仅顶根、CopyModule/priority 排序分别取体。当前快照 grouping、MergeCurrentView、64KiB payload 分流、失败释放保留、方案 generation 切换分别按独立实现列出，不以排序相似宣称原版动作全域等价。
+
+已核全部引用哈希/行片段、层级、脚本、链接与 diff 空白规则。没有运行原厂密码/导入、当前产品或文件清理。原动作捕获、native快照/文件所有权、所有注册入口和浏览器呈现仍未验证；实施分子不增加。
+
+## 入口与证据边的双向对账
+
+[对账页面](entry-reconciliation.html) · [完整机器账本](entry-reconciliation.json)。四种菜单的214个声明（含28个无resolver的结构/特殊模板项）、4175个原树词法候选和十图231条边完整保留，按相同源路径、SHA-256和行范围建立**导航线索**。目前40个菜单声明、135个候选有片段重叠，40条边有反向线索；191条边无这种线索不等于不可达，其中包含扫描范围外的当前实现与内部边。
+
+修复入口生成器仍只读取最早四张图的问题。`view-registry.cjs` 现统一十图的索引/入口/对账注册，后续新增图必须加入此表；成员范围/词法行重叠与真实绑定确认分别保留。每个链接都有实际重叠范围，索引生成核对双向互逆、来源hash、分类一致与片段包含关系，不把命中直接升为已审或闭合。新增绑定确认与全链关闭计数均为0。
+
+当前候选范围仍仅是28个原版反编译树，不包含当前src；逐行XAML、未抽BAML/native/动态注册及相邻方法被引用片段覆盖的误关联风险继续开放。页面可从菜单/候选找证据，也可从每条证据边查看来源线索，筛选无重叠项；所有候选原未审状态保留。HTML内嵌数据与独立JSON逐字数据比较一致，脚本与本地链接检查通过；浏览器实际操作仍未验证。
+
+更新任一局部图或成员清单后，最终收尾顺序为：
+
+```powershell
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+本轮修复登记遗漏并建立可追溯对账，不新增证据边或产品实施单元；入口完整性仍为未证明。
+
+## XAML 结构入口与逐行清单复核
+
+[结构声明页](xaml-entry-inventory.html) · [声明/文件账本](xaml-entry-inventory.json) · [逐行对照](xaml-entry-comparison.json)。新增安全 XML 解析流程，DTD 禁止、XmlResolver=null，仅用 System.Xml.Linq 读文本，不实例化 XAML、厂商类型或执行任何绑定。
+
+当前471个本地反编译XAML均成功解析，0失败；得到1904个已识别属性候选，与既有1904个XAML词法候选按路径/行/规范化属性名/解码值全部对上，**没有发现本批新增遗漏，也不增加候选计数**。每条现保留命名空间、元素类型/行列、祖先、根x:Class及同元素命名/命令/参数上下文。资源x:Key按命名空间排除，不能因本地名Key相同当作快捷键；未识别属性名及失败清单保留。
+
+入口账本每条XAML候选关联结构声明ID，coverage同步结构清单状态，索引检查新页面脚本与链接。此复核解决现存文本的逐行定位盲点，仍不证明完整事件名注册表、Property/Value式Setter语义、模板/DataContext/资源查找、原BAML属性赋值顺序、动态或native入口。绑定与完整行为关闭仍为0，实际浏览器呈现未验收。
+
+生成顺序补充为：
+
+```powershell
+& tests/ArchitectureRecovery/Export-XamlEntries.ps1
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-xaml-entry-view.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+本轮结构扫描和源哈希/位置/匹配、HTML内嵌数据一致、脚本及链接检查通过，主框架实施仍为41/96＝42.71%。
+
+## Setter / EventSetter 间接入口补漏
+
+在前轮1904个属性候选之上，结构解析新增57个命令Setter和15个EventSetter，共72个先前未登记的**元素声明候选**。原1904个XAML属性仍全部匹配；本地结构清单现1976项，总入口候选由4175词法项加72补充项组成，共4247，不能把两份同源清单相加重复计数。
+
+新项保留Property/Value或Event/Handler、目标名及所处Style/Template/Trigger的属性和行位置。资源x:Key仍排除按键类别；实际Style查找、BasedOn合并、触发器激活、DataContext与运行事件路由未因解析成功而关闭。指令式动态注册和BAML全集仍独立开放。
+
+原主菜单SubmenuOpened与通用工具栏按钮Click两个EventSetter已进一步追到消费者：TitleBar.MenuItem_SubmenuOpened / TitleToolBar.Button_Click → MainWindow.SeMenuFocus，查到参数窗后恢复逻辑焦点。新增R12源码边及5个引用，位于菜单分派页的模板事件层。该focus链不是ItemClickCommand业务分派的别名，实际路由/触发顺序仍未知。
+
+对账现含4247候选、232边；138候选有引用片段重叠、42边有反向线索、190边无该线索。全部候选仍未审/未全链关闭；XML解析471文件0失败、源哈希/片段、层级和脚本/链接检查通过。浏览器呈现与原机焦点操作未执行，实施进度仍41/96＝42.71%。前述1904/4175/231数量保留为对应历史轮次，本节及首页是当前清单。
+
+## 图像结果、显示选择与共享 ROI
+
+[层级视图](results-roi.html) · [逐边账本](results-roi.edges.json)。新增18条边（9条原版源码、7条当前独立实现、2条未知），20个引用。先运行 `node tests/ArchitectureRecovery/build-results-roi.cjs`，再按上述入口/结构/对账/索引顺序更新。
+
+明确分开MainWindowData的初始化/日志上报与具体模块AsyncModuleResultCallBackArrived。显示来源替换会Dispose旧decorator并清缓存；self-run渲染有busy门、BeforeExchange、UI队列，UI尾部仅ROI可见且非拖动才更新ROI。P_ValueChanged、RelatedIOChanged的存储、PIXELIMAGE父项选择和刷新单列，没有把命名近似的回调串成臆测图像通路。
+
+原版共享ROI从父MainViewControl取得，ProcedureConfigControl对ModuleResultView与ImageViewBox的SetRoiVisible处理不同；参数窗、单双图和IsCanDrawROI决定实际可见性。ROISelecter要求写权限并比较字节变化，随后参数/ROI序列/预执行有明确次序。中间的图像Exchange、叠加、二进制布局和native生产仍未知。
+
+当前pull provider的请求代数/epoch检查、先清旧frame、按Tab显示，与ROI源能力匹配、缓存输入、单/多源挂载、Refresh/Commit/Dispose分别作为独立适配。GeometryCommitted服务不自行证明原版字节去重，typed几何也不冒称IUserBytesData ABI。新增图自动进入共享注册表及双向对账；本轮140候选有片段重叠、44边有反向线索，仍无新增全链关闭。
+
+全部引用/层级/脚本/链接及diff空白规则通过。未运行原件、SDK或产品，未验证浏览器呈现；主框架实施仍41/96＝42.71%，本轮不加分。
+
+## tool函数源与MQ反向入口
+
+[层级视图](external-entries.html) · [导出声明](tool-function-exports.json) · [原exe类型引用](server-init-reference.json) · [REA选中CIL](server-init-cil.json)。新增16条边（13条原版源码/原件锚点、1条当前scope独立请求、2条未知），18个引用。运行 `node tests/ArchitectureRecovery/build-external-entries.cjs` 后再更新入口与对账。
+
+本轮经REA静态核原件，并用System.Reflection.Metadata只读exe的TypeRef：`0x01000137`是Frontend.Base.ServerManager（引用Frontend.Base 1.0.0.0），不能使用ServerBackgroundApp.Server同名类型或VMControls.Data替代。exe SHA为42e243…e0c23、MVID77c739a5…；callee Frontend.Base.dll SHA为9dc5ff…f5929、MVID0f02d11c…，完整身份在JSON。选中InitServer/InitiSources/GetDataSources/GetToolFunctionSources四体均present、0截断，原始CIL字节按头长度/il_size重核SHA；全程序集coverage仍partial。
+
+InitServer的字段/调用锚点证明它注册函数源并交InitiSources，不据名字猜网络监听。GetToolFunctionSources的tool源中21个FilterName全部保存，包含委托、命令数组与对象；readonly文字不是无副作用保证。特别保留保存委托未用path却返回0、hide/show/SaveAs不同Task/Dispatcher路径、controllercommands初始化的单次/连续/停止映射。
+
+MQ部分分开Hkr与Zmq实现：接收循环、UTF8/*分隔、无有效数据也可能调用委托、两者构造是否启动接收不同。实际OnZmqReceived赋值/业务dispatch未定位，常量重复值不能当真实协议；关闭竞争、编码、native缓冲与服务进程未知。没有启动端点、发消息、执行授权/设备或结束任何进程。
+
+入口账本单列21个导出声明，双向对账增加导出方向；它们不重复计入4247词法/结构候选。当前12个导出声明有片段重叠，51条边有来源线索，均不升为真实远端绑定或完整链。类型引用工具新增模式同时回归原214声明/222resolver/57成员定位通过，源哈希、CIL、层级、脚本及链接/diff检查通过；运行和浏览器呈现仍未验证，实施41/96＝42.71%不变。
+
+类型引用复验（不会加载原程序集）：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --type-ref 'D:/Program Files/VisionMaster4.4.0/Applications/VisionMaster.exe' 0x01000137 'D:/MyWork/REA逆向测试/docs/architecture-recovery/server-init-reference.json'
+```
+
+## 从入口到效果的显式分析链图
+
+[主窗口焦点分析链](entry-chain-focus.html) · [节点/关系账本](entry-chain-focus.json)。在既有R12/L08的成员证据之上，补主窗口x:Class与TitleBar组合位置，建立11节点、12条显式关系（11条资源/源码关系、1条运行效果未知）。这批关系是有边界的入口链，不与十二张证据视图的266边混为同一计数。
+
+箭头逐项区分constructor/resource、XAML组合、EventSetter声明、方法调用、条件分支和Framework效果。菜单与通用工具栏按钮分别进入处理器，再汇入SeMenuFocus；祖先MainWindow为空、ProcedureConfigControl/curTabControlBase为空的两条无写入分支都保留。不能因图上相邻而增造调用，也不把逻辑焦点API调用解释为实际键盘焦点或所有模板均生效。
+
+节点/箭头可点击进入原片段，另有逐边按钮。所有端点、ID、分类、非未知关系有源引用、源hash/行片段和HTML内嵌JSON一致性已检查；全域索引同步独立链图状态并检查脚本/链接。当前对应焦点合同尚未在此链建模，这不证明其不存在；实际程序集/资源/样式激活与原机焦点、键盘路由未运行。fullBehaviorClosed和全入口complete继续false，浏览器呈现未验证。
+
+本轮重建顺序：
+
+```powershell
+node tests/ArchitectureRecovery/build-entry-chain-graph.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+只新增模型关联与证据，不改产品，实施仍41/96＝42.71%。
+
+## 单次运行的真实模板与命令入口
+
+在[运行与保存图](execution-storage.html)新增G00/G05/G06/P00四条边及12个资源/源码引用，原图现26边32引用。默认Lang_SigRun声明关联SigRun、SingleRunTemplate和GetSolution；工具栏ItemsControl→customDataTemplate→专用SingleRunTemplate的选择、Command绑定、CustomItemData懒工厂及反射消费均已定位。
+
+单次专用模板按CustomItemData.IsRunning、Modules.Count=0、IsOnExecuteAfterLoad禁用；不能把通用TitleToolButtonDataTemplate的Click焦点事件直接套用到该专用模板，也不能把三个局部trigger说成全体继承/祖先守卫。原G01“未核XAML”的旧断点已更新为这些已回收声明及运行时物化仍待核，不让历史未知覆盖新增事实。
+
+流程Tab另由选中TabItem触发器将RunButtons插入，按钮RunOnceCommand交VmProcedureDecorator.RunOnceCommandExe，后续VmProcedure.Run(null,false)到ProcessManager；主工具栏则仍交方案GlobalScriptStartRunOnce。共享资源实际DataContext、运行时类型/反射、模板全部模式及原生派发/回调不由静态绑定证明。当前工具栏独立运行合同继续分列。
+
+本轮所有引用/层级/脚本/链接及双向对账通过，146候选/55条边有片段线索；没有新增全链关闭、原机操作或产品实施。实施仍41/96＝42.71%。
+
+## 全局单次的原件导出定位
+
+新增G07与2个引用，运行/保存图现27边34引用。[PE导出表及入口样本](global-run-export.json)固定选定安装x64副本：`PublicFile/x64/iMVS-6000PlatformSDK.dll`，SHA-256 `b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1`。与本轮REA open_binary返回身份一致；PE表确认`IMVS_ExecuteOnce4GlobalScript`为非转发导出，ordinal429、RVA0x00648df0、VA0x180648df0，32入口字节与文件偏移重核一致。
+
+REA `analyze_function`明确返回provider_unavailable：Ghidra/IDA未配置，Hopper不支持win32；`inspect_binary_layout`当前provider也不支持此主机。[诊断原记录](global-run-provider-status.json)保留失败类别和安装缺项。没有安装/重配引擎，也没有反复调用失败操作；继续以System.Reflection.PortableExecutable静态PE表解析取得身份和地址，工具输出不冒充REA反编译。
+
+G04仍为unknown，但从未定位导出推进为精确原件/地址已定位、函数体缺失。入口字节不等于完整函数，未推断handle ABI、全局脚本到流程调度、回调线程或实际进程加载了哪份DLL。后续取得可用原生分析provider时应复用此SHA/地址继续，而非重新按名字猜目标。
+
+复验（只读PE，不加载/执行厂商代码）：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --pe-export 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/iMVS-6000PlatformSDK.dll' IMVS_ExecuteOnce4GlobalScript 'D:/MyWork/REA逆向测试/docs/architecture-recovery/global-run-export.json'
+node tests/ArchitectureRecovery/build-execution-storage.cjs
+```
+
+原始PE哈希与字节、源引用、层级、脚本/链接及对账检查通过；未运行产品、SDK/设备或浏览器呈现。主框架实施41/96＝42.71%不变。
+
+## XAML 事件到同类型处理器定位
+
+[处理器对照页](xaml-handler-map.html) · [声明/方法体/源清单](xaml-handler-map.json)。新增Roslyn文本索引模式，解析原反编译树2705个C#文件；按相同artifact目录、准确x:Class和方法名定位，禁止用另一目录的同名类型回退。保留全部源码hash、UTF-16 span、签名/参数、空体标志及调用表达式，未加载厂商程序集或执行源码。
+
+本轮完整分类发现18条KeyTime动画属性被旧宽泛Key规则误收（其中5条有根类、13条无根类），现单列animation-key-time-property，不当事件处理器；原声明仍保留，不靠删行压小候选全集。由此输入/生命周期/EventSetter的有限事件候选共634条：543条在声明类型内定位到唯一方法体，90条本类型未声明（继承/外部/缺源码仍待核），1条存在重载，不擅选。去重可见方法体456个，其中21个空块；定位不证明delegate兼容、生成IStyleConnector、真实运行绑定或完整调用链。
+
+全部方法体span与原文本、源hash、声明类型/目录和HTML内嵌数据一致检查通过。入口清单保存声明ID→定位状态/成员ID；双向对账新增“已定位成员范围”线索，156候选/61边有片段关联，但不升为绑定确认。候选总数仍4247，结构声明仍1976，已有271证据边不重复计数。
+
+重建顺序：
+
+```powershell
+& tests/ArchitectureRecovery/Export-XamlEntries.ps1
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --xaml-handlers 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-xaml-entry-view.cjs
+node tests/ArchitectureRecovery/build-xaml-handler-view.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+未定位不等于不存在；当前文本签名未做语义编译，也未取得新增CIL/ABI或原机事件证据。实际浏览器呈现未验收，完整入口仍未证明；实施仍41/96＝42.71%。
+
+## 事件处理器的同目录基类链
+
+处理器索引升级为schemaVersion2：除准确x:Class本类型之外，仅沿同artifact目录内**唯一的同命名空间或显式限定名基类**继续找同名成员；泛型、别名、导入命名空间和跨artifact基类不猜。每一步保留类型、源部分、原BaseList文本、别名及hash，验证器检查从根类型到最终声明类型的每一步确由前一声明支持，仍不执行语义绑定。
+
+634个事件候选保持全部行：543条本类型方法体，70条继承方法体，1条继承的私有体只作定位，19条同目录基类链未定位，1条重载。去重可见方法体由456增至502；新增3个IL警告体分别是VMControls.WPF.ImageListPanelBase的BtnImageAddFolder_Click（1021）、LocalImageFolder_Click（1056）、BtnImageAddRpFolder_Click（1768），对应完整路径/span见账本，不把可解析当CIL语义已确认。
+
+私有体是ParamsTabControlBase资源引用的BaseWindow_Closing，定位到TabWinBase.cs私有成员，明确保留派生资源是否能绑定的疑问。剩余19条都属于ImageSourceModuleControl.ImageListPanel，其基类通过using VMControls.WPF来自别的artifact目录，未用同名搜索强接；下一步需确认原程序集基类/引用身份后再跨目录关联。
+
+[处理器页面](xaml-handler-map.html)已展示基类逐步路径、访问修饰、IL警告；双向对账保留这些成员的片段线索（158候选/61边），不升级真实绑定/全链状态。源码hash、body span、继承步骤、内嵌数据、脚本/链接和diff检查通过；没有新做原机/CIL或浏览器验收，实施仍41/96＝42.71%。前轮“90本类型未声明”是历史状态，当前19未定位不代表入口不存在。
+
+重建命令仍为`--xaml-handlers`后依次handler视图、入口清单、对账及索引；没有扩到其它工作树或安装包外的未知同名类型。
+
+## ImageListPanel跨目录基类的原件确认
+
+[聚焦元数据与19个原始CIL体](image-list-base-metadata.json) · [REA原件身份/预算结果](image-list-base-rea.json)。原ImageSourceModuleControl.dll的ImageListPanel TypeDef为0x02000006，BaseType引用0x0100001d；解析为VMControls.WPF.ImageListPanelBase，程序集名、版本、公钥令牌及culture与选定原VMControls.WPF.dll定义匹配。child SHA04a73b…958906/MVID4298c0d6…，parent SHA99ffa4…c97d/MVIDd144317f…，完整身份在账本。
+
+本轮REA分别确认两原件；整份WPF成员表示超过67108864字节预算，返回unavailable，而不是源码缺失或授权拒绝。随后用System.Reflection.Metadata/PEReader聚焦目标类型，仅读取19个需要的原MethodDef、签名字节及CIL bytes/hash，不加载或运行厂商代码。此输出明确标为普通静态元数据工具，不冒充REA反编译；CIL身份不等于本地反编译体已经语义/ABI等价。
+
+索引schemaVersion3只为这一条特定原件确认的跨目录基类增加显式许可；仍禁止同名类回退。两原件及两份反编译源hash重核，每条跨目录路径显示image-list-base-metadata.json，验证器只接受该derived/base、目录、源文件和声明BaseList组合，不放宽任意imports或跨artifact连接。
+
+原剩19条事件全部获得声明基类/成员位置依据。634条当前分布为543本类型体、89继承体、1私有基类体仅定位、1重载；502去重体与3个反编译IL警告保留。找不到本地基类的19条历史状态已解除，但真实delegate/生成连接器/运行程序集选择仍未确认，绑定和全链关闭计数均为0。
+
+复验顺序（先结构XAML清单，再以下命令）：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --image-base-evidence 'D:/MyWork/REA逆向测试'
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --xaml-handlers 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-xaml-handler-view.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+原件、程序集引用、公钥令牌、CIL字节hash、源span、跨目录路径和HTML脚本/链接检查通过。未运行产品、原SDK或浏览器呈现；主框架实施仍41/96＝42.71%。
+
+## 加密入口补充：启动、激活、设置与载荷
+
+用户要求加密相关不得遗漏。本轮在既有方案文件、Group、脚本、历史恢复、XML/ZIP资源、退出验证和加密狗路径之外，新增 E15–E23 九条源码边；它们进入原有层级及入口族清单，不因未实现或原生缺体而隐藏。当前12个证据视图共280条边、399个引用，加密页37条边、58个引用。完整入口覆盖与完整调用链仍未证明。
+
+- 启动：分别保留 BeforeStartPart 与 AppBeforStart 的不同调用顺序；SoftEncrypt 经 CodeManager 选择软加密/设备/加密狗展示状态，异常退出。CodeManager 内部实现保留未知。
+- 到期提醒：后台STA → IsNeedRemind → GetAuthTime，保留300秒缓存、限时类型、剩余天数变化、先写 OldAuthTime 再判断<=3的顺序，Yes才激活。
+- 启动失败：两个明确错误码进入激活提示；工具退出后等待并尝试 ReInitData，不把进程退出视作授权成功。远程加密狗帮助为另一分支。
+- 激活与设置：AuthSet → itemauth 软件设置页，与 StartAuthActivation → 语言配置 → 外部 SoftEncryptActive.exe 分列。源方法包含进程查找/终止和配置写入，本轮只读源码，没有调用这些行为。外部工具内部、授权存储/网络仍未知。
+- 退出密码设置：SoftwarePage ToggleButton → 命令 → 设置/验证窗 → CloseSoftSet → StructTOBytes/Base64 → 配置；启用配置另由 SaveSoftWareInfo 写入。保留原 nullable 谓词及IL警告，未推断开关更新与命令执行顺序。
+- 自动加载：配置 AutoLoadSolPassword 与 SDK strPassWord 的读取分别登记。Base64字样不等于已确认的加密合同，完整 SDK 设置和实际启动消费仍开放。
+
+新增边只引用本地原反编译源/资源，未重新获取这些方法的原件CIL，不升级为运行证据。重建顺序为 `build-entry-routing-security.cjs` → `build-xaml-handler-view.cjs` → `build-entry-inventory.cjs` → `build-entry-reconciliation.cjs` → `build-index.cjs`；源hash/片段、每边层级唯一性、双向线索、HTML脚本/链接检查通过。浏览器呈现仍未验收，实施计分增量0。
+
+## 两处事件歧义的原连接器证据
+
+[连接器聚焦页](xaml-connector-review.html)保留两原件身份与7个方法的原始CIL、token、指令和hash。HikHistogram 的 IStyleConnector.Connect（0x06000c64）通过 ldftn 0x06000c5c → SelectionChangedEventHandler 构造 → add_SelectionChanged 明确选择双参数重载；零参数同名源候选保留，不作为此连接器目标。尚未把该分支与原BAML连接ID/运行激活闭合。
+
+ParamsTabControlBase 引用的基类私有 BaseWindow_Closing（0x060003c2）原体为 nop/ret；所选生成连接器未找到直接关闭钩子，通用 CreateDelegate helper不能证明具体私有成员绑定。schemaVersion4事件索引保留634行、502去重体：543本类型、89继承、1原连接器重载定位、1私有基类仅定位，3个IL警告仍保留，真实绑定/全链关闭均0。
+
+聚焦重建：`dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --connectors 'D:/MyWork/REA逆向测试'`，随后 `build-xaml-connector-review.cjs`、`--xaml-handlers`及上述HTML/对账生成顺序。工具只读PE元数据/CIL，不加载厂商程序集；原件hash、CIL字节hash、重载选择及备选保留检查通过。
+
+## 自动加载方案密码链：输入到 SDK 与启动门
+
+本轮继续推进F-03/F-04/F-18/F-19/F-21/F-23，新增E24–E32九条源码边，进入密码层级、入口族及双向对账。当前12视图289条边、423个引用；加密页46条边、82个引用。它们是有限静态切片，仍不证明全软件入口齐全。
+
+确认链分别保留：SoftwarePage密码附加属性/helper、SoftwareSetDlg确认按钮、Apply事件、菜单订阅、Sdg_ApplyEventHander及SaveSoftWareInfo。Apply忽略事件Func<bool>返回值，最终非短路调用AccessApply；需要重启但用户拒绝时，回调返回true而未保存。不能凭确认窗关闭判断配置已保存。
+
+SetAutoLoadSol区分isSaveConfig、IsAutoLoadLast及当前平台密码/用户属性密码来源；模式和执行状态分别映射。UTF8GetFixLenBytes对密码固定32字节、路径780字节，只截字节，不保障满长NUL或多字节字符边界；manager非零返回抛异常，调用经过ServerSDKAPI和NativeMethods到原生DLL。结构布局与原生接受规则仍待核。
+
+回读GetAutoLoadSolState失败也返回0；IsAutoLoadLast的setter还有额外查询、最近方案及互斥属性副作用。ProjectManager另存/加载更新调用、参数文件入口与引导页优先门分别登记。SystemConfigManager.IsAutoLoad只判断模式1，模式2单独判断。SoftwarePage.SoftwareApply是另一组直接写cfg/SDK的方法声明，未定位调用者，不接成确认按钮主链，也不据此断言不可达。
+
+[原件编码聚焦页](autoload-cil-review.html)新增3原件身份和5个原始CIL方法：VisionMaster.exe的SaveSoftWareInfo在IL_010b引用VM.Utility.Base64Helper.String2Base64；VM.Utility.dll中0x0600011b先空串检查，再DefaultEncode.GetBytes，转0x0600011d/Convert.ToBase64String。VM.Util.dll中Hik.Util.ByteUtil静态构造将DefaultEncode初始化为Encoding.UTF8；字段非InitOnly，故运行时恒定编码仍未证明。不能把Base64或这条托管编码链称作受保护.sol算法。精确SHA/MVID、token、指令、原始字节/hash与REA证据ID保留在autoload相关JSON。
+
+复验命令：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --autoload-evidence 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-autoload-cil-review.cjs
+node tests/ArchitectureRecovery/build-entry-routing-security.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+原件SHA/MVID、5个完整CIL字节/hash、编码调用位置的原始opcode/token、初始化字段可变性、源码hash/片段、每边层级唯一性、HTML脚本/链接检查通过；原SDK、授权工具、配置写入与浏览器呈现均未执行。原生自动加载实际消费、存储/错误回滚与原BAML运行绑定仍开放；真实绑定/全链关闭仍0。主框架实施41/96＝42.71%，分母32包×3具名实施单元，本轮建图计分增量0。
+
+## 主窗口几何与工作区锁定视图
+
+新增[标题栏、显示器边界与工作区锁定](window-layout.html)，覆盖F-03/F-04/F-05/F-21/F-23的有限窗口/锁定分支：23条边中16条本地原反编译源/资源确认、5条当前独立实现、2条未知，45个引用。全图当前13视图312条边、468个引用；F-01～F-23仍均不宣称完整恢复。上轮自动加载密码页及原件CIL证据保留。
+
+窗口路径从主窗根声明、自定义TitleBar、BtnMaximize样式的状态命令，到BaseWindow的CanExecute、模板事件、HwndSource hook与释放、WindowProc、显示器及DPI换算逐边展开。副屏分支位置仍使用首monitorinfo的rcMonitor坐标，尺寸取窗口所在屏rcWork；当前WorkAreaHook则使用所在屏工作区减显示器原点。保留公式差异，不以常见窗口实现替换原分支，也未称这些文本公式已由原件CIL/桌面验证。
+
+Header_DoubleClick要求MaxButtonVisibility=Visible；主窗根声明该内置按钮Collapsed，因而不能从基类存在双击方法推断主窗必然最大化。其它标题栏/非客户区输入、重复模板订阅、100/150/200%DPI、多屏负坐标、任务栏方向及显示器切换仍开放。
+
+锁定路径包括XML中两个子项AreaLocking/AreaUnLocking、LockingTemplate按状态换Content、GetMainData、LockDlg复选/结果及IsNotifyLock配置；状态setter按字段→历史服务→导入菜单→通知顺序。视图链逐层经过release包装、MainViewControl、ProcedureConfigControl和DiagramArea，并分列新增按钮隐藏、Tab上下文清除、ToolBox禁用、提示控件增删。没有据此宣称所有流程模型API均锁定，也不把工作区锁当密码或权限验证。
+
+加载成功后阈值分支单列：配置解析失败默认128/80；中间区间若已跳过提示，该分支不写锁状态。BeginInvoke中的ShowDialogDelay(2000)保留原调用与参数，异步竞争和实际延迟/窗口寿命未验证。当前独立切换处理器、用户JSON偏好、历史门与原服务/配置合同分别记录。
+
+复验顺序：`build-window-layout.cjs` → `build-entry-inventory.cjs` → `build-entry-reconciliation.cjs` → `build-index.cjs`。中央registry已登记新页，新增入口导航、完整层级和全部13页双向范围对账；源码hash/片段、层级每边恰一次、脚本/链接及diff检查通过。只读现有源/资源，没有操作原窗口、系统设置、用户配置或另一工作树；浏览器呈现仍未验收。主框架实施仍41/96＝42.71%（32包×3具名实施单元），本轮模型增量不计实施完成。
+
+## 角色登录、权限配置与两份 helper
+
+新增[角色与权限层级](role-access.html)及[原件CIL对照](role-cil-review.html)，补22条边/40个引用，连接标题栏用户菜单、LoginWindow、两份AccessManagerHelper、CodeManager、权限页、外部user函数和配置导入导出。当前14视图334条边、508个引用；F-01～F-23入口与行为完整性仍未证明，没有当前独立壳角色权限同构结论。
+
+REA确认原VisionMasterMain.dll（SHA319618…80c1，MVID88823867…）、VM.User.dll（SHA8acc2e…226e，MVID6c7bcc46…），并复用已确认同版EXE身份。精确身份、REA证据ID和18个聚焦原始CIL方法保留于role-artifact-identities.json、role-cil-evidence.json。恢复工具只读PE元数据/方法体，不加载厂商代码。原件字节、方法CIL hash、登录调用位置的raw opcode/token和回调null谓词均复核；不是原BAML或实际登录运行证明。
+
+原LoginWindow.ButtonLogin_Click在IL_00cb直接调用0x060001fd，即VisionMasterMain.AccessManager.AccessManagerHelper.SetLoginUser一参数版本，随后pop忽略bool。该helper回调为空直接false，调用SaveAccessInfo也不读取bool；即使存储失败，状态字段可能已经变化。Operator前台替换为同步路径，仍有窗口构造、ReplaceMainWindow、旧窗Close取消和回调异常等未知。
+
+启动读取权限的EXE中另有VisionMaster.AppMainWindow.AccessManagerHelper.SetLoginUser三参数版本：回调为空先尝试创建AccessManager，参数分别控制保存和Dispatcher.BeginInvoke前台替换。LoadAccessInfo传false,false；它先解码配置/结构，按原磁盘ID双向Contains谓词判断，再写缓存，未检查SetLoginUser返回就true。这两份helper不合并，不以同名或相似源码强接调用链。
+
+CodeManager.IsAllAccessUser原CIL对存储角色数值0或1返回true；不从IsAdmin字段名推断仅管理员。SaveAccessInfo明确为StructTOBytes→Base64→SaveConfig，随后通知IsAccessEnable/IsAdmin；catch提示并false。IsUseSoftEncrypt原CIL确认是读取SoftEncryptNodeName对应配置并Convert.ToBoolean，异常记录后throw；加密页E16撤销“整个方法体仍缺”的旧未知，保留配置字段初始化、提供器和native授权边界。Base64不当加密，模式配置不当授权真实性。
+
+AccessManager构造与Finalize两体原CIL都只在OnAccessEnableCallBack==null时Combine/Remove；保留这个谓词，不静默改成通常的非空解除，也不单凭此断言完整宿主泄漏。
+
+权限页分别登记：启用/禁用的管理员验证及确认、技术员/操作员密码检查与保存、管理员改密、模块权限配置、txt导入/导出。导入有CheckPassAdminAccess，成功解码后按AccessCheckDisk改IDInfo并写缓存/配置；导出可见处理器没有同样验证调用，会清IDInfo后重新编码写文本，两边finally恢复按钮。模块权限树、重置/改密、结构转换/机器ID及所有页面可见性/外部权限门仍需继续取回/核查。
+
+入口清单新增角色登录和权限配置族；外部函数范围对账增至14/21，但范围重叠仍不是实际可达证明。没有执行登录、改密、权限导入导出、写入用户配置、切换窗口或原SDK操作；浏览器呈现仍未验收。
+
+复验顺序：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --role-evidence 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-role-cil-review.cjs
+node tests/ArchitectureRecovery/build-role-access.cjs
+node tests/ArchitectureRecovery/build-entry-routing-security.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+源/原件hash、CIL字节、类型/方法定位、层级每边恰一次、内联脚本/链接和diff检查通过。真实绑定与全链关闭计数仍0；主框架实施41/96＝42.71%（32包×3具名实施单元），建图与静态取证不增加实施分子。
+
+## 模块配置权限：暂存、确认、SDK与逐入口消费者
+
+新增[模块配置权限视图](module-permissions.html)及[代理/确认原件CIL](module-access-cil-review.html)，14条边中12条源码/原CIL确认、2条未知，38个引用。当前全图15视图348条边、546个引用；角色页和入口族已链接此页。入口清单仍4247候选，范围重叠不是可达或真实绑定证明。
+
+从AccessPage.Permission_Click进入AccessModuleManager，构造枚举各根流程的GetAllModule（集合模块及递归后代），按ID排序建代理；Group取直接Parent.FullName，之后追加根方案全局模块。XAML按字符串Group分组，是扁平分组列表，不能按画面层级推断递归权限树。GlobalModuleAccess静态数组、IsGlobal其它消费者、同名父节点及模块增删刷新仍需逐项核查。
+
+复用REA确认的同版Frontend.Base.dll与VisionMasterMain.dll身份，聚焦回收16个原CIL方法。ModuleTagInfoProxy构造取模块FullName与ConfigAvailable；setter只改本地_configAvailable并通知。确认Button_Click才逐代理调用VmModule.set_ConfigAvailable，之后Close，无整批回滚。其余订阅者、原BAML与WPF事件先后未运行验证，不把暂存结论外推为任意关闭/取消都已验收。
+
+全选与组勾选先改代理；GroupChecked本身不汇总，Click另调UpdateGroup。UpdateGroup先_update=true，以Enumerable.First查匹配ToolTip组头，组内全选才true，总选择对已登记组头做All；不生成显式混合null状态。原CIL确认First的MethodSpec目标及两个_update字段写入均在异常处理区之外，枚举器finally不是复位保护。缺组头/虚拟化/异常重入/空组仍待原机验证。
+
+VmModule.ConfigAvailable本地默认true；getter读取UserData键，null保留缓存、VmException记错误并false。setter先改本地字段与通知，再尝试序列化写UserData，VmException只记录，不撤销字段。该特殊键走UserData直接写分支，未进入后续通用ModifyConfig历史逻辑；不据此宣称所有历史捕获都不存在。动态与普通UIParam路径分别保留，普通路径继续到ModuleManager、ServerSDKAPI、NativeMethods和原生DLL。
+
+SDK Set缓冲分配/复制/释放、空数据删除与返回码分列；Get特殊缺项码返回null，Copy异常可被捕获后继续释放并返回数组，故返回数组不等于复制完整。原生存储、bool布局、内存异常、动态参数和.sol权限往返仍未知，没有调用SDK或修改模块权限。
+
+消费者按入口分别记录：decorator配置有Forbidden/LoadFailed门；ProcedureConfigControl另有ConfigCheck；全局菜单SDK模式先放行、Operator拒绝、Tech按模块存在/flag判断；触发内容页没有同样可见的SDK早退；相机IsMaskVisible只是Tech遮罩投影。不能把这些不同谓词合成统一安全边界，也未确认当前独立壳具有同构模块权限服务。
+
+本轮为定位原泛型First补充MethodSpec底层目标及raw实例化签名字节；不进行语义泛型替换或运行依赖绑定。连接器、自动加载编码和角色聚焦CIL均重新生成复核，原有重载选择/密码编码/两份helper判断保持，源码/原件hash、CIL、字段写入、层级、脚本/链接及diff检查通过。
+
+重建模块权限切片：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --module-access-evidence 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-module-access-cil-review.cjs
+node tests/ArchitectureRecovery/build-module-permissions.cjs
+node tests/ArchitectureRecovery/build-role-access.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+原始CIL与精确SHA/MVID/证据ID见module-access-artifact-identities.json和module-access-cil-evidence.json。未运行权限窗口、设备/原SDK、配置写入或浏览器呈现；真实绑定和完整链关闭仍0。主框架实施41/96＝42.71%（32包×3具名实施单元），本轮静态恢复不增加实施分子。
+
+## 改密、权限重置与结构序列化
+
+新增[密码生命周期层级](password-lifecycle.html)和[原件校验/重置/序列化CIL](password-cil-review.html)，14条边中12条源码/原CIL确认、2条未知，26个引用。当前16视图362条边、572个引用。入口完整性及原机行为仍未关闭，当前独立壳不冒称已具同构密码/权限服务。
+
+AccessPage修改密码入口注入CodeManager后打开ReSetPassCode。确认链依次检查任一输入非空、旧密码格式、旧密码字符串比对、新密码格式及两次一致，再SetAdminEnable(true,new)。原CIL明确两处格式调用均指VM.User.CodeManager.CheckCodeFormat，其校验仅Length为3～15；窗口类自己的3～8同名方法没有被此处理器调用。UI字母数字/空格/剪贴板事件与程序化格式检查分列，不从同名方法或提示文案推定规格。
+
+SetAdminEnable返回SaveAccessInfo的bool，但改密确认处理器pop忽略，之后DialogResult=true并显示成功。setter先写enable/code，再按AccessCheckDisk选择GetDiskID或空IDInfo，最后保存。技术员和操作员setter也各自改字段并返回保存结果，AccessPage.SaveInfo逐项调用且忽略结果，不是一次整体事务。
+
+关闭权限保护的ResetAccess原CIL置角色数值0、三个enable=false、三个code=null，通知LoginUser、IsAdmin=true，再依次可空调用AllAccess与AccessEnable(false,0)，最后返回SaveAccessInfo。此体未写IDInfo；不能把“重置”解释为找回密码、清掉所有机器信息或停用原生授权。当前窗口、各回调异常和存储失败仍分别开放。
+
+AccessCodeSet只是检查一致/CodeManager格式后返回字符串，权限启用与退出密码设置的调用者随后写入不同状态/节点。退出密码、用户角色密码与方案文件保护不因共用窗口或StructTOBytes而合并。
+
+原VM.User元数据保留AccessUserInfo顺序布局、Pack1、8字段、raw字段签名和封送描述符；未计算或硬编码运行Marshal.SizeOf，不把元数据字段offset读取值当作已验证的运行内存偏移。StructTOBytes调用Marshal.SizeOf、AllocHGlobal、StructureToPtr(false)、Copy、Free；BytesToStruct先按type取size，保留一次Math.Log(size,1)并丢弃结果，只有size大于数组Length才null，足够长时只复制size字节。两体都无本地异常处理区，不能由末尾Free推断任意异常均释放，也不能把结构复制+Base64标成加密算法。
+
+15个聚焦原CIL方法与AccessUserInfo元数据保留在password-cil-evidence.json，精确原件SHA/MVID/REA身份引用见password-artifact-identities.json。角色页、加密页已把“整个结构转换体未知”更新为本页已恢复的调用/复制路径，剩实际布局、所有权、配置提供器、落盘/异常和原生受保护容器未知。角色与模块权限CIL重新生成后，各自旧判断继续通过；通用读取器新增raw字段/布局输出，不执行厂商代码。
+
+重建顺序：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --password-evidence 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-password-cil-review.cjs
+node tests/ArchitectureRecovery/build-password-lifecycle.cjs
+node tests/ArchitectureRecovery/build-role-access.cjs
+node tests/ArchitectureRecovery/build-entry-routing-security.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+原件hash/MVID、CIL字节/hash、实际校验目标/长度常量、忽略setter结果、重置状态与布局声明、源码片段、层级和脚本/链接检查通过。未执行改密、权限重置、配置写入、厂商封送/硬件操作或浏览器呈现。主框架实施41/96＝42.71%（32包×3具名实施单元），本轮模型与静态取证不增加实施分子，真实绑定和全链关闭仍0。
+
+## 欢迎、最近方案、帮助与加载时迁移
+
+新增[主菜单资源与导航入口](shell-resources.html)，24条边中17条本地原反编译源/资源确认、5条当前独立实现、2条未知，49个引用。当前17视图386条边、621个引用，入口页已增加导航。README顶部当前快照改由build-index根据registry和进度台账生成，避免历史271条边的文字继续冒充当前总数；下面各轮记录保留历史语境。
+
+本地帮助经过中性版配置键、语言资源和ProcessStartInfo；在线文档、更多支持和V社区分别使用OnlineHelpDoc、OnlineHelp和VClub，异常边界/英语后缀也不同。关于窗可能启动VersionInfoTool并等待5000ms，却不在这里读取等待返回值再决定后续；版本行来自AppData、算法/驱动和MVDALGO_DEV_ENV的文件信息，不是重建程序的三个程序集版本。URL仅记录配置，本轮没有浏览网站或验证远端内容。
+
+样例打开保留原忙状态、OpenSample INI/Demo目录、FileName/空值判断及finally释放顺序；当前样例是独立JSON选择器、用户目录偏好、执行/改动门和doc.Load。最近菜单原版动态生成、ToolTip传路径；cfg缓存按绝对时间差过滤99天，字符串相等去重，新增时缓存超限仅淘汰一项。当前完整路径+OrdinalIgnoreCase及Take(6)分列，不改写原行为。
+
+欢迎页绑定ProjectManager的列表和打开命令，帮助、样例、普通文件、ToolBox类型和“不再显示”各有事件。最近条目SelectSolutionCommand仅设置OpenRecentSolutionInfo并尝试关闭欢迎窗，可见App启动代码另消费它；普通菜单重开欢迎页之后同样消费的路径本轮未定位，保留未知，不能把临时选择当作已加载。
+
+加载时版本侧链按字符串比较V4.0.0和语言资源Lang_version；旧于当前版本时检查兼容工具/配置，生成无冲突输出名，构造含源路径/密码/输出/版本的进程参数，隐藏启动、重定向管道并等待。可见体以输出文件存在继续，未以ExitCode判定成功；后续才进入VmSolution.Load与路径/最近列表更新。工具内部、闭包原CIL、密码编码/版本格式、管道等待和native加载完成仍开放；没有执行任何进程查找/终止/启动或文件转换。
+
+同时纠正引用类型：XAML/XML/config/cfg归为提取资源，与反编译C#分开，原件CIL/元数据引用继续使用专属类型。17个注册视图全部重建，随后重建入口清单、双向对账和索引；源码hash/片段、每边层级恰一次、脚本/链接、中央注册一致性和diff检查通过。只读已有原始证据，没有本轮重新获取这些方法的原件CIL，不冒称运行或原机验证。
+
+重建新页：`node tests/ArchitectureRecovery/build-shell-resources.cjs`，随后依次入口清单、对账、索引；共享证据分类调整时按view-registry的全部生成器重建。浏览器呈现仍受先前file策略限制，未绕过；完整入口/真实绑定/全链关闭仍未证明。主框架实施41/96＝42.71%（32包×3具名实施单元），本轮建图不增加分子。
+
+## CompatibleTool工具侧入口与升级结果边界
+
+新增[兼容工具层级](compatibility-tool.html)及[原件参数门/阶段覆盖CIL](compatibility-cil-review.html)，15条边中13条源码/原CIL确认、2条未知，23个引用。当前18视图401条边、644个引用；菜单/加载页接入工具侧明细。领域完整恢复、全入口和原机迁移验收仍未证明。
+
+REA确认原CompatibleTool.exe，SHAaf413cf17cf5683582b604d4cd3079234cb2af3f7f56e14594e3ab73b77d90e4、MVID22070afa-2e59-4765-93c6-cdf80c45681f，证据ev_78eb0b5d835343babf824011522e01d328ec963c2f1be348c259f0ffd9467d03。聚焦PEReader回收12个原始CIL体，保留参数解析、转换调度/聚合、版本查询、回调、保存与DeInit。没有加载或运行厂商程序集/静态初始化，没有启动工具或访问SDK。
+
+Main逐args.Trim后无分隔拼接再Split(';')并记录拆分参数；Count>=4及TryParse后读取array[4]，原CIL确认门不是>=5。四项畸形输入的异常交Main catch，stdout写ex.Message，finally再DeInit；只有正常走到末尾才返回flag对应0/-1，DeInit抛错可越过返回。静态convertHelper创建及构造SDK订阅不在Main显式try体中，初始化失败不自动归入其catch。密码作为方案参数字段传递，本轮未执行或采集真实参数。
+
+ConvertSolution先GetVersionInfo、VersionUpgradeFlag(true)、Load原方案，按SolutionPath非null及回调错误标志进入助手。模块警告仅日志；方案结束状态不为0且不为3758097203u才置错误，不为数值例外虚构名称。版本阶段用Contains条件，早期4.0/4.1/4.2助手的bool与后续4.3→4.4写同一local，后者覆盖前者；不能画成阶段累计AND或早期失败必然短路。具体阶段内部各助手另有非短路&聚合，范围/未知分列。
+
+SaveAsSolution把原密码传VmSolution.SaveAs，之后CloseSolution/Dispose(isTakeOver:true)，正常末尾true；调用者忽略bool，但抛异常仍交外层catch。Main finally的DeInit直接DestoryHandle，不能以清理调用存在推断任何失败都释放完成。父进程读取stdout并以File.Exists输出文件为门，与工具flag、退出码、各助手成功及native加载完成不同。
+
+本页恢复方案侧入口与调度，没有把Main列出四种LoadType当作流程、Group、设计的全部转换体已恢复。To_VM4_2的IsReady/DynamicIO/模板匹配/前台/自定义模块，以及VM4_4的前台/DynamicIO/全局变量/Handle模块助手内部、native格式/ABI与当前独立JSON迁移仍开放。上一轮“整个兼容工具入口待取”已更新为入口原CIL已取、上述具体内部仍待逐体恢复。
+
+重建顺序：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --compatibility-evidence 'D:/MyWork/REA逆向测试'
+node tests/ArchitectureRecovery/build-compatibility-cil-review.cjs
+node tests/ArchitectureRecovery/build-compatibility-tool.cjs
+node tests/ArchitectureRecovery/build-shell-resources.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+原件SHA/MVID、12个CIL字节/hash、>=4/第5项、相同local的阶段写入及raw调用token、源码hash/片段、层级唯一性、脚本/链接和diff检查通过。未执行转换、进程操作、配置写入、SDK/硬件或浏览器呈现；主框架实施仍41/96＝42.71%（32包×3具名实施单元），本轮建图和静态取证不增加分子。
+
+## 兼容工具的全局变量迁移与改名资源
+
+在[兼容工具视图](compatibility-tool.html#edge-G01)增加G01～G08八条边，另有[原CIL/资源对照页](variable-migration-review.html)。该页覆盖增加F-01/F-17的具体类型/订阅数据流，不以领域标签本身当作完成。当前18视图409条边、659个引用；所有领域完整恢复与入口全链关闭仍未证明。
+
+复用同版REA确认CompatibleTool.exe身份，回收GlobalVarUtils的11个原始CIL方法，保留主迁移、运行参数解析、绑定分页/写入、结果改名和类型重载。source不是VmSolution或全局变量模块不存在会直接保持true；旧变量名/类型和链接从VariableManager、native指针和运行参数根组合，字符串类型必须相等才纳入，重复字典键/其它异常不会按通常意图自动去重。
+
+原CIL确认主函数对moduleParamBinding用“!=null OR Length!=0”：非null直接true，null仍求Length；不是通常的AND判断。GetModuleParamBinding本身可在异常后返回部分列表，不能把非null当完整快照。现有目标13000的参数绑定另回写链接表，支持订阅而尚无绑定的参数进入待写批次；待写同Owner/Name重复时移除已有项，128条或余项分别设置绑定。两个SetModuleParamBinding结果均pop忽略，之后仍写UserData[@参数名]=UTF8带零true；不据此宣称失败会阻止标志或具备事务回滚。
+
+结果绑定先构造解绑列表、改All索引和类型，再UnBindVarArray，随后按128条重绑与余项重绑。中间还改结果名称；解绑后失败没有这段可见源码保证恢复旧状态。原枚举到字符串GetVarType的FLOAT分支保留字面值foat，另一字符串到枚举/GetBindType只识别float，不静默修写或把各重载合并成统一类型转换。
+
+安装原CompatibleTool.xml通过独立XmlReader（DTD禁止、resolver空）和XDocument行号只读导出14组/190项，顺序、空/缺属性区别、原路径/SHA与行号保留；属性值逐项与原始XML行复核，未执行厂商XmlSerializer。UpdateModuleResultName按模块ID、StrModuleName/首TypeName、旧名/首SrcName，DstName非空才UTF8定长128写入。资源列表不是运行匹配证明，输出名/类型/所有权与native ABI仍开放。
+
+精确未闭合依赖包括VariableManager.GetAllVar、GetVmModulesByIDArray、ModifyLinkModuleByParamBind，RunParamsBaseNode/参数根XML的字段求值，SDK GetModuleParamBindingList/SetModuleParamBinding/UnBindVarArray/BindGlobalVarParam及指针释放/失败原子性。其它DynamicIO、前台、模板和自定义模块助手仍分别待展开；没有用当前独立变量模型或JSON实现补位。
+
+重建顺序：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --variable-migration-evidence 'D:/MyWork/REA逆向测试'
+& tests/ArchitectureRecovery/Export-VariableMigrationResource.ps1
+node tests/ArchitectureRecovery/build-variable-migration-review.cjs
+node tests/ArchitectureRecovery/build-compatibility-tool.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+原件hash/MVID、11个CIL字节/hash、OR分支、两个忽略返回值、foat字面值、XML行/属性值、源码片段、重载token引用、层级/脚本/链接及diff检查通过。原CIL引用助手现在允许显式token区分同名重载，原有调用保持不变。未执行迁移、native、配置写入或浏览器呈现；主框架实施41/96＝42.71%（32包×3具名实施单元），本轮静态建图不增加分子。
+
+## VariableManager读取、模块还原与修改命令边界
+
+在[兼容工具视图](compatibility-tool.html#edge-G09)增加G09～G14六条边，另有[原件引用/异常与内存对照页](variable-manager-review.html)。当前18视图415条边、676个引用，所有领域/完整入口仍不宣称关闭。
+
+REA确认原Apps.XmlParser.dll，SHA78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1、MVIDd0604401-ab61-48a4-938b-faad16d74e7c，证据ev_b3a71726ac88c3bfa26cb2a7f52cae18a1c0b089aa5306d29d074a63ad2ee5f7。原CompatibleTool三个目标调用的MemberRef共用TypeRef0x01000045，解析到Apps.XmlParser.Variable.VariableManager；name/version/public-key token与选定定义匹配，仍不证明运行绑定。完整记录见variable-manager-reference.json、variable-manager-rea-identity.json和七个选中原CIL体。
+
+带object构造仅VmModule才设DataSource；迁移传全局变量模块，不把无参构造的无DataSource回退当作这条迁移路径。GetAllVar数组重载先用VarCount正整数为门，再读GlobalValueList；非null且按Marshal.SizeOf整除才覆盖ref，其它分支保留传入数组，未校验VarCount等于结构数。迁移调用者初始空数组不能据此证明已读全变量，更不证明嵌入链接指针为独立快照。List重载原体保留但未误接为迁移调用。
+
+GetVmModulesByIDArray调用GetAllModuleByIDs，从链接栈按ID首匹配、RootID门到CreateLinkModuleTrans；后续缺缓存时可能构造模型、PreAdd、登记预生成模块并切历史禁止标志。这不是普通字典查询；构造失败与标志恢复继续未知，未执行模型还原。
+
+ModifyLinkModuleByParamBind参数错误只日志而不return；RepairVarName只有首尾均为%才保留，否则反翻译。生成单链接命令载荷，变量/bind文本256、参数名128、类型16，nValueNum=1，内层pBinaryValue指向链接缓冲。原CIL异常表确认AllocHGlobal/Copy在保护区之前，finally只覆盖之后的路由，不能以末尾Free宣称所有失败均释放。
+
+DataSource存在时走ModuleParam.Params[ModifyVar]，Core本地源显示Dispose门、可选模型历史及SDK返回非零throw普通Exception；它不在VariableManager只捕获VM.PlatformSDKCS.VmException的catch内。无DataSource回退走SetBinaryData((uint)varID,...)，非零转VmException后被本地日志吞掉。两条失败合同明确分开，普通源与原XmlParser CIL也分开：Core/SDK原件身份本轮未重新核验。外层SDK字节缓冲与内层链接指针各自分配/释放，native返回前是否消费/复制内层指针仍未知。
+
+本轮补出通用CIL读取器的catch类型字段，并核对准确catch类和保护区偏移。七个方法体、原件SHA/MVID、程序集引用、数组重载token、ref赋值/键、分配与保护区、源码片段、层级/脚本/链接和diff检查通过。上一轮“整个VariableManager方法体未知”更新为已恢复这三条方法与路由，剩ExternalCallHelper结构/指针转换、参数根XML、native命令与失败原子性具体开放。
+
+重建顺序：
+
+```powershell
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-restore -- --variable-manager-evidence 'D:/MyWork/REA逆向测试'
+dotnet run --project tests/ArchitectureRecovery/MemberInventory/MemberInventory.csproj --no-build -- --type-ref 'D:/Program Files/VisionMaster4.4.0/Applications/CompatibleTool.exe' 0x01000045 'D:/MyWork/REA逆向测试/docs/architecture-recovery/variable-manager-reference.json'
+node tests/ArchitectureRecovery/build-variable-manager-review.cjs
+node tests/ArchitectureRecovery/build-variable-migration-review.cjs
+node tests/ArchitectureRecovery/build-compatibility-tool.cjs
+node tests/ArchitectureRecovery/build-entry-inventory.cjs
+node tests/ArchitectureRecovery/build-entry-reconciliation.cjs
+node tests/ArchitectureRecovery/build-index.cjs
+git diff --check -- docs/architecture-recovery tests/ArchitectureRecovery
+```
+
+没有运行原件、SDK、模型创建、参数写入、配置或浏览器呈现；真实绑定/全链关闭仍0。主框架实施41/96＝42.71%（32包×3具名实施单元），本轮模型与静态取证不增加实施分子。
+
+## 后续细化范围
+
+保留目标 F-01～F-23，不以本页所涉 F-04/F-05/F-16/F-18/F-19/F-21/F-23 代替全框架：
+
+1. 默认单次工具栏及Tab的资源/命令链已补G00/G05/G06/P00；继续核四模式类型物化、共享RunButtons的实际DataContext、反射最终绑定与运行操作，不能把局部声明恢复等同全部模式已闭合。
+2. 展开执行所有者、回调队列、GraphExecutor 及结果绑定；分别记录线程、取消、故障和释放，不能从调用参数顺序推断异步执行时序。
+3. 在已确认原件身份基础上，经 REA 取回 G04/P05/S06 的原生函数及 ABI；缺体持续 unknown。
+4. 其余 F 领域按总计划的原始入口逐边补图，包括装载、画布手势/连线/视口、Group 身份/导航/循环/中断/累积、配置和变量、历史与会话、插件交接、外部服务和部署。
+
+总实施进度沿用主框架台账 **41/96＝42.71%**，分母为 32 包各 3 个具名实施单元；建图和文本审查不增加分子，人工验收另计。工具线 10/10 是不同范围，不用于本框架百分比。
+
+## 本地入口范围对账与白名单外补录
+
+新增[入口扫描范围与补录](entry-scope-audit.html)。独立遍历当前 analysis/decompiled，28 个树、2705 个 C# 和 471 个 XAML 共 3176 文件，与入口、结构 XML 和余项扫描清单逐路径/SHA256 比对无差异。排除目录与未跟随链接显式保留；此结果不证明原安装程序集或原 BAML 已全部取得。
+
+白名单外 80073 个属性中，32947 个值符合 C# 标识符语法，67 个与同树 XAML 根类的直接方法名匹配。15 个 Handler 已由 EventSetter 元素登记，避免重复计数；其余 52 个补入入口及双向对账。候选共 4299＝4175 词法＋72 结构元素＋52 余项补录。包含 7 个 PasswordChanged，以及 TextChanged、Opened、ItemDoubleClick、MethodName 等；原 ItemDoubleClick 是 EventHandler 依赖属性，不能把这些同名定位都标为 CLR 事件或已确认绑定。继承、别名、跨程序集、原 BAML、动态注册与未匹配属性仍开放。
+
+每个新候选保留元素属性、根类型、属性位置/哈希和 C# 方法体/跨度；重新核对原文件、准确 body span、同树类型和方法名。源码范围重叠仍只提供导航线索。新增确认绑定及完整链关闭均为 0；18 图、415 边、676 引用不因增加候选而膨胀。
+
+生成顺序：MemberInventory --xaml-remainder → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。仅静态审查，未执行原版、密码/授权工具、SDK 或配置写入；浏览器呈现未验收。主框架实施维持 41/96＝42.71%（32 包×3具名单元），静态架构工作增量0。
+
+## 资源保护原件：XML提供器、ZIP依赖与保存入口
+
+新增[资源保护指令核查](resource-protection-review.html)，三原件22个聚焦CIL方法；加密页新增E33–E39七条源码/原CIL确认边，现53边99引用；全图18视图422边693引用。入口族新增资源文件、字符串/字节重载和保存的独立链接。完整入口和行为链仍未证明。
+
+BaseNode源码虽保存在Apps.XmlParser目录，实际MethodDef位于VM.Xml.dll。构造对AesCryptHelper的TypeRef指VM.Util，ZIP调用TypeRef则指VM.Compress的Hik.Util.CompressUtil；VM.Util中Hik.Util.Compress.CompressUtil是另一类型，不能据近似名字接链。以REA身份、原件SHA/MVID、版本/public key token及引用侧car交叉核对；运行绑定仍另列未知。Apps.XmlParser全成员REA曾因64MiB表示预算不可用，保留该覆盖结果；随后确认真正的VM.Xml归属，未把工具失败解释为原body不存在。
+
+资源字符串Encrypt为UTF8→字节变换→Base64；Decrypt为Base64→字节变换→UTF8→TrimEnd(new char[1])。字节体为Rijndael.Create、随包常量Key和静态IV、CryptoStream；没有显式Mode/Padding设置，不以框架惯例补有效合同。Decrypt只Read一次、丢返回长度、返回密文长度缓冲；两流有finally，算法对象在所选体内未显式Dispose。原静态IV的RVA字节、提供器默认配置及原机差分仍未知，不外推.sol或授权算法。
+
+文件loadXml先写IgnoreUnknown/defaultFileName、入锁，再对原XML路径改属性，即使即将走ZIP分支；只有XML标识路径执行Decrypt，ZIP直读不重新检查标识。IgnoreUnknown=false在锁finally外，失败可能越过复原。字符串/字节入口经loadXmlByString，不含同样标识解密分支；异常包装和标志残留分列。
+
+正确ZIP助手按每项Stream.Length分配数组，单次Read丢长度，收集整缓冲再拼接；未把Length推断为已验证的解压长度。内部ZIP流Length/Read/CRC/格式和多项资源行为仍待取证。Save(string)写相对temp.xml，删除目标后复制并删temp；本体不调Encrypt，不据加载支持解密推定保存自动重加密、事务回滚或全资源往返。派生序列化与所有调用者仍开放。
+
+生成：MemberInventory --resource-protection-evidence → build-resource-protection-review.cjs → build-entry-routing-security.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。检查原件身份、CIL字节/hash、关键指令/分支位置、引用程序集、源码快照、层级唯一覆盖、脚本和链接；未加载厂商程序集、解密/写资源、启动SDK/设备或授权工具。浏览器呈现未验收，主框架实施41/96＝42.71%（32包×3单元），本轮增量0。
+
+## ZIP内部原件：声明大小、密码门、条件CRC及关闭
+
+新增[ZIP流核查](zip-stream-review.html)，VM.Compress.dll内ZipEntry、ZipInputStream和InflaterInputStream共35个聚焦方法、2068条指令，原CIL字节/大小/hash逐方法与REA成员摘要一致，分支/切换目标和关键指令位置检查通过。E40–E45六条原CIL确认边进入主界面→资源保护→ZIP内部层级；加密页59边117引用，全图18视图428边711引用。新增ZIP独立密码门的入口族导航，全部入口完整性/全链关闭仍未证明。
+
+Length覆写读entry.Size；Size的known位1未设时返回-1，Length遇负值抛ZipException，无entry抛InvalidOperationException。助手按这个声明大小分配缓冲，不能称独立测得的解压长度。GetNextEntry先关闭旧项，读取头/扩展后选择InitialRead或ReadingNotSupported；Read校验参数后调internalReader。构造初始为ReadingNotAvailable，InitialRead完成初始化后换BodyRead。
+
+InitialRead先验可解压能力，再看加密位；password为null时抛No password set。资源助手没有设置Password；classic ZIP可选密码分支使用ASCII和PkzipClassic，不与XML Rijndael或方案密码UI合并。密钥变换内部、其它密码设置调用及原机加密ZIP仍待追。
+
+BodyRead的method8调用基类Read循环Inflate/Fill，method0调用ReadClearTextBuffer。外层一次Read不等于底层只读一次；助手依然丢返回数并拼整个数组。BodyRead只在finish标志成立时以true完成CRC校验；完成体先停解密、可读描述符、置size=0，再按checkCrc比较CRC，错误先抛而尚未reset/清entry。CloseEntry中method8且flags位8时循环Read排空；其余有entry的正常分支跳过剩余数据后以false完成，不能保证逐项CRC已校验。Close本体只清读取状态/entry后调用基类，无排空/CRC；基类owner默认true，正常Close按owner关闭底层流。
+
+保留底层Inflater/InputBuffer、CRC运算、classic ZIP变换、ZIP64/描述符/空项/多项组合、异常残留、资源实际读取/释放和原机差分为未知。资源保护旧页与E38已链接新证据，撤销笼统“Length/Read/CRC分支全部未取回”的旧状态，仍不宣称算法/全链关闭。
+
+生成：MemberInventory --zip-stream-evidence → build-zip-stream-review.cjs → build-resource-protection-review.cjs → build-entry-routing-security.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。原件身份、CIL及引用快照、层级、脚本/链接检查通过；未运行厂商代码、读取ZIP内容、解密/写资源、启动SDK或设备。浏览器呈现未验收；主框架实施41/96＝42.71%（32包×3单元），本轮静态建图增量0。
+
+## 方案密码窗口：原件挂接与局部状态
+
+新增[密码窗口原件核查](password-ui-review.html)，Apps.PcUI.dll内Encryption/Decryption全部33个方法，原CIL大小/字节/hash逐成员与REA摘要一致；SHA bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74，MVID 380598ff-2817-448e-bad2-2350035a99a0。REA整体覆盖partial保留，不能据选中方法可解码宣称整个原件或窗口依赖全覆盖。
+
+E46–E52新增六条原件/源码确认、一条生命周期未知边。加密页66边141引用，全图18视图435边735引用；完整入口与全链仍未证明。窗口构造→组件URI→Connect分支中的14/8处typed ldftn/委托/add事件，分别定位22个本地声明候选。两个Encryption匿名CommandBinding的声明归属有歧义，保留多候选。原BAML映射与运行激活均未确认；入口账本候选增添原件注册代码链接，未把traceStatus改成已审或闭链。
+
+Preview输入正则和Space处理、Paste CanExecute=true/Handled=true、可见TextBox的TextChanged及首个Changes段删除分别登记。PasswordBox没有在这些连接器中挂同一TextChanged，不能把粘贴允许解释成拒绝粘贴，也不能把单段删除解释成全部内容规范化。
+
+三个眼睛setter true时从PasswordBox复制到TextBox，false时复制回来并换可见性；Apply仍读PasswordBox。声明TwoWay Text与显式set_Text后的绑定保留、失焦提交和打开眼睛直接确认的实际值分列，未凭常规WPF使用习惯推定效果。Decryption先base.OnKeyDown，再仅对Return且OriginalSource为PasswordBox调Apply，本体不Handled；Encryption原类型无本地OnKeyDown覆写，不推断继承/默认按钮的其它路径不存在。
+
+原CIL确认Encryption取消为空串且true，Decryption取消false；Encryption Apply只查空/一致不重跑Regex。Decryption SDK失败返回nIsCorrect=0和SDK抛异常不同，所选处理器无本地catch。标题栏关闭、BaseWindow模板与nullable结果保持E52未知；不能把取消当关闭或据静态分析声明native算法已恢复。
+
+生成：MemberInventory --password-ui-evidence → build-password-ui-review.cjs → build-entry-routing-security.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。核对声明文件hash、22处原挂接序列、handler token/body、两处歧义、候选元数据、层级/脚本/链接；未运行原窗口、输入密码、调用SDK、写配置或操作设备。浏览器呈现未验收；主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。
+
+## BaseWindow继承依赖：模态、关闭与条件清理
+
+新增[BaseWindow生命周期核查](base-window-review.html)，VM.Controls.dll原件19个聚焦方法，包含模板两个编译器回调、WindowProc、ShowDialog/Delay及关闭阶段。REA原件身份成功，整体成员读取因64MiB表示预算unavailable，保留覆盖失败；所选体随后经PEReader/System.Reflection.Metadata读取CIL，未冒称全程序集REA反编译成功。Apps.PcUI的BaseWindow TypeRef与选定VM.Controls名称/版本/public key token及SHA/MVID对账，实际运行绑定未确认。
+
+窗口页新增W10–W16七条原件/资源确认边，现30边63引用；全图18视图442边753引用。密码页E52和密码窗口核查已接到新继承证据，未知缩小为原BAML/模板实际选择、WPF模态内部及调用者操作结果，仍未关闭整体生命周期。
+
+模板CloseWinButton由OnApplyTemplate挂Click；构造另有CloseWindowCommand，两者进new virtual BaseWindow.Close。它在_isclosed时早退，写CloseReason数值3，再在catch(Exception)范围内调Window.Close；处理器不写DialogResult或密码字段，不能推定Window.DialogResult内部关闭必经此new成员。模板Loaded回调按header与三个按钮宽度+30抬高最小尺寸，原件编译器方法名通过JSON属性解析精确引用，不再受\u003C转义影响。
+
+OnClosing先base，再检查Cancel；未取消才置closing、Hide已加载可见的OwnedWindows并激活Owner，Hide不等于Dispose。OnClosed先更新激活列表/base/closed，再解选定当前部件挂接、尝试原生Owner置前台；_hs为空时提前返回，清Owner和Stop timer仅在句柄分支后执行，外部异常可中断清理。不据代码末尾有释放就宣称所有路径均收尾。
+
+ShowDialog的modal/reason状态、customOwner/LastWindow/MainWindow/线程条件与基类调用分列；ShowDialogDelay更新timer，remove/add Tick并Start，Tick非closing才Close且finally Stop。没有证据把该定时器辅助入口直接接到密码窗口。WindowProc关闭原因只是按消息分类，不证明真正外部来源身份。Repeated-template/旧部件、底层WPF、Owner前台及异常结果保持未知。
+
+生成：MemberInventory --base-window-evidence及--type-ref → build-base-window-review.cjs → build-password-ui-review.cjs → build-window-layout.cjs → build-entry-routing-security.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。检查原件/引用身份、CIL字节/hash/分支、模板secure XML快照、关键状态顺序、全部现有CIL方法头引用兼容、层级与脚本/链接。未执行原窗口、SDK、输入密码、发送系统消息或改设备/配置；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。
+
+## 独立入口载体补漏：GlobalToolItems与公开包装
+
+新增[外部全局工具栏](global-toolbar.html)，与主菜单接收者/资源严格分开。原安装myLibs/GlobalToolResource/GlobalToolItems.xml共13节点、11具名声明，另有VmGlobalToolControl五个公开Open入口。资源经XDocument安全解析（DTD禁止、resolver=null、保留行列、无厂商执行），原路径/SHA/原始字段/父层级/匿名容器全部保留。未改PowerShell执行策略；脚本文件执行受本机策略限制后，改用本仓库静态C# XML读取器，未留下受阻脚本或执行原代码。
+
+三原件身份由REA取得，VMControls.Data的成员摘要partial保留；VMControls.WPF既有64MiB整成员读取限制不在状态未变时重试。用PEReader聚焦60个方法，所有byte/hash与元数据绑定；这不是全WPF反编译或运行等价。新视图10边（9确认/1未知）27引用，19图452边780引用；F-01～F-23仍均not-established。
+
+载体链：包装模板→ToolControl→VmGlobalToolData→独立XML→分组/排序/IsShowExternal缓存→ItemClickCommand→GlobalToolDataItem方法→函数字符串事件→ToolControl自己的switch操作。继承菜单隐藏字段不代替外部工具栏筛选，重复同名方法不接到TitleMenueItemData。LoadXmlExtern改BaseNode.defaultNameSpace无finally，异常可能越过复原；排序比较在相等Priority时也返回-1，未改成推定的稳定排序。
+
+Init先复制展示列表并移除ControllerSet，加载成功才按模块14000存在决定移除/补回；缓存与UI副本分开。Init/DeInit重订阅和解除SDK/事件，包装Dispose只清Template，是否触发内部Unloaded/收尾仍待证。公开五入口经OpenGloablModule/Dispatcher进入同一分派，不能沿用按钮权限或称远端调用已成功。各分派方法的全部权限/密码、文件/执行及native回流仍开放。旧VisionMaster.AppMainWindow.GlobalToolData是另一载体，本地文本未找到消费者不证明死代码。
+
+入口页加独立资源族；双向对账新增additional模式16行，逐项保留公共分派/已定位方法范围导航，范围关联不证明运行绑定。原四模式214菜单声明、4299扫描候选、21函数源声明分别保持原口径；没有把16额外声明混成词法命中数。JSON同时保留11资源项和5包装方法、原件token/发出字符串/目标分派/完整性状态。
+
+生成：MemberInventory --global-tool-resource及--global-toolbar-evidence → build-global-toolbar.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。原件/资源hash、CIL、层级唯一覆盖、16声明双向对账、内联脚本/链接与diff检查通过；未执行宿主、真实函数、SDK/设备或配置写入。原BAML、外部/主窗实例化、实际可见条目和完整链仍未证明，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。
+
+## 外部工具栏下游：脚本保护、保存续作与另存取消
+
+新增[工具栏效果核查](toolbar-effects-review.html)，20个聚焦原件方法/闭包；新G11–G17七条确认边。工具栏页现17边44引用，全图19图459边797引用；另存/脚本保护单独进入加密入口族，不并入主菜单同名操作。原声明11+公开包装5口径不变，相关条目与双向对账新增有限行为片段跳转，仍标运行未证，不混为范围匹配的绑定证明。
+
+原件编译器闭包通过调用点MethodDef token选取，读取器新增exact methodTokens模式：从首方法确定TypeDef、验证全部方法归同一声明类型，再按token输出。显示名.&lt;&gt;c不是完整嵌套名，精确身份以原件SHA/MVID及TypeDef/MethodDef token为准；不同同名编译器类型不靠名字猜。已有GlobalToolbar60方法重新导出hash完全不变，13个CIL证据文件273方法头引用均通过。
+
+GlobalScript用自身缓存、GetShellParamer门和ShellRun密码字段；密码窗口ShowDialog结果被pop，以IsPasswordOK决定继续，SetWindowOwner在显示脚本窗之前执行。add/remove/add ExcuteEvent对应三个不同MethodDef，三体都调用VmSolution.Instance的VmModule.Run，不能据lambda文本相同推定remove成功。密码窗/GlobalScriptUI内部与原机执行仍待取证。
+
+公开SaveSolution先在Dispatcher保存各流程标定数据，再Task.Run；worker再次取当前VmSolution.SolutionPath（不是预先捕获路径），SaveAs第二参数为null，返回值丢弃，无本地catch。continuation只ResetParamStateFlag，不读前任务状态。另一SaveSolution(Task)的worker catch日志/提示后，continuation仍可Start afterSaveTask，不能将续作视为保存成功。
+
+另存已有密码先Decryption真值门，但没有把返回密码赋给新temp字段；文件对话框前重置临时密码为空，encryptButton的处理器仅true且非空才写新密码。文件对话框仅Ok分支执行SaveCalib/SaveAs/Reset；正常Cancel绕过保存后仍return true，原CIL分支与最终ldc.i4.1确认。SaveSolution(Task)无路径分支据此true启动后任务，因此不把此bool标为“已保存”。原生SaveAs密码/容器、Task实际调度/错误回流和后任务全部生产者仍未闭合。
+
+生成：MemberInventory --toolbar-effects-evidence → build-toolbar-effects-review.cjs → build-global-toolbar.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。核原件、CIL/闭包token、关键分支与返回、旧输出兼容、导航目标、层级/脚本/链接及diff；未运行原窗口、脚本、保存、SDK或设备，未写原配置。浏览器呈现未验收，主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。
+
+## 脚本/Group共用校验窗：原件、资源与取消断点
+
+新增[PasswordCheckWindow核查](password-check-review.html)，PasswordWindowUI.dll原件SHA a92355c94078102e8be0112bcd3cffd11d6113fa42f4e2beae0ad5d5c9fb275e、MVID 60c84fa6-0c1e-47d0-8119-82b9d9855cb2。REA原件/成员identity取得，整体partial保留；选中15方法的CIL大小/原byte/hash逐项与REA一致。WPF及exe两处TypeRef均匹配选定程序集名称/版本/public key token，不外推运行绑定成功。
+
+原件g.resources整段hash与REA一致。PEReader读取managed manifest resource，再用ResourceReader.GetResourceData获取键、编码值大小/hash；从不读取资源Value、不反序列化厂商对象或构建XAML。passwordcheckwindow/resourcedictionary及Modify/Set BAML键已登记，但没有解码BAML或假造本地XAML。当前PATH和用户工具目录未找到ilspycmd；未安装工具或绕过已有浏览器/脚本策略。
+
+E53–E59新增6确认/1未知边，加密页73边157引用，全图19图466边813引用。入口清单新增compiledEntryCarriers，7处原挂接与1个未定位取消handler另列，不混入4299本地源码词法/结构候选；其它主菜单214、额外工具栏16和函数导出21口径保持。
+
+CheckPassword：IsNullOrWhiteSpace→nullable null，否则直接String.op_Equality比较OriginalPassword→true/false，不调SDK、Regex、Trim或归一化。OK读passwordBox.Password，null/false分别提示且置IsPasswordOK=false，true才置true并BaseWindow.Close；取消handler置false再Close，全部所选方法没有set_DialogResult。因此调用者读字段与模态bool分开，旧方案SDK校验、角色密码与此直接字符串比较不合并。
+
+Connect只有七处typed挂接（输入/键盘、TextChanged、CanExecute及btnOk.Click），未指向btnCancel_Click；不能据handler存在推定当前可见取消按钮，也不能断言死代码。CanExecute仅Handled=true，无CanExecute赋值，不套Apps.PcUI的true/true语义。TextChanged只在首Changes[0].AddedLength>0时检查/删除首段，空/多变更、删除、剪贴板可用性和事件竞争未验。眼睛setter显式双向复制，确认仍读密码框；BAML/失焦同步/Return默认行为未知。
+
+调用者分别接主菜单脚本、工具栏脚本、Group导航及Group参数页：传入ShellRun.Password或PasswordA，成功后显示脚本、写DisplayModuleSet或开参数窗，不能以一个成功bool替代这些不同效果。Modify/Set两个原件类型另列未审取证任务。
+
+生成：MemberInventory --password-check-evidence / --password-check-resources / --type-ref-name → build-password-check-review.cjs → build-toolbar-effects-review.cjs → build-entry-routing-security.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。核对原件/CIL/资源/引用、7挂接/取消缺口、14文件288成员头、编译入口独立口径、层级/脚本/链接及diff。未执行原窗口、输入密码、SDK或设备；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。
+
+## Group保护闭环补证：设置/修改窗与UserData写入
+
+新增[密码设置、修改与Group状态](password-edit-review.html)，PasswordWindowUI的Modify21方法、Set18方法共39，逐CIL大小/byte/hash与REA摘要一致；另取VMControls.WPF的Group10方法。新增E60–E66七条确认边，加密页80边181引用，全图19图473边837引用。E59及校验窗旧页撤销“Set/Modify整个body未取回”的过时状态，仍保留BAML/取消/运行与native边界。
+
+设置窗CheckPassword的null门精确为IsNullOrWhiteSpace(first) && IsNullOrEmpty(repeat)，其余直接相等；修改窗旧密码空白为null，新对则任一空白为null。不能按提示或惯例把设置窗改成OR；相同非空空白值能到其相等分支只是静态条件，不代表当前UI可输入。修改OK先算两结果，再按空状态、旧错、新不一致/成功分支显示，成功才写ModifiedPassword。
+
+原件Set13/Modify19共32处挂接，均只看到OK按钮挂接。Set取消handler存在而未在连接器挂接，Modify无本地取消handler；三窗的原BAML键已取得但未解码。编译入口载体扩展为Check一组、Set/Modify一组，32处代码不混进4299本地源码候选。原BAML投递、菜单默认键、明文编辑同步和实际取消行为保持未知。
+
+Group上下文菜单按IsPasswordEnabledA转换可见性，并以非禁用且非加载失败门控制启用；三个DelegateCommand原CIL已核。Enable先PasswordA后enable=true，Edit只写新密码，Cancel保护先Check验证再清PasswordA后enable=false，均读窗口IsPasswordOK并catch日志。字段getter读UserData，非空bytes才刷缓存；setter缓存先变、UserData后写、通知最后，值相同短路，无两字段事务或失败回滚。
+
+数据路径另追UserData的生命周期/历史分支、动态/普通SDK设置。PasswordA用直接UTF8，启用位用结构字节；普通ModuleManager对空数据调用DeleteUIParamValue，其它数据Alloc/Copy/SDK/Free，非零抛VmException。这些不证明密码在磁盘上被加密，也不等于原生受保护.grp导出；ABI、异常内存清理、历史、native持久化/方案保存及原机状态仍未关闭。
+
+生成：MemberInventory --password-edit-evidence / --group-password-evidence → build-password-edit-review.cjs → build-password-check-review.cjs → build-entry-routing-security.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。核49方法、判空分支/重载token、32挂接、原件/资源与源片段、16文件337成员头、层级/脚本/链接及diff；未运行原窗、输入密码、写UserData/配置、调用SDK或设备。浏览器呈现未验收，主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。
+
+## Group文件载荷：界面保护与导入导出密码分离
+
+新增[Group文件入口、密码与导入导出](group-file-storage.html)，10边（9确认/1未知）、23引用；选定VM.Core、PublicFile/x64/VM.PlatformSDKCS、VMControls.WPF、Apps.Data四原件25个聚焦方法。全图20图483边860引用，原BAML、native算法和完整操作链仍未关闭。主界面索引接Group上下文/API族；未把实际IVMGroup接收者和所有外部宿主视为已证实。
+
+修正文件命名口径：普通过滤取AppFileExtension.Group，原getter国际标志优先grow，否则远程grox、本地gro；远程对话框源码固定grox，不再泛称.grp。国际/远程状态初始化及模式实际投递仍未知。原IMVSGroup.GetDeepLevel固定返回0，不能按名称补父层级递归。
+
+界面PasswordA来自UserData，与VmModule.ModuleFilePassword独立。ExportFile显式password覆盖缓存，null才回退文件密码/空串；路径null才决定另选或复用，native导出成功后仅原ModuleFilePath空时写文件路径/密码。已有路径的另存不自动改缓存。SaveAs则直接SyncExportGroupModule(ID,0,path,password)并返回null，不走同一回退/缓存合同。局部无PasswordA读取不证明全程序永不关联两状态通道。
+
+导入菜单未提供密码，LoadGroup API仍可显式传；内部导入SDK用strPassword??空，成功缓存保留原strPassword。版本GetGroVersion用空串，Group升级进程参数密码槽也为空；只读分析，未查杀/启动任何兼容进程。输出存在不是ExitCode/加载完成。导入后置旗标false再等待及回调消费与已有加载图互链，native早回调与异常恢复保持未知。
+
+本地导出成功提示依据File.Exists，远程依据!FtpCheckFileName原谓词；未按名字解释FTP布尔语义。REA托管native边界指三个导出名、相对iMVS-6000PlatformSDK.dll、stdcall、CharSet未指定，仅为选定PublicFile/x64程序集声明。实际DLL绑定、原生ABI/编码、容器/KDF、正确/错误/取消与文件往返均未验证；x86不外推。Core→SDK、WPF→Core引用身份与选定名称/版本/public key token匹配，不当运行绑定证明。
+
+生成：MemberInventory --group-file-evidence及--type-ref-name → build-group-file-storage.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。核原件hash/MVID、CIL/分支、引用与native托管声明、17文件362成员头、层级和脚本/链接及diff；未执行原导入/导出、SDK、兼容工具、密码输入或设备。浏览器呈现未验收，主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。
+
+## 跨页分析链与证据身份描述校正
+
+新增[Group界面保护与文件密码逐箭头图](group-protection-chain.html)，24节点、24显式关系（17静态确认/7未知），与已有主界面焦点链共同进入入口页及总索引。左路从上下文命令、设置窗、nullable校验、调用者字段门、两setter顺序、UserData到SDK；右路从导出菜单、接口调用、候选IMVSGroup、文件密码回退到SDK/缓存。每箭头注明关系种类、条件、来源局部边及引用hash/片段；不以同名、相邻框或范围重叠发明调用。
+
+七个虚线断点保留宿主上下文实际激活、设置窗BAML事件、WPF模态回流、接口接收者和两个native效果。两条密码通道没有虚构自动同步箭头；嵌套存储调用与“前setter正常返回后的下次调用”分别标注，不画成原子事务。修改/取消保护、导入等其它路径仍链接原局部页，不纳入此有界图的覆盖。当前实现对应未在此链建立，不推断不存在或原版等价。
+
+总模型仍20局部视图483边860引用，跨页24关系独立计数，不增加证据边或实施分子；另有原焦点链11节点12关系。验证端点/唯一ID、关系分类与条件、父边存在及分类、引用来源继承/hash/片段、HTML嵌入图JSON往返、脚本和相对/edge链接。索引显式拒绝此链的完整性/运行完成声明；浏览器呈现仍未验收。
+
+自审纠正共用provenance与页脚残留的“No new REA/未核原件”早期描述：改为按逐引用证据类型、身份清单和静态范围陈述。20视图由rebuild-views.cjs统一重生，边/引用数量不变；四个原有定制provenance保留。coverage的binaryIdentity不再统一写未校验，索引实际复核16个被original-managed-cil引用的数据集、18个规范化原件路径SHA、357个decoded body的字节/摘要；MVID来自已取manifest，native/其它证据类型/全安装范围和运行绑定不外推。这与17个完整CIL证据文件362方法头的另一检查口径分别记录（autoload5方法未被该标签直接引用）。
+
+生成：rebuild-views.cjs → build-group-protection-chain.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs。仅重生本聊天架构文件、检查原件/源码与静态图，不执行厂商/重建产品、SDK、配置或设备；未触碰其它工作树、未推送。主框架实施维持41/96＝42.71%（32包×3单元），本轮增量0；完整入口/行为链和原机效果尚未证明。
+
+## 密码参数入口与当前格式分界
+
+新增[参数面板密码输入、提交与日志遮罩](password-parameters.html)，8边、15引用，依据本地Apps.XmlUI/Apps.XmlParser提取源码与XAML；本切片未重核原件SHA/MVID/CIL及运行激活。主界面到具体工具实例/模板选择器仍未知。恢复模板CurValueA绑定、失焦事件、眼睛切换复制、Space/Paste处理、命令、AccessMode/Check、日志与原值写入、失败返回。日志和变更通知的遮罩取决于FullDisplayName，SetParamUnitDirect仍收原value；显示遮罩不等于加密。调用方不读SetParamUnit返回码，OldValue赋值不等于成功。PasswordBoxBindingHelper另列，未伪接至未引用它的模板。
+
+Group文件页另增当前实现3边：独立JSON临时文件替换、OwnedGroups所属与深度验证、密码机制对应未知。资源SHA256摘要不是加密；原版GetDeepLevel固定0与当前父链最多3层不作等价。仅建模、不更改产品。
+
+当前21局部图494边881引用，跨页图另计。入口候选4299保持不变；新增范围交叠仅导航，不是绑定/完整链证明。安全入口族逐项校验目标视图及edge存在并保持complete=false。浏览器呈现未验证；主框架实施维持41/96＝42.71%（32包×3具名单元），静态文档不增加分子。
+
+## 密码参数模板的上游选择路径
+
+参数密码页新增T09–T12四边、9引用，现12边24引用。已定位GlobalResources.ParamItemTemplate、ParamCategoryUI与ParamsTabControlPanal单元格的ParamUserControl声明；控件Content绑定上下文，默认将DisplayType经Apps.XmlUI.UserTempConverter转换为ContentTemplate。ExternDisplayType变为string时改绑定自身该值，空字符串同样进入此支；非string恢复默认。NameValueItem.DisplayType返回运行类型名，PasswordString未覆盖该getter。Converter首次缓存加载原模板字典，命中键取对应DataTemplate，否则取Default；未推定异常时也回退。
+
+Content变更还可按内容程序集加载额外模板字典。原代码先登记ExternAssembly再LoadComponent/合并，局部无catch，失败状态不能画成已回滚；static字典状态与潜在同键覆盖保留。MyDataTemplateSelector只处理ParamObject/PointFParam选择；Apps.XmlUI.ParamTabControl.UserTempConverter做F3数值格式化，均不误接本链。
+
+PasswordString对象的XML生产仍未定位。NameValueItem继承BaseNode，当前所选树没有该体；using Hik.Xml只是候选命名空间，不当作类型解析证明。未将全量renderer重复提取文件视为新的原件身份证据。实际主界面实例、DataContext/BAML事件、底层写入和原机往返继续未知。
+
+21视图498边890引用；入口候选数不变。验证源hash/片段、层级覆盖、目标链接、脚本、入口范围及对账；浏览器呈现仍未验收。主框架实施41/96＝42.71%（32包×3单元），文档与静态分析增量0。
+
+## 密码参数基类原件引用与通用加载载体
+
+新增T13–T16四边11引用，参数密码页现16边35引用。REA检查Apps.XmlParser.dll与VM.Xml.dll原件；前者TypeRef 0x0100002e指向Hik.Xml.BaseNode，程序集VM.Xml 1.0.0.0/public key token与选定定义匹配。两原件SHA/MVID、VM.Xml十个聚焦方法原始CIL摘要与REA成员结果对照通过，分支目标均落在指令边界；不把身份一致当运行绑定。证据见parameter-base-reference.json、parameter-xml-rea-identities.json、parameter-xml-artifact-identities.json、parameter-xml-rea-members.json、parameter-xml-cil-evidence.json与parameter-xml-review.json。
+
+Init→ParseXmlNode按XML元素/属性名GetField并进入SetValueByTypeCode；不伪接到属性setter。SetObjectValue中BaseNode/NameList/ArrayList/IList各分支和LoadNodeListE通用创建载体已定位，但未选择其中一支作为具体PasswordString生产者。NodeList.LoadNodeList是另一载体，包含IdNameNode cast；其FindType失败回退用类型名小写EndsWith取首个匹配，不是严格全名匹配。PasswordString所选声明继承BaseNode，不能凭相似路径认定由IdNameNode列表创建。
+
+具体工具XML、ActivatorWrap注册/查找实现、字段实际类型、宿主实例/BAML和SDK写入仍未接成完整链；本轮没有重核Apps.XmlUI原件CIL、没有运行厂商代码/SDK/工具。已纠正上一切片“仅猜Hik.Xml命名空间”的现状，历史记录保留。
+
+生成：MemberInventory --type-ref-name / --parameter-xml-evidence → build-password-parameters.cjs → build-entry-inventory.cjs → build-entry-scope-audit.cjs → build-entry-reconciliation.cjs → build-index.cjs；21视图502边901引用。主框架实施维持41/96＝42.71%（32包×3单元），本轮静态分析增量0，浏览器呈现未验收。
+
+## 具体随包密码参数声明与加载路径
+
+在选定原版Module(sp)/x64/Collection/SaveImage/SaveImageAlgorithmTab.xml找到PasswordString[Password]。安全XML解析生成password-parameter-resource.json，记录文件SHA/长度、准确节点层级/行号、Description/DisplayName=SubWindowPassword、AccessMode=RW、CustomVisible=False；密码和默认值不输出内容，仅保存空值/长度状态。该资源位于原.cs/.xaml词法扫描范围之外，作为一个独立随包声明登记，不并入4299候选或214主菜单声明，也不称可点击入口已证明。
+
+参数页新增T17–T19三边8引用，现19边43引用。原本地VmModule.InitBase按ModuleDir/StrModuleName构造Params.XmlPath；VmModuleExtern.GetParamRoot按Param.Data空值创建并缓存AlgorithmTabRoot，缓存非该类型时as返回不能保证自动重建。AlgorithmTabRoot构造从IParamsConfig取得路径/owner并loadXml(path,ignoreUnknown:true)，Init临时设置默认命名空间Apps.XmlParser.ParamTab；原Tabs/Categorys/Items集合字段与XML路径相符。恢复仅在base.Init正常返回后，未虚构finally；构造InitLoad位于try前。
+
+具体运行模块身份、ActivatorWrap注册/创建、loadXml重载与ignoreUnknown分支、隐藏参数的运行可见性、主界面实际事件和SDK存取仍为未知。本轮新增体引用本地提取源，未冒称新增原件CIL核验；不修改插件实现、其它工作树或安装资源。21图505边909引用，主框架实施41/96＝42.71%（32包×3单元），文档增量0。
+
+## 菜单容器与无resolver计数的语义对账
+
+四份原菜单214声明逐项按原XML id层级恢复直接子项；全部28个无resolver声明都有具名子菜单（20个顶级、4个语言容器、4个Linux资源另存/导入分支容器）。因此28不能解释成28个缺失handler。entry-reconciliation.json逐项增加declaredContainer、declaredChildren及declarationRole；统计明确menuContainersWithoutResolver=28、menuLeavesWithoutResolver=0，旧menuWithoutResolver保留只表示字段数量。页面显示直接子项，容器不当作已绑定点击入口。所有子项key均验证存在，原菜单文件按绝对路径核SHA；修正此前只支持仓库相对证据路径的verify函数。
+
+菜单分派页新增R13/R14：DoChangeLanguage对softLanguage0隐藏Lang_Language并按需改zh-cn，1只恢复容器可见，其它值无switch分支；ChSet/ChTraditionSet/EnSet先改语言并发顶层通知，再更新langcur并设置授权工具语言。声明存在不保证运行可见；繁体方法体存在不保证四份XML都有入口。通知/重入、所有消费者及运行点击仍未证。
+
+21图507边911引用；新增范围重叠线索不算确认绑定/完整链。生成功能图、Group跨页链、入口清单/范围审计/双向账本与总索引，源码hash/片段、层级、脚本、链接及diff检查通过。未运行厂商程序或浏览器呈现验收，未更改产品/插件工作树/安装资源。主框架实施41/96＝42.71%（32包×3单元），本轮增量0。
+
+## 主界面方案新建/打开的生命周期主链
+
+新增[方案新建、打开与任务交付生命周期](solution-lifecycle.html)，14边19引用（11本地源码确认/2当前独立实现/1未知），涵盖默认菜单分派、忙状态门、新建IsCreating与尚未启动Task、保存询问/afterSaveTask、worker资源关闭/进度遮罩、历史旧方案备份与新实例、打开选择器/格式和密码门、任务交付与自动加载配置调用位置。下游版本迁移、保存、密码窗链接既有局部视图，不按相邻页面虚构调用。
+
+新建的ProjectManager.CreateNewSolution捕获VmException后仍可能继续登记newSolution并返回true；IVmSolution.CreatNewInstance按序清密码/关闭native方案/替换实例/创建默认流程。当前New菜单则调用doc.NewSolution(false)，空流程集合与历史/替换事件是独立合同。打开包装StopRun调用ContinuousRunEnable=false，未据此假定底层停止一定完成；当前独立加载先停continuous标志、选文件并记目录，随后检查activeRun/未保存修改，再JSON加载。
+
+ProjectManager.LoadSolution多种取消/转交保存分支仍返回true。完整本地方法体引用保留flag2门、显式return与UpdateAutoLoadLaseSol位置：密码窗非true时可跳过Task构造但继续到自动加载配置调用；task.Start后也不等完成。辅助体仍有GetAutoLoadSolState()==0及IsAutoLoadLast门。此为本地提取源码控制流，不当作原机已发生配置写入；新增体未重核原件CIL，远程对话框IL类型告警/运行绑定/回调和异常矩阵继续未知。没有运行厂商程序、任务、设备或更改配置。
+
+22局部图521边930引用，原入口4299候选/214菜单声明分母不变；范围交叠增加不计确认绑定或闭链。新旧图的hash/片段、层级、脚本、链接、入口范围、对账与diff检查通过，浏览器呈现未验收。主框架实施维持41/96＝42.71%（32包×3单元），静态文档增量0。
+
+## 方案打开敏感分支的原件CIL复核
+
+REA重新核VisionMaster.exe SHA 42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23、MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5。MemberInventory --solution-lifecycle-evidence导出两个类型12个聚焦方法，逐体核字节数/摘要、完整解码与分支目标。生命周期页给N02/N05/O01–O05追加13个original-managed-cil引用，方法数与引用数分别统计；未核worker/Dispatcher委托体不被包装体证据覆盖。
+
+LoadSolution 0x06000153，原CIL将ShowDialog nullable返回拆为GetValueOrDefault==true与HasValue再取反；非true正常路径在IL_0271设local16，IL_02d4跳IL_03e9，绕过IL_02ef Task构造/IL_03e2 Start，经IL_0439调用UpdateAutoLoadLaseSol后正常返回true。verify-solution-lifecycle-cil.cjs记录原指令路径与两处条件选择，校验不存在额外local16重写及Task节点；这是调用均正常返回的静态路径见证，不是任意CIL解释器、原机执行或写盘成功。配置helper自身门、异常、字段值、native完成和认证均不由此证明。完整路径见solution-lifecycle-cil-review.json。
+
+另纠正反编译同名类型歧义：普通选择器构造为Microsoft.Win32.OpenFileDialog（IL_0064），远程为DirectoryBrowser.OpenFileDialog（IL_0109），远程模态调用BaseWindow.ShowDialog。DirectoryBrowser程序集实际绑定/资源与远程交互未验证。
+
+22图521边943引用；边数量不增加，本轮提升证据而非制造闭链。更新清单/范围审计/对账/总索引并检查hash/层级/脚本/链接与diff。未运行厂商代码/设备/配置写入，浏览器呈现仍未验收。主框架实施保持41/96＝42.71%（32包×3单元），增量0。
+
+## 主界面打开方案的逐箭头分支图
+
+新增[打开方案：分支与任务/配置回流](solution-open-chain.html)，23节点26关系（22有限静态确认/4未知），独立于521证据边计数。每箭头明确relation、condition、父视图/边、继承源引用与运行未验证标志；主菜单声明、忙门、选择取消、格式/显式密码错误、密码窗true/非true、保存交付/拒绝、Task启动、调用者配置回流与后台native路径分别列出。
+
+图中Task.Start→配置调用是调用者正常返回后顺序，不是等待任务完成；Task.Start→后台委托是运行调度未知，SaveSolution→afterSaveTask启动也保留分支/回调未知。密码窗非true路径继承原CIL见证，不能误读为绕过认证。worker内部版本/迁移只画有条件Load调用，不称穷尽全部后台分支。主窗实际激活和native完成另两虚线断点。
+
+建立explicit-chain.cjs复用有限关系校验与可交互SVG/关系列表，节点支持键盘选择，点关系显示条件与证据。新图接总索引/入口页；index复核端点、唯一ID、条件、父边及分类、引用继承/hash/片段和禁闭链声明；校验嵌入JSON往返、脚本与链接。生成时修正A02引用，只接真正OpenSolution菜单声明，未拿NewSol菜单作证；生命周期O01追加该声明引用，当前22图521边944引用。
+
+浏览器呈现仍未验收，未以HTTP等绕过此前本地文件协议拒绝；未执行产品/厂商SDK或触碰其它工作树。主框架实施41/96＝42.71%（32包×3具名单元），建图与静态复核增量0。
+
+## 主菜单流程导入与算法代码导出
+
+新增[流程导入与算法代码导出入口](procedure-transfer.html)，14边32引用（12源码确认/1当前独立实现/1未知），四原件13聚焦CIL体，其中一个Connect由分析器自动纳入。复用已取Core/WPF/Exe身份，新经REA核Apps.XmlUI原件SHA 639d0fb9dfca81e38df690e201b73874ce006d1361b689ddc6d5f41f7b0b04fd、MVID a00f8b40-7a51-4c6d-8aeb-cad134724f1f；逐体核字节/摘要、分支及关键参数点。
+
+导入链：主菜单三包装→运行门→普通SDK选择器/DirectoryBrowser远程prcx→根历史→ImportProFile(ref path)→版本/CompatibleTool VMProcedure空密码槽→SDK导入/后置旗标与等待→文件属性/位置/历史。原CIL明确远程ShowDialog非true后仍尝试FileNames[0]，不说取消必返回；核心导入IL_046d空串到IL_0481 ImportProcess，而缓存ModuleFilePassword用原strPassword（IL_0607/0608）。两通道不混同。未查杀或启动进程，也未执行SDK/导入。
+
+导出链：ProLevel门/流程WorkState门→窗口/工具目录和PATH源路径→流程模块选择→按钮名称与路径校验/确认覆盖后的原删除代码→Task.Run→2064槽ID表、10MiB缓冲和一次不足重试→EXP模块ROI配置/导出/错误与释放。导出长度取容量local1而非返回长度local2；原CIL只有枚举器finally，不冒称缓冲/native清理覆盖所有异常。按源码记录原PInvoke自定义UTF8Marshaler声明，不当作native ABI验证。
+
+当前BuildFileMenu明确未实现导入/算法导出运行时，本页只描述该构建体有限缺口，不推定其它程序集没有同名能力。主菜单包装追加本地成员引用用于入口账本跳转，CIL引用仍独立显示；范围交叠不是运行绑定。23图535边976引用，完整入口/异步状态机/BAML/native效果均未证明，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3单元），本轮静态文档增量0。
+
+## 外部工具菜单的初始化、路径与启动边界
+
+新增[外部工具菜单、语言路径与启动边界](external-tools.html)，9边33引用。选定VisionMaster.exe身份同前，聚焦14原CIL体含4个语言解析lambda，复核字节/摘要与分支；四份原菜单各5个ExternTitleMenueItemData，共20声明、7种工具名，是214总菜单声明的子集。完整resource/id/层级/info/initMethodName/methodName投影见external-tool-declarations.json，原XML SHA逐份核对。
+
+Init先base.Init再反射initMethodName；CheckPath只在文件不存在时写IsDisplayInMenu=false，存在分支不主动恢复true。GetPathByLang用分号/冒号分割且只取恰2段，以CultureInfo及GetLangParm做Single唯一匹配，无语言回退。OpenExe则GetFullPath后以Language资源值作参数、CreateNoWindow=false、工作目录取最后反斜杠之前，调用Process.Start而不等待。GetPathByLang参数求值异常发生在OpenExe内部try之外，经通用反射时由其空catch吞掉；不能把所有错误合并为弹窗。
+
+原CIL确认OpenModuleParamTool枚举窗口按精确GetType()==ModuleParamTool.MainWindow返回，随后PRO权限门，再BaseWindow.Show，非模态。查找表的两本地模式声明却用VMCollector.exe作CheckPath输入，而此点击处理器不读Info；保留此配置/调用差异，不推定设计意图、不改资源。全部进程/工具/授权效果与当前实现对应仍未知，未实际检查工具可用性或启动任何程序。
+
+更新24图544边1009引用、入口范围/双向对账/索引；20外部工具声明不重复加入口分母。范围重叠跳转从111增至131菜单声明不算运行绑定。CIL、source/hash/片段、层级、脚本、链接与diff检查通过，浏览器呈现仍未验收。主框架实施41/96＝42.71%（32包×3单元），静态建模增量0。
+
+## 五个设置入口的共享窗口与保存/重启生命周期
+
+新增[共享设置窗口、保存顺序与重启分支](settings-lifecycle.html)，10边30引用（9原源码/CIL确认/1未知）。五菜单包装传不同item参数到同一SoftwareSetDlgShow；原CIL确认实际窗口VisionMasterMain.SoftwareSetDlg、Apply订阅、共享Program.MainData模型的装载/绑定顺序、Radio选择及Frame替换。主菜单源范围跳转现147/214；范围交叠仍不是运行绑定。
+
+原件核VisionMasterMain.dll SHA 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1、MVID 88823867-dc1b-476f-9133-0d8cf5da19e8，连同已选Exe共20方法（含自动Connect）核字节/摘要/分支。Apply在IL_0010 Invoke后IL_0015 pop丢弃事件bool，IL_007a AccessApply后IL_0080 and非短路；AccessApply自己的异常在事件try/catch外。重启需求为true而用户非Yes时，回调直接true但跳过四项保存；窗口整体Apply还继续权限页，不以true/Close宣称保存成功。
+
+SaveSolInfo为XML→UTF8→Base64写SolutionCommInfo并可吞错；SetRunPolicy2Server每批最多32流程写SDK，随后运行模式/缓存更新按原顺序；SaveSoftWareInfo逐键配置后接图像、历史、启动/自动加载和高级IConfirm.ConfirmData。Base64不是加密，跨键/跨批不虚构整体事务。现有E25及权限A18切片继续保留，原件补证范围与窗口/权限真实副作用分列。
+
+选定原ReStartVM.bat只读投影settings-restart-script.json保存SHA及文本；原脚本按镜像名taskkill、start、pause，与包装WaitForExit分别记录，不证明实际解析/重启完成。本任务未运行任何脚本、终止/启动进程或改配置。25图554边1039引用，原机/浏览器呈现、采集字段全部消费者和当前实现对应仍未验收。主框架实施41/96＝42.71%（32包×3具名单元），静态建模增量0。
+
+## 主菜单保存/另存与同名外部工具栏合同分界
+
+在execution-storage新增B01–B08八边，不新增局部视图。恢复六个保存/另存包装、忙门/通信标志重置、ProjectManager按/root与remote模式派发、旧密码窗/两种选择器、临时新密码、BeginSave路径门、显示/非显示进度分支、配置/目录/最近列表顺序及afterSaveTask条件启动。新原件CIL九方法；复用solution-lifecycle的两个SaveSolution重载和toolbar-effects的SaveAsSolutionProcess，分别记载不充作额外完整链。
+
+原CIL确认本地starshipxac.Windows.Shell.Dialogs.FileSaveDialog与远程DirectoryBrowser.SaveFileDialog。主菜单文件选择取消false；外部ToolControl另存取消可返回true，且其临时密码入口策略不同。ProjectManager.AnotherSaveSolution的临时密码仅在确认后的IL_0243/03b9清空；入口/取消支路未清。button_Click只在设置窗true且密码非空时赋字段，保留同对象无其它写入时的跨次留存条件，不读取用户实际密码。
+
+已纠正entry-routing-security E13旧“最近列表之后清密码”的顺序：本地自动加载配置/目录/日志在前，清临时密码后仅flag=true才最近列表；远程另有配置路径。另存flag=false仍可能到本地配置更新，配置写入/异常与保存效果分开。SaveSolution(Task,...)复用路径时可忽略内层bool并返回true，内层SaveSolution(path,...)却只有Export为true才发通知和afterSaveTask.Start；所以外层true不能充分证明后续Task启动。非显示进度分支的底层返回也未总用于flag。
+
+25图562边1061引用，原535/554等数值保留为历史切片；主菜单范围线索159/214不算确认绑定。source/hash/片段、CIL/分支、层级、脚本、链接、入口范围和对账/diff检查通过。未运行产品、SDK、文件对话框或保存、配置写入；浏览器呈现未验收，主框架实施41/96＝42.71%（32包×3具名单元），静态建模增量0。
+
+## 配置宿主与全局模块的入口/清理边界
+
+新增[配置窗口入口、全局模块与参数宿主](configuration-hosts.html)，9边30引用，Exe/WPF两原件21个聚焦CIL体。CameraSet分别恢复SDK/数值用户门、方案模块与ItemsA清单同步、9名称过滤、GetAuthority操作标志和新建模态窗；不把相机清单投影当作硬件状态。CheckConfigAvailable已补原CIL：true为拒绝，SDK直接false，用户3拒绝，用户2按模块null/ConfigAvailable判断；其中两次读用户不宣称原子快照。module-permissions M11同步引用与未知说明。
+
+全局触发先查14200并过拒绝门，缺模块时反射固定程序集/首个IVmModule候选创建，再建模型/窗口；窗口参数根与静态CacheTabRoot清理分列。综合配置按当前moduleName+Control找已加载程序集并取首个TabWinBase候选，工厂内部复用/实例化不猜；权限门与interop/ShowDialog如实保留。另以原CIL区分Apps.XmlUI.UILogManager、VM.CalibGuide.TypeSelectWindow、FrontendUI.Design.EditFrontendWindow，不把同名Window解析为主窗口或既有普通工具配置器。
+
+纠正solution-lifecycle N04旧“关闭相机”：CloseCamera选Dispatcher后委托只调用get_ItemsA/Clear/set_CurDeviceA。进一步取setter/Root体，setter先在同值返回，仅选择改变为null时清Root并发通知；集合/属性通知的其它消费者仍未知。因此本切片不能证明设备已释放或一定未释放，也不按名称写硬件关闭。原方案重置页追加3个CIL引用，原有历史记录保留更正。
+
+26图571边1095引用，菜单范围线索172/214；完整运行链/当前对应、BAML、动态工厂和硬件效果未证明。生成各页及打开分支图，核hash/片段、CIL、层级、脚本、链接、入口与对账/diff。未运行插件、SDK、设备或干预其它任务。浏览器呈现未验收，主框架实施41/96＝42.71%（32包×3单元），静态增量0。
+
+## 连续/停止、退出与四份菜单的有限静态导航对账
+
+运行与保存页新增Q01–Q08，退出页新增X01，Exe/Core/PublicFile-x64-SDK三原件21聚焦CIL体含3个委托，核字节/摘要与分支。MutiRun经CheckRun放行才设true；StopRun直接false。方案true只直接作用全局脚本门，false再清自执行并逐流程停止；全局脚本开始/停止后才更新字典/字段/IsGlobalRuning及通知。流程setter先调用SDK再判断字段变化，因此重复false仍进停止。各manager非零抛VmException，不把四个native调用合为一个。
+
+RefreshUIStopExecute创建false旗标，Task.Run里StopExecute正常返回后才写true，调用者Hik.Util.SyncWaitor.Wait(ref bool)。原委托无finally；等待函数体、超时/线程与native是否同步完成仍未知，不宣称永久等待或立即返回。方案打开O01补入下游等待引用，包装无显式等待不能解释为保证非阻塞。Exit有MainWindow时Close后返回，仍受Closing取消/保存/SDK隐藏约束；无主窗才Dispose→Environment.Exit，未以finally补保证。Linux资源RunSet原方法仅nop/ret，保留真实空入口，不猜设置窗。
+
+补全GlobalTrigger公开包装的本地source引用后，四份原菜单214声明中，28均为有子菜单的无resolver容器；其余186个含resolver声明全部有成员范围导航。这里仅186/186有限静态跳转线索，原222个resolver引用/去重成员定位、动态条目/词法候选、运行绑定与完整行为分别保留；确认绑定/闭链仍0。不能按同名或范围交叠直接宣称所有入口已完整恢复。
+
+26图580边1122引用；入口/层级/脚本/引用与CIL/对账/diff通过，浏览器呈现未验收。未运行产品/SDK/线程委托/设备、退出或修改配置；未触碰其它工作树。主框架实施41/96＝42.71%（32包×3具名单元），静态增量0。
+
+## 菜单对象继承、泛型集合与XML物化载体
+
+菜单/安全页新增R15–R20六边，补原命令R06与动态Items R07的CIL引用。MemberInventory新增--base-type直接读取TypeDef.Extends，三段实际关系为TitleMenueItemData→Apps.Data.ItemData→Apps.Data.NotifyPropertyChangedBaseNode→Hik.Xml.BaseNode；程序集/TypeDef/TypeRef与SHA/MVID按原件核对，不从using推类型。REA取Apps.Data成员；其中items字段泛型类型未解码，新增--type-fields用MetadataReader签名provider解出原0615128081011270为List<ItemData>，并核原raw签名摘要。未读取实例字段值或加载厂商程序集。
+
+三原件新增聚焦21个CIL体（Apps.Data所选12体摘要另与REA对照），复用原VM.Xml创建载体。ItemData默认可见/可用true、分组false并建List；Title构造传完整nodeName，但该字符串并不设置static defaultNameSpace，Init仅在后者为空时取运行Namespace。items落IList→LoadNodeListE，普通类型先TypeTable存在门再CreateInstance/Init/Add；原CIL缺键对IgnoreUnknown两值均跳过节点，未套用另一NodeList的IdNameNode限制。具体注册表/工厂和启动激活仍未知。
+
+GetAllChildren原体直接读items字段并递归，未调虚拟Items getter；Title.Items动态反射结果as List<ItemData>写回同字段、异常null。不能把工具栏取全后代当成强制刷新全部动态条目，也不能按静态XML声明数宣布运行入口完整。
+
+Title构造另有两处FunctionManager.Register：GlobalLightSet→LightSet、GlobalCameraSet→CameraSet。以静态注册站点单独加入入口/双向账本additional（16工具栏/包装+2注册=18），不混入214菜单、4299词法候选或21个tool导出；重复构造的注册语义/实际消费者保持未知，index验证新分类及目标，未放松unverified约束。
+
+26图586边1146引用，范围/层级/脚本/引用/CIL/签名/对账与diff检查通过。打开分支图重生继承原命令补证，但运行绑定、完整类型物化和原机效果均未证明；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），静态增量0。
+
+## 类型工厂和函数表：入口物化的下一层
+
+菜单安全页新增R21–R24，补VM.Util十五体及Apps.Data.FunctionManager五体；二十个原件CIL摘要均与REA逐体对照，核原件SHA/MVID及分支目标。保存Librarys.Config只读资源快照与摘要；没有加载或执行厂商程序集。XML载体R18、未知R20、构造注册R16和综合配置H06同步修订。
+
+ActivatorWrap静态初始化先ConvertDLLPath再读配置加载；ConvertDLLPath体及实际路径/启动绑定仍开放。LoadAssembly按传入路径缓存，在GetTypes前加入程序集表，GetTypes失败不回滚；只登记公开且FullName缺键类型，顺序同名保留先者。字符串创建拒绝空/缺类型；无参Type重载优先公开静态GetInstance，带参重载不走此分支。不能据此把配置窗或菜单对象统一称为new/单例。
+
+FunctionManager两个Register均仅缺键时Add，已有键不覆盖；Execute缺键抛错，存在则as Action后直接Invoke。原构造两注册站点与所有运行注册者/消费者分别记录，不扩成完整入口。资源保护、方案/Group/脚本密码、自动加载编码、权限/加密狗与密码参数保持各自证据及原生边界；UTF8/Base64或密码字段不被写成磁盘加密证明。
+
+当前26图590边1164引用；重新生成受影响视图、打开分支图、入口/范围/双向账本和总索引，静态校验通过。完整运行入口与行为链仍未证明，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮架构取证增量0。
+
+## 工厂启动路径回退：补齐两处原件方法体
+
+继续从同一VM.Util原件/REA成员取ConvertDLLPath和GetRegistrykeyPath，新增两个CIL体，工厂证据计22体。R25独立记录默认文件缺失门、固定HKLM子键默认值、字符串/空白/目录存在门、字段改写和异常吞掉路径。默认配置存在时不会走注册表回退；回退后本方法没有再次验证Librarys.Config存在。句柄Close不在finally，不能从正常路径推所有路径都关闭。
+
+R18/R20/R21不再把已取齐的路径方法体列为缺失；实际StartupPath、注册表视图和值、程序集绑定与类型物化仍未知。未读取用户注册表、运行路径改写或加载厂商程序集。配置窗口页按新证据文件摘要重生，修复中间对账发现的旧引用，不放宽摘要检查。
+
+26图591边1167引用；受影响视图、分支图、入口/范围/双向对账、层级、原件摘要/CIL分支和内联脚本检查通过。F-01～F-23仍未声明全域闭合；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮静态架构取证增量0。
+
+## 停止后的同步等待：六个重载分开
+
+取得VM.Util中SyncWaitor六个原件CIL体，逐体核REA摘要、原件身份和分支，另核PublicFile/x64 SDK的TypeRef程序集名/版本/token。execution-storage新增Q09–Q11，Q06/Q08及solution-lifecycle O01修订，不再把单参Wait列为缺体。MemberInventory仅用PEReader/Metadata导出，没有加载或执行厂商代码。
+
+停止委托调用的Wait(ref bool)循环读标志：true返回，false PeekMessage/TranslateMessage/DispatchMessage，有消息时分发，没有则Sleep(1)。本体无超时/取消/Task异常观察；因此StopExecute抛错而未置true时，本体没有本地超时退出保障，但实际挂起/可见性与native完成未运行证明。消息分发也意味着不能把此等待画成无重入的单纯睡眠。
+
+数组Wait检查严格ElapsedMilliseconds > timeout并返回void，无超时结果；不能把它的时限套到单参调用。Delegate重载校验bool返回类型并DynamicInvoke，无消息时不Sleep；SyncWait用GetMessage。两个PrecisionWait按bool选择消息循环或TimeBeginPeriod(1)/Sleep/TimeEndPeriod(1)，后者无finally保障清理；ref版本仍无超时。原PInvoke入口/ABI、全部调用者与系统效果另列未知。
+
+26图594边1176引用；重生运行/退出/方案生命周期及打开分支、入口/范围/对账/总索引，静态检查通过，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），静态模型增量0。
+
+## 主窗菜单初始化与语言刷新：接回实际宿主
+
+菜单安全页新增R26–R30。使用同一已核身份的原VisionMaster.exe导出九个聚焦方法体，核文件SHA/MVID、原IL字节摘要及分支目标，并与本地反编译源码分别引用；本批不宣称REA逐方法等价或运行效果。InitMainWindow中构造先选资源，构造返回才赋MainData，随后PreLoad、InitServer和日志桥；此前R02的顺序未知收窄为上游启动模式/线程选择。
+
+PreLoad先创建并赋菜单根、加载XML，再用SDK成功返回的语言值或VmSolution.SoftLanguage进行语言门处理，之后才订阅Refresh。Refresh重用原根loadXml，临时覆盖static默认命名空间；加载返回后先恢复，再通知Items、清工具栏缓存并通知、刷新工具箱和其它显示，finally再次恢复命名空间。失败可中断后续缓存/通知，不是原子替换；PreLoad则沿异常内链区分VmException，提示/日志之后走Exit调用，提示自身异常无finally保障。
+
+Refresh中的软件期限/设备型号/加密狗只是按当前模式本地化显示，不被当成重新授权或算法证据。App.ShowMainWindow原CIL确认MainData到主窗DataContext、Closing挂接和Show顺序；所提取TitleBar XAML分别绑定MenuSource.Items/MenuToolSource。运行BAML版本对应、全部DataContext覆盖、动态菜单实例及实际启动分支仍未证明，完整入口闭链不计新增。
+
+26图599边1197引用；入口/层级/引用/CIL分支、源码唯一锚点、双向对账和脚本校验通过。浏览器呈现未验收；未执行SDK/产品、退出或其它进程操作。主框架实施41/96＝42.71%（32包×3具名单元），本轮静态架构取证增量0。
+
+## 菜单资源、加密读取与物化跨页总链
+
+新增[菜单物化总链](menu-materialization-chain.html)，26节点31关系，三处运行连接未知。每条关系继承既有菜单/安全页证据，区分调用顺序、条件分支、类型表依赖、绑定声明与运行未知；关系数独立，不增加599条证据边或实施计数。主索引和入口清单均已链接。
+
+XML存在、受保护标识、Decrypt、ZIP后备和解析分别建节点，保留ZIP前仍先操作原XML属性的失败可能，不把两类资源读取串成必经顺序。类型工厂静态初始化到配置回退/加载/TypeTable是依赖关系，不冒充观察到的启动时序。缺键跳过、工厂创建、父节点/Init/Add、初次语言门后订阅、主窗DataContext和后续同根刷新分别连接。源码通知不等于绑定实际消费，动态Items/工具栏字段递归不等于入口全集。
+
+通用关系图模板改用模型标题作为图像描述，支持模型独立画布高度，移除写死的方案打开/Task说明；方案打开图同步重生。关系端点、父边身份、引用摘要及原文继承、JSON嵌入一致性、内联脚本和本地链接检查通过；浏览器呈现未验收。F-01～F-23仍未声明完整闭合，主框架实施41/96＝42.71%（32包×3具名单元），本轮静态模型增量0。
+
+## 当前文件菜单和独立持久化：操作与提交边界
+
+新增当前独立实现I03–I05、J04–J06六边，分别接入菜单/安全和运行/保存层级。当前MainWindow直接Click/Action/Safe不与旧EditorForm同名函数混用；Safe只显示错误，不提供统一忙门/回滚。最近文件展开重建条目，缓存按Duration().Days<=99过滤，更新全路径去重/取6；Persist所捕获IO/权限错误不回滚已更新内存。最近文件打开先活动运行/保存门后查文件，普通打开则先选择并记目录，二者不画成同一路径。
+
+进一步追PrepareSave到ToolPluginRegistry资产参与者和当前scope，按持久化插件资源前缀重建资源集合、按Id覆盖，再Rebase。Rebase只投影资源路径和vision.image-file的Path，不能推全部任意插件参数均重定位。主框架选定写盘体直接序列化JSON，不当成原.sol密码/加密保存，也不推断工具私有payload的保护策略。
+
+文件写入后才更新文档状态并Changed；Changed、目录偏好或后续菜单更新失败均可发生在已落盘/部分状态改变之后，不能以Safe报错推保存完全未发生。载入先解析/分离/恢复提供者身份检查/结构校验，再提交文档及发SolutionReplaced/Changed；主窗替换scope的取消、Dispose、重建和订阅另列，未声明整个事件链具备事务回滚。只读当前main源码，不触碰其它worktree或产品实现。
+
+26图605边1219引用；受影响视图、跨页链、入口/范围/对账/总索引及源码锚点、引用摘要、层级与脚本检查通过。未执行产品保存/打开、SDK或设备操作；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量0。
+
+## 资源保护静态IV：从原RVA字段到消费者
+
+补E67：AesCryptHelper静态构造分配16字节数组，InitializeArray的FieldDef 0x040001a1提供数据，赋MY_IV，再由字节Encrypt/Decrypt两体传set_IV。MemberInventory新增有界--field-rva，限定静态HasFieldRVA、确切ValueType TypeDef签名、ClassLayout.Size与请求大小一致、PE原始节/文件边界，双读RVA与文件偏移对照；不加载厂商程序集。
+
+原VM.Util SHA/MVID、REA字段token/签名摘要、16字节载荷摘要/原文件字节、静态构造数组长度与ldtoken/InitializeArray/stsfld、两个set_IV消费者逐项复核。原字节与摘要保留resource-iv-rva.json；资源保护核查页、E35未知与菜单总链加密关系同步更新，不再把静态IV载荷列为缺失。没有执行密码变换或解密资源；运行提供器/最终Mode/Padding、间接数组修改、真实密文差分及原生.sol算法继续分别未知。
+
+26图606边1223引用；受影响视图、资源核查、总链、入口/范围/对账及总索引静态检查通过。浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮静态取证增量0。
+
+## 非菜单函数源：注册器、缓存和载荷执行分列
+
+补Frontend.Base原件九个方法，REA成员原IL摘要与独立MetadataReader解码对照，核SHA/MVID及分支；字段泛型签名独立解为Func<List<ToolFunctionSourceModle>>并核REA raw摘要。external-entries新增X10–X13，X03从有限调用锚点收敛为已取得完整解码栈指令的分支规则；不宣称完整反编译C#或运行可达性。
+
+InitServer仅旧工厂null且参数非null才赋值，但每次都调用InitiSources；有工厂就重新Invoke/替换列表后清缓存。后续传入另一个工厂不会替换原工厂；工厂异常则到不了列表写入/缓存清空。Instance无锁懒建；GetToolFunctionSources独立锁内ToArray是容器浅拷贝，源对象仍共享，换列表方法未见同锁。GetDataSources所选体恒返回null，不能由此推函数源列表为空。
+
+ClearCache按三把锁顺序清三缓存，各自finally退出，不是统一事务。FunctionInfo.Value为object背字段直存直取，setter没有调用载荷或ValueChanged。原21导出声明、工厂/列表注册、快照读取与真实调用者因此分别记录；网络监听、MQ接收启动、权限和业务dispatch不由注册器名称或对象赋值推断。未打开socket、发送消息、运行厂商代码或修改产品。
+
+层级、引用摘要/CIL、字段签名、入口/范围/双向对账和总索引静态检查通过；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮取证增量0。
+
+## MQ入口可达性：日志、构造、接收和回调不混用
+
+补T05–T08，取同一VisionMaster.exe的REA成员引用与十一个聚焦方法体（含三个async MoveNext），核SHA/MVID、原IL摘要和分支；生成类的真实元数据名为.<<-ctor>b__3_0>d，与猜测名称不同，导出器严格所属类型检查先拦下，再按实际类型重取。仅改进分析工具错误诊断，没有放宽token所属类型校验。分析工具输出占用时停止本工具会话，采用独立bin/mq-audit及UseAppHost=false构建成功，不干预产品或服务。
+
+有界REA查询保留938方法摘要，其中898有体、40无体，所报体无截断；对InitMq、Zmq构造、Hkr.CallReceived三个MethodDef token均无直接call/callvirt/newobj/ldftn引用。OnZmqReceived字段的直接写入仅见Base构造置null，接收状态机读取。REA覆盖仍partial，负结果严格限所选EXE/token查询，不覆盖外部程序集、反射、间接注入和native，不推出整个产品从不启动MQ。
+
+AppBeforStart的InitMq只是一条日志字符串。InitMq本体构造Hkr、写字段、检查connectSuccess后提示/返回码，没有挂业务回调或启动接收；Hkr构造也没有启动接收Task。另一Zmq构造内部确有Task.Run→包装状态机→CallReceived路径，但上游实例化尚未建立。消息源、实际回调赋值、权限和业务dispatch继续未知，不能凭常量名或tool导出声明补齐。
+
+入口/层级/引用/原件摘要/状态机CIL分支和双向对账、总索引静态检查通过；未打开socket、发消息、运行厂商接收或操作设备，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量0。
+
+## 进程入口与启动汇合：并行分支接回菜单总链
+
+shell-lifecycle新增L23–L27，八个原件方法逐体核REA IL摘要、原件SHA/MVID与分支。CLI EntryPoint为Program.Main 0x0600010a，区别于另一个App.Main；主入口设置工作目录，按IsMultiApp分直接StartApp或SingleInstanceManager using，StartApp再存参数/new App/Run。没有执行注册表、应用或第二实例启动。
+
+OnStartup先启动后台STA/最高优先级线程执行BeforeStartPart，同时调用线程执行BeforeStartMian/菜单预加载。后台catch保存异常，finally发mWaitEventBefore；调用线程在自身初始化后WaitOne，再检查异常、通知欢迎页、AppAfterStart。事件是完成信号而非成功断言，无参等待不声明超时。DoneException可在授权恢复成功后返回，不能把全部异常简化为必退出或全量重跑；后续显示前/后的代码也不在同一个catch区间。
+
+原用户数值!=3且FrontendFirst=false才进入主编辑器显示分支，其余走Frontend；显示调用返回之后才处理最近方案、提醒线程及Undo实现LoadFrom/注入，再更新标题和窗口状态。窗口调用先于服务注入，不代表全部界面服务就绪。菜单总链M24依据这些有限静态条件从未知交接改为guarded-startup-continuation（总链未知由3处收窄为2处），不增加运行验证或完整闭链计数。R26未知同步指向已核线程分支。
+
+26图619边1269引用；引用/层级、原件摘要/CIL、入口对账、跨页关系和总索引静态校验通过。浏览器呈现、真实线程/授权/native效果仍未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮静态模型增量0。
+
+## 撤销服务注入：配置、接口、IOC和调度器连接
+
+history-replay新增H11–H14，原菜单H01/H02补原件CIL；三原件共22方法核REA原IL摘要、SHA/MVID及分支。保存随包UnRedoServiceImplement=myLibs\\VM.UnRedo.dll的单项快照/配置文件摘要，不读取或发布其它配置项。筛选谓词GetInterfaces.Contains(IUnRedoService)原CIL已取，启动页L27不再将它列为缺体。
+
+MemberInventory新增--type-interfaces，直接读取指定TypeDef的InterfaceImpl、TypeRef及程序集引用，不执行GetInterfaces/Assembly.Load。原VM.UnRedo.UnRedoService直接实现IUnRedoService；其引用程序集名/版本/token与原Exe接口TypeRef一致。但GetTypes().FirstOrDefault的实际首个候选、程序集绑定和运行配置仍未知，不以类名或接口声明推真实选择。
+
+OnStartup给Set的true在IOC包装中选TypeLifetime.Singleton，随后交容器RegisterType；包装没有直接new服务。Get先IsRegistered，未注册返回default(T)，已注册才Resolve，异常不由包装吞掉；容器内部注册/解析/并发与Singleton行为仍开放。服务构造每实例new调度器，Undo/Redo/Register转发，GetScheduleInstance直接返回同一调度器，GetUnRedoView每次new视图并传该引用，不能误画成每个历史视图另有独立历史栈。
+
+26图623边1295引用；配置摘要、接口引用、原件CIL、层级/双向入口对账、跨页链和总索引静态检查通过，浏览器呈现未验收。未执行配置装载/容器激活、Undo/Redo、产品或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮静态模型增量0。
+
+## 要求覆盖审计：修复领域到工作包的46处遗漏
+
+新增[23领域与32工作包要求矩阵](domain-requirements.html)。检查发现原总索引手工维护57个领域—工作包关联，遗漏A08/B08/C08/D07/D08等组合/交付要求的46个关联。保留旧关联快照domain-package-baseline.json，从docs/framework-reverse-plan.json直接生成全部103个关联；没有改变任务台账、计划完成标准或实施分母。总索引每次生成同步更新并检查矩阵，避免手工清单再次漂移。
+
+矩阵逐包保留原入口、问题、动作、依赖和完成标准，带计划原文行范围/摘要；计划标准标为authorized-plan-requirement，不冒充原版行为。首批10包选定有限证据边，原分类与引用范围/摘要沿用原页；其余22包仅表示本矩阵逐要求映射尚未建立，不表示无实现或无其它局部源码。页面范围关联仅作导航，不把其中每条边自动算进领域覆盖。
+
+组合/交付工作包完整保留，32包均未由本矩阵声明要求关闭；领域完整性仍未证明。矩阵支持按领域/文字筛选与任务深链接展开。逐域重新对照台账，103关联、46修复、32要求原文和任务锚点检查通过；内联脚本与原视图检查通过，浏览器呈现未验收。623条架构证据边不因新增要求导航而增加。主框架实施41/96＝42.71%（32包×3具名单元），本轮审计增量0。
+
+## 逐要求映射扩充：有限片段、未知边界与组合缺口分列
+
+按每包入口/问题/完成标准逐项复核现有图，补A01–A04/A06/A07、B01–B07、C05/C07、D03/D05的有限或边界链接。不是按领域页面范围自动把所有边归给工作包：例如A06只映射设计窗口入口、B07只映射框架合同消费而不证明采用SHA、C07只映射等待/重入/租约状态而不冒充长稳实测、D03只映射UserData/对象落地子路径而不称mdata格式已恢复。
+
+改进原先“有链接即有限映射”的计数：D01/D05仅指向unknown边，单列unknown-boundary-only；其余25包有source-confirmed或independent-implementation有限片段。A08/B08/C08/D07/D08五个组合/交付包继续not-established，并写明各自所需的组合状态、采用/发布或全域审计证据。27包有链接不等于27包完成，32包仍未由此矩阵声明要求闭合；实施与人工验收状态均不从映射推定。
+
+逐链接分类、源引用范围/摘要与父边一致性、2包边界仅含unknown、25包有限片段至少含一条非unknown，以及五个缺口ID均已复核。矩阵可展开查看每条边原行为及全部保留未知，避免有限片段遮蔽异常/native/运行边界。总索引同步生成矩阵，623证据边未增，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮审计增量0。
+
+## B01细化：参数根、运行候选和基础选择确认
+
+新增[运行参数根、候选树与选择确认](parameter-candidates.html)，P00–P08九条原版边、C01独立typed来源、U01完整操作缺口。REA两原件身份读取成功，但Apps.XmlParser/Apps.XmlUI全成员枚举分别触发64MiB表示预算而unavailable；保留诊断，不重复无变化枚举、不称目标缺失。按指定类型用本地PEReader独立解码32原件方法，与提取源码对照并核原件SHA/MVID、原IL摘要和分支；明确没有REA逐方法交叉匹配或原机执行。
+
+GetParamRoot仅Data==null时创建并缓存；根构造的装载try可吞XML错误并返回，外层因此可缓存未完整装载根，非空Data不证明加载成功。Init的临时命名空间恢复不在finally，XmlLoaded事件在OnXmlLoaded之前；后者IsOnInit有自己的finally恢复。Tab展平集合与名称索引分列，Categorys=null早退发生在索引清理之前。
+
+根候选只找唯一Tab_Run Params，展开动态子项和Between参数，以Holder保留原对象；所选体没有CustomVisible过滤，不外推上游可见性。基础选择数据按DecorateSource/父级/local门建立模块树，按int模块ID缓存；首次非全类型请求没有等同全类型建表分支，后续类型过滤复用节点并重挂Parent。EnumEntrysA重建与RunParamsA仅首次构建分列。确认检查OutputEnabled、数量、重复及绑定类型，成功后清旧选择列表并替换属性；窗口构造/确认/删除/类型切换及原Connect体分别引用，第三构造不虚补数据创建。
+
+当前WorkflowSources按输出描述符/typed CanFlow生成候选，与原NameValueItem字段树分开。B01要求矩阵接上新增具体边，仍不证明全部派生类、窗口调用者、订阅/持久化和原BAML操作。27图634边1339引用；入口范围/层级、引用摘要/CIL、对账、要求矩阵与总索引静态检查通过，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量0。
+
+## 基础参数选择窗口的真实消费者与Group分流
+
+补P09–P15七边，定位基础窗口直接调用者为全局变量及全局触发配置，GroupRunParam另走GroupRunParamConfigData/DialogHandler，不按名字强接基础窗口。消费者三原件23个指定方法独立解码并核既有REA身份、原件摘要与分支；未宣称REA逐成员交叉核验。原基础32体和消费者23体分别保留，Group回调仅本地提取源，未冒充本批原件CIL。
+
+全局变量命令先取旧VarRunParamInfo数组，再建候选数据/其它变量已选和类型传入窗口；仅ShowDialog=true回读。SelectedRunParams先改字段/显示再通知，弱事件消费者把新旧数组交VariableManager；该调用不在ValueChanged本地try区间内。ModifyLinkModuleForSub先写ModifyVar关联载荷，再解绑旧可订阅项/绑定新同类型项并写UserData标志、SetInit，非事务流程；缓冲分配/复制/结构编码在写入try之前，不能以finally推前序失败都已释放。
+
+触发输出和输入分别采用基础选择数据与ModuleInputSelectData。后者为int/float/string的DynamicIO输入树、固定32上限及独立除外类型，不能套原NameValueItem字段树或基础类的all=null规则。确认后写BindParams字段并通知IsOutPutChange，不当作触发器已保存/执行。输出还原使用独立GlobalTriggerConfig.CacheTabRoot直接构根，输入还原用Inputs[ParamName]包装DynamicIO，不能与ModuleParam.Data缓存合并。
+
+Group专用回调前后设置历史抑制，但没有finally保证回调失败后恢复；随后缓存/通知/GetParamUnit只在正常继续时发生。Group实际DialogHandler生产者、模板/窗口和二进制身份仍未知。B05/B06/C06矩阵接入相关有限边，完整原机绑定/native/SDK/设备效果仍开放。
+
+27图641边1367引用；原件摘要/CIL、源码锚点、层级、入口范围/双向对账、要求矩阵和总索引检查通过，浏览器呈现未验收。未运行产品、绑定写入、触发器或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量0。
+
+## Group专用编辑回调、候选加载与关闭门
+
+新增P16–P19，并将P15从本地提取源补强为选定公共控件原件CIL。找到两个不同DynamicObjectConfigControl.dll：Module(sp)/x64/.CommonControl副本SHA38832b…与DataFilter副本SHAd9fbcd…，MVID/大小也不同，身份分别保留，不互换或宣称运行必载某份。本轮显式选公共控件副本静态分析。
+
+REA完成该副本成员分析，但完整MCP响应超10MiB传输预算；通过精确Evidence ID的summary确认完整保留记录，再导出当前44记录、38,481,416字节到analysis/architecture-recovery/group-config-retained-evidence.json。只把相关22方法及身份摘入架构文档，逐方法原IL摘要对照独立解码并核分支，未重跑同一失败传输、未误称分析被截断或目标缺失。
+
+模板按钮ConfigCommand参数绑定EditRunParamMethod，getter返回EditRunParam；回调new专用DynamicRunParamConfigWin、设Owner/DataContext、Group数据时设RelateControl并AsyncLoadParams，再ShowDialog返回nullable结果。Group上层Invoke直接pop结果，因此不是只有true才继续。类型/搜索变化会丢弃式Task.Run加载；worker设置进度和static CheckedParams、取候选、更新EnumEntrysA，正常尾部才清static字段/关闭进度，没有本体finally或请求版本门。
+
+窗口忙时OnClosing取消并返回；放行时先赋DialogResult=true再调用基类，CancelVisible=Collapsed只作资源声明，不推原机必关闭或必为用户确认。Group回调正常返回后恢复历史抑制、清缓存/通知、逐关联参数调用CloneSource.GetParamUnit；这不是完整保存/事务回写证明。GetInsideRunParamTree、编辑中的Add/Delete/Update、真实BAML/实例/另副本及native效果仍未齐。B06矩阵指向新增链。
+
+27图645边1393引用；原件身份/REA选定方法摘要、CIL分支、源码/资源锚点、层级、入口/对账、要求矩阵和总索引检查通过，浏览器呈现未验收。未启动产品、调用原窗口/容器、执行参数写入或设备操作。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量0。
+
+## Group候选生产、懒展开与即时编辑
+
+新增P20–P22，公共控件原件20个选定方法体与既有REA完整保留记录逐IL摘要交叉核验。当前Group直接子模块按普通模块和嵌套Group分支过滤；普通模块另受可见性、启用、访问门限制。ExpendHolder首次读取先置isLoaded，回填勾选可通过CheckParam(delete=true)清源路径UserData；worker主动枚举不等于等待用户展开。
+
+勾选命令即时执行Add/Delete，新增先改集合再调用SDK、写索引/XML UserData和关联；删除仅局部捕获VmException。批量新增不回滚先前成功项，本体无完整事务保证。原SDK效果、所有派生合同、真实BAML/线程与最终方案文件落盘仍未闭合。B06要求矩阵接入新增边，不宣称整项完成。
+
+加密/密码/授权入口目录补登资源AES流和固定IV初始化两项，当前51族；方案、Group、脚本、资源、ZIP、角色与授权入口保持分别追踪，完整性仍未建立。27图648边1419引用；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮仅模型增量，实施计数不变。
+
+## Group关联模块：独立窗口、确认门与关系字典
+
+新增P23–P26：公共控件副本19个原方法体与既有REA完整保留记录逐IL摘要交叉核对。关联列模板命令参数来自祖先面板EditModulesMethod；窗口CheckClosing绑定面板DataContext的CheckClosing，但窗口DataContext另设为ModulesPickData，两个数据源分开。
+
+Closing只在DialogResult=true时运行校验；Group校验仅计第一根直接子Holder勾选数，大于128拒绝，非递归全树上限。关联命令与Group主参数编辑回调不同，false/null直接返回，true才按旧Holder快照增删；先改字典再调用SDK，finally只释放枚举器，没有SDK失败的事务回滚。RelationModulesStr getter会先清字典并向SDK重读，catch可保留部分状态，不能当纯显示格式化。
+
+GetParamsOfEqualTypeTree原件生产体、真实模板/DataContext、关闭按钮与其它处理器顺序、路径格式、SDK效果和最终持久化仍开放；B06矩阵接入四边，不宣称整包完成。27图652边1443引用，身份/方法摘要、CIL分支、源码锚点、层级、入口与双向对账、要求矩阵/总索引检查通过；浏览器呈现未验收。未运行产品、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量不计实施完成。
+
+## 关联候选生产：模块类型名/参数名与单根直接子项
+
+新增P27–P28，按既有REA确认SHA/MVID的Apps.XmlParser原件独立解码5方法（3生产方法+2捕获/排序lambda）；该大程序集此前全成员REA表示预算不足，本轮不声称逐方法REA交叉摘要。普通模块按StrModuleName匹配并FindBaseNodeByName参数名，嵌套Group仅按已暴露项UserData路径前两段匹配；不是字段值类型比较，也没有沿用另一候选入口的可见性/启用/rw门。
+
+styleType[2]显示名读取到local2后未再使用。GetParamsNode有候选才建单根，原对象目标的Holder直接放根下；临时Stack无Push/外传，无自递归调用。最外层仅排序零或一个根，不是对子候选排序或去重。Modules getter自身是否已展平/递归仍未知，不能将方法内未递归扩成全软件搜索范围结论。P25生产端缺口替换为对应有界边，B06要求矩阵接入。
+
+27图654边1452引用；CIL摘要/分支、原件身份、源码锚点、层级、入口/范围/双向对账、要求矩阵和总索引检查通过，浏览器呈现仍未验收。未加载或执行厂商程序集、SDK及设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量不计实施。
+
+## 模块范围：Modules缓存、Children别名与懒装载
+
+新增P29–P31，VM.Core原件SHA936763…/MVID290025bc…经REA确认。全成员REA因64MiB表示预算不可用，未重跑同一请求；7方法按原件文件独立解码，不声称逐方法REA摘要交叉核验。Children直接转Modules；getter缓存未装载时锁内调用虚拟LoadModules，随后锁外连接和导入，正常尾部才恢复Undo懒加载标志。其finally仅锁/枚举器释放，不保证失败恢复标志。
+
+默认LoadModules传1，IMVSGroup覆盖传20，uint重载消费GetFirstLayerModuleTree返回；逐项复用/创建，项级异常可跳过；状态读取后才替换缓存，null返回不写已装载。getter本身无展平，消费者也不主动递归，但native第一层返回、创建/导入副作用和集合直接修改仍未齐，因此不冒称全树范围完全证明。缓存已装载也不代表锁外连接/导入均完成。setter同引用无动作；ResetLazyBuilder另建空集合并清标志/通知。P25/P27/P28对应unknown已收窄，B06要求矩阵接入。
+
+27图657边1464引用；原件身份/CIL摘要与分支、源码锚点、层级、入口/范围/双向对账、要求矩阵和总索引检查通过；浏览器呈现未验收，未启动厂商产品/SDK/设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮架构证据补充不计实施完成。
+
+## 主界面到Group参数与关联的跨页总链
+
+新增group-configuration-chain.html/json：29节点、31显式关系、10未知边界，索引已登记并通过explicit-chain逐父边/引用继承校验。此图将plugin-sessions配置入口、parameter-candidates的专用回调/候选/懒装载/即时编辑及关联差异、entry-routing-security的UserData存储分支接为可点击总链。
+
+主界面实际投递、通用窗到Group模板激活、勾选路由、嵌套关联模板、模态回流、通知再求值及native/文件落盘分别为未知；不能因已有相邻方法而改画必达。参数配置在命令内即时修改，外层回调结果pop；关联配置则false/null返回、true才应用差异。Modules/Children共享缓存以依赖箭头呈现，不伪造任务并发/加载成功时序。图只继承已有证据，不增加657逐边记录或实施计数。
+
+总索引、关系父边分类、源码/原件摘要、引用区间、脚本语法和链接检查通过；27视图657证据边1464引用保持不变，新图关系独立计数。浏览器呈现未验收，未运行产品、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型补充不计实施完成。
+
+## Group勾选路由声明与Holder三态传播
+
+新增P32–P34：核11个选定原件体，Apps.XmlParser的Holder/4闭包10体为独立文件CIL加REA身份，Group命令getter1体与公共控件REA保留记录逐摘要匹配。树容器自带CheckBox只有CheckEnabled绑定，Group实例隐藏该框；Group自己Holder模板另框绑定祖先DataContext.CheckCommand，以当前Holder作参数，getter缓存的DelegateCommand明确指向CheckCommandExecute。未将两框混为同一命令或声称原BAML已激活。
+
+Holder叶无ParentTree恒false，非叶按所有子项全false/全true/混合null聚合；OutputEnabled另按Any聚合。setter向下同步CheckEnabled/OutputEnabled并向父递归通知，DynamicIO超限可break，不是原子全选或直接重复执行配置命令。三态null进入.Value的可能性保留，不能未经WPF绑定/命令时序证明就宣称原机必失败或必安全。Q13未知边界已补声明、getter和传播证据，但运行投递仍未知；B06矩阵接入三边。
+
+27图660边1481引用；Group总链仍29节点31关系10未知。原件身份/CIL摘要分支、REA选定体摘要、源码/资源锚点、层级、入口/范围/双向对账、要求矩阵和总索引检查通过，浏览器呈现未验收。未运行厂商产品/SDK/设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮架构证据补充不计实施。
+
+## 命令包装：默认谓词、接口Execute与异常传递
+
+新增P35–P37，选定Applications/3rdLib/MVVM/Mvvm.dll（SHA5685c1…，MVID0a07db51…）经REA身份/成员检查，26个选定原件体与REA raw IL摘要逐一匹配。公共控件DelegateCommand<T> TypeRef的name/version/publicKeyToken与所选原件一致，不能据此冒称实际程序集绑定已经确定。
+
+Group动作构造使用恒true谓词并传自动重查询禁用标志false；基类CanExecute不增加IsActive/busy权限门。ICommand.Execute是async void包装，内部await基类Task执行，未重查CanExecute；同步适配先调用Action再Task.Delay(0)，不是Task.Run。异常分别交Task/async void构建器SetException，不是日志后吞掉。实际UI禁用、上下文异常处理与部分写入后果均未知。重查询注册与弱处理器通知代码已记，辅助实现/实际投递另待核。Q13补进包装证据但继续未知，B06要求矩阵接入。
+
+27视图663证据边1503引用；Group总链29节点31关系10未知。身份/REA逐体摘要、CIL分支、调用方程序集引用、源/资源锚点、层级、入口/范围/双向对账、要求矩阵与总索引检查通过；浏览器呈现未验收。未执行厂商程序集、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型补充不计实施完成。
+
+## 主界面配置入口分流与独立Group密码配置
+
+新增plugin-sessions:P08–P11，按已有REA身份确认的WPF原件独立解码16体（未声称逐方法REA匹配）。画布图形按钮、Group按钮和仅MODULE触发器中的MouseDoubleClick附加命令走DiagramArea.ConfigParamsCommand；流程设置按钮向ProcedureConfigControl.ConfigParamsCommand传DisplayModuleSet。两者禁用门相近，但加载失败时画布提示、流程命令本体不提示；最终条件委托/直接处理器调用汇入OpenParams。设置按钮还另有Click选择Tab动作，未假定Click/Command先后。
+
+ItemDoubleClick是EventHandler值类型的依赖属性，不是CLR event；两处资源赋处理器值，连接器没有add_ItemDoubleClick不代表未挂接。卸载只对命名实例Delegate.Remove后赋回。原BAML转换/赋值、附加事件辅助和实际投递仍未知。
+
+VmGroupDecorator另有无参配置命令：PasswordA独立校验，读取IsPasswordOK而忽略ShowDialog返回，成功或未启用密码才直接通用模态参数窗；不走OpenParams/扩展查找，完整绑定调用者仍未定位，不推密码绕过。entry-routing-security:E58补原件CIL引用，加密/密码/授权目录现52族。B01要求矩阵接入有限入口。
+
+Group总链扩为34节点39关系13未知；27逐边视图667边1528引用。原件身份/CIL摘要与分支、源码/资源锚点、层级、入口/范围/双向对账、父证据继承、要求矩阵及总索引检查通过；浏览器呈现未验收。未运行厂商程序集、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量不计实施。
+
+## ConfigCheck：权限短路、Group继承与代理目标
+
+新增plugin-sessions:P12–P15，按既有REA身份独立解码Core/WPF共10原件体，未声称逐方法REA摘要匹配；另从原Core完整读取四个选定TypeDef继承、声明ConfigCheck getter与MethodImpl行。Procedure角色门flag为false时不读取虚拟ConfigCheck，直接VmModuleDecorator方法则根本不读ConfigCheck，二者权限逻辑分列。
+
+原VmModule.get_ConfigCheck仅ldc.i4.1/ret；选定IMVSGroup→VmModuleSet→VmModule两中间类均无getter/MethodImpl覆盖，所以具体接收者为该Group且无更派生覆盖时继承true。该有限结论不证明真实UI接收者、其它派生/代理、所有保护层或密码绕过。VmProxyModule先置isSubLoaded后动态载入/取首个VmModule候选/创建目标，再转发虚拟ConfigCheck，前序失败无本体恢复位。ConfigAvailable是另一个UserData键，null保留缓存、VmException日志后false，与PasswordA不同。
+
+Group总链扩37节点42关系13未知，补条件虚拟派发依赖；加密/密码/授权目录53族，B01要求矩阵接入四边。27逐边视图671边1544引用；原件身份/CIL摘要与分支、元数据继承/MethodImpl、源锚点、层级、入口/范围/双向对账、要求矩阵/总索引检查通过；浏览器呈现未验收。未执行厂商程序集、动态目标、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮建模不增加实施计数。
+
+## 画布附加路由事件到命令
+
+新增plugin-sessions:P16–P17；选定Apps.UIHelper.dll（SHAbe53f1…/MVID97956edd…）身份与成员由REA确认，12选定原件体逐raw IL摘要匹配。Event附加属性类型为RoutedEvent，默认null；OnEventChanged读当前属性，非null时AddHandler(Control_MouseDoubleClick)，本体不读OldValue也无RemoveHandler。不能把置null/改事件写成已解绑旧处理器；实际重复/卸载后果未运行观察。
+
+处理器先将MouseButtonEventArgs.Handled=true，再取Command和实际附加参数，用null调用CanExecute，true才以实际参数Execute；false仍已Handled。无命令/类型空保护或本体catch；实际异常上层和其它路由处理器注册方式仍未知。不把这套附加处理等同普通Button命令机制。Q01补入静态辅助证据，仍保留模板/属性实际激活、实例绑定和UI投递未知；B01矩阵接入两边。
+
+27图673边1556引用；Group总链37节点42关系13未知保持，新增证据不虚增运行闭合数。身份/REA逐体摘要、CIL分支、源码/资源锚点、层级、入口/范围/双向对账、要求矩阵和总索引检查通过，浏览器呈现未验收。未执行厂商程序集、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量不计实施完成。
+
+## 原BAML载体：资源存在与语义映射分离
+
+新增baml-carriers-review.html/json和baml-carrier-artifacts.json。选定WPF/CommonControl/Apps.XmlUI三原件共1009资源项、145个.baml键（57/21/67）。按CorHeader资源目录、PE节和文件长度约束读载体，RVA与直接文件字节相等，逐.g.resources长度/摘要与既有REA原件记录匹配；ResourceReader只用Key/GetResourceData，不读Value、不反序列化用户资源对象、不实例化XAML。Stream/ByteArray长度前缀严格核对后保留原载荷长度/摘要/前缀。
+
+确认procedureconfigcontrol、base/diagramitemtemplate、Group配置Control/Panal/Win/关联窗和CheckBoxConfigTreeView等原资源键存在。新增plugin-sessions:P18及parameter-candidates:P38，只证明有限载体身份；BAML记录仍未解码，本地XAML属性/类型/绑定/connectionId和实际资源激活全部不升级。总链Q05/Q39补原载体证据，仍未知；B01/B06矩阵与总索引接入可搜索载体清单，载体数不等于功能或入口数。
+
+27逐边视图675边1564引用；Group总链37节点42关系13未知。原件/资源摘要、RVA/文件字节、编码长度、引用锚点、层级、入口/范围/双向对账、要求矩阵、脚本与链接检查通过；浏览器呈现未验收。未执行厂商程序集、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮资源建模增量不计实施完成。
+
+## 8份关键原BAML的定向离线提取与字节映射
+
+仓库已有ilspycmd 11.1.0.9782及BamlDecompiler，新增decode-selected-baml.cjs，以--resource单载荷模式和--disable-updatecheck定向提取8份：WPF流程/画布模板2份、CommonControl配置/关联模板5份、XmlUI勾选树1份。baml-selected-decode.json保留4工具文件摘要、原件/资源/载荷摘要、命令参数/退出状态、输出与本地XAML摘要；每次解码前后核原件不变。8个输出与既有对应本地XAML全文件逐字节一致，生成文件位于baml-decoded/，未加载目标对象或运行厂商程序。
+
+新增plugin-sessions:P19及parameter-candidates:P39，将有限按钮、委托值、附加双击、编辑回调/CheckCommand与窗口声明关联到具体原载荷和离线反编译表示。该结果不是每种BAML记录的独立语义验证，connectionId/程序集解析全集、真实模板/绑定激活与UI投递仍未知。原载体基础清单改用semanticAnalysisIncluded=false说明仅做字节盘点；当前合并视图读取选定解码证据，不再沿用全体0解码状态。145载体中8份离线输出映射，其余137未解码，运行激活0。
+
+总链Q01/Q05/Q13/Q39补选定来源证据但仍保持未知；B01/B06要求矩阵及总索引接入。27逐边视图677边1580引用；Group总链37节点42关系13未知。原件/资源/工具/输出/本地摘要、载荷长度、逐字节映射、引用锚点、层级、入口/范围/双向对账、父证据继承、脚本与链接检查通过，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量不计实施完成。
+
+## InitializeComponent装载URI与原BAML候选
+
+新增plugin-sessions:P20和parameter-candidates:P40–P41，核8个InitializeComponent及随类型连接器共20原件体；CommonControl12体与REA保留记录逐IL摘要匹配，WPF/XmlUI8体为已核身份加独立CIL。baml-load-review.json逐类型保留方法token、pack URI、同程序集/路径推得的.baml候选键和载荷摘要。8引用全部能对应原键，其中7个候选已有选定离线映射；DiagramArea自身base/diagramarea.baml尚未解码，不能用diagramitemtemplate代替它的装载引用。
+
+8个生成方法均先检查_contentLoaded，首次在new Uri/LoadComponent之前置true，无catch/finally恢复；字段未被其它代码改回且实例仍可调用时，后续本方法可直接返回。因此标志不等同装载成功，代码不提供本体失败自动重试保证；全部字段写者、构造失败实例和真实加载器恢复另待核。URI/资源键是静态同名路径候选关联，未运行WPF资源解析或证明模板激活。总图Q05/Q39、B01/B06矩阵及载体清单/总索引接入新证据。
+
+27逐边视图680边1600引用；Group总链37节点42关系13未知。原件/REA选定体/CIL分支、URI/候选载荷、离线输出摘要、源码引用、层级、入口/范围/双向对账、父证据继承、要求矩阵和总索引检查通过；浏览器呈现未验收。未执行厂商程序集、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量不计实施完成。
+
+## DiagramArea自身BAML、数据模板与部件查找
+
+将base/diagramarea.baml加入显式解码范围，离线输出与既有本地DiagramArea.xaml逐字节一致；共9份映射、136份未选载体。新增baml-decode-targets.json作为唯一选定范围清单，生成器/审核/HTML按该范围和实际计数显示，避免扩批后沿用硬编码8/137。所有9项重新提取与原件前后摘要检查通过；8个装载URI现全部有对应离线输出映射。
+
+新增plugin-sessions:P21/P22。原模板m_DiagramGrid DataContext取Procedure，内部ZoomArea/DiagramPage/StatusBar声明缩放、来源、选择、锁/打开参数和结果状态投影；外部滚动条/本地化资源仍为独立依赖。4个原件体按既有REA身份独立CIL解码：构造调InitializeComponent，OnApplyTemplate先基类、再FindName五部件，as类型赋字段后UpdateCalibGuide。原BAML有对应名称/Click声明，StyleConnector有两个Click挂接代码；没有把部件查找返回或按钮初始Collapsed当最终UI成功/可见结论。UpdateCalibGuide、按钮处理体、内部页面/转换器/外部资源和实际激活仍开放。A03矩阵和总链Q01接入。
+
+27逐边视图682边1614引用；Group总链37节点42关系13未知。原件/工具/载荷/离线输出与本地摘要、CIL分支、引用/层级、入口范围/双向对账、要求矩阵和总索引检查通过；浏览器呈现未验收，未运行厂商对象、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量不计实施完成。
+
+## 画布引导/流程模式、动态页面与CalibData回调
+
+新增plugin-sessions:P23–P27，18个Core/WPF原件体按既有REA身份独立CIL解码并核分支（含页面工厂3闭包），未声称逐方法REA摘要匹配。OnProcedureChanged与UpdateCalibGuide在有数据/流程模式时清理不同；页面有效性门只包替换，按钮可见性/CanChangeMode绑定在其外。进入/退出按钮都先写IsBootMode后做页面/释放操作，无catch/回滚；不把绑定IsEnabled当处理器内守卫。工厂按中性标志选CalibGuide/VM.CalibGuide，已加载简单名优先，缺失且路径存在才加载，首个IGuidePage候选交工厂后as Control，无额外类型/构造过滤。
+
+选定VmProcedure模式/数据setter仅字段和通知；保存另由SaveCalibData可选委托触发。CalibrationGuideData.Parent先写/通知当前父，再在当前VmProcedure的保存委托Remove/Combine本对象SaveData，未对旧父解绑。SaveData将当前对象XML经ByteUtil写当前父UserData[CalibData]；字段非null但回调缺失时SaveCalibData无另写。字节编码、序列化/加载内部、页面实现、通知重入、旧父回调后果与最终文件持久化仍未知，未执行动态页面/SDK或保存。A03要求矩阵接入五边。
+
+27视图687边1638引用；Group总链仍37节点42关系13未知。原件身份/CIL摘要分支、源码锚点、层级、入口/范围/双向对账、要求矩阵与总索引检查通过；浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮架构证据增量不计实施完成。
+
+## CalibData初始化读取与主菜单/外部工具栏保存分流
+
+新增plugin-sessions:P28–P30，6原件体中Exe5体与既有REA完整保留记录逐IL摘要匹配，Core.Init1体为REA身份加独立CIL。Init先设置流程信息/父级和条件历史，再在独立吞异常块读CalibData；非null直接保存byte[]并isBootMode=true，不解析XML；null只清calibrationData，不写模式false。旧实例复用与读取失败不能假定统一清零，全部Init调用者/实际字段值仍未知。
+
+主菜单两Dispatcher闭包均调用ProjectManager.SaveCalibUserData，它与外部ToolControl同名循环均枚举方案Modules返回的VmProcedure，逐项接口SaveCalibData，无单项catch；连接P27的空数据/可选回调/字节写入，非最终文件完成证明。path重载仅Export true才通知并启动afterSaveTask；有路径的外层无进度分支pop导出结果且不Start后续Task，有进度分支也丢path重载bool，最终仍true；外部工具栏另走Task SaveAs并无条件状态重置续作。返回/任务合同分别建边，不推原生落盘成功。A03矩阵接入，P26旧装载未知收窄。
+
+27视图690边1652引用；Group总链37节点42关系13未知。原件/REA选定体摘要、CIL分支、源码锚点、层级、入口/范围/双向对账、要求矩阵和总索引检查通过；浏览器呈现未验收。未运行厂商对象、保存回调、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮架构证据增量不计实施完成。
+
+## 画布页面到节点容器、装饰器与默认样式
+
+新增3份原BAML定向离线提取：base/diagrampage、themes/generic、base/diagramitem，全部与本地对应XAML逐字节一致；累计12份、其余133未选，原件前后和工具/输出摘要通过。新增plugin-sessions:P31–P34；18选定原件体为既有REA身份加独立CIL（含构造Loaded回调及节点连接谓词），不声称逐方法REA匹配。
+
+DiagramPage原ItemsPanel为Canvas IsItemsHost，初始化回调写hostPanal，容器工厂new DiagramItem并传主面板/连接面板/页面；未等同实际容器生成或面板已非空。页面和节点DataContext包装分流不同，连接补TargetItem/ReplaceCurBox及真实绑定重入另待核。DiagramItem/ItemsPage的默认样式类型键、原generic合并DiagramItemTemplate与原类型键Style形成静态依赖；ThemeInfo/框架主题查找、资源覆盖、DisplayType转换及实际应用仍未知。DiagramItem自身BAML的键盘绑定不是另一个节点模板字典。
+
+基类Loaded可重复订阅ContextMenu.Opened，页面Loaded另用hasAddedTransformAdorner门，Add成功后才置true；缺失装饰层/解绑/重复加载后果未运行。A04要求矩阵与总链Q01接入四边，未用静态依赖代替运行闭合。27视图694边1679引用，Group总链37节点42关系13未知。原件/资源/工具/输出/本地摘要、CIL分支、引用/层级、入口范围/双向对账、要求矩阵和总索引检查通过，浏览器呈现未验收；未运行厂商对象/SDK/设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮建模增量0。
+
+## 节点显示类型来源、转换门与Group双击分流
+
+新增plugin-sessions:P35–P39及display-type-review.html/json。12个WPF原件体按REA身份独立CIL解码，另原元数据读取3枚举30个Int32字面量；对Convert原switch目标建立20值静态对应，7 MODULE/7 ADORNER/6 DEFAULT，ConvertBack不是逆映射。Group/流程固定GROUP/PROCESS，GROUP双击走SubSource.OpenGroupCommand导航及PasswordA校验，而Group配置按钮另走DiagramArea.ConfigParamsCommand；不是所有节点双击配置。显示模块集setter先置当前流程装饰器IsSelected，再在引用变更时通知DisplayModuleSet/IsProcedure/IsDependentGroup。
+
+静态显示表依赖CurrentPathHelper+ModulePathGenerate.txt，按精确分隔/第三列去ADORNER/Enum.TryParse，重复键保留先项，无文件存在/列数门/catch；安装目录191行候选文本的路径/摘要/完整行快照已存，未证明运行路径选用。普通实例/共享类型名/TargetDisplayType三种缓存分开，setter不清已有子缓存，默认子显示分支不写缓存。工厂/模板、实际主题/样式优先级、字典错误、路径解析、通知/密码/运行交互仍未知，未以NORMAL回退掩盖静态初始化可能失败。A04矩阵、总链Q01和总索引接入显示门。
+
+27视图699边1704引用；Group总链37节点42关系13未知。原件/枚举/候选文本摘要、CIL分支/有限switch表、资源离线输出映射、引用/层级、入口/范围/双向对账、要求矩阵与索引链接检查通过；浏览器呈现未验收。未运行厂商对象、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型增量0。
+
+## CurrentPathHelper：宿主模式、注册表与三种路径合同
+
+新增plugin-sessions:P40–P43。定位WPF TypeRef到VM.Utility（name/version/key token与选定原件一致），REA确认原件SHA65ebb5…/MVID32e8ac89…；8个原件体与REA raw IL摘要逐一匹配。两份类型离线反编译输出与工具/原件/输出摘要、规范重放参数存于current-path-decompile.json及original-managed/utility/；未调用厂商helper或请求实际注册表值。
+
+单例静态构造先实例化，再读宿主AppSettings.StartClientMode：空白/精确1设SDK，精确2设RP，其它不设；公开标志后续写者与宿主配置未齐。GetCurrentPath在SDK时读取固定HKLM默认值，先补反斜杠再判空白，空串可变成单反斜杠而不保留基目录；非SDK保持BaseDirectory，RP空分支不改结果。GetRegistryPath返回原默认值；GetVMInstallPath另从CurrentVersion/卸载InstallPath选择Applications后缀或ApplicationBase。注册表关闭无finally，catch返回至今结果。三方法不可合成统一安装目录回退。
+
+显示表/全局触发工厂拼接依赖已接回原helper分支，但安装目录191行文本仍仅候选，实际文件、进程模式、注册表及动态加载未知。显示类型页/总索引链接新路径证据，A04矩阵接入四边。27视图703边1724引用；Group总链37节点42关系13未知。原件/REA逐体摘要、调用方程序集引用、工具/源码摘要、CIL分支、引用/层级、入口/范围/双向对账、要求矩阵与总索引检查通过，浏览器呈现未验收。主框架实施41/96＝42.71%（32包×3具名单元），本轮建模增量0。
+
+## PasswordWindowUI原BAML、共享样式与39处声明对照
+
+将PasswordWindowUI原件g.resources纳入显式资源范围，新增四份BAML定向离线提取（Check/Set/Modify/共享字典）；它们没有此前本地XAML，不虚报字节匹配。载体范围现4原件1017资源项149个BAML，已离线提取16份，其中12份有既有本地文件逐字节匹配。原件/资源/载荷/工具/输出摘要保留；读取Value/实例化XAML和厂商执行均未发生。
+
+新增password-baml-review.html/json及声明XML安全提取器（DTD禁止、Resolver null）。39声明对应39原挂接，34唯一静态关联、5个重复CanExecute候选关联，独立raw连接ID映射/运行绑定0。新增E68–E70：三窗内容都只有OK，所选布局/字典没有btnCancel/IsCancel/IsDefault；共享密码/明文样式MaxLength=15、密码字符*和输入法声明，不推最终字段值或实际通道过滤。更新E53/E59/E62与旧review的缺BAML描述，仍保留基类标题栏/Esc/实际关闭和同步未知；加密目录54族。
+
+27逐边视图706边1747引用；父图、原件/资源/输出、声明与注册候选、层级、入口/范围/双向对账、要求矩阵、脚本和链接检查通过，浏览器呈现未验收。未执行窗口、密码检查、SDK或设备。主框架实施41/96＝42.71%（32包×3具名单元），本轮建模增量0。
+
+## 并行全域审计与运行界面设计器缓冲链
+
+用户授权后，3个子智能体分别审计32任务/23领域缺口、安全入口及外部服务；主线恢复FrontendUI.Design的5类型/32独立解码CIL体并新增configuration-hosts:H09–H16。REA确认原件SHA60c0c7…/MVID0de25f5a…，完整成员表示达到64MiB预算而不可用，不冒称REA逐体交叉确认。5份ILSpy离线源码保留规范参数和工具/原件/输出摘要。关闭链明确DoSave先更新临时缓冲、Cancel非回滚、Save返回void且catch、方案UserData写入非.sol落盘、ParseXaml运行消费仍缺完整绑定；静态独立复核通过，StringUtil helper实际体仍未知。
+
+新增domain-gap-audit.html/json列32任务/23域及下一份静态证据和分离的runtime/native要求；仍25有限映射、2仅边界、5未建立映射，所有任务未关闭。security-entry-audit.html/json发现通信.gtd加密狗保护链（7关系）、触发密码即时写入，以及远程RSA口令待追候选。external-entry-audit.html/json列13项通信换方案/后台/触发/脚本差异并复用9个原EXE体的REA记录及原件字节摘要。专项49处源码引用已根线核hash和摘录，三审计接回索引和入口清单；专项关系与27逐边视图分开计数，54安全族不冒充安全入口全集。
+
+修正compiledEntryCarriers及入口页残留的密码BAML未解码表述；原件离线解码不等于raw connection-ID或运行绑定证明。当前27视图714边1786引用；层级、原件/摘要/分支、矩阵、入口/范围/双向对账、专项分类/引用、脚本语法与链接检查通过。浏览器呈现未验证、完整入口链关闭0；未执行厂商对象、SDK/设备/外部服务，不触碰另一工作树、不提交推送。主框架实施41/96＝42.71%（32包×3具名单元），本轮模型与审计增量计分0。
+
+## 主界面八区入口、18维核查与运行模式暂缓
+
+按用户截图和明确分区新增main-ui-map.html/json，并设为技术索引和入口清单的首要导航：菜单栏、工具栏、工具箱、工作流画布（流程编辑区）、图像/模块结果区、图像箱、历史/帮助、状态栏。保留用户原图副本和SHA作为位置参照，不作为行为、控件父树或运行绑定证明。main-ui-regions-source-map.json记录八区有限原资源/源成员及当前父边；主界面组合根的VisionMasterMain本地提取资源与实际EXE激活/版本仍分别核。区域到证据页为独立导航组织。
+
+32操作族现27有源切片、5未知（不是全部逐控件入口分母或完成率）；独立复核修正6个原未知族曾误标located的问题。随后root找到LocalImageListView的精确AutoPlay/ImageModes/SelectionChanged源，把自动切换与运行全部/运行选中从results待定位族移到imagebox有源族，补5源引文及3父边。图像箱正式页I01–I06/U01新增7边28引用、14原件独立解码体，区分ExecuteType=1/2写入、值相同跳过、Root和类型门、空catch、缓存只oldRoot非null时清，以及语言通知后的字段Find不等同自行回读。SDK真正执行、保存和原BAML/实际绑定未验；未把“运行全部”当作顶栏运行模式。八区/维度页当前123引用（含维度父例，非独立文件数）、33父链接。
+
+entry-completeness-dimensions.json将既有八门展开为18个显式核查维度和逐入口记录结构，覆盖表面/别名、触发方式、物化/对象、可见/允许/访问条件、权限许可、参数、线程/重入、取消异常、写回、释放和反向入口；它是独立核查要求，不是已证原行为或已逐项满足的矩阵。历史结果与Undo、图像箱缩略与主图像、分类侧栏与工具列表、流程状态条与主窗日志条分别保留；日志筛选LogTypeCommand与折叠LogCommand分开。
+
+用户2026-10-21明确“运行模式本次不深入追，保留待分析入口”；主图、入口JSON与coverage均保存deferred-by-user，仅登记OpenRunSetCommand声明，不扩内部窗口/执行行为。其它区域和窗口级/后台入口继续未闭合。
+
+另把上轮审计接入正式视图：communication-protection 17边52引用/29独立原体，communication-dispatch 14边40引用/9原EXE retained体，remote-server-lifecycle 11边42引用/47体REA逐IL摘要匹配。主菜单通信另增H17–H20/7原EXE体，保持与外部ToolControl同名入口的缓存、Owner、可见门和双权限门差别；拒绝遮罩分支无finally，消息重入/其它恢复者仍未知。随包远程窗依赖/原体不证明真实主界面创建者；未用无直接caller判dead。正式安全目录60族仍不等于安全入口全集，专项与正式视图证据重叠不相加。
+
+当前31逐边视图767边1965引用；全视图重建、原件/方法摘要与分支、引用/层级/脚本/链接、入口范围/双向对账、32包/23域矩阵与主UI记录校验通过。分析工具通用manifest出口构建0warning/error，重复.<>c按精确token唯一选取；浏览器呈现未验证，完整入口链关闭0。未执行厂商、SDK、设备或网络服务，不触碰另一工作树、不提交推送。主框架实施41/96＝42.71%（32包×3具名单元），模型增量计分0。
+
+## 2026-10-21：双项目核心与入口补证
+
+核心页加入五层向下分析组织及真实图像源工具 UI 向上追溯示例；上行19节点、21研究关系、59引用，分为14原件确认、3当前独立实现、4未知桥接。两项目职责另有2条合同引用；不凭同名控件汇合，也不把研究方向当作反向运行调用。插件项目继续拥有插件所需的公共配置、模板、编辑器、ROI、显示与执行会话框架。
+
+本批工具箱拖放16边/61引用/33独立原体，流程局部入口15边/89引用/41体，状态栏9边/34引用/17体；菜单下一步审计7项发现/26引用/12体，隐藏光源清理条件与Linux模板使用边界分别保留。共享BAML选择清单17项均离线解码，其中13项与既有本地提取逐字相符，不代表原机激活验证。
+
+当前34张正式证据视图、807边、2149引用；上行研究图另列，不与正式边相加。主界面8区、32操作族中29有有限源切片、3未知；18维度是核查要求，不是已逐入口完成的分母。UI及维度188引用/52父链接与上行59引用、职责2引用分别校验。完整入口链关闭仍为0，运行模式保持deferred-by-user。
+
+全视图重建、源文件与原体摘要、证据继承、链接、脚本语法、核心HTML内嵌JSON往返一致及必要DOM ID唯一性检查通过。浏览器呈现和原机运行未验证。主框架实施41/96＝42.71%（32包×3具名单元）；本批文档与静态证据不增加实施完成数。
+
+## 2026-10-21：结果区异步与旧源寿命补证
+
+核心页results区的result-async操作族新增results-roi V10–V16，恢复首次源变化排队及身份门、后续直接切源、装饰器Dispose/DeInit、回调闭包当前字段读取、图像标签/Owner分支、Loaded/Unloaded、OwnerWin_Closed与Dispatcher_ShutdownStarted。三类关闭入口不得合并；闭包所选体未见模块身份/generation比较，不代表已观察到陈旧显示。DeInit局部枚举器finally不等于整条资源清理具备异常恢复保证。
+
+独立原件解码16体（14活动/闭包体、2生成连接体），核对SHA256、MVID、原始IL摘要及跳转目标；未加载执行厂商程序集。REA inspect_managed_members返回metadata.representation资源预算不可用，保留[result-lifecycle-rea-attempt.json](result-lifecycle-rea-attempt.json)；不冒称本批方法体已由REA复核。[有限复核清单](result-lifecycle-review.json)记录原件、源码、方法坐标、EH与未知。
+
+当前正式34视图814边2174引用；主界面32操作族中30有有限源切片、2未知，仍不是全部具体入口的分母。运行模式保持待分析，完整入口链关闭0；浏览器呈现/原机激活未验证。主框架实施41/96＝42.71%（32包×3具名单元），文档补证计分0。
+
+独立只读复核后精确化：V13保留入队前与UI执行时两次isclose门及self忙早退；V14明确外层分支未进入/image==null与可空Tag的null/null相等；V11区分切源序列无finally和锁释放finally。复核16体身份、摘要、EH及跳转目标通过。核心JSON往返一致和必要导航ID唯一性检查通过。
+
+## 2026-10-21：结果三仓与流程渲染分支
+
+results-roi新增V17–V24共8条原件确认关系，接入核心页results区和C03结果生命周期证据矩阵。恢复显示/缓冲/备用三组字典、NeedFixed/执行次数路由、SelectedImage/输入图/叠加键、共享Tag写入、BeforeExchange及等待后引用交换、可变字典别名和有限清理范围。GetDataSendFinishState是有副作用的等待谓词：true继续等待；满足槽计数相等或请求次数小于已发送次数时清零并返回false。
+
+正常流程状态回调与模块自执行回调分列；UpdateRender worker与两个主图UI闭包的身份检查，不覆盖输入图及列表/树的所有闭包，也未证明等待期间切源安全。独立复核据原CIL细化了!hasRendered回退、needActiveUpdateShapes、输入图不置hasRendered及worker仅catch无finally等差异。实际调度、陈旧显示、图像所有权和native绘制未知。
+
+本批29原件CIL体（27活动/闭包体、2生成连接体），与上一批16体重复2个生成成员，不可相加称45个去重方法。两个原DLL SHA/MVID、IL摘要及197个跳转目标（含switch各目标）根线校验通过；[有限清单](render-store-review.json)保留来源和EH。新Apps.XmlParser REA成员查询亦因表示预算不可用，保留原失败记录；不称REA逐体复核。未执行原程序/SDK/设备。
+
+正式34视图822边2207引用；核心页UI/维度246引用、67父链接，上行研究图59引用和职责合同2引用另列。32操作族仍30有限源切片/2未知，不是完整具体入口分母；完整链关闭0，运行模式仍待分析。主框架实施41/96＝42.71%（32包×3单元），文档取证不加实施计数。
+
+## 2026-10-21：插件向上逆追补入公共图形／文本渲染层
+
+用户指出图形与文本应能沿工具插件层逆追。原模型虽已有结果仓/刷新调度，却没有显式呈现公共绘制适配、实际图形/文字控件及后端的分层，属于模型缺口。本轮新增[图形、文本与界面文字的渲染层](rendering-layers.html)，核心页新增[公共呈现层](main-ui-map.html#rendering)，[插件向上入口](main-ui-map.html#plugin-ui)新增PU22–PU25：工具显示项/输出Object→公共IShape/IText适配→ShapeItemsPage/TextShape/几何绘制器→WPF Visual子树。具体工具生产者/实例尚未证明的PU22继续unknown，不能从ImageSource取图模式控件伪造文字生产链。
+
+新页12边（9原件确认、1当前独立、2未知）、32引用，25原件CIL体独立核查。IText聚合IMultiText，结果叠字经FormattedText/DrawText；矩形示例DrawRectangle并可叠加索引文字；界面TextBlock、native底图像素与ROI交互另列。原VMBaseControls元数据SHA/MVID由REA完整身份记录确认，未声称REA逐体CIL复核。独立复核修正：outline/micro/低质量矩形仅向已有IMultiPoint追加；Rect.ToolTip先存Tag，并非直接设置ToolTip控件。原BAML模板激活、逐工具显示生产者、字体/DPI/裁剪/导出及像素等价未知。
+
+同批results-roi V25–V32恢复完成委托、补跑信号、线程池队列与Shutdown(false,0)；23体含15个Utility体与REA原始IL摘要吻合，原REA总体元数据coverage=partial照实保留。238跳转目标（含switch各目标）根线校验通过。ThreadService类型初始化的默认30/1池和渲染专用10/1池分开；正常Shutdown返回/引用清空不证明正在执行的工作已结束。
+
+当前正式35视图842边2278引用；核心6层分析组织、8区33操作族（31有限源切片/2未知），不是具体入口总数或完整率。核心UI/维度316引用/86父链接，上行23节点25研究关系/86引用，职责2引用另列。脚本、来源摘要/原件CIL、内嵌数据往返与必要导航ID校验通过；浏览器/原机未验证，完整入口链关闭0。运行模式本批仍只登记入口。主框架实施41/96＝42.71%（32包×3具名单元），本批文档补证不加实施计数。
+
+## 2026-10-21：三线合流——真实工具入口、文字生产、原模板与当前呈现
+
+三条并行线及根线交叉复核已合入[核心公共呈现层](main-ui-map.html#rendering)与[插件向上入口](main-ui-map.html#plugin-ui)。Blob原AlgorithmTab的ResutlText/TextDisplayGroup资源经GroupLink、Setter/Trigger、Operation/Bridge回查到活动Show Text；其Display资源Content=Blob Area:{0}、Mapping=Area。ImageSource活动Show Text为0，Group同名段仅注释；这两个负例不能冒充文字生产者。资源/源供应链存在不等于同一活实例已采用。
+
+文字生产T01–T08（49原体/58引用）恢复映射、输出订阅计数、Feature缓存聚合、按Content数量构造Text、回调/直接读取区别及后台分发；根线E01/E02（3体/6引用）补RenderDataEventArgs→ValueEventArgs→EventArgs与同sender/args传递。当前C10–C19（23引用）定位真实TextBlock/Path/Geometry、分层图像、坐标/缩放/Group和Runner导出；与原TextShape/DrawText分开，不冒称等价。G01–G08（42原体/65引用）补矩阵、刷新清理、模板部件、命中和Tag提示。各体/引用范围可能重叠，不能相加作唯一方法或文件数。
+
+[原资源专题](rendering-binding-resource-review.html)确认两主BAML及ShapeItemsPageStyle/generic两依赖共4份输出与本地XAML逐字节一致，18体/25引用，仍0活绑定；srf查找与sfr声明只是静态对照。[具体工具专题](tool-rendering-entry-audit.html)含13调查关系/54引用、5安全XML样本/30原体。TR07经独立复核明确只有OnPropertyChanged异常进入旧值恢复，之前日志及InvokeOnParamValueChanged不受该try保护。
+
+rendering-layers当前61关系/267引用，分46原件确认、11当前独立实现、4未知；核心向上25节点/32研究关系/229引用，下行6层，UI/维度528引用/136父链接及职责合同2引用分别保存。正式全域35视图891边2513引用，所有F-01～F-23完成仍未证明。操作族仍33（31有限源切片/2未知），不是具体可达入口分母。完整入口链关闭0；运行模式本批仍只登记。
+
+全视图重建、原件/资源/独立CIL、源码hash与摘录、父边继承、来源双向对账、脚本及本批交叉复核通过。浏览器/原机活模板、同实例、真实绘制与保存、字体/DPI/像素未验。重建顺序已让rebuild-views先重核两资源专题再生成局部图；核心可直达两专题。主框架实施41/96＝42.71%（32包×3具名单元）；本批文档取证不加实施计数。
+
+## 2026-10-21：画布呈现、结果导出、菜单物化与资源范围对账
+
+[核心页](main-ui-map.html#rendering)新增三组可展开的有限证据分支，并按区域回接workflow、results及menu/toolbar。每条保留原证据／当前独立实现／未知、精确引用与未闭行为；这三个专题与正式视图重叠，不加入35视图891边2513引用的计数。主架构6层与插件向上25节点32研究关系保持原范围；运行模式仅登记入口。
+
+[画布呈现](workflow-rendering-entry-audit.html)：11条、50引用，29原件CIL体/91分支目标。DiagramItem模板的Path轮廓、ID TextBlock及HeadReNameTextBox名称，与Connection单Shape内折线/闭合箭头、DiagramPage独立连线视觉层分开；也与工具结果TextShape/DrawText分开。当前GraphLayer中的Border/TextBlock/Path/Polygon另列独立实现。名称显式提交到保存、全量样式及活实例仍未知。
+
+[结果图像导出](image-export-entry-audit.html)：14条、41引用，30原件体。原BAML菜单/命令进入ImageSaveOpenCvHelper的同步分支，经OpenCV编码写文件。根线核实SaveRenderImage的显式ImageData cast、顶层可见性快照、controlImage=null/quality=0；CheckData精确小写后缀和长度门先于编码；WriteByteToFile的false被调用者忽略，原图Mat释放无finally、叠加图有finally但两个Mat构造在try外。原生字形/像素/实际文件和当前主WPF保存入口不据此关闭；当前RunnerPNG保持独立。
+
+[菜单物化](menu-entry-materialization-audit.html)：10条、40引用，22原件体/60分支目标、4新原BAML输出及1既有输出。TitleBar/工具栏声明和生成Connect对应到具体命令；TitleToolBar Click只做SeMenuFocus，TitleBar关闭Click只记录日志，不将这些焦点/日志事件冒充业务反射分派。主MenuToolSource和GlobalToolData的资源根/过滤分开，后者实际创建者、权限生产者和动态活实例继续unknown。
+
+[资源范围对账](resource-scope-reconciliation.html)：旧四程序集149键与另一账本WPF57+Base85按原件SHA/MVID、资源名、键合并，291输入行去掉57重复，得到五个选定全载体清单234键。21个键有所选离线输出，17与本地逐字节一致、4无本地对照；另五份菜单/样式部分资源记录属于两个程序集，未混入234。原DLL摘要、资源RVA/范围/长度前缀、.resources v2名称及encoded/payload摘要重算通过；MVID继承已有原PE元数据并由DLL摘要绑定，不声称本构建器重解析GUID堆。部分资源未记录raw payload digest的限制保留。资源数量不能作为入口覆盖率。
+
+本批根线检查：全视图重建、专题生成器、来源摘录/摘要和原件CIL/分支检查、跨页链及入口双向对账通过；核心内嵌JSON往返、14个DOM ID唯一、rendering/workflow/menu/plugin-ui/runtime-mode的静态DOM导航通过。静态DOM替身只验证脚本路由和内容，不证明浏览器布局、原WPF绑定或运行行为；浏览器及原机仍未验。专题关系共35条/131引用只在本有限范围内列数，不能加到正式总数或称35个完整入口。
+
+主框架实施进度仍41/96＝42.71%（32包×3具名单元），本批建模增量0；人工验收独立。F-01～F-23完整恢复与完整入口均未证明。
+
+## 2026-10-21：标题提交、菜单状态、导出文字三线合流与领域导航
+
+[核心页](main-ui-map.html)新增[标题提交](workflow-title-commit-audit.html)、[菜单状态生产者](menu-state-producers-audit.html)、[文字导出](export-text-rendering-audit.html)。现有六专题共72条有限调查关系/314引用，分别59 source-confirmed、7 independent-implementation、6 unknown；其范围互有重叠，不能加入正式35视图891边2513引用，不能视为72个完整入口。核心UI/维度528引用及136父链接、向上25节点32研究关系229引用仍单独保留。
+
+标题专题11条/60引用，33原体/82分支：原HeadReNameTextBox在旧IsReName为true的变更回调中UpdateSource；Return或失焦只置false，未在该体发现Escape取消。装饰器字符校验、undo注册/日志及VMModule.Name写入分开；模块/Group先调用SetModuDisplayName，流程另SetProcessName；改名与VmSolution显式SDK保存分属不同消费者。根线复核该提交及分支范围，不把失焦当立即写.sol，不把有限Group基类来源当全部改名/历史/存储闭环。
+
+菜单状态专题12条/71引用，39原体/132分支（其中7个Apps.Data体与既有REA原始IL相符）：ItemData默认IsEnabled/IsVisible为true，仅字段与变更通知；LockProcess只明确改ImportProcess项。语言菜单可见门、RunData模板禁用与角色按钮标题/显隐分别保留。根线核AccessManager原Finalize的null条件才Remove，不据此声称实际泄漏或必解绑；DoClose所选退订不证明全生命周期释放。CodeManager各菜单授权生产者仍待取。
+
+文字导出专题14条/52引用，25托管体及1个明确无IL的PInvoke声明：IMultiText按Position分组，测量Size(double,double)原体两次conv.i4，主链调用五参数重载，不混入七参数旁支。字号越界回10、换行后仍返回原始首次整数行高；与屏幕TextShape的字体/比例/opacity/偏移规则分开。根线核PutTextZh包装到core_putTextZh的调用目标；LPStr/Cdecl等来自绑定原件的离线声明，未伪称native体或UTF-8协议。三个原生候选仅身份/PE machine，不证明实际装载。
+
+六专题按明确的独立领域上下文归类，接入[index](index.html)、[要求矩阵](domain-requirements.html)和[缺口队列](domain-gap-audit.html)。领域关联不等于专题每条边覆盖该领域，也不增加工作包完成数；32任务仍25有限片段/2未知边界/5未建立本矩阵映射，要求关闭0。插件向上render-*及文字生产节点新增独立导出支路导航，明确屏幕呈现不自动调用导出，也不证明同一活实例。
+
+[根线合流复核记录](core-supplemental-integration-review.json)保存本批输入SHA和有限检查范围：全视图/专题重建、各原件及CIL分支/引用校验、跨页链和入口双向对账通过；核心内嵌JSON往返、14 DOM ID唯一、主rendering/workflow/menu/results及plugin-ui/render-backend、runtime-mode静态DOM替身路由通过；6专题领域上下文双向一致。输入摘要复查无漂移。静态DOM替身不是浏览器、原WPF或原生验收；运行模式仍不深入，完整入口未证明。
+
+主框架实施41/96＝42.71%（32包×3具名单元），本轮静态模型/取证增量0；人工验收独立。
+
+## 2026-10-21：授权消费者、改名历史与原生装配；核心精确定位
+
+[授权消费者](menu-authorization-consumers-audit.html)、[改名历史](workflow-rename-history-audit.html)、[原生装配](rendering-native-loader-audit.html)合入核心、领域上下文与缺口导航。九专题共107有限调查关系/464引用：89原件有限事实、9当前独立实现、9未知；范围可能重叠，不加入正式35视图891边2513引用，不作为完整入口数量。新增专题分别回接此前MS-U01、WTU01及文字导出U01，明确partial-evidence-extension，原unknown不删除、不自动闭合。
+
+授权10条/36引用、17原体（7体与REA原始IL相符）、116分支。根线核IsAllAccessUser的两次字段读取：稳定值0/1为true，其它值false，两次读取并非原子快照；参数窗准入另只在2/3角色且!ConfigAvailable时受限，仍要求ConfigCheck。IsAdmin真正WPF/输入消费者已定位，进入参数窗与允许编辑分开。74个顶层PE仅字节名候选，3原件全IL中5条OnAllAccess字段指令均ldfld，不把此有限直接IL扫描提升为“全程序没有订阅者”。未读取实际用户/凭据，也未运行配置写入。
+
+改名历史12条/78引用、73原体/197分支。三个字符串快照不保存ID/GUID，Undo按新名称末段重建路径，Redo按原FullName重新解析；根线核两回调没有本地EH，也不使用恢复Params。原UnRedo服务在Action前Pop/Push搬栈，吞Exception；RecoverStack仅提供回调，不能说改名失败自动回滚。RemoveEmpty只弹空top不Dispose，已注册非空part不因SDK写名失败自动清理。原服务仅离线解析，未执行其构造和TempFiles清理。
+
+原生装配13条/36引用、19托管体/6个PInvoke声明。主入口先设cwd；NativeMethods静态初始化先LoadLibraries再TryPInvoke，没有本地EH。平台、附加路径及dll/架构子目录搜索、吞异常及tried先写字段分别恢复。三份候选静态导出核查为5/4/5个所选名；两x64文件完全相同，x86缺精确core_putTextZh名。未以候选、架构或exe.config probing推断真实装载；L12经根线复核改为“失败与异常分支”，没有进程/窗口关闭结论。
+
+ToolBox新离线BAML输出与本地逐字节一致，解码记录自身仍未录raw payload digest。资源对账将它另列为第6份较弱解码记录：该键已在五程序集234键清单，不重复增加键数。21份有载荷身份对账的所选输出、6份独立较弱记录及资源在场/活绑定仍分别计量。
+
+修复核心锚点：此前点击framework/effects等层后刷新会退main，仅rendering恢复；现在六层、八区、插件入口与运行模式入口都由统一路由恢复。新增[改名历史精确定位](main-ui-map.html#audit/workflow-rename-history-audit/RH08)、[授权谓词定位](main-ui-map.html#audit/menu-authorization-consumers-audit/AC01)、[原生出口定位](main-ui-map.html#audit/rendering-native-loader-audit/L10)。每条关系可在核心中定位，非法/缺失书签退回主界面；不引入运行调用边。
+
+[可重复静态导航核验](../../tests/ArchitectureRecovery/verify-core-navigation.cjs)已接build-index，自动重写[根线合流记录](core-supplemental-integration-review.json)，避免每次生成后报告摘要过期。全视图/专题重建、原件/资源/CIL引用及跨页链/入口对账通过；32条初始路由、hashchange、非法书签、三处后续补证导航、九专题领域上下文、内嵌JSON及14 DOM ID校验通过。冻结输入摘要再核无漂移。静态DOM替身不证明浏览器布局、WPF活绑定或原生行为；运行模式继续仅登记，所有领域与完整入口仍未证明。
+
+主框架实施41/96＝42.71%（32包×3具名单元），本轮静态模型及取证增量0；人工验收独立。
+
+
+## 2026-10-21：已实现部分优先交付
+
+[核心入口](main-ui-map.html)连接[主框架已实施单元对照](implemented-framework-map.html)、[工具插件详情](tool-plugin-map.html)和[二值化核心算法有限对比](algorithm-binary-comparison-audit.html)。主框架逐项42单元全部保留；权威旧汇总仍41/96=42.71%，两者冲突明确标识，未擅改账本。每卡的任务级正式证据是上下文关联，不充作逐单元行为闭环。
+
+工具默认18普通注册运行体＋1框架Group，111处当前源码引用；162原目录可切换，143项本轮暂缓深追。5个非目录内置适配器和未注册ContourMatch反例单列，不能依名称推断算法对应。标定10/10仅对应既定授权实施及自审，不等于162工具或原生全域等价。
+
+二值化11行矩阵把原参数、运行注册、模式、ROI/mask/Fixture、输出和版本身份分开。隔离当前真实源码对两份保留原件BMP回放为0像素差；生产DLL因PDB源身份不匹配未执行，原厂SDK本轮未执行。其余四模式拒绝、原生深层算法等未知保留。运行模式继续仅登记。
+
+生成流程统一纳入新专题与两张对照页。CIL引用解析增加单进程缓存，仍逐次检查输入身份并在退出时重新核hash；本地20次重复引用238ms→25ms仅代表该解析器基准，不代表全部逆向工作的加速倍数。最终静态检查见[合流记录](core-supplemental-integration-review.json)；浏览器视觉与原厂全链路验收未建立。架构取证增量实施计分为0，人工验收独立。
+
+
+## 2026-10-21：关联文档统一网页阅读
+
+主总览与各关联HTML的阅读入口统一走网页，612份本地MD和32包JSON台账生成离线阅读页，保留原文件下载。正文跨文档链接与动态领域卡片/侧栏链接均解析到对应网页；见[关联文档目录](documents/index.html)和[静态导航检查](document-web-review.json)。原文、结论与权威进度不变；生成时重新核来源SHA。两处历史缺失JSON证据原样列入检查报告，不虚造原件。浏览器视觉未验收。
+
+另补当前流程改名→Edit→document part的具名载荷证据RC02：完整文档快照、ProcedureId、BaseDirectory、64KiB内存/文件分支、首次Undo capture及RestoreSnapshot/Rebase；C01.1卡仅挂此有限操作切片，不冒称整单元已完成原版全等价。
+
+
+## 2026-10-21：结果切源与scope回调归属
+
+[结果/历史专题](history-results-entry-audit.html#HRC02)新增HRC02/HRC03，当前源码65处引用，13条有限关系（9原件、3当前独立、1未知）；正式35视图891边2513引用口径不加总。[C03.1具名卡](implemented-framework-map.html#C03.1)直达此操作切片及原HRE03/HRU01。
+
+当前pull展示先清三个presenter，再经request代数、Epoch/generation、SolutionId、scope引用及当前流程检查提交。事件Detach使用保留delegate实例；Dispatcher已排队回调仍经scope/ScopeId及各自refresh/run门复核。Replace先失效owner后解订阅和释放；Close所选源码未包统一finally，不能保证前序异常后所有清理继续。Interlocked/Volatile门不构成文档/UI/native内存统一原子快照。原历史查询重新读取m_CurrentInfo、原生缓冲生命周期与当前托管方案分别记录，未伪称同协议或运行时验收。
+
+本轮仅补证据模型，不运行厂商/设备，不修改产品或另一工作树、不推送。实施总计仍按权威汇总41/96=42.71%（32包×3），逐项42冲突保留；架构增量计分0。
+
+
+## 2026-10-21：正式视图精确书签修复
+
+修复已实现对照卡继承父task链接使用#ID、而正式视图仅接受#edge-ID时落回默认边的问题。新生成卡统一输出规范#edge-ID；35正式视图兼容旧#ID并监听hashchange，非法/畸形编码回退首边。全部891关系分别测试规范/旧书签的地址片段变化，各视图末边两类首次加载共70次；检查实际显示behavior和规范化后的hash，不以目标ID存在代替准确定位。测试为静态DOM替身，不是浏览器布局验收。见[evidence-bookmark-review.json](evidence-bookmark-review.json)。完整原版行为与入口仍未证明；本次导航修复不改变41/96=42.71%的实施计数，明细42差异保留。
+
+
+## 2026-10-21：二值化计算输出与实际呈现分支
+
+[算法对照B13/B14](algorithm-binary-comparison-audit.html#B13)与[工具详情](tool-plugin-map.html)新增二值化具体图像交付链。当前非partial插件只实现运行/两editor合同，不隐含ImageList/ImageOutput/DisplayProvider。主窗自动source准入、Preview鼠标读取选中节点首个图像输出、专用窗口Present→ShowSelectedImage→GroupRoiEditor→DrawingContext.DrawImage分别列证；通用frame文字/几何链不自动承接该工具Image输出。专用窗连续呈现100ms门发生在LastResult/历史更新之后，状态表文字不是原TextShape叠字。
+
+新增内容为静态当前源码切片，没有增加UI运行证据，也不推广两个算法0差夹具至WPF呈现；原二值化Display实例、坐标/字体/native合成与导出仍待证。本轮不改产品、不扩未实施工具，进度沿41/96=42.71%（32包×3），逐项42冲突保留；模型取证计分0。
+
+
+## 2026-10-21：二值化显示样式写回与独立方案保存
+
+[B15](algorithm-binary-comparison-audit.html#B15)对所选原二值化Display.xml图像/ROI/数据记录声明逐引用，资源事实与活实例/持久化分开；[B16/B17](algorithm-binary-comparison-audit.html#B16)追当前样式编辑Changed→宿主Guard→节点DisplayStyles→Save/Load→窗口构造snapshot→ROI绘制。立即写回、局部赋值先于可能抛错的宿主回调、三键白名单/缺键默认、JSON事务步骤、绘图线宽除Scale均分列，未把保存源码当本轮操作通过。原热色/线型/高亮/Tips/Status字段未被当前样式合同完整承接；原.sol与当前JSON继续区分。
+
+工具页五条实际显示交付/样式关系直达核心；专题18条关系70引用为有限重叠切片，不能加到正式891边或称完整入口。未执行厂商或产品UI、未改产品或另一工作树。本轮进度41/96=42.71%（32包×3）；逐项42冲突保留，模型取证计分0。
+
+
+## 2026-10-21：连续运行、回调缓存与停止边界
+
+[运行与保存](execution-storage.html#edge-M05)新增M05—M08，正式视图变为35张895边2523引用；新关系全部为当前独立实现。当前连续运行每轮重新读StopOnNg/间隔，Cancel仅协作请求，Finish按CTS引用清理；control.StopRequested和用户取消token的间隔路径不同。模块发布先同步存结果再Enqueue显示，WorkStatus反向次序另列。cache关闭直接dispatch，worker缓存交换/溢出/异常、扩容丢批次和Close不join/drain分别保留；Close后Enqueue自身不检查alive，不能替代宿主归属门。
+
+图标接受NoMatch，但RunCore成功bool不接受，因此StopOnNg可能停止连续运行；动态端口事件另需owner及runSequence，不能当作像素/历史帧发布。原全局脚本、流程SDK调用及原等待消息泵保持独立，不用托管Task/CTS代替native语义。[C02.1](implemented-framework-map.html#C02.1)挂18条具名操作切片，含原native未知；不把该切片当完整参数准备或整单元等价证明。
+
+全部895条规范/旧书签定位和层级自动展开由静态DOM替身检查，原件/源码引用和网页导航分别核验；本轮未执行厂商、重建产品、设备或并发回调。实施41/96=42.71%（32包×3），明细42冲突保留，架构增量0。
+
+
+## 2026-10-21：已实现部分的具名差异优先级
+
+[原/当前差异清单](implemented-framework-map.html#comparisons)直接嵌在已实现主框架页：首批10项、45个有限事实链接、5份输入模型SHA；不增正式895边计数，不作为全量差异穷举或实施完成率。按分析P0/P1/P2、类别、关键词筛选，原件source-confirmed、当前independent-implementation、unknown沿原关系保留。建议只选择下一核查动作，不宣判缺陷、改变目录priority或扩大未实现工具范围。
+
+涵盖全局/根流程入口、CTS/回调关闭、名称路径/快照、模块历史/流程摘要、样式/图像交付、gvar/JSON、原.sol边界、二值化模式拒绝与NoMatch谓词。实际生成筛选脚本经静态DOM验证默认10、P0=O09、P1=7、文件类别2、关键词及组合空集/重置；逐事实分类/behavior/unknown与来源模型一致。浏览器呈现及产品操作未新验收。实施41/96=42.71%（32包×3），明细42冲突保留，模型整理计分0。
+
+
+## 2026-10-21：原显示属性的UserData写入与恢复
+
+[B18—B21](algorithm-binary-comparison-audit.html#B18)补原显示属性→UserData→SDK普通/动态UI参数，以及ParamRoot.InitNode/ReloadProperty→ObjectBase.UpdateResultShowParam恢复。REA整程序集成员检查达到64MiB表示预算，明确unavailable且无成员；保留[原返回](display-userdata-parser-rea.json)。既有Debug元数据工具过旧执行失败，已记录并结束自己的调用；随后在独占文档目录编译已有只读PE元数据工具，取得44个原方法/闭包体、185个分支目标并绑定三份原件SHA/MVID，未加载或执行厂商程序集。见[定向复核](display-userdata-review.json)。
+
+源代码确认键为[ParamRoot]_对象名+属性尾名，字符串UTF8加零尾；属性先改字段/通知再SaveData，其catch可吞SDK错误。SDK写用户数据不等于写.sol；原生保存/加密/缓冲释放仍未知。恢复按模块ID查询，精确键覆盖字段及Feature映射，异常不保证回滚已改字段。
+
+更正字段对应：XML linewidth、ObjectBase.linewidth与实际绘制StrokeThickness不是一个字段；后者构造为1f，并可被用户数据覆盖。不能把XML linewidth=2直接等同当前默认StrokeThickness=2或原实例最终值。资源声明、通用类型链、实际二值化活对象与原生文件保存继续分开。工具详情/优化清单O05接入四条新原件事实；未改变正式895边2523引用口径。本轮实施41/96=42.71%（32包×3），明细42冲突保留，模型取证计分0。
+
+
+## 2026-10-21：全局单次原生命令4002与间接接收边界
+
+[运行调度G08—G11](execution-storage.html#edge-G08)将G04从“原函数体未取得”细化为“间接接收者/流程派发仍未知”。同SHA x64 SDK导出RVA0x648df0的完整.pdata入口164字节/51指令，handle查表失败0xE0000006后，显式全局对象RCX尾跳转0x180678900。分派函数80指令以MSVCR120!_snprintf_s和原%d常量格式化0xFA2为4002，再调用0x1806C00D0。发送函数含3个primary/chained范围198指令，按字段+0x2398函数指针交命令、长度、响应缓冲及长度输出；响应OK和sscanf_s错误解析分别记录。
+
+[静态复核](global-run-native-review.json)绑定原件、dumpbin、捕获脚本、各范围原字节/汇编SHA、.pdata区段及329指令的直接分支目标；捕获工具[capture-native.cjs](global-run-native.resources/capture-native.cjs)仅静态读PE/disassemble。EH flags/handler与语言特定funclet分开，不把参数只凭声明命名；未执行SDK。+0x2398的注册/实际接收者、4002接收分支、流程选择及回调生产仍未知，不能将命令发送/响应当执行完成。
+
+主框架对照C02.1及差异O01接入四个精确关系；正式35视图现899边2533引用，完整入口/领域关闭仍0。全部899条规范/旧式书签静态定位另核；浏览器/原机未验收。本轮实施41/96=42.71%（32包×3），明细42与汇总冲突保留，模型计分0。
+
+
+## 2026-10-21：全局命令注册与候选PlatformManager接收case
+
+[全局单次G12—G15](execution-storage.html#edge-G12)补SDK GetProcAddress(PF_M_MsgDeal)→+0x2398写入；SDK另有显式清零路径及0x180662A70六参数转五参数尾桥，按栈变化核出第六入参迁到新第五位置，不凭只改RCX推丢参数。
+
+原件常量含PlatformManager.dll/Server相对路径，现场候选Applications/Server/PlatformManager.dll由REA open_binary固定SHA06d86f…ca0624。候选PF_M_MsgDeal ordinal4/RVA0x6A0250有响应指针/容量>=0x200门，五参数再注入全局对象为六参数交接收函数。79,252字节接收主范围最初因默认64KiB界限拒绝；随后对这一个精确.pdata范围调整为128KiB并捕获，保留尝试/范围记录，不扫整个映像。
+
+只解释其入口和4002切片：小输入分词/首token atoi，4001<selector<5000后减4002，界限<=8，RVA0x616360表项0→0x61514F。该case经虚槽检查后以global+0x228调用0x1805FE250，回复OK或Err*%d。接收范围含跳表数据，反汇编行数不充作已审查指令/功能数。候选文件与真实加载副本、虚表类型、最终执行/回调仍未闭合，G11保留unknown并改为新断点；[注册和候选复核](global-run-registration-review.json)绑定两原件与汇编/表项/字符串身份。
+
+原生捕获均只读PE/.pdata和dumpbin，无LoadLibrary/SDK/厂商运行。C02.1及O01接入四条精确关系，正式35视图903边2546引用；领域/完整入口关闭仍0。实施41/96=42.71%（32包×3），明细42冲突保留，本轮模型补证计分0。
+
+
+## 2026-10-21：全局单次的计数门、相机授权门与再转交
+
+[G16—G18](execution-storage.html#edge-G16)继续追候选4002分支的0x1805FE250，静态取得3个有限函数、351条反汇编指令。日志原名CGlobalSriptMng::ExcuteOnce，分别读取流程/模块正计数，再经Check camera前置门，向0x180600C50传4002/零载荷及局部输出指针。该函数在临界区中经+0x7F968回调与+0x7F970上下文再转交，缺指针返回E000000F；正常返回值不证明脚本或流程已执行完成。原始范围/字节/汇编/同步导入复核见[global-run-engine-review.json](global-run-engine-review.json)。
+
+相机门包含GetAuthorizationInfo日志及虚槽查询、rsp+0x168按有符号比较>=10000的支路、当前数量比较与临时容器清理；首查询错误写状态后不立即false，不能臆造统一失败策略。结构字段/虚表目标/相机计数内部仍未知；授权数量检查不冒称加解密算法，本轮不执行授权查询或设备。核心运行层及原生边界层已直接挂接；真实加载身份、回调注册/目标与完成语义继续unknown。
+
+正式35视图906边2557引用；C02.1及差异O01接入三条原事实，运行模式仍不深追。原件/引用/导航静态校验另列，未运行厂商或产品UI。实施41/96=42.71%（32包×3），明细42冲突保留，模型补证计分0。
+
+
+## 2026-10-21：全局单次回调的初始状态与注册写入
+
+[G19/G20](execution-storage.html#edge-G20)补候选PlatformManager的两个有限函数、120条静态反汇编指令：初始化体清零+0x7F968/+0x7F970并初始化+0x7F978临界区；原日志SetCallback4Single的方法保存入口RDX回调和R8 userdata，在该临界区内写入同一对字段。方法内没有非空校验，正常返回0不表示执行完成；消费时的空值错误仍由G17处理。原件、.pdata、汇编及导入复核见[回调注册有限复核](global-run-callback-review.json)。
+
+注册写入体已取得，不能继续笼统标为“注册体缺失”；注册调用者、传入目标/context类型、真实加载实例、流程派发和完成回调仍未知。同步临界区的正常路径不证明异常清理或全部线程语义。本轮仅静态原件，不执行厂商SDK/授权查询/设备。正式35视图908边2562引用，入口链闭合仍0。主框架实施总进度41/96=42.71%（32包×3具名单元），明细42的既存冲突保留，模型补证计分0。
+
+
+## 2026-10-21：回调注册导出、SDK提供目标与上下文门
+
+[G21—G23](execution-storage.html#edge-G22)补回跨映像的静态候选链：SDK GetProcAddress(PF_M_SetGlobalscriptCallback)→+0x23C0；候选PlatformManager同名导出ordinal6/RVA0x6A0750将二参桥到SetCallback4Single。SDK 0x180662990提供函数地址0x1806BD820及原R8上下文；该目标检查第六参数非空，再注入另一SDK全局对象，交0x180653BA0。新增候选导出20条、SDK两个函数116条静态指令，均核原字节、.pdata与汇编身份，不执行SDK。
+
+两个分支事实须保留：SDK查找结果写+0x23C0后检查的是+0x23A8，不能画成前者的非空确认；候选SDK回调第六上下文为空时正常路径返回0，不能把0视作脚本执行完成。实际加载身份、上游注册调用者/上下文、0x180653BA0内部及流程完成继续unknown。正式35视图911边2569引用，完整入口链关闭仍0。主框架实施41/96=42.71%（32包×3），明细42冲突未改；本轮模型补证不加实施分。
+
+
+## 2026-10-21：GlobalScript加载、命令接口桥与三种返回状态
+
+[G24—G27](execution-storage.html#edge-G24)把全局单次候选链从SDK 0x180653BA0追到GS_M_DealMsg与虚表+0x40。SDK加载体用_Mtx_lock保护+0x28、GetProcAddress(GS_M_DealMsg)写+0x18；已有模块handle的分支直接正常返回，不重新确认函数指针。消费体没有同一互斥量读取，不能据加载持锁宣称消费/卸载并发安全。模块路径含GlobalScript相对片段，路径helper与实际LoadedModule身份分别保留未知。
+
+现场候选Applications/GlobalScript/GlobalScript.dll已由REA open_binary固定SHA 4e25bd…e6f05。原导出ordinal1/RVA0x1A50五到六参桥注入对象，0x84B0检查对象+0x50指针，调用接口虚槽+0x40；原第四参按32位搬运。接口有符号负状态走异常helper，业务结果另经第七出参返回；局部32位长度会符号扩展写回原64位指针。接口状态、业务返回码和长度不能合并为执行完成。六个所选原生函数140条静态指令、SDK本轮两个函数335条；原字节/.pdata/汇编检查均不执行厂商代码。
+
+GlobalScript虚槽的接口/实现、初始化、命令4002内部、异常及真实完成继续未知；[有限复核](global-run-script-review.json)不声称原机验收。正式35视图915边2580引用，入口链完整闭合仍0；主框架实施41/96=42.71%（32包×3），明细42冲突保留，补证不增加实施计数。
+
+
+## 2026-10-21：IGScriptCom静态契约、命令4002与异步单次任务
+
+[G28—G31](execution-storage.html#edge-G30)补齐候选托管段。原native错误辅助所带IID字节与GScriptComponent.IGScriptCom GuidAttribute逐字节匹配；REA固定GScriptComponent及VM.GlobalScript.Support原件身份，接口声明/DealMsg由离线反编译和原CIL交叉核对。只宣称静态契约匹配，COM实际激活/加载绑定仍待证。
+
+DealMsg通过GlobalScript.HandleMsg→GlobalManager.HandleMsg/HandleCmd，在DLL模式下4002对应ExcuteOnce并调用StartOnce。HandleCmd正常尾固定返回0，不返回局部业务num。StartOnce用Task.Run提交闭包并立即返回0，bRunOnceProcess在任务体内才置true；等待编译超时仅记日志后继续，编译/外部程序集门与CodeRun错误在任务内处理。原单次命令返回与脚本完成是两个阶段，不能用当前根流程Task await合同替代。CodeRun内部/流程选择、报告消费者、真实完成通知继续unknown。
+
+DealMsg的UTF8输出容量<=字节数时写所需长度+1并返回E0000012；正常Copy只复制字节数，未追加零终止符或重写成功长度。10个原方法/闭包CIL完整解码，分支目标、原件SHA/MVID、REA组件IL摘要、GUID属性blob及native常量、反编译器和源输出身份复核见[托管单次有限复核](global-run-managed-review.json)。工具整体complete=false表示范围有限，不把它篡改为全域闭合；本轮不执行厂商代码。正式35视图919边2593引用，完整入口链关闭仍0。框架实施41/96=42.71%（32包×3），明细42冲突保留，模型补证不加实施分。
+
+
+## 2026-10-21：数据架构作为一级专题，并由可点击主界面地图进入
+
+[主架构入口地图](../framework-architecture.html#entry/data)按界面位置提供25个可点击操作入口，右侧直接显示操作调用链、原版/当前数据上下文及缺口，再进入逐边证据；这组映射是研究导航，不充作原版控件绑定证明。主界面核心新增[数据层](main-ui-map.html#data)，八区点击后立即给出数据专题入口。
+
+[数据架构](data-architecture.html)覆盖12个固定分析维度、8个主题章节：结构、类型/索引/订阅、单轮值、图像/ROI、结果缓存/线程、历史、持久化与ABI消息；已取9组核心结构的选定字段、51条既有关系出现位置和原/当前分开的传递图。不声称这9组就是软件全部数据模型；原native字段布局、像素所有权、.sol schema及动态类型等缺口明确保留。操作点击、深链接、分类/行为与源码摘要逐项静态核对，浏览器视觉未验收。
+
+正式35视图919边2593引用未因专题复用增加；本次是数据分析与导航交付，不计产品实施增量。主框架实施41/96=42.71%（32包×3），台账明细42冲突保留。
+
+
+## 2026-10-21：参数、图像与模块结果的跨层缓存/释放实质追踪
+
+[数据专题的生命周期深追](data-architecture.html#lifecycles)新增50个原版方法体（4个原件、13个类型）、19个原/当前切片，不以导航条目代替分析。参数追ModuleParam字符串SDK读写、%动态键、历史捕获/通知顺序、VmIO轮次失效/懒拉取以及当前JSON快照和有效参数缓存。图像分别追SDK ImageBaseData的byte[]/IntPtr/pin/共享映射与UI Apps.Data.ImageData的数组/地址载体，不合并两种路径。结果追SDK批次查询/转换/释放、UI三仓引用交换、当前模块实例与scope state的不同寿命和显示发布门。
+
+重要边界：ImageBaseData.Dispose只Free GC pin；仓库Clear不逐张析构。查询容器Release未清原页地址列表，不声称重复释放安全。chunk.FillData的缓存pData可来自全局原生复制池，初始268435455字节；GetBytes回绕复用、超大请求释放旧池扩容，因此对象被缓存不保证旧池地址内容稳定。GetData各重载的返回形式不同；默认无参GetData会再复制成托管byte[]。共享头所选读取字段及复制读取/借用映射的句柄归属分别记录，正常关闭不能推异常路径都关闭。
+
+主架构可点击地图已把每段的数据表示、缓存失效、释放者/时机、分支与源码片段直接内嵌到侧栏；主界面核心区域也直接展开，不再只有链接。以50体397个原CIL分支目标及所有引用摘要复核为有限证据，不执行原SDK、内存分配、设备或指针释放。native生产/共享版本协议、显示MemoryAddress读取/轮次门、全量provider/历史保留与最终像素生命周期继续列待证，未宣称完整数据层等价。主框架实施41/96=42.71%（32包×3），本轮补证不计产品增量。
+
+
+## 工具箱内的缓存图像数据链
+
+主界面地图工具箱按 14 分类选择 162 个具体工具，在当前详情区显示参数/端口声明、当前运行源码、既有算法对照及工具专项分析。仅 18 普通插件与 1 框架 Group 已定位当前接收路径；目录存在不证明恢复完成。
+
+本次为 Collection/ImageBufferModule 单列 IB01–IB09 共 9 条有限数据生命周期事实、34 个源码/原资源引用。逐项核对输入订阅/常量、数量和刷新门、拥有像素的复制、FIFO、输出引用传递、失败结果过滤、scope/fallback 持有与窗口关闭；地图内直接展开表示、缓存、释放及完整证据片段。成功的输出字典复制不复制像素；队列淘汰/状态删除不等于旧结果像素立即释放。
+
+确认当前插件失败时构造的 ModuStatus/ModuRunTime 在主流程 GraphExecutor 因 PreserveFailedOutputs 默认 false 被丢弃，不能把插件返回边界直接称作主窗/下游发布。旧工具专档保留历史限定，本次模型显式纠正边界解释。已进一步核普通配置入口 RunConfiguredTool 复用 GraphExecutor 的相同过滤；它使用配置窗口活性抑制过期发布，scope token 与窗口关闭分列。另一 ToolDebugSession 路径仍与本入口分开，未修改产品。
+
+原 native DLL SHA256 与 REA open_binary 身份相符，但历史 native/*.c 和受控运行原始产物在主工作树未找到；REA analyze_function(Process) 返回 provider_unavailable，完整响应保存在 image-buffer-native-retrieval.json。未运行原版或设备，未把历史文档当成本次取得的原生函数体。tool-data-lifecycle.json、tool-map-inline-review.json 保留本次证据和静态 DOM 替代检查；浏览器未验收，全部工具生命周期未闭合。主框架仍 41/96=42.71%，本次增加实施计数为 0。
+
+
+## 顶栏数据类型与数据流页签
+
+主架构 HTML 新增与全景/入口追踪并列的数据页签，直接呈现讲解内容，不使用目录跳转或iframe作为主体。三类数据导读、当前14种DataKind的4组通俗解释及Scalar/Array独立维度、6步可点击流转、3条生命周期主线、9组结构、原/当前/保存逐边链和缓存图像实例均可在页签内阅读。讲解流程是独立分析组织，不当作原版全模式调用链。具体类型、流转、复制、缓存与释放保留原证据及未知，未扩实施范围。
+
+verify-data-design-tab 检查全部5个顶栏页签、6步点击、3主线切换、数据来源等值、当前枚举完整性、逐条引用hash/片段以及数据hash直达和工具hash回地图。仅静态DOM替代验证，browserRendered=false；实施进度仍41/96=42.71%。图像源专属生命周期深化暂留断点，尚未把本轮只读源码发现当作已写模型。
+
+
+## 数据页签双栏与三级展开
+
+按用户要求结合两边表达优点：六步流转点击后，左栏用“这一步做什么、谁给谁、传递方向、副本还是共用、哪里保留、谁释放”解释同一个缓存图像场景，例子明确非本轮实测；右栏分三级展开具体类型与字段、实际传递/缓存/释放、原版与当前源码原文/hash/未知。每步同时提供原版已核相关边界与当前独立实现，明确它们不是一一同构或已闭合的原生算法链。
+
+SunEyeVision_V2页面仅只读参考其讲解组织；不将其WorkflowContext/RuntimeParameterSnapshot/位图池等类型或行为作为本项目实现证据。六步均支持#data-design/<step>直达，参数/图像/模块结果三线与详细结构仍在同一页签内。验证覆盖6步中文问答、三级内容、所选类型和源码、原/当前区分、全部页签/主线与hash恢复；浏览器呈现仍未验收，主框架实施41/96=42.71%不加分。
+
+
+## 图像源到工具、结果与显示的并行深化
+
+按用户授权分三线独占取证：当前图像源 IS01–IS10（本地、SDK、相机、拼接、缓存、退役、预览与保存）；当前工具/结果/显示 TD01–TD09（输入引用、工作数组、结果过滤、类型门、三显示入口与持有者）；原版显示 OD01–OD07（实际Apps.BaseData.Byte2ImageSource、映射/数组双分支、执行计数门、位图复用、映射关闭与解锁边界）。主线统一合入数据页签，不修改产品和另一工作树。
+
+image-data-pipeline.json 为5层原/当前对照：36条记录中26条新事实、8条明确复用既有原版数据链、2条显式未知。引用计数是事实引用次数，不是不同文件数；既有正式视图919条边/2593引用不与此补充模型相加。页签内可直接展开持有/复制/缓存/释放、成员分支和源码原文/hash/MVID；本地/SDK/相机分别列出。图像源、二值化工具箱具体入口亦同步显示对应当前数据事实。
+
+提供源码可配置路线 ImageSource.Image→ImageBuffer.InputImage→OutImage0Image→ImageBinary.Image→NodeRunRecord→显示，注明只在实际灰度值、合法配置及显示入口条件满足时成立，非已运行端到端验收。通用IMAGE声明可连接不证明RGB/Raw实际值能进入GrayImage算法；自动来源列表、Preview点击与通用frame不混用。PathCache降低或目录dirty不驱逐像素、PendingFrame单槽引用覆盖、相机临时native缓冲finally、拼接先克隆后改前缀、失败结果过滤与多持有者退役均逐条留证。
+
+原版新核3原件、19个CIL体（17所选体+2 helper自动纳入Connect）、349分支目标；实际显示转换器是Apps.BaseData.Byte2ImageSource，不是VM.Controls或HikPcUI.ImageView同名类。非direct经真实VM.ExternalCall.IntPtr2Bytes的new byte[]/Marshal.Copy回填Buffer；direct只在offset>84且expectedCount!=0时检查计数。using映射Dispose与位图Unlock不是相同异常保证。
+
+IU01保留原生生产/算法全体与载荷所有权缺口，IU02保留RenderDataCenter具体实例→活ImageViewBox.ImageDataSource binding缺口。未把SDK ImageBaseData与UIImageData并成同一实例；原生全链未闭合、原/当前GUI/设备未执行、browserRendered=false。verify-image-data-pipeline和现有全量构建进行来源/分类/片段/原件身份与页内呈现检查；不据静态通过宣称等价。主框架仍41/96=42.71%，本次实施计分0。
+
+## 图像链本轮合流与检索更正
+
+数据页签已将图像进入、工具处理、模块结果、显示、释放按原版与当前实现分栏展开，55条事实项含8条复用证据、2条明确未知；每条直接展示持有者、复制/缓存/释放和源码原文。原版A链为RenderDataCenter→模块结果视图，B链为tempImageStore→RenderControlBase；原BAML分别绑定各自的ImageViewBox，不混成同一条实例链。
+
+此前默认`rg --files`遵循Git忽略，不能据未列出断言原体缺失。本轮直接读取并逐字核对47份保留REA原生伪码与原件身份，展开Process的memcpy_s、FreeBuf通知和DeInit清理。保留历史判断供审计；它不再代表当前恢复状态。接口callee、全部模式/错误分支、其它原生工具算法及最后读者仍未闭合；未执行原版、设备或GUI。静态原BAML与成员链已证，运行绑定未验收。
+
+## 原版缓存与在飞显示的进一步展开
+
+本轮三条独立子线分别追原图像源路径缓存NC01–NC05、公共显示在飞任务IF01–IF05、结果三仓交换RC01–RC04；根线用已有Ghidra/JDK静态恢复缓存图像工具Process/GetInImage/CopyImage/SetOutImage/DeInit五体，新增NB01–NB04。模型现73条记录（63条新事实、8条复用、2条显式未知），直接在数据页签和图像源/缓存图像工具详情展示，不以目录链接替代。
+
+页签新增通俗持有说明：输入像素复制到缓存缓冲；display/buffer字典交换后旧显示数据仍被待写仓持有；Task闭包持有控件/事件，执行时读取当前状态。静态限定分别附证据，不宣称原机竞态必现。清路径列表、删节点、清字典、清控件和最后像素读者分开。
+
+离线CLI只读取原DLL，在当前工作树写分析数据库和报告；未执行厂商代码/设备、未改全局配置。首次启动的类加载/缓存路径问题和Ghidra中文路径日志配置错误不当作成功证据；最终进程exit0与五份c/asm及函数清单证明所选恢复。SetOutImage的第五栈实参已核汇编，不按伪码省参推断缺失；其语义、分配接口callee和最终像素归还仍未知。主框架实施41/96=42.71%，文档/取证增量不计分。
+
+## 参数快照与共享内存接口来源
+
+数据页签新增参数四时点讲解及原/当前11条SP/CP对照：值编辑与输入来源、启动配置复制与节点运行时解析、有效参数缓存、保存投影。有效参数写在执行前，读取叠加后续编辑，因此不视为成功运行纯历史。原版图像源算法XML与UI XML默认不同，SDK分发/落盘未知保留。参数原文与类型/持有/缓存/退役直接内嵌，而非目录链接。
+
+原图像链新增PB01–PB04（SDK回调→方案事件→VmIO typed载荷）和NM01–NM04（原PE虚表→分配/释放体→映射头/视图/句柄→基类析构），现81条图像记录。原图像跳过chunk.FillData，ByteData另有复制，不能一概画为查询释放前完成像素复制。新原生14体由已有离线Ghidra在本任务数据库静态恢复；所选vtable槽从当前原PE直接核字节。共享名/base+0x80和头字段已定位，但ModuleFrame提交接收端、同帧计数与最后读者未闭合。工具箱的图像源/缓存图像详情亦内嵌新事实。
+
+静态构建、页内内容、原/当前区分、参数/图像hash入口与来源身份检查分别进行；原版/设备/GUI未运行，浏览器未验收。主框架实施仍41/96=42.71%，本轮取证与文档计分0。
+
+## 原生提交、SDK桥与数据事实直达
+
+本轮PS01–PS04核原参数SDK值/绑定分发、UTF8编组和读回释放，参数对照共15条；RQ01–RQ04核主动查询与历史页/映射/旧图像/V2取图差异；MF01–MF04恢复原ModuleFrame图像提交的额外实参、条件映射地址选择、长度_指针_共享名文本结果槽与真实返回码，图像对照共89条。ModuleFrame全局自动分析90秒超时已保留为限制；随后仅静态恢复14个所选函数，不把单体成功称作全DLL分析完成，不把反编译void误当API无返回。内部文本槽到SDKtyped输出、执行计数发布及最后读者仍未闭合。
+
+导航审计发现旧入口未消费新版数据，现按界面操作在根地图与核心地图中直接内嵌适用事实、持有/复制/缓存/释放及原文；具体工具提供通用CP上下文，SP/PS只归图像源。各事实支持#data-design/fact/ID定位并展开祖先details，公共生命周期与缓存工具事实也有页内目标。研究关联不冒充原调用边。静态DOM替身执行实际handler，校验内容、源码及hash，不宣称浏览器视觉验收。框架实施仍41/96=42.71%，本轮取证/文档计分0。

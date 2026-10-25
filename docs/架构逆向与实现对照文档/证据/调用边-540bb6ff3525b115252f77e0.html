@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ToolDisplayFrame.ImageLayers / CheckedImageNames · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ToolDisplayFrame.ImageLayers / CheckedImageNames · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C12"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ToolDisplayFrame.ImageLayers / CheckedImageNames → 选中底层与至多三个独立Image叠层</h2><p>有层时折叠常驻Image并创建选中层Image，以selectedLayer.Opacity显示；仅selected名等BackgroundImageName时勾选叠层Visible。CheckedImageNames按Ordinal去重Take(3)，不存在或空图层跳过；有效槽默认alpha字节191/127/63、z=100/101/102，声明alpha/z可覆盖（z==0取默认）。创建WPF Image而非改写底图像素。</p><p><a href="../专题/rendering-layers.html#edge-C12">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/rendering-layers.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/rendering-layers.edges.json · SHA256 28101fd3e74d0ef6d0fc0f2c5059c29b49d8a7d9e0e05a0081c069f7d6bfb43b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="6a732e72bb9e48afe83fc89698bd5d8a76062d00b7b2a2635f6fbdc4d20bf24f">{
+  &quot;id&quot;: &quot;C12&quot;,
+  &quot;route&quot;: &quot;当前 · 实际结果呈现与有限导出&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;ToolDisplayFrame.ImageLayers / CheckedImageNames&quot;,
+  &quot;to&quot;: &quot;选中底层与至多三个独立Image叠层&quot;,
+  &quot;behavior&quot;: &quot;有层时折叠常驻Image并创建选中层Image，以selectedLayer.Opacity显示；仅selected名等BackgroundImageName时勾选叠层Visible。CheckedImageNames按Ordinal去重Take(3)，不存在或空图层跳过；有效槽默认alpha字节191/127/63、z=100/101/102，声明alpha/z可覆盖（z==0取默认）。创建WPF Image而非改写底图像素。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolDisplayPresenter.cs&quot;,
+      &quot;member&quot;: &quot;Layer alpha and stacking&quot;,
+      &quot;sha256&quot;: &quot;0148527f597e5db2239b4efab3987ca992b2216317cd166a95f9f51f7238c6e2&quot;,
+      &quot;start&quot;: 37,
+      &quot;end&quot;: 67,
+      &quot;excerpt&quot;: &quot;        if(frame.ImageLayers.Count>0)\n        {\n            image.Visibility=Visibility.Collapsed;\n            // Source result view selects one base image, then may add up to three\n            // separately checked overlays. The overlay list is explicit session state.\n            if(selectedLayer is not null)\n            {\n                var rendered=new W.Image{Tag=\&quot;DisplayImage:\&quot;+selectedLayer.Name,Stretch=Stretch.Fill,Opacity=selectedLayer.Opacity,\n                    Visibility=Visibility.Visible,Source=Bitmap(selectedLayer.Image)};\n                scene.Children.Add(rendered);\n            }\n            bool overlaysVisible=selectedLayer is not null&amp;&amp;frame.BackgroundImageName==selectedLayer.Name;\n            byte[] nativeAlpha=[191,127,63];int[] nativeZ=[100,101,102];int slot=0;\n            foreach(var name in frame.CheckedImageNames.Distinct(StringComparer.Ordinal).Take(3))\n            {\n                var layer=frame.ImageLayers.FirstOrDefault(item=>item.Name==name&amp;&amp;item.Image is not null);\n                if(layer is null)continue;\n                int z=layer.OverlayZIndex==0?nativeZ[slot]:layer.OverlayZIndex;\n                double alpha=(layer.OverlayAlpha??nativeAlpha[slot])/255d;\n                var rendered=new W.Image{Tag=\&quot;DisplayOverlay:\&quot;+layer.Name,Stretch=Stretch.Fill,Opacity=alpha,\n                    Visibility=overlaysVisible?Visibility.Visible:Visibility.Collapsed,Source=Bitmap(layer.Image)};\n                W.Panel.SetZIndex(rendered,z);scene.Children.Add(rendered);slot++;\n            }\n        }\n        else\n        {\n            image.Visibility=Visibility.Visible;\n            if (frame.ImageVisible &amp;&amp; frame.Image is {} source) image.Source=Bitmap(source);\n        }\n        if (frame.TextVisible)\n        {&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolDisplayContracts.cs&quot;,
+      &quot;member&quot;: &quot;Layer and frame declarations&quot;,
+      &quot;sha256&quot;: &quot;8e09c8b9d5c67a949bfaeca44613d25730295a5dee4b20604c9da40c03e661b4&quot;,
+      &quot;start&quot;: 27,
+      &quot;end&quot;: 49,
+      &quot;excerpt&quot;: &quot;public sealed record ToolDisplayImageLayer(string Name, VisionCore.IImageData? Image, bool Visible, double Opacity)\n{\n    public int OverlayZIndex { get; init; }\n    public byte? OverlayAlpha { get; init; }\n}\npublic sealed record ToolDisplayFrame(VisionCore.IImageData? Image, string Text, string Color,\n    double FontSize, double Opacity, double PositionX, double PositionY, string RecordText,\n    IReadOnlyList&lt;ToolDisplayCell> ResultList)\n{\n    public IReadOnlyList&lt;ToolDisplayGraphic> Graphics { get; init; } = Array.Empty&lt;ToolDisplayGraphic>();\n    /// &lt;summary>Optional source image objects. The presenter displays one selected object at a time.&lt;/summary>\n    public IReadOnlyList&lt;ToolDisplayImageLayer> ImageLayers { get; init; } = Array.Empty&lt;ToolDisplayImageLayer>();\n    public string? SelectedImageName { get; init; }\n    public string? BackgroundImageName { get; init; }\n    public IReadOnlyList&lt;string> CheckedImageNames { get; init; } = Array.Empty&lt;string>();\n    public bool TextVisible { get; init; }\n    public bool ImageVisible { get; init; }\n    public bool RecordVisible { get; init; }\n    public bool ResultListVisible { get; init; }\n}\npublic interface IToolDisplayProvider\n{\n    ToolDisplayDefinition DisplayDefinition { get; }&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;未读取的Visible标记不能自动视为所有层的呈现门；透明合成与原版像素/遮挡一致性未验。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

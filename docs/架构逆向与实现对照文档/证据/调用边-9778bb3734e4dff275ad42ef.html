@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>独立 Group 循环轮体 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>独立 Group 循环轮体 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C04"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>独立 Group 循环轮体 → 取消/边界保护 → break → Execute → 累积/等待</h2><p>每轮先取消、int32范围及10000轮独立守卫，再判断中断，之后执行并加 completed；仅 Success 加累积，非成功退出；成功后有间隔就等待，包括末轮。completed 包含已执行的失败轮，不能称成功轮数。</p><p><a href="../专题/group-control.html#edge-C04">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/group-control.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/group-control.edges.json · SHA256 c6dc5708e08f496256f3b1f356107d578039de6c3ec9fb98c139daabc3c89bed</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="1d29497f77fb44ddaedeb03534b84aec8c452ded16c8dea2966aaee330ea18fa">{
+  &quot;id&quot;: &quot;C04&quot;,
+  &quot;route&quot;: &quot;当前 · 配置与循环执行&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;独立 Group 循环轮体&quot;,
+  &quot;to&quot;: &quot;取消/边界保护 → break → Execute → 累积/等待&quot;,
+  &quot;behavior&quot;: &quot;每轮先取消、int32范围及10000轮独立守卫，再判断中断，之后执行并加 completed；仅 Success 加累积，非成功退出；成功后有间隔就等待，包括末轮。completed 包含已执行的失败轮，不能称成功轮数。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/SolutionExecutor.cs&quot;,
+      &quot;member&quot;: &quot;SolutionExecutor Group loop body&quot;,
+      &quot;sha256&quot;: &quot;a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b&quot;,
+      &quot;start&quot;: 31,
+      &quot;end&quot;: 43,
+      &quot;excerpt&quot;: &quot;                for(long index=loop.Start;index&lt;loop.End;index+=loop.Increment){\n                    childToken.ThrowIfCancellationRequested();\n                    if(index&lt;int.MinValue||index>int.MaxValue)throw new InvalidOperationException(\&quot;Independent Group index overflow guard.\&quot;);\n                    // Independent resource guard; this is not a recovered VM iteration limit.\n                    if(completed>=10000)throw new InvalidOperationException(\&quot;Independent Group iteration limit is 10000.\&quot;);\n                    if(GroupBreak.Evaluate(node,body,last,(int)index,diagnostics,values,(name,element)=>accumulator.ReadSelfElement(name,element,last))){broke=true;breakIndex=(int)index;break;}\n                    last=await Execute(body.Id,values,childToken,depth+1,(int)index);completed++;\n                    if(last.Status==SessionStatus.Success)accumulator.Add(last);\n                    if(last.Status!=SessionStatus.Success)break;\n                    if(loop.IntervalMs>0)await Task.Delay(loop.IntervalMs,childToken);\n                }\n                return (last??new ExecutionSessionResult(SessionStatus.Success,[])) with{CompletedGroupIterations=completed,GroupBroke=broke,GroupBreakIndex=breakIndex,GroupDiagnostics=diagnostics.AsReadOnly(),WorkflowOutputs=accumulator.Finish(last),WorkflowDisplays=accumulator.FinishDisplays()};\n                },childToken);&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

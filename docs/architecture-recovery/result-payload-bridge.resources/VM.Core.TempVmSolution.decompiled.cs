@@ -1,0 +1,63 @@
+using UIVersionControlManager;
+using VM.PlatformSDKCS;
+
+namespace VM.Core;
+
+public class TempVmSolution
+{
+	static TempVmSolution()
+	{
+		UIVersionControlManagerCS.VersionControlManager = new VMVersionControlManager(ServerSDKManager.serverSDKManager.mSolutionManager);
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnSolutionLoadBeginCallBack += VmSolution.MSolutionManager_OnSolutionLoadBeginCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnSolutionLoadEndCallBack += VmSolution.MSolutionManager_OnSolutionLoadEndCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnSolutionLoadProgressCallBack += VmSolution.MSolutionManager_OnSolutionLoadProgressCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnModelLoadWarn += VmSolution.MSolutionManager_OnModelLoadWarn;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnSolutionSaveBeginCallBack += VmSolution.MSolutionManager_OnSolutionSaveBeginCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnSolutionSaveEndCallBack += VmSolution.MSolutionManager_OnSolutionSaveEndCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnSolutionSaveProgressCallBack += VmSolution.MSolutionManager_OnSolutionSaveProgressCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnModuleContinousRunStatusCallBack += VmSolution.MSolutionManager_OnModuleContinousRunStatusCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnModuleResultCallBack += VmSolution.MModuleManager_OnModuleResultCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnWorkStatusCallBack += VmSolution.MProcessManager_OnWorkStatusCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnModuleStartContinuouslyProcessStatusCallBack += VmSolution.MProcessManager_OnProcessStartContinuousStatusCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessExecuteStatusCallBack += VmSolution.MProcessManager_OnProcessExecuteStatusCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnModuleStopRunProcessStatusCallBack += VmSolution.MProcessManager_OnModuleStopRunProcessStatusCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnUIGlobalProcessObjectIDCallBack += VmSolution.MSolutionManager_OnUIGlobalProcessObjectIDCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnReportModuleStatusCallBack += VmSolution.MModuleManager_OnReportModuleStatusCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessImportBeginCallBack += VmSolution.MProcessManager_OnProcessImportBeginCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessImportProgressCallBack += VmSolution.MProcessManager_OnProcessImportProgressCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessImportUiDataCallBack += VmSolution.MProcessManager_OnProcessImportUiDataCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessImportEndCallBack += VmSolution.MProcessManager_OnProcessImportEndCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessExportBeginCallBack += VmSolution.MProcessManager_OnProcessExportBeginCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessExportProgressCallBack += VmSolution.MProcessManager_OnProcessExportProgressCallBack;
+		ServerSDKManager.serverSDKManager.mProcessManager.OnProcessExportEndCallBack += VmSolution.MProcessManager_OnProcessExportEndCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnImportGroupBeginCallBack += VmSolution.MModuleManager_OnImportGroupBeginCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnImportGroupProcessCallBack += VmSolution.MModuleManager_OnImportGroupProcessCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnImportGroupUiDataCallBack += VmSolution.MModuleManager_OnImportGroupUiDataCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnImportGroupEndCallBack += VmSolution.MModuleManager_OnImportGroupEndCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnExportGroupBeginCallBack += VmSolution.MModuleManager_OnExportGroupBeginCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnExportGroupProcessCallBack += VmSolution.MModuleManager_OnExportGroupProcessCallBack;
+		ServerSDKManager.serverSDKManager.mModuleManager.OnExportGroupEndCallBack += VmSolution.MModuleManager_OnExportGroupEndCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnGlobalScriptRecvDataCallBack += VmSolution.MSolutionManager_OnGlobalScriptRecvDataCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnVarValueChangeCallBack += VmSolution.MSolutionManager_OnVarValueChangeCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnResourceUsagePushCallBack += VmSolution.MSolutionManager_OnResourceUsagePushCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnDongleCallBack += VmSolution.MSolutionManager_OnDongleCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnProxyCrashNotice += VmSolution.MSolutionManager_OnProxyCrashNotice;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnServerStatusCallBack += VmSolution.MSolutionManager_OnServerStatusCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnExecuteAfterLoad += VmSolution.MSolutionManager_OnExecuteAfterLoad;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnReportDataToVM += VmSolution.MSolutionManager_OnReportDataToVM;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCloseSolutionCallBack += VmSolution.MSolutionManager_OnCloseSolutionCallBack;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnProcedureUnRegister += VmSolution.MSolutionManager_OnProcedureUnRegister;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnDataQueueReportDataCallBack += VmSolution.MSolutionManager_DataQueueReportData;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCommunicationRecvCallBack += VmSolution.MSolutionManager_OnCommuRecvData;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCommunicationStatusCallBack += VmSolution.MSolutionManager_OnCommuStatus;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCameraCollectCallBack += VmSolution.MSolutionManager_OnCameraCollect;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCameraCollectStartCallBack += VmSolution.MSolutionManager_OnCameraCollectStart;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCameraConnectStatusCallBack += VmSolution.MSolutionManager_OnCameraConnectStatus;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCommuConnectCallBack += VmSolution.MSolutionManager_OnCommuConnect;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnSolutionRunEndCallBack += VmSolution.MSolutionManager_OnSolutionRunEndCallBack;
+	}
+
+	public static void Init()
+	{
+	}
+}

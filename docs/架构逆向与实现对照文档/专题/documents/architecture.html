@@ -1,0 +1,73 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>独立 VM 重建架构 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 独立 VM 重建架构</p><h1>独立 VM 重建架构</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>独立 VM 重建架构</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="architecture.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="architecture.html#独立-vm-重建架构">独立 VM 重建架构</a></p><p style="margin-left:14px"><a href="architecture.html#工程边界">工程边界</a></p><p style="margin-left:14px"><a href="architecture.html#模型">模型</a></p><p style="margin-left:14px"><a href="architecture.html#模块与数据">模块与数据</a></p><p style="margin-left:14px"><a href="architecture.html#调度与错误">调度与错误</a></p><p style="margin-left:14px"><a href="architecture.html#首批模块">首批模块</a></p><p style="margin-left:14px"><a href="architecture.html#当前验证与下一阶段">当前验证与下一阶段</a></p></details><h1 id="独立-vm-重建架构">独立 VM 重建架构</h1><p>本轮实现方案主体与无界面执行后端。结构为独立设计；尚未证明与原 VM 架构或行为等价。原程序行为证据保存在 analysis，重建实现不得把推导当作已观察运行。</p>
+<h2 id="工程边界">工程边界</h2><table>
+<thead>
+<tr>
+<th>工程</th>
+<th>职责</th>
+<th>依赖</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>VisionData</td>
+<td>不可变灰度图、点、圆、连通域值</td>
+<td>无</td>
+</tr>
+<tr>
+<td>VisionFramework</td>
+<td>方案、模块契约、端口、ROI、资源、持久化、验证与调度</td>
+<td>VisionData</td>
+</tr>
+<tr>
+<td>VisionCore</td>
+<td>独立算法实现</td>
+<td>VisionData</td>
+</tr>
+<tr>
+<td>VisionIO</td>
+<td>BMP读取</td>
+<td>VisionData</td>
+</tr>
+<tr>
+<td>VisionModules</td>
+<td>可注册的内置模块适配</td>
+<td>Framework、Core、IO</td>
+</tr>
+<tr>
+<td>VisionGraphRunner</td>
+<td>通用CLI方案创建、验证、执行</td>
+<td>Framework、Modules</td>
+</tr>
+<tr>
+<td>VisionWorkbench / VisionWorkflow</td>
+<td>之前的找圆验证界面与固定链路</td>
+<td>保留实验入口，尚未接入主图编辑器</td>
+</tr>
+<tr>
+<td>SolutionInspector</td>
+<td>原.sol的只读格式调查</td>
+<td>与独立运行后端分离</td>
+</tr>
+</tbody></table>
+<p>VisionData 暂保留 VisionCore 命名空间以保持此前源码引用；程序集已物理分离。主框架不引用算法库。当前没有外部DLL插件发现/卸载，ModuleRegistry提供受版本标识的工厂注册扩展点。</p>
+<a class="site-evidence-link" data-evidence-key="02bf72a3c777bcbe4e74e88e513f0cff32a0f3c740bc1a60112d75096c46bddf" href="../../../证据/02bf72a3c777bcbe4e74e88e513f0cff32a0f3c740bc1a60112d75096c46bddf.html#content">查看完整原文／记录 ↗ <small>02bf72a3c777</small></a>
+<h2 id="模型">模型</h2><p>SolutionDocument包含版本、ID、名称、多个ProcedureDocument及ResourceDocument。流程包含节点与端口连接；节点包含模块ID/版本、名称、显式参数、编辑器坐标、启用状态、超时与ROI集合。支持矩形、圆、环和多边形ROI的数据表示和基本合法性校验；尚未实现ROI掩膜、fixture变换、角度范围、自交检查或图形编辑。</p>
+<p>独立文件格式 *.vmx.json，FormatVersion=1。不是原.sol兼容写入格式。未知文档字段、重复JSON字段、未来版本和悬空节点连接拒绝。保存先校验、写同目录临时文件、flush再替换，失败不得破坏原文件；跨进程协作锁和嵌入资源打包尚未实现。</p>
+<h2 id="模块与数据">模块与数据</h2><p>IModule声明ModuleDescriptor并实现ExecuteAsync。描述包含版本、输入输出端口、参数类型和范围。每个节点每次运行由factory创建实例，执行后Dispose/DisposeAsync。描述在注册时冻结；registry尚未支持运行期间热更新。</p>
+<p>PortValue显式区分GrayImage、Number、Integer、Boolean、Text、Components、Circle。不自动把整数转double，也不进行字符串隐式转换。后续需要显式类型转换模块。</p>
+<p>ModuleStatus：Success、NoMatch、Failed。NodeRunStatus另有Running、Skipped、Cancelled、TimedOut。SessionStatus.Success只代表没有运行错误，不代表所有检测目标存在或全部业务判断合格。比较输出Passed=false也可以是正常执行。</p>
+<h2 id="调度与错误">调度与错误</h2><p>当前为稳定、顺序DAG执行，拓扑顺序在多个可执行节点间沿文档节点顺序决定。允许fan-out，输入端口只能单绑定。检查模块/版本、端口方向和类型、必填输入、参数类型/范围、重复节点/连接、环及禁用节点依赖。环明确拒绝，没有模拟循环。</p>
+<p>运行期间使用节点参数、连接及ROI快照；进度观察器不能修改当前运行快照，观察器异常不影响算法。节点结果保存类型化输出、错误和耗时。上游失败或被连接输出缺失时，下游跳过并无输出；独立链路继续执行。</p>
+<p>取消与超时为协作机制，仍等待实际模块结束并释放资源，不遗弃后台任务。内置同步算法只在开始/结束检查取消，因此不能保证中途即时停止。硬超时需要后续进程隔离。</p>
+<p>资源目录按方案所在目录解析相对路径；SolutionExecutor在执行前校验所有声明资源和可选SHA256。直接使用GraphExecutor只运行流程，不校验Solution资源。预校验不是输入文件的全程不可变快照，算法模块仍通过Path读取，后续需要按资源ID统一获取。</p>
+<h2 id="首批模块">首批模块</h2><ul>
+<li>vision.image-file：文件BMP图像源。</li>
+<li>vision.threshold：阈值分割。</li>
+<li>vision.components：8邻域连通域及数量。</li>
+<li>vision.circle：独立径向找圆，显式ROI/采样参数。</li>
+<li>logic.number-compare：数值判断。</li>
+</ul>
+<p>版本均1.0.0。实现及限制见 src/VisionModules/README.md。没有原厂DLL依赖，也没有原厂数值等价结论。</p>
+<h2 id="当前验证与下一阶段">当前验证与下一阶段</h2><p>examples/architecture-demo.vmx.json 是五节点、四连接的两条链路：图像源→阈值→连通域；图像源→找圆→半径比较。保存再加载后执行成功。</p>
+<p>验证涵盖模型保存、ROI、资源身份、端口类型、拓扑顺序、失败传播、无匹配、取消/超时、销毁、快照隔离，以及真实内置模块的集成链路。可用tests目录重复运行。</p>
+<p>下一阶段建设通用流程编辑器：模块工具箱、节点拖放、端口连线、参数面板、图像/ROI编辑、撤销重做和保存重开；直接调用本框架。分支循环、断点单步、并发、相机/通信、原.sol往返与SDK兼容仍在后续里程碑。</p>
+<p class="meta">来源：docs/architecture.md · SHA256 9e4b2b6d6ca70d2f101874b82385f0da8c1e6b9e76c73440197f19a569bb3650<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

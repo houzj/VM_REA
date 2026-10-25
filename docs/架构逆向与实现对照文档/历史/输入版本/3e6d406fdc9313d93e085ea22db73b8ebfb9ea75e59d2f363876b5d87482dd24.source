@@ -1,0 +1,1062 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>流程标题显式提交、名称写入与保存边界</title><style>body{max-width:1300px;margin:auto;padding:24px;background:#101c2d;color:#e3eefb;font:15px/1.7 Microsoft YaHei,sans-serif}a{color:#a3d8ff}article{background:#1a2e45;padding:18px;margin:16px 0;border:1px solid #4c647c}.unknown{border-style:dashed}.notice{padding:15px;border-left:4px solid #ddaa6a;background:#253a50}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 Consolas,monospace}</style><a href="workflow-rendering-entry-audit.html">画布呈现</a> · <a href="main-ui-map.html">主架构</a><h1>流程标题显式提交、名称写入与保存边界</h1><p class="notice">重命名：资源命令/编辑旗 → HeadReNameTextBox的显式UpdateSource → 装饰器Name → 模块/流程各自SDK名称操作。保存是另一个消费者，未证明退出编辑立即写文件。没有按惯例补造Escape取消、绑定错误恢复或方案往返。</p><p>33个原件独立CIL体；实际样式绑定、原生序列化和运行验收均未闭合。</p><article id="WTN01" class="source-confirmed"><h2>WTN01 · 节点/流程标题与重命名声明 → Name Explicit绑定及RenameCommand / RenameWindowCommand</h2><p>source-confirmed：所选NORMAL节点标题HeadReNameTextBox.Text绑定Name（TwoWay、UpdateSourceTrigger=Explicit），IsReName另TwoWay；流程标题和Group标题也声明相同提交形式。所选右键重命名项调用RenameWindowCommand，另有RenameCommand项；前者声明默认禁用，仅IsForbidden=false且IsLoadFailed=false启用。这是具体资源入口，不把所有菜单、F2或双击都当作同一路重命名。</p><p>待追：diagramitemtemplate/ProcedureConfigControl原BAML byte-equal父证据已在既有账本，真实模板选择、其它菜单和快捷键全集未在本片运行核验。</p><details><summary>NORMAL title explicit binding · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1143–1143
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+          &lt;appUi:HeadReNameTextBox Name=&quot;itemName&quot; Grid.Column=&quot;1&quot; Background=&quot;#00FFFFFF&quot; FontWeight=&quot;Bold&quot; FontSize=&quot;12&quot; VerticalAlignment=&quot;Center&quot; BorderThickness=&quot;0&quot; MaxLength=&quot;{x:Static local:DiagramItem.MaxNameLenth}&quot; Foreground=&quot;{Color:ColorResourceBinding Col_EditProcess_Foreground}&quot; Text=&quot;{Binding Name, Mode=TwoWay, UpdateSourceTrigger=Explicit}&quot; IsReName=&quot;{Binding IsReName, Mode=TwoWay}&quot; /&gt;</pre></details><details><summary>Rename window menu declaration · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1074–1089
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+    &lt;MenuItem Header=&quot;{DynamicResource Lang_Rename}&quot; Command=&quot;{Binding RenameWindowCommand}&quot;&gt;
+      &lt;FrameworkElement.Style&gt;
+        &lt;Style TargetType=&quot;{x:Type MenuItem}&quot;&gt;
+          &lt;Setter Property=&quot;IsEnabled&quot; Value=&quot;False&quot; /&gt;
+          &lt;Style.Triggers&gt;
+            &lt;MultiDataTrigger&gt;
+              &lt;MultiDataTrigger.Conditions&gt;
+                &lt;Condition Value=&quot;False&quot; Binding=&quot;{Binding IsForbidden}&quot; /&gt;
+                &lt;Condition Value=&quot;False&quot; Binding=&quot;{Binding IsLoadFailed}&quot; /&gt;
+              &lt;/MultiDataTrigger.Conditions&gt;
+              &lt;Setter Property=&quot;IsEnabled&quot; Value=&quot;True&quot; /&gt;
+            &lt;/MultiDataTrigger&gt;
+          &lt;/Style.Triggers&gt;
+        &lt;/Style&gt;
+      &lt;/FrameworkElement.Style&gt;
+    &lt;/MenuItem&gt;</pre></details><details><summary>Procedure header explicit binding · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml:529–529
+SHA256 a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106
+                      &lt;appUi:HeadReNameTextBox Name=&quot;headText&quot; Foreground=&quot;{DynamicResource Col_ProcessBar_Foreground}&quot; BorderThickness=&quot;0&quot; Background=&quot;#00FFFFFF&quot; MaxLength=&quot;64&quot; FontSize=&quot;14&quot; Margin=&quot;8,0,0,0&quot; VerticalAlignment=&quot;Center&quot; MaxWidth=&quot;240&quot; Text=&quot;{Binding Name, Mode=TwoWay, UpdateSourceTrigger=Explicit}&quot; IsReName=&quot;{Binding IsReName, Mode=TwoWay}&quot; /&gt;</pre></details></article><article id="WTN02" class="source-confirmed"><h2>WTN02 · VmModuleBaseDecorator.Rename命令 → IsReName=true与有限弹窗分支</h2><p>source-confirmed：RenameCommandExe仅IsReName=true；RenameWindowCommandExe先置true，再new ModifyName(this).ShowDialog。IsReName值变化先写字段，变true时注册RootOperation再通知；不因失败的后续窗口构造/注册而声称回滚。ModifyName带参构造仅decorator is VmModuleDecorator才赋DataContext；不能泛称所有流程/Group装饰器都可用同一弹窗。SearchClick只清DataContext再Close，并未显式UpdateSource。</p><p>待追：ModifyName默认TextBox绑定的真实提交/失焦顺序、关闭按钮/取消和各装饰器实际入口组合未验；不以普通WPF惯例补齐。</p><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_RenameCommand · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:3937–3956
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009ce&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009ce&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;get_RenameCommand&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20001280c5&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 37,
+          &quot;ilSha256&quot;: &quot;00af1f564ba43a195781a97bfcf8f24d839fc522c8875106cec8a506da965b7b&quot;,
+          &quot;ilBytes&quot;: &quot;027b2b050004252d1b260202fe06cf090006735300000a735400000a250a7d2b050004062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_RenameWindowCommand · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:3649–3668
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009cc&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009cc&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;get_RenameWindowCommand&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20001280c5&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 37,
+          &quot;ilSha256&quot;: &quot;9a1149e58abc5ea22e093b9a6286ff0a71cfe909b69799a82e263b65f70d6c14&quot;,
+          &quot;ilBytes&quot;: &quot;027b2a050004252d1b260202fe06cd090006735300000a735400000a250a7d2a050004062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::RenameCommandExe · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:4097–4116
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009cf&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009cf&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;RenameCommandExe&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 10,
+          &quot;ilSha256&quot;: &quot;fd890004dd23f1a508ebae807c95bf969a27d0d2656b6d589c72d4ac56b5b30b&quot;,
+          &quot;ilBytes&quot;: &quot;00021728d1090006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::RenameWindowCommandExe · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:3809–3828
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009cd&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009cd&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;RenameWindowCommandExe&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 24,
+          &quot;ilSha256&quot;: &quot;3535b62d346f43c307ba346c81a48bca4906c131bcc8612d39e0cd580d911fa8&quot;,
+          &quot;ilBytes&quot;: &quot;00021728d1090006000273900a00060a066fce00000a262a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_IsReName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:4168–4187
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009d1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;set_IsReName&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 93,
+          &quot;ilSha256&quot;: &quot;ec8f6a6d20be5d11a99240667a492fcc7a45430523979cbba8d3d7e26ffe87b3&quot;,
+          &quot;ilBytes&quot;: &quot;00027b2c05000403fe0116fe010a062c4b0002037d2c050004027b2c0500040b072c2c00280500002b252d03262b1f731809000672828d0070283800000a252d06267229000070146faa00000a00000272636000706f7c02000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.ModifyName::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:5111–5130
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x06000a90&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000a90&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.ModifyName&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200101128274&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 41,
+          &quot;ilSha256&quot;: &quot;477d37f573dcc14bf905f820af9f2de69b99d68d1edf70053a17b7ca6a227004&quot;,
+          &quot;ilBytes&quot;: &quot;02287201000a00000228920a0006000375a0000002250a14fe030b072c0a000206285500000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.Base.ModifyName::SearchClick · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:5319–5338
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x06000a91&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000a91&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.ModifyName&quot;,
+            &quot;name&quot;: &quot;SearchClick&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;6358512c6b45fb4a288fd720b42a858565c4bb5ede23d7940539b59ac5b6dd34&quot;,
+          &quot;ilBytes&quot;: &quot;000214285500000a00026f8601000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Rename entry methods · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:1146–1157
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	private void RenameWindowCommandExe()
+	{
+		IsReName = true;
+		ModifyName modifyName = new ModifyName(this);
+		modifyName.ShowDialog();
+	}
+
+	private void RenameCommandExe()
+	{
+		IsReName = true;
+	}
+</pre></details><details><summary>Rename state and undo root · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:443–464
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	public bool IsReName
+	{
+		get
+		{
+			return _IsReName;
+		}
+		set
+		{
+			if (_IsReName != value)
+			{
+				_IsReName = value;
+				if (_IsReName)
+				{
+					Ioc.Get&lt;IUnRedoService&gt;()?.Register(new RootOperation(), AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) ?? &quot;&quot;);
+				}
+				OnPropertyChanged(&quot;IsReName&quot;);
+			}
+		}
+	}
+
+	public ICommand SkipToModuleCommand
+	{</pre></details><details><summary>Dialog data context restriction · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ModifyName.xaml.cs:21–36
+SHA256 9e2fd69869e055ab23815d47c5bce9c52be9ea8ce5bc127fe2f754a41481ff82
+	public ModifyName(VmModuleBaseDecorator decorator)
+	{
+		InitializeComponent();
+		if (decorator is VmModuleDecorator dataContext)
+		{
+			DataContext = dataContext;
+		}
+	}
+
+	private void SearchClick(object sender, RoutedEventArgs e)
+	{
+		DataContext = null;
+		Close();
+	}
+}
+</pre></details><details><summary>Dialog text and confirm declarations · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ModifyName.xaml:21–23
+SHA256 b916164efba6152d83629be84da6f2734f99a7db901f71107ec54ee7277b11d2
+          &lt;TextBox Name=&quot;ModuleID&quot; BorderThickness=&quot;0&quot; Width=&quot;100&quot; VerticalContentAlignment=&quot;Center&quot; Background=&quot;{DynamicResource ListViewComboBoxBackground}&quot; Text=&quot;{Binding Name}&quot; /&gt;
+        &lt;/Border&gt;
+        &lt;Button Margin=&quot;40,0,0,0&quot; Style=&quot;{StaticResource BlueButtonStyle}&quot; Width=&quot;56&quot; Content=&quot;{DynamicResource Confirm}&quot; Click=&quot;SearchClick&quot; /&gt;</pre></details></article><article id="WTN03" class="source-confirmed"><h2>WTN03 · HeadReNameTextBox.IsReName变化 → 进入Focus/SelectAll，退出旧true时UpdateSource</h2><p>source-confirmed：依赖属性默认false，变更回调取OldValue；NewValue为true先Focus和SelectAll，OldValue为true才取TextProperty.BindingExpression并UpdateSource。构造订阅KeyDown/LostFocus并ContextMenu=null；Return和失焦只置IsReName=false。因此显式提交由true→false触发；该体没有Escape取消/恢复原文、bindingExpression空检查或catch，不能宣称所有结束方式都安全提交。</p><p>待追：WPF BindingExpression内部校验/异常传播、焦点路由/输入法/鼠标取消与其它处理器未验；没有本体Escape不证明全程序无取消。</p><details><summary>Apps.PcUI.HeadReNameTextBox::.cctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:166–185
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600000a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.PcUI.HeadReNameTextBox&quot;,
+            &quot;name&quot;: &quot;.cctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 96,
+          &quot;ilSha256&quot;: &quot;756fa49ae969820e6ffd5fd9ac04747f70c4cbb5b57677a951f455fe397aff67&quot;,
+          &quot;ilBytes&quot;: &quot;724b000070d072000001283b00000ad003000002283b00000a168c7200000114fe060d000006733c00000a733d00000a283e00000a8003000004007e3f00000ad003000002283b00000ad003000002283b00000a734000000a6f4100000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldstr&quot;,</pre></details><details><summary>Apps.PcUI.HeadReNameTextBox::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:804–823
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600000e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.PcUI.HeadReNameTextBox&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 55,
+          &quot;ilSha256&quot;: &quot;7c8db973a0d7bf26bf173a4f81271dc82c1e4ae8aa210a8e219aa23ddfb0f2fa&quot;,
+          &quot;ilBytes&quot;: &quot;02284b00000a00000202fe0610000006732a00000a282b00000a000202fe060f000006734c00000a284d00000a000214284e00000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Apps.PcUI.HeadReNameTextBox::OnIsReNameChanged · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:456–475
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600000d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.PcUI.HeadReNameTextBox&quot;,
+            &quot;name&quot;: &quot;OnIsReNameChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000201128095118099&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 86,
+          &quot;ilSha256&quot;: &quot;e953aeac811987f8603f2881afa7a7eae36ebb65a0d1f6421abf6accf8e5dd6d&quot;,
+          &quot;ilBytes&quot;: &quot;000275030000020a0f01284400000aa5720000010b0f01284500000aa5720000010c080d092c1000066f4600000a26066f4700000a000007130411042c1700067e4800000a6f4900000a130511056f4a00000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.PcUI.HeadReNameTextBox::HeadReNameTextBox_KeyDown · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:1101–1120
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x06000010&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000010&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.PcUI.HeadReNameTextBox&quot;,
+            &quot;name&quot;: &quot;HeadReNameTextBox_KeyDown&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c1269&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 25,
+          &quot;ilSha256&quot;: &quot;f4129d26191a76a3eea7942306c37cd28a33659d53e012699d853eafc4d9de95&quot;,
+          &quot;ilBytes&quot;: &quot;00046f2200000a1cfe010a062c0a000216280c00000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.PcUI.HeadReNameTextBox::HeadReNameTextBox_LostFocus · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:1030–1049
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600000f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.PcUI.HeadReNameTextBox&quot;,
+            &quot;name&quot;: &quot;HeadReNameTextBox_LostFocus&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c1280a1&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 10,
+          &quot;ilSha256&quot;: &quot;a9bdcf6a0f441a22865442a38f6fb69c6d7691590bc639593c332a1cb1b309b3&quot;,
+          &quot;ilBytes&quot;: &quot;000216280c000006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Rename property callback and source commit · local-decompiled-source</summary><pre>analysis/decompiled/Apps.PcUI.ImageSourceAudit/Apps.PcUI/HeadReNameTextBox.cs:30–46
+SHA256 64d7234a19006d86a81059d26ce952ccdfa5e2dd67f51324f985ce433014a516
+	private static void OnIsReNameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+	{
+		HeadReNameTextBox headReNameTextBox = d as HeadReNameTextBox;
+		bool flag = (bool)e.OldValue;
+		if ((bool)e.NewValue)
+		{
+			headReNameTextBox.Focus();
+			headReNameTextBox.SelectAll();
+		}
+		if (flag)
+		{
+			BindingExpression bindingExpression = headReNameTextBox.GetBindingExpression(TextBox.TextProperty);
+			bindingExpression.UpdateSource();
+		}
+	}
+
+	public HeadReNameTextBox()</pre></details><details><summary>Key and focus exit handlers · local-decompiled-source</summary><pre>analysis/decompiled/Apps.PcUI.ImageSourceAudit/Apps.PcUI/HeadReNameTextBox.cs:53–65
+SHA256 64d7234a19006d86a81059d26ce952ccdfa5e2dd67f51324f985ce433014a516
+	private void HeadReNameTextBox_LostFocus(object sender, RoutedEventArgs e)
+	{
+		IsReName = false;
+	}
+
+	private void HeadReNameTextBox_KeyDown(object sender, KeyEventArgs e)
+	{
+		if (e.Key == Key.Return)
+		{
+			IsReName = false;
+		}
+	}
+}</pre></details></article><article id="WTN04" class="source-confirmed"><h2>WTN04 · HeadReNameTextBox本地样式 → 静态显示TextBlock与可编辑PART_ContentHost切换</h2><p>source-confirmed：本地generic资源将IsHitTestVisible绑定自身IsReName；模板默认TextBlock显示Text、PART_ContentHost Hidden，IsReName=true折叠前者并显示后者。禁用态另降border透明度。这个样式解释标题显示/编辑两个视觉部分，不意味着值已写入模块或磁盘。</p><p>待追：Apps.PcUI generic原BAML/实际主题命中尚未在此核验；这是本地提取声明，与已核CIL分列。</p><details><summary>Rename hit-test declaration · local-extracted-resource</summary><pre>analysis/decompiled/Apps.PcUI.ImageSourceAudit/themes/generic.xaml:20–20
+SHA256 8808b3e446871adfeaf7ff780440eb58ad1430907e40ba868f6ce6d22e2bd194
+    &lt;Setter Property=&quot;UIElement.IsHitTestVisible&quot; Value=&quot;{Binding IsReName, Mode=OneWay, RelativeSource={RelativeSource Mode=Self}}&quot; /&gt;</pre></details><details><summary>Rename presentation and editing template · local-extracted-resource</summary><pre>analysis/decompiled/Apps.PcUI.ImageSourceAudit/themes/generic.xaml:23–41
+SHA256 8808b3e446871adfeaf7ff780440eb58ad1430907e40ba868f6ce6d22e2bd194
+        &lt;ControlTemplate TargetType=&quot;{x:Type local:HeadReNameTextBox}&quot;&gt;
+          &lt;Border Name=&quot;border&quot; BorderBrush=&quot;{TemplateBinding Control.BorderBrush}&quot; BorderThickness=&quot;{TemplateBinding Control.BorderThickness}&quot; Background=&quot;{TemplateBinding Control.Background}&quot; SnapsToDevicePixels=&quot;True&quot;&gt;
+            &lt;Grid&gt;
+              &lt;TextBlock Name=&quot;tb&quot; IsHitTestVisible=&quot;False&quot; TextTrimming=&quot;CharacterEllipsis&quot; Text=&quot;{TemplateBinding TextBox.Text}&quot; Foreground=&quot;{TemplateBinding Control.Foreground}&quot; FontSize=&quot;{TemplateBinding Control.FontSize}&quot; FontWeight=&quot;{TemplateBinding Control.FontWeight}&quot; FontFamily=&quot;{TemplateBinding Control.FontFamily}&quot; /&gt;
+              &lt;ScrollViewer Name=&quot;PART_ContentHost&quot; Visibility=&quot;Hidden&quot; Focusable=&quot;False&quot; HorizontalScrollBarVisibility=&quot;Hidden&quot; VerticalScrollBarVisibility=&quot;Hidden&quot; /&gt;
+            &lt;/Grid&gt;
+          &lt;/Border&gt;
+          &lt;ControlTemplate.Triggers&gt;
+            &lt;Trigger Property=&quot;local:HeadReNameTextBox.IsReName&quot; Value=&quot;True&quot;&gt;
+              &lt;Setter TargetName=&quot;tb&quot; Property=&quot;Visibility&quot; Value=&quot;Collapsed&quot; /&gt;
+              &lt;Setter TargetName=&quot;PART_ContentHost&quot; Property=&quot;Visibility&quot; Value=&quot;Visible&quot; /&gt;
+            &lt;/Trigger&gt;
+            &lt;Trigger Property=&quot;IsEnabled&quot; Value=&quot;False&quot;&gt;
+              &lt;Setter TargetName=&quot;border&quot; Property=&quot;UIElement.Opacity&quot; Value=&quot;0.56&quot; /&gt;
+            &lt;/Trigger&gt;
+            &lt;Trigger Property=&quot;UIElement.IsMouseOver&quot; Value=&quot;True&quot;&gt;
+              &lt;Setter TargetName=&quot;border&quot; Value=&quot;{DynamicResource TextBox.MouseOver.Border}&quot; Property=&quot;Border.BorderBrush&quot; /&gt;
+            &lt;/Trigger&gt;
+            &lt;Trigger Property=&quot;UIElement.IsKeyboardFocused&quot; Value=&quot;True&quot;&gt;</pre></details><details><summary>Apps.PcUI.HeadReNameTextBox::.cctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:166–185
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600000a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.PcUI.HeadReNameTextBox&quot;,
+            &quot;name&quot;: &quot;.cctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 96,
+          &quot;ilSha256&quot;: &quot;756fa49ae969820e6ffd5fd9ac04747f70c4cbb5b57677a951f455fe397aff67&quot;,
+          &quot;ilBytes&quot;: &quot;724b000070d072000001283b00000ad003000002283b00000a168c7200000114fe060d000006733c00000a733d00000a283e00000a8003000004007e3f00000ad003000002283b00000ad003000002283b00000a734000000a6f4100000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldstr&quot;,</pre></details></article><article id="WTN05" class="source-confirmed"><h2>WTN05 · VmModuleBaseDecorator.Name setter → 字符拒绝 / undo与日志 → IVmModule.Name → 通知</h2><p>source-confirmed：名称相同仅RemoveEmptyOperation；不同则try内拒绝? ; . [ ] &lt; &gt; ( ) `并弹错return。否则先注册ReNameUnRedoOperation与写日志，再VMModule.Name=value。只捕获VmException：空名提示Lang_NameEmpty，否则ShowVmExceptionMessage，并记错误；随后仍OnPropertyChanged(Name)及VMModule.OnPropertyChanged(FullName)。普通异常如value为null引起Contains失败不在此catch，不能称一切输入都被校验；前置undo/log不表示SDK改名成功。</p><p>待追：VmException显示或日志自身异常、UI绑定错误显示/旧文本恢复、重复名/空白名native规则未知；不能推断失败事务回滚。</p><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_VMModule · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:1409–1428
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009a1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009a1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;get_VMModule&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20001280fd&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;a5b7c3f57517da384c6d82c8867d60ed9b1b2d0c4c8b1d47f09b83585430b6ff&quot;,
+          &quot;ilBytes&quot;: &quot;00022805090006753f0000010a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_Name · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:1498–1517
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009ca&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009ca&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;get_Name&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;2f8919990f23d5f44f6cfe5b528771c7a1305155e9736ead097692eb51f73f19&quot;,
+          &quot;ilBytes&quot;: &quot;000228a10900066fa900000a0a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_Name · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:1590–1609
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009cb&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009cb&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;set_Name&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 564,
+          &quot;ilSha256&quot;: &quot;0657b0e1af7327ab71f5d5c758cb7293c7e89bca39a1e944f78c054139527207&quot;,
+          &quot;ilBytes&quot;: &quot;000228a10900066fa900000a03285100000a0a0639070200000000031f3f285900002b2d6f031f3b285900002b2d65031f2e285900002b2d5b0372148d00706f9904000a2d4e0372217000706f9904000a2d410372188d00706f9904000a2d340372250000706f9904000a2d270372bd2d00706f9904000a2d1a0372c12d00706f9904000a2d0d03721c8d00706f9904000a2b01170c082c270072303f0070283800000a28b004000a72208d0070283a00000a1916282e01000a26dd730100001b8dd1010001251672828d0070283800000aa2251772b0070070a225180228a10900066fa900000aa22519729a870070a2251a03a228db00000a0b280500002b252d03262b4102fe06d5090006735708000a02fe06d4090006735708000a0228a10900066f7307000a0228a10900066fa900000a0373f509000673f009000607146faa00000a0072981600701d8dd1010001251672828d0070283800000aa2251772d5360070287207000aa225180228a10900066fa900000aa2251972e5000070a2251a72a28d0070283800000aa2251b72e5000070a2251c03a228db00000a1617286c07000a260228a1090006036f5808000a0000de480d0003283900000a130411042c1600726f700070283800000a1916282e01000a26002b090009283304000a000072d4150070096fd300000a28d400000a1617286c07000a2600de0002722d3c00706f7c02000a000228a109000672aa8d00706f5008000a00002b1300280500002b252d03262b066fb000000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Name validation and write ordering · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:359–411
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	public string Name
+	{
+		get
+		{
+			return VMModule.Name;
+		}
+		set
+		{
+			if (VMModule.Name != value)
+			{
+				try
+				{
+					if (value.Contains(&#39;?&#39;) || value.Contains(&#39;;&#39;) || value.Contains(&#39;.&#39;) || value.Contains(&quot;[&quot;) || value.Contains(&quot;]&quot;) || value.Contains(&quot;&lt;&quot;) || value.Contains(&quot;&gt;&quot;) || value.Contains(&quot;(&quot;) || value.Contains(&quot;)&quot;) || value.Contains(&quot;`&quot;))
+					{
+						HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_ModuleNameErrorInclude&quot;) + Environment.NewLine + &quot;                             ? ; . [ ] &lt; &gt; ( ) `&quot;, MessageIcons.Error);
+						return;
+					}
+					string displayName = AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) + &quot;:&quot; + VMModule.Name + &quot;, &quot; + value;
+					Ioc.Get&lt;IUnRedoService&gt;()?.Register(new ReNameUnRedoOperation(SetNewName, SetOldName, new UnRedo_NameData(VMModule.FullName, VMModule.Name, value)), displayName);
+					UILogManager.logCreate(&quot;信息&quot;, AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) + AppLocalizationService.GetPunctuation(&quot;：&quot;) + VMModule.Name + &quot; &quot; + AppLocalizationService.GetLang(&quot;修改为&quot;) + &quot; &quot; + value, ifLang: false);
+					VMModule.Name = value;
+				}
+				catch (VmException ex)
+				{
+					if (string.IsNullOrEmpty(value))
+					{
+						HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_NameEmpty&quot;), MessageIcons.Error);
+					}
+					else
+					{
+						ShowMessage.ShowVmExceptionMessage(ex);
+					}
+					UILogManager.logCreate(&quot;错误&quot;, ErrorCodeInfo.GetErrorInfo(ex.errorCode), ifLang: false);
+				}
+				OnPropertyChanged(&quot;Name&quot;);
+				VMModule.OnPropertyChanged(&quot;FullName&quot;);
+			}
+			else
+			{
+				Ioc.Get&lt;IUnRedoService&gt;()?.RemoveEmptyOperation();
+			}
+		}
+	}
+
+	public ICommand RenameWindowCommand
+	{
+		get
+		{
+			//IL_0017: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001e: Expected Obj, but got Unknown
+			//IL_0023: Expected Obj, but got Unknown
+			DelegateCommand val = _RenameWindowCommand;</pre></details></article><article id="WTN06" class="source-confirmed"><h2>WTN06 · VmModule.Name / IMVSGroup基类链 → SDK显示名写入 → 本地name → 前驱键迁移/父状态</h2><p>source-confirmed：VmModule原setter同名早退，先ModuleManager.SetModuDisplayName(ID,value)，成功返回才记旧FullName/name并写本地name；遍历PreModules将UserData中SourceIndex+旧名/TargetIndex+旧名读取后清旧键、写新键，通知父ready名称、Name及IVmSolution.OnModuleActionChanged(ReName,oldFullName,newFullName)。原类型元数据IMVSGroup→VmModuleSet→VmModule；未发现两中间类原源Name重写，本片以该基类路径为有限Group改名来源，不臆造Group专用保存。</p><p>待追：UserData getter/setter内部存储、部分键迁移失败/事件订阅者失败、Group运行类型替代、文件字节和native持久化尚未闭合。</p><details><summary>VM.Core.VmModule::get_Name · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:6163–6182
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600024c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600024c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModule&quot;,
+            &quot;name&quot;: &quot;get_Name&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;aa6811fee160c9d11332c1a61f0c560871ac053436f86e473dab4ebd1978f6c6&quot;,
+          &quot;ilBytes&quot;: &quot;027bac0100042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.Core.VmModule::set_Name · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:6211–6230
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600024d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600024d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModule&quot;,
+            &quot;name&quot;: &quot;set_Name&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 324,
+          &quot;ilSha256&quot;: &quot;fe564f2b6f01d16e147c592095a6dcf0a23ac9dbc5a18073121e1916962bbdf1&quot;,
+          &quot;ilBytes&quot;: &quot;00027bac0100040328bc00000a0a06392f01000000284801000a7b4901000a026f49020006036f7603000a00026fe70400060b027bac0100040c02037dac0100040002287d0200066f6202000a0d38ac000000096f6302000a13040011046f56020006724a21007008284501000a6fae050006130511046f56020006726221007008284501000a6fae050006130611046f56020006724a21007008284501000a146faf0500060011046f56020006726221007008284501000a146faf0500060011046f56020006724a210070027bac010004284501000a11056faf0500060011046f560200067262210070027bac010004284501000a11066faf0500060000096fa001000a3a49ffffffde0b092c07096f0e01000a00dc020828cd020006000272d302007028f30400060028a900000672dd02007007026fe70400066f4400000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.VmModule::NotifyNameChangedToParent · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:7337–7356
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060002cd&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002cd&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModule&quot;,
+            &quot;name&quot;: &quot;NotifyNameChangedToParent&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 27,
+          &quot;ilSha256&quot;: &quot;e9be4d5db86bd64e257a0d95c7db11140390fedede9f9bd54de44c05cddf6123&quot;,
+          &quot;ilBytes&quot;: &quot;00026fe00400067568000002252d03262b080203280a060006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.VmModuleSet::ReFlashReadyInfoOfName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:8240–8259
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x0600060a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600060a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModuleSet&quot;,
+            &quot;name&quot;: &quot;ReFlashReadyInfoOfName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020112440e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 141,
+          &quot;ilSha256&quot;: &quot;dcf2d1f0d353f23af654ae350e0d0f2b6c5e59ddb0fdf1d810fb4d18dcd7e1fd&quot;,
+          &quot;ilBytes&quot;: &quot;0002280706000600036f520200060b120128c301000a2d03172b071201283503000a16fe010a062c6300150c022806060006046f0305000a250c16fe0416fe010d092c470002280606000608036fe20400066f0405000a00026f56020006726a2e007072982a0070022806060006280505000a280605000a6faf050006000272902e007028f30400060000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Native first and predecessor user-data key migration · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmModule.cs:191–221
+SHA256 53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce
+	public override string Name
+	{
+		get
+		{
+			return name;
+		}
+		set
+		{
+			if (!(name != value))
+			{
+				return;
+			}
+			ServerSDKManager.serverSDKManager.mModuleManager.SetModuDisplayName(ID, value);
+			string fullName = FullName;
+			string text = name;
+			name = value;
+			foreach (VmModule preModule in PreModules)
+			{
+				byte[] value2 = preModule.UserData[&quot;SourceIndex&quot; + text];
+				byte[] value3 = preModule.UserData[&quot;TargetIndex&quot; + text];
+				preModule.UserData[&quot;SourceIndex&quot; + text] = null;
+				preModule.UserData[&quot;TargetIndex&quot; + text] = null;
+				preModule.UserData[&quot;SourceIndex&quot; + name] = value2;
+				preModule.UserData[&quot;TargetIndex&quot; + name] = value3;
+			}
+			NotifyNameChangedToParent(text);
+			OnPropertyChanged(&quot;Name&quot;);
+			((IVmSolution)VmSolution.Instance).OnModuleActionChanged(&quot;ReName&quot;, fullName, FullName);
+		}
+	}
+</pre></details><details><summary>Parent unready-name cache update · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs:229–242
+SHA256 f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346
+	internal void ReFlashReadyInfoOfName(VmModule node, string oldName)
+	{
+		initUnReadyModuleNames();
+		if ((!node.IsReady) ?? false)
+		{
+			int num = -1;
+			if ((num = UnReadyModuleNames.IndexOf(oldName)) &gt;= 0)
+			{
+				UnReadyModuleNames[num] = node.Name;
+				UserData[&quot;UnReadyModuleNames&quot;] = VM.PlatformSDKCS.StringUtil.UTF8GetBytesPadZero(string.Join(&quot;;&quot;, UnReadyModuleNames));
+				OnPropertyChanged(&quot;UnReadyModuleName&quot;);
+			}
+		}
+	}</pre></details><details><summary>Original Group base class declaration · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs:20–20
+SHA256 dc772aaba433316b7d0f4dc3b0b3c80c3c63769334d7d013896afe7b54c367d3
+public class IMVSGroup : VmModuleSet, IVMGroup, IVmModuleSet, IVmFrameBase, IParent, IChildren, IDisposable, IVmModule</pre></details><details><summary>Original module-set base class declaration · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs:21–21
+SHA256 f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346
+public abstract class VmModuleSet : VmModule, IVmModuleSet, IVmFrameBase, IParent, IChildren, IDisposable</pre></details></article><article id="WTN07" class="source-confirmed"><h2>WTN07 · VmProcedure.Name setter → 独立SetProcessName与流程名称动作事件</h2><p>source-confirmed：流程原类继承VmModuleSet但覆盖Name：不同名先ProcessManager.SetProcessName(ID,value)，返回后记录旧name再写新name、OnPropertyChanged(Name)、IVmSolution.OnModuleActionChanged(ReName,oldName,newName)。该体没有模块setter的PreModules UserData键迁移，不能用一个setter概括模块/流程/Group。</p><p>待追：其它流程索引/观察者与全部名称引用修复、native名规则和已打开参数窗状态未知。</p><details><summary>VM.Core.VmProcedure::get_Name · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:7700–7719
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x06000668&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000668&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmProcedure&quot;,
+            &quot;name&quot;: &quot;get_Name&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;aa6811fee160c9d11332c1a61f0c560871ac053436f86e473dab4ebd1978f6c6&quot;,
+          &quot;ilBytes&quot;: &quot;027bac0100042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.Core.VmProcedure::set_Name · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:7748–7767
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x06000669&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000669&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmProcedure&quot;,
+            &quot;name&quot;: &quot;set_Name&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 92,
+          &quot;ilSha256&quot;: &quot;dcf1288594fad82ae6e78aaf14240d203dd13776ab5078695e42e4a860a7419d&quot;,
+          &quot;ilBytes&quot;: &quot;00027bac0100040328bc00000a0a062c4a00284801000a7b8602000a026f49020006036f6b05000a00027bac0100040b02037dac0100040272d302007028f30400060028a900000672dd02007007027bac0100046f4400000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Procedure-specific name update · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs:103–121
+SHA256 fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da
+	public override string Name
+	{
+		get
+		{
+			return name;
+		}
+		set
+		{
+			if (name != value)
+			{
+				ServerSDKManager.serverSDKManager.mProcessManager.SetProcessName(ID, value);
+				string moduleName = name;
+				name = value;
+				OnPropertyChanged(&quot;Name&quot;);
+				((IVmSolution)VmSolution.Instance).OnModuleActionChanged(&quot;ReName&quot;, moduleName, name);
+			}
+		}
+	}
+</pre></details></article><article id="WTN08" class="source-confirmed"><h2>WTN08 · ModuleManager / ProcessManager改名包装 → ServerSDKAPI → NativeMethods名称边界</h2><p>source-confirmed：SetModuDisplayName与SetProcessName分别传共享mhandle、ID和新名称，非0返回码抛VmException；ServerSDKAPI只转NativeMethods.IMVS_SetModuDisplayName/IMVS_SetProcName。原P/Invoke声明目标iMVS-6000PlatformSDK.dll，名称为UTF8自定义封送；Process入口声明StdCall，不能把C#包装签名当native全ABI/验证或文件存储实现。</p><p>待追：native错误规则、字符串封送完整实现、成功后的内存/磁盘所有权及外部SDK实际加载版本未知；本次不运行原件。</p><details><summary>VM.PlatformSDKCS.ModuleManager::SetModuDisplayName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:12815–12834
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x06000065&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000065&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;SetModuDisplayName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200201090e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 33,
+          &quot;ilSha256&quot;: &quot;7b2970087e0c743e1ecd16c92944ea1086e657c797e67a9b6d7f4ef03026ad72&quot;,
+          &quot;ilBytes&quot;: &quot;007e97030004030428c00200060a0616fe030b072c0a000673a60600060c087a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ProcessManager::SetProcessName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:13198–13217
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x06000279&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000279&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ProcessManager&quot;,
+            &quot;name&quot;: &quot;SetProcessName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200201090e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 39,
+          &quot;ilSha256&quot;: &quot;46271d433dedb7e9c872554cf9a7ffc25840c03761d2735644459fa2195ed355&quot;,
+          &quot;ilBytes&quot;: &quot;0020ff0000e00a7e97030004030428c10200060a0616fe030b072c0a000673a60600060c087a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ServerSDKAPI::IMVS_SetModuDisplayName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:13402–13421
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060002c0&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002c0&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ServerSDKAPI&quot;,
+            &quot;name&quot;: &quot;IMVS_SetModuDisplayName&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00030818090e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;784a7a12b0245b1adda118bee520ec6e267875d7b4250fe8d030ba0d60285b4f&quot;,
+          &quot;ilBytes&quot;: &quot;0002030428a50300060a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ServerSDKAPI::IMVS_SetProcName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:13494–13513
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060002c1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002c1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ServerSDKAPI&quot;,
+            &quot;name&quot;: &quot;IMVS_SetProcName&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00030818090e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;caa8d27f7e9b7625a035e5f2df492e4541b534f27b312ea7d9023bf8ed176f69&quot;,
+          &quot;ilBytes&quot;: &quot;0002030428be0300060a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Module rename status check · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs:344–353
+SHA256 783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922
+	public void SetModuDisplayName(uint nModuleID, string strDisplayName)
+	{
+		int num = ServerSDKAPI.IMVS_SetModuDisplayName(CVmObjectBase.mhandle, nModuleID, strDisplayName);
+		if (num != 0)
+		{
+			VmException ex = new VmException(num);
+			throw ex;
+		}
+	}
+</pre></details><details><summary>Procedure rename status check · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ProcessManager.cs:266–276
+SHA256 06fee7c7b5387fea086abe5073be5dd2606ad121d9bc64b0ab9335bace100414
+	public void SetProcessName(uint nProcessID, string strProcName)
+	{
+		int num = -536870657;
+		num = ServerSDKAPI.IMVS_SetProcName(CVmObjectBase.mhandle, nProcessID, strProcName);
+		if (num != 0)
+		{
+			VmException ex = new VmException(num);
+			throw ex;
+		}
+	}
+</pre></details><details><summary>Module rename native declaration · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs:110–110
+SHA256 6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0
+	public static extern int IMVS_SetModuDisplayName(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = &quot;VM.PlatformSDKCS.UTF8Marshaler&quot;)] string strDisplayName);</pre></details><details><summary>Procedure rename native declaration · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs:184–185
+SHA256 6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0
+	[DllImport(&quot;.\\iMVS-6000PlatformSDK.dll&quot;, CallingConvention = CallingConvention.StdCall)]
+	public static extern int IMVS_SetProcName(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = &quot;VM.PlatformSDKCS.UTF8Marshaler&quot;)] string strName);</pre></details></article><article id="WTN09" class="source-confirmed"><h2>WTN09 · VmSolution.InternalExport / ExportAs → 显式保存消费者 → SyncSaveSolution → IMVS_SaveSolution</h2><p>source-confirmed：所选保存入口调用TempVmSolution.Init，受_isSaving门和路径/密码分支控制，随后SyncSaveSolution(path,password,IntPtr.Zero,0)。SyncSaveSolution先复位错误码/等待flag，调用IMVS_SaveSolution，立即返回码非0抛错；成功时清ParamSeted、SyncWaitor.Wait，再SDKMode下检查异步错误码。标题Name setter中没有此保存调用；不能说退出编辑立即写.sol，也不能说native导出必然包含某一重命名字节。本片只连接同一SDK状态的保存消费者边界。</p><p>待追：TempVmSolution同步全部名称/用户数据、native方案格式/事务、保存回调/Wait终止条件和改名后加载往返未知；现有保存专题仍独立。</p><details><summary>VM.Core.VmSolution::InternalExport · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:9948–9967
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060000cd&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000cd&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmSolution&quot;,
+            &quot;name&quot;: &quot;InternalExport&quot;,
+            &quot;parameters&quot;: 5,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0005020e0e02020e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 376,
+          &quot;ilSha256&quot;: &quot;ee863ab98f6e350bf31af8a4a8f5295d0f9f767cec066eb55e471ac6be7d034a&quot;,
+          &quot;ilBytes&quot;: &quot;000028e80600060028a90000067b0c0000040b072c07160cdd5901000028a9000006177d0c00000472550a007028a90000067b0c0000048c4f01000128b501000a282402000a0072350200700a28a9000006047d090000040314fe010d092c240028a90000066f5500000614fe03130411042c0d0028a90000066f550000060a00002b0400030a000214fe01130511052c5400052d0f28a90000066f7203000614fe032b0116130611062c100028a90000066f720300061000002b2900284801000a7b2502000a728d0a007072b10a0070282602000a28b501000a0e046f2702000a100000000228a200000a130711072c100028a9000006167d0c000004160cde74284801000a7b1802000a02067ea800000a166f2802000a0028a9000006066f560000060028a9000006026f5f00000600170cde4013080028a9000006167d0c00000472bf0a007028a90000067b0c0000048c4f01000128b501000a282402000a0028a90000067ede01000a6f5f0000060011087a082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.VmSolution::ExportAs · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:11302–11321
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060000d7&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000d7&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmSolution&quot;,
+            &quot;name&quot;: &quot;ExportAs&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0003010e0e02&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 399,
+          &quot;ilSha256&quot;: &quot;2e1ef5d4689cb501b2b393dd907b3686bf478f88afbe82693cabcd470818b712&quot;,
+          &quot;ilBytes&quot;: &quot;000028e80600060028a90000067b0c0000040b072c05dd7301000028a9000006177d0c00000472d30e007028a90000067b0c0000048c4f01000128b501000a282402000a0028a9000006047d09000004030a0614fe010c082c0672350200700a284801000a7b1802000a02067ea800000a166f2802000a0000dd100100000d0028a9000006167d0c00000472ff0e007028a90000067b0c0000048c4f01000128b501000a282402000a0072f102007028b301000a7203030070096fb401000a8c3601000128b501000a720f030070283601000a13041104721503007028b301000a096fb401000a28b601000a283601000a130404130511052c1600722d0f007028b301000a11041916285b02000a2600724f0f00701104284501000a284601000a0000de6913060028a9000006167d0c000004726f0f007028a90000067b0c0000048c4f01000128b501000a282402000a0004130711072c1b00722d0f007028b301000a11066fb701000a1916285b02000a2600724f0f007011066fb701000a284501000a284601000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.SolutionManager::SyncSaveSolution · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:13979–13998
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060005d0&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060005d0&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.SolutionManager&quot;,
+            &quot;name&quot;: &quot;SyncSaveSolution&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2004010e0e1809&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 128,
+          &quot;ilSha256&quot;: &quot;211ecd75d5530c609657975b132ae1f6978c49db9d659c12f9b9089f32dc11e8&quot;,
+          &quot;ilBytes&quot;: &quot;0020ff0000e00a02167d3303000402167d350300047e970300040304050e0428c30200060a0616fe030b072c0a000673a60600060c087a28840500067b0d030004166f5a00000600027c35030004281d00000a0028370700060d092c2200027b3303000416fe03130411042c1100027b3303000473a6060006130511057a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ServerSDKAPI::IMVS_SaveSolution · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:13586–13605
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060002c3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002c3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ServerSDKAPI&quot;,
+            &quot;name&quot;: &quot;IMVS_SaveSolution&quot;,
+            &quot;parameters&quot;: 5,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000508180e0e1809&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;72b4f1f38d5ac85a7246217f269cf5aa2e508294357c5850c7a2de397a9ec5db&quot;,
+          &quot;ilBytes&quot;: &quot;00020304050e0428a70300060a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Finite explicit solution export · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs:1551–1593
+SHA256 c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e
+	private static bool InternalExport(string path = null, string password = null, bool bDisplayProgress = true, bool isExportAs = false, string initDir = null)
+	{
+		try
+		{
+			TempVmSolution.Init();
+			if (Instance._isSaving)
+			{
+				return false;
+			}
+			Instance._isSaving = true;
+			LogHelper.Debug($&quot;InternalExport_isSaving_{Instance._isSaving}&quot;);
+			string text = &quot;&quot;;
+			Instance.isDisplayProgress = bDisplayProgress;
+			if (password == null)
+			{
+				if (Instance.SolutionPassword != null)
+				{
+					text = Instance.SolutionPassword;
+				}
+			}
+			else
+			{
+				text = password;
+			}
+			if (path == null)
+			{
+				path = ((isExportAs || Instance.ModuleFilePath == null) ? ServerSDKManager.serverSDKManager.mCollectionManager.OpenExportDialog(&quot;Lang_SolutionFile&quot;, $&quot;|*.{AppFileExtension.Solution}&quot;, initDir) : Instance.ModuleFilePath);
+			}
+			if (string.IsNullOrEmpty(path))
+			{
+				Instance._isSaving = false;
+				return false;
+			}
+			ServerSDKManager.serverSDKManager.mSolutionManager.SyncSaveSolution(path, text, IntPtr.Zero, 0u);
+			Instance.SolutionPassword = text;
+			Instance.SolutionPath = path;
+			return true;
+		}
+		catch (Exception ex)
+		{
+			Instance._isSaving = false;
+			LogHelper.Debug($&quot;InternalExport0_isSaving_{Instance._isSaving}&quot;);
+			Instance.SolutionPath = string.Empty;</pre></details><details><summary>Native save, wait and result checks · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs:305–326
+SHA256 46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a
+	public void SyncSaveSolution(string strPath, string strPassword, IntPtr pData, uint nDataLen)
+	{
+		int num = -536870657;
+		nSolutionSaveErrorCode = 0;
+		mWaitSaveSolutionFlag = false;
+		num = ServerSDKAPI.IMVS_SaveSolution(CVmObjectBase.mhandle, strPath, strPassword, pData, nDataLen);
+		if (num != 0)
+		{
+			VmException ex = new VmException(num);
+			throw ex;
+		}
+		ServerSDKManager.serverSDKManager.mModuleManager.ParamSeted = false;
+		SyncWaitor.Wait(ref mWaitSaveSolutionFlag);
+		if (CVmObjectBase.GetIsSDKMode() &amp;&amp; nSolutionSaveErrorCode != 0)
+		{
+			VmException ex2 = new VmException(nSolutionSaveErrorCode);
+			throw ex2;
+		}
+	}
+
+	public ImvsSdkDefine.IMVS_PROCESS_INFO_LIST? GetAllProcessList()
+	{</pre></details><details><summary>Native solution serialization declaration · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs:116–116
+SHA256 6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0
+	public static extern int IMVS_SaveSolution(IntPtr handle, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = &quot;VM.PlatformSDKCS.UTF8Marshaler&quot;)] string strPath, string strPassWord, IntPtr pData, uint nDataLen);</pre></details></article><article id="WTC01" class="independent-implementation"><h2>WTC01 · 当前GraphEditorDocument名称编辑 → 独立不可变文档改名与SolutionStore.Save</h2><p>independent-implementation：当前SetNodeName先RequireName再ChangeNode替换Name；RenameProcedure另拒同一组字符、同名返回，并将GroupOwner对应节点同步改名。Save经PrepareSave、Rebase和SolutionStore.Save后才更新document/FilePath/Dirty/Revision。它是当前JSON方案状态，未复刻原HeadReNameTextBox/SDK名称状态机或.sol ABI，UI真实调用另查。</p><p>待追：当前主WPF全部改名入口、键鼠/取消差分和原方案互通未在此验收。</p><details><summary>Current node rename API · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.cs:263–263
+SHA256 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558
+    public void SetNodeName(string id,string name) { RequireName(name); ChangeNode(id,n=&gt;n with {Name=name}); }</pre></details><details><summary>Current procedure rename API · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.cs:110–116
+SHA256 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558
+    public void RenameProcedure(string id,string name) {
+        RequireName(name);
+        // VmModuleBaseDecorator.Name rejects these characters before invoking the SDK.
+        if(name.IndexOfAny(&quot;?;.[]&lt;&gt;()`&quot;.ToCharArray())&gt;=0)throw new ArgumentException(&quot;名称不能包含 ? ; . [ ] &lt; &gt; ( ) `。&quot;,nameof(name));
+        var procedure=Procedure(id); if(procedure.Name==name)return;
+        Edit(d=&gt;d with {Procedures=d.Procedures.Select(p=&gt;p.Id==id?p with {Name=name}:procedure.GroupOwner is {} owner&amp;&amp;p.Id==owner.ProcedureId?p with{Nodes=p.Nodes.Select(n=&gt;n.Id==owner.NodeId?n with{Name=name}:n).ToArray()}:p).ToArray()});
+    }</pre></details><details><summary>Current document save boundary · current-source</summary><pre>src/VisionEditor.Core/GraphEditorDocument.cs:68–74
+SHA256 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558
+    public void Save(string path) {
+        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;
+        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;
+        var rebased = Rebase(prepared, BaseDirectory, directory);
+        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.
+        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();
+    }</pre></details></article><article id="WTU01" class="unknown"><h2>WTU01 · 标题提交与名称/保存消费者 → 活绑定、取消失败与存储往返仍未知</h2><p>unknown：已恢复显式UpdateSource、装饰器校验、模块/流程不同setter和SDK保存消费者；仍不是一个已观察的编辑→写盘→重载闭环。SetOldName/SetNewName已取原体但只证明undo调用IVmModule.Name，未证明完整历史事务/名称路径在失败后总可解析。</p><p>待追：下一原边：HeadReNameTextBox模板实际选择与绑定错误路由；VMModule.Name失败后视觉恢复；全部取消/窗口关闭；UserData native写入；TempVmSolution和IMVS_SaveSolution名称序列化/重载；当前逐操作差分。</p><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetOldName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:4554–4573
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009d4&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d4&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;SetOldName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020112827c128629&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 73,
+          &quot;ilSha256&quot;: &quot;fd53f742e8b4432e9da0cbda98192e8e63799f99f2e40da52f8251c1c5b2aed9&quot;,
+          &quot;ilBytes&quot;: &quot;00037b380500040a0616061f2e6f3400000a6ff800000a0b077221000070037b3a050004283a00000a0c28b401000a086f9900000a0d09753f000001037b390500046f5808000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetNewName · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-title-commit-audit.cil.json:4839–4858
+SHA256 ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1
+          &quot;token&quot;: &quot;0x060009d5&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060009d5&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.VmModuleBaseDecorator&quot;,
+            &quot;name&quot;: &quot;SetNewName&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020112827c128629&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 37,
+          &quot;ilSha256&quot;: &quot;dbe95b5357d48a36d3d9342fcfe48b45b9b6b9a75ead0646150bf76c089735d2&quot;,
+          &quot;ilBytes&quot;: &quot;0028b401000a037b380500046f9900000a0a06753f000001037b3a0500046f5808000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Undo name resolution and writes · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:1176–1191
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	private void SetOldName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)
+	{
+		string moduleFullName = nameData.ModuleFullName;
+		string text = moduleFullName.Substring(0, moduleFullName.LastIndexOf(&#39;.&#39;));
+		string sub = text + &quot;.&quot; + nameData.NewName;
+		object obj = VmSolution.Instance[sub];
+		(obj as IVmModule).Name = nameData.OldName;
+	}
+
+	private void SetNewName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)
+	{
+		object obj = VmSolution.Instance[nameData.ModuleFullName];
+		(obj as IVmModule).Name = nameData.NewName;
+	}
+
+	private void SkipToModuleCommandExecute()</pre></details></article><p class="notice">主框架实施41/96＝42.71%（32包×3具名单元）；本研究增加0。运行模式内部仍暂缓。</p><a href="workflow-title-commit-audit.json">机器清单</a></html><script data-document-web src="document-web-links.js"></script>

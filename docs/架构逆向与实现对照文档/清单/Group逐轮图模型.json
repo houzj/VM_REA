@@ -1,0 +1,72 @@
+{
+  "parent": "数据/group-data-pipeline.html",
+  "sourceRows": [
+    {
+      "id": "prepare",
+      "html": "<tr data-group-stage=\"prepare\"><th>准备：确认Group属于谁，冻结本次参数</th><td><p>循环前准备一次输入与本次输出描述；值复制合同按具体helper保留边界。</p><a href=\"group-data-pipeline.html#OG01\">OG01</a></td><td><p>独占body身份、solution结构/JSON快照、父输入解析与break外部操作数捕获；容器复制和payload共享分别说明。</p><a href=\"group-data-pipeline.html#CG01\">CG01</a> / <a href=\"group-data-pipeline.html#CG02\">CG02</a> / <a href=\"group-data-pipeline.html#CG04\">CG04</a></td></tr>"
+    },
+    {
+      "id": "round",
+      "html": "<tr data-group-stage=\"round\"><th>轮次：先判断是否中断，再执行本轮</th><td><p>Start/End/LoopIndex写第0项，break门先于执行。</p><a href=\"group-data-pipeline.html#OG02\">OG02</a> / <a href=\"group-data-pipeline.html#OG03\">OG03</a></td><td><p>索引/范围/间隔与独立资源门；内部比较读前轮，self读累计片段；输入值在本次Group调用内复用。</p><a href=\"group-data-pipeline.html#CG03\">CG03</a> / <a href=\"group-data-pipeline.html#CG05\">CG05</a></td></tr>"
+    },
+    {
+      "id": "execute",
+      "html": "<tr data-group-stage=\"execute\"><th>执行：每轮新上下文，失败按分支传回</th><td><p>只连已核虚调用和输出处理实参，不能补成完整子调度器。</p><a href=\"group-data-pipeline.html#OG04\">OG04</a> / <a href=\"group-data-pipeline.html#OG06\">OG06</a></td><td><p>本轮records/变量和输入容器独立，PortValue引用传递；非Success、取消和超时分别按实际门控。</p><a href=\"group-data-pipeline.html#CG06\">CG06</a> / <a href=\"group-data-pipeline.html#CG09\">CG09</a></td></tr>"
+    },
+    {
+      "id": "retain",
+      "html": "<tr data-group-stage=\"retain\"><th>保留：成功轮累积，图像显示按条件替换</th><td><p>类型分派、前置虚槽与按索引追加分开；图像及全部数组保留未知。</p><a href=\"group-data-pipeline.html#OG04\">OG04</a> / <a href=\"group-data-pipeline.html#OG05\">OG05</a> / <a href=\"group-data-pipeline.html#OG06\">OG06</a></td><td><p>先留PortValue片段，结束JoinArray才复制数组；GrayImage列表替换仅移引用，非像素free。</p><a href=\"group-data-pipeline.html#CG07\">CG07</a> / <a href=\"group-data-pipeline.html#CG08\">CG08</a></td></tr>"
+    },
+    {
+      "id": "retire",
+      "html": "<tr data-group-stage=\"retire\"><th>退役：模块结束、租约退出、solution关闭分开</th><td><p>节点delete与shared条件退役已见，结果最后读者未闭合。</p><a href=\"group-data-pipeline.html#OG07\">OG07</a></td><td><p>module.Dispose不清session；Group结束退出本轮租约，root scope关闭后等全部租约再清state并Dispose。</p><a href=\"group-data-pipeline.html#CG09\">CG09</a> / <a href=\"group-data-pipeline.html#CG10\">CG10</a></td></tr>"
+    }
+  ],
+  "sourceRowsSha256": "1f2dfc749055050ff482dfb0811372136fe3047ccf9ec4a4cc7601993b69978f",
+  "lanes": [
+    {
+      "id": "retain",
+      "title": "当前成功轮：保留与复制边界",
+      "factIds": [
+        "CG07",
+        "CG08"
+      ],
+      "pairs": [
+        [
+          "成功轮 PortValue 片段",
+          "结束时 JoinArray：复制数组",
+          "先保留片段，结束再合并"
+        ],
+        [
+          "GrayImage 列表被替换",
+          "仅移除列表中的图像引用",
+          "不表示像素 free"
+        ]
+      ]
+    },
+    {
+      "id": "retire",
+      "title": "当前退役：Group租约与根作用域分别退出",
+      "factIds": [
+        "CG09",
+        "CG10"
+      ],
+      "pairs": [
+        [
+          "Group 本次执行结束",
+          "退出本轮租约",
+          "不是关闭所有其它会话"
+        ],
+        [
+          "root scope 关闭",
+          "等待全部租约 → 清 state／Dispose",
+          "全部租约退出才继续"
+        ]
+      ]
+    }
+  ],
+  "classification": "independent-implementation",
+  "originalUnknown": "原版节点delete与shared条件退役已有OG07；结果最后读者未闭合。不能将当前租约合同画成原版Owner或native最终释放。",
+  "moduleBoundary": "module.Dispose 不清 session；此图不把模块结束、Group租约退出、root scope关闭合成同一个动作。",
+  "browserVerified": false
+}

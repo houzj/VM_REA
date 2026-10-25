@@ -1,0 +1,119 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定生产入口状态矩阵与专属修复（2026-10-19）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-PRODUCTION-STATE-MATRIX.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#映射标定生产入口状态矩阵与专属修复2026-10-19">映射标定生产入口状态矩阵与专属修复（2026-10-19）</a></p><p style="margin-left:14px"><a href="#原产品及当前可触发性">原→产品及当前可触发性</a></p><p style="margin-left:14px"><a href="#专属补丁与最小回归">专属补丁与最小回归</a></p><p style="margin-left:14px"><a href="#整工具最小剩余">整工具最小剩余</a></p></details><h1 id="映射标定生产入口状态矩阵与专属修复2026-10-19">映射标定生产入口状态矩阵与专属修复（2026-10-19）</h1><p>本轮直接核对MapCalibrationPlugin/ImageSolver/FileSession实际入口，不再扩纠错叶或base/shape。原证据复用D4文件方向、ROI所有权、MODULE-ROI-STATE及STATE-LIFECYCLE；共享R01–R04归根线。整体完成计数仍0/10；本文局部实施不计完整工具，人工验收单列且不阻挡计数。</p>
+<h2 id="原产品及当前可触发性">原→产品及当前可触发性</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>原厂成员/动作</th>
+<th>当前产品位置</th>
+<th>判定/有限动作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模式1/2</td>
+<td>Process21690按本地InputType分派；ProcessAlg21c50设置SDK模式再装配双图/双文件</td>
+<td>Runtime.ExecuteAsync→Image/File</td>
+<td>正常1/2有对应。descriptor限制1..2；直调非法mode不作为当前支持域，不按未执行分支猜返回码补丁。</td>
+</tr>
+<tr>
+<td>无新帧</td>
+<td>GetInputImage203d0两标志均0则Process返回E0000314，不到ProcessOutput</td>
+<td>Image早返Fail，ExecuteAsync强制ModuRunTime</td>
+<td>现有原模块/插件检查已覆盖；强制计时属已记录宿主契约，不以空writes推断平台显示自动清除。</td>
+</tr>
+<tr>
+<td>单帧与配对</td>
+<td>每侧新图更新其image/pose/pending；凑齐两侧才清pending并运行RoiFix/SDK</td>
+<td>ImageSession两图、两pose、两pending；Image wait与pair路径</td>
+<td>每侧保留最近图、独立pending有对应；本轮最小回归只走wait，避免把检测差异混入状态。</td>
+</tr>
+<tr>
+<td>新帧缺省pose</td>
+<td>203d0每收到一侧新帧，先将X/Y/Angle置-999999/-999/-999，再读各可选float</td>
+<td>Runtime.Image.Pose</td>
+<td><strong>确定、正常可触发差异已修：</strong> 旧产品缺Angle沿用previous.Angle（首帧0），现每新帧缺Angle=-999f；其余X/Y默认未变。未收到新帧则保持旧pose。</td>
+</tr>
+<tr>
+<td>原float常量</td>
+<td>source角度字段+17384：20661写0xc479c000；target+17390：20921同值；随后VM_M_GetFloat可选覆盖</td>
+<td>新Pose缺省与InputStateChecks逐bit断言</td>
+<td>0xc479c000对应-999f；有值按float存储，缺值不继承旧角。该值进入SnapWorldCur/Obj的XML R字段。</td>
+</tr>
+<tr>
+<td>Teach</td>
+<td>Process匹配触发→读必需物理坐标与角→设置Teach标记；pending时只输出等待，否则WriteXmlData</td>
+<td>Image TeachPose/TeachTriggered/Save</td>
+<td>现有PluginChecks与ImageFileChecks可复用；不按空字符串长度猜VM_M_GetString返回的count语义。</td>
+</tr>
+<tr>
+<td>Image→File→Image pending</td>
+<td>同一模块pending未被纯mode更新清除；已有定向六步trace</td>
+<td>分开的file/image session，File不改image pending</td>
+<td>已有受控原模块trace确认失败File路径保留pending；本轮最小回归验证File无矩阵失败不破坏待配对pose。成功File后Save/旧image显示属于更细共享SDK结果可见性，不能从失败File外推。</td>
+</tr>
+<tr>
+<td>双ROI配置</td>
+<td>正常type1生成全图rect；其他合法rect按图宽高换算；RoiFix非空首shape进双setter</td>
+<td>Runtime.Group两组，ImageSolver.Detect值式单矩形/全图</td>
+<td>当前合法配置空group作为全图，与正常type1语义对应；不能为模拟解析失败后的空native vector而让正常取消ROI保留旧框。</td>
+</tr>
+<tr>
+<td>错误raw ROI报文</td>
+<td>SetParam对非null载荷先Reset raw，再解析；失败后RoiFix可空vector跳setter保留旧SDK clone</td>
+<td>产品无暴露原raw二进制SetParam报文API</td>
+<td>属额外原生API边界，不把它当RoiDocument合法空group。未制造不安全裸指针或添加缓存猜实现。</td>
+</tr>
+<tr>
+<td>Region输入线</td>
+<td>原XML InputROI1/2是ROIBOX组合的Center/Width/Height/Angle标量订阅</td>
+<td>descriptor声明Region端口；Runtime实际读RoiGroups/Rois，未直接消费Inputs[InputROI1/2]；GraphExecutor把Inputs与RoiGroups分别传入</td>
+<td><strong>当前可触发接口空隙：</strong> 直接接Region端口可能未生效。但原结构标量订阅→raw ROI及宿主ROI控制器绑定优先级未在此闭合；不能自行猜Region优先于/合并到group。根线需审明确adapter合同/接入位置，本轮不改共享合同或暗设优先级。</td>
+</tr>
+<tr>
+<td>不支持ROI</td>
+<td>SDK setter接受rect/circle/annular；模块RoiFix实际只处理raw rect/annular分支；原配置选择器支持面与SDK接口不同</td>
+<td>descriptor和Runtime只支持一个包含矩形或全图，reject exclusion/其他shape</td>
+<td>显式产品支持边界；不得仅因SDK header有circle/annular就开放当前UI或假造其栅格语义。</td>
+</tr>
+<tr>
+<td>文件路径/刷新</td>
+<td>ReadFileMatrix可先替换缓冲后报错；成功SetParam才提交路径；Process Refresh失败提前返，不进SDK Run</td>
+<td>FileSession.SetInputPath Replacement即提交、成功才paths；Runtime.File按次序early return</td>
+<td>已有File/Session/Plugin回放覆盖，复用，不重写reader。Save输出路径空值拒绝与保存IO返回0边界保持。</td>
+</tr>
+<tr>
+<td>算法结果失败</td>
+<td>SDK Image失败GetResult空，模块写0/0；文件read失败早返仍可保留旧SDK结果</td>
+<td>Image结果失败session.Result=null；File Run清LastResult，setter失败不进入Run</td>
+<td>与现有受控原模块失败trace对应；平台订阅历史值/显示是否清除独立于这里的缓存与writes。</td>
+</tr>
+<tr>
+<td>Image输出</td>
+<td>ProcessOutput220b0生产状态、三组点/计数、ratio/error/scale、检测框等</td>
+<td>Runtime.ImageResult、ImageSolver.SolveBoards</td>
+<td>点/矩阵核心仍受共享R01–R04边界影响，不在此重做。ImageSolver当前Boxes取RoiDocument；原模块Detect*来自image描述块，不可凭ROI几何认定producer相同，须定向对照，未猜修。</td>
+</tr>
+<tr>
+<td>File输出</td>
+<td>文件分支只写状态，不把SDK ratio强行变成模块动态端口</td>
+<td>Runtime.File成功/失败仅ModuStatus/CalibStatus</td>
+<td>已有回放对应；ModuRunTime作为强制框架字段额外加入。</td>
+</tr>
+<tr>
+<td>显示</td>
+<td>Display.xml以目标图InImage2、计数/比例/误差/点绘制；CalibOriPoint*只有资源引用，未有已查生产者</td>
+<td>DisplayDefinition/LastDisplay及原资源控制器</td>
+<td>目标图绑定有对应；不造原点轴数值。等待/失败LastDisplay结果可见性不可等同真实VM历史输出，单列未知。</td>
+</tr>
+<tr>
+<td>reset/释放</td>
+<td>DeInit销毁工具及ROI clones，尾跳ResetMember；重复Init还可能装载默认配置</td>
+<td>plugin.Reset移除standalone cache；scope.State的销毁由共享执行scope拥有</td>
+<td>不给Map另建第二套scope生命周期；公共session销毁/真实宿主重置由根线对应。</td>
+</tr>
+</tbody></table>
+<h2 id="专属补丁与最小回归">专属补丁与最小回归</h2><p><code>MapCalibrationPlugin.Runtime.Image</code>将 <code>Pose(previous)</code> 改为当前帧 <code>Pose()</code>，缺少WorldRotateAngle时固定-999，去掉旧angle继承。仅改该生产路径，不修改共享NImage/Contracts或原生payload。</p>
+<p>新增 <code>tests/MapCalibration.InputStateChecks</code>：每侧独立节点反复只输入一张2×2图，永不凑齐图像对，不触发检测；验证显式pose→全缺省→部分pose→漏Angle四轮、哨兵float位、无帧早返、File模式失败保留pending/pose、等待无合成display，以及XML R字段为-999。测试读专属私有session仅用于验证缓存，不向产品注入测试钩子。</p>
+<p>构建采用独立 <code>analysis/map-calibration/d4-production-state/artifacts</code>，根线串行授权。最终结果与hash在同目录验证记录；首次测试编译缺System.IO已修，不隐去该失败。没有原厂运行或设备测试新增。</p>
+<h2 id="整工具最小剩余">整工具最小剩余</h2><p>已确定的新帧angle差异完成专属修复；其余分别归当前可触发的Region接入空隙/检测框producer待证、额外raw报文API边界、共享R01–R04及scope生命周期。下一应按这些明确成员实施和自动验证，不重新泛化全部SDK函数或将人工验收作为计分门槛。</p>
+<p>验证结果：独立artifacts增量构建退出0，0警告/0错误；InputStateChecks PASS48、退出0。记录与文件hash见analysis/map-calibration/d4-production-state/verification.json。构建槽已交还根线。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-PRODUCTION-STATE-MATRIX.md · SHA256 2e2f16af57d6026fc113e09d15e8d1c44ffe0375e6cc8ca4a1c6450efac89651<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

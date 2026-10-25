@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>UserData.set_Item → SetUIParamValue · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>UserData.set_Item → SetUIParamValue · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-E66"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>UserData.set_Item → SetUIParamValue → 生命周期/历史门 → 动态或普通SDK设置</h2><p>UserData写入有Parent/Dispose与全局/动态模块、历史分支；实际SetUIParamValue按isUsedForDynamicUIParam选择SDK动态或普通函数。普通ModuleManager对非空数据Alloc/Copy/SDK/Free，空数据走DeleteUIParamValue，非零返回抛VmException。密码清空的UTF8为空数组，因此普通分支可删除键，不是写入字符串对象。</p><p><a href="../专题/entry-routing-security.html#edge-E66">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/entry-routing-security.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/entry-routing-security.edges.json · SHA256 fe606f2f9a763da88f2f5487b7c2208a11138f29a5e2fa09b194c88c9aa25855</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="22486ff6a1bd6470e8098f497f86b2af29e5f0f0b9f1dc8e883681563e30b4a8">{
+  &quot;id&quot;: &quot;E66&quot;,
+  &quot;route&quot;: &quot;原版 · Group保护持久化边界&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;UserData.set_Item → SetUIParamValue&quot;,
+  &quot;to&quot;: &quot;生命周期/历史门 → 动态或普通SDK设置&quot;,
+  &quot;behavior&quot;: &quot;UserData写入有Parent/Dispose与全局/动态模块、历史分支；实际SetUIParamValue按isUsedForDynamicUIParam选择SDK动态或普通函数。普通ModuleManager对非空数据Alloc/Copy/SDK/Free，空数据走DeleteUIParamValue，非零返回抛VmException。密码清空的UTF8为空数组，因此普通分支可删除键，不是写入字符串对象。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.Core/VM.Core/UserData.cs&quot;,
+      &quot;member&quot;: &quot;UserData indexer history/lifecycle&quot;,
+      &quot;sha256&quot;: &quot;8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394&quot;,
+      &quot;start&quot;: 26,
+      &quot;end&quot;: 120,
+      &quot;excerpt&quot;: &quot;\tpublic virtual byte[] this[string key]\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!Parent.IsActive || Parent.IsOnDispose)\n\t\t\t{\n\t\t\t\treturn null;\n\t\t\t}\n\t\t\ttry\n\t\t\t{\n\t\t\t\tLogHelper.Info($\&quot;获取userdata模块ID名为{Parent.ID} {Parent.Name},key为{key}\&quot;);\n\t\t\t\treturn GetUIParamValue(key);\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex.errorMessage);\n\t\t\t\tthrow ex;\n\t\t\t}\n\t\t\tcatch (Exception ex2)\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex2.Message);\n\t\t\t\tthrow VmSolution.GetVmException(ex2);\n\t\t\t}\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (Parent == null || Parent.IsOnDispose)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (Parent.IsGlobalModu || key == \&quot;CheckedImages\&quot; || key == \&quot;DESIGNERBUFFER\&quot; || key == \&quot;ConfigAvailable\&quot;)\n\t\t\t{\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t}\n\t\t\telse if (Parent.IsDynamicModu)\n\t\t\t{\n\t\t\t\tIUnRedoService unRedoService = Ioc.Get&lt;IUnRedoService>();\n\t\t\t\tif (unRedoService != null &amp;&amp; unRedoService.ValiteType(\&quot;ModifyConfig\&quot;))\n\t\t\t\t{\n\t\t\t\t\tRecordAllUserData();\n\t\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tIUnRedoService unRedoService2 = Ioc.Get&lt;IUnRedoService>();\n\t\t\t\tif (unRedoService2 == null || !unRedoService2.ValiteType(\&quot;DeleteModule\&quot;))\n\t\t\t\t{\n\t\t\t\t\tIUnRedoService unRedoService3 = Ioc.Get&lt;IUnRedoService>();\n\t\t\t\t\tif (unRedoService3 == null || !unRedoService3.ValiteType(\&quot;CopyModule\&quot;))\n\t\t\t\t\t{\n\t\t\t\t\t\tif (key.Contains(\&quot;DynamicIO\&quot;))\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tbyte[] uIParamValue = GetUIParamValue(key);\n\t\t\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\t\t\tRecordSingleData(uIParamValue, value, key);\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tif (key.Contains(\&quot;SourceIndex\&quot;) || key.Contains(\&quot;TargetIndex\&quot;) || key.Contains(\&quot;Position\&quot;))\n\t\t\t\t{\n\t\t\t\t\tbyte[] uIParamValue2 = GetUIParamValue(key);\n\t\t\t\t\tRecordSingleData(uIParamValue2, value, key);\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tRecordAllUserData();\n\t\t\t\t}\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tbyte[] uIParamValue3 = GetUIParamValue(key);\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t\tif (uIParamValue3 != value &amp;&amp; (!(key == \&quot;CheckItemParamReady\&quot;) || (uIParamValue3 != null &amp;&amp; (uIParamValue3 == null || value == null || !(Hik.Util.StringUtil.UTF8GetString(uIParamValue3) == Hik.Util.StringUtil.UTF8GetString(value))))))\n\t\t\t\t{\n\t\t\t\t\tRecordSingleData(uIParamValue3, value, key);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void RecordAllUserData()\n\t{\n\t\tExpression&lt;Func&lt;object>> oldValue = () => Parent.GetAllUserData();\n\t\tstring displayName = string.Format(\&quot;{0}{1}:{2}ALL_USERDATA\&quot;, AppLocalizationService.GetLang(\&quot;Lang_Edit\&quot;), AppLocalizationService.GetLang(\&quot;界面数据\&quot;), Parent.FullName.Substring(Parent.FullName.LastIndexOf(',') + 1));\n\t\tIoc.Get&lt;IUnRedoService>()?.Register(new UserDataUnRedoOperation(UserData_Redo, UserData_Undo, new UnRedo_UserData\n\t\t{\n\t\t\tModuleFullName = Parent.FullName,\n\t\t\tIsAllUserData = true,\n\t\t\tPropertyKey = \&quot;ALL_USERDATA\&quot;,\n\t\t\tOldValue = oldValue,\n\t\t\tNewValue = null\n\t\t}, UserData_Update), displayName, (IBuilder builder, IUnRedoOperation operation) => CanRegisterUserData(builder, operation));&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.Core/VM.Core/UserData.cs&quot;,
+      &quot;member&quot;: &quot;UserData SDK branch&quot;,
+      &quot;sha256&quot;: &quot;8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394&quot;,
+      &quot;start&quot;: 146,
+      &quot;end&quot;: 158,
+      &quot;excerpt&quot;: &quot;\tprivate void SetUIParamValue(string key, byte[] value)\n\t{\n\t\tif (isUsedForDynamicUIParam)\n\t\t{\n\t\t\tstring[] array = key.Split(SplitStrs, StringSplitOptions.None);\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetDynamicUIParamValue(Parent.ID, array[0], value, (array.Count() > 1) ? array[1] : \&quot;\&quot;);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetUIParamValue(Parent.ID, key, value);\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs&quot;,
+      &quot;member&quot;: &quot;ModuleManager.SetUIParamValue allocate/delete/return&quot;,
+      &quot;sha256&quot;: &quot;783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922&quot;,
+      &quot;start&quot;: 765,
+      &quot;end&quot;: 799,
+      &quot;excerpt&quot;: &quot;\tpublic void SetUIParamValue(uint nObjectID, string strParamName, byte[] data, uint nRecvWaitTime = 10000u)\n\t{\n\t\tif (strParamName == \&quot;IsForbidden\&quot; &amp;&amp; data != null)\n\t\t{\n\t\t\tuint nEnableFlag = ((!ExternalCallHelper.BytesToStruct&lt;bool>(data, 0, data.Length)) ? 1u : 0u);\n\t\t\tEnableModule(nObjectID, nEnableFlag);\n\t\t\treturn;\n\t\t}\n\t\tint num = -536870657;\n\t\tif (data != null &amp;&amp; data.Length != 0)\n\t\t{\n\t\t\tIntPtr intPtr = Marshal.AllocHGlobal(data.Length);\n\t\t\tMarshal.Copy(data, 0, intPtr, data.Length);\n\t\t\tnum = ServerSDKAPI.IMVS_SetUIParamValue(CVmObjectBase.mhandle, nObjectID, strParamName, intPtr, (uint)data.Length, nRecvWaitTime);\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t\telse\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tDeleteUIParamValue(nObjectID, strParamName);\n\t\t\t\tnum = 0;\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tnum = ex.errorCode;\n\t\t\t}\n\t\t}\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex2 = new VmException(num);\n\t\t\tthrow ex2;\n\t\t}\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/StringUtil.cs&quot;,
+      &quot;member&quot;: &quot;StringUtil.UTF8GetBytes direct encoding&quot;,
+      &quot;sha256&quot;: &quot;a7c8631e83c9f4d515b2e51ec5d337caf4b77c569385086af44e7ddb173006e4&quot;,
+      &quot;start&quot;: 10,
+      &quot;end&quot;: 13,
+      &quot;excerpt&quot;: &quot;\tpublic static byte[] UTF8GetBytes(string str)\n\t{\n\t\treturn Encoding.UTF8.GetBytes(str);\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;native函数体、结构/内存异常清理、UserData全部历史语义及方案落盘/受保护.grp导出仍开放，不从UI字节存取推定磁盘加密。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

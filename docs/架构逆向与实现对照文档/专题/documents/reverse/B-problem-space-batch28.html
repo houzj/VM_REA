@@ -1,0 +1,56 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第二十八轮 B 问题空间：main 可独立完成的数据合同筛选 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第二十八轮 B 问题空间：main 可独立完成的数据合同筛选</p><h1>第二十八轮 B 问题空间：main 可独立完成的数据合同筛选</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第二十八轮 B 问题空间：main 可独立完成的数据合同筛选</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="B-problem-space-batch28.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="B-problem-space-batch28.html#第二十八轮-b-问题空间main-可独立完成的数据合同筛选">第二十八轮 B 问题空间：main 可独立完成的数据合同筛选</a></p><p style="margin-left:14px"><a href="B-problem-space-batch28.html#候选筛选">候选筛选</a></p><p style="margin-left:14px"><a href="B-problem-space-batch28.html#结论">结论</a></p><p style="margin-left:14px"><a href="B-problem-space-batch28.html#精确解除条件">精确解除条件</a></p><p style="margin-left:14px"><a href="B-problem-space-batch28.html#证据">证据</a></p></details><h1 id="第二十八轮-b-问题空间main-可独立完成的数据合同筛选">第二十八轮 B 问题空间：main 可独立完成的数据合同筛选</h1><ul>
+<li>基线：<code>fbcf222f08505555f3a06db9fa116cc21e4fd90e</code></li>
+<li>问题：在不复制 <code>tool-plugins</code> 配置框架的前提下，是否存在可由 main 单独闭合的 producer→消费→持久化数据合同？</li>
+<li>范围：B01、B04、B06、B08 未闭子单元；只读 main 源码及已有反编译证据，未访问或修改 <code>tool-plugins</code>。</li>
+</ul>
+<h2 id="候选筛选">候选筛选</h2><table>
+<thead>
+<tr>
+<th>候选</th>
+<th>main 已有能力</th>
+<th>缺失的源码级合同</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>B01 运行 Tab/变量目标</td>
+<td><code>WorkflowRunParameters</code>、配置校验和托管绑定</td>
+<td>原始 <code>BaseNode.XmlLoaded/GetRunParamsTree</code> 实例对象、SDK 订阅返回与取消确认</td>
+<td>阻塞</td>
+</tr>
+<tr>
+<td>B04.3 复合叶/累积</td>
+<td><code>PortValue</code>、<code>PolygonBatch</code> 独立托管容器、明确拒绝未知数组</td>
+<td>原生 pointset/POLYGON/bytearray producer、<code>ProcessGroupOutputV44</code> 载荷/所有权/清理及 Group 回写</td>
+<td>阻塞</td>
+</tr>
+<tr>
+<td>B06.2/B06.3 ROI/结果消费</td>
+<td><code>GroupComplexEditor</code>、<code>RoiGeometry</code>、<code>GroupOutputAccumulator</code> 托管消费路径</td>
+<td>插件 <code>IGroupRunParam</code> producer、<code>DisplayForGroupType</code>、ROI 字节/序号、跨轮 native 结果生命周期</td>
+<td>阻塞</td>
+</tr>
+<tr>
+<td>B08 组合验收</td>
+<td>已有托管 Group/ROI/历史组合检查</td>
+<td>B07 真实插件交付、原机对照及跨边界 payload</td>
+<td>阻塞</td>
+</tr>
+</tbody></table>
+<h2 id="结论">结论</h2><p>本问题空间没有可安全计分的新增实施单元。main 可以独立维护已经确认的托管数据合同（Group 输入/输出代理、ROI 几何验证、配置持久化和显式拒绝未知复合类型），但这些合同已经实施并有对应自审，重复修改不会增加 B01/B04/B06/B08 的实施计数。将 <code>PolygonBatch</code>、ROI 编辑器或结果累积器扩展成原生等价路径，需要缺失的 producer/ABI/所有权证据，属于猜测或复制插件配置框架。</p>
+<p>实施增量：<strong>+0</strong>。本报告只记录筛选结果和解除条件，没有产品源码改动。</p>
+<h2 id="精确解除条件">精确解除条件</h2><ol>
+<li>B01：提供同版本原始运行 Tab 实例，记录 <code>XmlLoaded → GetRunParamsTree → RunParamsSelectData</code> 的对象/类型/订阅/取消载荷，并能在 main 责任边界消费。</li>
+<li>B04.3：提供真实 producer 到 <code>ProcessGroupOutputV44</code> 的 pointset/POLYGON/bytearray 字段、基数、packing、所有权、失败和释放证据。</li>
+<li>B06：插件侧提交带 SHA 的 Group 参数/ROI producer 能力快照（资格、字段、坐标空间、序号、应用/取消、结果 payload 生命周期），main 仅消费该合同。</li>
+<li>B08：B07 真实插件交付后，才可执行跨层组合闭合；此前不得把托管组合检查升级为原机等价。</li>
+</ol>
+<h2 id="证据">证据</h2><ul>
+<li><code>docs/reverse/B04-types-close-batch26.md</code></li>
+<li><code>docs/reverse/B06-contract-gate-batch27.md</code></li>
+<li><code>src/VisionFramework/WorkflowRunParameters.cs</code></li>
+<li><code>src/VisionFramework/GroupOutputAccumulator.cs</code></li>
+<li><code>src/VisionFramework/PolygonRuntimeValues.cs</code></li>
+<li><code>src/VisionEditor.Core/GraphEditorDocument.Groups.cs</code></li>
+</ul>
+<p class="meta">来源：docs/reverse/B-problem-space-batch28.md · SHA256 6e2fb7e680a76bb930011c19125c5c542cb4dd7b730fe475582378bdf76eb6a5<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

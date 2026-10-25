@@ -1,0 +1,78 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 f3cec939adb4 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 f3cec939adb4</p><h1>原文证据 f3cec939adb4</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 f3cec939adb449464c5a65371f6689c4d9c74b0d0f61f201f9d29bfc7dc318a5。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs:755–830
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+	internal int AddRecord(object result, bool isChangeErrorInfo = true, bool isCallBack = false)
+	{
+		int num = 0;
+		string text = null;
+		if (result is ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data result2)
+		{
+			if (isCallBack)
+			{
+				curCallBackExecuteCount = result2.nExecuteCount;
+				if (result2.bIsSelfExecute != 1 &amp;&amp; curCallBackExecuteCount &lt;= maxQueryExecuteCount)
+				{
+					return 0;
+				}
+			}
+			else
+			{
+				if (maxQueryExecuteCount &lt; result2.nExecuteCount)
+				{
+					maxQueryExecuteCount = result2.nExecuteCount;
+				}
+				if (maxQueryExecuteCount &lt;= curCallBackExecuteCount)
+				{
+					return 0;
+				}
+			}
+			IList&lt;object&gt; displayList = ModuleParams.GetDisplayList();
+			foreach (Apps.XmlParser.Object dataRecord in dataRecords)
+			{
+				object recordContent = dataRecord.GetRecordContent(result2);
+				if (recordContent is Array)
+				{
+					for (int i = 0; i &lt; (recordContent as Array).Length; i++)
+					{
+						LogInfo logInfo = new LogInfo();
+						logInfo.RowIndex = result2.nExecuteCount;
+						logInfo.AddTime = result2.dtEndTime.ToString(&quot;yyyy-MM-dd HH:mm:ss:fff&quot;);
+						logInfo.Content = (recordContent as Array).GetValue(i).ToString();
+						LogInfo logInfo2 = logInfo;
+						if (!string.IsNullOrEmpty(logInfo2.Content))
+						{
+							lock (_recordlock)
+							{
+								tempInfoList.Add(logInfo2);
+								num++;
+							}
+						}
+						if (num &gt;= 500)
+						{
+							break;
+						}
+					}
+					continue;
+				}
+				LogInfo item = new LogInfo
+				{
+					RowIndex = result2.nExecuteCount,
+					AddTime = result2.dtEndTime.ToString(&quot;yyyy-MM-dd HH:mm:ss:fff&quot;),
+					Content = recordContent?.ToString()
+				};
+				lock (_recordlock)
+				{
+					tempInfoList.Add(item);
+					num++;
+				}
+				text = recordContent?.ToString();
+				break;
+			}
+		}
+		if (isChangeErrorInfo)
+		{
+			ErrorInfo = text;
+		}
+		return num;
+	}
+
+	private void RefreshRecordTimerTick(object sender, EventArgs e)</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../专题/history-results-entry-audit.html">结果历史、当前结果选择与帮助入口</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

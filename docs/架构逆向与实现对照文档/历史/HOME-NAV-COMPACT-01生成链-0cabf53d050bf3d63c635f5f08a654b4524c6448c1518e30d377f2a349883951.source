@@ -1,0 +1,30 @@
+'use strict';
+// Incremental delivery metadata only; never reads live reverse-engineering inputs.
+const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const site=path.resolve(__dirname,'../../../docs/架构逆向与实现对照文档');
+const read=p=>fs.readFileSync(path.join(site,p)),sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+const manifest=JSON.parse(read('清单/构建清单.json'));
+const audit={schemaVersion:1,documentProgress:{completed:2,total:4,percentage:50,denominator:'四个固定交付批次；只计整批通过，不按页数或测试数计分'},batches:[{id:1,title:'既有拆分、条目和证据保留',state:'static-verified',evidence:'静态与路由检查.json'},{id:2,title:'首页交付状态与导航修复',state:'implemented-vm-verification-required'},{id:3,title:'大专题按场景分页、适配关系图及专题增量更新',state:'incomplete',remaining:'既有内容已迁移；须逐专题核实分页粒度、关系类型、来源和未知边，不以通用关系投影代替。'},{id:4,title:'实际浏览器与最终兼容交接',state:'unverified',remaining:'390/768/桌面、打印、键盘、历史与离线实际验收；遵守先前 file:// 拒绝，不尝试绕过。根入口由主对话接入。'}],productImplementationCredit:0,complete:false};
+// Batch 2 is deliberately not credited until its VM operation checks pass.
+const navFile=path.join(site,'清单/导航操作检查.json');
+if(fs.existsSync(navFile)&&JSON.parse(fs.readFileSync(navFile)).passed){audit.batches[1].state='implemented-vm-verified';audit.batches[1].evidence='导航操作检查.json';}else{audit.documentProgress.completed=1;audit.documentProgress.percentage=25;}
+const topicChecks=['场景分页检查','停止状态图检查','持有关系图检查','工程依赖图检查','长图分块检查','动态模板链接检查','Group逐轮图检查','锚点定位检查','调用边定位检查'];
+if(audit.batches[1].state==='implemented-vm-verified'&&topicChecks.every(name=>{const f=path.join(site,'清单/'+name+'.json');return fs.existsSync(f)&&JSON.parse(fs.readFileSync(f)).passed;})){audit.documentProgress.completed=3;audit.documentProgress.percentage=75;audit.batches[2].state='implemented-static-vm-verified';audit.batches[2].evidence=topicChecks.map(n=>n+'.json');audit.batches[2].remaining='浏览器呈现与打印实际验收归第四批，仍未通过。';}
+function write(p,value){const b=Buffer.from(value),file=path.join(site,p);fs.writeFileSync(file,b);const row={path:p,sha256:sha(b),bytes:b.length},i=manifest.outputs.findIndex(x=>x.path===p);if(i<0)manifest.outputs.push(row);else manifest.outputs[i]=row;}
+const block='<section id="document-delivery" class="site-notice"><h2>交付清单与验收状态</h2><p>已生成 '+manifest.counts.pages+' 页，'+manifest.counts.entryPages+' 个界面入口，'+manifest.counts.toolPages+' 个工具条目，'+manifest.counts.evidencePages+' 个证据页，'+manifest.counts.oldRoutes+' 条旧路由。工具登记与文档页数不代表产品恢复完成。</p><ul><li>已检查：原文证据块、来源快照、相对文件链接与 VM 替代环境中的旧路由。</li><li>正在完成：大专题按具体问题分页、适配的状态／数据／Owner 关系图、按专题增量更新。</li><li>尚未验证：390／768／桌面呈现、打印、实际键盘和前进后退、离线浏览器运行。</li><li>兼容边界：原 docs/framework-architecture.html 未替换，最终接入由主对话维护者处理。</li></ul><p><a href="清单/交付与兼容.html">完整交付与未知</a> · <a href="清单/静态与路由检查.json">静态检查记录</a> · <a href="清单/目标验收.json">分批验收与剩余工作</a></p></section>';
+const routeReportFile=path.join(site,'清单/路由定位修复.json'),routeReport=fs.existsSync(routeReportFile)?JSON.parse(fs.readFileSync(routeReportFile)):null;
+const enrichedBlock=block.replace('</section>',(routeReport?'<p>锚点补查：修复 '+routeReport.staticAnchorsFixed+' 个静态锚点，'+routeReport.edgeRoutes+' 条调用边直达完整正文；另 '+routeReport.unknown.length+' 条登记字符串明确保留未知，不计语义兼容通过。<a href="清单/未解析旧入口.html">查看未知登记</a> · <a href="清单/锚点定位检查.json">锚点检查</a></p>':'')+'</section>');
+if(routeReport)audit.routeCompatibility={unknownRegistrations:routeReport.unknown.length,semanticComplete:routeReport.semanticCompatibilityComplete,browserVerified:false};
+let displayBlock=enrichedBlock.replace('</section>','<p>文档交付进度：'+audit.documentProgress.percentage+'%（'+audit.documentProgress.completed+'/4 固定批次）；实际浏览器验收仍未通过。</p></section>');
+if(audit.documentProgress.completed===3)displayBlock=displayBlock.replace('正在完成：大专题按具体问题分页、适配的状态／数据／Owner 关系图、按专题增量更新。','已交付并经静态／VM检查：大专题按问题分页、状态／数据／Owner 关系图及按专题增量更新；浏览器呈现另验。');
+// Delivery metadata belongs on maintenance, never in front of homepage navigation.
+const home=require('./home.cjs'),homeData=home.collect(manifest,read('工具/index.html').toString());
+for(const p of ['index.html','framework-architecture.html'])write(p,home.render(homeData));
+const maintenanceFile='清单/首页维护.html';let maintenance=fs.existsSync(path.join(site,maintenanceFile))?read(maintenanceFile).toString():home.maintenance('');
+const maintenanceBlock=displayBlock.replace(/href="(?![a-z]+:|#)([^"]+)"/gi,'href="../$1"');
+maintenance=maintenance.replace(/<section id="document-delivery"[\s\S]*?<\/section>/,maintenanceBlock);write(maintenanceFile,maintenance);
+if(!manifest.pages.some(p=>p.path===maintenanceFile))manifest.pages.push({path:maintenanceFile,title:'首页维护、验收与交付',kind:'maintenance'});manifest.counts.pages=manifest.pages.length;
+write('清单/目标验收.json',JSON.stringify(audit,null,2)+'\n');
+manifest.incrementalUpdates=[...(manifest.incrementalUpdates||[]),{kind:'delivery-home-only',sourceEvidenceRescanned:false,topicBodiesModified:false,implementationCredit:0}];
+fs.writeFileSync(path.join(site,'清单/构建清单.json'),JSON.stringify(manifest,null,2)+'\n');
+console.log(JSON.stringify({updated:['index.html','framework-architecture.html','清单/目标验收.json'],sourceEvidenceRescanned:false,complete:false}));

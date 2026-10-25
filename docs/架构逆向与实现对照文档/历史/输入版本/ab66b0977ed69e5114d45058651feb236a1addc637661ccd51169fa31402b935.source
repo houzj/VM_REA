@@ -1,0 +1,1315 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>菜单状态生产者：锁、方案、运行显示与角色按钮</title><style>body{max-width:1280px;margin:auto;padding:25px;background:#102032;color:#e0edf8;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#99d2ff}article{background:#1b3048;padding:19px;margin:20px 0;border-left:4px solid #edba76}.independent-implementation{border-color:#82cbff}.unknown{border:1px dashed #eaa5bd}summary{cursor:pointer}details{margin:13px 0}pre{font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}p{overflow-wrap:anywhere}.notice{padding:16px;background:#2d3f54}</style><a href="main-ui-map.html#menu">主界面菜单区</a> · <a href="menu-entry-materialization-audit.html">上批菜单物化</a> · <a href="menu-universe-next-audit.html">控制器条件链</a><h1>菜单状态生产者：锁、方案、运行显示与角色按钮</h1><p class="notice">ME-U01的有限延伸：具体IsEnabled/IsVisible字段、原通知及已知容器门；不穷尽全部权限/动态项或释放路径。<br>10项原证据、1项当前独立实现、1项未知；39个原CIL体，其中7个Apps.Data体匹配保留REA raw IL。完整入口/状态全集仍未证明。</p><p>字段门：ItemData默认true → setter先写后通知。锁门：显式/方案阈值 → 工作区锁 → 导入项IsEnabled与锁工具栏内容。语言门：SoftLanguage → Language.IsVisible。运行显示门：RunData.IsRunning → 模板有效IsEnabled。角色按钮门：角色回调 → Header/Visibility。各门分开保留，实际WPF状态仍待验证。</p><article id="MS01" class="source-confirmed"><h2>MS01 · Apps.Data.ItemData原构造/字段 → 默认true状态及同步变更通知</h2><p>source-confirmed：ItemData两构造均初始化isVisible=true、isEnabled=true、isGroupData=false及新List&lt;ItemData&gt;。IsVisible/IsEnabled getter只读字段；setter比较新旧，不同才先写字段再OnPropertyChanged(对应属性名)。NotifyPropertyChangedBaseNode.OnPropertyChanged直接PropertyChanged?.Invoke(this,new PropertyChangedEventArgs(name))，没有本地catch/Dispatcher/权限计算。通知异常不回滚已写字段。公开字段与属性setter不同，不能把XML初始字段装载说成必发同一setter通知。</p><p>待追：原字段/属性实际实例值、通知订阅者异常、外部直接写字段和全部类型派生覆盖未运行验证；未由默认true推出所有操作已授权。</p><details><summary>Apps.Data.ItemData::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:14895–14914
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x060000a1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000a1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.Data.ItemData&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 41,
+          &quot;ilSha256&quot;: &quot;4a34104c3f1bd378c508f21cc00d67c472a98445991cf46eb3c10ec4a05f5d9d&quot;,
+          &quot;ilBytes&quot;: &quot;02177dda00000402177ddb00000402167ddc00000402731801000a7ddd0000040228b400000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Apps.Data.ItemData::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:15074–15093
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x060000a2&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000a2&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.Data.ItemData&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 42,
+          &quot;ilSha256&quot;: &quot;4aeb29e48018192859318afcc44b6f131b76b819edfdaf6f7dabeb9c797a1feb&quot;,
+          &quot;ilBytes&quot;: &quot;02177dda00000402177ddb00000402167ddc00000402731801000a7ddd000004020328b500000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Apps.Data.ItemData::get_IsEnabled · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:14634–14653
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600009e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600009e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.Data.ItemData&quot;,
+            &quot;name&quot;: &quot;get_IsEnabled&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;b5d7ea43f5707bfe8e873bfbaa262a47b95195c73d1e66fbc72d64d4282385bc&quot;,
+          &quot;ilBytes&quot;: &quot;00027bdb0000040a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.Data.ItemData::set_IsEnabled · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:14710–14729
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600009f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600009f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.Data.ItemData&quot;,
+            &quot;name&quot;: &quot;set_IsEnabled&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 39,
+          &quot;ilSha256&quot;: &quot;1700694f6f3f379a434b51a64af7738dba023f7e7a44028db77ddfa1baa43040&quot;,
+          &quot;ilBytes&quot;: &quot;00027bdb00000403fe0116fe010a062c150002037ddb0000040272a30500706fb800000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.Data.ItemData::get_IsVisible · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:14373–14392
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600009c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600009c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.Data.ItemData&quot;,
+            &quot;name&quot;: &quot;get_IsVisible&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;a0d8748e6a1f4cae4ee7e664fdc2e18011684164b4b5d0370deb68b0e1560a83&quot;,
+          &quot;ilBytes&quot;: &quot;00027bda0000040a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.Data.ItemData::set_IsVisible · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:14449–14468
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600009d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600009d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.Data.ItemData&quot;,
+            &quot;name&quot;: &quot;set_IsVisible&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 39,
+          &quot;ilSha256&quot;: &quot;b1c5d890388312cac30f4bff23792a192c47ae9a373de10535a8dcbc7f6f58c1&quot;,
+          &quot;ilBytes&quot;: &quot;00027bda00000403fe0116fe010a062c150002037dda00000402728f0500706fb800000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.Data.NotifyPropertyChangedBaseNode::OnPropertyChanged · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:15283–15302
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x060000b8&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000b8&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.Data.NotifyPropertyChangedBaseNode&quot;,
+            &quot;name&quot;: &quot;OnPropertyChanged&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 33,
+          &quot;ilSha256&quot;: &quot;18b5e1cb66da44b233eaf4ee25284056260677a085467b0739567948ba5799fe&quot;,
+          &quot;ilBytes&quot;: &quot;00027be40000040a0614fe030b072c1000060203731d01000a6f1e01000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Recovered original initial flags · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-state-producers-audit.ItemData.cs:10–18
+SHA256 9d235d16f1e30caa64a4cb61cf83b482a93ac74c1577bf78650f47f4d7a1d3b4
+	public bool isVisible = true;
+
+	public bool isEnabled = true;
+
+	public bool isGroupData = false;
+
+	public List&lt;ItemData&gt; items = new List&lt;ItemData&gt;();
+
+	public string Name</pre></details><details><summary>Original state setter · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-state-producers-audit.ItemData.cs:50–67
+SHA256 9d235d16f1e30caa64a4cb61cf83b482a93ac74c1577bf78650f47f4d7a1d3b4
+	public bool IsEnabled
+	{
+		get
+		{
+			return isEnabled;
+		}
+		set
+		{
+			if (isEnabled != value)
+			{
+				isEnabled = value;
+				OnPropertyChanged(&quot;IsEnabled&quot;);
+			}
+		}
+	}
+
+	public bool IsGroupData =&gt; isGroupData;
+</pre></details><details><summary>Direct notification · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-state-producers-audit.NotifyBaseNode.cs:20–23
+SHA256 525f02e67019feb992d8d575e58e5724661e7adbda8bff07b08e4a21302a5a71
+	public virtual void OnPropertyChanged(string name)
+	{
+		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+	}</pre></details></article><article id="MS02" class="source-confirmed"><h2>MS02 · AreaLocking/AreaUnLocking → MainWindowData.IsWorkAreaLocking → 先改宿主锁字段 → IUnRedoService → Lang_ImportProcess.IsEnabled</h2><p>source-confirmed：AreaLocking在IsNotifyLock=false时显示LockDlg，保存其IsNotifyLock，DialogResult??false为true才设工作区锁true；已免提示则直接true；取消不会在该体主动置false。AreaUnLocking直接设false。IsWorkAreaLocking仅值变化才先写isWorkAreaLocking，再Ioc.Get&lt;IUnRedoService&gt;()?.SetLockStatus、LockProcess，最后通知IsWorkAreaLocking。LockProcess按Title.Items找Lang_File，再找Lang_ImportProcess，仅命中项IsEnabled=!isLock；不是所有菜单统一禁用。本地没有catch/回滚，前序异常可留下锁字段已改、导入项或最后通知未完成。</p><p>待追：根字段托管默认false；原实际锁状态、动态Items返回null、Ioc/通知异常与全部外部写入者尚未知，不能称锁状态与UI更新原子提交。</p><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::AreaLocking · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:9117–9136
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x060002da&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002da&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;AreaLocking&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 112,
+          &quot;ilSha256&quot;: &quot;91e96bd17e24ee9142bbabf8f375d73cc44af2f42d38cd14a0ee6ff57011944b&quot;,
+          &quot;ilBytes&quot;: &quot;007e690000046f4d00000616fe010a062c4f0016735f01000a0b076fbf01000a267e69000004076f6101000a6f4e00000600076f6201000a0d1203282001000a2d03162b071203282401000a0c082c0e007e69000004176f490000060000002b0e007e69000004176f4900000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::AreaUnLocking · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:9572–9591
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x060002db&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002db&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;AreaUnLocking&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;48a4190f0ac7489f3aa13d155577dbb8263f0fc172279f0781ee8045bcb02d37&quot;,
+          &quot;ilBytes&quot;: &quot;007e69000004166f49000006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::set_IsWorkAreaLocking · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:5169–5188
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000049&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000049&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;set_IsWorkAreaLocking&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 65,
+          &quot;ilSha256&quot;: &quot;8edc359109c8a7b30a75a6c1cfd9d5303a3e4cbbc11df9ad96bdde15526af9d7&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1300000403fe0116fe010a062c2f0002037d13000004281000002b252d03262b07036f1c01000a000203284a0000060002727f0c00706f2900000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::LockProcess · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:5464–5483
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600004a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600004a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;LockProcess&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 134,
+          &quot;ilSha256&quot;: &quot;372e26ca4d28dd7d6158146a5c84f2635949b71a74622f5c494f46fb77dc854f&quot;,
+          &quot;ilBytes&quot;: &quot;00027b110000046f1d01000a280800002b7e32010004252d17267e25010004fe0611030006731001000a258032010004281100002b0a0614fe030b072c4700066f1d01000a280800002b7e33010004252d17267e25010004fe0612030006731001000a258033010004281100002b0c0814fe030d092c0d00080316fe016f1e01000a0000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Explicit lock and cancel branches · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs:1105–1128
+SHA256 b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187
+	public void AreaLocking()
+	{
+		//IL_0014: Unknown result type (might be due to invalid IL or missing references)
+		//IL_001a: Expected Obj, but got Unknown
+		if (!Program.MainData.IsNotifyLock)
+		{
+			LockDlg val = new LockDlg(false);
+			((BaseWindow)(object)val).ShowDialog();
+			Program.MainData.IsNotifyLock = val.IsNotifyLock;
+			if (((Window)(object)val).DialogResult ?? false)
+			{
+				Program.MainData.IsWorkAreaLocking = true;
+			}
+		}
+		else
+		{
+			Program.MainData.IsWorkAreaLocking = true;
+		}
+	}
+
+	public void AreaUnLocking()
+	{
+		Program.MainData.IsWorkAreaLocking = false;
+	}</pre></details><details><summary>Lock update order and no local rollback · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:127–144
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	public bool IsWorkAreaLocking
+	{
+		get
+		{
+			return isWorkAreaLocking;
+		}
+		set
+		{
+			if (isWorkAreaLocking != value)
+			{
+				isWorkAreaLocking = value;
+				Ioc.Get&lt;IUnRedoService&gt;()?.SetLockStatus(value);
+				LockProcess(value);
+				OnPropertyChanged(&quot;IsWorkAreaLocking&quot;);
+			}
+		}
+	}
+</pre></details><details><summary>Concrete import-process destination · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:925–938
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	private void LockProcess(bool isLock)
+	{
+		TitleMenueItemData titleMenueItemData = menuSource.Items.OfType&lt;TitleMenueItemData&gt;().FirstOrDefault((TitleMenueItemData p) =&gt; p.Name == &quot;Lang_File&quot;);
+		if (titleMenueItemData != null)
+		{
+			TitleMenueItemData titleMenueItemData2 = titleMenueItemData.Items.OfType&lt;TitleMenueItemData&gt;().FirstOrDefault((TitleMenueItemData p) =&gt; p.Name == &quot;Lang_ImportProcess&quot;);
+			if (titleMenueItemData2 != null)
+			{
+				titleMenueItemData2.IsEnabled = !isLock;
+			}
+		}
+	}
+
+	private void OpenSolutionPathCmdExcute()</pre></details><details><summary>Original import declaration · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-MenuItems.xml:69–73
+SHA256 d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959
+					&lt;name&gt;Lang_ImportProcess&lt;/name&gt;
+					&lt;methodName&gt;ImportProcess&lt;/methodName&gt;
+					&lt;isEnableByRun&gt;true&lt;/isEnableByRun&gt;
+					&lt;isShowSeparator&gt;True&lt;/isShowSeparator&gt;
+				&lt;/TitleMenueItemData&gt;</pre></details></article><article id="MS03" class="source-confirmed"><h2>MS03 · VmSolution_LoadEnd与锁阈值 → 模块数门 / 延迟确认 / IsNotifyLock配置</h2><p>source-confirmed：加载回调只在e!=null且ErrorCode==0执行锁/旧控制器处理。模块数&gt;=NumOfDefLockModeModulesCount立即锁；否则同时&gt;=Prompt阈值且&lt;Def阈值才Dispatcher.BeginInvoke确认：IsNotifyLock=false才弹2000ms延迟对话框并保存偏好，DialogResult决定true/false；已免提示时该回调内部不改锁。其余模块数分支设false。Def/Prompt getter分别默认128/80，int.Parse配置失败吞异常保留默认；未校验负值或阈值先后。IsNotifyLock getter首次bool.Parse配置而无本地catch，setter先缓存再SaveConfig，不先证明落盘。加载失败不走本锁分支，但方法尾部更新最近项/日志/方案名通知仍在if之外。</p><p>待追：BeginInvoke投递/对话框回执、模块数是否在多次读取间变化、实际配置及失败恢复未知；不深入执行调度/运行模式内部。</p><details><summary>VisionMaster.MainWindowData::VmSolution_LoadEnd · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:2500–2519
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600003b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600003b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;VmSolution_LoadEnd&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128125&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 284,
+          &quot;ilSha256&quot;: &quot;8cfd4fa867aaa23f60ec09152530459b5fe2191a7f35a8e79dd35d2670ec10cc&quot;,
+          &quot;ilBytes&quot;: &quot;00042c0b046f0101000a16fe012b01160a06399300000000288800000a6f0201000a6e02284f0000066afe0416fe010b072c0c000217284900000600002b5e288800000a6f0201000a6e0228500000066a3216288800000a6f0201000a6e02284f0000066afe042b01160c082c2500286000000a6fda00000a02fe0686000006732a00000a280300002b6fdc00000a26002b0a000216284900000600000228460000066ff60200060000288800000a6f0301000a285a01000600725500007072bf0b0070282d00000a72bb0b0070288800000a6f0301000a287900000a1717282e00000a260228530000066ff10100060d092c0f00022853000006176f3f02000600000272d10b00706f2900000a000272eb0b00706f2900000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::&lt;VmSolution_LoadEnd&gt;b__14_0 · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:7171–7190
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000086&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000086&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;\u003CVmSolution_LoadEnd\u003Eb__14_0&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 105,
+          &quot;ilSha256&quot;: &quot;d94b29ed6cb3d4895722bf03186c2ae8320343c912d8ab9e3e1bb40db0444ce9&quot;,
+          &quot;ilBytes&quot;: &quot;007e690000046f4d00000616fe010a062c560016735f01000a0b0720d00700006f6001000a2602076f6101000a284e00000600076f6201000a0d1203282001000a2d03162b071203282401000a0c082c0c000217284900000600002b0a00021628490000060000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::get_NumOfDefLockModeModulesCount · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:6549–6568
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600004f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600004f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;get_NumOfDefLockModeModulesCount&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200008&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 38,
+          &quot;ilSha256&quot;: &quot;7fce57969253787323a55349db7028674092b4882c4c5a8053a561ecde705776&quot;,
+          &quot;ilBytes&quot;: &quot;0020800000000a0072d70c0070284400000a282601000a0a00de05260000de00060b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::get_PromptNumOfLockModeModulesCount · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:6730–6749
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000050&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000050&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;get_PromptNumOfLockModeModulesCount&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200008&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 35,
+          &quot;ilSha256&quot;: &quot;01c56f8157207764690bc757fbbca5682e2590d6a81596b0dc66b8463c5fb817&quot;,
+          &quot;ilBytes&quot;: &quot;001f500a0072110d0070284400000a282601000a0a00de05260000de00060b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::get_IsNotifyLock · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:5997–6016
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600004d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600004d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;get_IsNotifyLock&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 63,
+          &quot;ilSha256&quot;: &quot;5256dc82ed3459f6f30936f578ce50d7e72ab7dcbcb73ee144e7f256584de0f1&quot;,
+          &quot;ilBytes&quot;: &quot;00027c15000004282001000a16fe010a062c1c000272bd0c0070284400000a282101000a732201000a7d1500000400027c15000004282301000a0b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::set_IsNotifyLock · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:6243–6262
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600004e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600004e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;set_IsNotifyLock&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 78,
+          &quot;ilSha256&quot;: &quot;7035c9cc857740d4d5de715cc39f739e40584ccef50ff685b81b4e02533b97ed&quot;,
+          &quot;ilBytes&quot;: &quot;00027b150000040b030c1201282401000a08fe011201282001000a5f16fe010a062c2a000203732201000a7d1500000472bd0c0070027c15000004fe161100001b6f7700000a282501000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Load-success lock admission and queue · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:736–780
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	private void VmSolution_LoadEnd(object sender, EndEventArgs e)
+	{
+		if (e != null &amp;&amp; e.ErrorCode == 0)
+		{
+			if (VmSolution.Instance.GetModuleCount() &gt;= NumOfDefLockModeModulesCount)
+			{
+				IsWorkAreaLocking = true;
+			}
+			else if (VmSolution.Instance.GetModuleCount() &gt;= PromptNumOfLockModeModulesCount &amp;&amp; VmSolution.Instance.GetModuleCount() &lt; NumOfDefLockModeModulesCount)
+			{
+				Application.Current.Dispatcher.BeginInvoke((Action)(() =&gt;
+				{
+					//IL_0014: Unknown result type (might be due to invalid IL or missing references)
+					//IL_001a: Expected Obj, but got Unknown
+					if (!Program.MainData.IsNotifyLock)
+					{
+						LockDlg val = new LockDlg(false);
+						((BaseWindow)(object)val).ShowDialogDelay(2000u);
+						IsNotifyLock = val.IsNotifyLock;
+						if (((Window)(object)val).DialogResult ?? false)
+						{
+							IsWorkAreaLocking = true;
+						}
+						else
+						{
+							IsWorkAreaLocking = false;
+						}
+					}
+				}));
+			}
+			else
+			{
+				IsWorkAreaLocking = false;
+			}
+			MenuSource.LoadOldLightMoudle();
+		}
+		ProjectManager.UpdateRecentlySolutions(VmSolution.Instance.SolutionPath);
+		UILogManager.logCreate(&quot;信息&quot;, AppLocalizationService.GetLang(&quot;加载方案，路径：&quot;) + &quot; &quot; + VmSolution.Instance.SolutionPath, true, true);
+		if (SoftWareData.IsAutoLoadLast)
+		{
+			SoftWareData.SetAutoLoadSol(isSaveConfig: true);
+		}
+		OnPropertyChanged(&quot;SolutionPath&quot;);
+		OnPropertyChanged(&quot;SolutionName&quot;);
+	}</pre></details><details><summary>Configuration defaults and parse failure · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:182–216
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	public int NumOfDefLockModeModulesCount
+	{
+		get
+		{
+			int result = 128;
+			try
+			{
+				result = int.Parse(ConfigurationHelper.GetConfig(&quot;NumOfDefLockModeModulesCount&quot;));
+			}
+			catch
+			{
+			}
+			return result;
+		}
+	}
+
+	public int PromptNumOfLockModeModulesCount
+	{
+		get
+		{
+			int result = 80;
+			try
+			{
+				result = int.Parse(ConfigurationHelper.GetConfig(&quot;PromptNumOfLockModeModulesCount&quot;));
+			}
+			catch
+			{
+			}
+			return result;
+		}
+	}
+
+	public ProcedureRunData ProcRunPolicyData
+	{
+		get</pre></details><details><summary>Lock notification preference · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:162–181
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	public bool IsNotifyLock
+	{
+		get
+		{
+			if (!isNotifyLock.HasValue)
+			{
+				isNotifyLock = bool.Parse(ConfigurationHelper.GetConfig(&quot;IsNotifyLock&quot;));
+			}
+			return isNotifyLock.Value;
+		}
+		internal set
+		{
+			if (isNotifyLock != value)
+			{
+				isNotifyLock = value;
+				ConfigurationHelper.SaveConfig(&quot;IsNotifyLock&quot;, isNotifyLock.ToString());
+			}
+		}
+	}
+</pre></details></article><article id="MS04" class="source-confirmed"><h2>MS04 · 原LockingTemplate / GetMainData / CustomItemData → 同一宿主锁状态驱动工具栏子项选择</h2><p>source-confirmed：原MenuItems.xml中外层Lang_Locking声明LockingTemplate和GetMainData，其子Items[0]为AreaLocking、Items[1]为AreaUnLocking。CustomItemData getter缓存null才反射执行配置方法，GetMainData写Program.MainData；原LockingTemplate默认Content=Items[0]，CustomItemData.IsWorkAreaLocking==true时切Items[1]。这是一条工具栏内容选择链，和MS02对导入菜单IsEnabled的写入不同；原ToolButtonDataTemplate仍接子项ItemClickCommand。</p><p>待追：本地Apps.Style ItemsControlStyle未在本专题新解码，证据为本地提取声明；活CustomItemData对象身份、子索引完整性、字典实际选择及点击仍未知。</p><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::get_CustomItemData · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:7958–7977
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600028b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600028b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;get_CustomItemData&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20001c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 40,
+          &quot;ilSha256&quot;: &quot;9df570efa26240d9fe092680e1bb474c6a6d6f011a6b005fbc461562c3017a40&quot;,
+          &quot;ilBytes&quot;: &quot;00027be900000414fe010a062c0f0002027be800000428a30200060000027be90000040b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::GetMainData · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:8152–8171
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600028e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600028e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;GetMainData&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;110e19963531eb41be1f0d4805b37076b70d730139e0aae3aba1f73735446d19&quot;,
+          &quot;ilBytes&quot;: &quot;00027e69000004288c020006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Custom-data producer · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs:298–301
+SHA256 b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187
+	public void GetMainData()
+	{
+		CustomItemData = Program.MainData;
+	}</pre></details><details><summary>Locking toolbar group and command children · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-MenuItems.xml:299–326
+SHA256 d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959
+					&lt;customItemTemplateName&gt;LockingTemplate&lt;/customItemTemplateName&gt;
+					&lt;getCustomItemDataContextMethodName&gt;GetMainData&lt;/getCustomItemDataContextMethodName&gt;
+					&lt;items&gt;
+						&lt;TitleMenueItemData&gt;
+							&lt;name&gt;Lang_Locking&lt;/name&gt;
+							&lt;methodName&gt;AreaLocking&lt;/methodName&gt;
+							&lt;imageEnablePath&gt;Resources\ToolBar\ic_topbar_lock_normal.png&lt;/imageEnablePath&gt;
+							&lt;imageDisablePath&gt;Resources\ToolBar\ic_topbar_lock_disable.png&lt;/imageDisablePath&gt;
+						&lt;/TitleMenueItemData&gt;
+						&lt;TitleMenueItemData&gt;
+							&lt;name&gt;Lang_Unlock&lt;/name&gt;
+							&lt;methodName&gt;AreaUnLocking&lt;/methodName&gt;
+							&lt;imageEnablePath&gt;Resources\ToolBar\ic_topbar_unlock_normal.png&lt;/imageEnablePath&gt;
+							&lt;imageDisablePath&gt;Resources\ToolBar\ic_topbar_unlock_disable.png&lt;/imageDisablePath&gt;
+						&lt;/TitleMenueItemData&gt;
+					&lt;/items&gt;
+				&lt;/TitleMenueItemData&gt;
+				&lt;!--全局变量--&gt;
+				&lt;TitleMenueItemData&gt;
+					&lt;name&gt;Lang_GlobalVariable&lt;/name&gt;
+					&lt;methodName&gt;GlobalVariable&lt;/methodName&gt;
+					&lt;isShowExternal&gt;true&lt;/isShowExternal&gt;
+					&lt;toolGroupItemInfo&gt;
+						&lt;groupName&gt;group2&lt;/groupName&gt;
+						&lt;priority&gt;1&lt;/priority&gt;
+					&lt;/toolGroupItemInfo&gt;
+					&lt;imageEnablePath&gt;Resources\ToolBar\ic_全局变量_normal.png&lt;/imageEnablePath&gt;
+					&lt;imageDisablePath&gt;Resources\ToolBar\ic_全局变量_disable.png&lt;/imageDisablePath&gt;</pre></details><details><summary>Original lock content switch · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml:57–70
+SHA256 f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339
+      &lt;DataTemplate x:Key=&quot;LockingTemplate&quot;&gt;
+        &lt;ContentPresenter Name=&quot;cp&quot; Content=&quot;{Binding Items[0]}&quot;&gt;
+          &lt;FrameworkElement.Style&gt;
+            &lt;Style TargetType=&quot;{x:Type ContentPresenter}&quot;&gt;
+              &lt;Setter Property=&quot;ContentTemplate&quot; Value=&quot;{StaticResource ToolButtonDataTemplate}&quot; /&gt;
+            &lt;/Style&gt;
+          &lt;/FrameworkElement.Style&gt;
+        &lt;/ContentPresenter&gt;
+        &lt;DataTemplate.Triggers&gt;
+          &lt;DataTrigger Value=&quot;True&quot; Binding=&quot;{Binding CustomItemData.IsWorkAreaLocking}&quot;&gt;
+            &lt;Setter TargetName=&quot;cp&quot; Property=&quot;ContentPresenter.Content&quot; Value=&quot;{Binding Items[1]}&quot; /&gt;
+          &lt;/DataTrigger&gt;
+        &lt;/DataTemplate.Triggers&gt;
+      &lt;/DataTemplate&gt;</pre></details><details><summary>Child toolbar command declaration · local-extracted-resource</summary><pre>analysis/decompiled/Apps.Style/itemscontrolstyle/itemscontrolstyle.xaml:13–14
+SHA256 fb05637d2c3bc8b556d8c0c095d852dda97fb18d9414fbc2fafe987932913027
+    &lt;Button Margin=&quot;4,0,4,0&quot; Height=&quot;36&quot; Width=&quot;36&quot; Style=&quot;{StaticResource ToolBarButtonStyle}&quot; Command=&quot;{Binding ItemClickCommand}&quot;&gt;
+      &lt;FrameworkElement.ToolTip&gt;</pre></details></article><article id="MS05" class="source-confirmed"><h2>MS05 · SourcePropertyChanged(SoftLanguage) → DoChangeLanguage → Lang_Help/Lang_Language.IsVisible生产者</h2><p>source-confirmed：SourcePropertyChanged先转发原属性名通知，再SystemResourceAlert；仅名为SoftLanguage时调用DoChangeLanguage(VmSolution.SoftLanguage)。该方法按menuSource?.items字段定位Help/Language：值0且菜单可见才置false，并在当前语言不是zh-cn时ChangeLanguage；值1且菜单隐藏才置true；其它值无本地状态写入。它控制语言菜单显隐，不能等同角色权限，也不是动态Items getter的统一刷新。</p><p>待追：原属性事件实际投递、前序通知/告警抛错、语言切换引发的重载和实际菜单容器继承未知；首次PreLoad调用已由旧启动总链记录。</p><details><summary>VisionMaster.MainWindowData::SourcePropertyChanged · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:3567–3586
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600003e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600003e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;SourcePropertyChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128121&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 84,
+          &quot;ilSha256&quot;: &quot;c6b66e5df9ed1bf2189e9480137f4d4f764c8ccba4a47b458103dbb8458e4087&quot;,
+          &quot;ilBytes&quot;: &quot;0002046f0601000a6f2900000a0002046f0601000a288000000600046f0601000a72050c007028b900000a0a062c2400721f0c0070283700000a0002280701000a283f00000600724b0c0070283700000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::DoChangeLanguage · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:3889–3908
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600003f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600003f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;DoChangeLanguage&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010108&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 329,
+          &quot;ilSha256&quot;: &quot;37630cbb5dae79b34729b28f7f7606530f9d6ce05ca7e8cce1ab7e3b050ec670&quot;,
+          &quot;ilBytes&quot;: &quot;00030a062c0e2b0006173bac000000383401000000027b11000004252d0426142b597b0801000a7e27010004252d17267e25010004fe0606030006730901000a258027010004280700002b252d0426142b297b0801000a7e28010004252d17267e25010004fe0607030006730901000a258028010004280700002b0b072c08076f0a01000a2b01160d092c0a0007166f0b01000a000072730c00700c280c01000a0828dd00000a130411042c090008280d01000a0000388d00000000027b11000004252d0426142b597b0801000a7e29010004252d17267e25010004fe0608030006730901000a258029010004280700002b252d0426142b297b0801000a7e2a010004252d17267e25010004fe0609030006730901000a25802a010004280700002b130511052c0c11056f0a01000a16fe012b0116130611062c0b001105176f0b01000a00002b002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Property notification before language action · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:800–811
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	private void SourcePropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		OnPropertyChanged(e.PropertyName);
+		SystemResourceAlert(e.PropertyName);
+		if (e.PropertyName == &quot;SoftLanguage&quot;)
+		{
+			LogHelper.Info(&quot;----加密狗触发切换语言---start&quot;);
+			DoChangeLanguage(VmSolution.SoftLanguage);
+			LogHelper.Info(&quot;----加密狗触发切换语言---end&quot;);
+		}
+	}
+</pre></details><details><summary>Concrete language visibility branches · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:812–845
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	private void DoChangeLanguage(int softLanguage)
+	{
+		switch (softLanguage)
+		{
+		case 0:
+		{
+			ItemData itemData2 = menuSource?.items.FirstOrDefault((ItemData p) =&gt; p.name == &quot;Lang_Help&quot;)?.items.FirstOrDefault((ItemData p) =&gt; p.name == &quot;Lang_Language&quot;);
+			if (itemData2 != null &amp;&amp; itemData2.IsVisible)
+			{
+				itemData2.IsVisible = false;
+			}
+			string text = &quot;zh-cn&quot;;
+			if (AppLocalizationService.GetLangParm() != text)
+			{
+				AppLocalizationService.ChangeLanguage(text);
+			}
+			break;
+		}
+		case 1:
+		{
+			ItemData itemData = menuSource?.items.FirstOrDefault((ItemData p) =&gt; p.name == &quot;Lang_Help&quot;)?.items.FirstOrDefault((ItemData p) =&gt; p.name == &quot;Lang_Language&quot;);
+			if (itemData != null &amp;&amp; !itemData.IsVisible)
+			{
+				itemData.IsVisible = true;
+			}
+			break;
+		}
+		}
+	}
+
+	private void VmSolution_OnProxyCrashNotice(object sender, ObjectEventArgs args)
+	{
+		int status = (int)args.Param;
+		Application.Current.Dispatcher.BeginInvoke((Action)(() =&gt;</pre></details><details><summary>Original language menu declaration · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-MenuItems.xml:207–213
+SHA256 d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959
+					&lt;name&gt;Lang_Language&lt;/name&gt;
+					&lt;items&gt;
+						&lt;TitleMenueItemData&gt;
+							&lt;name&gt;%中文%&lt;/name&gt;
+							&lt;methodName&gt;ChSet&lt;/methodName&gt;
+						&lt;/TitleMenueItemData&gt;
+						&lt;TitleMenueItemData&gt;</pre></details><details><summary>Menu container consumes IsVisible · original-baml-offline-decoded-resource</summary><pre>docs/architecture-recovery/menu-entry-materialization-audit.resources/titlebar.xaml:341–343
+SHA256 f047a087f97b3217145d37d85c3b4f68c0d1dac21c7ed803d2879b3708c5e67d
+                &lt;DataTrigger Value=&quot;False&quot; Binding=&quot;{Binding IsVisible}&quot;&gt;
+                  &lt;Setter Property=&quot;Visibility&quot; Value=&quot;Collapsed&quot; /&gt;
+                &lt;/DataTrigger&gt;</pre></details></article><article id="MS06" class="source-confirmed"><h2>MS06 · TitleMenueItemData.RunData / isEnableByRun → 运行状态只在绑定模板禁用的有限链</h2><p>source-confirmed：isEnableByRun默认false，原导入/新建等声明可设true。RunData getter在runData==null且IsEnableByRun时取VmSolution.Instance并订阅RestoreDefaultDisplay；setter只在值不同且IsEnableByRun时写字段，写null才退订，随后通知RunData。RestoreDefaultDisplay先CustomItemData=null再RunData=null。TitleBar项样式及默认TitleToolButtonDataTemplate在RunData.IsRunning=true时将UI IsEnabled=false；所选体没有因此改ItemData.isEnabled字段。SingleRun等特殊模板另有CustomItemData门，只标所见声明，不扩到运行模式内部。</p><p>待追：原IsRunning全部生产者/时序本批不展开；WPF有效IsEnabled优先级、事件投递与旧ItemData释放未知。若前面CustomItemData通知抛异常，后续RunData清理不保证发生。</p><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::get_RunData · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:8336–8355
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000293&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000293&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;get_RunData&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20001c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 64,
+          &quot;ilSha256&quot;: &quot;981d9b9082927a22c34122728439db8fd8cdbee51e64ae0a26946688b0692a85&quot;,
+          &quot;ilBytes&quot;: &quot;00027beb0000042d080228920200062b01160a062c1f0002288800000a7deb00000402fe0690020006734900000a28c600000a0000027beb0000040b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::set_RunData · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:8601–8620
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000294&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000294&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;set_RunData&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 78,
+          &quot;ilSha256&quot;: &quot;597fa5176e9f17f53b65a81aabe16d08e6f62ea086ee530e9d219f42475088a6&quot;,
+          &quot;ilBytes&quot;: &quot;00027beb000004032e080228920200062b01160a062c360002037deb000004027beb00000414fe010b072c140002fe0690020006734900000a28f300000a00000272793600706f3a01000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::VmSolution_RestoreDefaultDisplay · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:8229–8248
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000290&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000290&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;VmSolution_RestoreDefaultDisplay&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128081&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 18,
+          &quot;ilSha256&quot;: &quot;3333fa397241900fec1618ef8b40eed90920a48676296d6068e8b55878c50ef0&quot;,
+          &quot;ilBytes&quot;: &quot;000214288c0200060002142894020006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Run state lazy subscription and null disposal · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs:184–213
+SHA256 b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187
+	public object RunData
+	{
+		get
+		{
+			if (runData == null &amp;&amp; IsEnableByRun)
+			{
+				runData = VmSolution.Instance;
+				VmSolution.RestoreDefaultDisplay += VmSolution_RestoreDefaultDisplay;
+			}
+			return runData;
+		}
+		set
+		{
+			if (runData != value &amp;&amp; IsEnableByRun)
+			{
+				runData = value;
+				if (runData == null)
+				{
+					VmSolution.RestoreDefaultDisplay -= VmSolution_RestoreDefaultDisplay;
+				}
+				OnPropertyChanged(&quot;RunData&quot;);
+			}
+		}
+	}
+
+	public virtual bool IsDisplayInMenu
+	{
+		get
+		{
+			return isDisplayInMenu;</pre></details><details><summary>Display restore field-reset order · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs:310–314
+SHA256 b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187
+	private void VmSolution_RestoreDefaultDisplay(object sender, EventArgs e)
+	{
+		CustomItemData = null;
+		RunData = null;
+	}</pre></details><details><summary>Import run-state opt-in · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-MenuItems.xml:69–73
+SHA256 d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959
+					&lt;name&gt;Lang_ImportProcess&lt;/name&gt;
+					&lt;methodName&gt;ImportProcess&lt;/methodName&gt;
+					&lt;isEnableByRun&gt;true&lt;/isEnableByRun&gt;
+					&lt;isShowSeparator&gt;True&lt;/isShowSeparator&gt;
+				&lt;/TitleMenueItemData&gt;</pre></details><details><summary>Menu runtime disable trigger · original-baml-offline-decoded-resource</summary><pre>docs/architecture-recovery/menu-entry-materialization-audit.resources/titlebar.xaml:338–340
+SHA256 f047a087f97b3217145d37d85c3b4f68c0d1dac21c7ed803d2879b3708c5e67d
+                &lt;DataTrigger Value=&quot;True&quot; Binding=&quot;{Binding Path=RunData.(VMInterface:IVMRun.IsRunning)}&quot;&gt;
+                  &lt;Setter Property=&quot;IsEnabled&quot; Value=&quot;False&quot; /&gt;
+                &lt;/DataTrigger&gt;</pre></details><details><summary>Default toolbar runtime disable trigger · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml:158–169
+SHA256 f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339
+      &lt;DataTemplate x:Key=&quot;TitleToolButtonDataTemplate&quot;&gt;
+        &lt;Button Margin=&quot;4,0,4,0&quot; Height=&quot;36&quot; Width=&quot;36&quot; Command=&quot;{Binding ItemClickCommand}&quot; ToolTip=&quot;{Lang:ResourceBinding Name}&quot; Visibility=&quot;{Binding IsVisible, Converter={StaticResource boolToVisibilityCvt}}&quot;&gt;
+          &lt;FrameworkElement.Style&gt;
+            &lt;Style TargetType=&quot;{x:Type Button}&quot; BasedOn=&quot;{StaticResource ToolBarButtonStyle}&quot;&gt;
+              &lt;Style.Triggers&gt;
+                &lt;DataTrigger Value=&quot;True&quot; Binding=&quot;{Binding Path=RunData.(VMInterface:IVMRun.IsRunning)}&quot;&gt;
+                  &lt;Setter Property=&quot;IsEnabled&quot; Value=&quot;False&quot; /&gt;
+                &lt;/DataTrigger&gt;
+              &lt;/Style.Triggers&gt;
+              &lt;EventSetter Event=&quot;Click&quot; Handler=&quot;Button_Click&quot; /&gt;
+            &lt;/Style&gt;
+          &lt;/FrameworkElement.Style&gt;</pre></details></article><article id="MS07" class="source-confirmed"><h2>MS07 · AccessManagerHelper.SetLoginUser前段 → 角色字段/IsAdmin/回调与角色按钮，不冒接菜单项</h2><p>source-confirmed：所选Exe helper若OnAccessEnableCallBack为空先GetInstance(AccessManager)，仍空则return false；随后记录角色是否相同，先写curLoginUser再IsAdmin=IsAllAccessUser，可选SaveAccessInfo，loginUser整数&gt;0才回调(true,loginUser)，角色日志后调用OnAllAccessCallBack(IsAdmin)，角色变化才通知CodeManager.LoginUser。所选SetLoginUser无本地catch，字段先写后保存/回调，后序异常不保证完成全部通知或回滚字段。AccessManager.SetAccessMenuItemVisible只把AccessButtonVisibility设Visible并按1/2/3选择Admin/Tech/Operator本地化Header；bEnable=false只折叠按钮，保留旧Header；返回true。这个具体接收者不遍历TitleMenueItemData、不写ItemData.IsEnabled/IsVisible。其对应原TitleBar绑定的是AccessManager.AccessButtonHeader/Visibility和ChangeLoginUserCommand。</p><p>待追：CodeManager.IsAllAccessUser/IsAdmin setter和OnAllAccessCallBack真实订阅者未取体，无法闭合各菜单授权；不由没有该字段写入推出无其它权限检查。SetLoginUser后续角色前端切换按用户要求不展开。</p><details><summary>VisionMaster.AppMainWindow.AccessManagerHelper::SetLoginUser · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:11871–11890
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000193&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000193&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.AccessManagerHelper&quot;,
+            &quot;name&quot;: &quot;SetLoginUser&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00030211690202&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 446,
+          &quot;ilSha256&quot;: &quot;208b651a86093f4f812e25709b518ab0fefbdec7bac716f5516123d192cd4136&quot;,
+          &quot;ilBytes&quot;: &quot;00282200000a7b2300000a14fe010b072c220028030000060c282200000a7b2300000a14fe010d092c090016130438880100000002282200000a7c5a02000a7b5b02000afe010a282200000a7c5a02000a027d5b02000a282200000a282200000a6f5c02000a6f5d02000a0003130511052c0d00282200000a6f5e02000a26000216fe03130611062c2900282200000a7b2300000a14fe03130711072c1400282200000a7b2300000a17026f5f02000a260000021308110817594503000000020000002a000000160000002b3c725500007072cb2500701717282e00000a262b28725500007072d72500701717282e00000a262b14725500007072e32500701717282e00000a262b00282200000a7b6002000a14fe03130911092c1c00282200000a7b6002000a282200000a6f6102000a6f6202000a26000616fe01130a110a2c10282200000a72ef2500706f2900000a00282200000a6f5700000a19fe0116fe01130b110b2c051713042b4e04130c110c2c4200286000000a252d03262b3528da00000a252d03262b2a7ebe010004252d17267ebd010004fe0657030006732a00000a2580be010004280300002b28dc00000a26001713042b0011042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.AccessManager::SetAccessMenuItemVisible · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:11434–11453
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600000b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AccessManager&quot;,
+            &quot;name&quot;: &quot;SetAccessMenuItemVisible&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200202021169&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 111,
+          &quot;ilSha256&quot;: &quot;aeecbc2eb76ec0bdc7c8f9951182b8c353f9ed0ac2dafc6bf01e76538b9b14ee&quot;,
+          &quot;ilBytes&quot;: &quot;00030a062c59000216280600000600727d0000700b040c08450400000002000000050000000e000000170000002b1e002b1d0072850000700b2b140072a50000700b2b0b0072c30000700b2b022b000207282d00000a280800000600002b0a00021828060000060000170d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.AccessManager::set_AccessButtonVisibility · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:11066–11085
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000006&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000006&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AccessManager&quot;,
+            &quot;name&quot;: &quot;set_AccessButtonVisibility&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011159&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 39,
+          &quot;ilSha256&quot;: &quot;4c4a2e9d052f9872bf9c240ca0fe278992a8a5e051f7c2ecc7f00c52720855e9&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0300000403fe0116fe010a062c150002037d030000040272010000706f2900000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.AccessManager::set_AccessButtonHeader · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:11250–11269
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000008&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000008&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AccessManager&quot;,
+            &quot;name&quot;: &quot;set_AccessButtonHeader&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 39,
+          &quot;ilSha256&quot;: &quot;ea1b14d4f2bcb0d17f1cc38892336834632a8a40a2b47f4196a54703e7831a79&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0400000403fe0116fe010a062c150002037d0400000402722f0000706f2900000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Selected role state and callbacks prefix · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/AccessManagerHelper.cs:82–117
+SHA256 0f32346a4fddc5aa60514b3ac7ba909c6fb0cfd44fb96793081cc63377f1a4fd
+		bool flag = loginUser == CodeManager.GetInstance()._accessCurUserInfo.curLoginUser;
+		CodeManager.GetInstance()._accessCurUserInfo.curLoginUser = loginUser;
+		CodeManager.GetInstance().IsAdmin = CodeManager.GetInstance().IsAllAccessUser();
+		if (isSaveAccessInfo)
+		{
+			CodeManager.GetInstance().SaveAccessInfo();
+		}
+		if ((int)loginUser &gt; 0 &amp;&amp; CodeManager.GetInstance().OnAccessEnableCallBack != null)
+		{
+			CodeManager.GetInstance().OnAccessEnableCallBack.Invoke(true, loginUser);
+		}
+		switch (loginUser - 1)
+		{
+		case 0:
+			UILogManager.logCreate(&quot;信息&quot;, &quot;管理员登录&quot;, true, true);
+			break;
+		case 2:
+			UILogManager.logCreate(&quot;信息&quot;, &quot;操作员登录&quot;, true, true);
+			break;
+		case 1:
+			UILogManager.logCreate(&quot;信息&quot;, &quot;技术员登录&quot;, true, true);
+			break;
+		}
+		if (CodeManager.GetInstance().OnAllAccessCallBack != null)
+		{
+			CodeManager.GetInstance().OnAllAccessCallBack.Invoke(CodeManager.GetInstance().IsAdmin);
+		}
+		if (!flag)
+		{
+			((NotifyPropertyChangedBase)(object)CodeManager.GetInstance()).OnPropertyChanged(&quot;LoginUser&quot;);
+		}
+		if ((int)CodeManager.GetInstance().GetLoginUser() != 3)
+		{
+			return true;
+		}
+		if (isShowFront)</pre></details><details><summary>Role-button-only consumer · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/AccessManager.cs:112–143
+SHA256 ce07b863372147e481521c962f95ef0bcd643d351af575271fa185fab8b436de
+	public bool SetAccessMenuItemVisible(bool bEnable, AccessUser curLoginUser)
+	{
+		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0016: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0017: Unknown result type (might be due to invalid IL or missing references)
+		//IL_002d: Expected I4, but got Unknown
+		if (bEnable)
+		{
+			AccessButtonVisibility = Visibility.Visible;
+			string infoKey = &quot;未命名&quot;;
+			switch ((int)curLoginUser)
+			{
+			case 1:
+				infoKey = &quot;Lang_Role_Admin&quot;;
+				break;
+			case 2:
+				infoKey = &quot;Lang_Role_Tech&quot;;
+				break;
+			case 3:
+				infoKey = &quot;Lang_Role_Operator&quot;;
+				break;
+			}
+			AccessButtonHeader = AppLocalizationService.GetLang(infoKey);
+		}
+		else
+		{
+			AccessButtonVisibility = Visibility.Collapsed;
+		}
+		return true;
+	}
+}
+</pre></details><details><summary>Separate role button bindings · original-baml-offline-decoded-resource</summary><pre>docs/architecture-recovery/menu-entry-materialization-audit.resources/titlebar.xaml:319–321
+SHA256 f047a087f97b3217145d37d85c3b4f68c0d1dac21c7ed803d2879b3708c5e67d
+            &lt;controls:IconMenuItem Name=&quot;accessButton&quot; Style=&quot;{StaticResource LoginUserIconMenuItem}&quot; NormalIcon=&quot;/VisionMasterMain;component/Resources/windowAUZ.png&quot; ClickIcon=&quot;/VisionMasterMain;component/Resources/windowAUZ.png&quot; HoverIcon=&quot;/VisionMasterMain;component/Resources/windowAUZ.png&quot; Margin=&quot;0,2,0,0&quot; Padding=&quot;-4,0,0,0&quot; VerticalContentAlignment=&quot;Center&quot; Width=&quot;100&quot; Height=&quot;30&quot; Foreground=&quot;#FFBEBEBE&quot; WindowChrome.IsHitTestVisibleInChrome=&quot;True&quot; Header=&quot;{Binding AccessManager.AccessButtonHeader, UpdateSourceTrigger=PropertyChanged}&quot; Visibility=&quot;{Binding AccessManager.AccessButtonVisibility, UpdateSourceTrigger=PropertyChanged}&quot;&gt;
+              &lt;controls:IconMenuItem Header=&quot;{DynamicResource 切换角色}&quot; Style=&quot;{StaticResource LoginUserIconMenuItem}&quot; Command=&quot;{Binding AccessManager.ChangeLoginUserCommand}&quot; /&gt;
+            &lt;/controls:IconMenuItem&gt;</pre></details></article><article id="MS08" class="source-confirmed"><h2>MS08 · AccessManager构造/Finalize → OnAccessEnableCallBack的null条件注册/退订</h2><p>source-confirmed：原构造初始AccessButtonVisibility=Collapsed、Header=空串；仅CodeManager.OnAccessEnableCallBack==null时Combine本实例SetAccessMenuItemVisible。原Finalize同样仅该字段==null时才Delegate.Remove同一处理器；CIL明确ldnull/ceq及brfalse越过Remove。故不能称对象关闭/析构必解绑：正常字段非null时这个移除分支不进入。Finalize还在finally调用Object.Finalize；本体没有IDisposable清理路径证明。</p><p>待追：该条件是否造成实际引用滞留、GC/终结器是否运行、外部覆盖/清空该delegate均未知；不运行原进程推断泄漏或修正原代码。</p><details><summary>VisionMaster.AccessManager::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:10448–10467
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000001&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000001&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AccessManager&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 91,
+          &quot;ilSha256&quot;: &quot;d1e0216a220a7694ef69cea31b96d7a336d8582e0c6a1e9f0f454baf8f323290&quot;,
+          &quot;ilBytes&quot;: &quot;02187d03000004027e2000000a7d0400000402147d0500000402282100000a0000282200000a7b2300000a14fe010a062c2800282200000a257b2300000a02fe060b000006732400000a282500000a74d50000017d2300000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VisionMaster.AccessManager::Finalize · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:10786–10805
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000002&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000002&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AccessManager&quot;,
+            &quot;name&quot;: &quot;Finalize&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 70,
+          &quot;ilSha256&quot;: &quot;a82f1f68125ae43b839cf66c4aed5a46a09b81ed794b83da5e3fe76c9e63e98c&quot;,
+          &quot;ilBytes&quot;: &quot;0000282200000a7b2300000a14fe010a062c2800282200000a257b2300000a02fe060b000006732400000a282600000a74d50000017d2300000a00de0802281100000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Null-guarded constructor callback registration · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/AccessManager.cs:61–73
+SHA256 ce07b863372147e481521c962f95ef0bcd643d351af575271fa185fab8b436de
+	public AccessManager()
+	{
+		//IL_0045: Unknown result type (might be due to invalid IL or missing references)
+		//IL_004f: Expected Obj, but got Unknown
+		//IL_004f: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0059: Expected Obj, but got Unknown
+		if (CodeManager.GetInstance().OnAccessEnableCallBack == null)
+		{
+			CodeManager val = CodeManager.GetInstance();
+			val.OnAccessEnableCallBack = (AccessEnableCallBack)Delegate.Combine((Delegate)(object)val.OnAccessEnableCallBack, (Delegate)new AccessEnableCallBack(SetAccessMenuItemVisible));
+		}
+	}
+</pre></details><details><summary>Null-guarded finalizer removal · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/AccessManager.cs:74–86
+SHA256 ce07b863372147e481521c962f95ef0bcd643d351af575271fa185fab8b436de
+	~AccessManager()
+	{
+		//IL_0026: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0030: Expected Obj, but got Unknown
+		//IL_0030: Unknown result type (might be due to invalid IL or missing references)
+		//IL_003a: Expected Obj, but got Unknown
+		if (CodeManager.GetInstance().OnAccessEnableCallBack == null)
+		{
+			CodeManager val = CodeManager.GetInstance();
+			val.OnAccessEnableCallBack = (AccessEnableCallBack)Delegate.Remove((Delegate)(object)val.OnAccessEnableCallBack, (Delegate)new AccessEnableCallBack(SetAccessMenuItemVisible));
+		}
+	}
+</pre></details></article><article id="MS09" class="source-confirmed"><h2>MS09 · MainWindowData构造 / RestoreDisplay / DoClose → 状态事件订阅、方案实例替换与有限释放</h2><p>source-confirmed：构造订阅RestoreDefaultDisplay、OnSolutionLoadEnd及其它静态事件，并给当前VmSolution.Instance.PropertyChanged挂SourcePropertyChanged。RestoreDisplay将(e as ObjectEventArgs).Param as VmSolution的PropertyChanged卸载，然后当前Instance先卸再挂；这段没有null门或本地catch。DoClose明确卸8个所列静态事件，但所选体未卸Instance.PropertyChanged，也未卸构造中OnExecuteAfterLoad及ProcedureUpgrade/GroupUpgrade各Begin/End共五项事件。ApplicationOperation.Dispose首先调用Program.MainData.DoClose；原产品关闭全部生命周期及其余释放路径不由此段保证。</p><p>待追：DoClose由所有关闭分支是否调用、静态事件对象真实生命周期、其它补充退订及已投递回调未知；未称完全释放或实际泄漏。</p><details><summary>VisionMaster.MainWindowData::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:362–381
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x0600002f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600002f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 407,
+          &quot;ilSha256&quot;: &quot;bc09cc56bdf0ad893f9d4ded458109dee94e681efaa382412f6fb435ff1dc8c6&quot;,
+          &quot;ilBytes&quot;: &quot;02147d0c0000040272990900707d0d00000402167d0f0000040228030000067d1000000402167d1400000402147d1b00000402167d1c00000402147d1d0000040272f90800707d2800000402167d2900000402282100000a000072b5090070283700000a0002fe0638000006734900000a28c600000a0002fe063b00000673c700000a28c800000a0002fe063a00000673c900000a28ca00000a0002fe063c00000673c900000a28cb00000a0002fe063000000673c900000a28cc00000a0002fe063100000673c900000a28cd00000a0002fe064000000673c900000a28ce00000a0002fe064200000673c900000a28cf00000a0002fe068100000673c900000a28d000000a0002fe068200000673c900000a28d100000a0002fe068100000673c900000a28d200000a0002fe068200000673c900000a28d300000a0002fe063d00000673c700000a28d400000a00288800000a02fe063e00000673d500000a6fd600000a0072eb090070283700000a00021728d700000a7d0c00000402287f000006000228830000060072230a0070283700000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::VmSolution_RestoreDisplay · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:2209–2228
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000038&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000038&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;VmSolution_RestoreDisplay&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128081&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 84,
+          &quot;ilSha256&quot;: &quot;d284bd6f161df3c1db667038d72333048d9021472234a2cb888c77a4df438016&quot;,
+          &quot;ilBytes&quot;: &quot;000475440000016fd800000a75470000010a0602fe063e00000673d500000a6ffb00000a00288800000a02fe063e00000673d500000a6ffb00000a00288800000a02fe063e00000673d500000a6fd600000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.MainWindowData::DoClose · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:1718–1737
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000037&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000037&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.MainWindowData&quot;,
+            &quot;name&quot;: &quot;DoClose&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 146,
+          &quot;ilSha256&quot;: &quot;974e3a18a6327e4c5c11dc8acd9ca95add7554f517ceac443718fcbf6cbdab8f&quot;,
+          &quot;ilBytes&quot;: &quot;0002fe0638000006734900000a28f300000a0002fe063b00000673c700000a28f400000a0002fe063a00000673c900000a28f500000a0002fe063c00000673c900000a28f600000a0002fe064000000673c900000a28f700000a0002fe063100000673c900000a28f800000a0002fe064200000673c900000a28f900000a0002fe063d00000673c700000a28fa00000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.ApplicationOperation::Dispose · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:13433–13452
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x06000028&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000028&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.ApplicationOperation&quot;,
+            &quot;name&quot;: &quot;Dispose&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 247,
+          &quot;ilSha256&quot;: &quot;be94583479e21ea7bc8fe5b7f56eea8392eff44cdd9cdf3941ad0a6b3edc75b2&quot;,
+          &quot;ilBytes&quot;: &quot;73ff0200060a007e690000046f370000060028bb00000a6fbc00000a0028bd00000a7bbe00000a6fbf00000a0006167d1501000472d9080070284400000a0b060772f908007028b900000a7d14010004067b1401000416fe010d092c1e007e69000004176f60000006007e6900000472fd0800706f5700000600000206fe0600030006732a00000a282900000600720b090070283700000a00724509007028c000000a0c000813041613052b36110411059a13060011066fc100000a16fe01130711072c170011066fc200000a00110620102700006fc300000a260000110517581305110511048e6932c27263090070283700000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>Original subscriptions · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:469–492
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	public MainWindowData()
+	{
+		LogHelper.Info(&quot;MainWindowData-------begin&quot;);
+		VmSolution.RestoreDefaultDisplay += VmSolution_RestoreDisplay;
+		VmSolution.OnSolutionLoadEndCallBack += VmSolution_LoadEnd;
+		VmSolution.OnSolutionLoadBeginCallBack += VmSolution_LoadBegin;
+		VmSolution.OnGlobalScriptReportCallBack += VmSolution_OnGlobalScriptReportCallBack;
+		VmSolution.OnExecuteAfterLoad += VmSolution_OnExecuteAfterLoad;
+		VmSolution.OnReportModuleData += VmSolution_OnReportModuleData;
+		VmSolution.OnProxyCrashNoticeCallBack += VmSolution_OnProxyCrashNotice;
+		VmSolution.OnServerStatusCallBack += VmSolution_OnServerStatusCallBack;
+		VmSolution.OnProcedureUpgradeBeginCallBack += VmSolution_OnSolutionUpgradeBeginCallBack;
+		VmSolution.OnProcedureUpgradeEndCallBack += VmSolution_OnSolutionUpgradeEndCallBack;
+		VmSolution.OnGroupUpgradeBeginCallBack += VmSolution_OnSolutionUpgradeBeginCallBack;
+		VmSolution.OnGroupUpgradeEndCallBack += VmSolution_OnSolutionUpgradeEndCallBack;
+		VmSolution.OnProcessImportEndCallBack += VmSolution_OnProcessImportEndCallBack;
+		VmSolution.Instance.PropertyChanged += SourcePropertyChanged;
+		LogHelper.Info(&quot;MainWindowData-------事件注册完毕&quot;);
+		appData = AppDataFactory.Instance(true);
+		CheckIsNeutral();
+		InitComTrigger();
+		LogHelper.Info(&quot;MainWindowData-------end&quot;);
+	}
+</pre></details><details><summary>Finite close and replacement subscription handling · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs:701–723
+SHA256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5
+	public void DoClose()
+	{
+		VmSolution.RestoreDefaultDisplay -= VmSolution_RestoreDisplay;
+		VmSolution.OnSolutionLoadEndCallBack -= VmSolution_LoadEnd;
+		VmSolution.OnSolutionLoadBeginCallBack -= VmSolution_LoadBegin;
+		VmSolution.OnGlobalScriptReportCallBack -= VmSolution_OnGlobalScriptReportCallBack;
+		VmSolution.OnProxyCrashNoticeCallBack -= VmSolution_OnProxyCrashNotice;
+		VmSolution.OnReportModuleData -= VmSolution_OnReportModuleData;
+		VmSolution.OnServerStatusCallBack -= VmSolution_OnServerStatusCallBack;
+		VmSolution.OnProcessImportEndCallBack -= VmSolution_OnProcessImportEndCallBack;
+	}
+
+	private void VmSolution_RestoreDisplay(object sender, EventArgs e)
+	{
+		VmSolution vmSolution = (e as ObjectEventArgs).Param as VmSolution;
+		vmSolution.PropertyChanged -= SourcePropertyChanged;
+		VmSolution.Instance.PropertyChanged -= SourcePropertyChanged;
+		VmSolution.Instance.PropertyChanged += SourcePropertyChanged;
+	}
+
+	private void Instance_PropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		throw new NotImplementedException();</pre></details><details><summary>Close cleanup caller prefix · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/ApplicationOperation.cs:37–41
+SHA256 b6633fabfdf9aea95469a40a85b988ff69add07183c2d8a7f241ef764dea9926
+	public void Dispose()
+	{
+		Program.MainData.DoClose();
+		WatchDogService.Instance.Dispose();
+		ServerSDKManager.serverSDKManager.mSolutionManager.ShieldModuleCbResult();</pre></details></article><article id="MS10" class="source-confirmed"><h2>MS10 · 已知ControllerSet与具体三种显示标志 → 复用旧控制器生命周期边界，保留状态与资源差异</h2><p>source-confirmed：本批不重取/重算旧链：LoadOldLightMoudle按模块14000同时写ControllerSet.IsVisible及IsDisplayInMenu；新建方案成功段和DeleteOldLightModule空集合段只写IsVisible=false。原声明初始两标志均false、isShowExternal=true。三个标志用途不同：顶层菜单有IsVisible门且基础样式有IsDisplayInMenu门，默认工具栏按钮有IsVisible门，主MenuToolSource不按IsShowExternal过滤。控制器native读取失败造成删除只是一条条件链，不能称实际发生。</p><p>待追：新建/删除详细失败恢复仍见menu-universe-next-audit；ControllerSet静态引用换根、活模板及具体实例未知。本项是状态汇合上下文，不作为新完成入口计数。</p><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::LoadOldLightMoudle · original-managed-cil</summary><pre>docs/architecture-recovery/menu-state-producers-audit.cil.json:9649–9668
+SHA256 5ccaa1b1af4dea7a8fa0afee66c26073cfe872b8541e30843e3fc35fb088e325
+          &quot;token&quot;: &quot;0x060002f6&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002f6&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;LoadOldLightMoudle&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 204,
+          &quot;ilSha256&quot;: &quot;c869e6e6d176218d8197fc1b0e4c71413c5c4bd20280f6cbac5a8bb2e0f0af5f&quot;,
+          &quot;ilBytes&quot;: &quot;00288800000a6feb00000a7e02020004252d17267ed5010004fe06a3030006734203000a258002020004283700002b0a026f1d01000a280800002b7e03020004252d17267ed5010004fe06a4030006731001000a258003020004281100002b0b0714fe030c082c6300076f1d01000a280800002b7e04020004252d17267ed5010004fe06a5030006731001000a258004020004281100002b800e0100047e0e01000414fe030d092c21007e0e0100047e0e0100040614fe032513046f0b01000a0011046f960200060000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Controller visibility and menu-display writes · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs:1848–1864
+SHA256 b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187
+	public void LoadOldLightMoudle()
+	{
+		VmModule vmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule m) =&gt; m.ID == 14000);
+		TitleMenueItemData titleMenueItemData = Items.OfType&lt;TitleMenueItemData&gt;().FirstOrDefault((TitleMenueItemData p) =&gt; p.Name == &quot;Lang_System&quot;);
+		if (titleMenueItemData != null)
+		{
+			ControllerSet = titleMenueItemData.Items.OfType&lt;TitleMenueItemData&gt;().FirstOrDefault((TitleMenueItemData p) =&gt; p.Name == &quot;Lang_ControllerSet&quot;);
+			if (ControllerSet != null)
+			{
+				TitleMenueItemData controllerSet = ControllerSet;
+				bool flag = (ControllerSet.IsVisible = vmModule != null);
+				controllerSet.IsDisplayInMenu = flag;
+			}
+		}
+	}
+
+	public static void DeleteOldLightModule()</pre></details><details><summary>Initial controller flags · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-MenuItems.xml:176–181
+SHA256 d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959
+					&lt;name&gt;Lang_ControllerSet&lt;/name&gt;
+					&lt;methodName&gt;LightSet&lt;/methodName&gt;
+                    &lt;isVisible&gt;false&lt;/isVisible&gt;
+					&lt;isDisplayInMenu&gt;false&lt;/isDisplayInMenu&gt;
+					&lt;isShowExternal&gt;true&lt;/isShowExternal&gt;
+					&lt;toolGroupItemInfo&gt;</pre></details></article><article id="MS11" class="independent-implementation"><h2>MS11 · 当前RequestWorkAreaLock / ToggleLock / RefreshAll → 独立控件门与显式刷新</h2><p>independent-implementation：当前RequestWorkAreaLock按isLocked/跳过提示偏好处理ToggleLock；ToggleLock翻转isLocked、写状态、AddProcedureButton/Rail/Toolbox门、切锁图标并RefreshAll。RefreshAll在工作流控件上再按isLocked/activeRun/parameterEditorOpen设门，undo/redo还查doc.CanUndo/CanRedo。当前是直接控件状态与刷新，未因此证明已重建原ItemData通知、ImportProcess门、CodeManager角色回调或原锁阈值载体。</p><p>待追：仅静态当前有限对照；没有运行当前程序，也未闭合所有当前菜单/权限差异。</p><details><summary>Current independent lock prompt entry · current-source</summary><pre>src/VisionEditor/MainWindow.ShellLock.cs:5–13
+SHA256 ead2899adc43791594d39b72f3e2b4683e52c0b298f2239d782be2dd19755cd4
+ void RequestWorkAreaLock()
+ {
+  if(isLocked){ToggleLock();return;}
+  if(ShellLockPreference.Read()){ToggleLock();return;}
+  var prompt=new ShellLockPrompt{Owner=this};
+  bool accepted=prompt.ShowDialog()==true;
+  ShellLockPreference.Write(prompt.SkipNextTime);
+  if(accepted)ToggleLock();
+ }</pre></details><details><summary>Current direct toggle and control updates · current-source</summary><pre>src/VisionEditor/MainWindow.xaml.cs:113–113
+SHA256 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a
+ void ToggleLock(){isLocked=!isLocked;StatusText.Text=isLocked?&quot;工作区已锁定&quot;:&quot;工作区已解锁&quot;;AddProcedureButton.IsEnabled=!isLocked;Rail.IsEnabled=!isLocked;ToggleToolboxButton.IsEnabled=!isLocked;if(lockToolButton?.Content is Image image)image.Source=Asset(isLocked?&quot;toolbar_ic_topbar_unlock_normal.png&quot;:&quot;toolbar_ic_topbar_lock_normal.png&quot;);if(lockToolButton is not null)lockToolButton.ToolTip=isLocked?&quot;解锁工作区&quot;:&quot;锁定工作区&quot;;RefreshAll();}</pre></details><details><summary>Current independent control state gates · current-source</summary><pre>src/VisionEditor/WorkflowTabs.cs:145–154
+SHA256 24a398d5cd2a16ba2ea01ce980df4b7a3c4f4b9afe27c34720195bcd0b48cb45
+        AddProcedureButton.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; !parameterEditorOpen;
+        PinnedAddProcedureButton.IsEnabled = AddProcedureButton.IsEnabled;
+        AddProcedureButton.Visibility = isLocked ? Visibility.Collapsed : Visibility.Visible;
+        Rail.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; !parameterEditorOpen &amp;&amp; (workflowOverview||doc.HasCurrentProcedure);
+        if(!EditableCanvas&amp;&amp;toolPopup is not null)toolPopup.IsOpen=false;
+        EmptyAddWorkflowButton.IsEnabled=!isLocked&amp;&amp;activeRun is null&amp;&amp;!parameterEditorOpen;
+        ToggleToolboxButton.IsEnabled = !isLocked;
+        undoToolButton!.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; doc.CanUndo;
+        redoToolButton!.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; doc.CanRedo;
+        stopToolButton!.IsEnabled = activeRun is not null;</pre></details></article><article id="MS-U01" class="unknown"><h2>MS-U01 · 仍缺：各角色菜单授权与全部状态/释放 → 精确下一原体与活绑定</h2><p>unknown：下一证据是VM.User.CodeManager.IsAllAccessUser、set_IsAdmin、OnAllAccessCallBack赋值/订阅者，及这些接收者是否实际写ItemData字段/属性或其它WPF容器门；不是从角色按钮Header推导授权矩阵。还缺原TitleBar子级容器样式实际分配、所有ItemData字段外部写入者、DoClose外其它解绑及活实例的状态差分。</p><p>待追：运行模式内部deferred；权限算法/本机身份信息不在本专题恢复；不以39个CIL体、214声明或测试数宣称状态/入口全集闭合。</p></article><p class="notice">未执行厂商/SDK/设备/网络服务或当前重建应用。运行模式内部按用户要求暂缓。静态引用/方法数量不折算完整率；实施仍41/96＝42.71%，本专题增量0。</p><a href="menu-state-producers-audit.json">完整机器台账</a></html><script data-document-web src="document-web-links.js"></script>

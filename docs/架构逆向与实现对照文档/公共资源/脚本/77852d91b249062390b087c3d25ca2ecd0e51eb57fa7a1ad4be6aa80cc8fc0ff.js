@@ -1,0 +1,1 @@
+document.getElementById("filter").addEventListener("input",e=>{const q=e.target.value.trim().toLowerCase();for(const r of document.querySelectorAll("tbody tr"))r.hidden=!r.dataset.search.toLowerCase().includes(q)});

@@ -1,0 +1,112 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1 第三切片：局部标记前定位分数核 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D1 第三切片：局部标记前定位分数核</p><h1>D1 第三切片：局部标记前定位分数核</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1 第三切片：局部标记前定位分数核</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#d1-第三切片局部标记前定位分数核">D1 第三切片：局部标记前定位分数核</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#身份取体范围与阶段">身份、取体范围与阶段</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#先从caller恢复参数不按名称展开所有模式">先从caller恢复参数，不按名称展开所有模式</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#工作区梯度与候选数量">工作区、梯度与候选数量</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#从边缘候选到整数分数图">从边缘候选到整数分数图</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#峰值输出数量与失败链">峰值、输出数量与失败链</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#s2退出边界与下一有限任务">S2退出边界与下一有限任务</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html#定向复现">定向复现</a></p></details><h1 id="d1-第三切片局部标记前定位分数核">D1 第三切片：局部标记前定位分数核</h1><p>2026-10-19。接续<a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html">D1预处理与局部特征</a>，本切片只追80ac20的实际前定位配置、梯度候选、整数分数图、门槛与单点输出。不同时扩684b50的其他边缘下级，不新增泛化实图probe，不修改产品或共享NImage。</p>
+<h2 id="身份取体范围与阶段">身份、取体范围与阶段</h2><p>原厂目标SHA-256仍为 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。沿用已记录的REA provider不可用状态，使用根线授权的私有Ghidra12.1.4只读CLI取体，不切换REA活动target，不改全局配置。新C/汇编/tail放 <code>analysis/map-calibration/d1-source-chain/source/</code>，无REA Evidence ID。</p>
+<p>本切片增加14个入口体：75fbc0、75f130、75da20、72a400、75f300、75f8c0、7280d0、728060、7299e0、6ee930、6a6c50、6a7570、726d60、728150。机器索引当前69条入口记录，仍含前轮9个Ghidra拆分块，不能按入口数称算法完成。源文件/汇编/tail身份、关键行、直接callee和未纳入索引的边界均在 <code>source-index.json</code>；常量从原始PE读取并核目标SHA。</p>
+<p>S2推进范围是<strong>80ac20这条caller的d=1、mode=1主干</strong>。75f130/75da20按派单取得函数体，但当前caller不进入它们，不为它们继续递归扩叶体。没有新S3运行结论、S4实现或S5宿主验收。</p>
+<h2 id="先从caller恢复参数不按名称展开所有模式">先从caller恢复参数，不按名称展开所有模式</h2><p>80ac20在自己的栈+104构造870b90的配置，关键赋值见 <code>18080ae49..18080af7b</code>，配置指针经 <code>18080b45c LEA R13,[RSP+104]</code> 和 <code>18080b4d1</code> 放入callee参数。870b90的实际前定位配置重组见 <code>180870c00..180870d20</code>，并非默认常量表直接透传：</p>
+<table>
+<thead>
+<tr>
+<th>6eea70配置slot</th>
+<th>来源</th>
+<th>本caller数值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>870b90 config[8]</td>
+<td>10</td>
+</tr>
+<tr>
+<td>1</td>
+<td>config[9]</td>
+<td>50</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CVTTSS2SI读取config[6]的float</td>
+<td>8</td>
+</tr>
+<tr>
+<td>3</td>
+<td>config[0]</td>
+<td><strong>1</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>config[1]</td>
+<td>10</td>
+</tr>
+<tr>
+<td>5</td>
+<td>config[3]==2时依据config[5]的切换</td>
+<td><strong>1</strong>（config[5]=2进入此结果）</td>
+</tr>
+</tbody></table>
+<p>因此六整数是 <strong>[10,50,8,1,10,1]</strong>。slot3为缩小因子d，当前d=1；梯度筛选比例为float <code>8/255</code>；前定位整数峰门槛为float <code>(10*0.01)*50</code>，本数值路径得到5。半径下界/上界还按图像尺寸限制，但峰门槛使用配置slot1的50，不能悄悄换成截断后的半径上界。</p>
+<p>CPU类号7/10/11使6eea70进入72b170；d=1使72b170只调用75fbc0。其他CPU类号使6eea70走普通路径，d=1只调用72a400。72a400自身再次检查CPU并可能转75fbc0，保留原参数栈；因此不能只凭一层调用名断言执行了普通分数核。<strong>75da20的下采样和75f130的float分数核在这个caller配置不可达</strong>，这就是本轮不扩其下级的源码依据。</p>
+<h2 id="工作区梯度与候选数量">工作区、梯度与候选数量</h2><p>72b170的6ee930将caller scratch组织为输入/整数scoreMap与后续辅助区；工作区大小取726d60和728150需求的最大值，再加align128(4WH)。d=1不生成缩小图，scoreMap覆盖W×H的int槽。</p>
+<p>75fbc0调用7280d0进一步切分辅助区。令 <code>A=align128(2WH)</code>，<code>R=align128(8*max(W,H)+4)</code>，顺序放两张signed-short梯度图、一张short幅值图（各A）、R字节权重表、align128(4WH)的候选坐标列表。指针均来自caller-owned workspace；这些函数没有独立heap分配/释放。</p>
+<p>75f300对3×3邻域计算两个signed-short差分，系数可直接从尾循环和向量运算还原为右列减左列的[1,2,1]加权Gx、下行减上行的[1,2,1]加权Gy。普通72a400分别调用6a7570、6a6c50产生相应梯度。图像最外一圈梯度和幅值清0，不按镜像边界计算梯度（这与前轮局部均值核的边缘处理不同）。</p>
+<p>幅值不是可任意统一的double sqrt：</p>
+<ul>
+<li>75f300向量块在 <code>18075f64f..18075f665</code> 使用float SQRTPS→CVTPS2DQ→PACKUSDW；该函数所取汇编中没有均值归一化那样的MXCSR保存/清round位。</li>
+<li>它的尾循环在 <code>18075f770..18075f789</code> 以float sqrt，stored幅值为加0.5后CVTT，而用于尾部max比较的R9D是<strong>加0.5前</strong>的截断值。不能把returned max简单替换为全图stored幅值的最大值。</li>
+<li>普通72a400的向量幅值是SQRTPS后ADDPS半，再CVTTPS2DQ；尾部也是加0.5后截断，其max按stored幅值更新。</li>
+</ul>
+<p>这些是源码/汇编差异，不是本轮新测得的像素差。未据此宣称真实fixture必然产生不同候选。</p>
+<p>75fbc0以75f300返回的max乘8/255，交75f8c0。75f8c0把阈值取ceil再至少设为1，逐行从左至右收录 <code>M &gt;= T</code> 的坐标，坐标以两个short保存。源码伪代码误显示void；cookie后 <code>18075fbae MOV EAX,EBP</code>明确返回候选数量N。它不做NMS、连通域或选一个最强边缘；不能把这些常见操作加进重建。</p>
+<p>普通72a400直接以float比较 <code>M &gt;= returnedMax*8/255</code>，没有75f8c0的显式最小1。对于正的整数幅值，两种门槛转换需服从各自returned max；在max=0这个源码边界，普通谓词会把M=0纳入，而75f8c0会排除。后续普通投票又存在1/M，<strong>本轮没有运行补证该退化路径，也不靠“应该跳过0”修复原厂行为</strong>；IEEE异常旗标、坐标转换及最终峰值必须保留为必要补证任务。</p>
+<h2 id="从边缘候选到整数分数图">从边缘候选到整数分数图</h2><p>75fbc0在取到N后先逐行清scoreMap，无论N是否0；N&lt;=0时不进入投票。N&gt;0才调用728060生成半径权重，再7299e0累计。普通72a400内联相同形态的权重表和mode1整数累计，但梯度幅值/阈值来源仍如上不同。</p>
+<p>728060的半径步长是0.5；数量为 <code>K=2*(rmax-rmin)+1</code>，包含两端。对第i项 <code>r=rmin+0.5*i</code>，权重为按显式±0.5后截断得到的 <code>rmax*0.15915493667125702f / r</code>。常量来自18161c8b0，不能按标准数学π重新计算替代。当前范围未被尺寸截断的10..50产生K=81；这个派生数值不表示81项都具有非零整数权重。</p>
+<p>7299e0按 <code>int(1000000.0f/K)</code> 将候选列表分批处理，源码次序保留。当前mode1只沿一个方向投票：令 <code>u=(-Gx/M,-Gy/M)</code>，从候选 <code>(x,y)+rmin*u</code> 出发，每次加0.5<em>u。每步坐标按原float顺序计算，以符号对应的±0.5后截断到整数；在0&lt;=X&lt;W、0&lt;=Y&lt;H时，向 <code>score[Y*stride+X]</code> 加该半径项的*<em>整数权重</em></em>。不是双线性累加，也不把幅值作为票重。</p>
+<p>mode2反向、mode3双向等分支已在7299e0取得，但当前slot5=1不经过它们；没有用它们扩展本caller支持范围。分母M在75fbc0路径由最小1筛选保护，而普通退化边界没有同一源码保护，不能把保护条件跨路径移植。</p>
+<h2 id="峰值输出数量与失败链">峰值、输出数量与失败链</h2><p>72b170的d=1输出使用6ee680：从零峰值开始按行/列遍历，用严格 <code>new &gt; max</code> 更新位置，同分保留首次；只有 <code>5 &lt;= maxScore</code> 才返回1并写峰值row/column。72b170将其换成X/Y并乘d，当前d=1。普通6eea70的d=1路径在自身循环做对应整数峰值选择，判定同样为门槛包含等号。</p>
+<p>因此三种数量必须分开：N是内部边缘候选数量；K是半径采样/权重表长度；前定位对外只给<strong>一个</strong>位置和status，不是N个标记。只有pre-status==1，870b90才把该位置传给后续6a3a70；四个局部窗口能否构成最终四点，还需80ac20的拟合半径（第四切片已确认，接受区间[15,21]）门和整体成功返回。</p>
+<p>失败生命周期可源码定位为：</p>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>本阶段写入</th>
+<th>不可推导的保证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>W/d或H/d&lt;3</td>
+<td>前定位status=0，立即返回</td>
+<td>不统一清之前的X/Y</td>
+</tr>
+<tr>
+<td>N&lt;=0</td>
+<td>scoreMap已经清0，不投票</td>
+<td>不生成伪造候选/默认位置</td>
+</tr>
+<tr>
+<td>峰值未达5</td>
+<td>status=0，峰位置不写</td>
+<td>不把旧位置视为有效输出</td>
+</tr>
+<tr>
+<td>峰值达5</td>
+<td>status=1，写唯一位置并乘d</td>
+<td>不表示后续圆/标记拟合成功</td>
+</tr>
+<tr>
+<td>前定位失败</td>
+<td>870b90不调用6a3a70</td>
+<td>不套用6a3a70参数错误时的全部清零规则</td>
+</tr>
+</tbody></table>
+<p>直接caller-owned scratch在每次函数调用重新组织、scoreMap在投票前清理，源码没有缓存前一帧成功峰作为后备。没有额外释放对象；不能把此局部事实当成SDK Process/Destroy完整生命周期已恢复。</p>
+<h2 id="s2退出边界与下一有限任务">S2退出边界与下一有限任务</h2><p>本caller的d=1/mode1配置、两条CPU路径、score累加、候选/半径数量与单点门槛已形成可定位的源码链。仍需分开保留：</p>
+<ol>
+<li>75f300向量幅值转换的浮点环境、尾部max语义与普通核的首次差异需要指定微核补证，尚未做；不会直接据不同指令推导整图差值。</li>
+<li>普通路径max=0、M=0的退化投票需要源码/汇编结合最小运行证据；本轮没有按意图补一个过滤条件。</li>
+<li>75f130/75da20已取体但本caller不可达，下级不扩；若另一个caller实际提供d&gt;=2，应另立任务，不在本切片泛化。</li>
+<li>726d60内的75aeb0只用于工作区大小估算，未在本轮继续展开；完整通用尺寸分配界限不据本次有限参数域宣称安全等价。</li>
+<li>后续才进入684b50的6c9d90/普通边缘链，优先确认80ac20实际配置选择；70d2e0各模式细追也保留。当前没有新产品算法或NImage公共契约变化。</li>
+</ol>
+<p>原始索引及派生参数属于S1/S2产物；不以索引脚本成功退出替代S3差分，不声称全部8向识别或真实宿主已验收。根线审查后统一通知“框架层逆向”，无提交SHA、无自动同步另一工作树。</p>
+<h2 id="定向复现">定向复现</h2><a class="site-evidence-link" data-evidence-key="ac3ee381577108317e47b3039abd6044926e3617d45d43a89411f5412396c0d0" href="../../../../证据/ac3ee381577108317e47b3039abd6044926e3617d45d43a89411f5412396c0d0.html#content">查看完整原文／记录 ↗ <small>ac3ee3815771</small></a>
+<p>仍依赖本机原厂SDK和已有私有Ghidra工程；全部新导出/报告写当前工作树专属analysis，不写另一工作树，不接设备或操作桌面。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.md · SHA256 74cedcc5b30f6ea9595a738a33356fc41e46707e5df23df233cb527f45b56a86<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第九轮：旋转标定的文件消费者与连续采样链 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第九轮：旋转标定的文件消费者与连续采样链</p><h1>第九轮：旋转标定的文件消费者与连续采样链</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第九轮：旋转标定的文件消费者与连续采样链</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="20261020-pass9-rotate-consumer-chain.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="20261020-pass9-rotate-consumer-chain.html#第九轮旋转标定的文件消费者与连续采样链">第九轮：旋转标定的文件消费者与连续采样链</a></p><p style="margin-left:14px"><a href="20261020-pass9-rotate-consumer-chain.html#原件入口状态和输出">原件入口、状态和输出</a></p><p style="margin-left:14px"><a href="20261020-pass9-rotate-consumer-chain.html#当前真实图的可复验结果">当前真实图的可复验结果</a></p><p style="margin-left:14px"><a href="20261020-pass9-rotate-consumer-chain.html#未覆盖与接口判断">未覆盖与接口判断</a></p></details><h1 id="第九轮旋转标定的文件消费者与连续采样链">第九轮：旋转标定的文件消费者与连续采样链</h1><p>范围仅为“标定”十工具中的旋转标定消费者、相机映射文件生产者及既有 N 点／映射／平移旋转 XML 产物的格式交接。原件只读，未改产品、共享框架或 <code>tool-plugins</code>。本报告把原函数结论、当前实现实测和未证原版整图分开。</p>
+<h2 id="原件入口状态和输出">原件入口、状态和输出</h2><p>安装件 <code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/RotateCalibModu/RotateCalibModu.dll</code> SHA-256 <code>B08486B8481ED6D7774634B30B5CAE167F85B911EBF394122663BAB400A9BB41</code>。原函数反编译位于只读取证目录 <code>worktrees/tool-plugins/analysis/full-audit/rotate-calibration/native/</code>：</p>
+<table>
+<thead>
+<tr>
+<th>成员/RVA</th>
+<th>C 体 SHA-256</th>
+<th>可核实的分支及状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CAlgorithmModule::SetParam</code> <code>0x38980</code></td>
+<td><code>487625BEFE572F7CBBCCD887CAE0FC677F0CC4F2A57419958F3C95A06828892C</code></td>
+<td><code>FilePath</code> 非空后按路径末两字节精确选 <code>ml</code> 或 <code>al</code>；前者传 <code>LoadFile(...,true)</code>，后者传 <code>LoadCalibFile</code>；调用后即写路径，即使装载报错；其他后缀返回 <code>E0000204</code>。原指令 <code>38980..38b1a</code> 已核 ABI 和分支。</td>
+</tr>
+<tr>
+<td><code>LoadCalibFile</code> <code>0x3a340</code></td>
+<td><code>A6042F2AF785EBE281C2AD8E4F36CF7E3E4C89470F2E28D96E69D3FC4F1DEB86</code></td>
+<td>先清有效位 <code>+0x15e44</code>；以 <code>rb</code> 打开，严格 <code>ftell=0x24</code> 并读 36 字节到 <code>+0x15e20</code> 的九 float 缓存；成功才置有效位；打开失败 <code>E0000201</code>，长度／读取失败 <code>E0000204</code>。</td>
+</tr>
+<tr>
+<td><code>LoadFile</code> <code>0x3a670</code></td>
+<td><code>1FCE51DAAF54E214DA6DF07C1DCE3E5178B82AEA5320F18FB7513777330D4AC6</code></td>
+<td>同样先清有效位；定位 <code>CalibOutputParam</code>，其子项 <code>DataType=&quot;FloatList&quot;</code> 写九 float 缓存并置有效位；缺节报 <code>E0000017</code>。短列表保留旧尾项，超九项原生越界；独立实现有显式九项边界。</td>
+</tr>
+<tr>
+<td><code>Process</code> <code>0x376b0</code></td>
+<td><code>4B92DBF021269B9C1942B419DF5260CE0757DA3F059C9FE33D976884C13ACE01</code></td>
+<td><code>RefreshSignal</code> 第 0 项非零时对缓存 <code>FilePath</code> 再调用 <code>SetParam</code>；有效位缺失先 <code>DeInitVecData</code> 返回 <code>E0000008</code> 且未写状态输出；其后 <code>RotNum</code> 限 3..16，依次取 <code>ImagePointX/Y</code>、<code>WorldRotateAngle</code> 第 0 项；中间样本写 <code>ModuStatus=1</code>、<code>remainCount</code> 和零中心，满额调用正反 <code>CalibRot</code>、清样本并写六个中心／误差输出。Ghidra 对 Getter 条件显示恒真／恒假，实际门已在 <code>docs/plugins/ROTATE-CALIBRATION-TYPED-INPUT-SOURCE.md</code> 按 <code>37906..37a1d</code> 原指令核对，不据该伪常量推断。</td>
+</tr>
+</tbody></table>
+<p>原端口为旋转样本 <code>ImagePointX/Y</code>、<code>WorldRotateAngle</code>、<code>RotNum</code>、<code>RefreshSignal</code>，没有 <code>CalibMatrix</code> 输入。文件路径是矩阵消费者的正式交接面。当前 <code>RotateCalibrationSession.Load/Run</code>、<code>RotateCalibrationFile.Read</code> 与 <code>RotateCalibrationPlugin.Runtime</code> 使用对应矩阵缓存、有效位和顺序采样；独立方案 JSON 缓存不冒充原生方案 ABI。</p>
+<h2 id="当前真实图的可复验结果">当前真实图的可复验结果</h2><p><code>tests/CalibrationRotateConsumer.Checks/Program.cs</code> 创建真实 <code>GraphEditorDocument</code>：相机映射两组四点通过 <code>WorkflowSubscription.NumberArrayConstant</code> 进入原端口，执行边连接相机→采样源→旋转；相机 <code>CalibStatus</code> 接旋转 <code>RefreshSignal</code>，采样源连续给出 <code>RotNum=3</code>、X/Y 环形三点与 <code>WorldRotateAngle=120</code>。同一 <code>ModuleExecutionScope</code> 连跑三次，每轮相机重写自身目录内的 36 字节 <code>camera.iwcal</code>，旋转在相机之后刷新并消费该文件。三轮两节点全部 Success/原生码 0，<code>remainCount=2,1,0</code>，前两轮中心 0，第三轮图像中心 <code>(50,50)</code>。文件 SHA-256 <code>E2196EC26DEC21D729B86D14FA52A70AF217D9B4C87D7B40681AF01B66BFC06D</code>。这是<strong>当前实现真实图交接</strong>，并非原版 VisionEditor 同构整图实跑，也不替代原版同输入数值差分。</p>
+<p>独立恢复图仍走 <code>SolutionExecutor/GraphEditorDocument</code>：先删除自身 <code>camera.iwcal</code>，保留相同 <code>FilePath</code> 且 <code>RefreshSignal=1</code>；旋转返回 Failed/<code>E0000008</code>，输出集合为空。写回刚生成的 36 字节文件，在<strong>同一 execution scope</strong> 再跑则 Success/0、<code>remainCount=2</code>，证明当前刷新重新装载和失败清采样。直接读取不存在的 <code>.iwcal</code> 得 <code>E0000201</code> 且 <code>loaded=false</code>；这是 <code>LoadCalibFile</code> 底层结果，<code>Process</code> 因无有效矩阵另返回 <code>E0000008</code>，不得混为同一码。</p>
+<p>对既有真实生产物只读校验：<code>analysis/joint-audit/pass6-cal-result/npoint-generated.xml</code> SHA <code>C04A0EB0B5D3C6DD45F62ABEF63184E286D0234D5FC1911012123E36E2175601</code>、<code>analysis/joint-audit/pass8-cal-map/mapped.xml</code> SHA <code>BDA8736F696E5B8721F811B31BE8486D3C09B436BD32CFE30A1587221275E967</code>、<code>analysis/joint-audit/pass8-cal-translation/npoint-generated.xml</code> SHA <code>9E63AE925797C5F5778E75FA8AF7373B5AB88A7A5A3CD9BD1A284F4111D5CA0C</code>，三者经当前 <code>RotateCalibrationFile.Read</code> 均 <code>0/loaded=true</code>。这些是<strong>预存产物格式兼容探针</strong>；本轮未把三个生产者分别放进同一运行图，也未把 XML 测试说成原厂完整运行认可。相机 <code>.iwcal</code> 则在本轮图内现生成、现消费，关闭一条完整可执行文件链。</p>
+<p>命令 <code>dotnet run --project tests/CalibrationRotateConsumer.Checks/CalibrationRotateConsumer.Checks.csproj -c Release</code> 最终退出 0，stdout <code>analysis/joint-audit/pass9-cal-rotate/checks.log</code>。首个构建尝试遇其他并行线共享 <code>VisionPlugins.ImageSource/obj</code> 的 <code>CS2012</code> 写锁，未改进程或文件；错峰重试成功。验证日志保留失败尝试应由协调线另计。当前生产代码未修改，本切片没有足以提出主框架独占修复的差异。</p>
+<h2 id="未覆盖与接口判断">未覆盖与接口判断</h2><ol>
+<li>原版平台内 CameraMapping→Rotate 的同构完整图、回调调度和同数据集数值差分未运行；只证两个原件各自文件读写合同与当前整图。相机生产者本轮复用第八轮的原函数证据，不重复宣称其 SDK 所有算例合格。</li>
+<li>N 点、映射、平移旋转三份 XML 仅现有产物的消费者直接解析，不等于本轮原件生产者重新执行；短 XML 缓存尾保留与坏 XML 的全部状态组合可依据旧 Rotate 原定点取证，未在这张图中扩大测试。</li>
+<li>旋转输出没有原版直接矩阵端口。旋转由文件取得变换，再输出中心／误差给后继；不能把 CameraMapping 的 <code>CalibStatus</code> 当矩阵、也不能把旋转虚构为标定加载的矩阵生产者。后继若需要中心坐标，应按实际六个输出端口逐个核订阅。</li>
+</ol>
+<p class="meta">来源：docs/joint-audit/20261020-pass9-rotate-consumer-chain.md · SHA256 b69315f1f72ddd7755248d1729915303e4398f6a1ea298896957e2672d53d8a7<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

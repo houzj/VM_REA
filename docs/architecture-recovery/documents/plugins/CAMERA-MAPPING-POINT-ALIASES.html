@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>相机映射：POINT 组合与分量别名证据</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/CAMERA-MAPPING-POINT-ALIASES.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#相机映射point-组合与分量别名证据">相机映射：POINT 组合与分量别名证据</a></p><p style="margin-left:14px"><a href="#字段及调用链">字段及调用链</a></p><p style="margin-left:14px"><a href="#失败原子性不能擅自推断">失败原子性不能擅自推断</a></p><p style="margin-left:14px"><a href="#声明中已有的名称差异">声明中已有的名称差异</a></p><p style="margin-left:14px"><a href="#公共接口建议与当前边界">公共接口建议与当前边界</a></p></details><h1 id="相机映射point-组合与分量别名证据">相机映射：POINT 组合与分量别名证据</h1><p>此文供公共框架线落合同。<strong>源码确认、托管兼容行为和未验证原生行为分开</strong>；不能把现有独立 Point 端口类型支持等同于本协议已经复现。</p>
+<h2 id="字段及调用链">字段及调用链</h2><p>原始安装 <code>Calibration/IMVSCameraMapModu/IMVSCameraMapModu.xml</code> 的第1组 <code>Combination TargetPointInput1(POINT)</code> 包含 <code>TargetPointX1/TargetPointY1</code> 两个 float Filter；Object组相同。AlgorithmTab 第124行起 <code>PointPair Data1</code> 的 <code>ObjectPoint/TargetPoint</code> 子元素调用 <code>GetFrontCombinationTreeOperation(POINT)</code>、<code>SetCombinationSourceOperation(ObjectPointInput1/TargetPointInput1)</code>、<code>GetSelectedCombinationOperation</code>。逐轴子元素调用 <code>GetFrontFilterTreeOperation(float)</code>、<code>SetFilterSourceOperation(ObjectPointX1/...Y1)</code>、<code>GetSelectedFilterOperation</code>。</p>
+<p>原厂反编译源基目录：<code>D:/MyWork/REA逆向测试/analysis/decompiled</code>。</p>
+<table>
+<thead>
+<tr>
+<th>源码位置</th>
+<th>确认行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/SetCombinationSourceOperation.cs</code></td>
+<td>通过 <code>VmModule.GetIO(组合名)</code> 查订阅方；解析来源路径/下标后设置 <code>iO.RelateIO</code>，再设置 <code>RelateIndex</code>；清空则设 RelateIO=null。这里不是创建另一份X/Y数值</td>
+</tr>
+<tr>
+<td>同目录 <code>SetFilterSourceOperation.cs</code></td>
+<td>单独查 <code>GetIO(轴名)</code>，设置该叶 RelateIO/RelateIndex；来源预检失败会回写ButtonSelecter.OldCurValue；这不证明底层写入异常可回滚</td>
+</tr>
+<tr>
+<td><code>VM.Core/VM.Core/VmModule.cs:1823</code> Subscribe</td>
+<td>两边都是叶则调用原生 SubscribeResult；组合两边 Childs.Count相同则<strong>按顺序逐项</strong>执行 <code>source.Childs[i].RelateIO=target.Childs[i]</code>；数目不同抛 SubscriptionsNotAligned</td>
+</tr>
+<tr>
+<td><code>VM.Core/VM.Core/VmIO.cs:121</code> RelateIO getter</td>
+<td>组合从各子叶重建：每叶必须有来源且来源有Parent；所有来源属于同一个Parent、来源叶不重复且数量相等、类型适配，才返回该共同组合Parent；否则返回null</td>
+</tr>
+<tr>
+<td>同文件 SubscriptionInfo / GetSubscriptionInfo（约795行）</td>
+<td>可重建共同组合时显示共同来源及下标；不能重建时 GetSelectedCombinationOperation 使用 GetSubscriptionInfo，按叶生成 <code>(X来源,Y来源)</code> 组合文本，并把组合选择框置ReadOnly=true</td>
+</tr>
+<tr>
+<td>同文件 RelateIndex / SetRelateIndex（约268/828行）</td>
+<td>组合getter取首个非null子下标；setter递归给全部子叶设置。对不一致子下标的完整原厂运行语义仍未验证</td>
+</tr>
+<tr>
+<td><code>PointPair.cs:145</code> IsPointModeA</td>
+<td>切到按点重新 InniterBusiness 两个组合子选择器；切到坐标重新初始化X/Y（以及存在的Angle）子选择器。不是另存一套坐标</td>
+</tr>
+</tbody></table>
+<h2 id="失败原子性不能擅自推断">失败原子性不能擅自推断</h2><p><code>VmIO.RelateIO</code> setter（约157–205行）先登记Undo，再调用旧来源UnSubscribe；无共同来源时逐项清空子绑定；设置新 <code>_relateIO</code> 后 Subscribe，异常分支将 <code>_relateIO=null</code> 再抛出。<code>VmModule.Subscribe</code> 对组合逐叶处理，没有在上述托管代码中看到整组旧值恢复；<code>UnSubscribe</code> 则捕获并记日志。</p>
+<p>因此本专项<strong>没有证据证明原厂整组失败是原子回滚</strong>。来源路径预检失败、ButtonSelecter恢复显示、原生第2叶订阅失败是三种不同边界。公共框架若采用原子文档事务，可以作为明确的独立安全实现，不能标记为原厂确认。低层失败后实际订阅状态需要原厂运行探针才能闭合。</p>
+<h2 id="声明中已有的名称差异">声明中已有的名称差异</h2><p>主声明XML与原厂AlgorithmTab第3–8组都使用 <code>TargetInputN/ObjectInputN</code>，第1–2组使用 <code>TargetPointInputN/ObjectPointInputN</code>。公开SDK CameraMapParam的第3–8组属性仍叫 <code>TargetPointInputN/ObjectPointInputN</code>。先前文档把AlgorithmTab误列为SDK命名，2026-10-18按安装原文件逐组纠正。当前Descriptor、alias provider和Runtime统一实际UI/主声明名称；原始XML未改。不能把SDK封装属性命名当作UI目的端口。</p>
+<h2 id="公共接口建议与当前边界">公共接口建议与当前边界</h2><p>Producer 为统一图数据/订阅框架；Consumer 为相机映射及其余含Combination的工具。Payload 应显式携带组合身份、源/目标有序字段映射、下标身份、每个叶的来源和只读派生组合展示。Session关闭只释放编辑器，绑定由流程文档持有；执行、保存、撤销、流程切换都使用同一份绑定。</p>
+<p>验收至少覆盖：绑定完整POINT后X/Y读回各自叶来源；单改X保留Y；来源来自不同组合时显示派生元组而非虚构单一POINT；完整重新绑定替换两轴；清空组合清两轴；Index.All/单元素/索引引用；不同流程同NodeId隔离；第一/第二叶拒绝时的可观测状态。原厂失败边界没有运行证据的项应保留未知。</p>
+<p>当前产品实现 <code>IToolPointInputAliasProvider</code>，声明16组（8个示教点与8个运行点）UI/主声明原名组合到X/Y映射。主宿主消费公共 <code>PointAliasConfigurationSubscriptions</code>；生产PointPair在模式变化时重新读取可见子选择器。真实工具检查已覆盖完整POINT拆成叶、按坐标读回、改X保留Y、组合只读元组、Undo恢复共同POINT，以及数组POINT两组展开成4点经GraphExecutor运行。全部9项数组运行输出与受控官方模块比较通过0.003固定阈值。2026-10-18另已逐16组验证原名并实际Graph接通全部8组32条叶、执行16点，避免只测1/2组漏掉短名称。</p>
+<p>Runtime保留旧独立组合端口和逐轴覆盖作为兼容路径；正常公共别名路径只存X/Y叶绑定，不把两个来源当作独立可冲突的权威。批事务原子性是托管文档安全规则，仍不是原厂逐叶失败回滚证明。单下标/索引引用继续明确Unsupported。原厂缺失组合force操作忽略已另行补证；原厂桌面和完整原生订阅平台未验证。</p>
+<p>解析器补证：缺失组合force操作已确认原厂IgnoreUnknown加载时保留null并忽略，不再列为待发明的必填投影。专用产品规则与真实WPF已验证。索引候选/手工路径/托管原生载荷及仍未知的原生取元素边界见 <a href="CAMERA-MAPPING-PARSER-INDEX.html">解析器与索引</a>，该更新优先于本文早期未知记录。</p>
+<p class="meta">来源：docs/plugins/CAMERA-MAPPING-POINT-ALIASES.md · SHA256 bfe49dd3a349fc3c3b54e8b5bdcbbf93c848ecd9ca230cc45a26f6978bab675a<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

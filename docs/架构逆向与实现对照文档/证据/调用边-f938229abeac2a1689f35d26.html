@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SolutionStore.Save · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SolutionStore.Save · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-J03"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SolutionStore.Save → 临时文件 → Flush(true) → File.Move</h2><p>先校验/序列化、限制 32MiB、检查重复键；同目录独占新临时文件写入和 Flush(true)，Move(overwrite:true)，finally 清临时文件。</p><p><a href="../专题/execution-storage.html#edge-J03">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/execution-storage.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/execution-storage.edges.json · SHA256 a9ff89e4868a237886b3ceade3029c19466278ee1454727fd4d7198e4fa01ae8</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="fa5993c4c6e7b5cf8f7942ceacc2b49c13b8c93056216a317a98b3501a464489">{
+  &quot;id&quot;: &quot;J03&quot;,
+  &quot;route&quot;: &quot;当前 · 保存&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;SolutionStore.Save&quot;,
+  &quot;to&quot;: &quot;临时文件 → Flush(true) → File.Move&quot;,
+  &quot;behavior&quot;: &quot;先校验/序列化、限制 32MiB、检查重复键；同目录独占新临时文件写入和 Flush(true)，Move(overwrite:true)，finally 清临时文件。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/SolutionStore.cs&quot;,
+      &quot;member&quot;: &quot;SolutionStore.Save&quot;,
+      &quot;sha256&quot;: &quot;533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365&quot;,
+      &quot;start&quot;: 17,
+      &quot;end&quot;: 25,
+      &quot;excerpt&quot;: &quot;    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\&quot;Solution exceeds size limit.\&quot;);\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\&quot;.\&quot;+Path.GetFileName(full)+\&quot;.\&quot;+Guid.NewGuid().ToString(\&quot;N\&quot;)+\&quot;.tmp\&quot;);\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }\n    public static void ValidateStructure(SolutionDocument solution){&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;不证明断电、跨卷、native 保存事务或全部插件资产兼容。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

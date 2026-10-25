@@ -1,0 +1,605 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>菜单授权消费者：CodeManager与直接WPF状态门</title><style>body{max-width:1280px;margin:auto;padding:24px;background:#102032;color:#e2edf8;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#9cd5ff}article{padding:18px;margin:20px 0;background:#1a3048;border-left:4px solid #eeb873}.independent-implementation{border-color:#83caff}.unknown{border:1px dashed #e4a1ba}summary{cursor:pointer}details{margin:12px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 Consolas,monospace}p{overflow-wrap:anywhere}.notice{padding:16px;background:#2a3e55}</style><a href="main-ui-map.html#menu">主界面菜单区</a> · <a href="menu-state-producers-audit.html">菜单状态生产者</a> · <a href="menu-entry-materialization-audit.html">菜单物化</a><h1>菜单授权消费者：CodeManager与直接WPF状态门</h1><p class="notice">MS-U01有限取证：两个CodeManager角色谓词、原回调直接访问及明确WPF/动作消费者；不推出完整菜单授权矩阵。<br>本批8项原证据、1项当前独立实现、1项未知；17个原CIL体，7个VM.User体与REA raw IL匹配。三原件IL中五处回调字段读取，已确认赋值者0（表示未定位，不是全产品不存在）。</p><p>IsAdmin属性通知→直接WPF绑定/输入动作门，与OnAllAccessCallBack.Invoke是两条不同机制。已证消费者包括工具项容器、参数编辑状态、图区菜单/框选/Delete动作；没有据此生成全菜单角色矩阵。</p><article id="AC01" class="source-confirmed"><h2>AC01 · CodeManager原默认值 / IsAllAccessUser → Admin或None为true，Tech/Operator不由此判true</h2><p>source-confirmed：原CodeManager._isAdmin字段初始true；IsAllAccessUser只比较_accessCurUserInfo.curLoginUser是否Admin或None，命中true否则false。实际枚举类型为VM.User.AccessUser（不是按业务名另造UserType），Int32常量None=0、Admin=1、Tech=2、Operator=3。原CIL先读curLoginUser与1作beq，再重读该字段以brtrue区别零/非零；稳定同值时谓词为v==1 || v==0，负数/其它未声明值均false；两次读取不是原子快照，实际交错未知。它没有读取ItemData列表或逐菜单权限表。此处None也为true是所选原程序规则，不能替换成按名称猜测的角色矩阵；本报告不读取任何实际登录用户/权限配置。</p><p>待追：不同原版本、真实登录状态、额外授权入口与所有菜单业务内的权限检查尚未知；不据该bool声称任何具体操作对所有角色开放。</p><details><summary>VM.User.CodeManager::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:170–189
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000001&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000001&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.User.CodeManager&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 36,
+          &quot;ilSha256&quot;: &quot;4d454e6b694659903865daecd2864c2f3864d20784e595df42fd0e5dc5f66555&quot;,
+          &quot;ilBytes&quot;: &quot;0272010000707d110000040272170000707d1200000402177d1500000402281100000a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.User.CodeManager::IsAllAccessUser · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:308–327
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000006&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000006&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.User.CodeManager&quot;,
+            &quot;name&quot;: &quot;IsAllAccessUser&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 31,
+          &quot;ilSha256&quot;: &quot;73de511e0bdd23e875ff24605e998884be9df469ba6cec6c86fbb8b2495936ac&quot;,
+          &quot;ilBytes&quot;: &quot;027c100000047b06000004172e0d027c100000047b060000042d02172a162a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.User.CodeManager::get_IsAdmin · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:444–463
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000008&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000008&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.User.CodeManager&quot;,
+            &quot;name&quot;: &quot;get_IsAdmin&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;c0486425d9a1ebb043db4d21ec8e4daf0ce954bfaca7851ccf3c16f05f09a267&quot;,
+          &quot;ilBytes&quot;: &quot;027b150000042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Original default admin projection · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.CodeManager.cs:35–39
+SHA256 2a21a5db9dd36e7652682cf1b3ec192b4780bee6271d2bd22ec9522e99007977
+	private bool _isAdmin = true;
+
+	public static CodeManager Instance =&gt; GetInstance();
+
+	public bool IsAccessEnable =&gt; _accessCurUserInfo.curLoginUser != AccessUser.None;</pre></details><details><summary>Actual role predicate · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.CodeManager.cs:114–121
+SHA256 2a21a5db9dd36e7652682cf1b3ec192b4780bee6271d2bd22ec9522e99007977
+	public bool IsAllAccessUser()
+	{
+		if (_accessCurUserInfo.curLoginUser == AccessUser.Admin || _accessCurUserInfo.curLoginUser == AccessUser.None)
+		{
+			return true;
+		}
+		return false;
+	}</pre></details><details><summary>Exact original enum constants · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.access-user-enum.json:6–44
+SHA256 8c605fead50b946e1079fe42f50b4d2f4ee670c45b938eac15ff5debbbc7dc42
+  &quot;type&quot;: &quot;VM.User.AccessUser&quot;,
+  &quot;typeToken&quot;: &quot;0x02000002&quot;,
+  &quot;values&quot;: [
+    {
+      &quot;name&quot;: &quot;None&quot;,
+      &quot;token&quot;: &quot;0x04000002&quot;,
+      &quot;value&quot;: 0,
+      &quot;constantType&quot;: &quot;Int32&quot;,
+      &quot;constantHex&quot;: &quot;00000000&quot;,
+      &quot;attributes&quot;: &quot;Public, Static, Literal, HasDefault&quot;
+    },
+    {
+      &quot;name&quot;: &quot;Admin&quot;,
+      &quot;token&quot;: &quot;0x04000003&quot;,
+      &quot;value&quot;: 1,
+      &quot;constantType&quot;: &quot;Int32&quot;,
+      &quot;constantHex&quot;: &quot;01000000&quot;,
+      &quot;attributes&quot;: &quot;Public, Static, Literal, HasDefault&quot;
+    },
+    {
+      &quot;name&quot;: &quot;Tech&quot;,
+      &quot;token&quot;: &quot;0x04000004&quot;,
+      &quot;value&quot;: 2,
+      &quot;constantType&quot;: &quot;Int32&quot;,
+      &quot;constantHex&quot;: &quot;02000000&quot;,
+      &quot;attributes&quot;: &quot;Public, Static, Literal, HasDefault&quot;
+    },
+    {
+      &quot;name&quot;: &quot;Operator&quot;,
+      &quot;token&quot;: &quot;0x04000005&quot;,
+      &quot;value&quot;: 3,
+      &quot;constantType&quot;: &quot;Int32&quot;,
+      &quot;constantHex&quot;: &quot;03000000&quot;,
+      &quot;attributes&quot;: &quot;Public, Static, Literal, HasDefault&quot;
+    }
+  ],
+  &quot;meaning&quot;: &quot;Original metadata Enum literal constants; no vendor assembly loading or UI execution.&quot;
+}
+</pre></details></article><article id="AC02" class="source-confirmed"><h2>AC02 · CodeManager.IsAdmin setter / SaveAccessInfo → 属性通知而非菜单字段改写</h2><p>source-confirmed：IsAdmin setter只在值变化时先写_isAdmin再OnPropertyChanged(IsAdmin)，无本地catch或菜单遍历。SaveAccessInfo尝试将角色结构静态序列化后SaveConfig，再通知IsAccessEnable及IsAdmin；catch提示并return false，成功true。这里仅追原代码合同，未执行序列化、读取/写入实际配置或获取凭据。SetLoginUser调用SaveAccessInfo时没有读取其bool返回值，不等于落盘失败必停止后续回调。</p><p>待追：NotifyPropertyChangedBase实际通知线程/异常传播、保存调用者全部策略、WPF订阅和持久化实际结果未知；不把保存通知等同各菜单授权重算。</p><details><summary>VM.User.CodeManager::set_IsAdmin · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:492–511
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000009&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000009&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.User.CodeManager&quot;,
+            &quot;name&quot;: &quot;set_IsAdmin&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 28,
+          &quot;ilSha256&quot;: &quot;3d02ea5a6720467ba10f59ac58a98a88a5c303298a360ae2f19963dfde50c3d3&quot;,
+          &quot;ilBytes&quot;: &quot;027b15000004032e1202037d150000040272490000706f1900000a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VM.User.CodeManager::SaveAccessInfo · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:613–632
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x0600000b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.User.CodeManager&quot;,
+            &quot;name&quot;: &quot;SaveAccessInfo&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 87,
+          &quot;ilSha256&quot;: &quot;25802e734c493d90c8833bdd1cb7d8e0ce78c28300bb11c09c01877c7287cc98&quot;,
+          &quot;ilBytes&quot;: &quot;02027b100000048c03000002281a000006281b00000a0a027b1100000406281c00000a0272bd0000706f1900000a0272490000706f1900000ade180b72db000070076f1600000a1816281d00000a26160cde02172a082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Admin property notification · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.CodeManager.cs:41–55
+SHA256 2a21a5db9dd36e7652682cf1b3ec192b4780bee6271d2bd22ec9522e99007977
+	public bool IsAdmin
+	{
+		get
+		{
+			return _isAdmin;
+		}
+		set
+		{
+			if (_isAdmin != value)
+			{
+				_isAdmin = value;
+				OnPropertyChanged(&quot;IsAdmin&quot;);
+			}
+		}
+	}</pre></details><details><summary>Save result and notifications · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.CodeManager.cs:123–137
+SHA256 2a21a5db9dd36e7652682cf1b3ec192b4780bee6271d2bd22ec9522e99007977
+	public bool SaveAccessInfo()
+	{
+		try
+		{
+			string defaultValue = Convert.ToBase64String(StructTOBytes(_accessCurUserInfo));
+			ConfigurationHelper.SaveConfig(accessInfoNodeName, defaultValue);
+			OnPropertyChanged(&quot;IsAccessEnable&quot;);
+			OnPropertyChanged(&quot;IsAdmin&quot;);
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(&quot;Lang_CfgSaveErr&quot;, ex.Message, MessageIcons.Warning);
+			return false;
+		}
+		return true;</pre></details><details><summary>VisionMaster.AppMainWindow.AccessManagerHelper::SetLoginUser · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:1594–1613
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000193&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000193&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.AccessManagerHelper&quot;,
+            &quot;name&quot;: &quot;SetLoginUser&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00030211690202&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 446,
+          &quot;ilSha256&quot;: &quot;208b651a86093f4f812e25709b518ab0fefbdec7bac716f5516123d192cd4136&quot;,
+          &quot;ilBytes&quot;: &quot;00282200000a7b2300000a14fe010b072c220028030000060c282200000a7b2300000a14fe010d092c090016130438880100000002282200000a7c5a02000a7b5b02000afe010a282200000a7c5a02000a027d5b02000a282200000a282200000a6f5c02000a6f5d02000a0003130511052c0d00282200000a6f5e02000a26000216fe03130611062c2900282200000a7b2300000a14fe03130711072c1400282200000a7b2300000a17026f5f02000a260000021308110817594503000000020000002a000000160000002b3c725500007072cb2500701717282e00000a262b28725500007072d72500701717282e00000a262b14725500007072e32500701717282e00000a262b00282200000a7b6002000a14fe03130911092c1c00282200000a7b6002000a282200000a6f6102000a6f6202000a26000616fe01130a110a2c10282200000a72ef2500706f2900000a00282200000a6f5700000a19fe0116fe01130b110b2c051713042b4e04130c110c2c4200286000000a252d03262b3528da00000a252d03262b2a7ebe010004252d17267ebd010004fe0657030006732a00000a2580be010004280300002b28dc00000a26001713042b0011042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details></article><article id="AC03" class="source-confirmed"><h2>AC03 · OnAllAccessCallBack公开delegate字段 → 三个原件的直接CIL访问只有读取/调用，订阅者未定位</h2><p>source-confirmed：CodeManager声明OnAllAccessCallBack为公开delegate字段，未提供add/remove事件方法。顶层Applications与myLibs的74个.dll/.exe只做字节名候选筛选，命中VisionMaster.exe、VisionMasterMain.dll、VM.User.dll；再对这三个原件完整离线IL输出定位5条该字段指令，均为ldfld，所属方法是两个不同命名空间的SetLoginUser及CodeManager.ResetAccess。所选输出未找到该字段的stfld/stsfld/ldflda赋值/地址写入指令，故本批没有可确认的真实订阅者，不能把Invoke当成已注册了菜单接收者。</p><p>待追：74件只是限定目录字节名候选；三件离线IL不证明其它目录、插件、反射、动态代码或外部宿主没有赋值。IL文本扫描与真实事件投递分开，未称整个产品从不使用该回调。</p><details><summary>Callback is a public field · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.CodeManager.cs:23–23
+SHA256 2a21a5db9dd36e7652682cf1b3ec192b4780bee6271d2bd22ec9522e99007977
+	public IsAllAccessCallBack OnAllAccessCallBack;</pre></details><details><summary>Original direct field-access scope · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.recovery.json:52–141
+SHA256 600d58c786bc4f86f6e01314ee9c60b764177491f688ecf581d5da492b195a19
+  &quot;fullILScopes&quot;: [
+    {
+      &quot;artifact&quot;: &quot;exe&quot;,
+      &quot;output&quot;: &quot;docs/architecture-recovery/menu-authorization-consumers-audit.exe.il&quot;,
+      &quot;sha256&quot;: &quot;06d2760b82f86af68710ec874cb9f1bea2c4cde5f94f64d098e575b14401f924&quot;,
+      &quot;toolArguments&quot;: [
+        &quot;--disable-updatecheck&quot;,
+        &quot;-il&quot;,
+        &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\VisionMaster.exe&quot;
+      ],
+      &quot;exitCode&quot;: 0,
+      &quot;accesses&quot;: [
+        {
+          &quot;line&quot;: 24705,
+          &quot;instruction&quot;: &quot;IL_010e: ldfld class [VM.User]VM.User.CodeManager/IsAllAccessCallBack [VM.User]VM.User.CodeManager::OnAllAccessCallBack&quot;,
+          &quot;enclosingMethodEnd&quot;: &quot;} // end of method AccessManagerHelper::SetLoginUser&quot;
+        },
+        {
+          &quot;line&quot;: 24714,
+          &quot;instruction&quot;: &quot;IL_0122: ldfld class [VM.User]VM.User.CodeManager/IsAllAccessCallBack [VM.User]VM.User.CodeManager::OnAllAccessCallBack&quot;,
+          &quot;enclosingMethodEnd&quot;: &quot;} // end of method AccessManagerHelper::SetLoginUser&quot;
+        }
+      ]
+    },
+    {
+      &quot;artifact&quot;: &quot;main&quot;,
+      &quot;output&quot;: &quot;docs/architecture-recovery/menu-authorization-consumers-audit.main.il&quot;,
+      &quot;sha256&quot;: &quot;d7bc492ef97d2779aab950ab4440cd71563d5c3e79876eb798b83d8ddd20e65e&quot;,
+      &quot;toolArguments&quot;: [
+        &quot;--disable-updatecheck&quot;,
+        &quot;-il&quot;,
+        &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll&quot;
+      ],
+      &quot;exitCode&quot;: 0,
+      &quot;accesses&quot;: [
+        {
+          &quot;line&quot;: 32711,
+          &quot;instruction&quot;: &quot;IL_00eb: ldfld class [VM.User]VM.User.CodeManager/IsAllAccessCallBack [VM.User]VM.User.CodeManager::OnAllAccessCallBack&quot;,
+          &quot;enclosingMethodEnd&quot;: &quot;} // end of method AccessManagerHelper::SetLoginUser&quot;
+        },
+        {
+          &quot;line&quot;: 32720,
+          &quot;instruction&quot;: &quot;IL_00ff: ldfld class [VM.User]VM.User.CodeManager/IsAllAccessCallBack [VM.User]VM.User.CodeManager::OnAllAccessCallBack&quot;,
+          &quot;enclosingMethodEnd&quot;: &quot;} // end of method AccessManagerHelper::SetLoginUser&quot;
+        }
+      ]
+    },
+    {
+      &quot;artifact&quot;: &quot;user&quot;,
+      &quot;output&quot;: &quot;docs/architecture-recovery/menu-authorization-consumers-audit.user.il&quot;,
+      &quot;sha256&quot;: &quot;579e29d1869d2120f51dd4cbaac48266ff63191d95163a02af05bc85fc3ce56c&quot;,
+      &quot;toolArguments&quot;: [
+        &quot;--disable-updatecheck&quot;,
+        &quot;-il&quot;,
+        &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VM.User.dll&quot;
+      ],
+      &quot;exitCode&quot;: 0,
+      &quot;accesses&quot;: [
+        {
+          &quot;line&quot;: 575,
+          &quot;instruction&quot;: &quot;IL_0067: ldfld class VM.User.CodeManager/IsAllAccessCallBack VM.User.CodeManager::OnAllAccessCallBack&quot;,
+          &quot;enclosingMethodEnd&quot;: &quot;} // end of method CodeManager::ResetAccess&quot;
+        }
+      ]
+    }
+  ],
+  &quot;codeManager&quot;: {
+    &quot;output&quot;: &quot;docs/architecture-recovery/menu-authorization-consumers-audit.CodeManager.cs&quot;,
+    &quot;sha256&quot;: &quot;2a21a5db9dd36e7652682cf1b3ec192b4780bee6271d2bd22ec9522e99007977&quot;,
+    &quot;toolArguments&quot;: [
+      &quot;--disable-updatecheck&quot;,
+      &quot;-t&quot;,
+      &quot;VM.User.CodeManager&quot;,
+      &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VM.User.dll&quot;
+    ],
+    &quot;exitCode&quot;: 0
+  },
+  &quot;toolbox&quot;: {
+    &quot;artifact&quot;: &quot;wpf&quot;,
+    &quot;resource&quot;: &quot;VMControls.WPF.g.resources/toolbox.baml&quot;,
+    &quot;output&quot;: &quot;docs/architecture-recovery/menu-authorization-consumers-audit.resources/toolbox.xaml&quot;,
+    &quot;sha256&quot;: &quot;998e9fce93666d53ba8e4905ee851504a525a614745cbd503588e7fad138bbb5&quot;,
+    &quot;local&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF/ToolBox.xaml&quot;,
+    &quot;localSha256&quot;: &quot;998e9fce93666d53ba8e4905ee851504a525a614745cbd503588e7fad138bbb5&quot;,
+    &quot;byteIdenticalToLocal&quot;: true,
+    &quot;toolArguments&quot;: [
+      &quot;--disable-updatecheck&quot;,
+      &quot;--resource&quot;,
+      &quot;VMControls.WPF.g.resources/toolbox.baml&quot;,
+      &quot;-o&quot;,</pre></details></article><article id="AC04" class="source-confirmed"><h2>AC04 · CodeManager.ResetAccess / 两版SetLoginUser → 字段/IsAdmin通知与回调顺序</h2><p>source-confirmed：ResetAccess先将角色改None、清相应启用/口令字段，通知LoginUser，再IsAdmin=true，随后OnAllAccessCallBack?.Invoke(IsAdmin)、OnAccessEnableCallBack?.Invoke(false,None)，最后return SaveAccessInfo。两个原SetLoginUser前段均先写角色/计算IsAdmin，再保存/通知回调；本批不展开其操作员前端切换分支。清的是内存字段的原代码定义，未读取或显示个人口令值。没有证明IsAdmin setter会自动调用OnAllAccessCallBack，两个机制须分别看实际调用点。</p><p>待追：回调异常可阻断后续调用/保存，选体未提供全事务回滚；真实回调接收者及关闭释放仍未定位，运行模式内部保持deferred。</p><details><summary>VM.User.CodeManager::ResetAccess · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:1013–1032
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x0600000e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.User.CodeManager&quot;,
+            &quot;name&quot;: &quot;ResetAccess&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 153,
+          &quot;ilSha256&quot;: &quot;f0043415a8d115602b2a7410cf8e5b735f57d30df9c6c731c467c3e7cca1ad3f&quot;,
+          &quot;ilBytes&quot;: &quot;027c10000004167d06000004027c10000004167d07000004027c10000004147d08000004027c10000004167d09000004027c10000004147d0a000004027c10000004167d0b000004027c10000004147d0c0000040272fb0000706f1900000a02172809000006027b0f000004252d03262b0c0228080000066f2100000626027b0e000004252d03262b0816166f1d0000062602280b0000062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VisionMaster.AppMainWindow.AccessManagerHelper::SetLoginUser · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:1594–1613
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000193&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000193&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.AccessManagerHelper&quot;,
+            &quot;name&quot;: &quot;SetLoginUser&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00030211690202&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 446,
+          &quot;ilSha256&quot;: &quot;208b651a86093f4f812e25709b518ab0fefbdec7bac716f5516123d192cd4136&quot;,
+          &quot;ilBytes&quot;: &quot;00282200000a7b2300000a14fe010b072c220028030000060c282200000a7b2300000a14fe010d092c090016130438880100000002282200000a7c5a02000a7b5b02000afe010a282200000a7c5a02000a027d5b02000a282200000a282200000a6f5c02000a6f5d02000a0003130511052c0d00282200000a6f5e02000a26000216fe03130611062c2900282200000a7b2300000a14fe03130711072c1400282200000a7b2300000a17026f5f02000a260000021308110817594503000000020000002a000000160000002b3c725500007072cb2500701717282e00000a262b28725500007072d72500701717282e00000a262b14725500007072e32500701717282e00000a262b00282200000a7b6002000a14fe03130911092c1c00282200000a7b6002000a282200000a6f6102000a6f6202000a26000616fe01130a110a2c10282200000a72ef2500706f2900000a00282200000a6f5700000a19fe0116fe01130b110b2c051713042b4e04130c110c2c4200286000000a252d03262b3528da00000a252d03262b2a7ebe010004252d17267ebd010004fe0657030006732a00000a2580be010004280300002b28dc00000a26001713042b0011042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMasterMain.AccessManager.AccessManagerHelper::SetLoginUser · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:3156–3175
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x060001fd&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001fd&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMasterMain.AccessManager.AccessManagerHelper&quot;,
+            &quot;name&quot;: &quot;SetLoginUser&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0001021181ad&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 451,
+          &quot;ilSha256&quot;: &quot;78d7ef012275481e04713b1c5abbfa99c4a17d42fa434cc25affe4cba718c0cd&quot;,
+          &quot;ilBytes&quot;: &quot;00281b01000a7be201000a14fe010c082c0800160d38a7010000021304110417594503000000020000002a000000160000002b3c72c828007072ce280070171728e301000a262b2872c828007072da280070171728e301000a262b1472c828007072e6280070171728e301000a262b0002281b01000a7c4301000a7b4601000afe010a281b01000a7c4301000a027d4601000a281b01000a281b01000a6fe401000a6fe501000a00281b01000a6fe601000a260216fe03130511052c2900281b01000a7be201000a14fe03130611062c1400281b01000a7be201000a17026fe701000a260000281b01000a7be801000a14fe03130711072c1c00281b01000a7be801000a281b01000a6fe901000a6fea01000a26000616fe01130811082c10281b01000a72f22800706feb01000a00281b01000a6f2c00000a19fe0116fe01130911092c04170d2b7828ec01000a6fed01000a751d000002250b14fe03130a110a2c5a0028ee01000a6fef01000a130b110b14fe03130c110c2c4100110b176ff001000a00110b6ff101000a00282c00002b252d03262b08110b6ff301000a000714fe03130d110d2c110007146ff401000a00076fb100000a00000000170d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Reset callback and save order · local-decompiled-source</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.CodeManager.cs:154–170
+SHA256 2a21a5db9dd36e7652682cf1b3ec192b4780bee6271d2bd22ec9522e99007977
+	public bool ResetAccess()
+	{
+		_accessCurUserInfo.curLoginUser = AccessUser.None;
+		_accessCurUserInfo.adminEnable = false;
+		_accessCurUserInfo.adminCode = null;
+		_accessCurUserInfo.techEnable = false;
+		_accessCurUserInfo.techCode = null;
+		_accessCurUserInfo.operatorEnable = false;
+		_accessCurUserInfo.operatorCode = null;
+		OnPropertyChanged(&quot;LoginUser&quot;);
+		IsAdmin = true;
+		OnAllAccessCallBack?.Invoke(IsAdmin);
+		OnAccessEnableCallBack?.Invoke(bEnable: false, AccessUser.None);
+		return SaveAccessInfo();
+	}
+
+	public bool SetAdminEnable(bool bEnable, string adminCode)</pre></details></article><article id="AC05" class="source-confirmed"><h2>AC05 · MainWindow原资源CodeManager.Instance.IsAdmin → IsParamsEditState → 参数窗创建时IsEditState</h2><p>source-confirmed：已验证原MainWindow BAML声明把CodeManager.Instance.IsAdmin绑定VmMainViewConfigControl.IsParamsEditState。所选本地VmMainViewConfigControl模板转到mainViewControl，MainViewControl模板转到ProcedureConfigControl.IsParamsEditState。原OpenParamsTabControl创建或取得TabWinBase后，将IsEditState=IsParamsEditState，再赋ParamsConfig；这是创建时读取赋值，不能声称已打开参数窗随角色变化自动更新。没有在该体通过ItemData.IsEnabled来实现这条门。</p><p>待追：两个中继本地模板是否均对应活字典、已有窗体更新、IsEditState所有下游控件/ROI/保存门未在本片闭合；与主菜单启用矩阵分开。</p><details><summary>Original main host role-state binding · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-entry-materialization-audit.resources/mainwindow.xaml:27–27
+SHA256 6176a9c0c68a8d44e5fd2885ca6683c4a02a1cd22ff97bb0b5d52104a84c7915
+      &lt;VMWpf:VmMainViewConfigControl Name=&quot;MainView&quot; IsParamsEditState=&quot;{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}&quot; SelectedModule=&quot;{Binding SelectedModule, Mode=TwoWay}&quot; IsLockWorkArea=&quot;{Binding IsWorkAreaLocking, Mode=OneWay}&quot; IsOpenParams=&quot;{Binding IsOpenParams, Mode=TwoWay}&quot; ZoomIndex=&quot;{Binding ConfigZoomIndex, Mode=TwoWay}&quot;&gt;</pre></details><details><summary>Local wrapper edit-state forwarding · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF.Release/VMControls.WPF.Release/VmMainViewConfigControl.xaml:3–3
+SHA256 bef842a4a870746c1549ac6dc7ea40d5f792d977090ae13c8d05b9f028867570
+  &lt;wpf:MainViewControl Name=&quot;mainViewControl&quot; IsLockWorkArea=&quot;{Binding IsLockWorkArea, ElementName=us}&quot; IsOpenParams=&quot;{Binding IsOpenParams, Mode=TwoWay, ElementName=us}&quot; IsShowProgressMask=&quot;{Binding IsShowProgressMask, Mode=TwoWay, ElementName=us}&quot; ZoomIndex=&quot;{Binding ZoomIndex, ElementName=us, Mode=TwoWay}&quot; IsParamsEditState=&quot;{Binding IsParamsEditState, Mode=OneWay, ElementName=us}&quot; /&gt;</pre></details><details><summary>Local template edit-state forwarding · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/MainViewControl.xaml:30–30
+SHA256 6043bcab8597ed0a738e5bb604c25fa647350a15c646239ad0a9b5267285576f
+            &lt;local:ProcedureConfigControl x:Name=&quot;m_ProcedureConfig&quot; IsLockWorkArea=&quot;{Binding IsLockWorkArea, RelativeSource={RelativeSource TemplatedParent}}&quot; IsOpenParams=&quot;{Binding IsOpenParams, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}&quot; Solution=&quot;{Binding Solution, RelativeSource={RelativeSource TemplatedParent}}&quot; LoadingFlag=&quot;{Binding Path=IsLoadingFlag, RelativeSource={RelativeSource TemplatedParent}}&quot; Procedures=&quot;{Binding Path=Solution.(VMInterface:IChildren.Children), RelativeSource={RelativeSource TemplatedParent}}&quot; SelectedModule=&quot;{Binding SelectedModule, Mode=TwoWay}&quot; SelectedItem=&quot;{Binding SelectedItem, Mode=TwoWay}&quot; ZoomIndex=&quot;{Binding ZoomIndex, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}&quot; IsParamsEditState=&quot;{Binding IsParamsEditState, Mode=OneWay, RelativeSource={RelativeSource Mode=TemplatedParent}}&quot; /&gt;</pre></details><details><summary>VMControls.WPF.ProcedureConfigControl::OpenParamsTabControl · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:7295–7314
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000297&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000297&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ProcedureConfigControl&quot;,
+            &quot;name&quot;: &quot;OpenParamsTabControl&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c1c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 720,
+          &quot;ilSha256&quot;: &quot;9259ac86bb30689aa47ba4914992d4a0c55062e407b52a99ad6520c3f2e50c59&quot;,
+          &quot;ilBytes&quot;: &quot;0000027b3501000414fe03130511052c0600ddb802000072ea240070287b00000a000475dc000001250b2d03042b06076f4303000a753f0000010a0206289802000616fe01130611062c16007222250070283800000a285703000a26dd6e020000066f5803000a16fe01130711072c3f00280500002b252d03262b3273180900062572700300706f1409000600728a030070283800000a7294030070066fa900000a283a00000a146faa00000a000002288f020006751f000002250c14fe03130811082c3e00086fad00000a752c00000225130914fe03130a110a2c250011096f5c02000a16fe01130b110b2c0811096f8601000a0014130908146f5903000a00000002062899020006252d0626731d0300060d09036fb703000600090228780200066fb9030006007232250070287b00000a0009066fab00000a6fbf030006007266250070287b00000a0028ce02000a14fe03130c110c2c2b0002289b01000a130d09110d252d0b2628ce02000a6fcf02000a6fd002000a0009026fbd03000600002b320002289d01000a7590000001130e110e14fe03130f110f2c180009735a03000a25110e6f9e01000a6f5b03000a001310000009285c03000a00096fd102000a00027e2b010004178ce4010001285d03000a0002097d35010004027b35010004723510007002fe069c020006734501000a28c601000a0002288f020006751f00000225130414fe03131111112c18001104027b350100046f5903000a0011046fed0100060000020428ae020006007296250070287b00000a0000dd8c0000001312007282090070283800000a729409007011126fd300000a8cd7010001281e01000a72a0090070283a00000a1313111372a6090070283800000a11126fd300000a28d400000a283a00000a131372ca2500701113284300000a28a400000a0000de2913140072ca25007011146fa300000a72a009007011146fe700000a28e800000a28a400000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Parameter window state snapshot · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml.cs:741–745
+SHA256 36be1620196c60a72efb03dab8afb4fa302ba1ba8ec4acf7eb1f5f61883678bd
+			tabWinBase2.IsEditState = IsParamsEditState;
+			LogHelper.Info(&quot;ParamsConfig value start.&quot;);
+			tabWinBase2.ParamsConfig = vmModule.Params;
+			LogHelper.Info(&quot;ParamsConfig value end.&quot;);
+			if (Application.Current != null)</pre></details></article><article id="AC06" class="source-confirmed"><h2>AC06 · 新提取原ToolBox BAML → ToolItems.IsEnabled直接绑定CodeManager.Instance.IsAdmin</h2><p>source-confirmed：定向离线解码VMControls.WPF.g.resources/toolbox.baml，与现有本地ToolBox.xaml逐字节相同。ToolItems这个ItemsControl的IsEnabled直接绑定CodeManager.Instance.IsAdmin；这是一条真正的WPF容器声明消费者，未改ItemData字段，也不是OnAllAccessCallBack注册。它的有效IsEnabled仍受父级/其它WPF门影响。</p><p>待追：原内层BAML payload未单独记digest，身份以原DLL与离线输出为界；容器活实例、父级状态、全部工具拖拽/执行限制未知。</p><details><summary>Original toolbox role binding · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.resources/toolbox.xaml:268–274
+SHA256 998e9fce93666d53ba8e4905ee851504a525a614745cbd503588e7fad138bbb5
+        &lt;ItemsControl Name=&quot;ToolItems&quot; IsEnabled=&quot;{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}&quot;&gt;
+          &lt;FrameworkElement.Style&gt;
+            &lt;Style TargetType=&quot;{x:Type ItemsControl}&quot;&gt;
+              &lt;Setter Property=&quot;ItemsSource&quot; Value=&quot;{Binding Source={StaticResource src}}&quot; /&gt;
+              &lt;Setter Property=&quot;ItemTemplate&quot; Value=&quot;{StaticResource FoldItemTemplate}&quot; /&gt;
+              &lt;Setter Property=&quot;Margin&quot; Value=&quot;0,12,0,0&quot; /&gt;
+              &lt;Setter Property=&quot;ItemsPanel&quot;&gt;</pre></details></article><article id="AC07" class="source-confirmed"><h2>AC07 · 原图区样式与输入处理器 → ContextMenu/框选/Delete键直接消费IsAdmin</h2><p>source-confirmed：已有原DiagramPage解码资源中IsAdmin=false的DataTrigger把ContextMenu置null；本地ProcedureConfigControl样式也有此门，但其后还存在其它ContextMenu Setter/Trigger，不能据孤立触发器断言最后有效值。原ItemsPage.OnMouseLeftButtonDown仅在!IsLockWorkArea &amp;&amp; !IsOpenParams &amp;&amp; CodeManager.GetInstance().IsAdmin时设置框选起点/IsMouseDown并挂拖动、鼠标抬起处理器；DiagramItem.ListViewItem_KeyDown再要求Key.Delete，才DeleteCommand?.Execute(null)。这些是具体UI/动作接收者，无需假接到菜单ItemData字段。</p><p>待追：真实样式优先级、派生覆盖、菜单命中与其它删除/拖拽入口未知；这些有限动作门不能自动推广为全工具授权表。</p><details><summary>Local diagram resource role gate · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml:220–222
+SHA256 906e1e21324ee23d6e2f15853fa54afe5c268539fff49a252020de0e94c8d4c4
+        &lt;DataTrigger Value=&quot;False&quot; Binding=&quot;{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}&quot;&gt;
+          &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{x:Null}&quot; /&gt;
+        &lt;/DataTrigger&gt;</pre></details><details><summary>Procedure context-menu role gate and following trigger · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml:456–463
+SHA256 a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106
+          &lt;DataTrigger Value=&quot;false&quot; Binding=&quot;{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}&quot;&gt;
+            &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{x:Null}&quot; /&gt;
+          &lt;/DataTrigger&gt;
+          &lt;DataTrigger Value=&quot;True&quot; Binding=&quot;{Binding IsProcedure}&quot;&gt;
+            &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource OperateMenu}&quot; /&gt;
+          &lt;/DataTrigger&gt;
+          &lt;MultiDataTrigger&gt;
+            &lt;MultiDataTrigger.Conditions&gt;</pre></details><details><summary>VMControls.WPF.Base.ItemsPage::OnMouseLeftButtonDown · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:4990–5009
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000c1a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000c1a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.ItemsPage&quot;,
+            &quot;name&quot;: &quot;OnMouseLeftButtonDown&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011281ad&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 117,
+          &quot;ilSha256&quot;: &quot;be3c84588bb09f3664c4e5fbd4498cfddcf8ef164ded7a7c7c3ef129cb82b6be&quot;,
+          &quot;ilBytes&quot;: &quot;000228f30b00062d170228fb0b00062d0f28ac04000a6f8509000a16fe012b01170a062c03002b4c02030228d200002b6ff401000a7d320600040203026ff401000a7d3306000402177d340600040202fe062b0c0006736500000a287608000a000202fe06250c0006736800000a281f09000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Direct mouse-down role gate · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ItemsPage.cs:582–592
+SHA256 bc3a7a487a75be202162bbe4ba6d6202b9b0e6ee9b618a9db9373a299091491b
+	protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+	{
+		if (!IsLockWorkArea &amp;&amp; !IsOpenParams &amp;&amp; CodeManager.GetInstance().IsAdmin)
+		{
+			startPoint = e.GetPosition(this.GetParent&lt;ZoomArea&gt;());
+			startPointofPage = e.GetPosition(this);
+			IsMouseDown = true;
+			PreviewMouseMove += ToolItemGrid_PreviewMouseMove;
+			PreviewMouseLeftButtonUp += ToolItemGrid_PreviewMouseUp;
+		}
+	}</pre></details><details><summary>VMControls.WPF.Base.DiagramItem::ListViewItem_KeyDown · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:5755–5774
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000b8c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000b8c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramItem&quot;,
+            &quot;name&quot;: &quot;ListViewItem_KeyDown&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128501&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 72,
+          &quot;ilSha256&quot;: &quot;4cec52e3c6c2f89d04b1f6e3ca479b51e68b9721e03909b018eeac49861c4b54&quot;,
+          &quot;ilBytes&quot;: &quot;0002285a0b00062d1402285c0b00062d0c28ac04000a6f8509000a2b01160a062c2500046ff005000a1f20fe010b072c15000228500b0006252d03262b07146f7501000a0000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Direct delete-key role gate · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramItem.xaml.cs:946–952
+SHA256 19d967cb454fa6ba9aae63a53c2b394b318ce9dd1391d7c5ec8a00a77f683ce3
+	private void ListViewItem_KeyDown(object sender, KeyEventArgs e)
+	{
+		if (!IsLockWorkArea &amp;&amp; !IsOpenParams &amp;&amp; CodeManager.GetInstance().IsAdmin &amp;&amp; e.Key == Key.Delete)
+		{
+			DeleteCommand?.Execute(null);
+		}
+	}</pre></details></article><article id="AC08" class="source-confirmed"><h2>AC08 · ProcedureConfigControl.OpenParams → 角色/模块可配置状态的另一个动作门</h2><p>source-confirmed：原OpenParams先CanOpenConfigurationInterface(data)，通过才关闭已开curTabControlBase并OpenParamsTabControl。CanOpenConfigurationInterface解IDecorate.DecorateSource或data为IVmModule，读取GetLoginUser；只有!ConfigAvailable且角色Tech或Operator时置flag=false，最后返回flag &amp;&amp; vmModule.ConfigCheck；该体没有模块null保护或本地catch，也没有Enum.IsDefined门：稳定角色值2/3走受限分支，0/1及其它未声明值不会仅因!ConfigAvailable而拒绝，但仍必须ConfigCheck为true；实际未声明值可达性未验证。它与IsAdmin决定IsEditState是不同门，不可把进入参数窗和允许编辑视为同一谓词。</p><p>待追：ConfigAvailable/ConfigCheck生产者及原模块具体身份另见既有module-access；本片不重新宣称其全集闭合，也未运行模块/设备。</p><details><summary>VMControls.WPF.ProcedureConfigControl::OpenParams · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:6642–6661
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000290&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000290&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ProcedureConfigControl&quot;,
+            &quot;name&quot;: &quot;OpenParams&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 59,
+          &quot;ilSha256&quot;: &quot;46491949a071c69236243efa3b80d60795b9b017e55da5f900cc36aaf44827c7&quot;,
+          &quot;ilBytes&quot;: &quot;000203289502000616fe010a062c022b29027b3501000414fe030b072c0e00027b350100046fa501000a00000202288f020006032897020006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.ProcedureConfigControl::CanOpenConfigurationInterface · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:6916–6935
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x06000295&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000295&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ProcedureConfigControl&quot;,
+            &quot;name&quot;: &quot;CanOpenConfigurationInterface&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001021c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 88,
+          &quot;ilSha256&quot;: &quot;670a96d8b088a5bf9edcf4cbb84eebcbc18667627b79b0208a28092e16a67bac&quot;,
+          &quot;ilBytes&quot;: &quot;00170a285303000a6f5403000a0b0375dc000001250d2d03032b06096f4303000a753f0000010c086f5503000a2d0d07182e060719fe012b01172b0116130411042c02160a062c08086f5603000a2b011613052b0011052a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.User.CodeManager::GetLoginUser · original-managed-cil</summary><pre>docs/architecture-recovery/menu-authorization-consumers-audit.cil.json:952–971
+SHA256 0b83031a0e15c3a31ef776d417eccd8a332bbeff8ac2cdd94a77441099e6d9b2
+          &quot;token&quot;: &quot;0x0600000c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600000c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.User.CodeManager&quot;,
+            &quot;name&quot;: &quot;GetLoginUser&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20001108&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;baea15c840984207877007d9bfef38f24cb4ac91e264db3481f1f902eff4f0f9&quot;,
+          &quot;ilBytes&quot;: &quot;027c100000047b060000042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Parameter-open action gate · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml.cs:649–659
+SHA256 36be1620196c60a72efb03dab8afb4fa302ba1ba8ec4acf7eb1f5f61883678bd
+	public void OpenParams(object data)
+	{
+		if (CanOpenConfigurationInterface(data))
+		{
+			if (curTabControlBase != null)
+			{
+				curTabControlBase.Close();
+			}
+			OpenParamsTabControl(ROIPartUI, data);
+		}
+	}</pre></details><details><summary>Role and module-specific configuration admission · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml.cs:693–703
+SHA256 36be1620196c60a72efb03dab8afb4fa302ba1ba8ec4acf7eb1f5f61883678bd
+	public bool CanOpenConfigurationInterface(object data)
+	{
+		bool flag = true;
+		AccessUser loginUser = CodeManager.Instance.GetLoginUser();
+		IVmModule vmModule = ((data is IDecorate decorate) ? decorate.DecorateSource : data) as IVmModule;
+		if (!vmModule.ConfigAvailable &amp;&amp; (loginUser == AccessUser.Tech || loginUser == AccessUser.Operator))
+		{
+			flag = false;
+		}
+		return flag &amp;&amp; vmModule.ConfigCheck;
+	}</pre></details></article><article id="AC09" class="independent-implementation"><h2>AC09 · 当前主界面菜单/工具栏 → 独立Action装配的有限对照</h2><p>independent-implementation：当前Menu函数直接把Action接Click并Safe执行，Tool以action是否null决定初始IsEnabled并接Click。当前工作流控件还直接按isLocked、activeRun和parameterEditorOpen设门。所选当前体没有接原CodeManager/OnAllAccessCallBack，因此它们只能作为当前独立实现证据，不能借原IsAdmin消费者静态取证宣称已复现角色授权。</p><p>待追：未穷尽当前所有权限/数据源；未运行重建产品；原/当前角色差异与授权验收仍分开。</p><details><summary>Current independent menu and toolbar callbacks · current-source</summary><pre>src/VisionEditor/MainWindow.xaml.cs:56–57
+SHA256 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a
+ MenuItem Menu(string title,params (string,Action)[] items){var root=new MenuItem{Header=title,Foreground=new SolidColorBrush(Color.FromRgb(192,192,192)),Padding=new Thickness(10,4,10,4)};root.SubmenuOpened+=(_,_)=&gt;SetShellMenuFocus(root);foreach(var item in items){var mi=new MenuItem{Header=item.Item1};mi.Click+=(_,_)=&gt;Safe(item.Item2);root.Items.Add(mi);}MenuHost.Items.Add(root);return root;}
+ Button Tool(string asset,string tip,Action? action){var b=new Button{Width=44,Height=42,Margin=new Thickness(0),Padding=new Thickness(8),Background=Brushes.Transparent,BorderBrush=Brushes.Transparent,BorderThickness=new Thickness(0),ToolTip=tip,IsEnabled=action is not null};b.Template=PlainTemplate();b.Content=new Image{Source=Asset(asset),Width=26,Height=26,Stretch=Stretch.Uniform};if(action is not null)b.Click+=(_,_)=&gt;Safe(action);b.Click+=(_,_)=&gt;SetShellMenuFocus(b);ToolBar.Children.Add(b);return b;}</pre></details><details><summary>Current independent workflow state gates · current-source</summary><pre>src/VisionEditor/WorkflowTabs.cs:145–154
+SHA256 24a398d5cd2a16ba2ea01ce980df4b7a3c4f4b9afe27c34720195bcd0b48cb45
+        AddProcedureButton.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; !parameterEditorOpen;
+        PinnedAddProcedureButton.IsEnabled = AddProcedureButton.IsEnabled;
+        AddProcedureButton.Visibility = isLocked ? Visibility.Collapsed : Visibility.Visible;
+        Rail.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; !parameterEditorOpen &amp;&amp; (workflowOverview||doc.HasCurrentProcedure);
+        if(!EditableCanvas&amp;&amp;toolPopup is not null)toolPopup.IsOpen=false;
+        EmptyAddWorkflowButton.IsEnabled=!isLocked&amp;&amp;activeRun is null&amp;&amp;!parameterEditorOpen;
+        ToggleToolboxButton.IsEnabled = !isLocked;
+        undoToolButton!.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; doc.CanUndo;
+        redoToolButton!.IsEnabled = !isLocked &amp;&amp; activeRun is null &amp;&amp; doc.CanRedo;
+        stopToolButton!.IsEnabled = activeRun is not null;</pre></details></article><article id="AC-U01" class="unknown"><h2>AC-U01 · OnAllAccessCallBack真正赋值/释放者仍未知 → 其它载体与活绑定待取证</h2><p>unknown：本批闭合的是CodeManager有限原体及具体IsAdmin直接消费者，没有定位可确认的OnAllAccessCallBack赋值/订阅者，未发现它到ItemData.IsEnabled/IsVisible的已证写入边。下一步需在用户指定的其它安装载体/外部宿主中定位具体字段赋值或反射注册，并验证对应实例/生命周期；活WPF绑定与已打开参数窗更新另行验证。</p><p>待追：不以未找到订阅者证明全产品没有订阅者；不读取身份/凭据，不执行原程序/SDK，运行模式内部继续deferred。</p></article><p class="notice">未读取个人凭据/实际身份；未执行厂商、SDK、网络服务或重建产品。运行模式内部暂缓。实施41/96＝42.71%，本次静态文档增量0。</p><a href="menu-authorization-consumers-audit.json">机器台账</a></html><script data-document-web src="document-web-links.js"></script>

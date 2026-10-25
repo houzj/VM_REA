@@ -1,0 +1,74 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第八批四线：静态消费者与运行硬门</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/BATCH8-20261019.md">下载原始文件</a></nav><main><h1 id="第八批四线静态消费者与运行硬门">第八批四线：静态消费者与运行硬门</h1><p>基线 <code>5e76aee5546a29243c9d95c17d29c2e73080bceb</code>。执行前固定四个有限退出问题，A/C/D子智能并行、主智能负责B与整合。没有原目标运行、SDK初始化、注册表操作、产品修改或历史产品测试重跑；不自动推送，不读取或修改tool-plugins。</p>
+<table>
+<thead>
+<tr>
+<th>线</th>
+<th>实质证据</th>
+<th>尚未闭合</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="A03-config-error-batch8.html">A03</a></td>
+<td>两个原配置错误产生点、catch→stderr→null及系统配置候选依赖；只读元数据导出通过</td>
+<td>旧运行丢失内层异常，不能判定XML/CSP/映射为实际原因；logger初始化仍blocked</td>
+</tr>
+<tr>
+<td><a href="B05-native-dispatch-batch8.html">B05</a></td>
+<td>SetBinaryData真实入口和callee共222行；原结构数据/长度经对象+23a8函数指针投递0bd2消息，打印字节前缀核对通过</td>
+<td>回调绑定和gvar文件格式未知；B01/B04前置开放，仅提前源码调查</td>
+</tr>
+<tr>
+<td><a href="C02-begin-isolation-batch8.html">C02</a></td>
+<td>真实Begin前的显式cctor/普通构造副作用，42聚焦体，8项静态硬门检查</td>
+<td>VmProcedure空构造仍读VmSolution静态字段，TempVmSolution空Init仍进入SDK初始化链；actualBeginPermitted=false</td>
+</tr>
+<tr>
+<td><a href="D01-save-callees-batch8.html">D01</a></td>
+<td>两callee各追一层，6段2231行；SDK文本命令+2398函数指针、ModuleFrame事件/回调参数；根线复跑字节核对通过</td>
+<td>实际绑定、封装执行方式、writer/reader/事务未知；返回0不代表已落盘</td>
+</tr>
+</tbody></table>
+<p>有限静态问题4/4达到退出边界，不代表四个产品功能完成。A03日志和C02真实Begin运行门仍关闭；B05/D01原生消费者继续有精确缺体。静态阴性搜索仅限指定两原件，不推全程序不存在。失败保留，包括C线哈希清单自枚举与偏移误抄后的更正；没有用成功记录覆盖失败。</p>
+<h2 id="固定进度">固定进度</h2><table>
+<thead>
+<tr>
+<th>层</th>
+<th align="right">严格达成</th>
+<th align="right">进度</th>
+<th align="right">本批增量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>源码</td>
+<td align="right">51/96</td>
+<td align="right">53.1%</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>实现</td>
+<td align="right">29/96</td>
+<td align="right">30.2%</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>验证</td>
+<td align="right">29/96</td>
+<td align="right">30.2%</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>三层同时达成，总完成率</td>
+<td align="right">28/96</td>
+<td align="right"><strong>29.2%</strong></td>
+<td align="right"><strong>0个百分点</strong></td>
+</tr>
+</tbody></table>
+<p>剩余68项至少一层未达成。所有分母固定为plan-units-v1，不给partial折半，不以指令、方法、静态检查数抬高百分比。原全面对账冻结基线保留，追加本批证据而不冒充全量重审或产品回归。完整包无新增关闭。</p>
+<h2 id="下一批准入条件">下一批准入条件</h2><ul>
+<li>A：旧异常无法从空日志恢复；先完善自有执行器stderr/exit/清理捕获机制及静态隔离方案，再决定是否有条件重试，不能重跑同一失败探针。</li>
+<li>B：只追对象+23a8函数指针赋值与0bd2消息消费者；没有实际绑定，不实现猜测的gvar格式。</li>
+<li>C：真实Begin须证明外部路径、文件、线程、SDK句柄/脚本及退出全部受控；未证明前停止同题运行，可选择其他依赖满足的静态入口。</li>
+<li>D：追对象+2398的绑定和ModuleFrame回调执行/实际序列化者；不重复入口和当前callee导出。</li>
+</ul>
+<p>下一批需优先判断目标能否满足具名验收门槛，不以填满四个槽位为目的。FCR-024资产Undo、A08.2默认输入失败及插件交接、原生ABI、部署/长稳等剩余范围保持开放；详见 <a href="../FRAMEWORK-PROGRESS-RECONCILIATION.html">96项全面对账</a>。本批完整审计及哈希在 <code>analysis/full-audit/batch8-20261019/</code>，本地提交完整SHA见HEAD-after.txt。</p>
+<p class="meta">来源：docs/reverse/BATCH8-20261019.md · SHA256 cf50483b37d63ad999ac3a579af354eea23ad0e03c9328b2a8ff5bb24a122d43<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

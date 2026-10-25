@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Viewbox / SizeChanged / previewScale · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>Viewbox / SizeChanged / previewScale · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C16"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>Viewbox / SizeChanged / previewScale → 图像坐标缩放与重绘生命周期</h2><p>构造把Image和labels Canvas放scene Grid，外层Viewbox Stretch.Uniform；SizeChanged触发DrawGraphics。绘制scale取ActualWidth/scene.Width与ActualHeight/scene.Height较小值，无效或&lt;=0回退1，几何线宽据此反缩放；text坐标/字号随Viewbox缩放。RefreshToolDisplay末尾将previewScale设为整个presenter.LayoutTransform；SetPreviewScale在非ROI分支只即时修改Preview.LayoutTransform，该处未即时改toolDisplayImage，后续刷新才重赋。</p><p><a href="../专题/rendering-layers.html#edge-C16">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/rendering-layers.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/rendering-layers.edges.json · SHA256 28101fd3e74d0ef6d0fc0f2c5059c29b49d8a7d9e0e05a0081c069f7d6bfb43b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="1bbcbeda3b8f44a1bc271e023b17a66473e807d36fa98fa0c6f7208719bdd0aa">{
+  &quot;id&quot;: &quot;C16&quot;,
+  &quot;route&quot;: &quot;当前 · 实际结果呈现与有限导出&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;Viewbox / SizeChanged / previewScale&quot;,
+  &quot;to&quot;: &quot;图像坐标缩放与重绘生命周期&quot;,
+  &quot;behavior&quot;: &quot;构造把Image和labels Canvas放scene Grid，外层Viewbox Stretch.Uniform；SizeChanged触发DrawGraphics。绘制scale取ActualWidth/scene.Width与ActualHeight/scene.Height较小值，无效或&lt;=0回退1，几何线宽据此反缩放；text坐标/字号随Viewbox缩放。RefreshToolDisplay末尾将previewScale设为整个presenter.LayoutTransform；SetPreviewScale在非ROI分支只即时修改Preview.LayoutTransform，该处未即时改toolDisplayImage，后续刷新才重赋。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolDisplayPresenter.cs&quot;,
+      &quot;member&quot;: &quot;Presenter composition&quot;,
+      &quot;sha256&quot;: &quot;0148527f597e5db2239b4efab3987ca992b2216317cd166a95f9f51f7238c6e2&quot;,
+      &quot;start&quot;: 16,
+      &quot;end&quot;: 20,
+      &quot;excerpt&quot;: &quot;    public ToolDisplayImagePresenter()\n    {\n        scene.Children.Add(image); scene.Children.Add(labels); Content = new W.Viewbox { Stretch = Stretch.Uniform, Child = scene };\n        SizeChanged+=(_,_)=>DrawGraphics();\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolDisplayPresenter.cs&quot;,
+      &quot;member&quot;: &quot;Scale-dependent redraw&quot;,
+      &quot;sha256&quot;: &quot;0148527f597e5db2239b4efab3987ca992b2216317cd166a95f9f51f7238c6e2&quot;,
+      &quot;start&quot;: 74,
+      &quot;end&quot;: 80,
+      &quot;excerpt&quot;: &quot;    void DrawGraphics(){\n        foreach(var shape in labels.Children.OfType&lt;System.Windows.Shapes.Path>().ToArray())labels.Children.Remove(shape);\n        foreach(var text in labels.Children.OfType&lt;W.TextBlock>().Where(t=>t.Tag is string).ToArray())labels.Children.Remove(text);\n        if(Frame is null)return;\n        double scale=Math.Min(ActualWidth/scene.Width,ActualHeight/scene.Height);if(!double.IsFinite(scale)||scale&lt;=0)scale=1;\n        foreach(var graphic in Frame.Graphics){\n            if(graphic.Type==\&quot;text\&quot;){&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolDisplays.cs&quot;,
+      &quot;member&quot;: &quot;Presenter layout zoom&quot;,
+      &quot;sha256&quot;: &quot;f3ae89186549591a8a025fc8d36d66bc2b5ea959ec3ed293d3e1030bcdd0e656&quot;,
+      &quot;start&quot;: 52,
+      &quot;end&quot;: 52,
+      &quot;excerpt&quot;: &quot;  toolDisplayImage.LayoutTransform=new ScaleTransform(previewScale,previewScale);&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.xaml.cs&quot;,
+      &quot;member&quot;: &quot;Preview zoom branches&quot;,
+      &quot;sha256&quot;: &quot;034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a&quot;,
+      &quot;start&quot;: 118,
+      &quot;end&quot;: 121,
+      &quot;excerpt&quot;: &quot; void ZoomPreviewIn(object sender,RoutedEventArgs e)=>SetPreviewScale(Math.Min(8,previewScale*1.2));\n void ZoomPreviewOut(object sender,RoutedEventArgs e)=>SetPreviewScale(Math.Max(.1,previewScale/1.2));\n void ResetPreviewZoom(object sender,RoutedEventArgs e)=>SetPreviewScale(1);\n void SetPreviewScale(double value){if(configurationRoiEditor is {} roiEditor){roiEditor.ZoomSource(value/previewScale);previewScale=value;return;}previewScale=value;Preview.LayoutTransform=new ScaleTransform(previewScale,previewScale);}&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;未运行验证变换是否计入所有外围布局；没有原OnSetImageEnd/三仓完成时序；Show(null)清视图不证明provider快照和图像资源已释放。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

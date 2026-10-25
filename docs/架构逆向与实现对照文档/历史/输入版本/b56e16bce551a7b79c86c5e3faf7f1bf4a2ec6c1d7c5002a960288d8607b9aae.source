@@ -1,0 +1,487 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>方案保存SDK的原生入口与直接边界</title><style>body{max-width:1280px;margin:auto;padding:24px;background:#101a29;color:#e3edf8;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#96d1ff}p{color:#b0c6dc}.notice{background:#1c2d43;border-left:4px solid #dfb16e;padding:15px}details{background:#17273c;padding:14px;border:1px solid #3f5671;margin:14px 0}summary{cursor:pointer}.unknown{border-color:#d299ac}pre{font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1524;padding:12px}code{overflow-wrap:anywhere}</style><a href="index.html">← 架构索引</a> · <a href="execution-storage.html#edge-S06">保存原生边界</a><h1>方案保存SDK的原生入口与直接边界</h1><p class="notice">五参数SDK声明→原导出IMVS_SaveSolution→handle门/初始化→0x180665BA0直接边界。5托管体、6个定界native函数848条指令；REA反编译工具不可用，原静态汇编独立保留。未执行SDK、未写.sol，落盘与格式仍未知。</p><p><a href="solution-save-native-boundary-audit.json">完整专题JSON</a> · <a href="solution-save-native-boundary-audit.native.json">原件范围与汇编</a> · <a href="solution-save-native-boundary-audit.cil.json">原托管CIL</a></p><nav><a href="#S01">S01</a> · <a href="#S02">S02</a> · <a href="#S03">S03</a> · <a href="#S04">S04</a> · <a href="#S05">S05</a> · <a href="#S06">S06</a> · <a href="#S07">S07</a> · <a href="#S08">S08</a> · <a href="#S09">S09</a> · <a href="#S10">S10</a> · <a href="#U01">U01</a> · <a href="#U02">U02</a></nav><details id="S01" class="source-confirmed"><summary>S01 · 既有保存入口/同步等待证据 → 新的原SDK身份与限定原生边界 · source-confirmed</summary><p>本专题复用execution-storage S01/S03/S04、solution-open-chain与main-menu-save-review已取托管入口，不把菜单或保存返回值再包装成新运行证据。新核原VM.PlatformSDKCS.dll SHA/MVID与PInvoke；所选x64 native SDK原件SHA、PE导出及函数体分别绑定，候选路径不代表实际进程已装载该文件。</p><p>待核：原运行模块路径/实例handle与具体用户保存事件未观察。</p><details><summary>Original SDK binding · 3–13</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.artifact-identities.json · original-managed-metadata · SHA 6f5d2e22a11b919a675e0157f50b625f35a2090986c5a4648db5376e662d0e60</code></p><pre>  &quot;artifacts&quot;: [
+    {
+      &quot;key&quot;: &quot;sdk&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\PublicFile\\x64\\VM.PlatformSDKCS.dll&quot;,
+      &quot;sha256&quot;: &quot;34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1&quot;,
+      &quot;mvid&quot;: &quot;e7b3a3b0-7083-486a-8ca2-97cecec02ea2&quot;,
+      &quot;reaEvidence&quot;: &quot;ev_f7be1556d1c1f0da99dd1b08f8123e6bc1998e5194f19d85c28edfc0b6aca764&quot;
+    }
+  ],
+  &quot;targets&quot;: [
+    {</pre></details><details><summary>VM.PlatformSDKCS.SolutionManager::SyncSaveSolution · 337–356</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.cil.json · original-managed-cil · SHA 9e84be6005fb2df841e3f8f96838703272a63d5416aa3ed64632d94792418c0d</code></p><pre>          &quot;token&quot;: &quot;0x060005d0&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060005d0&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.SolutionManager&quot;,
+            &quot;name&quot;: &quot;SyncSaveSolution&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2004010e0e1809&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 128,
+          &quot;ilSha256&quot;: &quot;211ecd75d5530c609657975b132ae1f6978c49db9d659c12f9b9089f32dc11e8&quot;,
+          &quot;ilBytes&quot;: &quot;0020ff0000e00a02167d3303000402167d350300047e970300040304050e0428c30200060a0616fe030b072c0a000673a60600060c087a28840500067b0d030004166f5a00000600027c35030004281d00000a0028370700060d092c2200027b3303000416fe03130411042c1100027b3303000473a6060006130511057a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details></details><details id="S02" class="source-confirmed"><summary>S02 · SolutionManager.SyncSaveSolution→ServerSDKAPI → 五参数原PInvoke声明 · source-confirmed</summary><p>原同步保存重置错误码和完成标志，再把mhandle/path/password/pData/nDataLen五参数交ServerSDKAPI.IMVS_SaveSolution；ServerSDKAPI原体直接同序转给NativeMethods，返回int。PInvoke库字面量为.\iMVS-6000PlatformSDK.dll；path显式CustomMarshaler=VM.PlatformSDKCS.UTF8Marshaler，password未在所选声明标同一MarshalAs，不能把两者都称UTF8。</p><p>待核：默认封送/平台调用约定的运行配置、native参数真实值与相对路径解析仍未执行。</p><details><summary>VM.PlatformSDKCS.SolutionManager::SyncSaveSolution · 337–356</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.cil.json · original-managed-cil · SHA 9e84be6005fb2df841e3f8f96838703272a63d5416aa3ed64632d94792418c0d</code></p><pre>          &quot;token&quot;: &quot;0x060005d0&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060005d0&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.SolutionManager&quot;,
+            &quot;name&quot;: &quot;SyncSaveSolution&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2004010e0e1809&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 128,
+          &quot;ilSha256&quot;: &quot;211ecd75d5530c609657975b132ae1f6978c49db9d659c12f9b9089f32dc11e8&quot;,
+          &quot;ilBytes&quot;: &quot;0020ff0000e00a02167d3303000402167d350300047e970300040304050e0428c30200060a0616fe030b072c0a000673a60600060c087a28840500067b0d030004166f5a00000600027c35030004281d00000a0028370700060d092c2200027b3303000416fe03130411042c1100027b3303000473a6060006130511057a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ServerSDKAPI::IMVS_SaveSolution · 875–894</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.cil.json · original-managed-cil · SHA 9e84be6005fb2df841e3f8f96838703272a63d5416aa3ed64632d94792418c0d</code></p><pre>          &quot;token&quot;: &quot;0x060002c3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002c3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ServerSDKAPI&quot;,
+            &quot;name&quot;: &quot;IMVS_SaveSolution&quot;,
+            &quot;parameters&quot;: 5,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000508180e0e1809&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;72b4f1f38d5ac85a7246217f269cf5aa2e508294357c5850c7a2de397a9ec5db&quot;,
+          &quot;ilBytes&quot;: &quot;00020304050e0428a70300060a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>NativeMethods.IMVS_SaveSolution · 115–116</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/VM.PlatformSDKCS.NativeMethods.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA 6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0</code></p><pre>	[DllImport(&quot;.\\iMVS-6000PlatformSDK.dll&quot;)]
+	public static extern int IMVS_SaveSolution(IntPtr handle, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = &quot;VM.PlatformSDKCS.UTF8Marshaler&quot;)] string strPath, string strPassWord, IntPtr pData, uint nDataLen);</pre></details></details><details id="S03" class="source-confirmed"><summary>S03 · 显式path UTF8Marshaler → 终止字节/非字符串/释放边界 · source-confirmed</summary><p>原MarshalManagedToNative对null返回零，非string抛InvalidOperationException；string以Encoding.UTF8.GetBytes得到字节，AllocHGlobal(length+1)，Copy再WriteByte末尾0，返回指针。GetInstance取静态instance，CleanUpNativeData调用FreeHGlobal。本事实仅限path显式定制封送，不自动规定password编码或native是否留存指针。</p><p>待核：CLR清理触发时点、分配/复制异常和native留存/复制所有权未知；不执行分配或SDK调用。</p><details><summary>VM.PlatformSDKCS.UTF8Marshaler::MarshalManagedToNative · 1110–1129</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.cil.json · original-managed-cil · SHA 9e84be6005fb2df841e3f8f96838703272a63d5416aa3ed64632d94792418c0d</code></p><pre>          &quot;token&quot;: &quot;0x06000675&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000675&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.UTF8Marshaler&quot;,
+            &quot;name&quot;: &quot;MarshalManagedToNative&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001181c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 98,
+          &quot;ilSha256&quot;: &quot;7fe9d2ebc6e6154c66f6a2b9fa446f6b873015d3d19f79d7ff162190760d82af&quot;,
+          &quot;ilBytes&quot;: &quot;000314fe010c082c087e4600000a0d2b4f03754f00000114fe0316fe01130411042c06733d01000a7a283e01000a03754f0000016f3f01000a0a068e691758284400000a0b061607068e69288700000a0007068e6916284001000a00070d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.UTF8Marshaler::GetInstance · 1559–1578</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.cil.json · original-managed-cil · SHA 9e84be6005fb2df841e3f8f96838703272a63d5416aa3ed64632d94792418c0d</code></p><pre>          &quot;token&quot;: &quot;0x06000677&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000677&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.UTF8Marshaler&quot;,
+            &quot;name&quot;: &quot;GetInstance&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00011281150e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 11,
+          &quot;ilSha256&quot;: &quot;037a1a7b47b477a25a1d835354e6242095ebbb7de309b6e51bc451fdfdf93f18&quot;,
+          &quot;ilBytes&quot;: &quot;007e4e0300040a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.UTF8Marshaler::CleanUpNativeData · 1047–1066</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.cil.json · original-managed-cil · SHA 9e84be6005fb2df841e3f8f96838703272a63d5416aa3ed64632d94792418c0d</code></p><pre>          &quot;token&quot;: &quot;0x06000673&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000673&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.UTF8Marshaler&quot;,
+            &quot;name&quot;: &quot;CleanUpNativeData&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;20010118&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 9,
+          &quot;ilSha256&quot;: &quot;56d896371de1fbf3e9feaeff8c235fefac08a45e509bf25a75b60fa5037f6397&quot;,
+          &quot;ilBytes&quot;: &quot;0003284800000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details></details><details id="S04" class="source-confirmed"><summary>S04 · native PE导出IMVS_SaveSolution → 非转发ordinal637/RVA0x646470→完整入口范围 · source-confirmed</summary><p>所选native SDK导出IMVS_SaveSolution ordinal637、RVA0x646470、首选VA0x180646470，EAT不在导出目录内且非转发。PE .pdata唯一主记录为[0x646470,0x646584)，无chain/handler标记，原入口78条指令/276字节；新原件字节hash与旧batch7记录一致。dumpbin为静态反汇编工具，不载入目标DLL执行。</p><p>待核：首选VA不是运行时ASLR基址；.pdata范围不证明全部语言级异常funclet或磁盘事务。</p><details><summary>IMVS_SaveSolution · 6–20</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  0000000180646470: 48 89 5C 24 08     mov         qword ptr [rsp+8],rbx
+  0000000180646475: 48 89 6C 24 10     mov         qword ptr [rsp+10h],rbp
+  000000018064647A: 48 89 74 24 18     mov         qword ptr [rsp+18h],rsi
+  000000018064647F: 48 89 7C 24 20     mov         qword ptr [rsp+20h],rdi
+  0000000180646484: 41 56              push        r14
+  0000000180646486: 48 83 EC 40        sub         rsp,40h
+  000000018064648A: 49 8B E8           mov         rbp,r8
+  000000018064648D: 4C 8B F2           mov         r14,rdx
+  0000000180646490: 48 8B F9           mov         rdi,rcx
+  0000000180646493: E8 D8 EC FF FF     call        0000000180645170
+  0000000180646498: 48 8B F0           mov         rsi,rax
+  000000018064649B: 48 85 C0           test        rax,rax
+  000000018064649E: 74 1E              je          00000001806464BE
+  00000001806464A0: 48 8B 08           mov         rcx,qword ptr [rax]
+  00000001806464A3: 48 8B 01           mov         rax,qword ptr [rcx]</pre></details><details><summary>Original export location · 12–21</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.native.json · original-native-static-pe · SHA bb4c42903eaf20396e5af7d22491d64cd446de1e117dd72f59259f4f8db9b802</code></p><pre>  &quot;export&quot;: {
+    &quot;name&quot;: &quot;IMVS_SaveSolution&quot;,
+    &quot;ordinal&quot;: 637,
+    &quot;rva&quot;: 6579312,
+    &quot;va&quot;: 6449030256,
+    &quot;eatEntryFileOffset&quot;: 12728408,
+    &quot;forwarder&quot;: null,
+    &quot;fileOffset&quot;: 6576240
+  },
+  &quot;exceptionDirectory&quot;: {</pre></details></details><details id="S05" class="source-confirmed"><summary>S05 · IMVS_SaveSolution入口寄存器/栈 → 保留handle/path/password；第五参数栈转交 · source-confirmed</summary><p>按所选x64调用边界记录：入口RCX保存到RDI、RDX保存到R14、R8保存到RBP；push R14+sub rsp,0x40使当前rsp比入口低0x48。0x180646553读取[rsp+0x70]，对应入口rsp+0x28的第五位置，写入最终call前[rsp+0x20]。R9在本入口没有显式保存/重建；此前存在多个直接/间接callee调用，不能从显示签名或只设置部分寄存器推断其实际值已保留或被丢弃。</p><p>待核：pData/R9贯穿各callee及IAT调用的全活性没有闭合；本专题不声称native整体忽略附加数据。</p><details><summary>IMVS_SaveSolution · 12–21</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  000000018064648A: 49 8B E8           mov         rbp,r8
+  000000018064648D: 4C 8B F2           mov         r14,rdx
+  0000000180646490: 48 8B F9           mov         rdi,rcx
+  0000000180646493: E8 D8 EC FF FF     call        0000000180645170
+  0000000180646498: 48 8B F0           mov         rsi,rax
+  000000018064649B: 48 85 C0           test        rax,rax
+  000000018064649E: 74 1E              je          00000001806464BE
+  00000001806464A0: 48 8B 08           mov         rcx,qword ptr [rax]
+  00000001806464A3: 48 8B 01           mov         rax,qword ptr [rcx]
+  00000001806464A6: 48 3B C1           cmp         rax,rcx</pre></details><details><summary>IMVS_SaveSolution · 72–81</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  0000000180646553: 8B 44 24 70        mov         eax,dword ptr [rsp+70h]
+  0000000180646557: 48 8D 0D 82 9D 65  lea         rcx,[0000000180CA02E0h]
+                    00
+  000000018064655E: 4C 8B C5           mov         r8,rbp
+  0000000180646561: 49 8B D6           mov         rdx,r14
+  0000000180646564: 89 44 24 20        mov         dword ptr [rsp+20h],eax
+  0000000180646568: E8 33 F6 01 00     call        0000000180665BA0
+  000000018064656D: 8B D8              mov         ebx,eax
+  000000018064656F: 85 C0              test        eax,eax
+  0000000180646571: 75 A0              jne         0000000180646513</pre></details></details><details id="S06" class="source-confirmed"><summary>S06 · 调用0x180645170后的列表检查 → 缺失/不匹配返回0xE0000006 · source-confirmed</summary><p>入口将0x180645170返回值存RSI；null、首节点等于哨兵或循环找不到[node+0x10]==原handle都进入0xE0000006返回。找到节点后取[node+0x18]到RBX，null同样拒绝。0x180645170原体返回/建立全局0x180CA0130内容，含其它分配/构造调用；没有把此不透明对象命名成已确认的SDK服务实例。</p><p>待核：原链表具体类型、对象注册和并发所有权未恢复，不根据布局推定所有handle有效性规则。</p><details><summary>IMVS_SaveSolution · 15–42</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  0000000180646493: E8 D8 EC FF FF     call        0000000180645170
+  0000000180646498: 48 8B F0           mov         rsi,rax
+  000000018064649B: 48 85 C0           test        rax,rax
+  000000018064649E: 74 1E              je          00000001806464BE
+  00000001806464A0: 48 8B 08           mov         rcx,qword ptr [rax]
+  00000001806464A3: 48 8B 01           mov         rax,qword ptr [rcx]
+  00000001806464A6: 48 3B C1           cmp         rax,rcx
+  00000001806464A9: 74 13              je          00000001806464BE
+  00000001806464AB: 0F 1F 44 00 00     nop         dword ptr [rax+rax]
+  00000001806464B0: 48 39 78 10        cmp         qword ptr [rax+10h],rdi
+  00000001806464B4: 74 28              je          00000001806464DE
+  00000001806464B6: 48 8B 00           mov         rax,qword ptr [rax]
+  00000001806464B9: 48 3B C1           cmp         rax,rcx
+  00000001806464BC: 75 F2              jne         00000001806464B0
+  00000001806464BE: B8 06 00 00 E0     mov         eax,0E0000006h
+  00000001806464C3: 48 8B 5C 24 50     mov         rbx,qword ptr [rsp+50h]
+  00000001806464C8: 48 8B 6C 24 58     mov         rbp,qword ptr [rsp+58h]
+  00000001806464CD: 48 8B 74 24 60     mov         rsi,qword ptr [rsp+60h]
+  00000001806464D2: 48 8B 7C 24 68     mov         rdi,qword ptr [rsp+68h]
+  00000001806464D7: 48 83 C4 40        add         rsp,40h
+  00000001806464DB: 41 5E              pop         r14
+  00000001806464DD: C3                 ret
+  00000001806464DE: 48 8B 58 18        mov         rbx,qword ptr [rax+18h]
+  00000001806464E2: 48 85 DB           test        rbx,rbx
+  00000001806464E5: 74 D7              je          00000001806464BE
+  00000001806464E7: 48 8D 4C 24 30     lea         rcx,[rsp+30h]
+  00000001806464EC: 48 8B D3           mov         rdx,rbx
+  00000001806464EF: E8 7C AB 9B FF     call        0000000180001070</pre></details><details><summary>direct_645170 · 6–50</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/direct_645170.region0.assembly.txt · original-native-static-disassembly · SHA 768086ea1b9103b4947865f9e1f598fe093b411c71aa9a4c8cc4c3c039c6090c</code></p><pre>  0000000180645170: 40 53              push        rbx
+  0000000180645172: 48 83 EC 40        sub         rsp,40h
+  0000000180645176: 48 C7 44 24 20 FE  mov         qword ptr [rsp+20h],0FFFFFFFFFFFFFFFEh
+                    FF FF FF
+  000000018064517F: 48 8B 05 AA AF 65  mov         rax,qword ptr [0000000180CA0130h]
+                    00
+  0000000180645186: 48 85 C0           test        rax,rax
+  0000000180645189: 75 68              jne         00000001806451F3
+  000000018064518B: 48 8D 15 EE B0 65  lea         rdx,[0000000180CA0280h]
+                    00
+  0000000180645192: 48 8D 4C 24 28     lea         rcx,[rsp+28h]
+  0000000180645197: E8 D4 BE 9B FF     call        0000000180001070
+  000000018064519C: 90                 nop
+  000000018064519D: 48 8D 15 65 98 65  lea         rdx,[0000000180C9EA09h]
+                    00
+  00000001806451A4: B9 10 00 00 00     mov         ecx,10h
+  00000001806451A9: E8 02 31 3A 00     call        00000001809E82B0
+  00000001806451AE: 48 8B D8           mov         rbx,rax
+  00000001806451B1: 48 89 44 24 50     mov         qword ptr [rsp+50h],rax
+  00000001806451B6: 48 85 C0           test        rax,rax
+  00000001806451B9: 74 1E              je          00000001806451D9
+  00000001806451BB: 48 C7 00 00 00 00  mov         qword ptr [rax],0
+                    00
+  00000001806451C2: 48 C7 40 08 00 00  mov         qword ptr [rax+8],0
+                    00 00
+  00000001806451CA: 45 33 C0           xor         r8d,r8d
+  00000001806451CD: 33 D2              xor         edx,edx
+  00000001806451CF: E8 3C 01 00 00     call        0000000180645310
+  00000001806451D4: 48 89 03           mov         qword ptr [rbx],rax
+  00000001806451D7: EB 02              jmp         00000001806451DB
+  00000001806451D9: 33 DB              xor         ebx,ebx
+  00000001806451DB: 48 89 1D 4E AF 65  mov         qword ptr [0000000180CA0130h],rbx
+                    00
+  00000001806451E2: 48 8D 4C 24 28     lea         rcx,[rsp+28h]
+  00000001806451E7: E8 C4 BE 9B FF     call        00000001800010B0
+  00000001806451EC: 48 8B 05 3D AF 65  mov         rax,qword ptr [0000000180CA0130h]
+                    00
+  00000001806451F3: 48 83 C4 40        add         rsp,40h
+  00000001806451F7: 5B                 pop         rbx
+  00000001806451F8: C3                 ret
+
+  Summary
+
+      A38000 .text
+</pre></details></details><details id="S07" class="source-confirmed"><summary>S07 · 0x180001070及第二次列表遍历 → 对象一致性门与显式清理调用 · source-confirmed</summary><p>找到非零RBX后以RCX=&amp;stack30、RDX=RBX调用0x180001070；其体建立局部对象、读[RBX+8]并经IAT0x180A390F0调用。随后再遍历列表找[node+0x18]==RBX，并要求[node+0x10]非零且等于原handle；失败EBX=0xE0000006，经0x1800010B0清理返回。这里不凭调用形态猜测锁类型或已覆盖所有异常释放。</p><p>待核：0x1800010B0没有唯一.pdata记录；其32字节保留并列下一检索地址。IAT调用的寄存器副作用未闭合。</p><details><summary>IMVS_SaveSolution · 37–75</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  00000001806464DE: 48 8B 58 18        mov         rbx,qword ptr [rax+18h]
+  00000001806464E2: 48 85 DB           test        rbx,rbx
+  00000001806464E5: 74 D7              je          00000001806464BE
+  00000001806464E7: 48 8D 4C 24 30     lea         rcx,[rsp+30h]
+  00000001806464EC: 48 8B D3           mov         rdx,rbx
+  00000001806464EF: E8 7C AB 9B FF     call        0000000180001070
+  00000001806464F4: 48 8B 0E           mov         rcx,qword ptr [rsi]
+  00000001806464F7: 48 8B 01           mov         rax,qword ptr [rcx]
+  00000001806464FA: 48 3B C1           cmp         rax,rcx
+  00000001806464FD: 74 0F              je          000000018064650E
+  00000001806464FF: 90                 nop
+  0000000180646500: 48 39 58 18        cmp         qword ptr [rax+18h],rbx
+  0000000180646504: 74 1B              je          0000000180646521
+  0000000180646506: 48 8B 00           mov         rax,qword ptr [rax]
+  0000000180646509: 48 3B C1           cmp         rax,rcx
+  000000018064650C: 75 F2              jne         0000000180646500
+  000000018064650E: BB 06 00 00 E0     mov         ebx,0E0000006h
+  0000000180646513: 48 8D 4C 24 30     lea         rcx,[rsp+30h]
+  0000000180646518: E8 93 AB 9B FF     call        00000001800010B0
+  000000018064651D: 8B C3              mov         eax,ebx
+  000000018064651F: EB A2              jmp         00000001806464C3
+  0000000180646521: 48 8B 48 10        mov         rcx,qword ptr [rax+10h]
+  0000000180646525: 48 85 C9           test        rcx,rcx
+  0000000180646528: 74 E4              je          000000018064650E
+  000000018064652A: 48 3B CF           cmp         rcx,rdi
+  000000018064652D: 75 DF              jne         000000018064650E
+  000000018064652F: 8B 05 A3 9D 65 00  mov         eax,dword ptr [0000000180CA02D8h]
+  0000000180646535: A8 01              test        al,1
+  0000000180646537: 75 1A              jne         0000000180646553
+  0000000180646539: 83 C8 01           or          eax,1
+  000000018064653C: 89 05 96 9D 65 00  mov         dword ptr [0000000180CA02D8h],eax
+  0000000180646542: E8 39 A1 01 00     call        0000000180660680
+  0000000180646547: 48 8D 0D 62 43 3E  lea         rcx,[0000000180A2A8B0h]
+                    00
+  000000018064654E: E8 05 1A 3A 00     call        00000001809E7F58
+  0000000180646553: 8B 44 24 70        mov         eax,dword ptr [rsp+70h]
+  0000000180646557: 48 8D 0D 82 9D 65  lea         rcx,[0000000180CA02E0h]
+                    00
+  000000018064655E: 4C 8B C5           mov         r8,rbp</pre></details><details><summary>direct_1070 · 6–26</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/direct_1070.region0.assembly.txt · original-native-static-disassembly · SHA 0af84984925c5ff88e33fac81163856828725b4a5ab65651bb86da5ed774229a</code></p><pre>  0000000180001070: 48 89 5C 24 08     mov         qword ptr [rsp+8],rbx
+  0000000180001075: 57                 push        rdi
+  0000000180001076: 48 83 EC 20        sub         rsp,20h
+  000000018000107A: 48 8D 05 A7 DA A3  lea         rax,[0000000180A3EB28h]
+                    00
+  0000000180001081: 48 8B F9           mov         rdi,rcx
+  0000000180001084: 48 8B DA           mov         rbx,rdx
+  0000000180001087: 48 89 01           mov         qword ptr [rcx],rax
+  000000018000108A: 48 8B 4A 08        mov         rcx,qword ptr [rdx+8]
+  000000018000108E: FF 15 5C 80 A3 00  call        qword ptr [0000000180A390F0h]
+  0000000180001094: 48 89 5F 08        mov         qword ptr [rdi+8],rbx
+  0000000180001098: 48 8B 5C 24 30     mov         rbx,qword ptr [rsp+30h]
+  000000018000109D: 48 8B C7           mov         rax,rdi
+  00000001800010A0: 48 83 C4 20        add         rsp,20h
+  00000001800010A4: 5F                 pop         rdi
+  00000001800010A5: C3                 ret
+
+  Summary
+
+      A38000 .text
+</pre></details></details><details id="S08" class="source-confirmed"><summary>S08 · 一致性门后的全局bit与初始化 → 条件初始化再进入具体分派call · source-confirmed</summary><p>读取0x180CA02D8最低bit；未置位时先写bit，再call0x180660680，随后RCX=0x180A2A8B0交0x1809E7F58。之后RCX取0x180CA02E0、RDX取原path/R14、R8取原password/RBP并转交第五栈参数，call0x180665BA0。两个初始化callee都有专属完整范围，但名字/全局对象语义未通过原符号证明；不称其为具体writer。</p><p>待核：bit先写、callee抛出/并发访问、0x180CA02E0具体类型及初始化失败后状态未知。</p><details><summary>IMVS_SaveSolution · 63–87</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  000000018064652F: 8B 05 A3 9D 65 00  mov         eax,dword ptr [0000000180CA02D8h]
+  0000000180646535: A8 01              test        al,1
+  0000000180646537: 75 1A              jne         0000000180646553
+  0000000180646539: 83 C8 01           or          eax,1
+  000000018064653C: 89 05 96 9D 65 00  mov         dword ptr [0000000180CA02D8h],eax
+  0000000180646542: E8 39 A1 01 00     call        0000000180660680
+  0000000180646547: 48 8D 0D 62 43 3E  lea         rcx,[0000000180A2A8B0h]
+                    00
+  000000018064654E: E8 05 1A 3A 00     call        00000001809E7F58
+  0000000180646553: 8B 44 24 70        mov         eax,dword ptr [rsp+70h]
+  0000000180646557: 48 8D 0D 82 9D 65  lea         rcx,[0000000180CA02E0h]
+                    00
+  000000018064655E: 4C 8B C5           mov         r8,rbp
+  0000000180646561: 49 8B D6           mov         rdx,r14
+  0000000180646564: 89 44 24 20        mov         dword ptr [rsp+20h],eax
+  0000000180646568: E8 33 F6 01 00     call        0000000180665BA0
+  000000018064656D: 8B D8              mov         ebx,eax
+  000000018064656F: 85 C0              test        eax,eax
+  0000000180646571: 75 A0              jne         0000000180646513
+  0000000180646573: 48 8D 4C 24 30     lea         rcx,[rsp+30h]
+  0000000180646578: E8 33 AB 9B FF     call        00000001800010B0
+  000000018064657D: 8B C3              mov         eax,ebx
+  000000018064657F: E9 3F FF FF FF     jmp         00000001806464C3
+
+  Summary</pre></details><details><summary>direct_660680 · 6–27</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/direct_660680.region0.assembly.txt · original-native-static-disassembly · SHA 8ce1171acac429d4f84fb711f7dd25147c41b3d35978ce205c8bdcc4de9f8510</code></p><pre>  0000000180660680: 48 8B C4           mov         rax,rsp
+  0000000180660683: 48 89 48 08        mov         qword ptr [rax+8],rcx
+  0000000180660687: 57                 push        rdi
+  0000000180660688: 48 81 EC 80 00 00  sub         rsp,80h
+                    00
+  000000018066068F: 48 C7 40 98 FE FF  mov         qword ptr [rax-68h],0FFFFFFFFFFFFFFFEh
+                    FF FF
+  0000000180660697: 48 89 58 10        mov         qword ptr [rax+10h],rbx
+  000000018066069B: 48 89 70 18        mov         qword ptr [rax+18h],rsi
+  000000018066069F: 48 8D 35 3A FC 63  lea         rsi,[0000000180CA02E0h]
+                    00
+  00000001806606A6: 48 89 70 08        mov         qword ptr [rax+8],rsi
+  00000001806606AA: 48 8D 05 7F 32 46  lea         rax,[0000000180AC3930h]
+                    00
+  00000001806606B1: 48 89 05 28 FC 63  mov         qword ptr [0000000180CA02E0h],rax
+                    00
+  00000001806606B8: 33 DB              xor         ebx,ebx
+  00000001806606BA: 48 89 1D 27 FC 63  mov         qword ptr [0000000180CA02E8h],rbx
+                    00
+  00000001806606C1: 48 89 1D 28 FC 63  mov         qword ptr [0000000180CA02F0h],rbx
+                    00
+  00000001806606C8: 48 89 1D 29 FC 63  mov         qword ptr [0000000180CA02F8h],rbx</pre></details><details><summary>direct_9e7f58 · 6–17</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/direct_9e7f58.region0.assembly.txt · original-native-static-disassembly · SHA a982a1df45799a1b5a64ee5cb27bc70c88d53cc5ec6bab2c7e3ee9f0295c53f7</code></p><pre>  00000001809E7F58: 48 83 EC 28        sub         rsp,28h
+  00000001809E7F5C: E8 47 FF FF FF     call        00000001809E7EA8
+  00000001809E7F61: 48 F7 D8           neg         rax
+  00000001809E7F64: 1B C0              sbb         eax,eax
+  00000001809E7F66: F7 D8              neg         eax
+  00000001809E7F68: FF C8              dec         eax
+  00000001809E7F6A: 48 83 C4 28        add         rsp,28h
+  00000001809E7F6E: C3                 ret
+
+  Summary
+
+      A38000 .text</pre></details></details><details id="S09" class="source-confirmed"><summary>S09 · dispatch返回值→entry返回 → 状态转交、清理与函数末尾关系 · source-confirmed</summary><p>0x180665BA0返回EAX保存到EBX；非零跳到共同清理段0x180646513，零走0x180646573另一路同样call0x1800010B0；两路把EBX还原EAX并回共同epilogue ret。最终分派是call，后续跳转都在所选入口范围内，不是直接tailcall到磁盘writer；本层没有把零返回转成已持久化证明。</p><p>待核：callee异常/清理异常传播未全部确定，返回int不等于保存回调已到达或文件可重开。</p><details><summary>IMVS_SaveSolution · 78–89</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  0000000180646568: E8 33 F6 01 00     call        0000000180665BA0
+  000000018064656D: 8B D8              mov         ebx,eax
+  000000018064656F: 85 C0              test        eax,eax
+  0000000180646571: 75 A0              jne         0000000180646513
+  0000000180646573: 48 8D 4C 24 30     lea         rcx,[rsp+30h]
+  0000000180646578: E8 33 AB 9B FF     call        00000001800010B0
+  000000018064657D: 8B C3              mov         eax,ebx
+  000000018064657F: E9 3F FF FF FF     jmp         00000001806464C3
+
+  Summary
+
+      A38000 .text</pre></details><details><summary>IMVS_SaveSolution · 53–62</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/IMVS_SaveSolution.region0.assembly.txt · original-native-static-disassembly · SHA 735fcd7c817efc533b6c833db014912e0abaefafe60f7eec21734fb421ba9c67</code></p><pre>  000000018064650E: BB 06 00 00 E0     mov         ebx,0E0000006h
+  0000000180646513: 48 8D 4C 24 30     lea         rcx,[rsp+30h]
+  0000000180646518: E8 93 AB 9B FF     call        00000001800010B0
+  000000018064651D: 8B C3              mov         eax,ebx
+  000000018064651F: EB A2              jmp         00000001806464C3
+  0000000180646521: 48 8B 48 10        mov         rcx,qword ptr [rax+10h]
+  0000000180646525: 48 85 C9           test        rcx,rcx
+  0000000180646528: 74 E4              je          000000018064650E
+  000000018064652A: 48 3B CF           cmp         rcx,rdi
+  000000018064652D: 75 DF              jne         000000018064650E</pre></details></details><details id="S10" class="source-confirmed"><summary>S10 · 直接callee0x180665BA0 → 取到完整主体但不把其名称猜作落盘writer · source-confirmed</summary><p>原.pdata主体[0x665BA0,0x6664CE)共459条/2350字节，unwind flags=3并有handlerRVA0x9E885C，语言特定EH数据/funclet仍未知。入口把RCX/RDX/R8保留到R13/R14/R15；可见path/password非零门、password终止字节扫描后length+1&lt;=0x20门、第五位置从当前rsp+0x960读取。其间多次使用R9作其它调用参数，不能凭此恢复导出入口R9全程含义。本文只到此直接边界及原汇编，不扩MQ/服务器/文件格式内部。</p><p>待核：其它字符串/路径处理、异常handler、间接调用和最终存储服务未在此语义闭合；其完整汇编不等于完整反编译规格。</p><details><summary>direct_665ba0 · 6–100</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/direct_665ba0.region0.assembly.txt · original-native-static-disassembly · SHA bb85d0da3f641e07bd575404238191b8395ca0eb92b622963043c580b6c7cb1c</code></p><pre>  0000000180665BA0: 40 53              push        rbx
+  0000000180665BA2: 56                 push        rsi
+  0000000180665BA3: 57                 push        rdi
+  0000000180665BA4: 41 54              push        r12
+  0000000180665BA6: 41 55              push        r13
+  0000000180665BA8: 41 56              push        r14
+  0000000180665BAA: 41 57              push        r15
+  0000000180665BAC: 48 81 EC 00 09 00  sub         rsp,900h
+                    00
+  0000000180665BB3: 48 C7 44 24 68 FE  mov         qword ptr [rsp+68h],0FFFFFFFFFFFFFFFEh
+                    FF FF FF
+  0000000180665BBC: 48 8B 05 BD F9 5C  mov         rax,qword ptr [0000000180C35580h]
+                    00
+  0000000180665BC3: 48 33 C4           xor         rax,rsp
+  0000000180665BC6: 48 89 84 24 F0 08  mov         qword ptr [rsp+00000000000008F0h],rax
+                    00 00
+  0000000180665BCE: 4D 8B F8           mov         r15,r8
+  0000000180665BD1: 4C 8B F2           mov         r14,rdx
+  0000000180665BD4: 4C 8B E9           mov         r13,rcx
+  0000000180665BD7: 48 89 4C 24 60     mov         qword ptr [rsp+60h],rcx
+  0000000180665BDC: B9 02 00 00 00     mov         ecx,2
+  0000000180665BE1: E8 2A C4 F3 FF     call        00000001805A2010
+  0000000180665BE6: 84 C0              test        al,al
+  0000000180665BE8: 74 28              je          0000000180665C12
+  0000000180665BEA: E8 81 C1 F3 FF     call        00000001805A1D70
+  0000000180665BEF: 48 8B C8           mov         rcx,rax
+  0000000180665BF2: C7 44 24 20 06 07  mov         dword ptr [rsp+20h],706h
+                    00 00
+  0000000180665BFA: 4C 8D 0D 97 FF 45  lea         r9,[0000000180AC5B98h]
+                    00
+  0000000180665C01: 4C 8D 05 D0 00 46  lea         r8,[0000000180AC5CD8h]
+                    00
+  0000000180665C08: BA 02 00 00 00     mov         edx,2
+  0000000180665C0D: E8 FE C2 F3 FF     call        00000001805A1F10
+  0000000180665C12: 4D 85 F6           test        r14,r14
+  0000000180665C15: 75 3D              jne         0000000180665C54
+  0000000180665C17: 41 8D 4E 04        lea         ecx,[r14+4]
+  0000000180665C1B: E8 F0 C3 F3 FF     call        00000001805A2010
+  0000000180665C20: 84 C0              test        al,al
+  0000000180665C22: 0F 84 7E 08 00 00  je          00000001806664A6
+  0000000180665C28: E8 43 C1 F3 FF     call        00000001805A1D70
+  0000000180665C2D: 48 8B C8           mov         rcx,rax
+  0000000180665C30: C7 44 24 20 08 07  mov         dword ptr [rsp+20h],708h
+                    00 00
+  0000000180665C38: 4C 8D 0D 59 FF 45  lea         r9,[0000000180AC5B98h]
+                    00
+  0000000180665C3F: 4C 8D 05 3A 47 45  lea         r8,[0000000180ABA380h]
+                    00
+  0000000180665C46: 41 8D 56 04        lea         edx,[r14+4]
+  0000000180665C4A: E8 C1 C2 F3 FF     call        00000001805A1F10
+  0000000180665C4F: E9 52 08 00 00     jmp         00000001806664A6
+  0000000180665C54: 4D 85 FF           test        r15,r15
+  0000000180665C57: 75 3D              jne         0000000180665C96
+  0000000180665C59: 41 8D 4F 04        lea         ecx,[r15+4]
+  0000000180665C5D: E8 AE C3 F3 FF     call        00000001805A2010
+  0000000180665C62: 84 C0              test        al,al
+  0000000180665C64: 0F 84 3C 08 00 00  je          00000001806664A6
+  0000000180665C6A: E8 01 C1 F3 FF     call        00000001805A1D70
+  0000000180665C6F: 48 8B C8           mov         rcx,rax
+  0000000180665C72: C7 44 24 20 09 07  mov         dword ptr [rsp+20h],709h
+                    00 00
+  0000000180665C7A: 4C 8D 0D 17 FF 45  lea         r9,[0000000180AC5B98h]
+                    00
+  0000000180665C81: 4C 8D 05 18 00 46  lea         r8,[0000000180AC5CA0h]
+                    00
+  0000000180665C88: 41 8D 57 04        lea         edx,[r15+4]
+  0000000180665C8C: E8 7F C2 F3 FF     call        00000001805A1F10
+  0000000180665C91: E9 10 08 00 00     jmp         00000001806664A6
+  0000000180665C96: 48 83 CE FF        or          rsi,0FFFFFFFFFFFFFFFFh
+  0000000180665C9A: 48 8B C6           mov         rax,rsi
+  0000000180665C9D: 0F 1F 00           nop         dword ptr [rax]
+  0000000180665CA0: 48 FF C0           inc         rax
+  0000000180665CA3: 41 80 3C 07 00     cmp         byte ptr [r15+rax],0
+  0000000180665CA8: 75 F6              jne         0000000180665CA0
+  0000000180665CAA: 48 FF C0           inc         rax
+  0000000180665CAD: 48 83 F8 20        cmp         rax,20h
+  0000000180665CB1: 76 3F              jbe         0000000180665CF2
+  0000000180665CB3: B9 04 00 00 00     mov         ecx,4
+  0000000180665CB8: E8 53 C3 F3 FF     call        00000001805A2010
+  0000000180665CBD: 84 C0              test        al,al
+  0000000180665CBF: 0F 84 E1 07 00 00  je          00000001806664A6
+  0000000180665CC5: E8 A6 C0 F3 FF     call        00000001805A1D70
+  0000000180665CCA: 48 8B C8           mov         rcx,rax
+  0000000180665CCD: C7 44 24 20 0A 07  mov         dword ptr [rsp+20h],70Ah
+                    00 00
+  0000000180665CD5: 4C 8D 0D BC FE 45  lea         r9,[0000000180AC5B98h]
+                    00
+  0000000180665CDC: 4C 8D 05 6D FF 45  lea         r8,[0000000180AC5C50h]
+                    00
+  0000000180665CE3: BA 04 00 00 00     mov         edx,4
+  0000000180665CE8: E8 23 C2 F3 FF     call        00000001805A1F10
+  0000000180665CED: E9 B4 07 00 00     jmp         00000001806664A6
+  0000000180665CF2: B9 02 00 00 00     mov         ecx,2
+  0000000180665CF7: E8 14 C3 F3 FF     call        00000001805A2010
+  0000000180665CFC: 84 C0              test        al,al</pre></details><details><summary>direct_665ba0 · 119–133</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.resources/direct_665ba0.region0.assembly.txt · original-native-static-disassembly · SHA bb85d0da3f641e07bd575404238191b8395ca0eb92b622963043c580b6c7cb1c</code></p><pre>  0000000180665D43: 8B 84 24 60 09 00  mov         eax,dword ptr [rsp+0000000000000960h]
+                    00
+  0000000180665D4A: 89 44 24 28        mov         dword ptr [rsp+28h],eax
+  0000000180665D4E: C7 44 24 20 0E 07  mov         dword ptr [rsp+20h],70Eh
+                    00 00
+  0000000180665D56: 4C 8D 0D 3B FE 45  lea         r9,[0000000180AC5B98h]
+                    00
+  0000000180665D5D: 4C 8D 05 A4 00 46  lea         r8,[0000000180AC5E08h]
+                    00
+  0000000180665D64: BA 02 00 00 00     mov         edx,2
+  0000000180665D69: E8 A2 C1 F3 FF     call        00000001805A1F10
+  0000000180665D6E: C7 44 24 50 FF 00  mov         dword ptr [rsp+50h],0E00000FFh
+                    00 E0
+  0000000180665D76: 49 8B D6           mov         rdx,r14
+  0000000180665D79: 48 8D 8C 24 B0 00  lea         rcx,[rsp+00000000000000B0h]</pre></details></details><details id="U01" class="unknown"><summary>U01 · REA analyze_function(IMVS_SaveSolution) → provider_unavailable精确失败与可恢复地址 · unknown</summary><p>REA open_binary对同SDK原件成功，analyze_function精确返回provider_unavailable：Ghidra未配置/缺Java，Hopper不支持Win32，IDA未配置。本批用现有MSVC dumpbin静态复核代替缺失的反编译展示，没有配置新引擎。下一静态检索地址为SDK首选VA0x180665BA0、未定界清理0x1800010B0及其IAT边界；工具恢复后需重新按同SHA绑定原件，不能使用别的活动目标。</p><p>待核：伪代码/高层P-code不可用；并非没有原字节或可以以合理设计填补的许可。</p><details><summary>REA exact analysis failure · 2–9</summary><p><code>docs/architecture-recovery/solution-save-native-boundary-audit.rea-analyze-failure.json · tool-failure-evidence · SHA 6073c0cf4effd005b0d892fa3b8ff93c796fcec8541d0c58d5a45b2e3ee0f240</code></p><pre>  &quot;content&quot;: [
+    {
+      &quot;type&quot;: &quot;text&quot;,
+      &quot;text&quot;: &quot;{\&quot;error\&quot;:{\&quot;code\&quot;:\&quot;provider_unavailable\&quot;,\&quot;category\&quot;:\&quot;unavailable\&quot;,\&quot;message\&quot;:\&quot;The selected analysis provider is unavailable. Review the reported local diagnostics or run `rea doctor`, then retry.\&quot;,\&quot;retryable\&quot;:true,\&quot;remediation\&quot;:{\&quot;action\&quot;:\&quot;The selected analysis provider is unavailable. Review the reported local diagnostics or run `rea doctor`, then retry.\&quot;},\&quot;details\&quot;:{\&quot;operation\&quot;:\&quot;analyze_function\&quot;,\&quot;selection_reason\&quot;:\&quot;provider_unavailable\&quot;,\&quot;requested_provider_id\&quot;:\&quot;auto\&quot;,\&quot;candidate_ids\&quot;:[\&quot;ghidra\&quot;,\&quot;hopper\&quot;,\&quot;ida\&quot;],\&quot;rejections\&quot;:[{\&quot;provider_id\&quot;:\&quot;ghidra\&quot;,\&quot;code\&quot;:\&quot;not_configured\&quot;,\&quot;reason\&quot;:\&quot;Set GHIDRA_INSTALL_DIR to an extracted Ghidra 12.1.x release directory.\&quot;,\&quot;diagnostics\&quot;:{\&quot;install_dir\&quot;:null,\&quot;analyze_headless_path\&quot;:null,\&quot;native_decompiler_path\&quot;:null,\&quot;application_properties_path\&quot;:null,\&quot;provider_version\&quot;:null,\&quot;java_command\&quot;:\&quot;java.exe\&quot;,\&quot;java_home\&quot;:null,\&quot;java_version\&quot;:null,\&quot;platform\&quot;:\&quot;win32\&quot;,\&quot;architecture\&quot;:\&quot;x64\&quot;,\&quot;checks\&quot;:[{\&quot;name\&quot;:\&quot;configuration\&quot;,\&quot;ok\&quot;:false,\&quot;code\&quot;:\&quot;not_configured\&quot;,\&quot;detail\&quot;:\&quot;GHIDRA_INSTALL_DIR is not set\&quot;},{\&quot;name\&quot;:\&quot;platform\&quot;,\&quot;ok\&quot;:true,\&quot;code\&quot;:null,\&quot;detail\&quot;:\&quot;win32\&quot;},{\&quot;name\&quot;:\&quot;architecture\&quot;,\&quot;ok\&quot;:true,\&quot;code\&quot;:null,\&quot;detail\&quot;:\&quot;x64\&quot;},{\&quot;name\&quot;:\&quot;installation\&quot;,\&quot;ok\&quot;:false,\&quot;code\&quot;:\&quot;executable_missing\&quot;,\&quot;detail\&quot;:\&quot;Ghidra application properties unavailable\&quot;},{\&quot;name\&quot;:\&quot;version\&quot;,\&quot;ok\&quot;:false,\&quot;code\&quot;:\&quot;version_unresolved\&quot;,\&quot;detail\&quot;:\&quot;unknown\&quot;},{\&quot;name\&quot;:\&quot;headless\&quot;,\&quot;ok\&quot;:false,\&quot;code\&quot;:\&quot;executable_missing\&quot;,\&quot;detail\&quot;:\&quot;analyzeHeadless unavailable\&quot;},{\&quot;name\&quot;:\&quot;native_decompiler\&quot;,\&quot;ok\&quot;:false,\&quot;code\&quot;:\&quot;executable_missing\&quot;,\&quot;detail\&quot;:\&quot;Matching native decompiler for win32/x64 was not found\&quot;},{\&quot;name\&quot;:\&quot;java\&quot;,\&quot;ok\&quot;:false,\&quot;code\&quot;:\&quot;runtime_missing\&quot;,\&quot;detail\&quot;:\&quot;java.exe\&quot;}]}},{\&quot;provider_id\&quot;:\&quot;hopper\&quot;,\&quot;code\&quot;:\&quot;unsupported_host\&quot;,\&quot;reason\&quot;:\&quot;Hopper integration is not supported on win32.\&quot;,\&quot;diagnostics\&quot;:{\&quot;launcher_path\&quot;:\&quot;/Applications/Hopper Disassembler.app/Contents/MacOS/hopper\&quot;,\&quot;platform\&quot;:\&quot;win32\&quot;}},{\&quot;provider_id\&quot;:\&quot;ida\&quot;,\&quot;code\&quot;:\&quot;not_configured\&quot;,\&quot;reason\&quot;:\&quot;Set REA_IDA_MCP_CONFIG to an upstream IDA MCP JSON registration; see docs/ida-provider.md.\&quot;,\&quot;diagnostics\&quot;:{\&quot;configured\&quot;:false,\&quot;live_connection_probed\&quot;:false}}]}}}&quot;
+    }
+  ],
+  &quot;isError&quot;: true
+}</pre></details></details><details id="U02" class="unknown"><summary>U02 · 新确定的原native调用边界 → 实际落盘、.sol内容及服务回调仍未知 · unknown</summary><p>本专题定位并取回原导出入口和直接分派体，保留callee地址、返回码、ABI活性与EH边界；没有运行SDK/DLL/服务，也没有写.sol。既有execution-storage S06的磁盘打包/密码/事务/回调生产未知不能因本批汇编取回自动关闭。</p><p>待核：实际加载路径、handle对象、nDataLen/pData值、native异步消费和回调时序、格式兼容及断电行为仍需独立原体或授权运行证据。</p></details><p>主框架实施41/96＝42.71%（32包×3具名单元），专题增量0。原体取回不代表原生行为或实施已闭合。</p></html><script data-document-web src="document-web-links.js"></script>

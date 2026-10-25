@@ -1,0 +1,79 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十二轮 J08：标定板与畸变标定的结果显示/失败切换</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass12-board-distortion-display.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第十二轮-j08标定板与畸变标定的结果显示失败切换">第十二轮 J08：标定板与畸变标定的结果显示/失败切换</a></p><p style="margin-left:14px"><a href="#原版资源和托管入口">原版资源和托管入口</a></p><p style="margin-left:14px"><a href="#当前源码链与离屏主窗实测">当前源码链与离屏主窗实测</a></p><p style="margin-left:14px"><a href="#j08-裁决及下一有限证据">J08 裁决及下一有限证据</a></p></details><h1 id="第十二轮-j08标定板与畸变标定的结果显示失败切换">第十二轮 J08：标定板与畸变标定的结果显示/失败切换</h1><p>仅当前“标定”分类两工具及其必要主框架显示桥。原安装版与反编译体只读；当前用离屏真实 <code>MainWindow</code> 执行成功→失败→切换节点。<strong>当前结果显示状态是实测；原厂同输入桌面显示没有实跑，不据此判视觉/清理等价。</strong> 不改产品、<code>tool-plugins</code> 或共享文件。</p>
+<h2 id="原版资源和托管入口">原版资源和托管入口</h2><table>
+<thead>
+<tr>
+<th>原件/成员</th>
+<th>SHA256</th>
+<th>源码支持的结论与限度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSCalibBoardCalibModu/IMVSCalibBoardCalibModuDisplay.xml</code></td>
+<td><code>01B6AA734E09BB8284F09CD13CDCABD02115E26B01C0BA218A01DBC960F041D6</code></td>
+<td><code>InImage</code> 图、<code>Show Text</code>、标定点/原点/坐标、检测 ROI、两个同名 <code>Data Record</code> 和 <code>Result List</code> 各自按 Mapping 取值；同名记录不可当唯一键覆盖。原板 <code>ProcessOutput @0x180020630</code> 的状态先行、成功后点/指标见第八轮报告。</td>
+</tr>
+<tr>
+<td><code>.../IMVSImageCalibModu/IMVSImageCalibModuDisplay.xml</code></td>
+<td><code>B63F5BD17DAEBFE62D004BC963D58FB74CC86CC8CF113644271F86F27CDFF7E7</code></td>
+<td><code>InImage</code> 默认显示，<code>Display Post-Correction Image</code> 映射 <code>PostCorrectionImageData</code> 且默认 <code>IsDisplay=false</code>；标定点、误差文字、ROI、记录/结果列表有独立特征映射。<code>PostCorrectionImageData</code> 是 <code>PostCorrectionImage</code> IMAGE 组合成员，不是另一个独立输出端口。原 <code>ProcessOutput @0x180020b70</code> 的非原子字段发布见第九轮报告。</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ParamRoot.cs</code>，<code>InitNode/InitVmIOs/GetDisplayList</code></td>
+<td><code>41D349894D2CFCB017F2840EBEB79D922A71B09A3F77F905F68DFD619435A24A</code></td>
+<td>用模块目录+<code>ModuleTypeName</code> 载入 <code>*Display.xml</code>，初始化显示对象 IO；显示来源是每模块的资源和 IO，而不是纯绘图常量。</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs</code>，<code>ModuleParams</code>、<code>RefreshImageList</code>、<code>RefreshShapeList</code>、<code>Dispose</code></td>
+<td><code>CEDA24B7FB93BCD9F02B77B23D42A839B1F737BF70CF3ABC6B7786D11765740E</code></td>
+<td>从 <code>ModuleParams.GetDisplayList()</code> 建图像/图形列表，维护记录计时和弱事件订阅，Dispose 脱钩。该托管入口只证明原资源如何进入显示模型；本轮没有原厂成功→失败→切节点的运行值/可见性 trace。</td>
+</tr>
+</tbody></table>
+<p>安装资源与当前派生资源字节 SHA 相同：<code>src/VisionPlugins.CalibrationBoard/Resources/Display.xml</code> 同 <code>01B6...041D6</code>；<code>src/VisionPlugins.DistortionCalibration/Resources/DistortionDisplay.xml</code> 同 <code>B63F...7E7</code>。这证明资源保真，<strong>不证明执行结果状态相同</strong>。</p>
+<h2 id="当前源码链与离屏主窗实测">当前源码链与离屏主窗实测</h2><p>当前 <code>CalibrationBoardPlugin.LastDisplay</code> 从同节点/同 scope <code>Snapshot.Inputs/Outputs</code> 构造 frame，并按声明顺序分别形成两个 <code>Data Record</code>，图形经 <code>ToolDisplayGraphics.Build</code>。当前 <code>DistortionCalibrationPlugin.LastDisplay</code> 将公开 <code>PostCorrectionImage</code> 映射为资源名 <code>PostCorrectionImageData</code>，<code>ToolDisplayImageLayers.Build</code> 生成原图与修正图层；<code>Fail</code> 只覆盖 <code>ModuStatus/ModuRunTime</code>，保留旧 <code>State.Outputs</code> 其他字段。Graph 层失败轮 <code>NodeRunRecord.Outputs</code> 可为空，但宿主 <code>RefreshToolDisplay</code> 在本节点 <code>results.ContainsKey</code> 时从插件 owned display state 拉取 frame；切换节点时它先执行 <code>Show(null)</code> 清旧图、记录和列表。<code>ToolDisplayImagePresenter.Show</code> 选择一个 base 图和可选 overlay，图像对象的资源 <code>IsDisplay</code> 与插件 layer 选择状态仍须区分。</p>
+<p>当前源码身份：<code>src/VisionPlugins.CalibrationBoard/CalibrationBoardDisplay.cs</code> SHA <code>51055B1F5FF390805A342479C905D574C86B2817254FCCF18A11879C4C7ACDB6</code>；<code>src/VisionPlugins.DistortionCalibration/DistortionCalibrationPlugin.cs</code> SHA <code>494A29CC3143890EF12E2570905BF13E90CDC3C28F2A7EB0BE393D6FDE7DA51E</code>；<code>src/VisionEditor/ToolDisplays.cs</code> SHA <code>F3AE89186549591A8A025FC8D36D66BC2B5EA959EC3ED293D3E1030BCDD0E656</code>；<code>src/VisionPluginContracts/ToolDisplayPresenter.cs</code> SHA <code>0148527F597E5DB2239B4EFAB3987CA992B2216317CD166A95F9F51F7238C6E2</code>。</p>
+<p>探针源 <code>tests/CalibrationBoardDistortionDisplay.Checks/Program.cs</code> SHA <code>010AFBE85D9192A7D812F6019DDA14CEAA2C080F1F6BEDAAF3C5BA85DE07114A</code>，工程 SHA <code>82B59BF4717EB98B8B6282294DE8AD81EE35A30F9FBDB02138F49E66BF8542ED</code>。调用真实 <code>MainWindow.RunProcedure</code>、实际 ImageSource→工具图和主窗 <code>RefreshRight/RefreshToolDisplay</code>；不直接伪造 display frame 或注入 results。运行：</p>
+<pre><code class="language-powershell">dotnet run --project tests/CalibrationBoardDistortionDisplay.Checks/CalibrationBoardDistortionDisplay.Checks.csproj -c Release -- analysis/joint-audit/pass12-cal-b-display/probe
+</code></pre>
+<p>最终退出码 0，<strong>11/11</strong>，<code>analysis/joint-audit/pass12-cal-b-display/fifth-run.log</code> SHA <code>A0D4F6F06BEF739231D60526FA97677966CED2A7DD0DB70B5585F53BB0C60057</code>，结构化输出 <code>probe/summary.json</code> SHA <code>A2C356A7D7C7A5E03523AFF579DA38C8EBEB4E25C54D84402C0F1CA2C2E94386</code>。</p>
+<table>
+<thead>
+<tr>
+<th>转换</th>
+<th>当前 <code>NodeRunRecord</code></th>
+<th>真实主窗所选 <code>ToolDisplayImagePresenter.Frame</code>、记录/列表</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>标定板 480×400 Gray8 棋盘 →</td>
+<td>Success</td>
+<td>有图、4 个 graphic、记录 208 字符、列表 10 列。棋盘为测试自造 <code>probe/board-valid.bmp</code> SHA <code>2D3260C121DC46450B77456A81618AA3D8F297F5BCE70398FDACBA998186CFD3</code>。</td>
+</tr>
+<tr>
+<td>同节点空白图 →</td>
+<td>NoMatch</td>
+<td>仍显示<strong>本轮输入图</strong>、0 个 graphic、失败记录 79 字符、列表列定义仍 10；没有旧标定点 graphic。空白夹具 SHA <code>EED3E49469D3E90FA5A2962614FDF8531D5CE747623AD401FBC6519AF44A6621</code>。</td>
+</tr>
+<tr>
+<td>切选图像源</td>
+<td>图层不重跑</td>
+<td>板工具 frame=null、记录空、列表 0 列。</td>
+</tr>
+<tr>
+<td>畸变 1000×1000 Mono8 SDK 板图 →</td>
+<td>Success</td>
+<td><code>InImage</code> 与 <code>Display Post-Correction Image</code> 两层均有 image，170 graphics、记录 40 字、列表 1 列。只读 fixture <code>worktrees/tool-plugins/analysis/distortion-calibration/trace-coded-boards/fixture.bmp</code> SHA <code>86E175CD993F9737380690A60F7BADA49935196691CA4509C93FF0066FADCC40</code>。两层<strong>可用于选择</strong>，未证明默认同时可见；原修正层 <code>IsDisplay=false</code>。</td>
+</tr>
+<tr>
+<td>同图但自动导出路径改 <code>.bad</code> →</td>
+<td>Failed</td>
+<td>owned LastDisplay 仍有前轮原图/修正图两层及 170 graphics；记录改为 60 字失败状态。该保留来自 <code>Fail</code> 仅覆盖状态/时间、宿主按节点存在拉取 owned frame，不能把图层失败 <code>NodeRunRecord.Outputs</code> 误称保留。</td>
+</tr>
+<tr>
+<td>切选图像源</td>
+<td>图层不重跑</td>
+<td>畸变工具 frame=null、记录空、列表 0 列；未把旧工具结果泄漏到所选源节点。</td>
+</tr>
+</tbody></table>
+<p>失败审计未抹去：<code>first-run.log</code> 缺测试工程 <code>System.IO</code>，<code>second-run.log</code>/<code>third-run.log</code> 在测试未调用 ImageSource <code>SubmitImage</code> 时源节点 <code>0xe000000f</code>、板跳过，<code>fourth-run.log</code> 把本地插件错写为静态 <code>ImageSourcePlugin.Id</code>；均为探针自身错误。第五次使用与第十轮板链同一棋盘构造、真实 <code>SubmitImage</code>，才计算 11 项通过。原始日志均在本轮忽略目录；没有干预其它任务进程。</p>
+<h2 id="j08-裁决及下一有限证据">J08 裁决及下一有限证据</h2><p>当前构建的上述两条具体显示/失败/切换边可关闭。畸变失败时旧图与点 graphic 保留是<strong>观察到的当前行为</strong>；原 <code>ProcessOutput</code> 非原子发布路径说明不能假定失败必清空，但未直接证明原版在同一文件扩展名错误后仍显示这些旧图或点。若要判断偏差，下一步只需对原厂受控实例的同一“先成功→自动导出失败→切节点”序列记录 <code>GetDisplayList</code> 图层对象值/可见状态与结果回调，或通过原托管 <code>ModuleDisplayDecorator</code> 结果刷新调用链加受控原模块输出复验；缺这一步不得自动清旧图。标定板也需原同图 NoMatch 的记录/图层差分，以及两项当前 UI 的默认选层/人工可见呈现。原配置窗口、全部图层勾选与缩放/像素级外观不由 11 项断言覆盖。J08 两工具<strong>整门仍开放</strong>，不重复正常夹具而扩称完整审核。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass12-board-distortion-display.md · SHA256 194706e130655ac61a70d57a895204891494a287e57e11873fb6ba2a5f9936a6<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

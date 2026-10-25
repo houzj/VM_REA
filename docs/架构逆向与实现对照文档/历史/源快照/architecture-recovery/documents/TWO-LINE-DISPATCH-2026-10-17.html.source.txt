@@ -1,0 +1,41 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>双线逆向调度记录（2026-10-17）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../TWO-LINE-DISPATCH-2026-10-17.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#双线逆向调度记录2026-10-17">双线逆向调度记录（2026-10-17）</a></p><p style="margin-left:14px"><a href="#起点与交付门槛">起点与交付门槛</a></p><p style="margin-left:14px"><a href="#已分派的插件线工作">已分派的插件线工作</a></p><p style="margin-left:14px"><a href="#主线当前工作工具发现与工具箱边界nfi-07">主线当前工作：工具发现与工具箱边界（NFI-07）</a></p><p style="margin-left:14px"><a href="#合流顺序">合流顺序</a></p></details><h1 id="双线逆向调度记录2026-10-17">双线逆向调度记录（2026-10-17）</h1><p>本记录由 <code>main</code> 维护。当前只有框架/集成线和 <code>tool-plugins</code> 插件线两个产品工作目录；<code>framework</code> 旧分支不承接新任务。交付与文件锁以 <a href="PLUGIN-FRAMEWORK-BOUNDARY.html">节点插件与框架边界</a> 和 <a href="PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.html">集成清单</a> 为准。</p>
+<h2 id="起点与交付门槛">起点与交付门槛</h2><table>
+<thead>
+<tr>
+<th>线</th>
+<th>本地/远端已提交基线</th>
+<th>当前状态</th>
+<th>本轮主责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>框架与集成 <code>main</code></td>
+<td><code>325b48c</code> = <code>origin/main</code></td>
+<td>工作目录干净；相对插件线独有 18 个提交</td>
+<td>审计原生工具发现/工具箱映射，确定安全的目录描述与注册边界；待插件交付提交后做逐文件集成</td>
+</tr>
+<tr>
+<td>插件 <code>tool-plugins</code></td>
+<td><code>1d66877</code> = <code>origin/tool-plugins</code></td>
+<td>21 个已跟踪文件修改、246 个未跟踪文件条目；都是在制，尚未交付</td>
+<td>先闭合公共配置模型、模板、宿主/订阅链路，并以图像源和另一真实工具验证运行与窗口</td>
+</tr>
+</tbody></table>
+<p>共同祖先为 <code>bf52c13</code>；插件线相对主线独有 14 个已提交变更。远端基线相同仅指各线已提交的 HEAD；不能把插件工作树的在制内容当作已推送功能，也不能直接快进合流。</p>
+<h2 id="已分派的插件线工作">已分派的插件线工作</h2><p>管理线已向现有插件对话“复刻图像源工具插件”发出恢复指令，要求保护未提交改动；按 PF-001～006 和相关清单核对原厂反编译源码/XAML/资源，闭合公共配置模型、模板、订阅及动态端口、宿主生命周期；实际操作 WPF 窗口和运行两个真实工具。交付时提供原生证据、界面与运行结果、剩余差异、契约请求、中文提交号与远端分支；在必要闭合节点构建并启动版本，留人工验收。插件线只改自己的工作目录，不合并 <code>main</code>。</p>
+<h2 id="主线当前工作工具发现与工具箱边界nfi-07">主线当前工作：工具发现与工具箱边界（NFI-07）</h2><p>先独立核对原生证据与当前实现，<strong>不碰插件线正在修改的</strong> <code>MainWindow.xaml.cs</code>、<code>tool-catalog.json</code>、<code>VisionFramework</code> 契约及 <code>VisionPluginContracts</code>。完成契约设计后，待插件线提交再确定由谁修改注册入口。</p>
+<p>原生源码已确认：</p>
+<ol>
+<li><code>analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs</code> 的 <code>LoadData</code> 从 <code>AppData.ModulesDir</code> 枚举一级目录；<code>ToolGroup.xml</code> 或 <code>Global</code> 建立分类。普通分类先插入 <code>defaultProxyModule</code>，展开时 <code>UpdateLoad</code> 再枚举分类下的 <code>ToolItemInfo.xml</code>，按 <code>Priority</code> 排序；<code>UserTools</code> 和 <code>GroupTools</code> 初次直接读子目录。</li>
+<li>同文件的 <code>GetItems</code> 将 <code>Lang_Tools</code> 与普通工具分开；全局工具限 <code>ProcedureModule</code>、<code>GlobalCameraModule</code>、<code>DataQueueModule</code>。<code>Reload</code> 清空源缓存并触发通知。</li>
+<li><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ToolItemGrid.cs</code> 从条目的 <code>ModuleDir</code>、<code>ModuleTypeName</code>、<code>DisplayType</code> 构造拖放装饰节点；拖动从鼠标按下后首次移动触发，释放会移除装饰层与预览处理器。</li>
+<li><code>analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs</code> 的 <code>LoadAssemblies</code> 针对 Group 在 <code>Module(sp)\\x64</code> 搜索 <code>IMVSGroup</code>，再加载 <code>IMVSGroupCs.dll</code>、<code>IMVSGroupControl.dll</code> 和可选 <code>DynamicObjectConfigControl.dll</code>。这是一条 Group 专有路径，不能据此声称所有插件的加载器已完整确认。</li>
+</ol>
+<p>现状：<code>src/VisionEditor/ToolNavigation.cs</code> 读取打包的 <code>tool-catalog.json</code>，以 <code>ModuleId</code> 是否已注册决定条目能否拖入；<code>src/VisionEditor/MainWindow.xaml.cs</code> 显式注册图像源、二值化。工具目录发现、版本/缺失诊断及真实元数据到宿主注册仍未实现。静态目录与原生惰性展开的行为存在差异；后续必须用实际主窗口操作和缺失工具场景验证，不能只核对目录文件。</p>
+<h2 id="合流顺序">合流顺序</h2><ol>
+<li>插件线先给可审查提交及 <code>CONTRACT-REQUESTS.md</code> 差异；主线核对提交相对于 <code>bf52c13</code> 和当前 <code>main</code> 的受影响文件，保留双方已有 Group、复合叶和 ROI 语义。</li>
+<li>依次整合配置模型/模板、宿主、订阅与端口、一个真实工具；共享文件逐方法合并，不整文件覆盖。</li>
+<li>在实际 WPF 主窗口验证工具箱拖放、配置、输入订阅、运行/停止、Group 内调用、结果显示、保存重开及窗口释放；原厂同状态差分单独记录。</li>
+<li>功能闭合后更新 <code>docs/framework-acceptance.html</code>，提供人工验收入口，再由各线中文提交并推送。未验证的原生 ABI、设备及完整工具库保持开放。</li>
+</ol>
+<p class="meta">来源：docs/TWO-LINE-DISPATCH-2026-10-17.md · SHA256 b35e1f5538c1dbaa86f20c597ec25729a95eb4db2b559ac6ce342327ad8d8598<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

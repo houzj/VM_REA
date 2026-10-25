@@ -1,0 +1,381 @@
+{
+  "id": "results",
+  "title": "结果提交与显示",
+  "question": "运行结果何时进入缓存，谁排队并刷新界面？",
+  "current": [
+    {
+      "id": "ERS01",
+      "from": "RunCore completed session",
+      "to": "WorkflowCallbacks.PublishModuleResult",
+      "member": "MainWindow.RunCore",
+      "condition": "owner remains current after execution",
+      "behavior": "先经发布接口提交StoreWorkflowCallResults/运行历史，再由UI分派刷新当前结果；相同session被提交但不因此证明所有payload已深复制。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "WorkflowCallbacks.PublishModuleResult(",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 47,
+          "end": 61,
+          "excerpt": "   WorkflowCallbacks.PublishModuleResult(\n    () => {\n      if(!IsCurrentExecutionOwner(owner))return;\n      if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString(\"F2\");StatusText.Text=\"流程完成：\"+session.Status+(session.OutputErrors.Count>0?\" · \"+string.Join(\"；\",session.OutputErrors):\"\");StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?\"bottombar_run.png\":\"bottombar_abnormal.png\");RefreshRight();}\n      if(workflowOverview)RenderWorkflowOverview();\n      if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();\n    },\n    () => {\n      StoreWorkflowCallResults(procedureId,session);RecordWorkflowRun(procedureId,elapsed);\n      if(!windowClosed)RecordFrameworkRunHistory(procedureId,session);\n    });\n   return session.Status==SessionStatus.Success&&session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.Skipped);\n  }\n  catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))StatusText.Text=\"运行已停止\";}\n  catch(Exception e){if(IsCurrentExecutionOwner(owner))StatusText.Text=\"运行失败：\"+e.Message;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ERS02",
+      "from": "FrameworkCallbackQueue.PublishModuleResult",
+      "to": "synchronousResult → Enqueue(value)",
+      "member": "FrameworkCallbackQueue.PublishModuleResult / Enqueue",
+      "condition": "default cacheEnabled=false; cache-on bounded array may overflow",
+      "behavior": "先同步执行提交动作，再Enqueue；禁用缓存直接dispatch，启用缓存进入双数组队列。该callback队列与图节点调度不是同一个队列。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/FrameworkCallbackQueue.cs",
+          "member": "public CallbackEnqueueResult Enqueue(T value)",
+          "sha256": "af27ece2a43db6473a9199a5e31221e900557805f2a036420b299ba143ad9a82",
+          "start": 34,
+          "end": 44,
+          "excerpt": " public CallbackEnqueueResult Enqueue(T value)\n {\n  lock(gate){\n   if(cacheEnabled){\n    if(receiveCount==receive.Length){dropped++;return CallbackEnqueueResult.Overflow;}\n    receive[receiveCount++]=value;return CallbackEnqueueResult.Queued;\n   }\n  }\n  dispatch(value);return CallbackEnqueueResult.Dispatched;\n }\n // As in the original, expansion discards queued receives. Call before active dispatch.",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/FrameworkCallbackQueue.cs",
+          "member": "public void PublishModuleResult(T value",
+          "sha256": "af27ece2a43db6473a9199a5e31221e900557805f2a036420b299ba143ad9a82",
+          "start": 55,
+          "end": 59,
+          "excerpt": " public void PublishModuleResult(T value,Action synchronousResult)\n {\n  ArgumentNullException.ThrowIfNull(synchronousResult);synchronousResult();Enqueue(value);\n }\n public void Close(){lock(gate)alive=false;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ERS03",
+      "from": "RestoreWorkflowResults / current debug records",
+      "to": "results → RefreshRight",
+      "member": "MainWindow.RestoreWorkflowResults / RunCore callback",
+      "condition": "current procedure, owner and cleared-view gates",
+      "behavior": "从当前流程session恢复NodeRunRecord并叠加工具调试记录，符合当前显示流程才刷新右侧；不是全局无条件接收每个异步回调。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "void RestoreWorkflowResults()",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 66,
+          "end": 70,
+          "excerpt": " void RestoreWorkflowResults()\n {\n  results.Clear();if(!clearedWorkflowResultViews.Contains(doc.CurrentProcedureId)){if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;RestoreToolDebugResults(doc.CurrentProcedureId);}\n\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "if(doc.HasCurrentProcedure&&doc.RootProcedureId",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 50,
+          "end": 50,
+          "excerpt": "      if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString(\"F2\");StatusText.Text=\"流程完成：\"+session.Status+(session.OutputErrors.Count>0?\" · \"+string.Join(\"；\",session.OutputErrors):\"\");StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?\"bottombar_run.png\":\"bottombar_abnormal.png\");RefreshRight();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ERS04",
+      "from": "RefreshToolDisplay",
+      "to": "provider.LastDisplay → three presenters",
+      "member": "MainWindow.RefreshToolDisplay",
+      "condition": "generation/owner/procedure guards; results contains node; provider exists",
+      "behavior": "先清旧显示，再按当前节点请求LastDisplay，应用显示订阅位置，核请求generation后将frame送图像/记录/列表presenter。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolDisplays.cs",
+          "member": "void RefreshToolDisplay(NodeDocument? node)",
+          "sha256": "f3ae89186549591a8a025fc8d36d66bc2b5ea959ec3ed293d3e1030bcdd0e656",
+          "start": 22,
+          "end": 48,
+          "excerpt": " void RefreshToolDisplay(NodeDocument? node){\n  long request=++toolDisplayRequestGeneration;\n  var owner=CaptureExecutionOwner();string procedure=doc.CurrentProcedureId;\n  bool Current()=>request==toolDisplayRequestGeneration&&IsCurrentExecutionOwner(owner)&&doc.CurrentProcedureId==procedure;\n  // main's pull-view adapter clears the previous source before asking a new provider.\n  toolDisplayImage.Show(null);toolDisplayRecord.Show(null);toolDisplayList.Show(null);\n  toolDisplayImage.Visibility=toolDisplayRecord.Visibility=toolDisplayList.Visibility=Visibility.Collapsed;\n  Preview.Visibility=PreviewImageName.Visibility=Visibility.Visible;\n  EmptyImage.Visibility=Preview.Source is null?Visibility.Visible:Visibility.Collapsed;\n  var provider=node is null?null:plugins.Find(node.ModuleId) as IToolDisplayProvider;\n  ToolDisplayFrame? frame=null;\n  try{\n   if(provider is not null&&node is not null&&results.ContainsKey(node.Id))frame=provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId));\n   if(frame is not null&&node is not null)frame=ToolConfigurationDisplaySubscriptions.ApplyPositions(frame,node,doc.CurrentProcedureId,(source,port)=>results.GetValueOrDefault(source)?.Outputs.GetValueOrDefault(port));\n  }\n  catch(Exception error){if(!Current())return;StatusText.Text=\"结果显示失败：\"+error.Message;} // Independent host diagnostic; not native exception parity.\n  if(!Current())return;\n  toolRecordTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;\n  toolListTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;\n  if(provider is null&&DisplayTabs.SelectedIndex>1)DisplayTabs.SelectedIndex=0;\n  toolDisplayImage.Show(frame);toolDisplayRecord.Show(frame);toolDisplayList.Show(frame);\n  bool overlay=frame is not null&&DisplayTabs.SelectedIndex==0;\n  toolDisplayImage.Visibility=overlay?Visibility.Visible:Visibility.Collapsed;\n  Preview.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;\n  PreviewImageName.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;\n  if(overlay)EmptyImage.Visibility=Visibility.Collapsed;\n  ImagePreviewPane.Visibility=DisplayTabs.SelectedIndex==0?Visibility.Visible:Visibility.Collapsed;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    }
+  ],
+  "original": [
+    {
+      "id": "results-roi:V03",
+      "route": "原版 · 显示来源与回调",
+      "classification": "source-confirmed",
+      "from": "ModuleDisplayDecorator.Init",
+      "to": "AsyncModuleResultCallBackArrived → ParentUI",
+      "behavior": "Init末段对具体VMModule的AsyncModuleResultCallBackArrived先Remove再Add ParentUI.OnModuleCallBackArrived。与V01的全局报告不是同一事件；完整生产者/队列仍单列未知。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs",
+          "member": "ModuleDisplayDecorator.Init callback registration",
+          "sha256": "ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e",
+          "start": 1196,
+          "end": 1204,
+          "excerpt": "\t\tResultData.Add(vmModule);\n\t\tif (VMModule != null)\n\t\t{\n\t\t\tWeakEventManager<IVmModule, EventArgs>.RemoveHandler(VMModule, \"AsyncModuleResultCallBackArrived\", ParentUI.OnModuleCallBackArrived);\n\t\t\tWeakEventManager<IVmModule, EventArgs>.AddHandler(VMModule, \"AsyncModuleResultCallBackArrived\", ParentUI.OnModuleCallBackArrived);\n\t\t}\n\t\tif (ModuleParams != null)\n\t\t{\n\t\t\tWeakEventManager<ParamRoot, EventArgs>.RemoveHandler(ModuleParams, \"ParamRootReloadEnd\", OnParamRootReloadEnd);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "ModuleDisplayDecorator.Init callback registration",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "V03",
+      "originalDocument": "docs/architecture-recovery/results-roi.edges.json",
+      "originalRecord": {
+        "id": "V03",
+        "route": "原版 · 显示来源与回调",
+        "classification": "source-confirmed",
+        "from": "ModuleDisplayDecorator.Init",
+        "to": "AsyncModuleResultCallBackArrived → ParentUI",
+        "behavior": "Init末段对具体VMModule的AsyncModuleResultCallBackArrived先Remove再Add ParentUI.OnModuleCallBackArrived。与V01的全局报告不是同一事件；完整生产者/队列仍单列未知。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs",
+            "member": "ModuleDisplayDecorator.Init callback registration",
+            "sha256": "ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e",
+            "start": 1196,
+            "end": 1204,
+            "excerpt": "\t\tResultData.Add(vmModule);\n\t\tif (VMModule != null)\n\t\t{\n\t\t\tWeakEventManager<IVmModule, EventArgs>.RemoveHandler(VMModule, \"AsyncModuleResultCallBackArrived\", ParentUI.OnModuleCallBackArrived);\n\t\t\tWeakEventManager<IVmModule, EventArgs>.AddHandler(VMModule, \"AsyncModuleResultCallBackArrived\", ParentUI.OnModuleCallBackArrived);\n\t\t}\n\t\tif (ModuleParams != null)\n\t\t{\n\t\t\tWeakEventManager<ParamRoot, EventArgs>.RemoveHandler(ModuleParams, \"ParamRootReloadEnd\", OnParamRootReloadEnd);",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "results-roi:V04",
+      "route": "原版 · 显示来源与回调",
+      "classification": "source-confirmed",
+      "from": "ModuleResultView.OnModuleCallBackArrived",
+      "to": "self-run忙门 / BeforeExchange / UI排队",
+      "behavior": "关闭或非ValueEventArgs先返回；由结果bIsSelfExecute==1识别self-run。有m_CurrentInfo且self时，busy/isRendering返回，否则BeforeExchange(executeCount)；随后BeginInvoke。不能从排队推出所有回调都已渲染。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs",
+          "member": "ModuleResultView self result admission",
+          "sha256": "e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88",
+          "start": 524,
+          "end": 554,
+          "excerpt": "\tpublic void OnModuleCallBackArrived(object sender, EventArgs e)\n\t{\n\t\tif (isclose)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tValueEventArgs valueEvent;\n\t\tif ((valueEvent = e as ValueEventArgs) == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tbool isSelfExecute = valueEvent.Value is ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data iMVS_MODULE_RESULT_INFO_LIST_EX_Data && iMVS_MODULE_RESULT_INFO_LIST_EX_Data.bIsSelfExecute == 1;\n\t\tif ((m_CurrentInfo != null) & isSelfExecute)\n\t\t{\n\t\t\tif (m_CurrentInfo.RenderDataCenter.IsBusy || isRendering)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tm_CurrentInfo.RenderDataCenter.BeforeExchange(valueEvent.ExecuteCount);\n\t\t}\n\t\tDispatcher.BeginInvoke((BeginInvokeDelegate)(() =>\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tif (!isclose)\n\t\t\t\t{\n\t\t\t\t\tif ((m_CurrentInfo != null) & isSelfExecute)\n\t\t\t\t\t{\n\t\t\t\t\t\tm_CurrentInfo.RenderDataCenter.Exchange(OwnerProcessID, valueEvent.ExecuteCount);\n\t\t\t\t\t\tbool flag = false;\n\t\t\t\t\t\tif (m_CurrentInfo.RenderDataCenter.TryGetImage(\"SelectedImage\", out var image) && image != m_CurrentInfo.ImageDataSource)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "ModuleResultView self result admission",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "V04",
+      "originalDocument": "docs/architecture-recovery/results-roi.edges.json",
+      "originalRecord": {
+        "id": "V04",
+        "route": "原版 · 显示来源与回调",
+        "classification": "source-confirmed",
+        "from": "ModuleResultView.OnModuleCallBackArrived",
+        "to": "self-run忙门 / BeforeExchange / UI排队",
+        "behavior": "关闭或非ValueEventArgs先返回；由结果bIsSelfExecute==1识别self-run。有m_CurrentInfo且self时，busy/isRendering返回，否则BeforeExchange(executeCount)；随后BeginInvoke。不能从排队推出所有回调都已渲染。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs",
+            "member": "ModuleResultView self result admission",
+            "sha256": "e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88",
+            "start": 524,
+            "end": 554,
+            "excerpt": "\tpublic void OnModuleCallBackArrived(object sender, EventArgs e)\n\t{\n\t\tif (isclose)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tValueEventArgs valueEvent;\n\t\tif ((valueEvent = e as ValueEventArgs) == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tbool isSelfExecute = valueEvent.Value is ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data iMVS_MODULE_RESULT_INFO_LIST_EX_Data && iMVS_MODULE_RESULT_INFO_LIST_EX_Data.bIsSelfExecute == 1;\n\t\tif ((m_CurrentInfo != null) & isSelfExecute)\n\t\t{\n\t\t\tif (m_CurrentInfo.RenderDataCenter.IsBusy || isRendering)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tm_CurrentInfo.RenderDataCenter.BeforeExchange(valueEvent.ExecuteCount);\n\t\t}\n\t\tDispatcher.BeginInvoke((BeginInvokeDelegate)(() =>\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tif (!isclose)\n\t\t\t\t{\n\t\t\t\t\tif ((m_CurrentInfo != null) & isSelfExecute)\n\t\t\t\t\t{\n\t\t\t\t\t\tm_CurrentInfo.RenderDataCenter.Exchange(OwnerProcessID, valueEvent.ExecuteCount);\n\t\t\t\t\t\tbool flag = false;\n\t\t\t\t\t\tif (m_CurrentInfo.RenderDataCenter.TryGetImage(\"SelectedImage\", out var image) && image != m_CurrentInfo.ImageDataSource)",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "results-roi:V05",
+      "route": "原版 · 显示来源与回调",
+      "classification": "source-confirmed",
+      "from": "OnModuleCallBackArrived UI尾部",
+      "to": "记录刷新 / 不在拖动时 UpdateROI",
+      "behavior": "UI闭包末段RefreshDataRecord；选择单/双图的ROI视图，仅ROIVisible且未IsDragROI时ModuleSource.UpdateROI；catch写自执行渲染异常日志，DispatcherPriority.Background。这里不替代中间图像/叠加分支。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs",
+          "member": "ModuleResultView callback record and ROI refresh",
+          "sha256": "e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88",
+          "start": 601,
+          "end": 617,
+          "excerpt": "\t\t\t\t\tRefreshDataRecord(valueEvent.Value);\n\t\t\t\t\tImageViewBox imageViewBox = (IsShowDoubleImage ? imageViewIn : imageView);\n\t\t\t\t\tif (imageViewBox.ROIVisible && !imageViewBox.IsDragROI)\n\t\t\t\t\t{\n\t\t\t\t\t\tModuleSource.UpdateROI();\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"自执行渲染异常：\" + ex.Message + ex.StackTrace);\n\t\t\t}\n\t\t}), DispatcherPriority.Background);\n\t}\n\n\tprivate void Dispatcher_ShutdownStarted(object sender, EventArgs e)\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "中间自执行分支与managed仓库分别见V14/V17–V22；多层叠加、图像内存及完整呈现生命周期仍未闭合。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "ModuleResultView callback record and ROI refresh",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "V05",
+      "originalDocument": "docs/architecture-recovery/results-roi.edges.json",
+      "originalRecord": {
+        "id": "V05",
+        "route": "原版 · 显示来源与回调",
+        "classification": "source-confirmed",
+        "from": "OnModuleCallBackArrived UI尾部",
+        "to": "记录刷新 / 不在拖动时 UpdateROI",
+        "behavior": "UI闭包末段RefreshDataRecord；选择单/双图的ROI视图，仅ROIVisible且未IsDragROI时ModuleSource.UpdateROI；catch写自执行渲染异常日志，DispatcherPriority.Background。这里不替代中间图像/叠加分支。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs",
+            "member": "ModuleResultView callback record and ROI refresh",
+            "sha256": "e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88",
+            "start": 601,
+            "end": 617,
+            "excerpt": "\t\t\t\t\tRefreshDataRecord(valueEvent.Value);\n\t\t\t\t\tImageViewBox imageViewBox = (IsShowDoubleImage ? imageViewIn : imageView);\n\t\t\t\t\tif (imageViewBox.ROIVisible && !imageViewBox.IsDragROI)\n\t\t\t\t\t{\n\t\t\t\t\t\tModuleSource.UpdateROI();\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"自执行渲染异常：\" + ex.Message + ex.StackTrace);\n\t\t\t}\n\t\t}), DispatcherPriority.Background);\n\t}\n\n\tprivate void Dispatcher_ShutdownStarted(object sender, EventArgs e)\n\t{",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "中间自执行分支与managed仓库分别见V14/V17–V22；多层叠加、图像内存及完整呈现生命周期仍未闭合。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "results-roi:V23",
+      "route": "原版 · 三仓渲染数据与流程回调",
+      "classification": "source-confirmed",
+      "from": "OnPreduceResultCallBackArrived",
+      "to": "流程状态0/1门、待渲染信号与UpdateRender",
+      "behavior": "非ValueEventArgs返回；try内非IMVS_MODULE_WORK_STAUS返回。状态0时(仓忙或isRendering)且次数不同FixedExcuteCount才将needRenderSignal替换为e2并返回；否则次数不一致只日志后写ExecuteCount，调用UpdateRender。状态1写状态载荷nExecuteCount；其它状态所选体不处理。catch仅Debug日志，不能据其文字推断实际复位任何ready字段。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/render-store-cil-evidence.json",
+          "member": "VMControls.WPF.ModuleResultView::OnPreduceResultCallBackArrived",
+          "sha256": "ddb2eb62624a452fdaec6d3374fe50098ba940935328dad860cda40d7ceb57bd",
+          "start": 6913,
+          "end": 6932,
+          "excerpt": "          \"token\": \"0x060001b5\",\n          \"symbol\": {\n            \"token\": \"0x060001b5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.ModuleResultView\",\n            \"name\": \"OnPreduceResultCallBackArrived\",\n            \"parameters\": 2,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"2002011c12811d\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 301,\n          \"ilSha256\": \"edec92f8d66a510f1ceb7282df477229603e009d29dd6930f085b39e2a4965bf\",\n          \"ilBytes\": \"00047562000001250a14fe030b0739190100000000067b3001000a25130475630000012c0b1104a5630000010c172b01160d0939e000000000087b3101000a16fe011305110539ae000000000228a00100066f220900066fa70800062d08027bc70000042b0117130611062c3000067b2d02000a0228a00100066f220900066fa5080006fe0116fe01130711072c0d0002067dc2000004dd9000000000067b2d02000a0228aa010006fe0116fe01130811082c350072be1a0070067b2d02000a8c1d0200010228aa0100068c1d020001282f02000a28a400000a0002067b2d02000a28ab010006000002067b2d02000a28b601000600002b1e087b3101000a17fe01130911092c0f0002087b3201000a28ab01000600000000de10260072281b0070283002000a0000de00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs",
+          "member": "Procedure status admission and deferred signal",
+          "sha256": "e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88",
+          "start": 640,
+          "end": 675,
+          "excerpt": "\tpublic void OnPreduceResultCallBackArrived(object sender, EventArgs e)\n\t{\n\t\tif (!(e is ValueEventArgs e2))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tif (!(e2.Value is ImvsSdkDefine.IMVS_MODULE_WORK_STAUS iMVS_MODULE_WORK_STAUS))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (iMVS_MODULE_WORK_STAUS.nWorkStatus == 0)\n\t\t\t{\n\t\t\t\tif ((m_CurrentInfo.RenderDataCenter.IsBusy || isRendering) && e2.ExecuteCount != m_CurrentInfo.RenderDataCenter.FixedExcuteCount)\n\t\t\t\t{\n\t\t\t\t\tneedRenderSignal = e2;\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tif (e2.ExecuteCount != ExecuteCount)\n\t\t\t\t{\n\t\t\t\t\tLogHelper.Error($\"不应该进这个分支.args.ExecuteCount = {e2.ExecuteCount}, ExecuteCount = {ExecuteCount}\");\n\t\t\t\t\tExecuteCount = e2.ExecuteCount;\n\t\t\t\t}\n\t\t\t\tUpdateRender(e2.ExecuteCount);\n\t\t\t}\n\t\t\telse if (iMVS_MODULE_WORK_STAUS.nWorkStatus == 1)\n\t\t\t{\n\t\t\t\tExecuteCount = iMVS_MODULE_WORK_STAUS.nExecuteCount;\n\t\t\t}\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t\tLogHelper.Debug(\"Set isReadyToRender True in Exception.\");\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "needRenderSignal消费者已另见V27；流程生命周期、全部状态值与实际交错仍未闭合。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "VMControls.WPF.ModuleResultView::OnPreduceResultCallBackArrived / Procedure status admission and deferred signal",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "V23",
+      "originalDocument": "docs/architecture-recovery/results-roi.edges.json",
+      "originalRecord": {
+        "id": "V23",
+        "route": "原版 · 三仓渲染数据与流程回调",
+        "classification": "source-confirmed",
+        "from": "OnPreduceResultCallBackArrived",
+        "to": "流程状态0/1门、待渲染信号与UpdateRender",
+        "behavior": "非ValueEventArgs返回；try内非IMVS_MODULE_WORK_STAUS返回。状态0时(仓忙或isRendering)且次数不同FixedExcuteCount才将needRenderSignal替换为e2并返回；否则次数不一致只日志后写ExecuteCount，调用UpdateRender。状态1写状态载荷nExecuteCount；其它状态所选体不处理。catch仅Debug日志，不能据其文字推断实际复位任何ready字段。",
+        "refs": [
+          {
+            "path": "docs/architecture-recovery/render-store-cil-evidence.json",
+            "member": "VMControls.WPF.ModuleResultView::OnPreduceResultCallBackArrived",
+            "sha256": "ddb2eb62624a452fdaec6d3374fe50098ba940935328dad860cda40d7ceb57bd",
+            "start": 6913,
+            "end": 6932,
+            "excerpt": "          \"token\": \"0x060001b5\",\n          \"symbol\": {\n            \"token\": \"0x060001b5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.ModuleResultView\",\n            \"name\": \"OnPreduceResultCallBackArrived\",\n            \"parameters\": 2,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"2002011c12811d\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 301,\n          \"ilSha256\": \"edec92f8d66a510f1ceb7282df477229603e009d29dd6930f085b39e2a4965bf\",\n          \"ilBytes\": \"00047562000001250a14fe030b0739190100000000067b3001000a25130475630000012c0b1104a5630000010c172b01160d0939e000000000087b3101000a16fe011305110539ae000000000228a00100066f220900066fa70800062d08027bc70000042b0117130611062c3000067b2d02000a0228a00100066f220900066fa5080006fe0116fe01130711072c0d0002067dc2000004dd9000000000067b2d02000a0228aa010006fe0116fe01130811082c350072be1a0070067b2d02000a8c1d0200010228aa0100068c1d020001282f02000a28a400000a0002067b2d02000a28ab010006000002067b2d02000a28b601000600002b1e087b3101000a17fe01130911092c0f0002087b3201000a28ab01000600000000de10260072281b0070283002000a0000de00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+          },
+          {
+            "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs",
+            "member": "Procedure status admission and deferred signal",
+            "sha256": "e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88",
+            "start": 640,
+            "end": 675,
+            "excerpt": "\tpublic void OnPreduceResultCallBackArrived(object sender, EventArgs e)\n\t{\n\t\tif (!(e is ValueEventArgs e2))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tif (!(e2.Value is ImvsSdkDefine.IMVS_MODULE_WORK_STAUS iMVS_MODULE_WORK_STAUS))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (iMVS_MODULE_WORK_STAUS.nWorkStatus == 0)\n\t\t\t{\n\t\t\t\tif ((m_CurrentInfo.RenderDataCenter.IsBusy || isRendering) && e2.ExecuteCount != m_CurrentInfo.RenderDataCenter.FixedExcuteCount)\n\t\t\t\t{\n\t\t\t\t\tneedRenderSignal = e2;\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tif (e2.ExecuteCount != ExecuteCount)\n\t\t\t\t{\n\t\t\t\t\tLogHelper.Error($\"不应该进这个分支.args.ExecuteCount = {e2.ExecuteCount}, ExecuteCount = {ExecuteCount}\");\n\t\t\t\t\tExecuteCount = e2.ExecuteCount;\n\t\t\t\t}\n\t\t\t\tUpdateRender(e2.ExecuteCount);\n\t\t\t}\n\t\t\telse if (iMVS_MODULE_WORK_STAUS.nWorkStatus == 1)\n\t\t\t{\n\t\t\t\tExecuteCount = iMVS_MODULE_WORK_STAUS.nExecuteCount;\n\t\t\t}\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t\tLogHelper.Debug(\"Set isReadyToRender True in Exception.\");\n\t\t}\n\t}",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "needRenderSignal消费者已另见V27；流程生命周期、全部状态值与实际交错仍未闭合。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    }
+  ],
+  "unknowns": [
+    "原模块自执行回调和流程回调是不同分支，正式edge保持各自门；此页不得画成已证明同一个帧实例。"
+  ],
+  "joinPolicy": "Edges are individually evidenced relationships. Array order is a reading order; no adjacent pair is automatically the same invocation/object/thread. Explicit gaps remain visible."
+}

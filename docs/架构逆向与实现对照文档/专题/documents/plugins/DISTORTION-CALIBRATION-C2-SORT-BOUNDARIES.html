@@ -1,0 +1,208 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C2：畸变 IRLS、median 排序与负索引边界源码 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / C2：畸变 IRLS、median 排序与负索引边界源码</p><h1>C2：畸变 IRLS、median 排序与负索引边界源码</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C2：畸变 IRLS、median 排序与负索引边界源码</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html#c2畸变-irlsmedian-排序与负索引边界源码">C2：畸变 IRLS、median 排序与负索引边界源码</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html#原件范围与abi">原件、范围与ABI</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html#7fec40逐操作分支表">7fec40逐操作分支表</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html#读写median-1的必要区分">读写median[-1]的必要区分</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html#7fd4e0n2n与权重迭代">7fd4e0：n、2n与权重/迭代</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html#既有快照的离线补证">既有快照的离线补证</a></p><p style="margin-left:14px"><a href="DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.html#完成状态与剩余项">完成状态与剩余项</a></p></details><h1 id="c2畸变-irlsmedian-排序与负索引边界源码">C2：畸变 IRLS、median 排序与负索引边界源码</h1><p>2026-10-19；本轮有限S1/S2及有界离线补证。目标是解释原指令的循环、元素数和越界前提，不将原生历史内存写入公共安全核。没有新增原厂执行、设备测试、产品修改或宿主验收。</p>
+<h2 id="原件范围与abi">原件、范围与ABI</h2><p>原core SHA256：<code>85D17ECC87D52E9A62D8BB86C8D5208AC999BCD31EC6D0806453F8165733F549</code>。复用上一轮<code>positive-workspace/source/output/1807fdcff.c</code>（入口7fd4e0）及<code>1807ff184.c</code>（入口7fec40）、seq4/56/63/67/76/83的median快照和原厂回放结果。新原指令/常量/函数范围位于本worktree <code>analysis/distortion-calibration/c2-sort-source/output/</code>，哈希见<code>distortion-calibration-c2-sort-evidence.json</code>。</p>
+<p>PE <code>.pdata</code>记载的runtime function范围分别为<code>[7fd4e0,7fec40)</code>和<code>[7fec40,7ff240)</code>。此前Ghidra把security-cookie helper当noreturn，未解码若干退出epilog；本轮在只读私有分析中恢复cookie后的原指令，并按这些范围输出冷分支/退出段。范围含padding，不代表每个字节执行。一次返回类型注解试验触发locked-storage空参数签名，已取消该原型改写；反编译签名不能替代下列调用点ABI。返回值以真实EAX写入为准：median失败<code>7feee6 XOR EAX,EAX</code>、成功<code>7ff1df MOV EAX,1</code>；IRLS一般失败<code>7febe9 XOR EAX,EAX</code>；median失败另经<code>7fdc03 MOV EAX,ESI</code>传回其0，正常epilog<code>7fe9f3 MOV EAX,EBX</code>。</p>
+<p>调用关系：7ff3c0→7fd4e0→7fec40。7fd4e0入口RCX=context、EDX=n、R8=options、R9=H输出，entry <code>[RSP+28]</code>为阈值收敛标志输出指针。context+10/+18为成对float源/目标，+40为n个点误差，+48为2n个权重，+50为排序缓冲。<code>7fdb86..7fdbdf</code>调用点把RCX/RDX/R8D/R9设为源、目标、n、系数；median入口另有entry栈参数+28自由度、+30排序区、+38误差区、+40 sigma指针。这与已有entry捕获一致，不能从反编译函数参数被省略推断无参。</p>
+<h2 id="7fec40逐操作分支表">7fec40逐操作分支表</h2><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>原指令位置</th>
+<th>精确读取/写入与条件</th>
+<th>证据状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>系数映射</td>
+<td>7fece0..7fed88</td>
+<td>freedom1取8系数；2取6；3由4系数构相似形式，其反号项由XOR signmask生成；固定H33=1</td>
+<td>源码/原指令确认</td>
+</tr>
+<tr>
+<td>逆矩阵门槛</td>
+<td>7fee92..7fef31</td>
+<td>float行列式/伴随逆；abs(det)转换double后与<code>2^-52</code>比较。有限有序下abs(det)&lt;门槛返回0；相等可继续。NaN的unordered flags不能用普通数学不等式代替</td>
+<td>原指令确认；非有限运行未覆盖</td>
+</tr>
+<tr>
+<td>每点误差</td>
+<td>7ff022..7ff0b1</td>
+<td>i=0..n-1，目标经H逆投影后减源；float平方、相加、SQRTSS，写一个欧氏误差<code>r[i]</code></td>
+<td>源码/原指令确认</td>
+</tr>
+<tr>
+<td>成对复制</td>
+<td>7ff0b7..7ff120</td>
+<td>正n时pairCount=floor(n/2)，每次复制误差2k和2k+1，共n或n-1项。仅当0&gt;r时翻符号；有序非负值直接保存</td>
+<td>源码/原指令确认</td>
+</tr>
+<tr>
+<td>奇数尾项</td>
+<td>7ff124..7ff14f</td>
+<td>n奇数时复制r[n-1]；偶数跳过。n=1只有此尾项，无pair循环</td>
+<td>源码确认；n=1仅独立分支见证，非完整SDK运行</td>
+</tr>
+<tr>
+<td>外循环起点</td>
+<td>7ff156..7ff164</td>
+<td>EDX=0；n&gt;1才进入。当前key=s[i+1]、previous=s[i]，i依次0..n-2</td>
+<td>原指令确认</td>
+</tr>
+<tr>
+<td>是否插入</td>
+<td>7ff171..7ff179</td>
+<td>COMISS previous,key；JBE跳过，故只对ordered previous&gt;key插入。MOVSXD RCX,EDX不改flags，紧随的第二个JBE复用同一flags，未形成任何下界检查</td>
+<td>原指令确认</td>
+</tr>
+<tr>
+<td>移位/负索引</td>
+<td>7ff17f..7ff197</td>
+<td>s[j+1]=s[j]；DEC j；立刻读s[j]；仅在ordered s[j]&gt;key时继续。不含j≥0或其他数组边界谓词</td>
+<td>原指令确认</td>
+</tr>
+<tr>
+<td>插回</td>
+<td>7ff199</td>
+<td>首个不大于key（或unordered）的值处，写s[j+1]=key；j可以小于-1</td>
+<td>原指令确认</td>
+</tr>
+<tr>
+<td>下一key</td>
+<td>7ff19f..7ff1a5</td>
+<td>++i，与n-1比较，i&lt;n-1才继续</td>
+<td>原指令确认</td>
+</tr>
+<tr>
+<td>中位数/sigma</td>
+<td>7ff1a7..7ff1c3</td>
+<td>读取s[floor(n/2)]，乘float <code>0x3fbdc52c</code>（1.4825797080993652）。偶数n取上中位，不读取下中位、不平均；奇数取唯一中位</td>
+<td>源码/原指令确认</td>
+</tr>
+<tr>
+<td>出口</td>
+<td>7feede..7fef29；7ff1d7..7ff22c</td>
+<td>失败EAX=0、成功EAX=1；恢复寄存器后RET，不能把cookie标注造成的缺段当作无返回值</td>
+<td>新补原指令确认</td>
+</tr>
+</tbody></table>
+<p>有限有序输入下的等价控制流（这是源码整理，不是产品代码）：</p>
+<a class="site-evidence-link" data-evidence-key="b39425f3ce7ea886043e25863183e5f8062aee34467acca8fb088aa5aeb1a56d" href="../../../../证据/b39425f3ce7ea886043e25863183e5f8062aee34467acca8fb088aa5aeb1a56d.html#content">查看完整原文／记录 ↗ <small>b39425f3ce7e</small></a>
+<h2 id="读写median-1的必要区分">读写median[-1]的必要区分</h2><p>key依次小于所有左侧被扫描项，移位经过s[0]后就会先读s[-1]。<strong>即使prefix为零或负值，也可能已发生这次负索引读</strong>；它只是对有限非负key停止继续移位，不能称没有越界访问。</p>
+<p>若该时刻s[-1]&gt;key，则继续把它搬到s[0]，再读取s[-2]；在可读内存内，无论下一次停止还是继续，随后都会产生s[-1]写。若更深前缀仍大于key，读写可以继续向前。代码没有由n给出的通用负索引下界；捕获<code>2n+32</code>个prefix只是已有fixture边界，不能升级为原厂容器尺寸或通用安全保证。</p>
+<p>s[-1]为正并非必然改变每次输出：还需实际key/移位路径满足比较条件。C1负前缀案例结果不变与本条一致。非有限值还受COMISS flags及MXCSR控制；本轮只记录指令，不声称覆盖NaN/Inf/异常mask的运行行为。</p>
+<h2 id="7fd4e0n2n与权重迭代">7fd4e0：n、2n与权重/迭代</h2><p><code>n</code>始终是点数；每点只产生一个欧氏r。设计矩阵有X/Y两行，因此权重数组是<strong>2n个float</strong>。freedom1/2/3分别用8/6/4个系数，不能把系数数或矩阵行数当作排序数量。</p>
+<p>令<code>eps=0x34000000=2^-23</code>（float FLT_EPSILON），<code>T=float(options.Factor * sigma)</code>。Factor在options+14按传入float使用；上游UI整数到Factor的缩放属于C3，不能在此擅自再除10。下表公式只写有限有序输入，且每个float运算保持原顺序。</p>
+<table>
+<thead>
+<tr>
+<th>分支</th>
+<th>原指令/字段</th>
+<th>实际行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>迭代入口</td>
+<td>options+0c；7fdb25..7fdbdf</td>
+<td>limit&gt;0才进入IRLS；每轮先复制旧系数，再调用median，要求返回1，否则返回失败。不因零残差跳过首轮</td>
+</tr>
+<tr>
+<td>WeightFun1</td>
+<td>options+8=1；7fddb4及对齐向量循环</td>
+<td>填满2n个1f，与sigma/T无关。不是n项，也不填reserve padding</td>
+</tr>
+<tr>
+<td>WeightFun2</td>
+<td>7fdc58..7fdd02</td>
+<td>每点e=float(r+eps)。若−T≤e≤T，w=1；否则w=float(T/abs(e))。7fdcf5/7fdcfb把相同w写weights[2i]和[2i+1]</td>
+</tr>
+<tr>
+<td>WeightFun3</td>
+<td>7fdd13..7fdda3</td>
+<td>每点q=float(1−float(r<em>r)/float(T</em>T+eps))，再q*q；r在[−T,T]内取该q平方，范围外取eps（不是0）；7fd944将0x34000000装入XMM8，7fdd85用XMM8作为范围外值，同样成对写两项。eps加在T²后，不能与Weight2的r+eps互换</td>
+</tr>
+<tr>
+<td>其它weight值</td>
+<td>7fdd13比较不等3→7fde61</td>
+<td>当前方法没有对应权重填充分支；不能猜成常权/全零或直接推SDK支持。畸变上游WeightFun4另走832830，WeightFun1走8345e0，不得拿本方法分支代替工具分派</td>
+</tr>
+<tr>
+<td>权重消费</td>
+<td>7fde63之后、730be0/8580e0调用</td>
+<td>每点X/Y行使用同一权重；随后进入加权正规方程。此次只确认n/2n及权重数据流，不宣称已审计所有矩阵乘加顺序</td>
+</tr>
+<tr>
+<td>线性求解返回</td>
+<td>7fe4c4..7fe4d7</td>
+<td>原8580e0返回0或0x1000001d可继续；其它返回走失败。对该码不凭名称猜数值语义</td>
+</tr>
+<tr>
+<td>收敛门槛</td>
+<td>7fe510..7fe59c</td>
+<td>用float按顺序累加各系数delta²、SQRTSS，与options+10严格比较；norm&lt;threshold才置输出标志1。相等不提前停止</td>
+</tr>
+<tr>
+<td>轮数耗尽</td>
+<td>7fe5a2..7fe5b3</td>
+<td>计数加1后与options+0c比较，达到上限转结果构造。该输出标志初值0、只在delta停止时置1；0不等于方法失败，返回值与它独立</td>
+</tr>
+</tbody></table>
+<p>零sigma也不是统一捷径：有限r=0、T=0时Weight2先得e=eps，故w=0；Weight3的分母是eps，r=0时w=1。这是分支公式的结果，不据此跳过后续正规方程或伪造成功。</p>
+<h2 id="既有快照的离线补证">既有快照的离线补证</h2><p>新<code>c2-sort-audit.cpp</code>只读取现有快照，在带显式边界的vector中按上述原指令顺序复制/排序；<strong>不加载原DLL</strong>，不创建SDK对象，不提供生产workspace。读取越过已捕获prefix会显式失败。负索引统计是离线模型轨迹，不冒充本轮硬件观测。</p>
+<p>6个原始case×零/捕获context共12个sigma逐float位相同；捕获context的493个排序结果float与既有原厂输出逐位相同。4个独立分支见证检查n=1、奇数、偶数上中位及正prefix负写，它们不是新原厂运行。</p>
+<table>
+<thead>
+<tr>
+<th>seq</th>
+<th>n / median索引</th>
+<th>零context最低读/写</th>
+<th>捕获context最低读/写</th>
+<th>捕获sigma</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>4</td>
+<td>99 / 49</td>
+<td>−1 / 无负写</td>
+<td>−1 / 无负写</td>
+<td>.00999284443</td>
+</tr>
+<tr>
+<td>56</td>
+<td>77 / 38</td>
+<td>−1 / 无负写</td>
+<td>−98 / −97</td>
+<td>1.48257971</td>
+</tr>
+<tr>
+<td>63</td>
+<td>80 / 40</td>
+<td>−1 / 无负写</td>
+<td>−33 / −32</td>
+<td>.00104970054</td>
+</tr>
+<tr>
+<td>67</td>
+<td>80 / 40</td>
+<td>−1 / 无负写</td>
+<td>−30 / −29</td>
+<td>3.61378813</td>
+</tr>
+<tr>
+<td>76</td>
+<td>77 / 38</td>
+<td>−1 / 无负写</td>
+<td>−97 / −96</td>
+<td>1.48257971</td>
+</tr>
+<tr>
+<td>83</td>
+<td>80 / 40</td>
+<td>−1 / 无负写</td>
+<td>−33 / −32</td>
+<td>.00106894167</td>
+</tr>
+</tbody></table>
+<p>结合C1布局，在这6个captured fixture里最低访问仍处于当次2n权重实际写区之后的reserve padding；这只解释这些样本，没有证明其他输入不会触及更多子块。先前seq46写weights→后seq56 prefix、seq63排序写prefix→后seq67 prefix的原硬件证据保留，其生命周期来源不因本轮离线回放而改变。</p>
+<p>验证命令：<code>RunC2SortSource.ps1</code>取得缺失体/原指令；<code>RunC2SortAudit.ps1</code>运行离线模型；<code>ExportC2SortEvidence.ps1</code>严格检查binary/常量/指令锚点、12 sigma、493字段和4分支见证并导出索引。不要为了只复核索引重新导入原生项目；已有产物可直接执行导出检查。</p>
+<h2 id="完成状态与剩余项">完成状态与剩余项</h2><p>本有限C2切片完成了源循环、n/2n、奇偶复制/中位索引、负索引前提和三种权重的分支还原；补证仅复用既有原厂结果并增加安全离线轨迹。没有实现原生越界，没有给安全核硬编码prefix，没有声称任意输入或真实宿主等价。</p>
+<p>仍开放：非有限/FP异常的实际执行、非法n/非法枚举的外部调用合同、所有权重上游分派与模型归一化完整数据流（C3）、所有矩阵乘加顺序/病态退化，以及C1 Init异常/尺寸helper和真实宿主池并发。直接调用7fec40的n≤0没有入口参数拒绝可据；离线模型主动拒绝该范围是独立分析边界，不能当作原厂行为。</p>
+<p class="meta">来源：docs/plugins/DISTORTION-CALIBRATION-C2-SORT-BOUNDARIES.md · SHA256 eefee41aae123905e871cd7f104b5f56c6a6ef8df213519be6f7f587357236ac<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

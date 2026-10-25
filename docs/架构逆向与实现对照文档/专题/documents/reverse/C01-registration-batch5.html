@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C01 第五批：Group 注册链与明确退出条件 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / C01 第五批：Group 注册链与明确退出条件</p><h1>C01 第五批：Group 注册链与明确退出条件</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C01 第五批：Group 注册链与明确退出条件</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="C01-registration-batch5.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="C01-registration-batch5.html#c01-第五批group-注册链与明确退出条件">C01 第五批：Group 注册链与明确退出条件</a></p><p style="margin-left:14px"><a href="C01-registration-batch5.html#本批进度指标">本批进度指标</a></p><p style="margin-left:14px"><a href="C01-registration-batch5.html#原件与审计">原件与审计</a></p><p style="margin-left:14px"><a href="C01-registration-batch5.html#已闭合的源码缺口">已闭合的源码缺口</a></p><p style="margin-left:14px"><a href="C01-registration-batch5.html#c01-剩余验收与退出条件">C01 剩余验收与退出条件</a></p><p style="margin-left:14px"><a href="C01-registration-batch5.html#保留的失败">保留的失败</a></p></details><h1 id="c01-第五批group-注册链与明确退出条件">C01 第五批：Group 注册链与明确退出条件</h1><p>2026-10-19；main 基线 e6bf62a。有限子项 <code>C01.group-register</code>：<strong>静态源码链 done，真实 Group/SDK 命中 blocked</strong>。C01 一级包未完成。本批无产品修改，无原厂代码执行，无 SDK/设备或窗口启动，无共享构建，未访问 tool-plugins。</p>
+<h2 id="本批进度指标">本批进度指标</h2><table>
+<thead>
+<tr>
+<th>固定验收项</th>
+<th>结果</th>
+<th>可复核证据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>配置入口→root 注册→关闭清空根</td>
+<td>done：2 原方法 CIL</td>
+<td>VMControls.WPF.dll；OpenParamsTabControl、CurTabControlBase_Closed</td>
+</tr>
+<tr>
+<td>Group Owner 绑定→配置数据→UserData</td>
+<td>done：5 原方法 CIL</td>
+<td>DynamicObjectConfigControl.dll；GroupParam.get_Owner、ConfigCommandExecute、ChangeGroupInfosToSDK、AddParam、DelUserDataByName</td>
+</tr>
+<tr>
+<td>IOC 实现/生命周期与原服务转发</td>
+<td>done：15 IOC + 7 撤销方法 CIL，启动调用 1 体</td>
+<td>VMControls.Interface.dll、VM.UnRedo.dll、VisionMaster.exe</td>
+</tr>
+<tr>
+<td>旧值/新值捕获及异常范围</td>
+<td>done：13 Core 方法 CIL/EH</td>
+<td>ModuleParam、UserData</td>
+</tr>
+<tr>
+<td>同一真实 Group 的根/part/SDK 数据观测</td>
+<td>blocked：0 次</td>
+<td>需专属原实例与被动断点日志；下述解除条件</td>
+</tr>
+</tbody></table>
+<p>本批合计 <strong>43 个原方法体</strong>，仅为静态覆盖数量，不是 43 项运行通过。固定 5 项中 4 项源码验收完成、1 项阻塞；一级 C01 完成数仍为 0。已有 batch1 的 13 个合成服务动作未重复。</p>
+<h2 id="原件与审计">原件与审计</h2><p>REA <code>inspect_managed_members</code> Evidence <code>ev_94e7251f01d24281bffa0e9c0300c8c5f0bd0b9e995a679e1e4847075df3db3f</code>：VMControls.Interface.dll SHA256 <code>47c11ff2239bd2577378c4eb202ef6b2aee8fc0e99c3b7f0692c2209eb69c304</code>，完整返回 <code>analysis/full-audit/batch5-20261019/C01/rea-interface-members.json</code>。已有大程序集 REA 全量成员输出预算限制，本批不重复相同大调用；以原件精确类型 ReflectionOnlyLoadFrom 提取 CIL、token、EH、可选参数默认值和 SHA256，不运行目标方法或静态构造。</p>
+<p>重跑入口 <code>tests/NativeEvidence/C01Registration/Run.ps1</code>，Framework64 csc 编译元数据导出器，不使用共享 dotnet。6 原件执行前后 SHA256 均一致，见 <code>artifact-integrity.json</code>；逐方法 <code>*.cil-methods.json</code>、指令 <code>*.cil-disassembly.txt</code>，原反编译逐行保留 <code>source-numbered.txt</code> 与 <code>source-hashes.csv</code>。此处 ReflectionOnly 依赖元数据可能由 GAC 解析，不据此声称运行时实际程序集来源；报告绑定的目标自身路径/hash 为原件身份。</p>
+<h2 id="已闭合的源码缺口">已闭合的源码缺口</h2><ol>
+<li><p><strong>IOC 并非每次 Get 新建撤销服务。</strong> 原 <code>VisionMaster.App.OnStartup</code> CIL <code>IL_02BB–02CA</code> 将 IUnRedoService、从配置指定程序集发现的实现类型、显式 <code>ldc.i4.1</code>、两个 null 传入 Ioc.Set。Ioc.Set token <code>060000AF</code> 的 isSingle 默认也为 True；SetInternal <code>060000AC</code> 为 true 选择 TypeLifetime.Singleton，随后 RegisterType。Ioc.Get <code>060000A6</code> 先 IsRegistered 再 Resolve，未注册返回默认值。只能确认容器注册/解析静态链，未观察真实进程重注册或替换。</p>
+</li>
+<li><p><strong>Group Owner 来自 XML 顶根模型。</strong> <code>DynamicObjectConfigControl/GroupParam.cs:37–47</code>（本批同原件 CIL）缓存 <code>(GetTopBaseNode() as AlgorithmTabRoot).Owner as VmModuleSet</code>，不是每个菜单新造 Group。GroupRunParam.ConfigCommandExecute 把此 Owner 赋给 GroupRunParamConfigData 和各装饰项；ParamConfigDataBase.ChangeGroupInfosToSDK 对 Owner.UserData 写组名/ID，AddParam 与 DelUserDataByName 写入或移除各项元数据。配置界面最外层 <code>VmModuleDecorator.OpenParamsTabControl</code> 先注册 ModifyConfig 根，再将 VMModule.Params 赋给配置窗口。没有实际对象身份日志，因此不把上述可达性称为原机命中。</p>
+</li>
+<li><p><strong>对话框抑制缺少 finally，已核原 EH。</strong> GroupRunParam.ConfigCommandExecute token <code>060001D7</code> 的 SetForbidRecord(true) 为 <code>IL_017B</code>，DialogHandler.Invoke <code>IL_0188</code>，返回值 <code>IL_018D pop</code>，SetForbidRecord(false) <code>IL_019A</code>。3 个 finally 范围分别 <code>[84,130)</code>、<code>[161,335)</code>、<code>[523,618)</code>，只覆盖枚举释放；均不包住十进制 392 的 Invoke。故“存在 finally”不代表抑制能异常复位；没有 Cancel 返回值回滚分支。孤立项清理的 ForEach 在 true 之前，仍可能触发录制。这是静态条件结论，不是已注入故障的运行观察。</p>
+</li>
+<li><p><strong>抑制检查先于旧值表达式执行。</strong> UnRedoSchedule.Register <code>06000046</code> 的 ForbidBuild 检查 <code>IL_007C–008A</code>，predicate Compile/Invoke 为 <code>IL_008F–00A6</code>；先拒绝 part 时不会采集旧值。ModuleParam.CanRegisterParam <code>060005CC</code> 的同模块去重、根 ModifyConfig 和非 IVmProcedure 检查之后才执行表达式；参数 setter 先 RecordParamUnRedo，再 SDK 写入。UserData 则区分全部数据的延迟捕获和单键携带旧新值，不能给所有 setter 套同一顺序。ModuleParam.Param_Update <code>060005CF</code> 在后续 Update 时取新值。Param_Undo/Redo 的 SDK SetAllParams catch 仅 <code>[18,46)</code>，后续非 Group ReFlashReadyState 位于其外；不能说整个回放异常均被该 catch 吞掉。</p>
+</li>
+</ol>
+<h2 id="c01-剩余验收与退出条件">C01 剩余验收与退出条件</h2><p>不再扩大本切片方法清单。下次 C01 仅执行以下固定原机差分清单，全部满足才申请关闭包：</p>
+<ul>
+<li>专属副本/专属 TempFiles 原实例里，正常打开真实 Group，记录 root 身份、Owner/ModuleFullName、Ioc 返回实例、首次及重复 part、旧参数真实载荷哈希；同模块两次和不同模块各一次。</li>
+<li>正常关闭、取消、窗口异常：记录抑制位、动作数、实际 SDK 值；不得由无 finally 的静态结论替代故障结果。</li>
+<li>Undo/Redo 记录真实 NewParamList 捕获点、回放后 SDK/界面值和栈迁移；至少一次不跨线程、一次实际 UI dispatcher 路径。</li>
+<li>CopyModule 优先级、RecoverStack 密码取消、TempFiles 淘汰载荷与完整性仍为 C01 已有缺口；限定独立样例各一例，失败保留，不另开无上限静态切片。</li>
+</ul>
+<p>解除当前阻塞需要：可归属本任务的原机工作实例、副本路径/进程身份、能被动采集上述调用的受控调试设施。当前未提供这些运行证据；没有尝试在安装目录构造会清 TempFiles 的 UnRedoSchedule，也未干预其他任务实例。原叶方法不是纯函数：真实捕获依赖 VmSolution/ServerSDKManager 与服务初始化，因此不通过未初始化假对象绕过真实命中验收。</p>
+<h2 id="保留的失败">保留的失败</h2><p><code>failed-inventory/</code> 保留初次广列 WPF 类型和 DynamicObject 解析依赖失败（退出 -532462766）；改精确 GetType 和补充原件只读依赖搜索后成功。扩展脚本误替换 PowerShell 条件造成一次找不到原件，已修正；全部 43 体成功后的 manifest 曾因当前重定向日志占用失败，进程退出后重新生成；另一次审计编号命令语法失败发生于执行前。完整说明 <code>failures.txt</code>，最终导出日志 <code>final-export.log</code>。这些是分析脚本失败，不是产品/原厂行为失败。未知泛型 operand 保留 token 与 unresolved 标记，未猜造调用目标。</p>
+<p class="meta">来源：docs/reverse/C01-registration-batch5.md · SHA256 507bca70fc6c39058dd294640d0010cee27541ed279e96a4851f2493e5702254<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

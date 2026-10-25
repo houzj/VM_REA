@@ -1,0 +1,897 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "WL01",
+      "classification": "source-confirmed",
+      "stages": [
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原CVmObjectBase平台注册",
+      "to": "无后缀IMVS_RegisterOutputPlatformInfoCallBack及静态委托根",
+      "behavior": "CVmObjectBase将delegateOutputCallBackFunc保存在静态字段PlatformInfoCallBack，再以mhandle、此委托和default(IntPtr) user调用ServerSDKAPI.IMVS_RegisterOutputPlatformInfoCallBack。包装直接调用同名NativeMethods，DllImport绑定.\\iMVS-6000PlatformSDK.dll，CharSet.Ansi，无EntryPoint改名；V32是另一独立声明/包装，不是这条注册边。delegateOutputCallBack声明StdCall/Ansi，参数为两个IntPtr、返回void。静态字段保持托管委托可达，所选DisconnectServer仅FtpDeInit、DestroyHandle及清mhandle，未清委托字段。注册非0分支只new VmException，没有throw，故不能把走到后续初始化当成注册成功。",
+      "representation": "平台通用回调=外层结构指针+user指针；不是直接的单模块图像数组回调。",
+      "cache": "静态委托字段与静态事件保持托管引用；ModuleManager构造订阅OnModuleResultExCallBack，不据此声称全部实例生命周期与解订阅已闭合。",
+      "release": "DestroyHandle是native句柄边界，不证明回调已排空；委托被静态引用与native停止调用是两项独立寿命条件。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/CVmObjectBase.cs",
+          "member": "CVmObjectBase.cs",
+          "sha256": "59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db",
+          "start": 17,
+          "end": 17,
+          "excerpt": "\tprivate static delegateOutputCallBack PlatformInfoCallBack;",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/CVmObjectBase.cs",
+          "member": "CVmObjectBase.cs",
+          "sha256": "59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db",
+          "start": 492,
+          "end": 500,
+          "excerpt": "\t\tPlatformInfoCallBack = delegateOutputCallBackFunc;\n\t\tnum = ServerSDKAPI.IMVS_RegisterOutputPlatformInfoCallBack(mhandle, PlatformInfoCallBack, user);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex5 = new VmException(num);\n\t\t}\n\t\tif (moduleNameIndexMap == null)\n\t\t{\n\t\t\tmoduleNameIndexMap = new Dictionary<string, int>();",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/CVmObjectBase.cs",
+          "member": "CVmObjectBase.cs",
+          "sha256": "59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db",
+          "start": 513,
+          "end": 520,
+          "excerpt": "\tprivate static void DisconnectServer()\n\t{\n\t\tLogHelper.Info(\"IMVS_DestroyHandle.\");\n\t\tServerSDKAPI.FtpDeInit(mhandle);\n\t\tServerSDKAPI.IMVS_DestroyHandle(mhandle);\n\t\tmhandle = IntPtr.Zero;\n\t}\n",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/delegateOutputCallBack.cs",
+          "member": "delegateOutputCallBack.cs",
+          "sha256": "3184fa23620db8bf2d93b8508953798c1c43bb4727970ca3ff23a0242af360b2",
+          "start": 9,
+          "end": 10,
+          "excerpt": "[UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Ansi)]\npublic delegate void delegateOutputCallBack(IntPtr pstOutputPlatformInfo, IntPtr pUser);",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "ServerSDKAPI.cs",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 72,
+          "end": 75,
+          "excerpt": "\tpublic static int IMVS_RegisterOutputPlatformInfoCallBack(IntPtr handle, delegateOutputCallBack pOutputCallBack, IntPtr user)\n\t{\n\t\treturn NativeMethods.IMVS_RegisterOutputPlatformInfoCallBack(handle, pOutputCallBack, user);\n\t}",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "NativeMethods.cs",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 23,
+          "end": 26,
+          "excerpt": "\tpublic static extern int IMVS_RegisterOutputPlatformInfoCallBack(IntPtr handle, delegateOutputCallBack pOutputCallBack, IntPtr user);\n\n\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\", CharSet = CharSet.Ansi)]\n\tpublic static extern int IMVS_RegisterOutputPlatformInfoCallBack_V32(IntPtr handle, delegateOutputCallBack pOutputCallBack, IntPtr user);",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "尚无实际注册运行结果、native callback排空/解绑本体；不将静态root等同于线程安全。",
+        "本条只针对当前ConnectServer实际caller，不把其他PF/Object/V32导出并入同一路。"
+      ]
+    },
+    {
+      "id": "WL02",
+      "classification": "source-confirmed",
+      "stages": [
+        "results"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原SDK结果wire结构元数据",
+      "to": "x64字段偏移、固定数组与描述指针布局",
+      "behavior": "对SHA34c0c90b…401c1、MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2原件，仅ReflectionOnlyLoadFrom后查询Marshal.SizeOf(Type)/OffsetOf(Type,field)。6个结构均Sequential/Pack8/Ansi，进程指针8。CHUNK_VALUE_EX大小288：pData@0、nLen@8、ByValTStr260 strValue@12、nUseRealData@272、reserved[3]@276；RESULT_INFO_EX大小208：status@0、名称byte[128]@4、type@132、count@136、六种值指针@144/152/160/168/176/184、reserved@192。RESULT_INFO_LIST_EX大小232：cycleID@8、moduleID@12、self@176、executeCount@180、resultNum@188、pInfo@192。外层OUTPUT_PLATFORM_INFO大小40：type@0、dataPtr@8、dataSize@16、dataLen@20。BYTEDATA_VALUE_EX大小32；RESULT_RESERVED_INFO大小272。完整字段/token/offset保留在原查询JSON与可核摘要。",
+      "representation": "固定内联名称/字符串和IntPtr目标是不同存储；ByValTStr在此Ansi声明不能按UTF16的260×2误算。",
+      "cache": "wire结构保存的是描述/指针，不因此拥有指向的图像或字节数据。",
+      "release": "Marshal布局查询不分配/释放原版数据；结构大小吻合不证明native分配长度、同帧或最后读者安全。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/layout-summary.txt",
+          "member": "layout-summary.txt",
+          "sha256": "211302269a74f3c69333093330e7e8588418dcaf39a27c57c3e0a3a110c56ac3",
+          "start": 1,
+          "end": 62,
+          "excerpt": "VM.PlatformSDKCS.ImvsSdkDefine+IMVS_OUTPUT_PLATFORM_INFO | Size=40 | Sequential | Pack=8 | Ansi\n0 nInfoType System.UInt32 0x04000477\n8 pData System.IntPtr 0x04000478\n16 nDataSize System.UInt32 0x04000479\n20 nDataLen System.UInt32 0x0400047a\n24 nReserved System.UInt32[] 0x0400047b\n\nVM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_CHUNK_VALUE_EX | Size=288 | Sequential | Pack=8 | Ansi\n0 pData System.IntPtr 0x040004f8\n8 nLen System.UInt32 0x040004f9\n12 strValue System.String 0x040004fa\n272 nUseRealData System.UInt32 0x040004fb\n276 nReserved System.UInt32[] 0x040004fc\n\nVM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_BYTEDATA_VALUE_EX | Size=32 | Sequential | Pack=8 | Ansi\n0 pData System.IntPtr 0x040004fd\n8 nLen System.UInt32 0x040004fe\n12 nReserved System.UInt32[] 0x040004ff\n\nVM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_RESULT_INFO_EX | Size=208 | Sequential | Pack=8 | Ansi\n0 nValueStatus System.Int32 0x0400050b\n4 strParamName System.Byte[] 0x0400050c\n132 nParamType System.Int32 0x0400050d\n136 nValueNum System.Int32 0x0400050e\n144 pIntValue System.IntPtr 0x0400050f\n152 pFloatValue System.IntPtr 0x04000510\n160 pStringValue System.IntPtr 0x04000511\n168 pImageValue System.IntPtr 0x04000512\n176 pChunkValue System.IntPtr 0x04000513\n184 pByteValue System.IntPtr 0x04000514\n192 nReserved System.UInt32[] 0x04000515\n\nVM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_RESULT_RESERVED_INFO | Size=272 | Sequential | Pack=8 | Ansi\n0 nArrivalTimeStampLow System.Int32 0x04000522\n4 nArrivalTimeStampHigh System.Int32 0x04000523\n8 nLeaveTimeStampLow System.Int32 0x04000524\n12 nLeaveTimeStampHigh System.Int32 0x04000525\n16 nRstTime System.Int64 0x04000526\n24 nMilliSec System.Int32 0x04000527\n28 nReserved System.UInt32[] 0x04000528\n\nVM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_RESULT_INFO_LIST_EX | Size=232 | Sequential | Pack=8 | Ansi\n0 nStatus System.UInt32 0x04000529\n4 nErrorCode System.UInt32 0x0400052a\n8 nCycleID System.UInt32 0x0400052b\n12 nModuleID System.UInt32 0x0400052c\n16 fModuleTime System.Single 0x0400052d\n20 fAlgorithmTime System.Single 0x0400052e\n24 bInCycle System.UInt32 0x0400052f\n32 pstrModuleName System.IntPtr 0x04000530\n40 pstrDisplayName System.IntPtr 0x04000531\n48 pstResultReservedInfo System.IntPtr 0x04000532\n56 pReserved System.IntPtr[] 0x04000533\n112 strPubAddress System.String 0x04000534\n176 bIsSelfExecute System.UInt32 0x04000535\n180 nExecuteCount System.UInt32 0x04000536\n184 nReserved System.UInt32[] 0x04000537\n188 nResultNum System.Int32 0x04000538\n192 pInfo System.IntPtr 0x04000539\n200 strReCommand System.Byte[] 0x0400053a\n216 nReservedEx System.UInt32[] 0x0400053b\n",
+          "evidenceType": "reflection-only-x64-marshalling-layout-query",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+          "member": "ImvsSdkDefine.cs",
+          "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717",
+          "start": 943,
+          "end": 958,
+          "excerpt": "\tpublic struct IMVS_MODULE_CHUNK_VALUE_EX\n\t{\n\t\tpublic IntPtr pData;\n\n\t\tpublic uint nLen;\n\n\t\t[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]\n\t\tpublic string strValue;\n\n\t\tpublic uint nUseRealData;\n\n\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]\n\t\tpublic uint[] nReserved;\n\t}\n\n\tpublic struct IMVS_MODULE_BYTEDATA_VALUE_EX",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+          "member": "ImvsSdkDefine.cs",
+          "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717",
+          "start": 1118,
+          "end": 1157,
+          "excerpt": "\t\t\tstring result = (IsMemory ? MemoryAddress : null);\n\t\t\tif (MemoryType == 2)\n\t\t\t{\n\t\t\t}\n\t\t\treturn result;\n\t\t}\n\t}\n\n\tpublic struct IMVS_MODULE_RESULT_INFO_EX\n\t{\n\t\tpublic int nValueStatus;\n\n\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 128)]\n\t\tpublic byte[] strParamName;\n\n\t\tpublic int nParamType;\n\n\t\tpublic int nValueNum;\n\n\t\tpublic IntPtr pIntValue;\n\n\t\tpublic IntPtr pFloatValue;\n\n\t\tpublic IntPtr pStringValue;\n\n\t\tpublic IntPtr pImageValue;\n\n\t\tpublic IntPtr pChunkValue;\n\n\t\tpublic IntPtr pByteValue;\n\n\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]\n\t\tpublic uint[] nReserved;\n\t}\n\n\tpublic struct IMVS_MODULE_RESULT_INFO_EX_Data\n\t{\n\t\tpublic int nValueStatus;\n\n\t\t[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+          "member": "ImvsSdkDefine.cs",
+          "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717",
+          "start": 1196,
+          "end": 1245,
+          "excerpt": "\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 61)]\n\t\tpublic uint[] nReserved;\n\t}\n\n\tpublic struct IMVS_MODULE_RESULT_INFO_LIST_EX\n\t{\n\t\tpublic uint nStatus;\n\n\t\tpublic uint nErrorCode;\n\n\t\tpublic uint nCycleID;\n\n\t\tpublic uint nModuleID;\n\n\t\tpublic float fModuleTime;\n\n\t\tpublic float fAlgorithmTime;\n\n\t\tpublic uint bInCycle;\n\n\t\tpublic IntPtr pstrModuleName;\n\n\t\tpublic IntPtr pstrDisplayName;\n\n\t\tpublic IntPtr pstResultReservedInfo;\n\n\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)]\n\t\tpublic IntPtr[] pReserved;\n\n\t\t[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]\n\t\tpublic string strPubAddress;\n\n\t\tpublic uint bIsSelfExecute;\n\n\t\tpublic uint nExecuteCount;\n\n\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]\n\t\tpublic uint[] nReserved;\n\n\t\tpublic int nResultNum;\n\n\t\tpublic IntPtr pInfo;\n\n\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]\n\t\tpublic byte[] strReCommand;\n\n\t\t[MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]\n\t\tpublic uint[] nReservedEx;\n\t}\n",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "查询只读加载元数据，未执行厂商代码；不得写成assembly完全未加载，也不得据布局代替native生产者实际写字段。",
+        "外层nDataSize/nDataLen与nResultNum的运行合法域和实际分配范围仍需native原体/动态校验。"
+      ]
+    },
+    {
+      "id": "WL03",
+      "classification": "source-confirmed",
+      "stages": [
+        "results",
+        "display"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原平台callback外层type=23",
+      "to": "RESULT_INFO_LIST_EX → PreProData的身份与计数复制",
+      "behavior": "callback先PtrToStructure解外层，case23u再将pData按RESULT_INFO_LIST_EX解包，传ref moduleResultExInfo。ModuleManager.GetModuleResultCallBack直接以PreProData(moduleResInfo)触发托管结果事件；PreProData复制status/error/cycleID/moduleID/pubAddress/时间/self/executeCount/resultNum到托管header，按resultNum从pInfo取描述并逐项转换。executeCount来自结果header，而LargeObject只接CHUNK_VALUE_EX、目标对象和异常标记，没有header计数实参；所选链未比较映射头计数或据其拒绝过期帧。",
+      "representation": "身份和执行计数属于结果列表header；每个chunk描述有pointer/length/name/useRealData，未额外携带该header计数。",
+      "cache": "PreProData创建新的托管结果描述数组，但不等于所有像素已经独立复制。",
+      "release": "PtrToStructure解包不转移native缓冲所有权，也不证明callback返回后所有借用指针仍有效。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/CVmObjectBase.cs",
+          "member": "CVmObjectBase.cs",
+          "sha256": "59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db",
+          "start": 840,
+          "end": 849,
+          "excerpt": "\t\t\tcase 23u:\n\t\t\t{\n\t\t\t\tImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX moduleResultExInfo = (ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX)Marshal.PtrToStructure(iMVS_OUTPUT_PLATFORM_INFO.pData, typeof(ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX));\n\t\t\t\tif (OnModuleResultExCallBack != null)\n\t\t\t\t{\n\t\t\t\t\tOnModuleResultExCallBack(ref moduleResultExInfo);\n\t\t\t\t}\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tcase 24u:",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 427,
+          "end": 430,
+          "excerpt": "\tpublic void GetModuleResultCallBack(ref ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX moduleResInfo)\n\t{\n\t\tOnModuleResultCallBack?.Invoke(PreProData(moduleResInfo));\n\t}",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 523,
+          "end": 555,
+          "excerpt": "\tpublic ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data PreProData(ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX resultInfo, bool isFilter = false)\n\t{\n\t\tImvsSdkDefine.IMVS_MODULE_RESULT_RESERVED_INFO iMVS_MODULE_RESULT_RESERVED_INFO = default;\n\t\tif (resultInfo.pstResultReservedInfo != IntPtr.Zero)\n\t\t{\n\t\t\tiMVS_MODULE_RESULT_RESERVED_INFO = (ImvsSdkDefine.IMVS_MODULE_RESULT_RESERVED_INFO)Marshal.PtrToStructure(resultInfo.pstResultReservedInfo, typeof(ImvsSdkDefine.IMVS_MODULE_RESULT_RESERVED_INFO));\n\t\t}\n\t\tImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data result = new ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data\n\t\t{\n\t\t\tnStatus = resultInfo.nStatus,\n\t\t\tnErrorCode = resultInfo.nErrorCode,\n\t\t\tnCycleID = resultInfo.nCycleID,\n\t\t\tnModuleID = resultInfo.nModuleID,\n\t\t\tstrPubAddress = resultInfo.strPubAddress,\n\t\t\tfModuleTime = resultInfo.fModuleTime,\n\t\t\tfAlgorithmTime = resultInfo.fAlgorithmTime,\n\t\t\tbInCycle = resultInfo.bInCycle,\n\t\t\tbIsSelfExecute = resultInfo.bIsSelfExecute,\n\t\t\tnExecuteCount = resultInfo.nExecuteCount,\n\t\t\tnResultNum = resultInfo.nResultNum,\n\t\t\tdtEndTime = GetDateTime(iMVS_MODULE_RESULT_RESERVED_INFO.nRstTime, iMVS_MODULE_RESULT_RESERVED_INFO.nMilliSec),\n\t\t\tpInfo = new ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX_Data[resultInfo.nResultNum]\n\t\t};\n\t\tImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX[] array = ExternalCallHelper.PtrToStructurs<ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX>(resultInfo.pInfo, resultInfo.nResultNum);\n\t\tfor (int i = 0; i < resultInfo.nResultNum; i++)\n\t\t{\n\t\t\tresult.pInfo[i].strParamName = StringUtil.UTF8GetString(array[i].strParamName);\n\t\t\tNativeData2Data(ref array[i], ref result.pInfo[i], isFilter);\n\t\t}\n\t\treturn result;\n\t}\n\n\tpublic static Array GetValueFromServer(ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX_Data struResultInfo)",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 575,
+          "end": 602,
+          "excerpt": "\tpublic void LargeObject(ref ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX nativeData, ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data targetData, ref bool isExcOccur)\n\t{\n\t\tif (targetData == null)\n\t\t{\n\t\t\ttargetData = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data();\n\t\t}\n\t\tbool isMemory = nativeData.nUseRealData == 0 || nativeData.nUseRealData == 2;\n\t\ttargetData.IsMemory = isMemory;\n\t\ttargetData.MemoryType = nativeData.nUseRealData;\n\t\tif (nativeData.nUseRealData == 0)\n\t\t{\n\t\t\ttargetData.MemoryAddress = nativeData.strValue;\n\t\t}\n\t\telse if (2 == nativeData.nUseRealData)\n\t\t{\n\t\t\ttargetData.MemoryAddress = nativeData.strValue;\n\t\t\ttargetData.MemoryPtr = nativeData.pData;\n\t\t\ttargetData.Size = (int)nativeData.nLen;\n\t\t}\n\t\telse if (1 == nativeData.nUseRealData)\n\t\t{\n\t\t\ttargetData.MemoryPtr = nativeData.pData;\n\t\t\ttargetData.Size = (int)nativeData.nLen;\n\t\t\ttargetData.FillData(ref isExcOccur);\n\t\t}\n\t}\n\n\t/// <summary>",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "尚未证明result header executeCount与对应共享图像映射头计数的native同帧关系。",
+        "仅所选PreProData/LargeObject链没有该比较，不扩大为全应用任何地方都不比较计数。"
+      ]
+    },
+    {
+      "id": "WL04",
+      "classification": "source-confirmed",
+      "stages": [
+        "results",
+        "display"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原NativeData2Data按nParamType分派",
+      "to": "图像/chunk描述转换或byte[]内容复制",
+      "behavior": "类型4图像和5 chunk在!isFilter下将各自pointer指向的CHUNK_VALUE_EX描述序列读成托管描述数组，再逐项LargeObject；这一步不是每种模式均复制像素。类型6则为每项nLen创建byte[]并Marshal.Copy(pData,array,0,array.Length)，hexValue保留全部复制结果，显示strValue仅取前min(nLen,4096)字节转十六进制。图像/chunk路径与byte路径不可合并为一个“结果都已深拷贝”的结论。",
+      "representation": "类型4/5=描述数组+持有/延迟解析对象；类型6=独立托管byte[]及截短的文本表现。",
+      "cache": "类型6hexValue是完整内容副本，4096只是十六进制展示上限；图像缓存范围依赖WL05具体模式。",
+      "release": "byte[]内容复制完成后不再依赖原pByteValue像素内存；本代码没有因此归还生产者native块。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 658,
+          "end": 694,
+          "excerpt": "\t\t\t\tImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX[] array = ExternalCallHelper.PtrToStructurs<ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX>(nativedata.pImageValue, nativedata.nValueNum);\n\t\t\t\ttargeData.pImageValue = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data[nativedata.nValueNum];\n\t\t\t\tfor (int i = 0; i < nativedata.nValueNum; i++)\n\t\t\t\t{\n\t\t\t\t\ttargeData.pImageValue[i] = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data();\n\t\t\t\t\tLargeObject(ref array[i], targeData.pImageValue[i], ref isExcOccur);\n\t\t\t\t}\n\t\t\t}\n\t\t\tbreak;\n\t\tcase 5:\n\t\t{\n\t\t\tif (isFilter)\n\t\t\t{\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tbool isExcOccur2 = false;\n\t\t\tImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX[] array4 = ExternalCallHelper.PtrToStructurs<ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX>(nativedata.pChunkValue, nativedata.nValueNum);\n\t\t\ttargeData.pChunkValue = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data[nativedata.nValueNum];\n\t\t\tfor (int k = 0; k < nativedata.nValueNum; k++)\n\t\t\t{\n\t\t\t\ttargeData.pChunkValue[k] = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data();\n\t\t\t\tLargeObject(ref array4[k], targeData.pChunkValue[k], ref isExcOccur2);\n\t\t\t\tif (isExcOccur2)\n\t\t\t\t{\n\t\t\t\t\ttargeData.nValueNum = 0;\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\t\t\tbreak;\n\t\t}\n\t\tcase 6:\n\t\t{\n\t\t\tImvsSdkDefine.IMVS_MODULE_BYTEDATA_VALUE_EX[] array2 = ExternalCallHelper.PtrToStructurs<ImvsSdkDefine.IMVS_MODULE_BYTEDATA_VALUE_EX>(nativedata.pByteValue, nativedata.nValueNum);\n\t\t\ttargeData.pByteValue = new ImvsSdkDefine.IMVS_MODULE_BYTEDATA_VALUE_EX_Data[nativedata.nValueNum];\n\t\t\tfor (int j = 0; j < nativedata.nValueNum; j++)\n\t\t\t{\n\t\t\t\ttry",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 696,
+          "end": 712,
+          "excerpt": "\t\t\t\t\tImvsSdkDefine.IMVS_MODULE_BYTEDATA_VALUE_EX iMVS_MODULE_BYTEDATA_VALUE_EX = array2[j];\n\t\t\t\t\tbyte[] array3 = new byte[iMVS_MODULE_BYTEDATA_VALUE_EX.nLen];\n\t\t\t\t\tMarshal.Copy(iMVS_MODULE_BYTEDATA_VALUE_EX.pData, array3, 0, array3.Length);\n\t\t\t\t\tstring empty = string.Empty;\n\t\t\t\t\tuint num = ((iMVS_MODULE_BYTEDATA_VALUE_EX.nLen > 4096) ? 4096u : iMVS_MODULE_BYTEDATA_VALUE_EX.nLen);\n\t\t\t\t\tempty = BitConverter.ToString(array3, 0, (int)num).Replace(\"-\", string.Empty).ToUpper();\n\t\t\t\t\ttargeData.pByteValue[j].strValue = empty;\n\t\t\t\t\ttargeData.pByteValue[j].hexValue = array3;\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t}\n\t\t\tbreak;\n\t\t}\n\t\tcase 7:\n\t\t\tif (nativedata.nValueStatus == 0)",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "描述转换helper的异常/长度合法域没有由本条动态校验。",
+        "捕获byte转换异常为空catch，不能由结果项存在认定其字节已完整成功复制。"
+      ]
+    },
+    {
+      "id": "WL05",
+      "classification": "source-confirmed",
+      "stages": [
+        "results",
+        "display",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原LargeObject nUseRealData与IMVS_MODULE_CHUNK_VALUE_EX_Data",
+      "to": "共享名延迟读取、指针入池复制或最终byte[]复制",
+      "behavior": "LargeObject模式0只保存共享名并置IsMemory；模式2保存共享名、native指针和长度但仍IsMemory；模式1保存指针/长度且立即FillData。FillData通过ImvsSdkDefine.GetByteFromMemoryIntptr默认bUseMemPool=true进MemoryHelper.VMReadFromMemoryPtr，GetBytes取得池区后memcpy复制；禁用pool的该helper支路才直接返回原pointer。共享名FillData走VMReadFromMemory，读16字节头，解析长度/状态字节8/偏移14，复制映射内容到池或byte[]后Unmap/Close。对象GetData()另建byte[]并Marshal.Copy，是再一次独立内容复制。池GetBytes在容量越界时offset回0，单块超过容量时free旧pool再分配，故池指针缓存不是永久不可变像素所有权。",
+      "representation": "模式0/2在LargeObject时延迟持有名字/地址描述；模式1默认即时复制到SDK共享池。之后GetData()返回托管数组又是一层复制。",
+      "cache": "对象pData缓存的是SDK池地址；池wrap或扩容可改变该地址内容/有效性，不能把对象还存活当作原帧仍有效。",
+      "release": "共享映射正常路径UnmapViewOfFile/CloseHandle；池扩容释放旧HGlobal，未见按每个chunk单独free池片段的机制。返回byte[]交GC；生产者指针仍须其生命周期协议。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 575,
+          "end": 602,
+          "excerpt": "\tpublic void LargeObject(ref ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX nativeData, ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data targetData, ref bool isExcOccur)\n\t{\n\t\tif (targetData == null)\n\t\t{\n\t\t\ttargetData = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data();\n\t\t}\n\t\tbool isMemory = nativeData.nUseRealData == 0 || nativeData.nUseRealData == 2;\n\t\ttargetData.IsMemory = isMemory;\n\t\ttargetData.MemoryType = nativeData.nUseRealData;\n\t\tif (nativeData.nUseRealData == 0)\n\t\t{\n\t\t\ttargetData.MemoryAddress = nativeData.strValue;\n\t\t}\n\t\telse if (2 == nativeData.nUseRealData)\n\t\t{\n\t\t\ttargetData.MemoryAddress = nativeData.strValue;\n\t\t\ttargetData.MemoryPtr = nativeData.pData;\n\t\t\ttargetData.Size = (int)nativeData.nLen;\n\t\t}\n\t\telse if (1 == nativeData.nUseRealData)\n\t\t{\n\t\t\ttargetData.MemoryPtr = nativeData.pData;\n\t\t\ttargetData.Size = (int)nativeData.nLen;\n\t\t\ttargetData.FillData(ref isExcOccur);\n\t\t}\n\t}\n\n\t/// <summary>",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+          "member": "ImvsSdkDefine.cs",
+          "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717",
+          "start": 1036,
+          "end": 1066,
+          "excerpt": "\t\tpublic void FillData(ref bool isExcOccur)\n\t\t{\n\t\t\tlock (_lock)\n\t\t\t{\n\t\t\t\tif (FillFailed || pData != IntPtr.Zero)\n\t\t\t\t{\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tif (IsMemory)\n\t\t\t\t\t{\n\t\t\t\t\t\tstring realMemoryAddress = GetRealMemoryAddress();\n\t\t\t\t\t\tpData = GetByteFromMemoryAddress(realMemoryAddress, out var lenth);\n\t\t\t\t\t\tSize = lenth;\n\t\t\t\t\t}\n\t\t\t\t\telse if (MemoryPtr == IntPtr.Zero)\n\t\t\t\t\t{\n\t\t\t\t\t\t_failed = true;\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t{\n\t\t\t\t\t\tpData = GetByteFromMemoryIntptr(MemoryPtr, Size, ref isExcOccur);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t\t_failed = true;\n\t\t\t\t}\n\t\t\t}\n\t\t}",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+          "member": "ImvsSdkDefine.cs",
+          "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717",
+          "start": 1078,
+          "end": 1088,
+          "excerpt": "\t\tpublic byte[] GetData()\n\t\t{\n\t\t\tIntPtr data = GetData(out var lenth);\n\t\t\tif (data != IntPtr.Zero)\n\t\t\t{\n\t\t\t\tbyte[] array = new byte[lenth];\n\t\t\t\tMarshal.Copy(data, array, 0, lenth);\n\t\t\t\treturn array;\n\t\t\t}\n\t\t\treturn null;\n\t\t}",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+          "member": "ImvsSdkDefine.cs",
+          "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717",
+          "start": 14873,
+          "end": 14876,
+          "excerpt": "\tinternal static IntPtr GetByteFromMemoryIntptr(IntPtr memoryPtr, int size, ref bool isExcOccur, bool bUseMemPool = true)\n\t{\n\t\treturn MemoryHelper.VMReadFromMemoryPtr(memoryPtr, size, ref isExcOccur, bUseMemPool);\n\t}",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/MemoryHelper.cs",
+          "member": "MemoryHelper.cs",
+          "sha256": "1930f12410b1ea46bfd62ad6489c34e1a9f0ea6f264cfaed0f4fa40f8c8fb29b",
+          "start": 172,
+          "end": 192,
+          "excerpt": "\tprivate static IntPtr GetBytes(int lenth, out int oriOffset)\n\t{\n\t\tif (offset + lenth > MaxMemoryLenth)\n\t\t{\n\t\t\toffset = 0;\n\t\t}\n\t\tif (lenth > MaxMemoryLenth)\n\t\t{\n\t\t\tMarshal.FreeHGlobal(largeMemoryIntPtr);\n\t\t\tint num = Math.Min(lenth + 268435455, int.MaxValue);\n\t\t\tlargeMemoryIntPtr = Marshal.AllocHGlobal(num);\n\t\t\tMaxMemoryLenth = num;\n\t\t}\n\t\toriOffset = offset;\n\t\tIntPtr result = largeMemoryIntPtr + offset;\n\t\toffset += lenth;\n\t\treturn result;\n\t}\n\n\t[DllImport(\"msvcrt.dll\", CallingConvention = CallingConvention.Cdecl, EntryPoint = \"memcpy\")]\n\tpublic static extern void MemCopy(IntPtr dest, IntPtr src, int count);",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/MemoryHelper.cs",
+          "member": "MemoryHelper.cs",
+          "sha256": "1930f12410b1ea46bfd62ad6489c34e1a9f0ea6f264cfaed0f4fa40f8c8fb29b",
+          "start": 195,
+          "end": 223,
+          "excerpt": "\tinternal static IntPtr VMReadFromMemoryPtr(IntPtr memoryPtr, int dataLenth, ref bool isExcOccur, bool bUseMemPool = true)\n\t{\n\t\tIntPtr zero = IntPtr.Zero;\n\t\tisExcOccur = false;\n\t\ttry\n\t\t{\n\t\t\tif (bUseMemPool)\n\t\t\t{\n\t\t\t\tzero = GetBytes(dataLenth, out var _);\n\t\t\t\tMemCopy(zero, memoryPtr, dataLenth);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tzero = memoryPtr;\n\t\t\t}\n\t\t}\n\t\tcatch (AccessViolationException)\n\t\t{\n\t\t\tLogHelper.Error(\"AccessViolationException Error\");\n\t\t\tzero = IntPtr.Zero;\n\t\t\tisExcOccur = true;\n\t\t}\n\t\treturn zero;\n\t}\n\n\t/// <summary>\n\t/// 自定义读取共享内存,前八位是共享内存长度\n\t/// </summary>\n\t/// <param name=\"fileName\"></param>",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/sdk-result-layout.resources/MemoryHelper.cs",
+          "member": "MemoryHelper.cs",
+          "sha256": "1930f12410b1ea46bfd62ad6489c34e1a9f0ea6f264cfaed0f4fa40f8c8fb29b",
+          "start": 226,
+          "end": 288,
+          "excerpt": "\tpublic static IntPtr VMReadFromMemory(string fileName, int startOffset, out int lenth, ref byte[] byteData, bool bUseMemPool = true)\n\t{\n\t\tbyte[] array = new byte[16];\n\t\tlong value = array.Length;\n\t\tIntPtr intPtr = OpenFileMapping(4L, bInheritHandle: false, fileName);\n\t\tlenth = 0;\n\t\tif (intPtr == IntPtr.Zero)\n\t\t{\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\t\tIntPtr intPtr2 = MapViewOfFile(intPtr, 4L, 0L, 0L, new IntPtr(value));\n\t\tif (intPtr2 == IntPtr.Zero)\n\t\t{\n\t\t\tCloseHandle(intPtr);\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\t\tMarshal.Copy(intPtr2, array, 0, array.Length);\n\t\tUnmapViewOfFile(intPtr2);\n\t\tif (array[8] != 0)\n\t\t{\n\t\t\tCloseHandle(intPtr);\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\t\tlong num = BitConverter.ToInt64(array, 0);\n\t\tstartOffset = BitConverter.ToInt16(array, 14);\n\t\tif (num < 0)\n\t\t{\n\t\t\tCloseHandle(intPtr);\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\t\tlenth = (int)num;\n\t\tvalue = num + startOffset;\n\t\tintPtr2 = MapViewOfFile(intPtr, 4L, 0L, 0L, new IntPtr(value));\n\t\tif (intPtr2 == IntPtr.Zero)\n\t\t{\n\t\t\tCloseHandle(intPtr);\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\t\tIntPtr zero = IntPtr.Zero;\n\t\tif (bUseMemPool)\n\t\t{\n\t\t\tzero = GetBytes((int)num, out var _);\n\t\t\tMemCopy(zero, intPtr2 + startOffset, (int)num);\n\t\t\tbyteData = null;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tbyteData = new byte[num];\n\t\t\tMarshal.Copy(intPtr2 + startOffset, byteData, 0, (int)num);\n\t\t\tzero = IntPtr.Zero;\n\t\t}\n\t\tif (intPtr2 != IntPtr.Zero)\n\t\t{\n\t\t\tUnmapViewOfFile(intPtr2);\n\t\t}\n\t\tif (intPtr != IntPtr.Zero)\n\t\t{\n\t\t\tCloseHandle(intPtr);\n\t\t}\n\t\treturn zero;\n\t}\n\n\t/// <summary>",
+          "evidenceType": "static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "共享名读取只检查16字节头，未在此比较结果header executeCount；与另一VMGetMemDataPtr读取80位置计数的接口不可混同。",
+        "池并发/最后消费者协调与模式2何时实际读名字路径需具体consumer时序，不能仅凭字段布局宣称同帧安全。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "WLU01",
+      "target": "native callback producer → case23",
+      "question": "已证托管注册/结构/身份复制，不据布局吻合证明native生产者计数、像素和结果同帧。"
+    },
+    {
+      "id": "WLU02",
+      "target": "delegate and native in-flight callbacks",
+      "question": "静态root与DestroyHandle不证明回调排空、线程同步或所有事件解订阅。"
+    },
+    {
+      "id": "WLU03",
+      "target": "SDK image/chunk pool and lazy consumer",
+      "question": "pool wrap/扩容与consumer最后读者、映射更新窗口和借用指针寿命尚未运行核验。"
+    }
+  ],
+  "provenance": {
+    "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+    "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+    "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2",
+    "wireLayouts": [
+      {
+        "charSet": "Ansi",
+        "marshalSize": 40,
+        "type": "VM.PlatformSDKCS.ImvsSdkDefine+IMVS_OUTPUT_PLATFORM_INFO",
+        "marshalError": null,
+        "pack": 8,
+        "layoutKind": "Sequential",
+        "declaredSize": 0,
+        "fields": [
+          {
+            "offset": 0,
+            "metadataToken": "0x04000477",
+            "name": "nInfoType",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 8,
+            "metadataToken": "0x04000478",
+            "name": "pData",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 16,
+            "metadataToken": "0x04000479",
+            "name": "nDataSize",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 20,
+            "metadataToken": "0x0400047a",
+            "name": "nDataLen",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 24,
+            "metadataToken": "0x0400047b",
+            "name": "nReserved",
+            "offsetError": null,
+            "type": "System.UInt32[]"
+          }
+        ],
+        "metadataToken": "0x020000b9"
+      },
+      {
+        "charSet": "Ansi",
+        "marshalSize": 288,
+        "type": "VM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_CHUNK_VALUE_EX",
+        "marshalError": null,
+        "pack": 8,
+        "layoutKind": "Sequential",
+        "declaredSize": 0,
+        "fields": [
+          {
+            "offset": 0,
+            "metadataToken": "0x040004f8",
+            "name": "pData",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 8,
+            "metadataToken": "0x040004f9",
+            "name": "nLen",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 12,
+            "metadataToken": "0x040004fa",
+            "name": "strValue",
+            "offsetError": null,
+            "type": "System.String"
+          },
+          {
+            "offset": 272,
+            "metadataToken": "0x040004fb",
+            "name": "nUseRealData",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 276,
+            "metadataToken": "0x040004fc",
+            "name": "nReserved",
+            "offsetError": null,
+            "type": "System.UInt32[]"
+          }
+        ],
+        "metadataToken": "0x020000db"
+      },
+      {
+        "charSet": "Ansi",
+        "marshalSize": 32,
+        "type": "VM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_BYTEDATA_VALUE_EX",
+        "marshalError": null,
+        "pack": 8,
+        "layoutKind": "Sequential",
+        "declaredSize": 0,
+        "fields": [
+          {
+            "offset": 0,
+            "metadataToken": "0x040004fd",
+            "name": "pData",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 8,
+            "metadataToken": "0x040004fe",
+            "name": "nLen",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 12,
+            "metadataToken": "0x040004ff",
+            "name": "nReserved",
+            "offsetError": null,
+            "type": "System.UInt32[]"
+          }
+        ],
+        "metadataToken": "0x020000dc"
+      },
+      {
+        "charSet": "Ansi",
+        "marshalSize": 208,
+        "type": "VM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_RESULT_INFO_EX",
+        "marshalError": null,
+        "pack": 8,
+        "layoutKind": "Sequential",
+        "declaredSize": 0,
+        "fields": [
+          {
+            "offset": 0,
+            "metadataToken": "0x0400050b",
+            "name": "nValueStatus",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 4,
+            "metadataToken": "0x0400050c",
+            "name": "strParamName",
+            "offsetError": null,
+            "type": "System.Byte[]"
+          },
+          {
+            "offset": 132,
+            "metadataToken": "0x0400050d",
+            "name": "nParamType",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 136,
+            "metadataToken": "0x0400050e",
+            "name": "nValueNum",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 144,
+            "metadataToken": "0x0400050f",
+            "name": "pIntValue",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 152,
+            "metadataToken": "0x04000510",
+            "name": "pFloatValue",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 160,
+            "metadataToken": "0x04000511",
+            "name": "pStringValue",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 168,
+            "metadataToken": "0x04000512",
+            "name": "pImageValue",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 176,
+            "metadataToken": "0x04000513",
+            "name": "pChunkValue",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 184,
+            "metadataToken": "0x04000514",
+            "name": "pByteValue",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 192,
+            "metadataToken": "0x04000515",
+            "name": "nReserved",
+            "offsetError": null,
+            "type": "System.UInt32[]"
+          }
+        ],
+        "metadataToken": "0x020000df"
+      },
+      {
+        "charSet": "Ansi",
+        "marshalSize": 272,
+        "type": "VM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_RESULT_RESERVED_INFO",
+        "marshalError": null,
+        "pack": 8,
+        "layoutKind": "Sequential",
+        "declaredSize": 0,
+        "fields": [
+          {
+            "offset": 0,
+            "metadataToken": "0x04000522",
+            "name": "nArrivalTimeStampLow",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 4,
+            "metadataToken": "0x04000523",
+            "name": "nArrivalTimeStampHigh",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 8,
+            "metadataToken": "0x04000524",
+            "name": "nLeaveTimeStampLow",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 12,
+            "metadataToken": "0x04000525",
+            "name": "nLeaveTimeStampHigh",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 16,
+            "metadataToken": "0x04000526",
+            "name": "nRstTime",
+            "offsetError": null,
+            "type": "System.Int64"
+          },
+          {
+            "offset": 24,
+            "metadataToken": "0x04000527",
+            "name": "nMilliSec",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 28,
+            "metadataToken": "0x04000528",
+            "name": "nReserved",
+            "offsetError": null,
+            "type": "System.UInt32[]"
+          }
+        ],
+        "metadataToken": "0x020000e1"
+      },
+      {
+        "charSet": "Ansi",
+        "marshalSize": 232,
+        "type": "VM.PlatformSDKCS.ImvsSdkDefine+IMVS_MODULE_RESULT_INFO_LIST_EX",
+        "marshalError": null,
+        "pack": 8,
+        "layoutKind": "Sequential",
+        "declaredSize": 0,
+        "fields": [
+          {
+            "offset": 0,
+            "metadataToken": "0x04000529",
+            "name": "nStatus",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 4,
+            "metadataToken": "0x0400052a",
+            "name": "nErrorCode",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 8,
+            "metadataToken": "0x0400052b",
+            "name": "nCycleID",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 12,
+            "metadataToken": "0x0400052c",
+            "name": "nModuleID",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 16,
+            "metadataToken": "0x0400052d",
+            "name": "fModuleTime",
+            "offsetError": null,
+            "type": "System.Single"
+          },
+          {
+            "offset": 20,
+            "metadataToken": "0x0400052e",
+            "name": "fAlgorithmTime",
+            "offsetError": null,
+            "type": "System.Single"
+          },
+          {
+            "offset": 24,
+            "metadataToken": "0x0400052f",
+            "name": "bInCycle",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 32,
+            "metadataToken": "0x04000530",
+            "name": "pstrModuleName",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 40,
+            "metadataToken": "0x04000531",
+            "name": "pstrDisplayName",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 48,
+            "metadataToken": "0x04000532",
+            "name": "pstResultReservedInfo",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 56,
+            "metadataToken": "0x04000533",
+            "name": "pReserved",
+            "offsetError": null,
+            "type": "System.IntPtr[]"
+          },
+          {
+            "offset": 112,
+            "metadataToken": "0x04000534",
+            "name": "strPubAddress",
+            "offsetError": null,
+            "type": "System.String"
+          },
+          {
+            "offset": 176,
+            "metadataToken": "0x04000535",
+            "name": "bIsSelfExecute",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 180,
+            "metadataToken": "0x04000536",
+            "name": "nExecuteCount",
+            "offsetError": null,
+            "type": "System.UInt32"
+          },
+          {
+            "offset": 184,
+            "metadataToken": "0x04000537",
+            "name": "nReserved",
+            "offsetError": null,
+            "type": "System.UInt32[]"
+          },
+          {
+            "offset": 188,
+            "metadataToken": "0x04000538",
+            "name": "nResultNum",
+            "offsetError": null,
+            "type": "System.Int32"
+          },
+          {
+            "offset": 192,
+            "metadataToken": "0x04000539",
+            "name": "pInfo",
+            "offsetError": null,
+            "type": "System.IntPtr"
+          },
+          {
+            "offset": 200,
+            "metadataToken": "0x0400053a",
+            "name": "strReCommand",
+            "offsetError": null,
+            "type": "System.Byte[]"
+          },
+          {
+            "offset": 216,
+            "metadataToken": "0x0400053b",
+            "name": "nReservedEx",
+            "offsetError": null,
+            "type": "System.UInt32[]"
+          }
+        ],
+        "metadataToken": "0x020000e2"
+      }
+    ],
+    "metadataQuery": {
+      "path": "docs/architecture-recovery/sdk-result-layout.resources/layout-metadata.json",
+      "sha256": "bc1c8551dd5b73aff262ff8cf9b881e7540b65d3cd5ddf14d41e595a0596399a",
+      "helper": "docs/architecture-recovery/sdk-result-layout.resources/Inspect-Layout.ps1",
+      "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File docs/architecture-recovery/sdk-result-layout.resources/Inspect-Layout.ps1 | Out-File -Encoding utf8 docs/architecture-recovery/sdk-result-layout.resources/layout-metadata.json",
+      "exitCode": 0,
+      "metadataLoadedReflectionOnly": true,
+      "targetCodeExecuted": false,
+      "pointerSize": 8
+    },
+    "staticCaptures": [
+      {
+        "type": "VM.PlatformSDKCS.ImvsSdkDefine",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.ImvsSdkDefine 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+        "exitCode": 0
+      },
+      {
+        "type": "VM.PlatformSDKCS.CVmObjectBase",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.CVmObjectBase 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/sdk-result-layout.resources/CVmObjectBase.cs",
+        "exitCode": 0
+      },
+      {
+        "type": "VM.PlatformSDKCS.delegateOutputCallBack",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.delegateOutputCallBack 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/sdk-result-layout.resources/delegateOutputCallBack.cs",
+        "exitCode": 0
+      },
+      {
+        "type": "VM.PlatformSDKCS.MemoryHelper",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.MemoryHelper 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/sdk-result-layout.resources/MemoryHelper.cs",
+        "exitCode": 0
+      }
+    ],
+    "resources": [
+      {
+        "path": "docs/architecture-recovery/sdk-result-layout.resources/ImvsSdkDefine.cs",
+        "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717",
+        "byteLength": 507666
+      },
+      {
+        "path": "docs/architecture-recovery/sdk-result-layout.resources/CVmObjectBase.cs",
+        "sha256": "59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db",
+        "byteLength": 44479
+      },
+      {
+        "path": "docs/architecture-recovery/sdk-result-layout.resources/delegateOutputCallBack.cs",
+        "sha256": "3184fa23620db8bf2d93b8508953798c1c43bb4727970ca3ff23a0242af360b2",
+        "byteLength": 305
+      },
+      {
+        "path": "docs/architecture-recovery/sdk-result-layout.resources/MemoryHelper.cs",
+        "sha256": "1930f12410b1ea46bfd62ad6489c34e1a9f0ea6f264cfaed0f4fa40f8c8fb29b",
+        "byteLength": 10632
+      },
+      {
+        "path": "docs/architecture-recovery/sdk-result-layout.resources/Inspect-Layout.ps1",
+        "sha256": "7dc4b2c013f8c445af2e9391ea86f1d8bae7183424774370530012d14a02d361",
+        "byteLength": 2065
+      },
+      {
+        "path": "docs/architecture-recovery/sdk-result-layout.resources/layout-metadata.json",
+        "sha256": "bc1c8551dd5b73aff262ff8cf9b881e7540b65d3cd5ddf14d41e595a0596399a",
+        "byteLength": 24041
+      },
+      {
+        "path": "docs/architecture-recovery/sdk-result-layout.resources/layout-summary.txt",
+        "sha256": "211302269a74f3c69333093330e7e8588418dcaf39a27c57c3e0a3a110c56ac3",
+        "byteLength": 2594
+      }
+    ],
+    "metadataLoadedReflectionOnly": true,
+    "targetCodeExecuted": false,
+    "originalRuntimeExecuted": false,
+    "nativeCliLaunched": false,
+    "liveProcessHandle": null,
+    "deviceCalled": false,
+    "anotherWorktreeRead": false,
+    "implementationChanges": false
+  }
+}

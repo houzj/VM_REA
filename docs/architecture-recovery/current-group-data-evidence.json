@@ -1,0 +1,872 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "stages": [
+    {
+      "id": "prepare",
+      "title": "准备：确认Group属于谁，冻结本次参数",
+      "summary": "独占body身份、solution结构/JSON快照、父输入解析与break外部操作数捕获；容器复制和payload共享分别说明。",
+      "factIds": [
+        "CG01",
+        "CG02",
+        "CG04"
+      ]
+    },
+    {
+      "id": "round",
+      "title": "轮次：先判断是否中断，再执行本轮",
+      "summary": "索引/范围/间隔与独立资源门；内部比较读前轮，self读累计片段；输入值在本次Group调用内复用。",
+      "factIds": [
+        "CG03",
+        "CG05"
+      ]
+    },
+    {
+      "id": "execute",
+      "title": "执行：每轮新上下文，失败按分支传回",
+      "summary": "本轮records/变量和输入容器独立，PortValue引用传递；非Success、取消和超时分别按实际门控。",
+      "factIds": [
+        "CG06",
+        "CG09"
+      ]
+    },
+    {
+      "id": "retain",
+      "title": "保留：成功轮累积，图像显示按条件替换",
+      "summary": "先留PortValue片段，结束JoinArray才复制数组；GrayImage列表替换仅移引用，非像素free。",
+      "factIds": [
+        "CG07",
+        "CG08"
+      ]
+    },
+    {
+      "id": "retire",
+      "title": "退役：模块结束、租约退出、solution关闭分开",
+      "summary": "module.Dispose不清session；Group结束退出本轮租约，root scope关闭后等全部租约再清state并Dispose。",
+      "factIds": [
+        "CG09",
+        "CG10"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "CG01",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "SolutionExecutor.RunAsync与OwnedGroups.Validate",
+      "to": "独占Group body身份及运行文档快照",
+      "behavior": "RunAsync先ValidateStructure，其内调用OwnedGroups.Validate：body.GroupOwner是(parentProcedureId,nodeId)，父节点必须为workflow.subprogram且Call.ProcedureId指回body；全solution只能一个节点引用该owned body，所有权链限制三层并拒循环。随后solution快照复制Resources/Procedures、连接、执行边和节点；参数JsonElement逐项Clone，ROI vertices与Call/GroupBreak及Configuration另建结构容器。owned配置先GroupDisplayLinks.Synchronize再Snapshot，不等于保留原文档所有引用。",
+      "representation": "身份是稳定ID记录与当前托管模型；数组/字典/JSON克隆与PortValue运行payload是不同复制层。",
+      "cache": "本次RunAsync的局部document持有快照到内部Execute闭包结束；并非每轮重新读取workspace.Document的节点参数。资源有另一个边界：初始验证catalog使用快照resources，但每次GraphExecutor的ResourceCatalog构造实参仍为workspace.Document.Resources；不能把全部资源读取也概括为只访问同一快照。",
+      "release": "无document IDisposable或逐值free；快照引用退出可达范围后由托管GC处理，不推实际回收时刻。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor.RunAsync",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 12,
+          "end": 16,
+          "excerpt": "        SolutionStore.ValidateStructure(workspace.Document);\n        var document=workspace.Document with{Resources=workspace.Document.Resources.ToArray(),Procedures=workspace.Document.Procedures.Select(p=>p with{Configuration=(p.GroupOwner is not null?GroupDisplayLinks.Synchronize(p.Configuration,p.Configuration):p.Configuration).Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(v=>v.Key,v=>v.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};\n        WorkflowCalls.Validate(document,procedureId);\n        var checkedProcedures=new HashSet<string>();void ValidateBreaks(string id){if(!checkedProcedures.Add(id))return;var parent=document.Procedures.Single(p=>p.Id==id);foreach(var node in parent.Nodes){if(node.GroupBreak is not null){var body=document.Procedures.SingleOrDefault(p=>p.Id==node.Call?.ProcedureId)??throw new InvalidDataException(\"Break metadata requires a Group body.\");GroupBreak.Validate(parent,node,body,registry);}if(node.Enabled&&node.Call is {} call)ValidateBreaks(call.ProcedureId);}}ValidateBreaks(procedureId);\n        var resources=document.Resources.ToArray();var catalog=new ResourceCatalog(workspace.BaseDirectory,resources);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "SolutionStore.ValidateStructure",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 31,
+          "end": 31,
+          "excerpt": "        OwnedGroups.Validate(solution);var resources=new HashSet<string>(StringComparer.Ordinal);foreach(var r in solution.Resources){if(r is null)throw new InvalidDataException(\"Null resource.\");Require(r.Id,\"Resource id\");Require(r.Path,\"Resource path\");if(!resources.Add(r.Id))throw new InvalidDataException(\"Duplicate resource id.\");if(r.Sha256 is not null&&!Regex.IsMatch(r.Sha256,\"\\\\A[0-9a-fA-F]{64}\\\\z\"))throw new InvalidDataException(\"Invalid resource digest.\");if(r.EmbeddedBase64 is {} encoded){if(encoded.Length>MaximumBytes)throw new InvalidDataException(\"Embedded resource exceeds size limit.\");byte[] bytes;try{bytes=Convert.FromBase64String(encoded);}catch(FormatException ex){throw new InvalidDataException(\"Invalid embedded resource encoding: \"+r.Id,ex);}if(r.Sha256 is not null&&!string.Equals(Convert.ToHexString(SHA256.HashData(bytes)),r.Sha256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException(\"Embedded resource digest mismatch: \"+r.Id);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor resources preverification",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 16,
+          "end": 17,
+          "excerpt": "        var resources=document.Resources.ToArray();var catalog=new ResourceCatalog(workspace.BaseDirectory,resources);\n        foreach(var resource in resources){if(cancellationToken.IsCancellationRequested)break;using var stream=catalog.OpenVerified(resource.Id);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor per-Execute ResourceCatalog",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 47,
+          "end": 47,
+          "excerpt": "                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex,scope,control,new ResourceCatalog(workspace.BaseDirectory,workspace.Document.Resources));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/OwnedGroups.cs",
+          "member": "OwnedGroups.Validate",
+          "sha256": "2a5eb09166d1d86559d3c092d6aa63ae96b6a6a555215aacb9ca6dc38e2a41f1",
+          "start": 4,
+          "end": 14,
+          "excerpt": " public static void Validate(SolutionDocument d)\n {\n  var byId=d.Procedures.ToDictionary(p=>p.Id);\n  foreach(var body in d.Procedures.Where(p=>p.GroupOwner is not null)){\n   var owner=body.GroupOwner!;\n   if(!byId.TryGetValue(owner.ProcedureId,out var parent)||parent.Nodes.SingleOrDefault(n=>n.Id==owner.NodeId) is not {} node||node.ModuleId!=WorkflowCalls.ModuleId||node.Call?.ProcedureId!=body.Id)throw new InvalidDataException(\"Group owner is missing or inconsistent.\");\n   if(d.Procedures.Sum(p=>p.Nodes.Count(n=>n.Call?.ProcedureId==body.Id))!=1)throw new InvalidDataException(\"Owned Group cannot be shared; copy its internal graph instead.\");\n   var seen=new HashSet<string>();var cursor=body;int depth=0;while(cursor.GroupOwner is {} edge){if(++depth>3||!seen.Add(cursor.Id)||!byId.TryGetValue(edge.ProcedureId,out cursor!))throw new InvalidDataException(\"Invalid Group ownership or nesting depth.\");}\n  }\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowConfiguration.cs",
+          "member": "WorkflowConfiguration.Snapshot",
+          "sha256": "ad59db622c095ac22c3550c3b3ca4b6491ac31d68108a83e0caa9c56928e7b1f",
+          "start": 26,
+          "end": 26,
+          "excerpt": " public WorkflowConfiguration Snapshot()=>this with{Subscriptions=Subscriptions.ToArray(),Inputs=Inputs.ToArray(),Outputs=Outputs.ToArray(),Displays=Displays.ToArray(),RunParameters=RunParameters.Select(p=>p.Snapshot()).ToArray(),RunCategories=RunCategories?.ToArray(),Groups=Groups.ToArray(),Variables=Variables.ToArray()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本次只核当前托管合同，不证明原版GroupOwner或原native布局一致；线程并发编辑的完整宿主锁域未在这里验证。"
+      ],
+      "holder": [
+        "RunAsync.document",
+        "ProcedureDocument.GroupOwner",
+        "parent NodeDocument.Call"
+      ]
+    },
+    {
+      "id": "CG02",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "父GraphExecutor的workflow.subprogram节点",
+      "to": "参数/输入处理后进入owned body Call闭包",
+      "behavior": "父GraphExecutor先从本轮records建立nodeInputs，再解析Subscriptions覆盖输入或参数、执行Coerce，之后才创建节点linked token。workflow.subprogram分支不registry.Create普通模块，而把Parameters=本轮参数字典及GroupBreak.Capture所得绑定放入node副本，传只读包装nodeInputs交callProcedure。SolutionExecutor.Call按node.Call.ProcedureId找body；GroupOwner为null直接单次Execute，有owner才进入Task.Run的Group循环。Task.Run包整个循环，不是ReadyQueue或各轮并行。",
+      "representation": "ReadOnlyDictionary是对局部nodeInputs字典的只读视图；PortValue对象未在该调用点deep-copy。",
+      "cache": "values由父调用闭包在多轮复用，参数使用父运行快照并加本轮订阅覆盖；当前代码没有每轮从编辑器重新capture输入。",
+      "release": "父节点持有child session于calls字典；本分支没有新普通module实例，所以不存在该调用节点的module.Dispose动作。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor.RunAsync parameter/input resolve",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 28,
+          "end": 36,
+          "excerpt": "   var parameters=n.Parameters.ToDictionary(x=>x.Key,x=>x.Value);foreach(var spec in d.Parameters)if(!parameters.ContainsKey(spec.Name)&&spec.DefaultValue is {} def)parameters[spec.Name]=def.Clone();\n   var numericIndices=new Dictionary<string,WorkflowArrayIndex?>(StringComparer.Ordinal);\n   try{foreach(var binding in p.Configuration.Subscriptions.Where(b=>b.NodeId==id)){PortValue value;if(!binding.IsParameter&&d.Inputs.Single(port=>port.Name==binding.Target) is {} deferred&&(deferred.SupportsDeferredNumericRead||deferred.SupportsDeferredIntegerRead||deferred.SupportsDeferredTextRead)){numericIndices.Add(binding.Target,binding.Source.ArrayIndex);try{value=workflow.Resolve(binding.Source with{ArrayIndex=null});}catch(InvalidDataException)when(workflow.CanDeferNumericRead(binding.Source)){continue;}}else value=workflow.Resolve(binding.Source);if(binding.IsParameter)parameters[binding.Target]=WorkflowSubscriptions.Parameter(d.Parameters.Single(p=>p.Name==binding.Target),value);else nodeInputs[binding.Target]=value;}}catch(Exception ex)when(ex is InvalidDataException or OverflowException){Record(NodeRunStatus.Failed,code:\"SubscriptionUnavailable\",message:ex.Message);continue;}\n   try{foreach(var input in nodeInputs.ToArray()){var port=d.Inputs.Single(p=>p.Name==input.Key);if(!PortTypes.AcceptsInput(port,input.Value.Kind,input.Value.Cardinality))throw new InvalidDataException(\"Input cardinality mismatch: \"+input.Key);nodeInputs[input.Key]=DataKinds.Coerce(input.Value,port);}}catch(Exception ex)when(ex is InvalidDataException or InvalidOperationException){Record(NodeRunStatus.Failed,code:\"InputTypeMismatch\",message:ex.Message);continue;}\n   var numericReader=numericIndices.Count==0?null:new WorkflowNumericInputRead(nodeInputs,numericIndices,workflow.Resolve);\n   var visibleSuccessors=executionSuccessorRead?.Invoke(id)??Array.AsReadOnly(executionEdges.Where(e=>e.FromNode==id).Select(e=>new ExecutionSuccessor(e.ToNode)).ToArray());\n   IModule? module=null;ModuleResult? result=null;Exception? error=null;using var timeout=new CancellationTokenSource();if(n.TimeoutMs>0)timeout.CancelAfter(n.TimeoutMs);using var linked=CancellationTokenSource.CreateLinkedTokenSource(timeout.Token,cancellationToken,scope?.Stopping??CancellationToken.None);Report(id,NodeRunStatus.Running);\n   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}\n   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor.RunAsync subprogram invocation",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 35,
+          "end": 35,
+          "excerpt": "   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor.Execute.Call",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 25,
+          "end": 33,
+          "excerpt": "            async Task<ExecutionSessionResult> Call(NodeDocument node,IReadOnlyDictionary<string,PortValue> values,CancellationToken childToken){\n                var body=document.Procedures.Single(p=>p.Id==node.Call!.ProcedureId);\n                // Legacy cross-flow calls retain one-shot behavior. Native Group loops own their body.\n                if(body.GroupOwner is null)return await Execute(body.Id,values,childToken,depth+1);\n                return await Task.Run(async()=>{\n                var loop=GroupLoop.Read(node);ExecutionSessionResult? last=null;int completed=0;bool broke=false;int? breakIndex=null;var diagnostics=new List<string>();var accumulator=new GroupOutputAccumulator(body);\n                for(long index=loop.Start;index<loop.End;index+=loop.Increment){\n                    childToken.ThrowIfCancellationRequested();\n                    if(index<int.MinValue||index>int.MaxValue)throw new InvalidOperationException(\"Independent Group index overflow guard.\");",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "父nodeInputs与payload本身是否可变取决于具体PortValue/工具数据类型；只读字典不代表深不可变图像内存。"
+      ],
+      "holder": [
+        "parent GraphExecutor.nodeInputs",
+        "Call.values",
+        "parent calls[nodeId]"
+      ]
+    },
+    {
+      "id": "CG03",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "GroupLoop.Read与SolutionExecutor循环",
+      "to": "每轮索引、独立context与等待控制",
+      "behavior": "Read强制LoopTimeGap在0..10000、LoopStep非0；EnableLoop=false时固定Start=0/End=1/Step=1。实际for条件始终index<End，Increment为Start<End?Step:-Step，不把它改述为完整双向区间循环。每轮先childToken.ThrowIfCancellationRequested，再int32范围与10000已完成轮独立资源门，再Evaluate break；通过后await Execute(body.Id,同values,...,index)，completed++，仅Success累积，非Success退出，Success且IntervalMs>0才Delay。",
+      "representation": "index是long循环变量，入body的GroupLoopIndex是已核范围后的int；不是全局变量或上轮输出。",
+      "cache": "每个Execute新建procedure WaitTime CancellationTokenSource与linked token，新GraphExecutor；内部Graph按ExecutionOrder串行await。",
+      "release": "每次Execute结束其using wait/linked退役；Interval取消抛出而非自动返回已聚合session。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupLoop.cs",
+          "member": "GroupLoop.Increment",
+          "sha256": "533b3e2d80d767cdde186fc7d6a7437223ab97d9be7a7d88f19af87a3935531c",
+          "start": 10,
+          "end": 10,
+          "excerpt": " public long Increment=>Start<End?Step:-(long)Step;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupLoop.cs",
+          "member": "GroupLoop.Read",
+          "sha256": "533b3e2d80d767cdde186fc7d6a7437223ab97d9be7a7d88f19af87a3935531c",
+          "start": 20,
+          "end": 33,
+          "excerpt": " public static GroupLoop Read(NodeDocument node)\n {\n  int Integer(string name,int fallback)=>node.Parameters.TryGetValue(name,out var v)?v.GetInt32():fallback;\n  var enabled=node.Parameters.TryGetValue(\"EnableLoop\",out var value)&&value.GetBoolean();\n  var interval=Integer(\"LoopTimeGap\",0);\n  if(interval is <0 or >10000)throw new InvalidDataException(\"Group loop interval must be 0..10000 ms.\");\n  var step=Integer(\"LoopStep\",1);\n  if(step==0)throw new InvalidDataException(\"Group LoopStep must be nonzero.\");\n  // The independent one-shot mode normalizes its range to [0,1); the hidden\n  // step must be normalized with that range or a negative saved step reruns it.\n  return new(enabled,enabled?Integer(\"StartIndex\",0):0,enabled?Integer(\"EndIndex\",1):1,interval){Step=enabled?step:1};\n }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor.Execute iteration",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 30,
+          "end": 44,
+          "excerpt": "                var loop=GroupLoop.Read(node);ExecutionSessionResult? last=null;int completed=0;bool broke=false;int? breakIndex=null;var diagnostics=new List<string>();var accumulator=new GroupOutputAccumulator(body);\n                for(long index=loop.Start;index<loop.End;index+=loop.Increment){\n                    childToken.ThrowIfCancellationRequested();\n                    if(index<int.MinValue||index>int.MaxValue)throw new InvalidOperationException(\"Independent Group index overflow guard.\");\n                    // Independent resource guard; this is not a recovered VM iteration limit.\n                    if(completed>=10000)throw new InvalidOperationException(\"Independent Group iteration limit is 10000.\");\n                    if(GroupBreak.Evaluate(node,body,last,(int)index,diagnostics,values,(name,element)=>accumulator.ReadSelfElement(name,element,last))){broke=true;breakIndex=(int)index;break;}\n                    last=await Execute(body.Id,values,childToken,depth+1,(int)index);completed++;\n                    if(last.Status==SessionStatus.Success)accumulator.Add(last);\n                    if(last.Status!=SessionStatus.Success)break;\n                    if(loop.IntervalMs>0)await Task.Delay(loop.IntervalMs,childToken);\n                }\n                return (last??new ExecutionSessionResult(SessionStatus.Success,[])) with{CompletedGroupIterations=completed,GroupBroke=broke,GroupBreakIndex=breakIndex,GroupDiagnostics=diagnostics.AsReadOnly(),WorkflowOutputs=accumulator.Finish(last),WorkflowDisplays=accumulator.FinishDisplays()};\n                },childToken);\n            }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor.Execute timeout ownership",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 21,
+          "end": 25,
+          "excerpt": "            using var wait=new CancellationTokenSource();\n            if(procedure.WaitTimeMs>0)wait.CancelAfter(procedure.WaitTimeMs);\n            using var linked=CancellationTokenSource.CreateLinkedTokenSource(token,wait.Token);\n            var runToken=linked.Token;\n            async Task<ExecutionSessionResult> Call(NodeDocument node,IReadOnlyDictionary<string,PortValue> values,CancellationToken childToken){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "负步长、Start>=End等组合只按现有代码表达；本切片没有运行差分验证，也不称与原生范围语义等价。"
+      ],
+      "holder": [
+        "Call.local index/completed/last",
+        "per-Execute wait/linked token"
+      ]
+    },
+    {
+      "id": "CG04",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "父GraphExecutor.GroupBreak.Capture",
+      "to": "外部操作数与动态下标先冻结，内部/self保留引用描述",
+      "behavior": "Capture先解析IndexSource，要求Integer+Scalar且0..int.MaxValue，写入Index并清IndexSource；外部非Self有Source的操作数立即从父workflow.Resolve取Element，再序列化为Constant JsonElement新记录。Inside/Self则保留源描述，供轮前求值。InvalidDataException转成PreparationError记录，并非在Capture处直接终止父节点。Snapshot对原Constant另Clone；Validate约束Self必须指向当前Group节点输出且非Inside、外部索引必须来自前置scalar int。",
+      "representation": "外部值冻结为JSON常量；内部数据引用是ID/端口/索引，而非原生指针或同一可变字典。",
+      "cache": "一个Group调用期间外部冻结常量不随body轮次更新；PreparationError随该调用传给Evaluate。",
+      "release": "这些记录无显式Dispose；源PortValue只在读取/序列化时短暂持有，未建立外部对象所有权转移。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreakBindings.Snapshot",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 12,
+          "end": 12,
+          "excerpt": "public sealed record GroupBreakBindings(GroupOperand? Left=null,GroupOperand? Right=null){public GroupBreakBindings Snapshot()=>new(Left is null?null:Left with{Constant=Left.Constant?.Clone()},Right is null?null:Right with{Constant=Right.Constant?.Clone()});public GroupBreakBindings Remap(IReadOnlyDictionary<string,string> ids,bool inside)=>new(Left?.Remap(ids,inside),Right?.Remap(ids,inside));}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Validate",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 20,
+          "end": 27,
+          "excerpt": " public static void Validate(ProcedureDocument parent,NodeDocument node,ProcedureDocument body,ModuleRegistry registry){\n  if(node.GroupBreak is null)return;if(body.GroupOwner!=new GroupOwnership(parent.Id,node.Id))throw new InvalidDataException(\"Break bindings require an owned Group.\");var kind=Kind(node);\n  foreach(var operand in new[]{node.GroupBreak.Left,node.GroupBreak.Right}){if(operand is null)continue;if(operand.IndexSource is {} indexSource){if(operand.Source is null||WorkflowSubscriptions.SourceType(parent,registry,indexSource)!=DataKind.Integer||WorkflowSubscriptions.SourceCardinality(parent,registry,indexSource)!=ValueCardinality.Scalar||WorkflowSubscriptions.Producer(parent,indexSource)==node.Id)throw new InvalidDataException(\"Group array index requires a preceding scalar integer source.\");}\n   if(operand.Index<0||operand.Source is not null&&operand.Constant is not null)throw new InvalidDataException(\"Invalid Group break operand.\");\n   if(operand.Self&&(operand.Source is not {Kind:WorkflowSourceKind.NodeOutput} own||own.Id!=node.Id||operand.Inside))throw new InvalidDataException(\"Invalid Group self-output source.\");if(operand.Source is {} source){var scope=operand.Inside?body:parent;if(WorkflowSubscriptions.SourceCardinality(scope,registry,source)==ValueCardinality.Scalar&&(operand.Index!=0||operand.IndexSource is not null))throw new InvalidDataException(\"Scalar break source index must be zero.\");if(WorkflowSubscriptions.SourceType(scope,registry,source)!=kind)throw new InvalidDataException(\"Group break operand type mismatch.\");if(!operand.Inside&&!operand.Self&&WorkflowSubscriptions.Producer(parent,source)==node.Id)throw new InvalidDataException(\"Group cannot subscribe to its own result.\");}\n   else if(operand.Constant is {} literal){_=Literal(kind,literal);}\n  }\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Capture",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 29,
+          "end": 40,
+          "excerpt": " internal static GroupBreakBindings? Capture(NodeDocument node,Func<WorkflowValueReference,PortValue> resolve){\n  GroupOperand? CaptureOperand(GroupOperand? operand){\n   if(operand is null)return null;\n   try{\n    if(operand.IndexSource is {} indexSource){var value=resolve(indexSource);if(value.Kind!=DataKind.Integer||value.Cardinality!=ValueCardinality.Scalar||value.As<long>() is <0 or >int.MaxValue)throw new InvalidDataException(\"Group array index must be a nonnegative int32 scalar.\");operand=operand with{Index=(int)value.As<long>(),IndexSource=null};}\n    if(operand is {Inside:false,Self:false,Source:{} source}){var value=Element(resolve(source),operand.Index);return new(Constant:JsonSerializer.SerializeToElement(value.Value));}\n    return operand;\n   }catch(InvalidDataException error){return new(){PreparationError=error.Message};}\n  }\n  return node.GroupBreak is {} bindings?new(CaptureOperand(bindings.Left),CaptureOperand(bindings.Right)):null;\n }\n internal static PortValue Element(PortValue value,int index){if(value.Cardinality==ValueCardinality.Scalar){if(index!=0)throw new InvalidDataException(\"Scalar index must be zero.\");return value;}try{return value.Kind switch{DataKind.Integer=>PortValue.Integer(value.As<IReadOnlyList<long>>()[index]),DataKind.Number=>PortValue.Number(value.As<IReadOnlyList<double>>()[index]),DataKind.Text=>PortValue.Text(value.As<IReadOnlyList<string>>()[index]),_=>throw new InvalidDataException(\"Unsupported comparison array.\")};}catch(Exception e)when(e is ArgumentOutOfRangeException or IndexOutOfRangeException){throw new InvalidDataException(\"Break comparison array index is unavailable.\");}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "未从此声称Capture是所有类型的通用序列化；Group break当前只支持Integer/Number/Text。"
+      ],
+      "holder": [
+        "captured NodeDocument.GroupBreak",
+        "GroupOperand.Constant/Index/PreparationError"
+      ]
+    },
+    {
+      "id": "CG05",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "GroupBreak.Evaluate与Resolve",
+      "to": "本轮索引/输入、前轮内部值与累计self分开读取",
+      "behavior": "break在本轮Execute前求值。previous=null且操作数为Self或Inside的生产者源时直接false，跳过首次内部比较；其他Inside LoopIndex取即将执行的index，WorkflowInput优先本次values，未绑定局部变量读声明初始值。绑定内部NodeOutput/LocalVariable在previous session读取，只允许相应可用源；Self由accumulator.ReadSelfElement读累计片段或last输出。Resolve失败记录最多32条去重diagnostics并返回false，继续执行，而非把缺值当0或自动break。break=true时记录broke/index，不再执行该轮也不增加completed。",
+      "representation": "previous=最后已返回body session；它不是新的WorkflowRunContext内部records。Self累计与普通上一轮输出有两个读取域。",
+      "cache": "accumulator对可累积输出按elementCounts和片段查找Element；不先JoinArray，避免每次比较都重建全数组。",
+      "release": "替换last会去除上一轮session的这个局部引用，但累积片段/显示/模块state可能另持有同payload；不能直接认定上轮已释放。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Resolve",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 41,
+          "end": 46,
+          "excerpt": " static PortValue Resolve(ProcedureDocument body,ExecutionSessionResult? previous,int index,GroupOperand operand,DataKind kind,IReadOnlyDictionary<string,PortValue> inputs,Func<string,int,PortValue> selfOutput){\n  if(operand.PreparationError is {} error)throw new InvalidDataException(error);\n  if(operand.Self&&operand.Source is {} own)return selfOutput(own.Port!,operand.Index);if(operand.Constant is {} literal)return Literal(kind,literal);if(!operand.Inside||operand.Source is not {} source)throw new InvalidDataException(\"Break operand is unbound.\");if(source.Kind==WorkflowSourceKind.GroupLoopIndex)return PortValue.Integer(index);if(source.Kind==WorkflowSourceKind.WorkflowInput){var spec=body.Configuration.Inputs.Single(v=>v.Id==source.Id);if(inputs.TryGetValue(spec.Name,out var input))return Element(input,operand.Index);}if(source.Kind==WorkflowSourceKind.LocalVariable){var spec=body.Configuration.Variables.Single(v=>v.Id==source.Id);if(spec.SourceNode is null)return WorkflowSubscriptions.Initial(spec);}if(previous is null)throw new InvalidDataException(\"Internal comparison requires a completed iteration.\");\n  var value=source.Kind switch{WorkflowSourceKind.NodeOutput=>previous.Nodes.SingleOrDefault(n=>n.NodeId==source.Id&&n.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch)?.Outputs.GetValueOrDefault(source.Port!)??throw new InvalidDataException(\"Internal output unavailable.\"),WorkflowSourceKind.LocalVariable=>previous.LocalVariables.GetValueOrDefault(body.Configuration.Variables.Single(v=>v.Id==source.Id).Name)??throw new InvalidDataException(\"Internal variable unavailable.\"),WorkflowSourceKind.WorkflowInput=>previous.WorkflowInputs.GetValueOrDefault(body.Configuration.Inputs.Single(v=>v.Id==source.Id).Name)??(body.Configuration.Inputs.Single(v=>v.Id==source.Id) is {NodeId:{} producer,Port:{} port}?previous.Nodes.SingleOrDefault(n=>n.NodeId==producer)?.Outputs.GetValueOrDefault(port):null)??throw new InvalidDataException(\"Internal input unavailable.\"),_=>throw new InvalidDataException(\"Unsupported comparison source.\")};return Element(value,operand.Index);\n }\n internal static bool Evaluate(NodeDocument node,ProcedureDocument body,ExecutionSessionResult? previous,int index,List<string> diagnostics,IReadOnlyDictionary<string,PortValue> inputs,Func<string,int,PortValue> selfOutput){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Evaluate",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 46,
+          "end": 51,
+          "excerpt": " internal static bool Evaluate(NodeDocument node,ProcedureDocument body,ExecutionSessionResult? previous,int index,List<string> diagnostics,IReadOnlyDictionary<string,PortValue> inputs,Func<string,int,PortValue> selfOutput){\n  if(!Enabled(node))return false;var bindings=node.GroupBreak;\n  // Native first-round guard excludes values produced by the internal graph.\n  if(previous is null&&new[]{bindings?.Left,bindings?.Right}.Any(o=>o is {Self:true}||(o is {Inside:true,Source:{} source}&&WorkflowSubscriptions.Producer(body,source) is not null)))return false;\n  try{var kind=Kind(node);return Compare(kind,Integer(node,\"CmpType\",1),Resolve(body,previous,index,bindings?.Left??new(),kind,inputs,selfOutput),Resolve(body,previous,index,bindings?.Right??new(),kind,inputs,selfOutput));}catch(InvalidDataException e){if(diagnostics.Count<32&&!diagnostics.Contains(e.Message))diagnostics.Add(e.Message);return false;}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.ReadSelfElement",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 10,
+          "end": 16,
+          "excerpt": " public PortValue ReadSelfElement(string name,int index,ExecutionSessionResult? last){\n  var spec=body.Configuration.Outputs.SingleOrDefault(o=>o.Name==name)??throw new InvalidDataException(\"Group self output no longer exists.\");\n  if(!spec.Accumulate||!GroupBreak.Accumulatable(spec.Kind))return (last?.WorkflowOutputs.GetValueOrDefault(name)??throw new InvalidDataException(\"Group self output unavailable.\")).Element(index);\n  if(index<0||index>=elementCounts.GetValueOrDefault(name))throw new InvalidDataException(\"Group self output element is unavailable.\");\n  foreach(var value in accumulated[name]){int length=value.ElementCount;if(index<length)return value.Element(index);index-=length;}throw new InvalidDataException(\"Group self output unavailable.\");\n }\n public IReadOnlyDictionary<string,IReadOnlyList<PortValue>> FinishDisplays()=>new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays.ToDictionary(p=>p.Key,p=>(IReadOnlyList<PortValue>)Array.AsReadOnly(p.Value.ToArray()),StringComparer.Ordinal));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor loop break ordering",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 36,
+          "end": 39,
+          "excerpt": "                    if(GroupBreak.Evaluate(node,body,last,(int)index,diagnostics,values,(name,element)=>accumulator.ReadSelfElement(name,element,last))){broke=true;breakIndex=(int)index;break;}\n                    last=await Execute(body.Id,values,childToken,depth+1,(int)index);completed++;\n                    if(last.Status==SessionStatus.Success)accumulator.Add(last);\n                    if(last.Status!=SessionStatus.Success)break;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "运行时不支持/不可用数据仅按具体异常门处理；不从false推断用户配置有效或原版也是同策略。"
+      ],
+      "holder": [
+        "Call.last",
+        "GroupOutputAccumulator.accumulated/elementCounts",
+        "GroupDiagnostics"
+      ]
+    },
+    {
+      "id": "CG06",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "每轮GraphExecutor → WorkflowRunContext",
+      "to": "独立records/variables与浅输入字典副本",
+      "behavior": "每次GraphExecutor.RunAsync先scope.Enter，再建本轮records/calls/descriptors和WorkflowRunContext。context把inputs字典ToDictionary，保留原PortValue；校验输入名/Kind/Cardinality并初始化无SourceNode变量。本轮Record先写records再workflow.Update：绑定该节点的变量先Remove，只有Node成功或NoMatch且含端口时重置引用，源不可用则保持缺值，不沿用前轮变量。Complete另建WorkflowInputs/Outputs/LocalVariables字典，输出仍指向当前本轮PortValue，显示每项新一元素数组包装。",
+      "representation": "每轮新容器；PortValue transport是共享引用。GroupLoopIndex解析产生当前索引Integer PortValue。",
+      "cache": "没有把前轮WorkflowRunContext.variables复制到下一轮；有状态工具可经solution scope继续持有state，这是另一个生命周期。",
+      "release": "context本身没有Dispose；session字典使成功导出的值继续可达，模块实例Dispose不清session。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor.RunAsync scope and context",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 7,
+          "end": 14,
+          "excerpt": "  using var scopeLease=scope?.Enter();\n  var initial=GraphValidator.Validate(procedure,registry);if(!initial.IsValid)throw new InvalidDataException(string.Join(\"; \",initial.Issues.Select(i=>i.Code+\": \"+i.Message)));\n  var p=procedure with{Nodes=procedure.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(x=>x.Key,x=>x.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices is null?null:Array.AsReadOnly(r.Vertices.ToArray())}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray(),Connections=procedure.Connections.ToArray(),ExecutionLinks=procedure.ExecutionLinks?.ToArray(),Configuration=procedure.Configuration.Snapshot()};\n  var validation=GraphValidator.Validate(p,registry);if(!validation.IsValid)throw new InvalidDataException(string.Join(\"; \",validation.Issues.Select(i=>i.Code+\": \"+i.Message)));\n  var calls=new Dictionary<string,ExecutionSessionResult>();var records=new Dictionary<string,NodeRunRecord>();var descriptors=p.Nodes.ToDictionary(n=>n.Id,registry.GetDescriptor,StringComparer.Ordinal);var suppressed=new HashSet<string>(StringComparer.Ordinal);var selectedSuccessors=new Dictionary<string,HashSet<string>>(StringComparer.Ordinal);var executionEdges=ProcedureGraph.ExecutionEdges(p);var workflow=new WorkflowRunContext(p,inputs,records,groupLoopIndex);\n  void Report(string id,NodeRunStatus s,string? m=null,ModuleDescriptor? updatedDescriptor=null){try{progress?.Report(new ExecutionEvent(id,s,m){UpdatedDescriptor=updatedDescriptor});}catch{}}\n  foreach(var id in validation.ExecutionOrder){\n   var n=p.Nodes.First(x=>x.Id==id);var d=descriptors[id];var sw=Stopwatch.StartNew();",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext constructor",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 10,
+          "end": 18,
+          "excerpt": " public WorkflowRunContext(ProcedureDocument procedure,IReadOnlyDictionary<string,PortValue>? inputs,Dictionary<string,NodeRunRecord> records,int? groupLoopIndex=null)\n {\n  this.procedure=procedure;this.records=records;this.groupLoopIndex=groupLoopIndex;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);\n  foreach(var pair in arguments){var spec=procedure.Configuration.Inputs.SingleOrDefault(i=>i.Name==pair.Key)??throw new InvalidDataException(\"Unknown workflow input: \"+pair.Key);if(pair.Value is null||pair.Value.Kind!=spec.Kind||pair.Value.Cardinality!=spec.Cardinality)throw new InvalidDataException(\"Workflow input type mismatch: \"+pair.Key);}\n\n  foreach(var b in procedure.Configuration.Subscriptions.Where(b=>b.Source.Kind==WorkflowSourceKind.WorkflowInput)){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==b.Source.Id);if(!arguments.ContainsKey(spec.Name)&&spec.NodeId is null)throw new InvalidDataException(\"Missing workflow input: \"+spec.Name);}\n  foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);\n }\n PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException(\"Current-run source unavailable: \"+node+\".\"+port);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext.Update",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 36,
+          "end": 36,
+          "excerpt": " public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext.Complete",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 37,
+          "end": 45,
+          "excerpt": " public ExecutionSessionResult Complete(ExecutionSessionResult session)\n {\n  var output=new Dictionary<string,PortValue>(StringComparer.Ordinal);var errors=new List<string>();\n  foreach(var spec in procedure.Configuration.Outputs){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound workflow output: \"+spec.Name);var value=Node(spec.NodeId,spec.Port!);if(value.Kind!=spec.Kind&&!(spec.Kind==DataKind.Image&&DataKinds.IsImage(value.Kind)))throw new InvalidDataException(\"type mismatch\");output.Add(spec.Name,value);}catch(InvalidDataException e){errors.Add(spec.Name+\": \"+e.Message);}}\n  var displays=new Dictionary<string,IReadOnlyList<PortValue>>(StringComparer.Ordinal);var displayErrors=new List<string>();foreach(var spec in procedure.Configuration.Displays){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound display: \"+spec.Name);displays.Add(spec.Name,Array.AsReadOnly(new[]{Node(spec.NodeId,spec.Port!)}));}catch(InvalidDataException e){displayErrors.Add(e.Message);}}\n  return session with{WorkflowDisplays=new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays),DisplayErrors=displayErrors.AsReadOnly(),Status=errors.Count>0&&session.Status==SessionStatus.Success?SessionStatus.Failed:session.Status,WorkflowInputs=new ReadOnlyDictionary<string,PortValue>(new Dictionary<string,PortValue>(arguments,StringComparer.Ordinal)),WorkflowOutputs=new ReadOnlyDictionary<string,PortValue>(output),LocalVariables=new ReadOnlyDictionary<string,PortValue>(variables.ToDictionary(v=>procedure.Configuration.Variables.Single(i=>i.Id==v.Key).Name,v=>v.Value,StringComparer.Ordinal)),OutputErrors=errors.AsReadOnly()};\n\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext.GroupLoopIndex",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 24,
+          "end": 24,
+          "excerpt": "  WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException(\"Group LoopIndex requires an owned invocation context.\"),",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "这不是“所有缓存每轮清空”：root scope的node state/参数缓存跨轮仍存；具体工具payload内部可变性与释放依具体实现另证。"
+      ],
+      "holder": [
+        "per-round WorkflowRunContext.arguments/variables/records",
+        "ExecutionSessionResult dictionaries"
+      ]
+    },
+    {
+      "id": "CG07",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "成功轮GroupOutputAccumulator.Add",
+      "to": "保留PortValue片段 → Finish时新JoinArray容器",
+      "behavior": "仅last.Status==Success时Add。对body输出中Accumulate且Accumulatable(Integer/Number/Text/Circle/Point/Fixture)的项，按ElementCount计数、百万元素独立资源门，再list.Add(value)保留原PortValue引用，不立即复制元素。Finish先复制last.WorkflowOutputs字典；每个可累计输出即使未有片段也JoinArray(kind,values)，覆盖该名。JoinArray把Elements扁平ToArray，随后typed工厂再ToArray出新底层容器；string元素仍为原string引用，结构类型按值取出。",
+      "representation": "累计阶段持有List<PortValue>片段；完成阶段生成typed数组PortValue。Scalar Element(0)返回原对象，Array Element生成scalar包装。",
+      "cache": "未累积输出保留last输出引用，累计输出是所有已成功轮片段的拼接；FinishDisplays和Finish分别创建结果容器。",
+      "release": "accumulator没有Dispose，不遍历free元素；返回后片段列表可离开作用域，新session数组仍持有元素/引用，不保证GC时间或native退役。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.Add",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 9,
+          "end": 9,
+          "excerpt": " public void Add(ExecutionSessionResult iteration){foreach(var spec in body.Configuration.Displays){if(!iteration.WorkflowDisplays.TryGetValue(spec.Name,out var values))continue;if(!displays.TryGetValue(spec.Name,out var frames))displays[spec.Name]=frames=new();if(!spec.Accumulate||spec.Kind==DataKind.GrayImage){displayCount-=frames.Sum(v=>v.ElementCount);frames.Clear();}if(values.Sum(v=>(long)v.ElementCount)>1000000-displayCount)throw new InvalidOperationException(\"Independent display frame limit is 1000000.\");displayCount+=values.Sum(v=>v.ElementCount);frames.AddRange(values);}foreach(var spec in body.Configuration.Outputs.Where(o=>o.Accumulate&&GroupBreak.Accumulatable(o.Kind))){if(!iteration.WorkflowOutputs.TryGetValue(spec.Name,out var value))continue;int length=value.ElementCount;if(length>1000000-count)throw new InvalidOperationException(\"Independent accumulated output element limit is 1000000.\");count+=length;elementCounts[spec.Name]=elementCounts.GetValueOrDefault(spec.Name)+length;if(!accumulated.TryGetValue(spec.Name,out var list))accumulated[spec.Name]=list=new();list.Add(value);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.Finish",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 17,
+          "end": 17,
+          "excerpt": " public IReadOnlyDictionary<string,PortValue> Finish(ExecutionSessionResult? last){var outputs=last?.WorkflowOutputs.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);foreach(var spec in body.Configuration.Outputs.Where(o=>o.Accumulate&&GroupBreak.Accumulatable(o.Kind))){var values=accumulated.GetValueOrDefault(spec.Name)??[];outputs[spec.Name]=PortValue.JoinArray(spec.Kind,values);}return new ReadOnlyDictionary<string,PortValue>(outputs);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": "GroupBreak.Accumulatable",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 19,
+          "end": 19,
+          "excerpt": " public static bool Accumulatable(DataKind kind)=>kind is DataKind.Integer or DataKind.Number or DataKind.Text or DataKind.Circle or DataKind.Point or DataKind.Fixture;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": "PortValue.Element",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 19,
+          "end": 19,
+          "excerpt": " public PortValue Element(int index){if(index<0||index>=ElementCount)throw new InvalidDataException(\"Array element unavailable.\");if(Cardinality==ValueCardinality.Scalar)return this;return Kind switch{DataKind.Integer=>Integer(As<IReadOnlyList<long>>()[index]),DataKind.Number=>Number(As<IReadOnlyList<double>>()[index]),DataKind.Text=>Text(As<IReadOnlyList<string>>()[index]),DataKind.Circle=>Circle(As<IReadOnlyList<VisionCore.CircleFit>>()[index]),DataKind.Point=>Point(As<IReadOnlyList<VisionCore.Point2>>()[index]),DataKind.Fixture=>Fixture(As<IReadOnlyList<FixtureValue>>()[index]),_=>throw new InvalidDataException(\"Unsupported array type.\")};}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": "PortValue.JoinArray and typed array copies",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 21,
+          "end": 24,
+          "excerpt": " public static PortValue JoinArray(DataKind kind,IEnumerable<PortValue> values){var flat=values.SelectMany(v=>v.Kind==kind?v.Elements():throw new InvalidDataException(\"Mixed output kinds.\")).ToArray();return kind switch{DataKind.Integer=>IntegerArray(flat.Select(v=>v.As<long>())),DataKind.Number=>NumberArray(flat.Select(v=>v.As<double>())),DataKind.Text=>TextArray(flat.Select(v=>v.As<string>())),DataKind.Circle=>CircleArray(flat.Select(v=>v.As<VisionCore.CircleFit>())),DataKind.Point=>PointArray(flat.Select(v=>v.As<VisionCore.Point2>())),DataKind.Fixture=>FixtureArray(flat.Select(v=>v.As<FixtureValue>())),_=>throw new InvalidDataException(\"Unsupported accumulated type.\")};}\n public static PortValue IntegerArray(IEnumerable<long> values){ArgumentNullException.ThrowIfNull(values);return new(DataKind.Integer,System.Array.AsReadOnly(values.ToArray()),ValueCardinality.Array);}\n public static PortValue NumberArray(IEnumerable<double> values){ArgumentNullException.ThrowIfNull(values);var copy=values.ToArray();if(copy.Any(v=>!double.IsFinite(v)))throw new ArgumentException(\"Non-finite number array element.\",nameof(values));return new(DataKind.Number,System.Array.AsReadOnly(copy),ValueCardinality.Array);}\n public static PortValue TextArray(IEnumerable<string> values){ArgumentNullException.ThrowIfNull(values);var copy=values.ToArray();if(copy.Any(v=>v is null))throw new ArgumentException(\"Null text array element.\",nameof(values));return new(DataKind.Text,System.Array.AsReadOnly(copy),ValueCardinality.Array);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Struct元素内部若含引用不等于递归深拷贝；这里没有验证所有复合工具类型或原native累积所有权。"
+      ],
+      "holder": [
+        "GroupOutputAccumulator.accumulated",
+        "Finish result outputs",
+        "JoinArray typed array"
+      ]
+    },
+    {
+      "id": "CG08",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "Group显示累积与GroupDisplayLinks",
+      "to": "GrayImage每轮替换及返回只读列表容器",
+      "behavior": "Add显示先找本轮WorkflowDisplays同名值，list不存在则创建；!spec.Accumulate或spec.Kind==GrayImage时先从displayCount减去旧元素数并frames.Clear，再执行百万元素资源门与AddRange(values)。条件仅精确GrayImage，不能泛称所有Image kind。Clear移除旧PortValue引用而不Dispose payload。FinishDisplays用每个frames.ToArray+Array.AsReadOnly并新字典。自动输出显示只支持GrayImage，LinkedOutputId对应输出稳定ID，同步NodeId/Port/Kind/Cardinality。",
+      "representation": "显示列表持有PortValue引用；容器复制不复制图像像素。稳定LinkedOutputId是当前独立身份合同。",
+      "cache": "只在成功轮Add；body失败轮的显示未加入该accumulator。返回Group WorkflowDisplays来自累积器，不等于执行了WPF绘制。",
+      "release": "旧帧Clear仅减少此列表持有；last、NodeRunRecord、工具scope state或宿主显示可能仍持有同图像，不能当作像素释放完成。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.Add displays",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 9,
+          "end": 9,
+          "excerpt": " public void Add(ExecutionSessionResult iteration){foreach(var spec in body.Configuration.Displays){if(!iteration.WorkflowDisplays.TryGetValue(spec.Name,out var values))continue;if(!displays.TryGetValue(spec.Name,out var frames))displays[spec.Name]=frames=new();if(!spec.Accumulate||spec.Kind==DataKind.GrayImage){displayCount-=frames.Sum(v=>v.ElementCount);frames.Clear();}if(values.Sum(v=>(long)v.ElementCount)>1000000-displayCount)throw new InvalidOperationException(\"Independent display frame limit is 1000000.\");displayCount+=values.Sum(v=>v.ElementCount);frames.AddRange(values);}foreach(var spec in body.Configuration.Outputs.Where(o=>o.Accumulate&&GroupBreak.Accumulatable(o.Kind))){if(!iteration.WorkflowOutputs.TryGetValue(spec.Name,out var value))continue;int length=value.ElementCount;if(length>1000000-count)throw new InvalidOperationException(\"Independent accumulated output element limit is 1000000.\");count+=length;elementCounts[spec.Name]=elementCounts.GetValueOrDefault(spec.Name)+length;if(!accumulated.TryGetValue(spec.Name,out var list))accumulated[spec.Name]=list=new();list.Add(value);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": "GroupOutputAccumulator.FinishDisplays",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 16,
+          "end": 16,
+          "excerpt": " public IReadOnlyDictionary<string,IReadOnlyList<PortValue>> FinishDisplays()=>new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays.ToDictionary(p=>p.Key,p=>(IReadOnlyList<PortValue>)Array.AsReadOnly(p.Value.ToArray()),StringComparer.Ordinal));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupDisplayLinks.cs",
+          "member": "GroupDisplayLinks.Synchronize",
+          "sha256": "08adc0b95ea6a7ade8dae69556a35054195b65cd57d62ed8fe0518da9dcb6941",
+          "start": 5,
+          "end": 14,
+          "excerpt": " public static WorkflowConfiguration Synchronize(WorkflowConfiguration before,WorkflowConfiguration next){\n  if(next.Outputs.Any(o=>o.Display&&o.Kind!=DataKind.GrayImage))throw new InvalidDataException(\"Automatic compound output display is not implemented.\");\n  var outputs=next.Outputs.Select(o=>o.Display&&before.Outputs.Any(old=>old.Id==o.Id&&old.Display)&&before.Displays.Any(d=>d.LinkedOutputId==o.Id)&&!next.Displays.Any(d=>d.LinkedOutputId==o.Id)?o with{Display=false}:o).ToArray();\n  var displays=next.Displays.Where(d=>d.LinkedOutputId is null).ToList();\n  foreach(var output in outputs.Where(o=>o.Display&&o.Kind==DataKind.GrayImage)){\n   var current=next.Displays.FirstOrDefault(d=>d.LinkedOutputId==output.Id);if(current is null){int n=0;while(displays.Any(d=>d.Name==\"display\"+n))n++;current=new(Guid.NewGuid().ToString(\"N\"),\"display\"+n,output.Kind){LinkedOutputId=output.Id};}\n   displays.Add(current with{NodeId=output.NodeId,Port=output.Port,Kind=output.Kind,Cardinality=output.Cardinality});\n  }\n  return next with{Outputs=outputs,Displays=displays.ToArray()};\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本slice没有运行UI，未证明Group图像帧与宿主renderer同次刷新、最后读者或灰度以外图像Kind的预期语义。"
+      ],
+      "holder": [
+        "GroupOutputAccumulator.displays",
+        "WorkflowDisplays",
+        "WorkflowInterfaceItem.LinkedOutputId"
+      ]
+    },
+    {
+      "id": "CG09",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "Group正常结束/中断/失败/取消",
+      "to": "末轮session改写聚合，父调用保留Calls但门控输出",
+      "behavior": "正常loop出口返回last或新Success空session，再with覆盖CompletedGroupIterations/GroupBroke/GroupBreakIndex/diagnostics/累积outputs与displays。零轮时last为null，Finish对可累积项产生空typed数组；成功break保留前轮节点记录。body返回非Success后先completed++再break，未Add该轮；返回状态仍取last，非累计输出可来自该last。父Graph收到child先存calls[id]，仅child.Success把WorkflowOutputs作为模块结果，否则输出Empty并SubprogramFailed。轮前Throw或Interval Delay抛取消会绕过Group最终聚合return，由父Graph catch/取消/超时门分类，不能宣称任何取消都保留部分累计结果。",
+      "representation": "最终Group session只保留last的Nodes/Calls等未被with覆盖字段；并不保存每轮完整session历史。",
+      "cache": "累积片段可包含此前Success轮，失败轮不加；但父调用失败时不向正常节点输出发布这些child值，Calls仍可持child诊断。",
+      "release": "Graph finally对普通module先IAsyncDisposable后IDisposable；Dispose错误留error，之后才Record。scope租约与节点module实例是两种退出动作。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor.Call completion",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 37,
+          "end": 43,
+          "excerpt": "                    last=await Execute(body.Id,values,childToken,depth+1,(int)index);completed++;\n                    if(last.Status==SessionStatus.Success)accumulator.Add(last);\n                    if(last.Status!=SessionStatus.Success)break;\n                    if(loop.IntervalMs>0)await Task.Delay(loop.IntervalMs,childToken);\n                }\n                return (last??new ExecutionSessionResult(SessionStatus.Success,[])) with{CompletedGroupIterations=completed,GroupBroke=broke,GroupBreakIndex=breakIndex,GroupDiagnostics=diagnostics.AsReadOnly(),WorkflowOutputs=accumulator.Finish(last),WorkflowDisplays=accumulator.FinishDisplays()};\n                },childToken);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionExecutor.Execute timeout mapping",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 47,
+          "end": 58,
+          "excerpt": "                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex,scope,control,new ResourceCatalog(workspace.BaseDirectory,workspace.Document.Resources));\n                if(wait.IsCancellationRequested&&!token.IsCancellationRequested&&session.Status==SessionStatus.Cancelled)\n                    session=session with{Status=SessionStatus.TimedOut,Nodes=session.Nodes.Select(n=>n.Status==NodeRunStatus.Cancelled?n with{Status=NodeRunStatus.TimedOut,ErrorCode=\"ProcedureWaitTimeout\",Message=\"Procedure wait time elapsed\"}:n).ToArray()};\n                return session with{GroupLoopIndex=groupLoopIndex};\n            }\n            catch(OperationCanceledException) when(wait.IsCancellationRequested&&!token.IsCancellationRequested)\n            {\n                return new ExecutionSessionResult(SessionStatus.TimedOut,[]){GroupLoopIndex=groupLoopIndex};\n            }\n\n        }\n        return await Execute(procedureId,inputs,cancellationToken,0);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor child result and module finally",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 35,
+          "end": 36,
+          "excerpt": "   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}\n   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor final cancellation status",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 48,
+          "end": 49,
+          "excerpt": "  var all=validation.ExecutionOrder.Select(id=>records[id]).ToArray();var status=cancellationToken.IsCancellationRequested||scope?.Stopping.IsCancellationRequested==true||all.Any(n=>n.Status==NodeRunStatus.Cancelled)?SessionStatus.Cancelled:all.Any(n=>n.Status==NodeRunStatus.TimedOut)?SessionStatus.TimedOut:all.Any(n=>n.Status==NodeRunStatus.Failed)?SessionStatus.Failed:SessionStatus.Success;\n  return workflow.Complete(new(status,Array.AsReadOnly(all)){Calls=new ReadOnlyDictionary<string,ExecutionSessionResult>(calls),NodeDescriptors=new ReadOnlyDictionary<string,ModuleDescriptor>(descriptors)});",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "超时/外部取消/Scope.Stopping涉及不同token，不能从一个分支推出所有race结果；本切片仅静态核顺序，没有新运行探针。"
+      ],
+      "holder": [
+        "Call.last/accumulator",
+        "parent calls[id]",
+        "parent NodeRunRecord"
+      ]
+    },
+    {
+      "id": "CG10",
+      "classification": "independent-implementation",
+      "stages": [
+        "group",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "每轮scope.Enter/ForProcedure与solution关闭",
+      "to": "跨轮state/有效参数持有，closing后等租约再释放",
+      "behavior": "GraphExecutor每次RunAsync using scope.Enter；body与父run沿用同root scope。模块context的Scope为ForProcedure(p.Id)借用view，State缓存键为(procedure,module,node)，因此同body多轮同键复用state而非每轮Dispose。RememberExecutionParameters在模块入口前对seed/applied逐JsonElement.Clone，覆写该键缓存。scope.Dispose对借用view无动作；root先closing=true并Cancel stopping，取消完成且leases==0才TryRelease，最后Exit也可触发。Release先快照distinct states+ownedServices，再清states/effectiveParameters/services/ownedServices，再逐IDisposable.Dispose，异常记录并保留failedResources。",
+      "representation": "运行租约、跨轮node state、参数JSON克隆缓存和结果session payload分别持有；非owned服务只从字典移除，不由Release列入dispose值。",
+      "cache": "结束一次Group只退出它的Graph租约，不自动关闭solution root或清node state；RemoveNode另按procedure键移除state与参数，并在锁外Dispose该state。",
+      "release": "root释放是IDisposable路径，不await IAsyncDisposable-only state；清字典不证明外部引用消失，cleanup失败对象被failedResources继续持有。Lease.Interlocked.Exchange保证一次Exit。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "ModuleExecutionScope.ForProcedure",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 17,
+          "end": 17,
+          "excerpt": " public ModuleExecutionScope ForProcedure(string procedure){ArgumentException.ThrowIfNullOrWhiteSpace(procedure);return ProcedureId==procedure?this:new(Root,procedure);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "ModuleExecutionScope.State",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 33,
+          "end": 35,
+          "excerpt": " public T State<T>(string module,string node,Func<T> create)where T:class {\n  var root=Root;lock(root.gate){ObjectDisposedException.ThrowIf(root.closing,this);var key=(ProcedureId,module,node);if(!root.states.TryGetValue(key,out var value))root.states.Add(key,value=create());return (T)value;}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "ModuleExecutionScope.Enter/RemoveNode",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 40,
+          "end": 42,
+          "excerpt": " public IDisposable Enter(){if(owner is not null)return owner.Enter();lock(gate){ObjectDisposedException.ThrowIf(closing,this);leases++;return new Lease(this);}}\n public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){root.effectiveParameters.Remove((ProcedureId,module,node));if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}\n public void RetainNodes(IEnumerable<(string Module,string Node)> current){var keep=current.Select(k=>(ProcedureId,k.Module,k.Node));RetainProcedureNodes(keep,ProcedureId);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "ModuleExecutionScope.Dispose/Release",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 45,
+          "end": 49,
+          "excerpt": " public void Dispose(){if(owner is not null)return;lock(gate){if(closing)return;closing=true;}try{stopping.Cancel();}catch(Exception error){RecordCleanupFailure(\"cancel\",stopping,error);}finally{bool release;lock(gate){cancellationComplete=true;release=TryRelease();}if(release)Release();}}\n bool TryRelease(){if(!closing||!cancellationComplete||leases!=0||releaseStarted)return false;releaseStarted=true;return true;}\n void Exit(){bool release;lock(gate){leases--;release=TryRelease();}if(release)Release();}\n void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}\n sealed class Lease(ModuleExecutionScope scope):IDisposable {ModuleExecutionScope? owner=scope;public void Dispose()=>Interlocked.Exchange(ref owner,null)?.Exit();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "ModuleExecutionScope.RecordCleanupFailure",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 24,
+          "end": 24,
+          "excerpt": " void RecordCleanupFailure(string phase,object resource,Exception error){lock(gate){cleanupFailures.Add(new(phase,resource.GetType().FullName??resource.GetType().Name,error));failedResources.Add(resource);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.Parameters.cs",
+          "member": "ModuleExecutionScope.RememberExecutionParameters",
+          "sha256": "ec53ae0a59eff823eaf5f7db488fb9db11f8e33d9763fc9a817704f6d99275e3",
+          "start": 9,
+          "end": 9,
+          "excerpt": " public void RememberExecutionParameters(string module,string node,IReadOnlyDictionary<string,JsonElement> seed,IReadOnlyDictionary<string,JsonElement> applied){var state=Parameters(module,node);lock(state.Gate){state.Seed=seed.ToDictionary(p=>p.Key,p=>p.Value.Clone());state.Values=applied.ToDictionary(p=>p.Key,p=>p.Value.Clone());}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "谁创建/最终Dispose宿主root scope需在具体solution lifecycle入口另追；本页不把局部Group结束等同应用关窗。",
+        "当前源码的参数缓存不是native SDK SetParam已确认值；cleanup异常、外部state引用和具体图像原生资源由实现另证。"
+      ],
+      "holder": [
+        "ModuleExecutionScope.Root.states/effectiveParameters/services",
+        "borrowed procedure view",
+        "Lease",
+        "failedResources"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "CGU01",
+      "target": "original Group semantics and native retirement",
+      "question": "当前全部事实是独立托管实现，不替代原版分支/ABI/同轮/最后读者证明。"
+    },
+    {
+      "id": "CGU02",
+      "target": "current Group runtime integration",
+      "question": "本轮只读源码，未新跑Group probe、原版、SDK、设备或WPF；分支race/宿主scope关闭需独立验证。"
+    },
+    {
+      "id": "CGU03",
+      "target": "payload final lifetime",
+      "question": "List.Clear/字典移除/局部last替换是引用变更；像素native所有者、外部session持有和GC最终时刻不能由容器动作推断。"
+    }
+  ],
+  "provenance": {
+    "sourceFiles": [
+      {
+        "path": "src/VisionFramework/SolutionExecutor.cs",
+        "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+        "byteLength": 6805
+      },
+      {
+        "path": "src/VisionFramework/OwnedGroups.cs",
+        "sha256": "2a5eb09166d1d86559d3c092d6aa63ae96b6a6a555215aacb9ca6dc38e2a41f1",
+        "byteLength": 981
+      },
+      {
+        "path": "src/VisionFramework/SolutionStore.cs",
+        "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+        "byteLength": 7978
+      },
+      {
+        "path": "src/VisionFramework/WorkflowCalls.cs",
+        "sha256": "4a87ffde0ca90726c07a4c1f121d6974c0b7814ad153f4e8c952bb34f53c3b9c",
+        "byteLength": 3872
+      },
+      {
+        "path": "src/VisionFramework/WorkflowConfiguration.cs",
+        "sha256": "ad59db622c095ac22c3550c3b3ca4b6491ac31d68108a83e0caa9c56928e7b1f",
+        "byteLength": 11749
+      },
+      {
+        "path": "src/VisionFramework/GroupLoop.cs",
+        "sha256": "533b3e2d80d767cdde186fc7d6a7437223ab97d9be7a7d88f19af87a3935531c",
+        "byteLength": 2156
+      },
+      {
+        "path": "src/VisionFramework/GroupBreak.cs",
+        "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+        "byteLength": 10885
+      },
+      {
+        "path": "src/VisionFramework/WorkflowRunContext.cs",
+        "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+        "byteLength": 5551
+      },
+      {
+        "path": "src/VisionFramework/GraphExecutor.cs",
+        "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+        "byteLength": 13886
+      },
+      {
+        "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+        "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+        "byteLength": 3208
+      },
+      {
+        "path": "src/VisionFramework/PortArrays.cs",
+        "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+        "byteLength": 4215
+      },
+      {
+        "path": "src/VisionFramework/GroupDisplayLinks.cs",
+        "sha256": "08adc0b95ea6a7ade8dae69556a35054195b65cd57d62ed8fe0518da9dcb6941",
+        "byteLength": 1340
+      },
+      {
+        "path": "src/VisionFramework/ModuleExecutionScope.cs",
+        "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+        "byteLength": 6340
+      },
+      {
+        "path": "src/VisionFramework/ModuleExecutionScope.Parameters.cs",
+        "sha256": "ec53ae0a59eff823eaf5f7db488fb9db11f8e33d9763fc9a817704f6d99275e3",
+        "byteLength": 2167
+      }
+    ],
+    "sourceProvider": "current-main direct source inspection; original-looking comments are not admitted as original evidence",
+    "runtimeExecuted": false,
+    "originalRuntimeExecuted": false,
+    "guiStarted": false,
+    "deviceCalled": false,
+    "productModified": false,
+    "anotherWorktreeRead": false,
+    "implementationCredit": 0
+  }
+}

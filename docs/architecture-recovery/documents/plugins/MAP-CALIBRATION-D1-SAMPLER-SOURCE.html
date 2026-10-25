@@ -1,0 +1,74 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1第五切片：当前旋转采样分派、边界与插值</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-D1-SAMPLER-SOURCE.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#d1第五切片当前旋转采样分派边界与插值">D1第五切片：当前旋转采样分派、边界与插值</a></p><p style="margin-left:14px"><a href="#原件与取体">原件与取体</a></p><p style="margin-left:14px"><a href="#起角与分派不能按整数数学角外推">起角与分派：不能按整数数学角外推</a></p><p style="margin-left:14px"><a href="#四角长度与状态">四角、长度与状态</a></p><p style="margin-left:14px"><a href="#通用优化采样double坐标11位整数权重">通用优化采样：double坐标、11位整数权重</a></p><p style="margin-left:14px"><a href="#轴候选的cpu分派与填充">轴候选的CPU分派与填充</a></p><p style="margin-left:14px"><a href="#与普通704de0的源码映射">与普通704de0的源码映射</a></p><p style="margin-left:14px"><a href="#生命周期与精确后续">生命周期与精确后续</a></p></details><h1 id="d1第五切片当前旋转采样分派边界与插值">D1第五切片：当前旋转采样分派、边界与插值</h1><p>2026-10-19。本切片只追第四切片当前caller的42×6采样，未新增实图probe、产品修改、设备测试或宿主验收。源码确认、独立算术复演与原厂运行分列；后两者不得互相替代。</p>
+<h2 id="原件与取体">原件与取体</h2><p>原件仍为VM4.4 SDK x64 MVD_Algorithm.dll，SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。REA provider缺失配置状态沿第四切片记录，采用身份匹配的私有Ghidra12.1.4 readOnly/noanalysis fallback，无REA Evidence ID，无活动session/全局配置修改。三次串行导出已退出，临时工程变更均丢弃。</p>
+<p>新增16体：1806bc000、1806c2d50、1806b53e0、1806b6290、1806b6820、1806b5e30、180718ca0、18071d780、180714870、180715930、1807165b0、18071b390、180713eb0、180715250、1806bc160、1806ba450。<code>analysis/map-calibration/d1-source-chain/source-index.json</code>现107条记录含10拆块，逐体带C/汇编哈希、调用引用和缺口；不是107个已闭合算法。</p>
+<h2 id="起角与分派不能按整数数学角外推">起角与分派：不能按整数数学角外推</h2><p>70f4e0使用float δ=2π/30；中心起角为<code>−(.5*δ+start)</code>，窗口方向起角再减π；每轮中心角与窗口方向分别<strong>减δ</strong>，不是由k直接乘δ重算。第四切片只给出步长/反向，本切片补上负半步起角和逐次递减，禁止以0+12k估计实际桶。</p>
+<p>6b7ea0以float <code>degree=57.295780181884766*angle</code>，通过截断整数除360的商取余，负余数再加360；bucket=int(degree)，fraction=degree−bucket。fraction&lt;=−FLT_EPS或fraction&gt;=FLT_EPS则直接到通用采样；其余还检查角点相位，再按0/90/180/270分派。角点相位门是另一个必要谓词，角度满足不等于已进入轴核。</p>
+<p><code>tests/MapCalibration.NativeProbe/ReplayD1SamplerAngles.py</code>只用索引中的PE常数进行独立逐操作IEEE float、最近偶数舍入复演，输出<code>angle-source-replay.json</code>。复演中28窗直接满足通用角谓词；k8为78°但无对应轴核，仍回通用；k7为90°，仅为角点相位检查前候选；k22约270.000183°，已回通用。故复演支持“29通用+1轴候选”的条件结论，<strong>不是原厂执行路径确认</strong>，也不证明任意MXCSR下相同。需要实际原厂入口角度/CPU证据时，只对该具体疑点补trace。</p>
+<h2 id="四角长度与状态">四角、长度与状态</h2><p>6bc000输入float rectangle[cx,cy,w,h,angle]，将角度和尺寸转double，调用double sin/cos。首角：</p>
+<pre><code>x0=cx−.5*w*cos(angle)+.5*h*sin(angle)
+y0=cy−.5*w*sin(angle)−.5*h*cos(angle)
+x1=x0+w*cos(angle); y1=y0+w*sin(angle)
+(x2,y2)=2*(cx,cy)−(x0,y0)
+(x3,y3)=2*(cx,cy)−(x1,y1)
+</code></pre>
+<p>6b7ea0检查四角严格<code>0&lt;x&lt;W−1 &amp;&amp; 0&lt;y&lt;H−1</code>，全内标志1，否则0。尺寸<code>int(floatDimension+.5)</code>，本caller已传偶数42×6；输出packed dims单独写回。全内最终status0，触边status1；这表示裁边/路径状态，不是“1检测成功”。峰提取后来复用局部status，不能串为同一种状态。</p>
+<p>6b7c70中心在界外→6bfe30→6c2d50（当前selector2），中心界内→6b7ea0。6c2d50伪代码sin()/cos()漏参数，汇编1806c2e45/1806c2e80..eb5确认angle由float升double后传XMM0，两次调用前均恢复角度寄存器。</p>
+<h2 id="通用优化采样double坐标11位整数权重">通用优化采样：double坐标、11位整数权重</h2><p>当前boundary2、fill0时，6b7ea0通用路径在四角不全内分支调用6b6290，其他边界模式调用6b6820（本caller不扩大到其他模式）。通用内部行段由6b5e30取样；caller以最多32列的块调度，行stride为输出width，尾段长度单独传递。6b5e30本身按4像素展开及余数循环，不应忽略尾项。</p>
+<p>6b6290为每行保存有效段起止、首有效坐标；两端用6bc160判定与夹取，直接复制夹取位置的最近像素。6bc160先int(x+.5)/int(y+.5)，再分别检查x/y边界：小于lower写lower，大于upper−1写upper，返回0；区间内返回1供双线性阶段。这里upper是传入W−1/H−1的末点坐标，不是W/H的越界索引。</p>
+<p>6b5e30双线性为整数权重。令ix=int(x)、iy=int(y)、<code>a=(ix+1)*2048−int(2048*x)</code>、<code>b=int(2048*y)−iy*2048</code>；四字节为p00/p10/p01/p11：</p>
+<pre><code>top=p10*2048+(p00−p10)*a
+bottom=p11*2048+(p01−p11)*a
+out=byte(((2048−b)*top+b*bottom+0x200000)&gt;&gt;22)
+</code></pre>
+<p>原源码使用32位整数运算/右移，公式仅表达当前非负有效坐标路径，不替代汇编的有符号/位宽。6b5e30横向坐标double逐次加cos/sin，结束写回行末与下一行起点（起点加−sin/+cos）。6b6290先处理边界像素和有效段末端，6b7ea0再调用6b5e30覆盖内部段；不能把整行都套作浮点双线性。</p>
+<p>6c2d50中心界外路径则直接double坐标+float双线性权重，输出+.5再截断；boundary2两端以夹取最近点填充，中间双线性。四角全内status0，其余status1，均写尺寸。即使同属优化入口，不能把中心界外体误归为11位权重核。</p>
+<h2 id="轴候选的cpu分派与填充">轴候选的CPU分派与填充</h2><p>在角度与角点相位均通过后，90°分支：CPU11用7165b0（非全内且boundary2）或71b390；CPU7/10用713eb0或715250。270°对应718ca0/71d780与714870/715930。6b53e0只是270°、其他CPU的fallback，不能标为当前优化7/10/11必达体。本轮取全上述体供对照，但当前算术复演的270°已走通用，不把它声称为运行覆盖。</p>
+<p>这些轴核以字节装载/重排、块转置和scalar余数构建旋转输出，并非所有路径都再做通用双线性。带填充版本调用6ba450计算源范围与输出边界，外围以fill字节（当前0）memset；相应block余数路径也必须保留。6ba450取四角x/y最小/最大，符号相关±.5后截断，依据axis flag交换宽高含义并计算裁边长度。所有CPU轴核已取C/asm，但不同SIMD打包、尾块的逐字节同构尚未完成，不以函数名或当前成功样本推等价。</p>
+<h2 id="与普通704de0的源码映射">与普通704de0的源码映射</h2><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>普通704de0</th>
+<th>优化入口实际体</th>
+<th>结论边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>几何起点/步进</td>
+<td>float sinf/cosf和float累计；横cos/sin，纵−sin/cos</td>
+<td>6bc000/6b7ea0以double sin/cos和double累计</td>
+<td>几何表达对应，精度/顺序不同</td>
+</tr>
+<tr>
+<td>内点插值</td>
+<td>float四点双线性+.5截断</td>
+<td>通用6b5e30为11位权重；6c2d50为float权重</td>
+<td>有明确数值实现差别，不宣称等价</td>
+</tr>
+<tr>
+<td>边缘处理</td>
+<td>从左右两端夹取最近像素，再处理内段</td>
+<td>6bc160夹取、6b6290行段；轴核可能fill0</td>
+<td>按实际分支分别映射</td>
+</tr>
+<tr>
+<td>长度</td>
+<td>packed输出width/height，双端/中段循环</td>
+<td>rounded dims、有效段/块/尾段、axis转置</td>
+<td>不能仅比较总像素数</td>
+</tr>
+<tr>
+<td>状态</td>
+<td>无此采样status输出</td>
+<td>全内0/触边1，后层另用峰数量/status</td>
+<td>不可作统一成功布尔</td>
+</tr>
+</tbody></table>
+<h2 id="生命周期与精确后续">生命周期与精确后续</h2><p>新取通用叶体使用caller输出、scratch和局部行段表；未见独立malloc/free。memset/memcpy是像素填充/复制，不能当资源释放。未展开所有CPU所有模式的生命周期。</p>
+<ol>
+<li>第六切片已补当前90°候选的具体相位实参与CPU来源，见 <a href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html">相位源码报告</a>；独立复演不替代原厂入口trace。轴核打包/尾部C与汇编仍需逐段核对。</li>
+<li>通用行段和普通采样已能建立数值差异假设，下一步只针对11位量化/float累计的首个分叉设计有限微证，不增加泛化实图样本。</li>
+<li>前定位vector/scalar零幅值差异保持第三切片未知；不猜补过滤。拟合失败回退mask/RMS别名保持第四切片单列任务，未借本切片宣称解决。</li>
+</ol>
+<p>验证为原件哈希、只读导出、索引/PE常数生成、独立角度复演、源码/必要汇编交叉核对。没有产品实现、宿主启动或手动验收结论；仅S1/S2的有限推进。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D1-SAMPLER-SOURCE.md · SHA256 37de517d387aa36185422f9e72bea64070b8147325b1aa6093e2bde4625c1303<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

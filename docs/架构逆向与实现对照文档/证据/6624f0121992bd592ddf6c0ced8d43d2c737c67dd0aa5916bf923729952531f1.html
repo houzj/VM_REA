@@ -1,0 +1,70 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 6624f0121992 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 6624f0121992</p><h1>原文证据 6624f0121992</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 6624f0121992bd592ddf6c0ced8d43d2c737c67dd0aa5916bf923729952531f1。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>                var result = await executionEngine.ExecuteWorkflowAsync(runRequest, cancellationToken);
+                if (sequenceNumbers is not null)
+                {
+                    foreach (var pair in result.NodeResults)
+                    {
+                        if (nodeParameterOverrides.ContainsKey(pair.Key) &amp;&amp; pair.Value.Success)
+                            sequenceNumbers[pair.Key] = checked(sequenceNumbers[pair.Key] + 1);
+                    }
+                }
+                await InvokeOnUIAsync(() =>
+                {
+                    snapshot.Complete(result, nodeId => GetSnapshotNodeName(rootEngineWorkflow, nodeId));
+                    ExecutionSnapshotUpdated?.Invoke(this, snapshot);
+                });
+
+                // 输出结果
+                logger.LogInfo($&quot;工作流执行完成: {rootEngineWorkflow.Name}&quot;);
+                var outcomeText = result.Status switch
+                {
+                    ExecutionStatus.Cancelled => &quot;已取消&quot;,
+                    ExecutionStatus.Success => &quot;成功&quot;,
+                    _ => &quot;失败&quot;
+                };
+                logger.LogInfo($&quot;执行结果: {outcomeText}&quot;);
+                logger.LogInfo($&quot;执行时间: {result.ExecutionTime.TotalMilliseconds:F2} ms&quot;);
+
+                // 触发节点执行结果事件
+                if (result.NodeResults != null &amp;&amp; result.NodeResults.Count > 0)
+                {
+                    foreach (var nodeResult in result.NodeResults)
+                    {
+                        var node = FindNodeRecursive(rootEngineWorkflow, nodeResult.Key);
+                        if (node is SunEyeVision.UI.Shared.WorkflowNode uiNode)
+                        {
+                            // 创建一个包含结果的 ToolResults
+                            var toolResults = CreateToolResultsFromNodeResult(nodeResult.Value);
+                            // 方案 §6 画布三态：流程控制结果 → node.Status（OK=命中/NG=未命中）。
+                            // 用 SDK 层 IControlFlowResult 接口判断（UI 不直接引用工具项目），
+                            // NextNodeIds 非空 = 命中 → OK；空 = 未命中 → NG。
+                            if (toolResults is IControlFlowResult flowResult)
+                            {
+                                uiNode.Status = flowResult.NextNodeIds != null &amp;&amp; flowResult.NextNodeIds.Count > 0 ? &quot;OK&quot; : &quot;NG&quot;;
+                            }
+                            else if (toolResults.IsSuccess)
+                            {
+                                uiNode.Status = toolResults.JudgmentStatus switch
+                                {
+                                    &quot;OK&quot; => &quot;OK&quot;,
+                                    &quot;NG&quot; => &quot;NG&quot;,
+                                    _ => &quot;成功&quot;
+                                };
+                            }
+                            OnNodeExecutionCompleted(uiNode, toolResults, cameraFrame is not null);
+                        }
+                    }
+                }
+
+                if (result.Status == ExecutionStatus.Cancelled)
+                {
+                    var message = result.CompletionMessage ?? &quot;工作流执行已取消&quot;;
+                    logger.LogWarning(message);
+                    InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this,
+                        new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, $&quot;[CANCELLED] {message}&quot;)));
+                }
+                else if (!result.Success &amp;&amp; result.Errors.Any())
+                {
+                    InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, $&quot;[ERROR] 工作流执行失败，错误数量: {result.Errors.Count}&quot;)));
+                    foreach (var error in result.Errors)
+                    {
+                        logger.LogError($&quot;错误: {error}&quot;);</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis--GEX26.html">数据/global-variable-analysis--GEX26.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,46 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 6fa3b0119c20 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 6fa3b0119c20</p><h1>原文证据 6fa3b0119c20</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 6fa3b0119c20b1413e5a74ac41f19aa47d9b21e1109b0da15e819d1286249fb8。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence"># 多图采集（ImageAcquisitionModule）
+
+本项按采集类清单顺序开始。原厂源码与资源只读；当前 worktree 独立实现，不修改框架线工作目录。本批按用户指定的代码复现范围验收；设备测试已排除，不宣称原生所有场景完全等价。
+
+## 证据与已确认行为
+
+- 安装路径：`D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageAcquisitionModule`。原生 DLL SHA256：`bba5912a1f97d3721ad45eb8b955e89cd6f71327e116511f5e2037224b81bea2`。
+- 托管与 UI 反编译输出在当前 `analysis/full-audit/image-acquisition/managed`、`control`。原生 Ghidra 反编译在 `native`，与 REA 元数据观测分开标识。REA 原生 provider 未配置，未将 CLI Ghidra 输出冒充 REA Evidence。
+- 原厂构造默认值由算法 XML 覆盖为相机模式 2；间隔 1000，数量 4，等待光源 10，CameraID=-1。UI XML 的间隔初值 0 不代表实际参数默认值；原厂运行和用户桌面截图均确认 1000。
+- `18000d6c0` Process：本地数量来自 ImageCount；相机数量来自 ImageConfigList，不受本地数量 3～8 限制。无相机/无配置返回 e0000001。
+- `180010a80` ProcessLocalImage：逐槽解码、发布后推进列表游标并循环；一张源图片可填充多个槽。空列表 e0000203，已登记文件丢失 e0000201；失败位置游标保留，已完成槽位保留，后续槽位为空。
+- `1800120c0`：逐槽 Image/Width/Height/PixelFormat 与对应角度；double 角度转换为 float32 输出。没有对应配置则角度 0。
+- `18000e0a0` SetParam：AddImage 允许重复；ClearImage 清空并重置游标；配置二进制为 0x358 字节，8 项 ×104 字节加头/保留，Serial 从1开始映射为0基槽位。
+- `180011a90`：每个相机配置按序触发光源、等待 DelayAfterTriggerLight、取帧、重置本地光源配置，再补足间隔；取帧内部失败不阻止后续配置。正向物理丢帧/丢包尚未制造验证。
+- `ImageAcquisitionParam.SetImageDirPath` 是递归追加 SDK API；UI `OpenFileForAcquisition.AddImageByDir` 是按路径长度、字符串排序，只进入一层子目录，目录切换先清空旧列表。两者不能混为一种语义。
+- 原厂 UI 资源 `datatemplate/paramusercontroldatatemplate.xaml`：相机模式额外曝光、增益、光源、触发时间0..65535、通道1..6、亮度0..255；两模式都有分布角-180..180、照射角0..90；最多8项，允许删空。
+
+## 原厂运行
+
+可重放工具：`tests/NativeEvidence/Invoke-OriginalImageAcquisitionProbe.ps1`；加载安装样例只读，创建临时流程/工具，在自己的 SDK 进程运行，不覆盖安装 SOL。
+
+当前完整运行：`analysis/full-audit/image-acquisition/runtime/run-202d854e150b4a5f9d2af292cdd478e3`。包含原厂参数边界、本地连续运行/循环、部分失败/恢复、逐图角度、真实相机3项/1项/2项参数配置/空配置及SOL内嵌重载、原厂 SDK 控件双模式截图。样例部分模块加载错误 e0000333 被单独记录，不掩盖为完整加载成功。
+
+真实相机 MV-CS050-10GC / DA5108130：3张2448×2048 RGB24，FrameNum=3；改1项再取1张 FrameNum=4。无光源绑定也能取帧。曝光/增益在 finally 恢复。不同时间传感器帧不做像素哈希相等断言。
+
+用户提供原厂桌面相机配置截图已存 `analysis/full-audit/image-acquisition/user-ui`。截图确认实际1000间隔、字段顺序、添加/删除按钮及窗口布局；按150%截图比例对应420×500逻辑尺寸，此比例属推断。本地图像桌面窗口和全局光源管理弹层未做逐像素对照；本地布局已按原厂XAML及SDK双模式截图实现。此视觉覆盖边界不冒充已验证。
+
+## 实现与边界
+
+当前复用已有独立图像解码器，新增多图采集插件、专用配置窗口、54个展平输出和会话状态。当前 VMX JSON 参数与嵌入资源是独立格式，不冒充原厂二进制兼容。原厂相机逐槽失败不阻止后续配置；独立实现同样继续，累计GetCameraFailCount，在没有最终查询错误的情况下返回成功和NativeErrorCode=0，保留有效槽位。空槽位以未发布可选图像端口表示，不能伪造上一帧。
+
+公共服务与宿主调整记录于 `docs/CONTRACT-REQUESTS.md`。设备测试按用户最新指令排除；设备字段范围、保存重载、模块协议和宿主接入已在代码及自动验证中覆盖；原厂未定义的解码器损坏输入行为不按未初始化内存复刻。
+
+原厂内嵌保存对照已成功：当前新建方案另存到自己的SOL，删除两张源图片后重载，四槽输出成功。
+
+相机曝光/增益由1800111e0按 %.3f 格式化，输入保留double直到格式化；图像源原来的float输入路径保持不变。设备范围从真实SDK读取。宿主为多图插件显示8个不同图像输出选项，禁用单图运行/切换控制，避免错误写入无关参数。
+
+## 代码范围收尾
+
+- 光源调用由 AcquisitionLightProtocolService 编码，指令 LightDeviceParamSetTrigger，748字节，触发时长位于+24、首通道位于+28。不能直接套用缺少触发时长字段的旧托管744字节结构。原生GetLightChannel只支持1..4；UI允许的5/6保持原厂不启用通道的行为。CompleteAsync只清理暂存状态，不凭空增加物理关闭命令。
+- 光源失败按原厂路径保留诊断并继续取图；取消仍清理暂存状态。全局光源资源目录和具体驱动通过IAcquisitionLightModuleTransport注入，与原厂调用全局模块的边界一致；本交付不宣称完成清单中的另一个光源工具或任意串口/网口驱动。
+- 数量、增删上限、显隐、订阅入口、目录手动输入与浏览差异、SDK递归追加、会话游标、数组槽位、错误恢复、内嵌重载及8路宿主预览均有自动检查。目录权限探测使用唯一临时文件，避免覆盖原厂固定test.txt同名用户文件。
+- 原厂探针默认不执行设备测试分支；历史相机分支仅保留为显式-ProbeCamera选项。用户排除设备测试后未再运行设备探针，历史记录单独保留，不计入本批代码测试数量。
+
+最终验证：18个程序1799项通过（本工具327、图像源767、宿主WPF245、其他460），全解决方案0警告0错误。来源与产物哈希见 image-acquisition-verification.json。原厂历史设备探针源码快照保存在对应run目录，当前探针已改为默认不执行设备测试分支，二者明确区分。
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Collection-ImageAcquisitionModule-899f2f0e.html">多图采集 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

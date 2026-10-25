@@ -1,0 +1,808 @@
+{
+  "schemaVersion": 2,
+  "modelVersion": "0.2",
+  "scope": {
+    "domains": [
+      "F-01",
+      "F-05",
+      "F-14",
+      "F-15",
+      "F-16",
+      "F-17",
+      "F-18",
+      "F-21",
+      "F-23"
+    ],
+    "completeFramework": false,
+    "implementationProgress": "41/96 = 42.71%; no change",
+    "manualAcceptanceExcluded": true
+  },
+  "baseline": "da853b5c386f04aba7634b09b2d1716a04f67103",
+  "generatedUtc": "2026-10-21T05:39:26.420Z",
+  "provenance": "Direct inspection of cited source/resources and explicitly labeled metadata/CIL evidence. Artifact identity is limited to each cited manifest; source hashes and binary identities are distinct. No vendor runtime execution or parity claim.",
+  "introduction": "从来源树和配置窗口追到订阅变更、原 SDK 描述、当前文档校验与本轮取值/发布；把同名不同生命周期的数据合同分开。",
+  "edges": [
+    {
+      "id": "D01",
+      "route": "原版 · 来源选择与订阅",
+      "classification": "source-confirmed",
+      "from": "GetFrontFilterTreeOperation.Operate",
+      "to": "前置输出树 → TargetName+A",
+      "behavior": "按 AlgorithmTabRoot 或 DynamicIOContainer 的 DataSource 分路，查询 Output、ExtraParams 类型筛选、排除 self/inside 且需要空项，再用 SetPropertyValueByNameNotrigger 写候选。不是只返回树而无消费赋值。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/GetFrontFilterTreeOperation.cs",
+          "member": "GetFrontFilterTreeOperation.Operate",
+          "sha256": "859b7c4ec74f7843623bc4923e797c898052e8e2a315b061fb4251c74a0446e7",
+          "start": 23,
+          "end": 68,
+          "excerpt": "\tpublic void Operate(object[] Params, string[] ExtraParams)\n\t{\n\t\tNameValueItem parentNode = Executor.GetParentNode<NameValueItem>();\n\t\tif (parentNode == null || string.IsNullOrEmpty(TargetName))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tobject topBaseNode = parentNode.GetTopBaseNode();\n\t\tIOwner owner = null;\n\t\tif (topBaseNode is AlgorithmTabRoot)\n\t\t{\n\t\t\towner = parentNode.GetTopBaseNode() as AlgorithmTabRoot;\n\t\t}\n\t\telse if (topBaseNode is DynamicIOContainer<DynamicIO> { DataSource: var dataSource })\n\t\t{\n\t\t\tbool isNeedNull = true;\n\t\t\tIList frontFilterTree = dataSource.GetFrontFilterTree((VmModule p) => true, \"Output\", ExtraParams, IsIncludeSelf: false, IsIncludeInside: false, isNeedNull);\n\t\t\ttry\n\t\t\t{\n\t\t\t\tparentNode.SetPropertyValueByNameNotrigger(TargetName + \"A\", frontFilterTree);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tthrow new Exception(ex.Message);\n\t\t\t}\n\t\t}\n\t\tif (owner != null && owner.Owner != null)\n\t\t{\n\t\t\tVmModule vmModule = owner.Owner as VmModule;\n\t\t\tbool isNeedNull2 = true;\n\t\t\tIList frontFilterTree2 = vmModule.GetFrontFilterTree((VmModule p) => true, \"Output\", ExtraParams, IsIncludeSelf: false, IsIncludeInside: false, isNeedNull2);\n\t\t\ttry\n\t\t\t{\n\t\t\t\tparentNode.SetPropertyValueByNameNotrigger(TargetName + \"A\", frontFilterTree2);\n\t\t\t}\n\t\t\tcatch (Exception ex2)\n\t\t\t{\n\t\t\t\tthrow new Exception(ex2.Message);\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic void ReOperate()\n\t{\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D02",
+      "route": "原版 · 来源选择与订阅",
+      "classification": "source-confirmed",
+      "from": "SetFilterSourceOperation.Operate",
+      "to": "目标 IO 查找与回退",
+      "behavior": "从 Params 的 NameValueItem/字符串和 ExtraParams[0] 取目标，先 owner.GetIO，再试子算法带 HashCode 的名字，再回退 VmModuleSet.ProcedureCommunicaitonModule。仍找不到则提示并返回。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/SetFilterSourceOperation.cs",
+          "member": "SetFilterSourceOperation IO owner resolution",
+          "sha256": "197ec3eb19974776db4dc9ab293cababed6319ef2a5a1c0da6a8a9bfd5eb0401",
+          "start": 57,
+          "end": 85,
+          "excerpt": "\t\t\tBaseNode baseNode = nameValueItem.GetTopBaseNode() as BaseNode;\n\t\t\tif (!((baseNode as IOwner)?.Owner is VmModule vmModule) || ExtraParams.Length == 0)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tstring text = ExtraParams[0];\n\t\t\tif (string.IsNullOrEmpty(text))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tVmIO iO = vmModule.GetIO(text);\n\t\t\tif (iO == null && baseNode is SubAlgorithmTabRoot subAlgorithmTabRoot)\n\t\t\t{\n\t\t\t\tiO = vmModule.GetIO(AppLocalizationService.UnDoTranslate(text + \"_\" + subAlgorithmTabRoot.HashCode));\n\t\t\t}\n\t\t\tif (iO == null && vmModule is VmModuleSet vmModuleSet)\n\t\t\t{\n\t\t\t\tvmModule = vmModuleSet.ProcedureCommunicaitonModule as VmModule;\n\t\t\t\tiO = vmModule.GetIO(text);\n\t\t\t}\n\t\t\tif (iO == null)\n\t\t\t{\n\t\t\t\tstring lang = AppLocalizationService.GetLang(\"Lang_IO_Message\");\n\t\t\t\tHikMessageBox.Show(lang + \":\" + AppLocalizationService.GetLang(text), MessageIcons.Warning);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tVmIO outputFilter = null;\n\t\t\tstring BindingIndex = null;\n\t\t\tbool isBindGlobalVar = false;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D03",
+      "route": "原版 · 来源选择与订阅",
+      "classification": "source-confirmed",
+      "from": "GetOutputInfo / 常量校验",
+      "to": "RelateIO 与 RelateIndex 赋值",
+      "behavior": "来源解析失败将 ButtonSelecter.CurValueA 恢复 OldCurValue；非空来源补 Root/TypeName，常量先 CheckValue；之后依次赋 RelateIO、RelateIndex。并非一个无副作用的字符串字段赋值。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/SetFilterSourceOperation.cs",
+          "member": "SetFilterSourceOperation source resolution and mutation",
+          "sha256": "197ec3eb19974776db4dc9ab293cababed6319ef2a5a1c0da6a8a9bfd5eb0401",
+          "start": 86,
+          "end": 116,
+          "excerpt": "\t\t\tif (!GetOutputInfo(vmModule, filterString, ref outputFilter, ref BindingIndex, ref isBindGlobalVar))\n\t\t\t{\n\t\t\t\tif (buttonSelecter != null)\n\t\t\t\t{\n\t\t\t\t\tbuttonSelecter.CurValueA = buttonSelecter.OldCurValue;\n\t\t\t\t}\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (outputFilter != null)\n\t\t\t{\n\t\t\t\tif (outputFilter != VmSolution.ExternIO && outputFilter.Root == null)\n\t\t\t\t{\n\t\t\t\t\toutputFilter.Root = vmModule;\n\t\t\t\t}\n\t\t\t\tif (string.IsNullOrEmpty(outputFilter.TypeName))\n\t\t\t\t{\n\t\t\t\t\toutputFilter.TypeName = iO.TypeName;\n\t\t\t\t}\n\t\t\t\tif (outputFilter is VmConstantIO vmConstantIO && !CheckValue(vmConstantIO.Name, iO.TypeName))\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"订阅失败\"), MessageIcons.Warning);\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t}\n\t\t\tiO.RelateIO = outputFilter;\n\t\t\tiO.RelateIndex = GetBindIndex(vmModule, BindingIndex);\n\t\t\tstring[] array = text.Split('_');\n\t\t\tif (array.Length == 2)\n\t\t\t{\n\t\t\t\tstring objName = array[1].Substring(0, array[1].Length - 1);\n\t\t\t\t((VmSolution.Instance[((IVmFullPath)vmModule).FullPath + \".[Display]\"] is ParamRoot paramRoot) ? (from a in paramRoot.GetDisplayList().OfType<Object>()",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "GetOutputInfo/GetBindIndex 的所有外部变量、数组及错误分支尚未在此图闭合。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D04",
+      "route": "原版 · 来源选择与订阅",
+      "classification": "source-confirmed",
+      "from": "VmIO.RelateIO setter",
+      "to": "登记订阅历史 → 解旧 → 订新",
+      "behavior": "LazyLoad 后叶节点同值直接返回；先登记 SubscribeUnRedoAction，读取旧来源，存在则 Root.UnSubscribe，否则对子项清订阅；赋新来源后 Root.Subscribe，失败清 _relateIO 再抛。不能推断失败会恢复旧订阅。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmIO.cs",
+          "member": "VmIO.RelateIO setter unsubscribe/register",
+          "sha256": "15e1832243422b6bfa2714f300b796d54c365950573639eb1039c5df58e99cb0",
+          "start": 167,
+          "end": 198,
+          "excerpt": "\t\t\t\tExpression<Func<object>> oldSubList = () => Root.GetModuleAllSubscribe();\n\t\t\t\tstring displayName = string.Format(\"{0}{1}{2}\", AppLocalizationService.GetLang(\"Lang_Edit\"), Root.FullName, AppLocalizationService.GetLang(\"RunParam_Subscribe\"));\n\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new SubscribeUnRedoAction(Subscribe_Redo, Subscribe_Undo, Subscribe_Update, new UnRedo_SubscribeData\n\t\t\t\t{\n\t\t\t\t\tModuleFullName = Root.FullName,\n\t\t\t\t\tOldSubList = oldSubList,\n\t\t\t\t\tNewSubList = null\n\t\t\t\t}), displayName, (IBuilder builder, IUnRedoOperation operation) => CanRegisterSubscribe(builder, operation));\n\t\t\t\tVmIO relateIO = RelateIO;\n\t\t\t\tif (relateIO != null)\n\t\t\t\t{\n\t\t\t\t\tRoot.UnSubscribe(this, relateIO);\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tforeach (VmIO child in Childs)\n\t\t\t\t\t{\n\t\t\t\t\t\tchild.RelateIO = null;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\t_relateIO = value;\n\t\t\t\tif (_relateIO != null)\n\t\t\t\t{\n\t\t\t\t\ttry\n\t\t\t\t\t{\n\t\t\t\t\t\tRoot.Subscribe(this, _relateIO);\n\t\t\t\t\t}\n\t\t\t\t\tcatch (Exception ex)\n\t\t\t\t\t{\n\t\t\t\t\t\t_relateIO = null;\n\t\t\t\t\t\tthrow ex;\n\t\t\t\t\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D05",
+      "route": "原版 · 来源选择与订阅",
+      "classification": "source-confirmed",
+      "from": "VmIO 新订阅完成",
+      "to": "RelatedIOChanged / Ready 刷新",
+      "behavior": "建立新订阅后发 RelatedIOChanged，Root 未进入 Dispose 才 ReFlashReadyState；调用顺序与字段变更分开记录。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmIO.cs",
+          "member": "VmIO subscription notification",
+          "sha256": "15e1832243422b6bfa2714f300b796d54c365950573639eb1039c5df58e99cb0",
+          "start": 200,
+          "end": 209,
+          "excerpt": "\t\t\t\tRelatedIOChanged?.Invoke(this, new ValueEventArgs\n\t\t\t\t{\n\t\t\t\t\tValue = _relateIO\n\t\t\t\t});\n\t\t\t\tif (!Root.IsOnDispose)\n\t\t\t\t{\n\t\t\t\t\tRoot.ReFlashReadyState();\n\t\t\t\t}\n\t\t\t}\n\t\t\tcatch (Exception ex2)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D06",
+      "route": "原版 · 来源选择与订阅",
+      "classification": "source-confirmed",
+      "from": "VmModule.Subscribe / UnSubscribe",
+      "to": "类型检查、叶订阅 SDK 或对子项递归",
+      "behavior": "先 IsSuitable；双方叶节点使用 GetSubInfo(source)、GetPubInfo(target,source.RelateIndex)，交 SubscribeResult/UnSubscribeResult。组合 Subscribe 要求子项数量相同，逐项赋 RelateIO，否则抛不对齐异常。变量名 source 在此是订阅方，不应按英语词义反转生产/消费方向。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.Subscribe",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 1823,
+          "end": 1846,
+          "excerpt": "\tinternal virtual void Subscribe(VmIO source, VmIO target)\n\t{\n\t\tif (!IsSuitable(target.TypeName, source.TypeName))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tif (target.IsLeafNode && source.IsLeafNode)\n\t\t{\n\t\t\tImvsSdkDefine.IMVS_SUBSCRIBE_BASIC_INFO subInfo = GetSubInfo(source);\n\t\t\tImvsSdkDefine.IMVS_PUBLISH_BASIC_INFO pubInfo = GetPubInfo(target, source.RelateIndex);\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SubscribeResult(subInfo, pubInfo);\n\t\t\treturn;\n\t\t}\n\t\tif (source.Childs.Count == target.Childs.Count)\n\t\t{\n\t\t\tfor (int i = 0; i < target.Childs.Count; i++)\n\t\t\t{\n\t\t\t\tsource.Childs[i].RelateIO = target.Childs[i];\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t\tstring lang = AppLocalizationService.GetLang(\"SubscriptionsNotAligned\");\n\t\tthrow new Exception(lang);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.UnSubscribe",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 1853,
+          "end": 1868,
+          "excerpt": "\tinternal virtual void UnSubscribe(VmIO source, VmIO target)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (!IsSuitable(target.TypeName, source.TypeName))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (target.IsLeafNode && source.IsLeafNode)\n\t\t\t{\n\t\t\t\tImvsSdkDefine.IMVS_SUBSCRIBE_BASIC_INFO subInfo = GetSubInfo(source);\n\t\t\t\tImvsSdkDefine.IMVS_PUBLISH_BASIC_INFO pubInfo = GetPubInfo(target, source.RelateIndex);\n\t\t\t\tServerSDKManager.serverSDKManager.mModuleManager.UnSubscribeResult(subInfo, pubInfo);\n\t\t\t}\n\t\t\telse\n\t\t\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D07",
+      "route": "原版 · 来源选择与订阅",
+      "classification": "source-confirmed",
+      "from": "VmProcedure.Subscribe",
+      "to": "自定义流程输出订阅合同",
+      "behavior": "流程专用方法双方叶节点时用 source.Name 填 strInputParamName，target.Name 填 strOutputParamName，过程 ID 与 target.Root.ID 填结构，再交 SetCustomOutputSubscribeInfo；这与普通模块 SubscribeResult 是不同 SDK 路径。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "VmProcedure custom output Subscribe",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 984,
+          "end": 1004,
+          "excerpt": "\tprivate void Subscribe(VmIO source, VmIO target, bool IfDelete)\n\t{\n\t\tif (!IsSuitable(target.TypeName, source.TypeName))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tif (target.IsLeafNode && source.IsLeafNode)\n\t\t{\n\t\t\tImvsSdkDefine.IMVS_CUSTOM_SUBSCRIBE_INFO customOutputSubscribeInfo = new ImvsSdkDefine.IMVS_CUSTOM_SUBSCRIBE_INFO\n\t\t\t{\n\t\t\t\tstrInputParamName = VM.PlatformSDKCS.StringUtil.UTF8GetFixLenBytes(source.Name, 256),\n\t\t\t\tstrOutputParamName = VM.PlatformSDKCS.StringUtil.UTF8GetFixLenBytes(target.Name, 256),\n\t\t\t\tnIfDelete = (IfDelete ? 1 : 0),\n\t\t\t\tnOutputType = source.ValueTypeIndex,\n\t\t\t\tnSubProcessID = (int)ID,\n\t\t\t\tnPubModuleID = (int)target.Root.ID\n\t\t\t};\n\t\t\tServerSDKManager.serverSDKManager.mVmInterfaceManager.SetCustomOutputSubscribeInfo(customOutputSubscribeInfo);\n\t\t\treturn;\n\t\t}\n\t\tif (source.Childs.Count == target.Childs.Count)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "U01",
+      "route": "原版 · 未闭合数据流",
+      "classification": "unknown",
+      "from": "订阅描述 / native 生产与回调",
+      "to": "实际值、持久化与生命周期",
+      "behavior": "本页闭合到托管订阅结构/调用，不声明 native 上游准备、同轮值可用时刻、重复/失败回滚、变量存储及 .sol 往返已恢复。",
+      "refs": [],
+      "unknowns": [
+        "全局变量/局部变量与 procedure IO 的原资源入口、VariableManager/native 内存及 callback 仍需逐族建链。",
+        "RelateIndex setter 与输入名称编码/固定数组容量、复合成员和单例替换尚未全分支核查。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C01",
+      "route": "当前 · 配置与 typed 合同",
+      "classification": "independent-implementation",
+      "from": "OpenWorkflowConfiguration / LocalVariables",
+      "to": "当前窗口与编辑所有者",
+      "behavior": "打开前 CanEditProcedure；配置窗切换会关闭旧窗，固定 solution/id 作为写入守卫，参数/订阅写入还检查 windowClosed、锁、activeRun。局部变量窗是模态独立入口。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowConfigurationHost.cs",
+          "member": "Current workflow configuration open",
+          "sha256": "48a5aa5f0c8dbc58d6d140486de6d2c0adf1f9fac7155a6ac7c837a3c204193d",
+          "start": 26,
+          "end": 35,
+          "excerpt": " void OpenWorkflowConfiguration(string id)\n {\n  if(workflowConfigurationWindow is {IsVisible:true}){if(configurationProcedureId==id){workflowConfigurationWindow.Activate();return;}workflowConfigurationWindow.Close();}\n  if(!CanEditProcedure(id))return;\n  SelectWorkflow(id);ResetEditingGesture();var window=CreateWorkflowConfigurationWindow(id);workflowConfigurationWindow=window;configurationProcedureId=id;parameterEditorOpen=true;\n  window.RepeatRequested+=()=>StartProcedureLoop(id);window.StopRequested+=()=>{if(runningProcedureId==id)activeRun?.Cancel();};\n  window.Closed+=(_,_)=>{if(ReferenceEquals(workflowConfigurationWindow,window)){workflowConfigurationWindow=null;configurationProcedureId=null;parameterEditorOpen=false;if(!windowClosed)RefreshAll();}};\n  try{window.Show();RefreshAll();}catch{workflowConfigurationWindow=null;configurationProcedureId=null;parameterEditorOpen=false;throw;}\n }\n WorkflowLocalVariablesWindow CreateWorkflowLocalVariablesWindow(string id)",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowConfigurationHost.cs",
+          "member": "Current variables window entry",
+          "sha256": "48a5aa5f0c8dbc58d6d140486de6d2c0adf1f9fac7155a6ac7c837a3c204193d",
+          "start": 40,
+          "end": 43,
+          "excerpt": " void OpenWorkflowLocalVariables(string id)\n {\n  if(!CanEditProcedure(id))return;ResetEditingGesture();var window=CreateWorkflowLocalVariablesWindow(id);parameterEditorOpen=true;try{window.ShowDialog();}finally{parameterEditorOpen=false;if(!windowClosed)RefreshAll();}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowConfigurationHost.cs",
+          "member": "Current configuration writer",
+          "sha256": "48a5aa5f0c8dbc58d6d140486de6d2c0adf1f9fac7155a6ac7c837a3c204193d",
+          "start": 10,
+          "end": 15,
+          "excerpt": " void WriteWorkflowConfiguration(string solution,string id,WorkflowConfiguration value)\n {\n  if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||!doc.Document.Procedures.Any(p=>p.Id==id))throw new InvalidOperationException(\"当前流程配置不可编辑。\");\n  doc.SetWorkflowConfiguration(id,value);\n }\n IEnumerable<WorkflowSourceOption> WorkflowSources(string id,DataKind? kind)=>ConfigurationProcedure(id).Nodes.SelectMany(n=>modules.GetDescriptor(n).Outputs.Where(p=>p.CanSubscribe&&(!kind.HasValue||DataKinds.CanFlow(p.Kind,kind.Value))).Select(p=>new WorkflowSourceOption(n.Id,p.Name,p.Kind,n.Name+\".\"+WorkflowPresentation.Output(n.ModuleId,p.Name)){Cardinality=p.Cardinality}));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C02",
+      "route": "当前 · 配置与 typed 合同",
+      "classification": "independent-implementation",
+      "from": "WorkflowSources / WorkflowOutput",
+      "to": "来源目录与会话结果消费者",
+      "behavior": "候选来自模块 descriptor 中 CanSubscribe 且类型能流入的输出，保留 Cardinality；显示读 workflowSessions[流程] 对应节点的输出。候选可见不保证本轮已执行并产值。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowConfigurationHost.cs",
+          "member": "Current source candidates and result reading",
+          "sha256": "48a5aa5f0c8dbc58d6d140486de6d2c0adf1f9fac7155a6ac7c837a3c204193d",
+          "start": 15,
+          "end": 16,
+          "excerpt": " IEnumerable<WorkflowSourceOption> WorkflowSources(string id,DataKind? kind)=>ConfigurationProcedure(id).Nodes.SelectMany(n=>modules.GetDescriptor(n).Outputs.Where(p=>p.CanSubscribe&&(!kind.HasValue||DataKinds.CanFlow(p.Kind,kind.Value))).Select(p=>new WorkflowSourceOption(n.Id,p.Name,p.Kind,n.Name+\".\"+WorkflowPresentation.Output(n.ModuleId,p.Name)){Cardinality=p.Cardinality}));\n PortValue? WorkflowOutput(string id,string node,string port)=>workflowSessions.TryGetValue(id,out var session)?session.Nodes.FirstOrDefault(n=>n.NodeId==node)?.Outputs.GetValueOrDefault(port):null;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C03",
+      "route": "当前 · 配置与 typed 合同",
+      "classification": "independent-implementation",
+      "from": "SetWorkflowConfiguration",
+      "to": "过滤失效输入引用 / snapshot / Group传播",
+      "behavior": "先过滤不再存在的 workflow input 引用；Group 则同步显示接口，再 Validate、Snapshot，同 JSON 返回。变量被移除/改类型时收集失效 ID，交 Edit/PropagateGroupInterface。此为当前文档编辑与历史合同。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "GraphEditorDocument.SetWorkflowConfiguration",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 100,
+          "end": 105,
+          "excerpt": "    public void SetWorkflowConfiguration(string id,WorkflowConfiguration configuration) {\n        var p=Procedure(id);configuration=configuration with{Subscriptions=configuration.Subscriptions.Where(b=>WorkflowSubscriptions.References(b.Source).All(s=>s.Kind!=WorkflowSourceKind.WorkflowInput||configuration.Inputs.Any(i=>i.Id==s.Id))).ToArray()};if(p.GroupOwner is not null)configuration=GroupDisplayLinks.Synchronize(p.Configuration,configuration);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();\n        if(JsonSerializer.Serialize(p.Configuration)==JsonSerializer.Serialize(snapshot))return;\n        var invalidVariables=p.Configuration.Variables.Where(v=>!snapshot.Variables.Any(next=>next.Id==v.Id&&next.Type==v.Type)).Select(v=>v.Id).ToHashSet(StringComparer.Ordinal);\n        Edit(d=>PropagateGroupInterface(d,p with{Configuration=snapshot},invalidVariables));\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C04",
+      "route": "当前 · 配置与 typed 合同",
+      "classification": "independent-implementation",
+      "from": "WorkflowInterfaceItem / WorkflowLocalVariable",
+      "to": "稳定 ID、类型、绑定与快照",
+      "behavior": "当前接口项区分 Id/Name、Kind、NodeId/Port、Display/Accumulate、Cardinality；局部变量有独立 Id、值/类型和来源。结构不是原 VmIO/native 指针布局，按独立数据契约记录。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowConfiguration.cs",
+          "member": "Workflow interface and local-variable records",
+          "sha256": "ad59db622c095ac22c3550c3b3ca4b6491ac31d68108a83e0caa9c56928e7b1f",
+          "start": 4,
+          "end": 4,
+          "excerpt": "public sealed record WorkflowInterfaceItem(string Id,string Name,DataKind Kind,string? NodeId=null,string? Port=null,bool Display=false,bool Accumulate=false){public ValueCardinality Cardinality{get;init;}=ValueCardinality.Scalar;[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public string? LinkedOutputId{get;init;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowConfiguration.cs",
+          "member": "Workflow local-variable record",
+          "sha256": "ad59db622c095ac22c3550c3b3ca4b6491ac31d68108a83e0caa9c56928e7b1f",
+          "start": 15,
+          "end": 15,
+          "excerpt": "public sealed record WorkflowLocalVariable(string Id,string GroupId,string Name,string Type,string Value,string Remark=\"\",string? SourceNode=null,string? SourcePort=null);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C05",
+      "route": "当前 · 配置与 typed 合同",
+      "classification": "independent-implementation",
+      "from": "WorkflowSubscriptions.SourceType / Cardinality",
+      "to": "当前来源类型与基数",
+      "behavior": "来源含节点、局部变量、流程输入、GroupLoopIndex 与四类常量；LoopIndex 仅拥有 Group body 且名字/port 合法。NumberArray 是 DataKind，不因此把此来源的 Cardinality 改成数组基数。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": "WorkflowSubscriptions.SourceType",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 33,
+          "end": 48,
+          "excerpt": " public static DataKind SourceType(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch\n {\n  WorkflowSourceKind.GroupLoopIndex=>PrivateLoopIndex(p,source),\n  WorkflowSourceKind.IntegerConstant=>int.TryParse(source.Id,NumberStyles.Integer,CultureInfo.InvariantCulture,out _)?DataKind.Integer:throw new InvalidDataException(\"Invalid integer constant.\"),\n  WorkflowSourceKind.NumberConstant=>double.IsFinite(ReadNumberConstant(source.Id))?DataKind.Number:throw new InvalidDataException(\"Invalid number constant.\"),\n  WorkflowSourceKind.NumberArrayConstant=>ReadNumberArrayConstant(source.Id) is not null?DataKind.NumberArray:throw new InvalidDataException(\"Invalid number array constant.\"),\n  WorkflowSourceKind.TextConstant=>ReadTextConstant(source.Id) is not null?DataKind.Text:throw new InvalidDataException(\"Invalid text constant.\"),\n\n  WorkflowSourceKind.LocalVariable=>VariableKind(p.Configuration.Variables.SingleOrDefault(v=>v.Id==source.Id)?.Type??throw new InvalidDataException(\"Missing local variable.\")),\n  WorkflowSourceKind.WorkflowInput=>p.Configuration.Inputs.SingleOrDefault(v=>v.Id==source.Id)?.Kind??throw new InvalidDataException(\"Missing workflow input.\"),\n  WorkflowSourceKind.NodeOutput=>OutputType(p,registry,source.Id,source.Port),\n  _=>throw new InvalidDataException(\"Unknown subscription source.\")\n };\n public static ValueCardinality SourceCardinality(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch{\n  WorkflowSourceKind.GroupLoopIndex=>PrivateLoopIndex(p,source)==DataKind.Integer?ValueCardinality.Scalar:throw new InvalidDataException(),\n  WorkflowSourceKind.IntegerConstant or WorkflowSourceKind.NumberConstant or WorkflowSourceKind.NumberArrayConstant or WorkflowSourceKind.TextConstant=>ValueCardinality.Scalar,",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": "WorkflowSubscriptions.SourceCardinality",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 46,
+          "end": 55,
+          "excerpt": " public static ValueCardinality SourceCardinality(ProcedureDocument p,ModuleRegistry registry,WorkflowValueReference source)=>source.Kind switch{\n  WorkflowSourceKind.GroupLoopIndex=>PrivateLoopIndex(p,source)==DataKind.Integer?ValueCardinality.Scalar:throw new InvalidDataException(),\n  WorkflowSourceKind.IntegerConstant or WorkflowSourceKind.NumberConstant or WorkflowSourceKind.NumberArrayConstant or WorkflowSourceKind.TextConstant=>ValueCardinality.Scalar,\n  WorkflowSourceKind.LocalVariable=>ValueCardinality.Scalar,\n  WorkflowSourceKind.WorkflowInput=>p.Configuration.Inputs.SingleOrDefault(v=>v.Id==source.Id)?.Cardinality??throw new InvalidDataException(\"Missing workflow input.\"),\n  WorkflowSourceKind.NodeOutput=>registry.GetDescriptor(p.Nodes.SingleOrDefault(n=>n.Id==source.Id)??throw new InvalidDataException(\"Missing source node.\")).Outputs.SingleOrDefault(o=>o.Name==source.Port)?.Cardinality??throw new InvalidDataException(\"Missing source output.\"),\n  _=>throw new InvalidDataException(\"Unknown subscription source.\")};\n static DataKind PrivateLoopIndex(ProcedureDocument p,WorkflowValueReference source){if(p.GroupOwner is null||source.Id!=\"LoopIndex\"||source.Port is not null)throw new InvalidDataException(\"LoopIndex is private to an owned Group body.\");return DataKind.Integer;}\n\n public static double ReadNumberConstant(string json){try{double value=JsonSerializer.Deserialize<double>(json);return double.IsFinite(value)?value:throw new InvalidDataException(\"Non-finite number constant.\");}catch(JsonException e){throw new InvalidDataException(\"Invalid number constant.\",e);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C06",
+      "route": "当前 · 配置与 typed 合同",
+      "classification": "independent-implementation",
+      "from": "WorkflowSubscriptions.Validate / Parameter",
+      "to": "类型、索引、冲突与数值范围校验",
+      "behavior": "重复目标拒绝；参数与端口分别校验类型/基数；索引只允许 opt-in primitive 输入且来源为 NodeOutput；同一端口不能既连线又订阅。参数值需 scalar、类型相符并通过 descriptor 范围检查。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": "WorkflowSubscriptions.Validate",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 67,
+          "end": 73,
+          "excerpt": " public static void Validate(ProcedureDocument p,ModuleRegistry registry)\n {\n  var targets=new HashSet<(string,string,bool)>();\n  foreach(var b in p.Configuration.Subscriptions){if(!targets.Add((b.NodeId,b.Target,b.IsParameter)))throw new InvalidDataException(\"Duplicate subscription target.\");var n=p.Nodes.SingleOrDefault(n=>n.Id==b.NodeId)??throw new InvalidDataException(\"Missing consumer node.\");var d=registry.GetDescriptor(n);var kind=b.IsParameter?ParameterType(d.Parameters.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException(\"Missing target parameter.\")):d.Inputs.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException(\"Missing target input.\");var cardinality=b.IsParameter?ValueCardinality.Scalar:d.Inputs.Single(v=>v.Name==b.Target).Cardinality;var sourceKind=SourceType(p,registry,b.Source);var sourceCardinality=SourceCardinality(p,registry,b.Source);var destination=b.IsParameter?null:d.Inputs.Single(v=>v.Name==b.Target);if(b.Source.ArrayIndex is {} index){index.Validate();if(b.IsParameter||destination is null||!(destination.SupportsDeferredNumericRead||destination.SupportsDeferredIntegerRead||destination.SupportsDeferredTextRead)||destination.Kind is not(DataKind.Integer or DataKind.Number or DataKind.NumberArray or DataKind.Text)||b.Source.Kind!=WorkflowSourceKind.NodeOutput)throw new InvalidDataException(\"Array index requires an opted-in numeric input/output binding.\");if(index.IndexSource is {} indexSource&&(indexSource.Kind!=WorkflowSourceKind.NodeOutput||SourceType(p,registry,indexSource)!=DataKind.Integer))throw new InvalidDataException(\"Index source must be a typed integer output.\");}if(b.IsParameter?sourceCardinality!=cardinality||sourceKind!=kind:!PortTypes.AcceptsInput(destination!,sourceKind,sourceCardinality))throw new InvalidDataException(\"Subscription type mismatch.\");if(!b.IsParameter&&p.Connections.Any(c=>c.ToNode==b.NodeId&&c.ToPort==b.Target))throw new InvalidDataException(\"Input already has a subscription.\");if(b.Source.Kind!=WorkflowSourceKind.NodeOutput&&b.Source.Port is not null)throw new InvalidDataException(\"Unexpected subscription source port.\");}\n\n }\n public static PortValue Initial(WorkflowLocalVariable v)=>v.Type switch{\"int\"=>PortValue.Integer(int.Parse(v.Value,CultureInfo.InvariantCulture)),\"float\"=>PortValue.Number(float.Parse(v.Value,CultureInfo.InvariantCulture)),_=>PortValue.Text(v.Value)};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": "WorkflowSubscriptions.Parameter",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 74,
+          "end": 79,
+          "excerpt": " public static JsonElement Parameter(ParameterDescriptor spec,PortValue value)\n {\n  if(ParameterType(spec.Kind)!=value.Kind||value.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException(\"Parameter subscription type mismatch.\");\n  JsonElement json=spec.Kind==ParameterKind.Integer?JsonSerializer.SerializeToElement(checked((int)value.As<long>())):JsonSerializer.SerializeToElement(value.Value);\n  if(!GraphValidator.ValidParameter(spec,json))throw new InvalidDataException(\"Subscribed parameter outside declared range: \"+spec.Name);return json;\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C07",
+      "route": "当前 · 单轮取值与发布",
+      "classification": "independent-implementation",
+      "from": "WorkflowRunContext 构造",
+      "to": "复制输入 / 校验名称类型 / 初始化变量",
+      "behavior": "每次 RunAsync 新建 context，输入拷贝并核声明名字、Kind、Cardinality；被使用且无生产绑定的 workflow input 必须有实参。无 SourceNode 的变量由声明初值初始化。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext constructor",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 10,
+          "end": 18,
+          "excerpt": " public WorkflowRunContext(ProcedureDocument procedure,IReadOnlyDictionary<string,PortValue>? inputs,Dictionary<string,NodeRunRecord> records,int? groupLoopIndex=null)\n {\n  this.procedure=procedure;this.records=records;this.groupLoopIndex=groupLoopIndex;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);\n  foreach(var pair in arguments){var spec=procedure.Configuration.Inputs.SingleOrDefault(i=>i.Name==pair.Key)??throw new InvalidDataException(\"Unknown workflow input: \"+pair.Key);if(pair.Value is null||pair.Value.Kind!=spec.Kind||pair.Value.Cardinality!=spec.Cardinality)throw new InvalidDataException(\"Workflow input type mismatch: \"+pair.Key);}\n\n  foreach(var b in procedure.Configuration.Subscriptions.Where(b=>b.Source.Kind==WorkflowSourceKind.WorkflowInput)){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==b.Source.Id);if(!arguments.ContainsKey(spec.Name)&&spec.NodeId is null)throw new InvalidDataException(\"Missing workflow input: \"+spec.Name);}\n  foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);\n }\n PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException(\"Current-run source unavailable: \"+node+\".\"+port);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor new context",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 11,
+          "end": 11,
+          "excerpt": "  var calls=new Dictionary<string,ExecutionSessionResult>();var records=new Dictionary<string,NodeRunRecord>();var descriptors=p.Nodes.ToDictionary(n=>n.Id,registry.GetDescriptor,StringComparer.Ordinal);var suppressed=new HashSet<string>(StringComparer.Ordinal);var selectedSuccessors=new Dictionary<string,HashSet<string>>(StringComparer.Ordinal);var executionEdges=ProcedureGraph.ExecutionEdges(p);var workflow=new WorkflowRunContext(p,inputs,records,groupLoopIndex);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C08",
+      "route": "当前 · 单轮取值与发布",
+      "classification": "independent-implementation",
+      "from": "WorkflowRunContext.Resolve / Node / Input",
+      "to": "仅本轮记录与实参取值",
+      "behavior": "节点来源要求记录为 Success 或 NoMatch 且存在输出；局部变量要求本轮字典已有值。流程输入优先显式实参，否则读绑定节点；常量按当前解析器，索引输入必须走 opt-in primitive reader。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext Node current-run guard",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 18,
+          "end": 18,
+          "excerpt": " PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException(\"Current-run source unavailable: \"+node+\".\"+port);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext.Resolve",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 22,
+          "end": 36,
+          "excerpt": " public PortValue Resolve(WorkflowValueReference source){if(source.ArrayIndex is not null)throw new InvalidDataException(\"Indexed input requires an opted-in primitive reader.\");return source.Kind switch\n {\n  WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException(\"Group LoopIndex requires an owned invocation context.\"),\n  WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),\n  WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),\n  WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),\n  WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),\n\n  WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),\n  WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException(\"Current-run variable unavailable: \"+source.Id),\n  WorkflowSourceKind.WorkflowInput=>Input(source.Id),\n  _=>throw new InvalidDataException(\"Unknown source kind.\")\n };}\n PortValue Input(string id){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==id);return arguments.TryGetValue(spec.Name,out var value)?value:spec.NodeId is not null?Node(spec.NodeId,spec.Port!):throw new InvalidDataException(\"Missing workflow input: \"+spec.Name);}\n public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext.Input",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 35,
+          "end": 35,
+          "excerpt": " PortValue Input(string id){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==id);return arguments.TryGetValue(spec.Name,out var value)?value:spec.NodeId is not null?Node(spec.NodeId,spec.Port!):throw new InvalidDataException(\"Missing workflow input: \"+spec.Name);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C09",
+      "route": "当前 · 单轮取值与发布",
+      "classification": "independent-implementation",
+      "from": "GraphExecutor.Record → workflow.Update",
+      "to": "变量先移旧值再尝试本轮生产值",
+      "behavior": "每条 Record 先写记录再 Update；绑定该节点的局部变量先 Remove，再尝试 Node；值不可用时捕获 InvalidDataException，保留不可用状态，不用上次成功值填补。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor.Record",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 15,
+          "end": 15,
+          "excerpt": "   void Record(NodeRunStatus s,IReadOnlyDictionary<string,PortValue>? outputs=null,string? code=null,string? message=null,uint? nativeCode=null){records[id]=new(id,s,outputs??Empty(),sw.Elapsed.TotalMilliseconds,code,message){NativeErrorCode=nativeCode};workflow.Update(id);Report(id,s,message);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext.Update",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 36,
+          "end": 36,
+          "excerpt": " public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C10",
+      "route": "当前 · 单轮取值与发布",
+      "classification": "independent-implementation",
+      "from": "GraphExecutor 订阅消费",
+      "to": "覆盖参数/输入 / 失败记录",
+      "behavior": "逐当前节点订阅 Resolve，参数交 Parameter 转 JSON、端口写 nodeInputs。订阅不可用/溢出记 SubscriptionUnavailable 并继续下一节点；输入基数/Coerce 错记 InputTypeMismatch。允许延迟读的输入另行构造 reader，不代表普通来源也能延迟缺值。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "GraphExecutor subscription resolution and type coercion",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 29,
+          "end": 33,
+          "excerpt": "   var numericIndices=new Dictionary<string,WorkflowArrayIndex?>(StringComparer.Ordinal);\n   try{foreach(var binding in p.Configuration.Subscriptions.Where(b=>b.NodeId==id)){PortValue value;if(!binding.IsParameter&&d.Inputs.Single(port=>port.Name==binding.Target) is {} deferred&&(deferred.SupportsDeferredNumericRead||deferred.SupportsDeferredIntegerRead||deferred.SupportsDeferredTextRead)){numericIndices.Add(binding.Target,binding.Source.ArrayIndex);try{value=workflow.Resolve(binding.Source with{ArrayIndex=null});}catch(InvalidDataException)when(workflow.CanDeferNumericRead(binding.Source)){continue;}}else value=workflow.Resolve(binding.Source);if(binding.IsParameter)parameters[binding.Target]=WorkflowSubscriptions.Parameter(d.Parameters.Single(p=>p.Name==binding.Target),value);else nodeInputs[binding.Target]=value;}}catch(Exception ex)when(ex is InvalidDataException or OverflowException){Record(NodeRunStatus.Failed,code:\"SubscriptionUnavailable\",message:ex.Message);continue;}\n   try{foreach(var input in nodeInputs.ToArray()){var port=d.Inputs.Single(p=>p.Name==input.Key);if(!PortTypes.AcceptsInput(port,input.Value.Kind,input.Value.Cardinality))throw new InvalidDataException(\"Input cardinality mismatch: \"+input.Key);nodeInputs[input.Key]=DataKinds.Coerce(input.Value,port);}}catch(Exception ex)when(ex is InvalidDataException or InvalidOperationException){Record(NodeRunStatus.Failed,code:\"InputTypeMismatch\",message:ex.Message);continue;}\n   var numericReader=numericIndices.Count==0?null:new WorkflowNumericInputRead(nodeInputs,numericIndices,workflow.Resolve);\n   var visibleSuccessors=executionSuccessorRead?.Invoke(id)??Array.AsReadOnly(executionEdges.Where(e=>e.FromNode==id).Select(e=>new ExecutionSuccessor(e.ToNode)).ToArray());",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C11",
+      "route": "当前 · 单轮取值与发布",
+      "classification": "independent-implementation",
+      "from": "WorkflowRunContext.Complete",
+      "to": "WorkflowOutputs / Displays / Variables 发布",
+      "behavior": "输出未绑定/不可用/类型不符收 OutputErrors，原 Success 改 Failed；显示错误进入 DisplayErrors，不在这里据此改 session 状态。输入快照仅 arguments 字典，绑定输入不自动补进该字典；局部变量按名称导出。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "WorkflowRunContext.Complete",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 37,
+          "end": 45,
+          "excerpt": " public ExecutionSessionResult Complete(ExecutionSessionResult session)\n {\n  var output=new Dictionary<string,PortValue>(StringComparer.Ordinal);var errors=new List<string>();\n  foreach(var spec in procedure.Configuration.Outputs){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound workflow output: \"+spec.Name);var value=Node(spec.NodeId,spec.Port!);if(value.Kind!=spec.Kind&&!(spec.Kind==DataKind.Image&&DataKinds.IsImage(value.Kind)))throw new InvalidDataException(\"type mismatch\");output.Add(spec.Name,value);}catch(InvalidDataException e){errors.Add(spec.Name+\": \"+e.Message);}}\n  var displays=new Dictionary<string,IReadOnlyList<PortValue>>(StringComparer.Ordinal);var displayErrors=new List<string>();foreach(var spec in procedure.Configuration.Displays){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound display: \"+spec.Name);displays.Add(spec.Name,Array.AsReadOnly(new[]{Node(spec.NodeId,spec.Port!)}));}catch(InvalidDataException e){displayErrors.Add(e.Message);}}\n  return session with{WorkflowDisplays=new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays),DisplayErrors=displayErrors.AsReadOnly(),Status=errors.Count>0&&session.Status==SessionStatus.Success?SessionStatus.Failed:session.Status,WorkflowInputs=new ReadOnlyDictionary<string,PortValue>(new Dictionary<string,PortValue>(arguments,StringComparer.Ordinal)),WorkflowOutputs=new ReadOnlyDictionary<string,PortValue>(output),LocalVariables=new ReadOnlyDictionary<string,PortValue>(variables.ToDictionary(v=>procedure.Configuration.Variables.Single(i=>i.Id==v.Key).Name,v=>v.Value,StringComparer.Ordinal)),OutputErrors=errors.AsReadOnly()};\n\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "U02",
+      "route": "当前与原版 · 差分断点",
+      "classification": "unknown",
+      "from": "独立 typed 取值 / 原 SDK 订阅",
+      "to": "语义对应与完整入口",
+      "behavior": "本页当前数据路径可直接核代码，仍未证明它与原版动态树/常量/索引/变量类型、失败语义、原生回调及持久化完全对应。",
+      "refs": [],
+      "unknowns": [
+        "普通工具/流程/Group/全局服务/脚本对变量的所有入口尚未穷尽。",
+        "页面浏览器呈现与本页链的操作级运行均未验证；不会由静态引用数宣称领域完成。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    }
+  ],
+  "hierarchy": {
+    "title": "主界面",
+    "kind": "ui-root",
+    "organization": "independent-reading-organization",
+    "meaning": "按主界面子系统组织证据；成员调用由叶节点对应的证据边表达。",
+    "children": [
+      {
+        "title": "原版来源选择与订阅",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "候选树、目标、来源与索引",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "GetFrontFilterTreeOperation.Operate → 前置输出树 → TargetName+A",
+                "kind": "edge",
+                "edgeId": "D01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "SetFilterSourceOperation.Operate → 目标 IO 查找与回退",
+                "kind": "edge",
+                "edgeId": "D02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "GetOutputInfo / 常量校验 → RelateIO 与 RelateIndex 赋值",
+                "kind": "edge",
+                "edgeId": "D03",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "历史、解绑/绑定与 SDK 描述",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "VmIO.RelateIO setter → 登记订阅历史 → 解旧 → 订新",
+                "kind": "edge",
+                "edgeId": "D04",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "VmIO 新订阅完成 → RelatedIOChanged / Ready 刷新",
+                "kind": "edge",
+                "edgeId": "D05",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "VmModule.Subscribe / UnSubscribe → 类型检查、叶订阅 SDK 或对子项递归",
+                "kind": "edge",
+                "edgeId": "D06",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "VmProcedure.Subscribe → 自定义流程输出订阅合同",
+                "kind": "edge",
+                "edgeId": "D07",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "native 与变量全链缺口",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "订阅描述 / native 生产与回调 → 实际值、持久化与生命周期",
+                "kind": "edge",
+                "edgeId": "U01",
+                "classification": "unknown"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "当前独立数据合同",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "窗口、所有者、文档与类型校验",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "OpenWorkflowConfiguration / LocalVariables → 当前窗口与编辑所有者",
+                "kind": "edge",
+                "edgeId": "C01",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "WorkflowSources / WorkflowOutput → 来源目录与会话结果消费者",
+                "kind": "edge",
+                "edgeId": "C02",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "SetWorkflowConfiguration → 过滤失效输入引用 / snapshot / Group传播",
+                "kind": "edge",
+                "edgeId": "C03",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "WorkflowInterfaceItem / WorkflowLocalVariable → 稳定 ID、类型、绑定与快照",
+                "kind": "edge",
+                "edgeId": "C04",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "WorkflowSubscriptions.SourceType / Cardinality → 当前来源类型与基数",
+                "kind": "edge",
+                "edgeId": "C05",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "WorkflowSubscriptions.Validate / Parameter → 类型、索引、冲突与数值范围校验",
+                "kind": "edge",
+                "edgeId": "C06",
+                "classification": "independent-implementation"
+              }
+            ]
+          },
+          {
+            "title": "单轮上下文、消费与结果发布",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "WorkflowRunContext 构造 → 复制输入 / 校验名称类型 / 初始化变量",
+                "kind": "edge",
+                "edgeId": "C07",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "WorkflowRunContext.Resolve / Node / Input → 仅本轮记录与实参取值",
+                "kind": "edge",
+                "edgeId": "C08",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "GraphExecutor.Record → workflow.Update → 变量先移旧值再尝试本轮生产值",
+                "kind": "edge",
+                "edgeId": "C09",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "GraphExecutor 订阅消费 → 覆盖参数/输入 / 失败记录",
+                "kind": "edge",
+                "edgeId": "C10",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "WorkflowRunContext.Complete → WorkflowOutputs / Displays / Variables 发布",
+                "kind": "edge",
+                "edgeId": "C11",
+                "classification": "independent-implementation"
+              }
+            ]
+          },
+          {
+            "title": "跨实现差分断点",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "独立 typed 取值 / 原 SDK 订阅 → 语义对应与完整入口",
+                "kind": "edge",
+                "edgeId": "U02",
+                "classification": "unknown"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

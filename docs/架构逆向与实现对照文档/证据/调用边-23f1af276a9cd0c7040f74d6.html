@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ToolDisplayImagePresenter.Show · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ToolDisplayImagePresenter.Show · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C11"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ToolDisplayImagePresenter.Show → 选中图像 → ImagePreview.Packed → BitmapSource</h2><p>Show先清labels/image.Source和动态Image；null帧设scene为1×1。有图层时按SelectedImageName精确匹配否则首层，无层用frame.Image，场景尺寸取图宽高否则640×480。Bitmap调用Packed，创建96DPI Gray8/Rgb24 BitmapSource并复制Pixels.ToArray、Freeze；不支持的Packed结果为空。无层只有ImageVisible才赋底图；有层不以该旗控制选中层。</p><p><a href="../专题/rendering-layers.html#edge-C11">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/rendering-layers.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/rendering-layers.edges.json · SHA256 28101fd3e74d0ef6d0fc0f2c5059c29b49d8a7d9e0e05a0081c069f7d6bfb43b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="b2ea224a5192de1490840b92e27630c80d975a95d0914c529699453d5f058a20">{
+  &quot;id&quot;: &quot;C11&quot;,
+  &quot;route&quot;: &quot;当前 · 实际结果呈现与有限导出&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;ToolDisplayImagePresenter.Show&quot;,
+  &quot;to&quot;: &quot;选中图像 → ImagePreview.Packed → BitmapSource&quot;,
+  &quot;behavior&quot;: &quot;Show先清labels/image.Source和动态Image；null帧设scene为1×1。有图层时按SelectedImageName精确匹配否则首层，无层用frame.Image，场景尺寸取图宽高否则640×480。Bitmap调用Packed，创建96DPI Gray8/Rgb24 BitmapSource并复制Pixels.ToArray、Freeze；不支持的Packed结果为空。无层只有ImageVisible才赋底图；有层不以该旗控制选中层。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolDisplayPresenter.cs&quot;,
+      &quot;member&quot;: &quot;Frame replacement and bitmap packing&quot;,
+      &quot;sha256&quot;: &quot;0148527f597e5db2239b4efab3987ca992b2216317cd166a95f9f51f7238c6e2&quot;,
+      &quot;start&quot;: 23,
+      &quot;end&quot;: 56,
+      &quot;excerpt&quot;: &quot;        Frame = frame; labels.Children.Clear(); image.Source = null;\n        foreach(var old in scene.Children.OfType&lt;W.Image>().Where(item=>!ReferenceEquals(item,image)).ToArray())scene.Children.Remove(old);\n        if (frame is null) { image.Visibility=Visibility.Visible;scene.Width = scene.Height = 1; return; }\n        static BitmapSource? Bitmap(IImageData? source)\n        {\n            if(source is null||ImagePreview.Packed(source) is not{} packed)return null;\n            var bitmap=BitmapSource.Create(packed.Width,packed.Height,96,96,\n                packed.Format==ImagePixelFormat.Rgb24?PixelFormats.Rgb24:PixelFormats.Gray8,null,packed.Pixels.ToArray(),packed.Stride);\n            bitmap.Freeze();return bitmap;\n        }\n        var selectedLayer=frame.SelectedImageName is null?null:frame.ImageLayers.FirstOrDefault(layer=>layer.Name==frame.SelectedImageName);\n        selectedLayer??=frame.ImageLayers.FirstOrDefault();\n        var sceneImage=frame.ImageLayers.Count>0?selectedLayer?.Image:frame.Image;\n        scene.Width = sceneImage?.Width ?? 640; scene.Height = sceneImage?.Height ?? 480;\n        if(frame.ImageLayers.Count>0)\n        {\n            image.Visibility=Visibility.Collapsed;\n            // Source result view selects one base image, then may add up to three\n            // separately checked overlays. The overlay list is explicit session state.\n            if(selectedLayer is not null)\n            {\n                var rendered=new W.Image{Tag=\&quot;DisplayImage:\&quot;+selectedLayer.Name,Stretch=Stretch.Fill,Opacity=selectedLayer.Opacity,\n                    Visibility=Visibility.Visible,Source=Bitmap(selectedLayer.Image)};\n                scene.Children.Add(rendered);\n            }\n            bool overlaysVisible=selectedLayer is not null&amp;&amp;frame.BackgroundImageName==selectedLayer.Name;\n            byte[] nativeAlpha=[191,127,63];int[] nativeZ=[100,101,102];int slot=0;\n            foreach(var name in frame.CheckedImageNames.Distinct(StringComparer.Ordinal).Take(3))\n            {\n                var layer=frame.ImageLayers.FirstOrDefault(item=>item.Name==name&amp;&amp;item.Image is not null);\n                if(layer is null)continue;\n                int z=layer.OverlayZIndex==0?nativeZ[slot]:layer.OverlayZIndex;\n                double alpha=(layer.OverlayAlpha??nativeAlpha[slot])/255d;\n                var rendered=new W.Image{Tag=\&quot;DisplayOverlay:\&quot;+layer.Name,Stretch=Stretch.Fill,Opacity=alpha,&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionData/RawImage.cs&quot;,
+      &quot;member&quot;: &quot;Independent preview packing&quot;,
+      &quot;sha256&quot;: &quot;e380f1abb06c6f49a8584d37ea8acfd22300ef87fbf66f503c20f3aa0f6f6342&quot;,
+      &quot;start&quot;: 20,
+      &quot;end&quot;: 28,
+      &quot;excerpt&quot;: &quot; public static IImageData? Packed(IImageData image){\n  if(image is GrayImage or RgbImage)return image;\n  long pixels=(long)image.Width*image.Height;int format=(int)image.Format;\n  if(pixels>int.MaxValue)return null;\n  if(format is 1 or 0x01000000 or 0x01080001&amp;&amp;image.Pixels.Length>=pixels)return new GrayImage(image.Width,image.Height,image.Pixels[..(int)pixels]);\n  if(pixels>int.MaxValue/3||image.Pixels.Length&lt;pixels*3)return null;\n  if(format is 2 or 201 or 0x02180014)return new RgbImage(image.Width,image.Height,image.Pixels[..((int)pixels*3)]);\n  if(format is not (3 or 200 or 0x02180021))return null;\n  int plane=(int)pixels;byte[] packed=new byte[plane*3];var source=image.Pixels;for(int i=0;i&lt;plane;i++){packed[3*i]=source[i];packed[3*i+1]=source[plane+i];packed[3*i+2]=source[plane*2+i];}return new RgbImage(image.Width,image.Height,packed);&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;不证明原native像素转换/色彩/DPI/步幅全部等价；Scene尺寸与无效图输入异常未运行验证。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

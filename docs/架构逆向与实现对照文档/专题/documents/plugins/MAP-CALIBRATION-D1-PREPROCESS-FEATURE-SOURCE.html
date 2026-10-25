@@ -1,0 +1,157 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1 第二切片：decoder 预处理与局部特征源码 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D1 第二切片：decoder 预处理与局部特征源码</p><h1>D1 第二切片：decoder 预处理与局部特征源码</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1 第二切片：decoder 预处理与局部特征源码</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#d1-第二切片decoder-预处理与局部特征源码">D1 第二切片：decoder 预处理与局部特征源码</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#证据身份与阶段">证据身份与阶段</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#覆盖表">覆盖表</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#85c8a0-的输入workspace与输出">85c8a0 的输入、workspace与输出</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#均值分派边界与舍入生命周期">均值分派、边界与舍入生命周期</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#870b90-的前定位与检测门">870b90 的前定位与检测门</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#6a3a70-的精确校验失败和参数abi">6a3a70 的精确校验、失败和参数ABI</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#70f4e0-到拟合输出及剩余叶体">70f4e0 到拟合输出及剩余叶体</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#生命周期与继续条件">生命周期与继续条件</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.html#复现入口">复现入口</a></p></details><h1 id="d1-第二切片decoder-预处理与局部特征源码">D1 第二切片：decoder 预处理与局部特征源码</h1><p>后续：<a href="MAP-CALIBRATION-D1-PRELOCATOR-SCORE-SOURCE.html">第三切片前定位分数核</a>已从80ac20实际配置确定d=1/mode1，并补对应分数核；本页“前定位分数生成仍未取体”的描述保留为第二切片时点，最新精确边界见后续报告。没有据此改变产品/运行/验收状态。</p>
+<p>2026-10-19，接续 <a href="MAP-CALIBRATION-D1-SOURCE-CHAIN.html">D1 主干源码链</a>。本切片补取指定的8a48e0、8a5e30、8a8040、6eea70、6a3a70及必要分派/归一化/拟合子体，恢复可定位条件、输出、失败与正常返回时的状态恢复。没有产品、共享算法或契约修改，没有新泛化实图probe。</p>
+<h2 id="证据身份与阶段">证据身份与阶段</h2><p>原厂核心SHA-256仍为 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。REA MCP的Ghidra provider在本轮开始时未配置；沿根线授权继续复用私有Ghidra12.1.4 readOnly/noanalysis CLI，不修改MCP配置或活动session。原始C、函数汇编、cookie-tail均在 <code>analysis/map-calibration/d1-source-chain/source/</code>，没有伪造REA Evidence ID。</p>
+<p><code>source-index.json</code> 当前为 <strong>55条入口记录</strong>：5条旧导出、50条本D1定向导出。相对首切片增加32条，其中9条是8a8040同一代码区被Ghidra拆出的块，不计为9个额外算法。索引已显式标注这些块，包含每份C/汇编/tail的哈希、callee和源码行锚点。此数量只是取体索引，不是算法完成度。</p>
+<p>本切片S2已追到decoder实际mode0阈值、均值分派和舍入生命周期，以及局部检测的参数门、输出和失败链；CPU向量核逐lane、前定位的分数生成、径向边缘下级及拟合全部分支仍非S2闭合。未新增S3实际运行范围，未进入S4实现或S5宿主验收。</p>
+<h2 id="覆盖表">覆盖表</h2><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>入口/体</th>
+<th>本轮已确认</th>
+<th>精确未闭合部分</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>预处理workspace大小</td>
+<td>85c840→8a48e0</td>
+<td>align128(WH)+align128(2WH)；后者原始汇编整数乘法</td>
+<td>无效尺寸/溢出不在本轮合法decoder域</td>
+</tr>
+<tr>
+<td>workspace切分及参数传递</td>
+<td>85c8a0</td>
+<td>第一区为byte均值图，第二区为2字节中间/scratch；窗口、offset、mode见下</td>
+<td>下级完整别名/重入边界未运行验证</td>
+</tr>
+<tr>
+<td>本机分派选择</td>
+<td>630120；8a5e30</td>
+<td>630120读CPUID/系统条件，EAX返回类号；11、7/10和其他走不同体</td>
+<td>每个CPUID组合到编号的完整映射未逐分支闭合；不凭机器名定类号</td>
+</tr>
+<tr>
+<td>局部均值</td>
+<td>8a4ae0+8a7b90；8e47b0/8e6720</td>
+<td>分离累计、边缘镜像式扩展、面积归一化，两个向量入口及小/大核分支均取得</td>
+<td>不声称各分派/边界/舍入逐位等价；没有用统一round替代</td>
+</tr>
+<tr>
+<td>输出二值图</td>
+<td>8a8040及9个块</td>
+<td>decoder实际mode0精确比较、等号为255；保存寄存器/epilogue已取得</td>
+<td>未执行全部mode的运行差分</td>
+</tr>
+<tr>
+<td>前定位</td>
+<td>6eea70→72b170或普通路径；6ee680/6ee560</td>
+<td>参数缩放、最小尺寸、峰值阈值、首次严格最大值、成功才写坐标</td>
+<td>分数图生成75fbc0/75f130/75da20及普通核未全部取体</td>
+</tr>
+<tr>
+<td>局部检测校验门</td>
+<td>6a3a70→6749b0</td>
+<td>指针/图像/参数检查与错误码，R8尺寸跨call活跃</td>
+<td>无效NaN的COMISS旗标全域语义未作产品实现</td>
+</tr>
+<tr>
+<td>径向检测与拟合</td>
+<td>70f4e0→684b50→70d280→70d2e0</td>
+<td>成功点筛选、少点失败、radius/center输出、重试和status传递</td>
+<td>684b50下级边缘核、70d2e0迭代各模型/退化分支仍待逐条细追</td>
+</tr>
+</tbody></table>
+<h2 id="85c8a0-的输入workspace与输出">85c8a0 的输入、workspace与输出</h2><p>实际caller为86ff00：warp后的灰图是source，source stride为W，输出图位于其workspace+6400。canvas为 <code>W=H=16m</code>，m由前轮源码约束为2..8；因此W为32..128，窗口 <code>kw=kh=W/4=4m</code>，为8..32。offset=0、mode=0，均由 <code>180870407..18087045c</code> 的栈参数组装确定，不从“通常的自适应阈值”猜得。</p>
+<p>85c840/8a48e0给出大小：<code>align128(WH)+align128(2WH)</code>。86ff00先以160×160计算上界大小；处理时85c8a0再按实际W/H切分：均值byte图放scratch起点，2字节中间区域放 <code>scratch+align128(WH)</code>。所见wrapper使用caller提供的缓冲区和栈，不自行分配/释放堆内存；不能把这个结论推广到尚未完全追完的全SDK会话。</p>
+<p>85c8a0先调用8a5e30生成局部均值图M，再8a8040比较source S与M。mode0按有符号整数比较：</p>
+<p><code>output = S &lt; M + offset ? 0 : 255</code>。</p>
+<p>这里offset为0，<strong>S==M写255</strong>。输出逐行按各自stride前进；正尺寸外无有效像素循环，没有额外“空输入报错”的状态契约可补。mode1为 <code>S &gt; M-offset ? 0 : 255</code>；mode2/3分别为比较目标相等/不等时写255，其余mode回到mode0式。当前decoder只消费mode0，其余模式只是取得源码，不据此声明产品支持。</p>
+<p>8a8040在原Ghidra分析中被拆为入口及808c/811d/8132/81c3/81ce/82bf/82ca/83d4/83e3等块。初次入口汇编只有20行，不能当作全部函数。补取后，mode0实际比较可定位 <code>1808a8443..1808a845b</code>：加载M，加offset，加载S，JL写0，否则255；公共恢复寄存器与RET在83b6/83d4。拆块的异常函数签名不作为新的ABI。</p>
+<h2 id="均值分派边界与舍入生命周期">均值分派、边界与舍入生命周期</h2><p>630120通过CPUID和系统条件计算返回类号，伪代码误显示void，cookie后 <code>180630673 MOV EAX,EBX</code>恢复返回语义。8a5e30读取它后：</p>
+<table>
+<thead>
+<tr>
+<th>返回类号</th>
+<th>分派</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>11</td>
+<td>8e47b0</td>
+</tr>
+<tr>
+<td>7或10</td>
+<td>8e6720</td>
+</tr>
+<tr>
+<td>其他</td>
+<td>8a4ae0生成2字节累计图，再8a7b90归一化输出</td>
+</tr>
+</tbody></table>
+<p>实际汇编保留packed尺寸、窗口和workspace栈参数并尾跳；伪代码把两条向量路径显示为四参数调用不代表窗口/尺寸丢失。两个向量体也有小宽度退回8a4a40，但当前decoder W&gt;=32，不满足其 <code>&lt;17</code> 或 <code>&lt;9</code> 门槛。</p>
+<p>普通路径源码先按窗口高度累加byte到ushort中间值，再水平方向滑动求和；边缘扩展通过对称的反向索引实现，不是简单复制最近边缘像素。归一化为float乘 <code>1/(kw*kh)</code>，普通标量边缘显式加/减0.5后截断到整数byte。逐索引递推在原始C/汇编保留，尚未发布一个可替代原厂核的数学重排实现。</p>
+<p>两个向量入口在 <code>kw*kh*255 &lt; 65536 &amp;&amp; kw &lt; 6</code> 时使用small-kernel归一化8e3e20/8e6120，否则8e4010/8e62d0。当前decoder kw&gt;=8，所以<strong>实际合法域必走后两个large-kernel子体</strong>；不能只核small-kernel就代表这条decoder路径。</p>
+<p>新取得的汇编表明，large-kernel内部向量转换使用CVTPS2DQ/VCVTPS2DQ，与标量的显式0.5后CVTT不是相同指令序列。进一步追踪发现它们有完整的rounding状态生命周期：</p>
+<ol>
+<li><strong>先</strong>计算float <code>1/area</code>（8e4010在1808e4046，8e62d0在1808e62f8）；</li>
+<li>STMXCSR保存旧值，再以 <code>&amp;0xffff9fff</code> 清rounding位并LDMXCSR，内部向量转换处于nearest模式；</li>
+<li>结束读取当前MXCSR，恢复旧值的 <code>&amp;0x6000</code> rounding位，其他当前位保留。</li>
+</ol>
+<p>因此不能说“向量转换任意依赖调用者rounding模式”；同样也不能说“整个核完全不依赖入口环境”，因为reciprocal计算发生在清位之前。恢复的是rounding位，不是把全部MXCSR覆盖回原快照。源码可确定两种转换序列不同，<strong>没有运行证据表明当前真实图像恰触发不同输出，也没有根据不同指令自行断言像素差幅度</strong>。下一最小S3问题若有必要，应是指定sum/area tie与MXCSR状态的定点微核，不是增加一批最终图像样本。</p>
+<h2 id="870b90-的前定位与检测门">870b90 的前定位与检测门</h2><p>80ac20每个局部窗口调用870b90。870b90先调用6eea70，只有写出的pre-status==1才继续6a3a70；失败直接退出，不假装保留中心有效。6eea70也读取630120：类号7/10/11使用72b170，其余普通路径。两条都有明确缩小因子d（配置slot3），工作尺寸为W/d、H/d；任一小于3，pre-status写0，坐标不写。</p>
+<p>普通路径将两个半径范围参数除以d并限制范围，比例输入除255、峰值比例乘0.01。d==1有整数分数图支路，d&gt;=2先缩小图像后用float分数图支路；72b170相应分派到75fbc0或75da20→75f130。6ee680/6ee560已取体：以严格 <code>new &gt; max</code> 更新峰位置，所以有限普通数值的并列最大值保留遍历中先到的点；达到 <code>threshold&lt;=max</code> 才成功并写坐标。最终前定位坐标乘d回到源图；失败只写status0，不推导所有原有坐标被清零。</p>
+<p>分数图生成下级仍未完全恢复，因此本轮不将前定位命名为某个特定圆检测/Hough实现，不拿当前NImageFiducials替代其分数含义。</p>
+<h2 id="6a3a70-的精确校验失败和参数abi">6a3a70 的精确校验、失败和参数ABI</h2><p>6a3a70首先检查必需output/workspace/config指针；null返回0x10000014。随后6749b0验证source指针、packed W/H和stride：source null为14，非法尺寸为1a，stride&lt;width为1b，其余0。6a3a70反编译将这次调用显示成两个参数，但汇编显示入口R8的packed尺寸仍然活跃；6749b0真实读R8。不能把“显示两个参数”误解为宽高不传递。</p>
+<p>下表按config的4字节slot解释，I表示整数槽，F表示MOVSS读出的float位；不是把int数值转换为float：</p>
+<table>
+<thead>
+<tr>
+<th>slot</th>
+<th>通过条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>I0/I1/I2/I3</td>
+<td>分别1..4、1..2、{0,1}、1..3</td>
+</tr>
+<tr>
+<td>F4/I5</td>
+<td>F4处于[-epsilon,255]，I5为1..50</td>
+</tr>
+<tr>
+<td>I6/I7</td>
+<td>0&lt;I6&lt;=I7</td>
+</tr>
+<tr>
+<td>F8/F9</td>
+<td>[-3.1415929794,3.1415929794]、[epsilon,6.2831854820]</td>
+</tr>
+<tr>
+<td>I10/F11</td>
+<td>I10为3..1000，F11&gt;=1</td>
+</tr>
+<tr>
+<td>I12/I13/I14</td>
+<td>I12和I13均1..3，I14&gt;0</td>
+</tr>
+<tr>
+<td>I15/F16</td>
+<td>0&lt;=I15&lt;=I10-3，F16&gt;=epsilon</td>
+</tr>
+</tbody></table>
+<p>epsilon原PE为 <code>1.1920928955078125e-7f</code>。本表描述正常有限数值；COMISS对NaN/未排序的具体旗标组合未作为产品支持范围。参数不通过返回0x10000019。</p>
+<p>这里还存在一个需要服从汇编的反编译布尔形状：C文本尾部显示 <code>F16&gt;epsilon || (F16==epsilon &amp;&amp; I12有效)</code>，但 <code>1806a3c6d..1806a3c7f</code> 的汇编先检查F16，再<strong>总是</strong>检查I12。不能据伪代码优先级漏掉I12的范围门。</p>
+<p>校验通过调用70f4e0后，6a3a70直接返回0。因此0只表示该校验/调用没有返回参数错误，<strong>不表示局部目标检测成功</strong>；检测status、center、radius和诊断是另外的output。870b90收到非0错误码才显式清数量/center及两个标量输出；直接调用6a3a70的校验失败路径没有统一清全部output。</p>
+<h2 id="70f4e0-到拟合输出及剩余叶体">70f4e0 到拟合输出及剩余叶体</h2><p>70f4e0使用caller workspace切片和栈缓冲，配置I2决定最多1或3轮。它构造由sin/cos与初始中心/半径界形成的径向位置，逐角调用684b50；只收status==1且坐标处于图像边界内的点。带可选诊断列表与无列表有不同写入分支。有效点少于3，或少于I15+3时，center/radius及诊断标量清0，mask/residual区域也清理并写失败status；不是“用已有三点补齐”。</p>
+<p>满足点数后调用70d280。此wrapper伪代码显示无参数，但汇编保留RCX/RDX/R8，保存原R9 status指针，并把后续栈参数重新排列后调用70d2e0；后者EAX写到原status指针。70d2e0已补体，明确拟合输出为centerX、centerY、radius，残差为 <code>sqrt((x-cx)^2+(y-cy)^2)-radius</code>，有效mask点超过2时输出RMS。退化初拟合失败会清模型、误差、residual/mask并返回0；输出正常模型主要返回1，某些迭代/半径约束分支返回2。不能把其0/1/2与6a3a70参数错误码混用。</p>
+<p>70f4e0写回拟合中心/半径，检查半径范围并可能改status为2；status0立即收尾，其他status在轮数允许时继续迭代。最终status、中心/半径与可选诊断逐层返给870b90/80ac20。80ac20另按其拟合半径（第四切片已确认，接受区间[15,21]）区间判定四个局部标记是否齐全，不能仅以6a3a70返回0采纳它们。</p>
+<p>684b50内部仍按630120分派到6c9d90或普通边缘链704de0→68ad10/68ae00→68aec0→68a2f0→68b930→6911c0/691450。70d2e0的完整体已取得，但1227行的迭代、退化、采样与各参数模式尚未全部逐条核汇编。这是下一源码切片的精确边界，不以“常见边缘/圆拟合”补足。</p>
+<h2 id="生命周期与继续条件">生命周期与继续条件</h2><p>本轮可定位的wrapper和主要worker采用caller拥有的workspace/栈；未发现它们直接调用堆分配/释放。均值归一化子体正常返回恢复rounding位；没有建立异常中断后的恢复契约，不能称“任何失败都完全恢复环境”。CPUID查询调用系统API；本轮只静态取体，不做设备或桌面操作。</p>
+<p>下一步按源码缺口分两条有限任务：</p>
+<ol>
+<li>前定位实际分数生成：6ee930、75fbc0/75f130/75da20、普通72a400/727a50/728c10；先取体判定哪个模式实际被80ac20配置选择。</li>
+<li>局部边缘/拟合：6c9d90及普通边缘链，70d2e0按配置模式切片细追，优先四局部标记的拟合半径（第四切片已确认，接受区间[15,21]）和失败传播；无需先增加最终图像样本。</li>
+</ol>
+<p>源码取得、S2闭合、S3差分、S4实现、S5真实宿主和人工验收继续分开。当前NImage opening/fiducial/decoder仍是独立实现，没有依据本轮取体数量称为原厂全域等价。根线统一通知“框架层逆向”，无提交SHA、无自动合流。</p>
+<h2 id="复现入口">复现入口</h2><p>继续使用 <code>tests/MapCalibration.NativeProbe/RunD1SourceExport.ps1 -Addresses @(...)</code> 按本文确切地址定向取得原始体，再运行 <code>ExportD1SourceIndex.py</code> 更新哈希/调用/缺口表。入口列表及当前全部产物以 <code>source-index.json</code> 为准；原始SDK、私有Ghidra工程与ignored analysis不随Git分发。本轮未执行产品托管构建或新增运行检查，索引导出脚本退出0不代表产品等价。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D1-PREPROCESS-FEATURE-SOURCE.md · SHA256 5e96a85813ac72484408538577a6a8ad382a6f66c9b81d703a9e0905c4de2833<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

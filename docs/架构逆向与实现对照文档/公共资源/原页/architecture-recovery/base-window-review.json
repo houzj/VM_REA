@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "methods": 19,
+  "artifact": "d36462c981f1db26a377c84a7e0c7de26f0f14eef92e41a4ed0acc24e4adb222",
+  "reaIdentity": "ev_f9d1193579571a69bedbd8666fcebf2b9882c7d300bc8bb10d533832ae6aadec",
+  "reaMemberCoverage": {
+    "state": "unavailable",
+    "issues": [
+      {
+        "code": "resource-limit",
+        "scope": "metadata.representation",
+        "offset": null,
+        "detail": "Managed metadata exceeds the 67108864 byte representation budget"
+      }
+    ]
+  },
+  "authority": "REA original identity plus focused PEReader/System.Reflection.Metadata CIL, not a successful whole-assembly REA member export; no vendor loading or execution.",
+  "template": {
+    "path": "analysis/decompiled/VM.Controls/styles/basewindowstyle.xaml",
+    "sha256": "46989e854d2dc8f66c9e05b06aad8f48995a0d8f963566371efaab0dd71a1e27",
+    "secureXmlStatus": "parsed"
+  },
+  "facts": [
+    "Apps.PcUI base TypeRef resolves to VM.Controls.BaseWindow with matching selected assembly name/version/public-key token; selected SHA/MVID is recorded. Runtime assembly binding and original BAML/template selection remain unverified.",
+    "Base template declares CloseWinButton with visibility TemplateBinding. OnApplyTemplate finds named parts then attaches Click to closeBtn_Click. Constructor separately registers CloseWindowCommand. Both handlers call BaseWindow.Close; this is separate from password Cancel handlers and Window.DialogResult setter.",
+    "BaseWindow.Close is a new virtual member. If _isclosed it returns; otherwise sets CloseReason numeric 3, calls Window.Close within catch(Exception), whose handler writes ex.Message. This body does not set DialogResult or password fields.",
+    "OnClosing calls Window.OnClosing first, checks e.Cancel and returns if cancelled. Otherwise writes _isclosing=true, hides owned windows only when loaded and visible, then activates nonnull Owner. It has no local catch or rollback.",
+    "OnClosed sets closing state, removes from ActivatedWindows under lock, calls base.OnClosed, then sets _isclosed=true. It detaches selected current template-part handlers, attempts owner foreground activation, and only if _hs exists removes hook/disposes it, clears owner and stops optional closeTimer. A null _hs skips that final cleanup block.",
+    "ShowDialog is a new virtual wrapper: closing gate returns nullable false, then modal flag/reason state. Depending on Owner/Application/thread it may set native custom owner, or use visible LastWindow/MainWindow and clear a cross-thread owner, before Window.ShowDialog. Actual WPF modal result semantics remain outside this body.",
+    "ShowDialogDelay updates or creates DispatcherTimer, removes/adds Tick handler, marks auto-close and starts timer before base dialog. Tick calls Close only when not already closing and stops timer in finally. Password callers in mapped slices use ShowDialog, not a proven timer path.",
+    "OnApplyTemplate registers state/mouse/size/button/Loaded handlers with no corresponding pre-detach in that body. Loaded callback measures header/button sizes, raises minima by Math.Max, then calls OnLoaded. Repeated template and old-part lifetime remain unverified.",
+    "WindowProc handles close-reason messages separately from Close(): source records messages 17/22 as shutdown, 274 SC_CLOSE as user, and 16 as task-manager reason only when prior reason is None. This code does not prove the real external source of a close request."
+  ],
+  "unknowns": [
+    "Original BAML/style selection, inherited WPF DialogResult/Close internals and actual modal/focus dispatch.",
+    "Owner/native handle/foreground effects, cancellation exceptions, repeated template application and cleanup after partial failure.",
+    "ActivatedWindows predicate closure and every external caller; timer-to-password-window reachability is not established.",
+    "No original window, password/SDK, native message injection or desktop operation was executed."
+  ],
+  "runtimeBindingsConfirmed": 0,
+  "closedEntryChains": 0
+}

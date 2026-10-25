@@ -1,0 +1,91 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SolutionCommInfo配置 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SolutionCommInfo配置 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-EA07"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SolutionCommInfo配置 → Base64解码XML → SolItems / Base64保存</h2><p>LoadSolInfo非空时Base64解码后loadXml，为每个SolItem挂DeleteEventHander，再处理定时器与自动保存状态。SaveSolInfo将UTF8 XML转Base64写同一配置键，异常提示并吞掉。GetSolItem读取的正是该集合；编码不是加密，未证明所有方案/密码字段已持久化正确。</p><p><a href="../专题/communication-dispatch.html#edge-EA07">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-dispatch.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-dispatch.edges.json · SHA256 d34ac2c9aec1484fb92e82c332d4a27a4d13c63f212939464b494ebfca7769a3</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="1054c1f02e684a887e3a293283362700a56a0dd1c2fd0a296af7a86945890a42">{
+  &quot;id&quot;: &quot;EA07&quot;,
+  &quot;route&quot;: &quot;原版 · 通信回调换方案&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;classificationScope&quot;: &quot;Local decompiled source statements; selected EXE method identity and original raw CIL bytes are separately rechecked, without vendor execution.&quot;,
+  &quot;from&quot;: &quot;SolutionCommInfo配置&quot;,
+  &quot;to&quot;: &quot;Base64解码XML → SolItems / Base64保存&quot;,
+  &quot;behavior&quot;: &quot;LoadSolInfo非空时Base64解码后loadXml，为每个SolItem挂DeleteEventHander，再处理定时器与自动保存状态。SaveSolInfo将UTF8 XML转Base64写同一配置键，异常提示并吞掉。GetSolItem读取的正是该集合；编码不是加密，未证明所有方案/密码字段已持久化正确。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs&quot;,
+      &quot;member&quot;: &quot;SolutionItemsData.LoadSolInfo&quot;,
+      &quot;sha256&quot;: &quot;b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c&quot;,
+      &quot;start&quot;: 255,
+      &quot;end&quot;: 280,
+      &quot;excerpt&quot;: &quot;\tpublic void LoadSolInfo()\n\t{\n\t\ttry\n\t\t{\n\t\t\tstring config = ConfigurationHelper.GetConfig(\&quot;SolutionCommInfo\&quot;);\n\t\t\tif (!string.IsNullOrEmpty(config))\n\t\t\t{\n\t\t\t\tbyte[] data = Convert.FromBase64String(config);\n\t\t\t\tloadXml(data);\n\t\t\t\tforeach (SolItem solItem in SolItems)\n\t\t\t\t{\n\t\t\t\t\tsolItem.DeleteEventHander += Item_DeleteEventHander;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (SaveAllSolTimerEnable &amp;&amp; !saveTime.IsEnabled)\n\t\t\t{\n\t\t\t\tAddTimer(saveTime);\n\t\t\t}\n\t\t\t_saveSolTimerEnable = GetAutoSaveSolState();\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\&quot;Lang_CfgErr\&quot;), ex.Message, MessageIcons.Warning);\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs&quot;,
+      &quot;member&quot;: &quot;SolutionItemsData.SaveSolInfo&quot;,
+      &quot;sha256&quot;: &quot;b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c&quot;,
+      &quot;start&quot;: 281,
+      &quot;end&quot;: 294,
+      &quot;excerpt&quot;: &quot;\tpublic void SaveSolInfo()\n\t{\n\t\ttry\n\t\t{\n\t\t\tbyte[] bytes = Encoding.UTF8.GetBytes(ToXmlStringWithHead(IsShort: true));\n\t\t\tstring defaultValue = Convert.ToBase64String(bytes);\n\t\t\tConfigurationHelper.SaveConfig(\&quot;SolutionCommInfo\&quot;, defaultValue);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\&quot;Lang_CfgSaveErr\&quot;), ex.Message, MessageIcons.Warning);\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs&quot;,
+      &quot;member&quot;: &quot;SolutionItemsData.GetSolItem&quot;,
+      &quot;sha256&quot;: &quot;b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c&quot;,
+      &quot;start&quot;: 295,
+      &quot;end&quot;: 298,
+      &quot;excerpt&quot;: &quot;\tpublic SolItem GetSolItem(string command)\n\t{\n\t\treturn SolItems.FirstOrDefault((SolItem x) => x.CommString == command &amp;&amp; x.CommEnable);\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-dispatch-original-members.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.SolutionItemsData::LoadSolInfo 0x06000268&quot;,
+      &quot;sha256&quot;: &quot;72c81ef1d571a429bb707afd1417301362531bd71fd5e1a2c7670bcbb4e81ea8&quot;,
+      &quot;start&quot;: 78,
+      &quot;end&quot;: 87,
+      &quot;excerpt&quot;: &quot;      \&quot;token\&quot;: \&quot;0x06000268\&quot;,\n      \&quot;declaringType\&quot;: \&quot;VisionMaster.AppMainWindow.SolutionItemsData\&quot;,\n      \&quot;name\&quot;: \&quot;LoadSolInfo\&quot;,\n      \&quot;rawIlSha256\&quot;: \&quot;d1038f58682182e75b4e731ec7b020cad5030129ad4e31944f112bc80a50cbc2\&quot;,\n      \&quot;rawIlBytes\&quot;: \&quot;00007279350070284400000a0a0628b600000a16fe010b072c540006285502000a0c020816281a03000a00000228550200066f1503000a0d2b1e096f1603000a130400110402fe0664020006731203000a6f6f0200060000096fad00000a2ddade0b092c07096fa200000a00dc00022859020006130511052c2500027bd10000046f1b03000a16fe01130611062c0f0002027bd1000004285f0200060000000202285d0200067dd400000400de1f130700729b350070282d00000a11076f7c00000a1816287b00000a2600de002b002a\&quot;,\n      \&quot;ilSize\&quot;: 208,\n      \&quot;fileOffset\&quot;: 51248,\n      \&quot;headerSize\&quot;: 12,\n      \&quot;reaBodyInstructionCoverage\&quot;: \&quot;complete retained body summary; original raw CIL bytes rechecked\&quot;,\n      \&quot;semanticScope\&quot;: \&quot;The local decompiled source is separately cited; this identity anchor does not bind other assemblies or every neighbouring declaration.\&quot;&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-rea-body-digest&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-dispatch-original-members.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.SolutionItemsData::SaveSolInfo 0x06000269&quot;,
+      &quot;sha256&quot;: &quot;72c81ef1d571a429bb707afd1417301362531bd71fd5e1a2c7670bcbb4e81ea8&quot;,
+      &quot;start&quot;: 90,
+      &quot;end&quot;: 99,
+      &quot;excerpt&quot;: &quot;      \&quot;token\&quot;: \&quot;0x06000269\&quot;,\n      \&quot;declaringType\&quot;: \&quot;VisionMaster.AppMainWindow.SolutionItemsData\&quot;,\n      \&quot;name\&quot;: \&quot;SaveSolInfo\&quot;,\n      \&quot;rawIlSha256\&quot;: \&quot;25e45f77c69b59b85d37d19616d444aa01ef458f65a074a7ff0abe62cc2f7129\&quot;,\n      \&quot;rawIlBytes\&quot;: \&quot;0000285b01000a0217281c03000a6f8701000a0a06280103000a0b727935007007282501000a0000de1d0c0072b3350070282d00000a086f7c00000a1816287b00000a2600de002b002a\&quot;,\n      \&quot;ilSize\&quot;: 74,\n      \&quot;fileOffset\&quot;: 51496,\n      \&quot;headerSize\&quot;: 12,\n      \&quot;reaBodyInstructionCoverage\&quot;: \&quot;complete retained body summary; original raw CIL bytes rechecked\&quot;,\n      \&quot;semanticScope\&quot;: \&quot;The local decompiled source is separately cited; this identity anchor does not bind other assemblies or every neighbouring declaration.\&quot;&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-rea-body-digest&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-dispatch-original-members.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.SolutionItemsData::GetSolItem 0x0600026a&quot;,
+      &quot;sha256&quot;: &quot;72c81ef1d571a429bb707afd1417301362531bd71fd5e1a2c7670bcbb4e81ea8&quot;,
+      &quot;start&quot;: 102,
+      &quot;end&quot;: 111,
+      &quot;excerpt&quot;: &quot;      \&quot;token\&quot;: \&quot;0x0600026a\&quot;,\n      \&quot;declaringType\&quot;: \&quot;VisionMaster.AppMainWindow.SolutionItemsData\&quot;,\n      \&quot;name\&quot;: \&quot;GetSolItem\&quot;,\n      \&quot;rawIlSha256\&quot;: \&quot;99ee57969b6f8fe61bb2b6a299ed3e61c3c6a63e2bbbe72862399d89f7c262b1\&quot;,\n      \&quot;rawIlBytes\&quot;: \&quot;73730300060a06037dd40100040002285502000606fe0674030006731d03000a283000002b0b2b00072a\&quot;,\n      \&quot;ilSize\&quot;: 42,\n      \&quot;fileOffset\&quot;: 51600,\n      \&quot;headerSize\&quot;: 12,\n      \&quot;reaBodyInstructionCoverage\&quot;: \&quot;complete retained body summary; original raw CIL bytes rechecked\&quot;,\n      \&quot;semanticScope\&quot;: \&quot;The local decompiled source is separately cited; this identity anchor does not bind other assemblies or every neighbouring declaration.\&quot;&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-rea-body-digest&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;BaseNode XML字段映射、重复加载集合清理、timer完整生命周期、配置写入原子性及保存后重开未证。&quot;
+  ],
+  &quot;nextMembers&quot;: [
+    &quot;SolutionItemsData constructor / LoadSolParam consumer&quot;,
+    &quot;SolItem field XML mapping and DeleteEventHander&quot;,
+    &quot;SolutionItemsData.AddTimer / auto-save callbacks&quot;
+  ],
+  &quot;priorLinks&quot;: [
+    {
+      &quot;view&quot;: &quot;settings-lifecycle&quot;,
+      &quot;id&quot;: &quot;S07&quot;,
+      &quot;url&quot;: &quot;settings-lifecycle.html#edge-S07&quot;
+    }
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平移旋转标定与旋转标定配置重建</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/TRANSLATION-ROTATE-CONFIGURATION-RECONSTRUCTION.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#平移旋转标定与旋转标定配置重建">平移旋转标定与旋转标定配置重建</a></p><p style="margin-left:14px"><a href="#证据边界">证据边界</a></p><p style="margin-left:14px"><a href="#原厂源码与资源">原厂源码与资源</a></p><p style="margin-left:14px"><a href="#本项目实现">本项目实现</a></p><p style="margin-left:14px"><a href="#验证与未知项">验证与未知项</a></p></details><h1 id="平移旋转标定与旋转标定配置重建">平移旋转标定与旋转标定配置重建</h1><h2 id="证据边界">证据边界</h2><p>本文区分三类证据：原厂反编译源码/资源明确声明的内容；本项目根据该声明接入公共配置模型后的独立实现；尚未通过原厂桌面窗口对照的内容。自动化模型测试和本项目截图不能单独证明与原厂像素或运行时完全一致。</p>
+<h2 id="原厂源码与资源">原厂源码与资源</h2><p><code>analysis/full-audit/plugin-coverage.json</code> 中记录了原厂 XML 资源路径及原始 SHA-256：</p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>原厂资源</th>
+<th>原始 SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平移旋转标定</td>
+<td><code>Calibration/TranslationCalibModu/TranslationCalibModuAlgorithmTab.xml</code></td>
+<td><code>3d626213bab65b7192fc27cfe3b0d5a2e13e595b5f349424adc327fe2aead062</code></td>
+</tr>
+<tr>
+<td>旋转标定</td>
+<td><code>Calibration/RotateCalibModu/RotateCalibModuAlgorithmTab.xml</code></td>
+<td><code>a6d2e3c283597ac044ec49d572a50c743f5221e0b858488f2a14d559e432e73e</code></td>
+</tr>
+</tbody></table>
+<p>审计文件保存了 XML 解析树，因此随仓库提交的 <code>src/VisionPlugins.Calibration/Resources/*CalibModuAlgorithmTab.xml</code> 是由该树重建的语义副本，不能声称字节级等同原始二进制资源。当前副本 SHA-256 分别为：平移旋转 <code>11a2fc389098112ea40f45b0684affa19e5102be557ac1cbcefa4590cf97d8fe</code>、旋转 <code>88a38cb5a7d047d4d67c9bbba25ebb46b21a8a18670ee0f312770f505e1bbd5e</code>。</p>
+<p>反编译模板证据来自：</p>
+<ul>
+<li><code>analysis/full-audit/renderer-gap-projects/TranslationCalibModuControl/Apps.XmlParser.ParamTab/EditButton_Calib.cs</code>，SHA-256 <code>fc61d0531dcb51fe5965774bae23a742c56ffd57b41b49916a09b2a69f43ed49</code>。类型继承 <code>Integer</code>，并暴露 <code>EditDialog</code>。</li>
+<li><code>analysis/full-audit/renderer-gap-projects/TranslationCalibModuControl/datatemplate/paramusercontroldatatemplate.xaml</code>，SHA-256 <code>e9326ae92f779cbde9f77178bf40b7516218686e52e52bf0cf90c69131db4778</code>。<code>EditButton_Calib</code> 由 <code>LeftRightControl</code>、<code>TextLeft</code>、<code>Integer_Sub</code> 与编辑图标按钮组成；图标按钮绑定 <code>EditDialogA.ClickCommand</code>，悬停时换图。</li>
+<li>同一反编译项目的 <code>TranslationCalibModuControl/NPointListWindow.cs</code> 将点表窗口宽度设为 520；<code>NPointList.xaml.cs</code> 在加载后将高度设为 399。XML 中的 <code>EditDialog</code> 另声明 <code>DialogWidth=493</code>、<code>DialogHeight=700</code>，运行时包装器覆盖了这两个数值。<code>NPointList.xaml</code> 明确列出六列、30px 行高、删除按钮在恰好 4 行时隐藏，以及底部“导出 / 导入 / 清空标定点 / 确认”操作。</li>
+<li><code>src/VisionPlugins.Calibration/Resources/ConfigurationGroups.xml</code> 的 <code>TextDisplayGroup</code> 原始配置定义 <code>Content</code>、<code>OKColor</code>、<code>NGColor</code>、<code>CharacterSize</code>、<code>Transparency</code>、<code>PositionX</code>、<code>PositionY</code>。前五项分别路由到显示对象或其属性；位置字段走订阅选择器。</li>
+<li>两个 AlgorithmTab XML 均声明 <code>Tab_Basic Params</code> 与 <code>ResultShow</code>，并链接共享 <code>TextDisplayGroup</code>。旋转标定还链接 <code>ImageSourceGroup</code> 和 <code>BottomCommandGroup</code>。旋转标定的 <code>InputWay</code> 值 <code>0</code> 显示 <code>ImagePoints</code>；值 <code>1</code> 显示 <code>ImagePointXs</code>、<code>ImagePointYs</code>。这些是 XML 中的明确触发器，不是推测。</li>
+<li><code>analysis/decompiled/Apps.XmlParser/Apps.XmlParser.ParamTab.AlgorithmTabRoot.decompiled.cs</code> 声明 <code>CustomTabCHWidth=420</code>、<code>CustomTabHeight=500</code>，因此这两个中文调试窗使用 420×500 默认尺寸有源码依据；尺寸不是从 XML 根节点推断出来的。</li>
+</ul>
+<p>审计索引 <code>analysis/full-audit/plugin-ui-renderer-contract.json</code> 把 <code>EditButton_Calib</code> 的模板定位到同一资源，并标注模板“静态链已找到，实例化布局未验证”。它提供静态关联证据，不证明原厂窗口的实际像素结果。</p>
+<h2 id="本项目实现">本项目实现</h2><p>两个插件都经 <code>IToolConfigurationProvider</code> 创建 <code>ToolConfigurationModelWindow</code>，并由公共 <code>ToolConfigurationView</code> 按原厂 XML 模型解析页签、类别、控件模板、触发器和订阅操作。旋转标定的 <code>InputWay</code> 是 XML 中没有 <code>AccessMode</code> 的 <code>RadioSelecter</code>；反编译模型在初始化阶段从 <code>IUserStringData</code> 读取 <code>Param.&lt;name&gt;</code>。公共状态模型因此允许此类单选控件写回配置用户数据，不把它误当成只读算法参数。</p>
+<p><code>EditButton_Calib</code> 使用源资源确认的左标签、数字编辑器和编辑图标布局，并继续使用既有平移标定点表弹窗。其图标来自仓库现有 N 点控件资源，形状和悬停切换与反编译模板一致；没有原始 <code>Apps.XmlUI</code> PNG 资源可供字节或颜色逐像素对比。共享显示组使用本项目已实现的对象绑定、颜色选择和订阅控件；未实现或没有契约的源操作必须暴露诊断，不能伪装成已支持。</p>
+<h2 id="验证与未知项">验证与未知项</h2><ul>
+<li><code>tests/TranslationCalibration.PluginChecks</code>：7458 项通过，覆盖 XML 页签/字段、<code>EditButton_Calib</code>、点编辑器源码尺寸、模式触发器、POINT 选择元数据、显示对象路由与公共窗口。</li>
+<li><code>tests/RotateCalibration.Checks</code>：1190 项通过；公共 WPF 回归为 1250 项通过，覆盖反编译 <code>AlgorithmTabRoot</code> 默认窗口尺寸、源定义页签、<code>ImageSourceGroup</code> 的 IMAGE 选择、POINT 订阅元数据、<code>InputWay</code> 两种状态及 <code>Param.InputWay</code> 用户数据持久化。</li>
+<li><code>src/VisionEditor/VisionEditor.csproj -c Release</code> 构建成功，0 错误、0 警告。</li>
+<li>自动化截图保存在 <code>analysis/full-audit/translation-calibration/checks/template-model-window.png</code> 和 <code>analysis/full-audit/rotate-calibration/checks/template-model-window.png</code>。它们是本项目运行证据，不是原厂截图。</li>
+</ul>
+<p>仍待用户在可见桌面上验收，并与原厂同页对照尺寸、页签、控件间距、按钮图标、颜色选择弹层、点表编辑和关闭行为。设备取帧不属于本轮验证。当前证据不支持宣称像素级原厂 UI 完全复现。</p>
+<p class="meta">来源：docs/plugins/TRANSLATION-ROTATE-CONFIGURATION-RECONSTRUCTION.md · SHA256 52201453012ed656e97d620d243d23a463de8fa4265bd3bdd4c9179c7b58ae07<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

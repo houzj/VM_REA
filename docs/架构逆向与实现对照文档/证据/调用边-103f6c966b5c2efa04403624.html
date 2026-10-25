@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WorkflowSubscriptions.Validate / Parameter · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>WorkflowSubscriptions.Validate / Parameter · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C06"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>WorkflowSubscriptions.Validate / Parameter → 类型、索引、冲突与数值范围校验</h2><p>重复目标拒绝；参数与端口分别校验类型/基数；索引只允许 opt-in primitive 输入且来源为 NodeOutput；同一端口不能既连线又订阅。参数值需 scalar、类型相符并通过 descriptor 范围检查。</p><p><a href="../专题/workflow-data.html#edge-C06">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/workflow-data.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/workflow-data.edges.json · SHA256 d9ce0fbe5e7700b1ac0583a5d7b40bbe04c3bc80a4d05c6317bccf6cc5f43384</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="ec6f366dc8c40621c37b117a3e2270fcf94e5ff828f59fdcf5007bc68a93a166">{
+  &quot;id&quot;: &quot;C06&quot;,
+  &quot;route&quot;: &quot;当前 · 配置与 typed 合同&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;WorkflowSubscriptions.Validate / Parameter&quot;,
+  &quot;to&quot;: &quot;类型、索引、冲突与数值范围校验&quot;,
+  &quot;behavior&quot;: &quot;重复目标拒绝；参数与端口分别校验类型/基数；索引只允许 opt-in primitive 输入且来源为 NodeOutput；同一端口不能既连线又订阅。参数值需 scalar、类型相符并通过 descriptor 范围检查。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/WorkflowSubscriptions.cs&quot;,
+      &quot;member&quot;: &quot;WorkflowSubscriptions.Validate&quot;,
+      &quot;sha256&quot;: &quot;3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01&quot;,
+      &quot;start&quot;: 67,
+      &quot;end&quot;: 73,
+      &quot;excerpt&quot;: &quot; public static void Validate(ProcedureDocument p,ModuleRegistry registry)\n {\n  var targets=new HashSet&lt;(string,string,bool)>();\n  foreach(var b in p.Configuration.Subscriptions){if(!targets.Add((b.NodeId,b.Target,b.IsParameter)))throw new InvalidDataException(\&quot;Duplicate subscription target.\&quot;);var n=p.Nodes.SingleOrDefault(n=>n.Id==b.NodeId)??throw new InvalidDataException(\&quot;Missing consumer node.\&quot;);var d=registry.GetDescriptor(n);var kind=b.IsParameter?ParameterType(d.Parameters.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException(\&quot;Missing target parameter.\&quot;)):d.Inputs.SingleOrDefault(v=>v.Name==b.Target)?.Kind??throw new InvalidDataException(\&quot;Missing target input.\&quot;);var cardinality=b.IsParameter?ValueCardinality.Scalar:d.Inputs.Single(v=>v.Name==b.Target).Cardinality;var sourceKind=SourceType(p,registry,b.Source);var sourceCardinality=SourceCardinality(p,registry,b.Source);var destination=b.IsParameter?null:d.Inputs.Single(v=>v.Name==b.Target);if(b.Source.ArrayIndex is {} index){index.Validate();if(b.IsParameter||destination is null||!(destination.SupportsDeferredNumericRead||destination.SupportsDeferredIntegerRead||destination.SupportsDeferredTextRead)||destination.Kind is not(DataKind.Integer or DataKind.Number or DataKind.NumberArray or DataKind.Text)||b.Source.Kind!=WorkflowSourceKind.NodeOutput)throw new InvalidDataException(\&quot;Array index requires an opted-in numeric input/output binding.\&quot;);if(index.IndexSource is {} indexSource&amp;&amp;(indexSource.Kind!=WorkflowSourceKind.NodeOutput||SourceType(p,registry,indexSource)!=DataKind.Integer))throw new InvalidDataException(\&quot;Index source must be a typed integer output.\&quot;);}if(b.IsParameter?sourceCardinality!=cardinality||sourceKind!=kind:!PortTypes.AcceptsInput(destination!,sourceKind,sourceCardinality))throw new InvalidDataException(\&quot;Subscription type mismatch.\&quot;);if(!b.IsParameter&amp;&amp;p.Connections.Any(c=>c.ToNode==b.NodeId&amp;&amp;c.ToPort==b.Target))throw new InvalidDataException(\&quot;Input already has a subscription.\&quot;);if(b.Source.Kind!=WorkflowSourceKind.NodeOutput&amp;&amp;b.Source.Port is not null)throw new InvalidDataException(\&quot;Unexpected subscription source port.\&quot;);}\n\n }\n public static PortValue Initial(WorkflowLocalVariable v)=>v.Type switch{\&quot;int\&quot;=>PortValue.Integer(int.Parse(v.Value,CultureInfo.InvariantCulture)),\&quot;float\&quot;=>PortValue.Number(float.Parse(v.Value,CultureInfo.InvariantCulture)),_=>PortValue.Text(v.Value)};&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/WorkflowSubscriptions.cs&quot;,
+      &quot;member&quot;: &quot;WorkflowSubscriptions.Parameter&quot;,
+      &quot;sha256&quot;: &quot;3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01&quot;,
+      &quot;start&quot;: 74,
+      &quot;end&quot;: 79,
+      &quot;excerpt&quot;: &quot; public static JsonElement Parameter(ParameterDescriptor spec,PortValue value)\n {\n  if(ParameterType(spec.Kind)!=value.Kind||value.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException(\&quot;Parameter subscription type mismatch.\&quot;);\n  JsonElement json=spec.Kind==ParameterKind.Integer?JsonSerializer.SerializeToElement(checked((int)value.As&lt;long>())):JsonSerializer.SerializeToElement(value.Value);\n  if(!GraphValidator.ValidParameter(spec,json))throw new InvalidDataException(\&quot;Subscribed parameter outside declared range: \&quot;+spec.Name);return json;\n }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,24 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 011023208dd4 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 011023208dd4</p><h1>原文证据 011023208dd4</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 011023208dd4062299060f59880a42a7b6c3a347c961a8082a16f314694d4cd0。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>src/VisionEditor/ToolDisplays.cs:23–44
+SHA256 f3ae89186549591a8a025fc8d36d66bc2b5ea959ec3ed293d3e1030bcdd0e656
+  long request=++toolDisplayRequestGeneration;
+  var owner=CaptureExecutionOwner();string procedure=doc.CurrentProcedureId;
+  bool Current()=>request==toolDisplayRequestGeneration&amp;&amp;IsCurrentExecutionOwner(owner)&amp;&amp;doc.CurrentProcedureId==procedure;
+  // main's pull-view adapter clears the previous source before asking a new provider.
+  toolDisplayImage.Show(null);toolDisplayRecord.Show(null);toolDisplayList.Show(null);
+  toolDisplayImage.Visibility=toolDisplayRecord.Visibility=toolDisplayList.Visibility=Visibility.Collapsed;
+  Preview.Visibility=PreviewImageName.Visibility=Visibility.Visible;
+  EmptyImage.Visibility=Preview.Source is null?Visibility.Visible:Visibility.Collapsed;
+  var provider=node is null?null:plugins.Find(node.ModuleId) as IToolDisplayProvider;
+  ToolDisplayFrame? frame=null;
+  try{
+   if(provider is not null&amp;&amp;node is not null&amp;&amp;results.ContainsKey(node.Id))frame=provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId));
+   if(frame is not null&amp;&amp;node is not null)frame=ToolConfigurationDisplaySubscriptions.ApplyPositions(frame,node,doc.CurrentProcedureId,(source,port)=>results.GetValueOrDefault(source)?.Outputs.GetValueOrDefault(port));
+  }
+  catch(Exception error){if(!Current())return;StatusText.Text=&quot;结果显示失败：&quot;+error.Message;} // Independent host diagnostic; not native exception parity.
+  if(!Current())return;
+  toolRecordTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
+  toolListTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
+  if(provider is null&amp;&amp;DisplayTabs.SelectedIndex>1)DisplayTabs.SelectedIndex=0;
+  toolDisplayImage.Show(frame);toolDisplayRecord.Show(frame);toolDisplayList.Show(frame);
+  bool overlay=frame is not null&amp;&amp;DisplayTabs.SelectedIndex==0;
+  toolDisplayImage.Visibility=overlay?Visibility.Visible:Visibility.Collapsed;</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/image-pipeline--display.html">数据/image-pipeline--display.html</a></li><li><a href="../数据/image-pipeline--retirement.html">数据/image-pipeline--retirement.html</a></li><li><a href="../数据/retirement-operation-map--config.html">数据/retirement-operation-map--config.html</a></li><li><a href="../数据/retirement-operation-map--solution.html">数据/retirement-operation-map--solution.html</a></li><li><a href="../数据/retirement-operation-map--window.html">数据/retirement-operation-map--window.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

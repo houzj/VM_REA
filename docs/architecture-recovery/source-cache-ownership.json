@@ -1,0 +1,1089 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "NC01",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "processing",
+        "results"
+      ],
+      "modes": [
+        "local"
+      ],
+      "from": "原Process：路径缓存查询与命中",
+      "to": "已保存的主图描述 → SetImageOutput或StitchImageOutput",
+      "behavior": "原体按0x3a0字节记录顺序逐项查找，以记录开头字符串与本次路径作逐字节比较，遇NUL且完全相等才置命中。命中后从同一记录+0x328取已有主图指针，+0x310/+0x314/+0x318/+0x31c取元数据，+0x338取随附64位描述字段；非命中才进入文件图像对象的虚表+0x38读取分支。所选命中代码先恢复描述再调用输出或拼接，不重新走NP01的像素复制准入分支。",
+      "representation": "0x3a0记录内的路径文本、图像元数据、像素地址及随附字段；路径没有在所选比较循环中做大小写折叠。",
+      "cache": "顺序扫描和命中指针复用已由Process汇编复核；未在所选命中段观察到移动记录操作，不能扩大为完整LRU/替换策略证明。",
+      "release": "命中不转移缓存记录的底层分配所有权；输出调用内部是否复制须看各callee，不能据恢复指针宣称显示零拷贝。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 1403,
+          "end": 1426,
+          "excerpt": "          pcVar16 = (char *)(uVar33 * 0x3a0 + *(longlong *)(this + 0x25d50));\n          lVar20 = LStack_25b98.QuadPart - (longlong)pcVar16;\n          do {\n            cVar10 = *pcVar16;\n            cVar1 = pcVar16[lVar20];\n            if (cVar10 != cVar1) break;\n            pcVar16 = pcVar16 + 1;\n          } while (cVar1 != '\\0');\n          iVar12 = (int)uVar21;\n          if (cVar10 == cVar1) {\n            cStack_25b80 = '\\x01';\n            goto LAB_18000ffe0;\n          }\n          uVar21 = (ulonglong)(iVar12 + 1U);\n          uVar33 = (ulonglong)(int)(iVar12 + 1U);\n        } while (uVar33 < (ulonglong)\n                          ((*(longlong *)(this + 0x25d58) - *(longlong *)(this + 0x25d50)) / 0x3a0))\n        ;\n        iVar12 = (int)uStack_25b60;\n      }\nLAB_18000ffe0:\n      QueryPerformanceCounter(&LStack_25b98);\n      QueryPerformanceFrequency(&LStack_25b90);\n      dStack_25460 = ((double)LStack_25b98.QuadPart / (double)LStack_25b90.QuadPart) * 1000.0;",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 1463,
+          "end": 1480,
+          "excerpt": "      lVar17 = (longlong)iVar12 * 0x3a0;\n      lVar20 = *(longlong *)(this + 0x25d50);\n      lVar23 = *(longlong *)(lVar20 + 0x328 + lVar17);\n      uStack_25550 = (undefined4)lVar23;\n      uStack_2554c = (undefined4)((ulonglong)lVar23 >> 0x20);\n      uStack_25564 = *(undefined4 *)(lVar20 + 0x314 + lVar17);\n      uStack_25568 = *(uint *)(lVar20 + 0x310 + lVar17);\n      uStack_2555c = *(undefined4 *)(lVar20 + 0x31c + lVar17);\n      iStack_25560 = *(int *)(lVar20 + 0x318 + lVar17);\n      dStack_25b38 = (double)CONCAT44(dStack_25b38._4_4_,iStack_25560);\n      uVar24 = *(undefined8 *)(lVar20 + 0x338 + lVar17);\n      uStack_25540 = (undefined4)uVar24;\n      uStack_2553c = (undefined4)((ulonglong)uVar24 >> 0x20);\n      if (lVar23 == 0) {\n        cVar10 = HSlog_ShouldLog(4);\n        if (cVar10 != '\\0') {\n          if ((DAT_18003cf00 & 1) == 0) {\n            DAT_18003cf00 = DAT_18003cf00 | 1;",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 1428,
+          "end": 1457,
+          "excerpt": "      if (cStack_25b80 == '\\0') {\n        do {\n          uVar21 = uVar33 + 1;\n          if (this[uVar33 + 0x2a4] != *(CMyAlgorithmManager *)(&DAT_18002ec9c + uVar33))\n          goto LAB_180010890;\n          uVar33 = uVar21;\n        } while (uVar21 != 6);\n        QueryPerformanceCounter(&LStack_25b98);\n        QueryPerformanceFrequency(&LStack_25b90);\n        dStack_25408 = ((double)LStack_25b98.QuadPart / (double)LStack_25b90.QuadPart) * 1000.0;\n        pCVar30 = &local_908;\n        if (0xf < CONCAT17(uStack_8e9,CONCAT25(uStack_8eb,CONCAT41(uStack_8ef,local_8f0)))) {\n          pCVar30 = (CMyAlgorithmManager *)CONCAT71(uStack_907,local_908);\n        }\n        (**(code **)(**(longlong **)(this + 0x25ab0) + 0x38))\n                  (*(longlong **)(this + 0x25ab0),pCVar30,0);\n        QueryPerformanceCounter(&LStack_25b98);\n        QueryPerformanceFrequency(&LStack_25b90);\n        dStack_25400 = ((double)LStack_25b98.QuadPart / (double)LStack_25b90.QuadPart) * 1000.0;\n        iVar12 = (**(code **)(**(longlong **)(this + 0x25ab0) + 0x20))();\n        if ((iVar12 == 0xcb) ||\n           (iVar12 = (**(code **)(**(longlong **)(this + 0x25ab0) + 0x20))(), iVar12 == 0xcd)) {\n          (**(code **)(**(longlong **)(this + 0x25ab0) + 0x78))(*(longlong **)(this + 0x25ab0),0xc9)\n          ;\n        }\n        QueryPerformanceCounter(&LStack_25b98);\n        QueryPerformanceFrequency(&LStack_25b90);\n        dStack_253f8 = ((double)LStack_25b98.QuadPart / (double)LStack_25b90.QuadPart) * 1000.0;\n        (**(code **)(**(longlong **)(this + 0x25ab0) + 0x78))(*(longlong **)(this + 0x25ab0),1);\n        QueryPerformanceCounter(&LStack_25b98);",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 1527,
+          "end": 1530,
+          "excerpt": "        iVar11 = StitchImageOutput(this,param_2,&uStack_25ad8,&uStack_255a8);\n        uStack_25b60 = FUN_18000c900();\n        if (iVar11 != 0) {\n          cVar10 = HSlog_ShouldLog(4);",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 1567,
+          "end": 1572,
+          "excerpt": "        iVar11 = SetImageOutput(this,param_2,(CAMERA_IMAGE_DATA *)&uStack_25568);\n        uStack_25b60 = (double)CONCAT44(uStack_25b60._4_4_,iVar11);\n        QueryPerformanceCounter(&LStack_25b98);\n        QueryPerformanceFrequency(&LStack_25b90);\n        pCStack_25b70 =\n             (CMyAlgorithmManager *)",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 1807,
+          "end": 1836,
+          "excerpt": "0x18000ff70: IMUL RCX, RDI, 0x3a0\n0x18000ff77: ADD RCX, R11\n0x18000ff7a: MOV R8, RAX\n0x18000ff7d: SUB R8, RCX\n0x18000ff80: MOVZX EDX, byte ptr [RCX]\n0x18000ff83: MOVZX EAX, byte ptr [RCX + R8*0x1]\n0x18000ff88: SUB EDX, EAX\n0x18000ff8a: JNZ 0x18000ff93\n0x18000ff8c: INC RCX\n0x18000ff8f: TEST EAX, EAX\n0x18000ff91: JNZ 0x18000ff80\n0x18000ff93: TEST EDX, EDX\n0x18000ff95: JZ 0x18000ffd5\n0x18000ff97: INC R9D\n0x18000ff9a: MOVSXD RDI, R9D\n0x18000ff9d: MOV RCX, qword ptr [R14 + 0x25d58]\n0x18000ffa4: SUB RCX, qword ptr [R14 + 0x25d50]\n0x18000ffab: MOV RAX, R10\n0x18000ffae: IMUL RCX\n0x18000ffb1: SAR RDX, 0x8\n0x18000ffb5: MOV RAX, RDX\n0x18000ffb8: SHR RAX, 0x3f\n0x18000ffbc: ADD RDX, RAX\n0x18000ffbf: CMP RDI, RDX\n0x18000ffc2: MOV RAX, qword ptr [RSP + 0x250]\n0x18000ffca: JC 0x18000ff70\n0x18000ffcc: MOV EDI, dword ptr [RSP + 0x288]\n0x18000ffd3: JMP 0x18000ffe0\n0x18000ffd5: MOV byte ptr [RSP + 0x268], 0x1\n0x18000ffdd: MOV EDI, R9D",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 1850,
+          "end": 1868,
+          "excerpt": "0x180010035: MOVSXD RAX, EDI\n0x180010038: IMUL RBX, RAX, 0x3a0\n0x18001003f: MOV RCX, qword ptr [R14 + 0x25d50]\n0x180010046: MOV RDX, qword ptr [RCX + RBX*0x1 + 0x328]\n0x18001004e: MOV qword ptr [RSP + 0x898], RDX\n0x180010056: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x314]\n0x18001005d: MOV dword ptr [RSP + 0x884], EAX\n0x180010064: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x310]\n0x18001006b: MOV dword ptr [RSP + 0x880], EAX\n0x180010072: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x31c]\n0x180010079: MOV dword ptr [RSP + 0x88c], EAX\n0x180010080: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x318]\n0x180010087: MOV dword ptr [RSP + 0x2b0], EAX\n0x18001008e: MOV dword ptr [RSP + 0x888], EAX\n0x180010095: MOV RAX, qword ptr [RCX + RBX*0x1 + 0x338]\n0x18001009d: MOV qword ptr [RSP + 0x8a8], RAX\n0x1800100a5: TEST RDX, RDX\n0x1800100a8: JNZ 0x18001016b\n0x1800100ae: LEA ECX, [RDX + 0x4]",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        }
+      ],
+      "unknowns": [
+        "路径归一化在此前路径生产阶段是否发生，不能由这一逐字节比较循环推断。",
+        "SetImageOutput与拼接输出的下游持有/最后读者不由本条闭合。"
+      ]
+    },
+    {
+      "id": "NC02",
+      "classification": "source-confirmed",
+      "stages": [
+        "processing",
+        "results"
+      ],
+      "modes": [
+        "local"
+      ],
+      "from": "原Process：缓存命中后的辅助Mono8输出",
+      "to": "已有辅助图描述或拼接后重新转换的辅助图",
+      "behavior": "在this+0x25a65非0且当前格式值等于0x2180014的门下，this+0x25c18非0时对本次拼接输出描述调用ConvertRgbToMono8，返回0才调用SetImageOutputMono8；为0时从缓存记录另一组+0x350/+0x354/+0x358/+0x35c元数据、+0x368指针及+0x378随附字段恢复描述，指针非0才发布辅助输出。不能把主图与辅助图描述压成唯一一个缓存指针。",
+      "representation": "每条记录至少有主图(+0x328)与辅助图(+0x368)两个指针门；不据此假定两指针永不别名。",
+      "cache": "非拼接辅助命中分支复用存储的辅助描述；拼接开关分支重新调用转换，二者由原汇编0x1800104eb的字节比较和跳转分开。",
+      "release": "本段不释放这两个缓存指针；DeInit分别检查它们，真正回收仍以共享接口callee为边界。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 1602,
+          "end": 1679,
+          "excerpt": "      if ((this[0x25a65] != (CMyAlgorithmManager)0x0) && (iVar11 == 0x2180014)) {\n        if (this[0x25c18] != (CMyAlgorithmManager)0x0) {\n          uStack_25ad8 = 0;\n          uStack_25ad4 = 0;\n          iStack_25ad0 = 0;\n          uStack_25acc = 0;\n          uStack_25ac8 = 0;\n          uStack_25ac4 = 0;\n          uStack_25ac0 = 0;\n          uStack_25abc = 0;\n          uStack_25ab8 = 0;\n          uStack_25ab4 = 0;\n          uStack_25ab0 = 0;\n          uStack_25aac = 0;\n          uStack_25aa8 = 0;\n          uStack_25aa4 = 0;\n          uStack_25aa0 = 0;\n          uStack_25a9c = 0;\n          dStack_25430 = FUN_18000c900();\n          iVar11 = ConvertRgbToMono8(this,(CAMERA_IMAGE_DATA *)&uStack_255a8,\n                                     (CAMERA_IMAGE_DATA *)&uStack_25ad8);\n          dStack_25428 = FUN_18000c900();\n          if (iVar11 == 0) {\n            SetImageOutputMono8(this,param_2,(CAMERA_IMAGE_DATA *)&uStack_25ad8);\n          }\n          dStack_25420 = FUN_18000c900();\n          uVar13 = (undefined4)uStack_253a0;\n          uVar36 = (undefined4)((ulonglong)uStack_253a0 >> 0x20);\n          uVar37 = SUB84(pCStack_25b70,0);\n          uVar38 = (undefined4)((ulonglong)pCStack_25b70 >> 0x20);\n          uVar40 = SUB84(dStack_25b88,0);\n          uVar41 = (undefined4)((ulonglong)dStack_25b88 >> 0x20);\n          DVar14 = LStack_25b48.s.LowPart;\n          LVar42 = LStack_25b48.s.HighPart;\n          uVar43 = SUB84(uStack_25b60,0);\n          uVar44 = (undefined4)((ulonglong)uStack_25b60 >> 0x20);\n          dVar9 = dStack_253a8;\n          goto LAB_180011651;\n        }\n        dStack_25418 = FUN_18000c900();\n        lVar20 = *(longlong *)(this + 0x25d50);\n        lVar23 = *(longlong *)(lVar20 + 0x368 + lVar17);\n        uStack_25550 = (undefined4)lVar23;\n        uStack_2554c = (undefined4)((ulonglong)lVar23 >> 0x20);\n        uStack_25564 = *(undefined4 *)(lVar20 + 0x354 + lVar17);\n        uStack_25568 = *(uint *)(lVar20 + 0x350 + lVar17);\n        uStack_2555c = *(undefined4 *)(lVar20 + 0x35c + lVar17);\n        iStack_25560 = *(int *)(lVar20 + 0x358 + lVar17);\n        uVar24 = *(undefined8 *)(lVar20 + 0x378 + lVar17);\n        uStack_25540 = (undefined4)uVar24;\n        uStack_2553c = (undefined4)((ulonglong)uVar24 >> 0x20);\n        if (lVar23 == 0) goto LAB_18001011e;\n        SetImageOutputMono8(this,param_2,(CAMERA_IMAGE_DATA *)&uStack_25568);\n        dStack_25410 = FUN_18000c900();\n      }\n      uVar13 = (undefined4)uStack_253a0;\n      uVar36 = (undefined4)((ulonglong)uStack_253a0 >> 0x20);\n      uVar37 = SUB84(pCStack_25b70,0);\n      uVar38 = (undefined4)((ulonglong)pCStack_25b70 >> 0x20);\n      uVar40 = SUB84(dStack_25b88,0);\n      uVar41 = (undefined4)((ulonglong)dStack_25b88 >> 0x20);\n      DVar14 = LStack_25b48.s.LowPart;\n      LVar42 = LStack_25b48.s.HighPart;\n      uVar43 = SUB84(uStack_25b60,0);\n      uVar44 = (undefined4)((ulonglong)uStack_25b60 >> 0x20);\n      dVar9 = dStack_253a8;\n      goto LAB_180011651;\n    }\n    cVar10 = HSlog_ShouldLog(4);\n    if (cVar10 != '\\0') {\n      puVar15 = FUN_180001320();\n      if (0xf < (ulonglong)puVar15[3]) {\n        puVar15 = (undefined8 *)*puVar15;\n      }\n      pcStack_25dc0 = (char *)CONCAT44(pcStack_25dc0._4_4_,0x1ae);\n      pCStack_25dc8 = (CMyAlgorithmManager *)0x18002eda8;\n      HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] local image path is empty\",puVar15,\n                     *(undefined4 *)(this + 0x24938));",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 2051,
+          "end": 2087,
+          "excerpt": "0x1800104eb: CMP byte ptr [R14 + 0x25c18], 0x0\n0x1800104f3: JZ 0x1800105dc\n0x1800104f9: MOV dword ptr [RSP + 0x310], R15D\n0x180010501: XOR EAX, EAX\n0x180010503: MOV qword ptr [RSP + 0x314], RAX\n0x18001050b: MOV qword ptr [RSP + 0x31c], RAX\n0x180010513: MOV qword ptr [RSP + 0x324], RAX\n0x18001051b: MOV qword ptr [RSP + 0x32c], RAX\n0x180010523: MOV qword ptr [RSP + 0x334], RAX\n0x18001052b: MOV qword ptr [RSP + 0x33c], RAX\n0x180010533: MOV qword ptr [RSP + 0x344], RAX\n0x18001053b: MOV dword ptr [RSP + 0x34c], EAX\n0x180010542: CALL 0x18000c900\n0x180010547: MOVSD qword ptr [RSP + 0x9b8], XMM0\n0x180010550: LEA R8, [RSP + 0x310]\n0x180010558: LEA RDX, [RSP + 0x840]\n0x180010560: MOV RCX, R14\n0x180010563: CALL 0x18001dd20\n0x180010568: MOV EBX, EAX\n0x18001056a: CALL 0x18000c900\n0x18001056f: MOVSD qword ptr [RSP + 0x9c0], XMM0\n0x180010578: TEST EBX, EBX\n0x18001057a: JNZ 0x18001058f\n0x18001057c: LEA R8, [RSP + 0x310]\n0x180010584: MOV RDX, R13\n0x180010587: MOV RCX, R14\n0x18001058a: CALL 0x18001da20\n0x18001058f: CALL 0x18000c900\n0x180010594: MOVSD qword ptr [RSP + 0x9c8], XMM0\n0x18001059d: MOVSD XMM12, qword ptr [RSP + 0xa48]\n0x1800105a7: MOVSD XMM9, qword ptr [RSP + 0xa40]\n0x1800105b1: MOVSD XMM6, qword ptr [RSP + 0x278]\n0x1800105ba: MOVSD XMM7, qword ptr [RSP + 0x260]\n0x1800105c3: MOVSD XMM10, qword ptr [RSP + 0x2a0]\n0x1800105cd: MOVSD XMM11, qword ptr [RSP + 0x288]\n0x1800105d7: JMP 0x180011651\n0x1800105dc: CALL 0x18000c900",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 2089,
+          "end": 2109,
+          "excerpt": "0x1800105ea: MOV RCX, qword ptr [R14 + 0x25d50]\n0x1800105f1: MOV RDX, qword ptr [RCX + RBX*0x1 + 0x368]\n0x1800105f9: MOV qword ptr [RSP + 0x898], RDX\n0x180010601: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x354]\n0x180010608: MOV dword ptr [RSP + 0x884], EAX\n0x18001060f: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x350]\n0x180010616: MOV dword ptr [RSP + 0x880], EAX\n0x18001061d: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x35c]\n0x180010624: MOV dword ptr [RSP + 0x88c], EAX\n0x18001062b: MOV EAX, dword ptr [RCX + RBX*0x1 + 0x358]\n0x180010632: MOV dword ptr [RSP + 0x888], EAX\n0x180010639: MOV RAX, qword ptr [RCX + RBX*0x1 + 0x378]\n0x180010641: MOV qword ptr [RSP + 0x8a8], RAX\n0x180010649: TEST RDX, RDX\n0x18001064c: JZ 0x18001011e\n0x180010652: LEA R8, [RSP + 0x880]\n0x18001065a: MOV RDX, R13\n0x18001065d: MOV RCX, R14\n0x180010660: CALL 0x18001da20\n0x180010665: CALL 0x18000c900\n0x18001066a: MOVSD qword ptr [RSP + 0x9d8], XMM0",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        }
+      ],
+      "unknowns": [
+        "ConvertRgbToMono8内部存储复用与并发边界不由本调用点证明。",
+        "辅助缓存失效及两个指针是否共享同一底层分配仍需具体分配/释放callee。"
+      ]
+    },
+    {
+      "id": "NC03",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "processing"
+      ],
+      "modes": [
+        "local"
+      ],
+      "from": "原Process：未满准入分支构建缓存记录后",
+      "to": "FUN_180024180@0x180024180调用边界",
+      "behavior": "在NP01已证的未满复制支路末端，Process填入主/辅助描述后调用FUN_180024180。保留汇编0x18001156f–0x18001157e明确RDX=本次栈上记录地址RSP+0x4a0，RCX=this+0x25d50，再CALL0x180024180；这是缓存容器与候选记录之间的实际调用边，不能只记为“缓存了图像”。",
+      "representation": "调用点传入容器字段地址与栈上候选记录地址；不将传参本身等同于深拷贝像素。",
+      "cache": "可证明候选记录交给此helper；47份已保留成员原体中没有该helper本体，故其内部追加、容量扩张、异常回滚和元素迁移仍未知。本条不虚构满容量淘汰或替换。",
+      "release": "栈上候选描述的退出不等于其指针目标释放；helper对复制失败、扩容和旧记录析构的处理未恢复。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-0.c",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+          "start": 2090,
+          "end": 2096,
+          "excerpt": "    FUN_180024180((ulonglong *)(this + 0x25d50),(undefined8 *)acStack_25948);\n  }\n  DVar14 = LStack_25458.s.LowPart;\n  LVar42 = LStack_25458.s.HighPart;\n  uVar43 = SUB84(dStack_25450,0);\n  uVar44 = (undefined4)((ulonglong)dStack_25450 >> 0x20);\n  uVar40 = SUB84(dStack_25448,0);",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5"
+        },
+        {
+          "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+          "member": "CMyAlgorithmManager::Process",
+          "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+          "start": 2780,
+          "end": 2783,
+          "excerpt": "0x18001156f: LEA RDX, [RSP + 0x4a0]\n0x180011577: LEA RCX, [R14 + 0x25d50]\n0x18001157e: CALL 0x180024180\n0x180011583: JMP 0x180011621",
+          "evidenceType": "retained-native-assembly",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088"
+        }
+      ],
+      "unknowns": [
+        "FUN_180024180@0x180024180函数体及异常片段尚未取得，记录是按值复制/移动、是否重分配尚不能定论。",
+        "本轮未证明任何满容量替换分支、PathCache缩容或改变路径后的主动回收策略。"
+      ]
+    },
+    {
+      "id": "NC04",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "retirement"
+      ],
+      "modes": [
+        "local"
+      ],
+      "from": "原SetParam(\"ClearImage\")",
+      "to": "路径列表游标/逻辑长度复位",
+      "behavior": "所选ClearImage分支进入两把临界区，写this+0x24878和+0x248c8为-1，将+0x24888设为+0x24880、+0x248d8设为+0x248d0，并将+0x3a4的8字节清零，然后经释放临界区公共出口返回。该完整所选分支没有更新路径像素缓存的+0x25d50/+0x25d58字段，也没有逐项调用缓存释放虚接口；清路径列表不能直接写作已释放全部像素缓存。",
+      "representation": "两组路径容器的游标和逻辑末尾，与0x3a0图像缓存容器是不同字段。",
+      "cache": "本条只确认所选ClearImage setter的直接字段副作用；不假定后续Process或其他回调不会另行处理失效。",
+      "release": "逻辑末尾回退/游标复位不等于delete列表存储，也不等于释放已缓存的像素块。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-3.c",
+          "member": "CMyAlgorithmManager::SetParam",
+          "sha256": "08b8dfcd958b692e5059ec895737202bd5731cd701912cba5f2ef2f8fd0b8f6e",
+          "start": 569,
+          "end": 613,
+          "excerpt": "      iVar6 = strcmp(\"ClearImage\",param_1);\n      if (iVar6 == 0) {\n        p_Var26 = (LPCRITICAL_SECTION)(this + 0x24898);\n        local_178._0_4_ = 0;\n        local_178._4_2_ = 0;\n        local_178._6_2_ = 0;\n        local_180 = p_Var26;\n        if (p_Var26 != (LPCRITICAL_SECTION)0x0) {\n          EnterCriticalSection(p_Var26);\n        }\n        p_Var1 = (LPCRITICAL_SECTION)(this + 0x248e8);\n        uStack_158 = 0;\n        local_160 = p_Var1;\n        if (p_Var1 != (LPCRITICAL_SECTION)0x0) {\n          EnterCriticalSection(p_Var1);\n        }\n        *(undefined4 *)(this + 0x24878) = 0xffffffff;\n        *(undefined8 *)(this + 0x24888) = *(undefined8 *)(this + 0x24880);\n        *(undefined4 *)(this + 0x248c8) = 0xffffffff;\n        *(undefined8 *)(this + 0x248d8) = *(undefined8 *)(this + 0x248d0);\n        local_148 = '\\0';\n        memset(local_147,0,0xff);\n        sprintf(&local_148,\"ClearImage %d\");\n        *(undefined8 *)(this + 0x3a4) = 0;\n        cVar4 = HSlog_ShouldLog(2);\n        if (cVar4 != '\\0') {\n          puVar10 = FUN_180001320();\n          if (0xf < (ulonglong)puVar10[3]) {\n            puVar10 = (undefined8 *)*puVar10;\n          }\n          HSlog_LogPrint(2,\"[%s] [ModuId:%d] [%s@%d] %s\",puVar10,*(undefined4 *)(this + 0x24938));\n        }\n        if (p_Var1 != (LPCRITICAL_SECTION)0x0) {\n          LeaveCriticalSection(p_Var1);\n        }\n        goto joined_r0x0001800151a9;\n      }\n      iVar6 = strcmp(\"DeleteImage\",param_1);\n      if (iVar6 == 0) {\n        local_180 = (LPCRITICAL_SECTION)(this + 0x24898);\n        iVar6 = 0;\n        local_178._0_4_ = 0;\n        local_178._4_2_ = 0;\n        local_178._6_2_ = 0;\n        if (local_180 != (LPCRITICAL_SECTION)0x0) {",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_c4c71d002c9bd6a275a4352fc858541e0f842f6570dc9e818fe9fed00446f042"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-3.c",
+          "member": "CMyAlgorithmManager::SetParam",
+          "sha256": "08b8dfcd958b692e5059ec895737202bd5731cd701912cba5f2ef2f8fd0b8f6e",
+          "start": 1353,
+          "end": 1360,
+          "excerpt": "joined_r0x0001800151a9:\n      if (p_Var26 == (LPCRITICAL_SECTION)0x0) {\n        return 0;\n      }\n      LeaveCriticalSection(p_Var26);\n      return 0;\n    }\n    cVar4 = HSlog_ShouldLog(2);",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_c4c71d002c9bd6a275a4352fc858541e0f842f6570dc9e818fe9fed00446f042"
+        }
+      ],
+      "unknowns": [
+        "该setter没有专属保留汇编，未知的格式化日志寄存器参数不从伪码显示签名臆断。",
+        "不能由本分支扩大断言DeleteImage、PathCache setter或外部通知都不释放缓存。"
+      ]
+    },
+    {
+      "id": "NC05",
+      "classification": "source-confirmed",
+      "stages": [
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原CMyAlgorithmManager析构",
+      "to": "DeInit之后单独释放缓存记录存储",
+      "behavior": "析构原体先调用DeInit(this)、MonitoringSubFolderDeInit(this)，随后若this+0x25d50非0，operator_delete该容器起始存储，并把+0x25d50/+0x25d58/+0x25d60三个字段清0。结合NP03可区分：DeInit逐记录发共享释放调用并清图像指针，析构另行释放容器本身。不能把其中任一步代替另一资源域的退役。",
+      "representation": "容器存储与条目指向像素/共享分配分别退役；本条不是新发现的逐图像释放实现。",
+      "cache": "析构删除缓存记录数组本身。只有DeInit而未析构时，不能由NP03推断这三个容器字段已经清0。",
+      "release": "析构顺序与delete字段由保留伪码确认；无析构专属汇编，虚表+0x10的具体callee、状态返回、最终映射解除和跨进程最后读者未证明。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-extra-1.c",
+          "member": "CMyAlgorithmManager::~CMyAlgorithmManager",
+          "sha256": "c88e4c4c516c6aaa47f4368c912eda01853cc77774bf8a9654dd9777aaa6e544",
+          "start": 52,
+          "end": 63,
+          "excerpt": "  DeInit(this);\n  MonitoringSubFolderDeInit(this);\n  if (*(void **)(this + 0x25d50) != (void *)0x0) {\n    operator_delete(*(void **)(this + 0x25d50));\n    *(undefined8 *)(this + 0x25d50) = 0;\n    *(undefined8 *)(this + 0x25d58) = 0;\n    *(undefined8 *)(this + 0x25d60) = 0;\n  }\n  if (*(HANDLE *)(this + 0x25d48) != (HANDLE)0x0) {\n    CloseHandle(*(HANDLE *)(this + 0x25d48));\n    *(undefined8 *)(this + 0x25d48) = 0;\n  }",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_452254103574ad6a940d2a4eb52226e56bb626a8ebb886251fff540eda7c5c05"
+        }
+      ],
+      "unknowns": [
+        "DeInit(this+0x10虚表+0x10)实际函数地址/本体及完整ABI尚缺；不能从接口名认定已成功free像素。",
+        "没有启动原版线程，不将所见清理顺序等同于已验证的并发安全或手工验收。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "NCU01",
+      "target": "FUN_180024180@0x180024180",
+      "question": "缓存追加/扩容/替换/异常时旧描述与新图像缓冲的所有权如何移动？",
+      "state": "call-site-ABI-confirmed-body-needed"
+    },
+    {
+      "id": "NCU02",
+      "target": "this+0x10 vtable+0x08 / +0x10",
+      "question": "分配与DeInit释放实际派生callee地址、原体、实参ABI、返回失败处理及映射最后读者是什么？",
+      "state": "virtual-call-site-only-no-callee-body"
+    },
+    {
+      "id": "NCU03",
+      "target": "SetParam(\"PathCache\")",
+      "question": "保留伪码sscanf_s(param_2,\"%d\")省略目标寄存器；需SetParam汇编核写入字段、负数/缩容后的处理。",
+      "state": "argument-recovery-needed-not-an-inferred-policy"
+    },
+    {
+      "id": "NCU04",
+      "target": "完整PathCache生命周期",
+      "question": "本轮只覆盖所选命中/准入helper/ClearImage/析构；尚未证明满容量替换、全部参数失效、并发访问与跨模块最后读者。",
+      "state": "branch-level-chain-open"
+    }
+  ],
+  "provenance": {
+    "scope": "原图像源路径缓存持有的有限新增切片；不重复NP01复制/NP02帧列表/NP03通用DeInit结论",
+    "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+    "binaryFreshlyRead": false,
+    "identityMethod": "retained REA subject digest; .c vs normalized_result and aggregate evidence_id/text exact matches",
+    "retainedExport": {
+      "path": "analysis/full-audit/image-source-native-evidence.json",
+      "sha256": "fd87e8234454320e2474faefe9658b574c3284828a48bf60e25aa1cffde927ac"
+    },
+    "retainedBodies": [
+      {
+        "path": "analysis/full-audit/image-source-native-0.c",
+        "sha256": "600faa687d61b61acbd7207fe2fdef569647d6bf91f5f34afbe5719eccff61ca",
+        "recordPath": "analysis/full-audit/image-source-native-0.json",
+        "recordSha256": "6ea564d74b4eef4aee9c97e71ca82fe5c3a22c0c7e418f5553bdd091cb3a2d15",
+        "reaEvidenceId": "ev_61cb8f2378ce6e9eea15477a66aa989f8fff80d4f608c2d300ecb6bd658e7bc5",
+        "procedure": "CMyAlgorithmManager::Process",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-1.c",
+        "sha256": "77fe8644089b30251007877c326c3ecff776f2277d551cd0f015e486896d4835",
+        "recordPath": "analysis/full-audit/image-source-native-1.json",
+        "recordSha256": "1f3eca2aea83209ef604cda04869b9e652796a7bd3d9a58be00137c768db7090",
+        "reaEvidenceId": "ev_d6e22ad4970496a8a4eb7263ccbbce0be77384da8abc3688a779c44f9aa776a0",
+        "procedure": "CMyAlgorithmManager::Init",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-10.c",
+        "sha256": "759e73750d4df789197f0e4ce6ea3705a9eec3b0088cd0c3f0e229df326c192d",
+        "recordPath": "analysis/full-audit/image-source-native-10.json",
+        "recordSha256": "b7ee2cc17e3d83ff16b4864ed0c0bd0be0ac32a0702207726e68713238219c4f",
+        "reaEvidenceId": "ev_0db800cbff06bb58a956359c85ed13edf46d4ee9a7299a731a045d739f86f844",
+        "procedure": "CMyAlgorithmManager::SortImageNameInFolder",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-2.c",
+        "sha256": "08d2342587e278886925aaecea6ee5c9a45fc1c9b687a301bb896deef8d41b6c",
+        "recordPath": "analysis/full-audit/image-source-native-2.json",
+        "recordSha256": "c659862d234aac6c056ab9401656edfdd567f9e0c761b3d138af8beb73a80979",
+        "reaEvidenceId": "ev_9a7541802aaff2d1925f28c59dd4f36ad0be27eae6521125015384b36ba658f9",
+        "procedure": "CMyAlgorithmManager::GetParam",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-3.c",
+        "sha256": "08b8dfcd958b692e5059ec895737202bd5731cd701912cba5f2ef2f8fd0b8f6e",
+        "recordPath": "analysis/full-audit/image-source-native-3.json",
+        "recordSha256": "cc94fac0cd5e7456900d854571d210a521ca22a4951ac91bef7955e42288e150",
+        "reaEvidenceId": "ev_c4c71d002c9bd6a275a4352fc858541e0f842f6570dc9e818fe9fed00446f042",
+        "procedure": "CMyAlgorithmManager::SetParam",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-4.c",
+        "sha256": "e04bbcb91354bd68d0ac8c37ab5ee04f6f47cc3b98e9fc907cfaef5f35f0297f",
+        "recordPath": "analysis/full-audit/image-source-native-4.json",
+        "recordSha256": "309d10ab62c97e036fa83e9874e3eb326ce3ab16617e59f206b8b4d3ab3dd831",
+        "reaEvidenceId": "ev_28ad4b8fa08378ccc72c6447d400062f803a4ef19601116cb9eec5a795f267f8",
+        "procedure": "CMyAlgorithmManager::ConvertFileImage",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-5.c",
+        "sha256": "28b1c8c223e8cf6d645ec5698436e1152857212979261fe68cebc73f6553842d",
+        "recordPath": "analysis/full-audit/image-source-native-5.json",
+        "recordSha256": "b0575475c7a75915c4b7532bb2a78e780c9eed68b1921bf1314f4f585a420245",
+        "reaEvidenceId": "ev_b6137f9acc717a6dbf6316bfca34a68954944f92b037dbb72830f5ba93dea089",
+        "procedure": "CMyAlgorithmManager::ConvertDataImage",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-6.c",
+        "sha256": "4e82ac296ad2bded918355fb6142a3b3f4d1d6ea36d29aac2d82ea1b652c9a53",
+        "recordPath": "analysis/full-audit/image-source-native-6.json",
+        "recordSha256": "e07845ade3850bff2a8a171700c750e7d71d88693ae5e8fa48b431dd64270c79",
+        "reaEvidenceId": "ev_7bbcce468361b419e5680f234edb6929907a39954ba46da9c89ce96113c54ff1",
+        "procedure": "CMyAlgorithmManager::SetImageOutput",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-7.c",
+        "sha256": "6fd48677973f78d10b066eab5bbe79486a98a89064698ea74b682177502b1721",
+        "recordPath": "analysis/full-audit/image-source-native-7.json",
+        "recordSha256": "438aae8d8159c8fe794c68645299b897efda778889f992ad79655c8dd154b316",
+        "reaEvidenceId": "ev_8cec78cab9e50d69c809a7265ff85c45c52aa003db7b340b18c0c4ce211b3ae5",
+        "procedure": "CMyAlgorithmManager::StitchImageOutput",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-8.c",
+        "sha256": "4cb7f0c97fe72e3eb442217ca88e3ea99913641b1f2aac57c9e89441e8d2ec06",
+        "recordPath": "analysis/full-audit/image-source-native-8.json",
+        "recordSha256": "e21863560de05a8a180f9817303e03ebce45a091e5fac443a736156e54a22925",
+        "reaEvidenceId": "ev_ecaaeae56d4abd5616ec285c16dd8029d470885f0fe7d57f3b908a309971f6fa",
+        "procedure": "CMyAlgorithmManager::SaveImageFileToSol",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-9.c",
+        "sha256": "8d0213b8453f40e6c5f8fb141011e15053595f7f62a7f1bf3c8161882b606ca7",
+        "recordPath": "analysis/full-audit/image-source-native-9.json",
+        "recordSha256": "3559fb4a44727be1dbba226dfc89ceacd3ec3453a899bc48bbbf9df793e03b0e",
+        "reaEvidenceId": "ev_9b3bb5d16babe8e8f501e44a1e292290efef1dfc50809bcbe7c7883a29a60fe5",
+        "procedure": "CMyAlgorithmManager::UpdateImageFilesListFromDir",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-0.c",
+        "sha256": "330e14fb2c0edf760e5a74bfb9740127c69803a3c5af01313c1cab0bde284c71",
+        "recordPath": "analysis/full-audit/image-source-native-extra-0.json",
+        "recordSha256": "67328db6b1ce5f503e724dd9b3360b34fc5ae26b9428981423862c92e0230965",
+        "reaEvidenceId": "ev_97cc8e08ebf0d39aa9af27362c826b46a4a6cf03293cc6715c314a468dbdfec9",
+        "procedure": "CMyAlgorithmManager::CMyAlgorithmManager",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-1.c",
+        "sha256": "c88e4c4c516c6aaa47f4368c912eda01853cc77774bf8a9654dd9777aaa6e544",
+        "recordPath": "analysis/full-audit/image-source-native-extra-1.json",
+        "recordSha256": "f154a10884753d7d51c6f0fa8d4f4e4fbb7ed0d93a484d115938140e77ca3a1e",
+        "reaEvidenceId": "ev_452254103574ad6a940d2a4eb52226e56bb626a8ebb886251fff540eda7c5c05",
+        "procedure": "CMyAlgorithmManager::~CMyAlgorithmManager",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-10.c",
+        "sha256": "2209f7ff9a5c44613207713272e09ee6960a63da762457b5168289f40812a34f",
+        "recordPath": "analysis/full-audit/image-source-native-extra-10.json",
+        "recordSha256": "d2ebd0beb681a8f74dbf7c66a4d027174cf961161f1dbbec63ab6d947bec9f2c",
+        "reaEvidenceId": "ev_18a2d0c1d24eb44eab431fab5399681fb20320011ca082652006712277e7e31c",
+        "procedure": "CMyAlgorithmManager::SetAllParamList",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-11.c",
+        "sha256": "ebbef09bdc04f0b000ee34994f58cb417d940073e0dfcfea4b6c53137aeef74f",
+        "recordPath": "analysis/full-audit/image-source-native-extra-11.json",
+        "recordSha256": "7935e3df965b399a834de07b7082c33f28dc750470877c17263429d6b13622d8",
+        "reaEvidenceId": "ev_2ca45acc532e850f29d1a7df77d701acfc29887b9edc5f08e7b44aed7a80e8e6",
+        "procedure": "CMyAlgorithmManager::GetAllParamList",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-12.c",
+        "sha256": "495831359aab5f0033d240b088cd4fad2c1a3c96d5a0d5c88f968a21c8f09acc",
+        "recordPath": "analysis/full-audit/image-source-native-extra-12.json",
+        "recordSha256": "b43ea234a9f6b0e00c19ca0d2c0387dfb554657e57d389ef037748ef6b66b9e3",
+        "reaEvidenceId": "ev_ac8685da772887d1a132662d85da5fda8769626501cc46e77fd2c1c776f9922f",
+        "procedure": "CMyAlgorithmManager::GetRootPath",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-13.c",
+        "sha256": "364800dae509130b26b3e3fb7234f0abf0e33046739ea83d22d467ffb1d6c2b5",
+        "recordPath": "analysis/full-audit/image-source-native-extra-13.json",
+        "recordSha256": "d1a80380cc5e4409200b00b33b5e2a31debc3effd1809763d140d0dc0ed769d6",
+        "reaEvidenceId": "ev_e508d4fdcf9f7ac5b4eb213fbc26b0c52ce3f9487f6c9ba1706ecfc4de7a8192",
+        "procedure": "CMyAlgorithmManager::ProcSavemoduleFinishEvent",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-14.c",
+        "sha256": "db342722946669aac4573d113217be1d212ca2d89698940c0476dd160117f333",
+        "recordPath": "analysis/full-audit/image-source-native-extra-14.json",
+        "recordSha256": "aa6cb6e5cf7f0ade8de6e1a5def8aaff7c357c8458779687c56d917b5c639f84",
+        "reaEvidenceId": "ev_912e37ba41c17c2161b27063d90199284ff2e9a0107a07e9c83607bc12e79278",
+        "procedure": "CMyAlgorithmManager::SharedMemory2Data",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-15.c",
+        "sha256": "7ed9650365fdf484c6d6197d06cc81689a644596f4707ab9604dd6258a43a902",
+        "recordPath": "analysis/full-audit/image-source-native-extra-15.json",
+        "recordSha256": "7a2ef0480003bac90f34e51deff32235e5514103955d8856eee718a73681c43b",
+        "reaEvidenceId": "ev_62a929f197c994644a5139e554421aef8b9106a5c8a4e6da934fb682e4ada2ea",
+        "procedure": "CMyAlgorithmManager::AddShareMemoryImgToList",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-16.c",
+        "sha256": "b9e803354c17f2305d4e021a32d35e2e986df47d2f46e7e428ede74b93022aab",
+        "recordPath": "analysis/full-audit/image-source-native-extra-16.json",
+        "recordSha256": "53e03e13fa5151e710b04f24ac322f64045a914398530de3b1a5e7d0d1a2039c",
+        "reaEvidenceId": "ev_fba9b3114fbb1612d66ab7eb513361f59260af68ff8335c73d0082a081bc0ad1",
+        "procedure": "CMyAlgorithmManager::ConvertPixelType",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-17.c",
+        "sha256": "6c8b183d51a211baefb50b71fc414b99d81c5da15e1953501de5339579790358",
+        "recordPath": "analysis/full-audit/image-source-native-extra-17.json",
+        "recordSha256": "ea432b1ff04aed06484148c423f89f4b76c2632d012cc4d01ac489ae7d9948ce",
+        "reaEvidenceId": "ev_f07be791e79390d7b996eb63efd9674c727158bb05c91319bde30192a5a71166",
+        "procedure": "CMyAlgorithmManager::SetImageOutputMono8",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-18.c",
+        "sha256": "aaa97f370db589a6a551cad9c7f972a288381be5f4cf18620b368ff45d47fd16",
+        "recordPath": "analysis/full-audit/image-source-native-extra-18.json",
+        "recordSha256": "b80f18bbb982625f863869f1e9ce513614b3f7c5f62c48d5d680a7fec28144cc",
+        "reaEvidenceId": "ev_2732ec4d01182cd6929a1155efaeb7c01af5e0b6e15993cccbc71f416516f407",
+        "procedure": "CMyAlgorithmManager::ConvertRgbToMono8",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-19.c",
+        "sha256": "53721de7673de74e88b6555e9cf2411eeafd1f9441c922194d78cbe3e2a7d479",
+        "recordPath": "analysis/full-audit/image-source-native-extra-19.json",
+        "recordSha256": "8bba5de698b35a07b9fdab0f739513d25779384c4ffd7f4ca4ef9a6b4bb9ca72",
+        "reaEvidenceId": "ev_05a06da4899a46bb9b871eeffed1dc8cd2c90ec59476bb8d4842f0da9170a021",
+        "procedure": "CMyAlgorithmManager::DynamicIOInit",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-2.c",
+        "sha256": "1250a4cb47b868c114c5801e54c364be6652b1186a84a8a41b7814e3cef7dbf7",
+        "recordPath": "analysis/full-audit/image-source-native-extra-2.json",
+        "recordSha256": "17de143ef2dcf9f0b69e56b99878fadfd9aa2514eacc1e371beb8be8f64a8c77",
+        "reaEvidenceId": "ev_5996e327d2087ca06dd5313ee1d80d1f813ee0f97f6c4357a423703c038f33b5",
+        "procedure": "CMyAlgorithmManager::MonitoringSubFolderInit",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-20.c",
+        "sha256": "da844949008e04ec7d39e068ff2de11b65e2f006da4179bf8c08bd53a81f5796",
+        "recordPath": "analysis/full-audit/image-source-native-extra-20.json",
+        "recordSha256": "a996de5d45d96e6c0b35e512b4e72273000134cbe9d12470edf7094f0fc9e88a",
+        "reaEvidenceId": "ev_47a2edeee01cc46152e693e9c6dadabc6b5322d925e517542f3f0b38fb36e0ce",
+        "procedure": "CMyAlgorithmManager::AnalyzeExtraIO",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-21.c",
+        "sha256": "8562c49da4d4785a626e5fa85299bd2a797751ee2b03a381bdc4a711d8fec058",
+        "recordPath": "analysis/full-audit/image-source-native-extra-21.json",
+        "recordSha256": "67167e5dd6f7916036afdef0e7f8037325047f2f92ceed3691937913c58394fc",
+        "reaEvidenceId": "ev_0b8501aad18f31909155b19d175f12aded11de86849d310c87adc6e625e62fe8",
+        "procedure": "CMyAlgorithmManager::OutputExtra",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-22.c",
+        "sha256": "647f72b6c09331c8ad30197763d96bd891de30e357b43b5b90b5adc458940761",
+        "recordPath": "analysis/full-audit/image-source-native-extra-22.json",
+        "recordSha256": "c2571daaa44f0a0c0bd1ecb15411aa25a53ece80d46d15c7dccb34f856f25ae1",
+        "reaEvidenceId": "ev_eaa8356d4583fda2bf00452573c6e19aa2dec6e4aabdadf9aa0ae578afeb3d02",
+        "procedure": "CMyAlgorithmManager::SetImageBuffNum",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-23.c",
+        "sha256": "069194eb36b7d202af6d1fc6c6db638426230cb2f7b3fd03932018417708bd31",
+        "recordPath": "analysis/full-audit/image-source-native-extra-23.json",
+        "recordSha256": "8b8f989495781f50c74b96fc7ff3455845150618633529b5ffae12a25a73be90",
+        "reaEvidenceId": "ev_9dbf19e8f87cbbbe43e3dae78ccbec8b15a9754ade7ae1d553e40855eaa969d3",
+        "procedure": "CMyAlgorithmManager::Add_WatchSubFolder",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-24.c",
+        "sha256": "cf1f8da896b11e866ee6150a32460681cd924c8ebb2b07f9d337ce6602050ebf",
+        "recordPath": "analysis/full-audit/image-source-native-extra-24.json",
+        "recordSha256": "da2b38d44405857660f09eabfdca2ffdf891bf6d814ebc4f165ccfede32a76b4",
+        "reaEvidenceId": "ev_02f64d9ecd3fc7384530efa4f9f7e7711fe0a0de8bfcc39ed3915d8c481042ab",
+        "procedure": "CMyAlgorithmManager::Del_WatchSubFolder",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-25.c",
+        "sha256": "e7f86d1f3cedf818710d36984d53155462ef82ad7ad089ff5a62e2550ed9314c",
+        "recordPath": "analysis/full-audit/image-source-native-extra-25.json",
+        "recordSha256": "079727026cb5ea13055ad225a2c8c402682c7cb4cd008764250189acbc0a52f1",
+        "reaEvidenceId": "ev_6dde2ea054e7e800c5f0ccf5c9d219a7032bcffd4fac88dd3d8e96884de7fc1d",
+        "procedure": "CMyAlgorithmManager::MonitoringSubFolderChanges",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-26.c",
+        "sha256": "e687d423394585ef6357e0aaf90eb57daa82bc29204c756b1953ab21e93ff540",
+        "recordPath": "analysis/full-audit/image-source-native-extra-26.json",
+        "recordSha256": "fa18f6a944f99a874d1bd8cd615e5229b1d09e66bfbb5bd218850e822a2d83d6",
+        "reaEvidenceId": "ev_67f8823ae20f7916df19e943a5b9e70624c685a0845cc83b19769a4d49cd2ab3",
+        "procedure": "CMyAlgorithmManager::GetImageFilesPathNameFromDir",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-27.c",
+        "sha256": "089ed6c440d109060f9bfc6c18275e4d9caf56921aca27ac7b58883386d9c1d7",
+        "recordPath": "analysis/full-audit/image-source-native-extra-27.json",
+        "recordSha256": "811a7042e8c7a9681f02922f59d2456616df823c4d67169656a6d2bcbc748578",
+        "reaEvidenceId": "ev_3af11d30ebcfd102105f515bb42788cb47992116f584a6307ea23c7d889edebe",
+        "procedure": "CMyAlgorithmManager::NotifyEvent",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-28.c",
+        "sha256": "5c78ec0a11978d6215a3e1782bbffe95cafa205ce1e0305633b61ab706307b27",
+        "recordPath": "analysis/full-audit/image-source-native-extra-28.json",
+        "recordSha256": "f297e5d11ac16b32bc61d937d29bf295ee7b1c9edba91a891db6dc6fc07c7afb",
+        "reaEvidenceId": "ev_3aa242af7e27bbf2ae875f0d10b558b47cd3ac7763eee0442e44db98d927a483",
+        "procedure": "CreateModule",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-3.c",
+        "sha256": "dcc34b7225ce4e4d0ae732ec79267056b3e110b3d397c0677ccec4c9bcd99961",
+        "recordPath": "analysis/full-audit/image-source-native-extra-3.json",
+        "recordSha256": "cac885d1cf6fc78948e7383e7e8c7ea288bfbfdb0ea33d7e92008363ef364d7f",
+        "reaEvidenceId": "ev_e2b5eb2d7cde20d3013adfa8b9063ac28c516eaca651257852829cec72a6f6b2",
+        "procedure": "CMyAlgorithmManager::MonitoringSubFolderDeInit",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-4.c",
+        "sha256": "e5b3e34cc013a8e0d093ae968a2302742c9da52eed88d679e3393ce92b1bd3a0",
+        "recordPath": "analysis/full-audit/image-source-native-extra-4.json",
+        "recordSha256": "eb3c34aaccbbef28b42474bdf71b38904fa40b309acfe357a4d4f3df2f77d17d",
+        "reaEvidenceId": "ev_3c1cfc7dd10fd8da320aeacfb1cc1bdafbf9ae3f5ede89aa9dffd3fbddbff8c0",
+        "procedure": "CMyAlgorithmManager::DeInit",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-5.c",
+        "sha256": "74c865ad126ccc12a495e2a56d70d78f40ac51b713e82bed7407b651f5d56186",
+        "recordPath": "analysis/full-audit/image-source-native-extra-5.json",
+        "recordSha256": "bc40a5176175b2cfd589856743639bb033b67ee63ea06ae7fce5604fc7b06704",
+        "reaEvidenceId": "ev_e28bdd61c7b0e6f9c7299c80310822a8f34f82048d595f402cdc6a511bb7f1e6",
+        "procedure": "CMyAlgorithmManager::AddImage2CircleList",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-6.c",
+        "sha256": "a405b266867a5149ae755eee9a1a22db8b046edaa0ae129ef8991817115dc5cd",
+        "recordPath": "analysis/full-audit/image-source-native-extra-6.json",
+        "recordSha256": "2d3275797e63f5a2cffdaa91ba6f0bbf10248d35001c8f7e88850b8e1cd75715",
+        "reaEvidenceId": "ev_da69f2789a96ecac70208f7eaa7e3c45338281c13ae75e35c891696d3c359736",
+        "procedure": "CMyAlgorithmManager::ThridImageThreadProcess",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-7.c",
+        "sha256": "b556956b29291be7b20b64f97f8193c3bfb8f2f1960f41d1d8d20d042fce81ed",
+        "recordPath": "analysis/full-audit/image-source-native-extra-7.json",
+        "recordSha256": "07f8fecca5c2160c42b812d8c7aee3edbdb609890e2b19470441b757474958b5",
+        "reaEvidenceId": "ev_a0e93820826834da6a4b6b5343a2e58d87e625fad229b4d5996127072756afe0",
+        "procedure": "CMyAlgorithmManager::SaveModuleData",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-8.c",
+        "sha256": "6625abfa9124a309bc2538e0f1666b732db67896c538d538d827cfb3d612d23a",
+        "recordPath": "analysis/full-audit/image-source-native-extra-8.json",
+        "recordSha256": "67cc060b542f6a288131f9dad9f185f35c82970cfd0c4e2758330b62336edb19",
+        "reaEvidenceId": "ev_b043344e5e22661c2e697de856892d7d32e95d6eb685a42419af2b962f6fea56",
+        "procedure": "CMyAlgorithmManager::LoadModuleData",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-extra-9.c",
+        "sha256": "44cbc53738417d4938cc0f475a33e71cec9279e33c3037c91feb045dc4d58763",
+        "recordPath": "analysis/full-audit/image-source-native-extra-9.json",
+        "recordSha256": "762c9d7ef575020f7e2df00759f8df64eb638cc36fcc7287b5d7158324338e10",
+        "reaEvidenceId": "ev_226c39f23d32a8494cd9fc2085a665e7675602ceda10326c62e58246d0680bb9",
+        "procedure": "CMyAlgorithmManager::SaveDataInfo",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-utility-0.c",
+        "sha256": "1b5954397e2ea34898c894a597c8fa8421648f688b95dea336395922f85f954f",
+        "recordPath": "analysis/full-audit/image-source-native-utility-0.json",
+        "recordSha256": "94e47c4e35b49b035037750b6da768f884f90fa0a55b7fc51c9232f1ec95bda0",
+        "reaEvidenceId": "ev_7e75f25b0cc914ac11f47e0bbe4acdb75465dd132113d594376a2e2dc4315120",
+        "procedure": "CMyAlgorithmManager::CopyFileFunction",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-utility-1.c",
+        "sha256": "c4971fbbf3f60aa4bda8b0651a15e23fad0ea5efa8fd740ebe6e49274ff1690b",
+        "recordPath": "analysis/full-audit/image-source-native-utility-1.json",
+        "recordSha256": "727f31c264107f9181cff033a8782bddb461ac4be3110b6ab06ca35e5042f035",
+        "reaEvidenceId": "ev_d548553e394ff028c0a1dbeaa832e2c53b84b5e9b1a4b5aa3c27b9438625e3b8",
+        "procedure": "CMyAlgorithmManager::CopyFileLinux",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-utility-2.c",
+        "sha256": "3c11636ead925cfaf8ac833caaebab356e327931c93a4ca5a51bbe9dd2201426",
+        "recordPath": "analysis/full-audit/image-source-native-utility-2.json",
+        "recordSha256": "7a971a77d79a237980deeb4c87f91ee83968ba6cc2cc92a3032f6ada01afdcf3",
+        "reaEvidenceId": "ev_c134c1ad7ee261adecbe89b8f1e2f11bedab3cc9bf8b5177fd98a2033eb7545c",
+        "procedure": "CMyAlgorithmManager::StringSplitVector",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-utility-3.c",
+        "sha256": "aa7943ea078844b1d376ccdea6262cbb1a0457b54d7c57c25db329c3ee54d350",
+        "recordPath": "analysis/full-audit/image-source-native-utility-3.json",
+        "recordSha256": "8be14b2b372d8a76fa0bf9caa06e9c81d7c69f3dd830bf279af2eb4710c98de3",
+        "reaEvidenceId": "ev_790694fabeb9c1862da87b008fbb84392cd5620be9ecb524511b89c1f5afe691",
+        "procedure": "CMyAlgorithmManager::ConvertFtp2Abs",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-utility-4.c",
+        "sha256": "480436d349f48718a48345e9ebd01ae0670ba7ead812945f2e5df5e894ab4f4a",
+        "recordPath": "analysis/full-audit/image-source-native-utility-4.json",
+        "recordSha256": "19790fd9fb63e553f8525c93d08a5e51cd9a68164baa55925ab7e12de36b2045",
+        "reaEvidenceId": "ev_8bd0d9a7eef3e6893b0156252ef31742d4a9358b2c85000cb3b877626d1943ae",
+        "procedure": "CMyAlgorithmManager::ConvertAbs2Ftp",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-utility-5.c",
+        "sha256": "5525ed8185cdafc889f7946a6f2c6730485e6bcb737f889f042042d46233309b",
+        "recordPath": "analysis/full-audit/image-source-native-utility-5.json",
+        "recordSha256": "55654d6218f6a05047f383619dfe9154517f8efd9293f21e8e650b74345515b5",
+        "reaEvidenceId": "ev_d6c00def427659b420f08198a9d7e7d648bb7c3a129e6d4c28f2e1700121780d",
+        "procedure": "CMyAlgorithmManager::StringReplace",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      },
+      {
+        "path": "analysis/full-audit/image-source-native-utility-6.c",
+        "sha256": "197a0a9b03d4d37656eb0bf650a9cd019de24844b77c6086d9997f47dd5d5f51",
+        "recordPath": "analysis/full-audit/image-source-native-utility-6.json",
+        "recordSha256": "1fefd6593e198333c3504c7b5f0b98a4ed74a74f9296d4abd7b9a3f2d502edae",
+        "reaEvidenceId": "ev_0047dee0d770230a5ca8310484efb051af386bd5200028d96bff8a43bb0fde81",
+        "procedure": "CMyAlgorithmManager::GetFileName",
+        "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "exactTextMatch": true
+      }
+    ],
+    "processAssembly": {
+      "path": "docs/architecture-recovery/image-producer-recovery.resources/ImageSource.Process.retained.asm.txt",
+      "sha256": "83621879df9f5c170a784fcb405080c48a4067b54829cac8c47ae2e1fced6657",
+      "reaEvidenceId": "ev_5f3611451779e19ac9ee03305438dbafbfc6a6f38ad0caeb8bf5d74bf090e088",
+      "exactTextMatch": true
+    },
+    "nativeABI": "Process selected call sites/register loads checked against retained assembly; SetParam/destructor/DeInit-specific assembly and virtual callees not recovered",
+    "cliLaunched": false,
+    "liveProcessHandle": null,
+    "originalRuntimeExecuted": false,
+    "deviceCalled": false,
+    "anotherWorktreeRead": false,
+    "implementationChanges": false
+  }
+}

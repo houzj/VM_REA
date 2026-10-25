@@ -1,0 +1,1740 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "VZ01",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原ModuleFrame的Batch int/float/string导出",
+      "to": "原指针/数量/第五字节进入各内部接收者",
+      "behavior": "原PE导出表分别确认BatchInt=0x134710、BatchFloat=0x134880、BatchString=0x1349f0，三者不是独立SetGlobalVarInt/Float/String导出。三wrapper汇编保存原RCX/RDX/R8/R9，检查句柄、名称和payload非null；调用内部126f10/127050/127340时，RDX=原句柄指针、R8=原名称、R9=原payload，数量写栈+0x20，原第五字节从当前栈+0xc0读出并写栈+0x28。内部接收体再从句柄首int取得键；不能因伪码callee少显示参数就说原指针或隐藏字节已丢弃。",
+      "representation": "导出入参、wrapper重排后的内部入参、后续typed存储分开；此边传递pointer/count而未证明wrapper复制payload。",
+      "cache": "Batch内部在所选后续体接入模块键下的值记录；独立Set导出虽已取体，不冒充GlobalVariableModule typed链实际使用的Batch入口。",
+      "release": "wrapper末尾清日志用字符串不等于释放调用者payload；上游临时描述/数值块与下游记录分别核对。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180134710.asm.txt",
+          "member": "180134710",
+          "sha256": "74090ad1b8b9d6bf9c2a56992a50d31bd72dbff0d35579ce5956bac34b581787",
+          "start": 9,
+          "end": 38,
+          "excerpt": "180134728\tMOV EBP,R9D\n18013472b\tMOV RBX,R8\n18013472e\tMOV RSI,RDX\n180134731\tMOV RDI,RCX\n180134734\tTEST RCX,RCX\n180134737\tJZ 0x180134863\n18013473d\tTEST RDX,RDX\n180134740\tJZ 0x180134863\n180134746\tTEST RBX,RBX\n180134749\tJZ 0x180134863\n18013474f\tMOV EAX,dword ptr [0x1802b2b28]\n180134755\tTEST AL,0x1\n180134757\tJNZ 0x18013476e\n180134759\tOR EAX,0x1\n18013475c\tLEA RCX,[0x1802029f0]\n180134763\tMOV dword ptr [0x1802b2b28],EAX\n180134769\tCALL 0x1801e8930\n18013476e\tMOVZX EAX,byte ptr [RSP + 0xc0]\n180134776\tMOV R9,RBX\n180134779\tMOV R8,RSI\n18013477c\tMOV byte ptr [RSP + 0x28],AL\n180134780\tMOV RDX,RDI\n180134783\tMOV dword ptr [RSP + 0x20],EBP\n180134787\tCALL 0x180126f10\n18013478c\tMOV EDI,EAX\n18013478e\tTEST EAX,EAX\n180134790\tJZ 0x1801347f5\n180134792\tMOV ECX,0x4\n180134797\tCALL 0x18001dbc0\n18013479c\tTEST AL,AL",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180134880.asm.txt",
+          "member": "180134880",
+          "sha256": "014037c6b6d9dd83e69c60531c81043f847365edae51dbcc20325eb0ca6bf0e7",
+          "start": 9,
+          "end": 38,
+          "excerpt": "180134898\tMOV EBP,R9D\n18013489b\tMOV RBX,R8\n18013489e\tMOV RSI,RDX\n1801348a1\tMOV RDI,RCX\n1801348a4\tTEST RCX,RCX\n1801348a7\tJZ 0x1801349d3\n1801348ad\tTEST RDX,RDX\n1801348b0\tJZ 0x1801349d3\n1801348b6\tTEST RBX,RBX\n1801348b9\tJZ 0x1801349d3\n1801348bf\tMOV EAX,dword ptr [0x1802b2b28]\n1801348c5\tTEST AL,0x1\n1801348c7\tJNZ 0x1801348de\n1801348c9\tOR EAX,0x1\n1801348cc\tLEA RCX,[0x1802029f0]\n1801348d3\tMOV dword ptr [0x1802b2b28],EAX\n1801348d9\tCALL 0x1801e8930\n1801348de\tMOVZX EAX,byte ptr [RSP + 0xc0]\n1801348e6\tMOV R9,RBX\n1801348e9\tMOV R8,RSI\n1801348ec\tMOV byte ptr [RSP + 0x28],AL\n1801348f0\tMOV RDX,RDI\n1801348f3\tMOV dword ptr [RSP + 0x20],EBP\n1801348f7\tCALL 0x180127050\n1801348fc\tMOV EDI,EAX\n1801348fe\tTEST EAX,EAX\n180134900\tJZ 0x180134965\n180134902\tMOV ECX,0x4\n180134907\tCALL 0x18001dbc0\n18013490c\tTEST AL,AL",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1801349f0.asm.txt",
+          "member": "1801349f0",
+          "sha256": "978de3e254d939733dc7ede0df2767069a49cf882eafdd4e25d91724aa824bce",
+          "start": 9,
+          "end": 38,
+          "excerpt": "180134a08\tMOV EBP,R9D\n180134a0b\tMOV RBX,R8\n180134a0e\tMOV RSI,RDX\n180134a11\tMOV RDI,RCX\n180134a14\tTEST RCX,RCX\n180134a17\tJZ 0x180134b43\n180134a1d\tTEST RDX,RDX\n180134a20\tJZ 0x180134b43\n180134a26\tTEST RBX,RBX\n180134a29\tJZ 0x180134b43\n180134a2f\tMOV EAX,dword ptr [0x1802b2b28]\n180134a35\tTEST AL,0x1\n180134a37\tJNZ 0x180134a4e\n180134a39\tOR EAX,0x1\n180134a3c\tLEA RCX,[0x1802029f0]\n180134a43\tMOV dword ptr [0x1802b2b28],EAX\n180134a49\tCALL 0x1801e8930\n180134a4e\tMOVZX EAX,byte ptr [RSP + 0xc0]\n180134a56\tMOV R9,RBX\n180134a59\tMOV R8,RSI\n180134a5c\tMOV byte ptr [RSP + 0x28],AL\n180134a60\tMOV RDX,RDI\n180134a63\tMOV dword ptr [RSP + 0x20],EBP\n180134a67\tCALL 0x180127340\n180134a6c\tMOV EDI,EAX\n180134a6e\tTEST EAX,EAX\n180134a70\tJZ 0x180134ad5\n180134a72\tMOV ECX,0x4\n180134a77\tCALL 0x18001dbc0\n180134a7c\tTEST AL,AL",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180126f10.c",
+          "member": "180126f10",
+          "sha256": "5a206e5d858a4d74f544b6da2d74f6a692415ad25ade2703d5d42e689be6a5db",
+          "start": 22,
+          "end": 51,
+          "excerpt": "  if (((param_2 != (int *)0x0) && (param_3 != (char *)0x0)) && (param_4 != 0)) {\n    FUN_18008e650();\n    iVar1 = *param_2;\n    if (iVar1 == -1) {\n      cVar2 = FUN_18001dbc0(4);\n      if (cVar2 != '\\0') {\n        uVar3 = FUN_18001db50();\n        uStack_48 = 0xa42;\n        FUN_180015b40(uVar3,4,&DAT_180231fe8,&DAT_180232670);\n      }\n    }\n    else {\n      uStack_18 = 0xf;\n      uStack_20 = 0;\n      uStack_30 = 0;\n      if (*param_3 != '\\0') {\n        lVar4 = -1;\n        do {\n          lVar4 = lVar4 + 1;\n        } while (param_3[lVar4] != '\\0');\n      }\n      FUN_180006300(&uStack_30,param_3);\n      uVar3 = FUN_18008eca0();\n      uStack_40 = param_6;\n      uStack_48 = param_5;\n      FUN_1800992e0(uVar3,iVar1,&uStack_30,param_4);\n      if (0xf < uStack_18) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_2f,uStack_30));\n      }\n    }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127050.c",
+          "member": "180127050",
+          "sha256": "006ef51a46890d416796d98001b48013aab663fe23b4a86842b347bb41065ee5",
+          "start": 47,
+          "end": 51,
+          "excerpt": "      FUN_180099550(uVar3,iVar1,&uStack_30,param_4);\n      if (0xf < uStack_18) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_2f,uStack_30));\n      }\n    }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127340.c",
+          "member": "180127340",
+          "sha256": "17db2fe9a4e769afb2bf77a32fa65107750786a738f73bd4f36323929e7f765e",
+          "start": 47,
+          "end": 51,
+          "excerpt": "      FUN_1800997c0(uVar3,iVar1,&uStack_40,param_4);\n      if (0xf < uStack_28) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_3f,uStack_40));\n      }\n    }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "实际从GlobalVariableModule typed调用进入这些导出的运行实例未执行；已有静态IAT与caller链和本导出体分别保存。",
+        "第五字节的具体业务命名不由ABI位置推定；后续非零分支可据所取体说明，但不命名为通用copy或ownership标志。"
+      ]
+    },
+    {
+      "id": "VZ02",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "Batch内部992e0/99550的附加分支与主仓读取",
+      "to": "非零字节分支逐值记录，随后取共享模块记录",
+      "behavior": "int与float接收体均仅把count==0直接判错；字节参数非零时，按上下文键查另一记录，更新标记/名称，然后仅在count>0时循环从原payload按4字节读取并写各自数值列表。之后仍执行公共检查并进入全局共享模块记录查找：记录为空返回0xe0000003，否则交f4d10/f4dc0处理。这里附加记录与主typed存储是两条持有关系，且负数量不等于被count==0门拒绝。",
+      "representation": "int附加列表字段+0x68/+0x6c/+0x70、float字段+0x40/+0x44/+0x48；实际值逐个写入内部数组，不是仅保存原pointer。",
+      "cache": "辅助字段和主共享记录可能同时保留数值；未取得全部创建/复用/清理分支，不推定它们是一份缓存。",
+      "release": "局部共享记录强引用减计数只撤销本调用持有；记录为空或后续失败不由此证明辅助字段已回滚。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800992e0.c",
+          "member": "1800992e0",
+          "sha256": "be72e210afefe324f89db34c1a033dd0bf3752b18268520ebd4ed5bf15f48a43",
+          "start": 23,
+          "end": 79,
+          "excerpt": "  if (param_5 == 0) {\n    uVar6 = 0xe0000001;\n  }\n  else {\n    auStackX_10[0] = param_2;\n    if (param_6 != '\\0') {\n      lVar7 = FUN_18009a990(param_1 + 0x18,auStackX_10);\n      lVar7 = FUN_180007510(*(undefined8 *)(lVar7 + 0x18));\n      FUN_18003fc70(lVar7,&DAT_180225e64);\n      *(uint *)(lVar7 + 0x10) = *(uint *)(lVar7 + 0x10) | 1;\n      puVar9 = *(undefined8 **)(lVar7 + 0x18);\n      if (puVar9 == DAT_1802b05e8) {\n        FUN_180001ac0(lVar7 + 0x18,param_3);\n      }\n      else if (puVar9 != param_3) {\n        FUN_180006470(puVar9,param_3,0,0xffffffffffffffff);\n      }\n      lVar10 = 0;\n      if (0 < (longlong)param_5) {\n        do {\n          uVar6 = *(undefined4 *)(param_4 + lVar10 * 4);\n          if (*(int *)(lVar7 + 0x68) == *(int *)(lVar7 + 0x6c)) {\n            FUN_18000ee00(lVar7 + 0x68,*(int *)(lVar7 + 0x6c) + 1);\n          }\n          *(undefined4 *)(*(longlong *)(lVar7 + 0x70) + 8 + (longlong)*(int *)(lVar7 + 0x68) * 4) =\n               uVar6;\n          *(int *)(lVar7 + 0x68) = *(int *)(lVar7 + 0x68) + 1;\n          lVar10 = lVar10 + 1;\n        } while (lVar10 < param_5);\n      }\n    }\n    iVar5 = FUN_18009a7e0();\n    if ((iVar5 != 0) && (cVar4 = FUN_18001dbc0(4), cVar4 != '\\0')) {\n      puVar9 = param_3;\n      if (0xf < (ulonglong)param_3[3]) {\n        puVar9 = (undefined8 *)*param_3;\n      }\n      uVar8 = FUN_18001db50();\n      FUN_180015b40(uVar8,4,&DAT_180226930,&DAT_180226ae0,0x50a,auStackX_10[0],puVar9,iVar5,uVar11);\n    }\n    FUN_1801e5430(&DAT_1802b1208);\n    if ((DAT_1802b2b48 & 1) == 0) {\n      DAT_1802b2b48 = DAT_1802b2b48 | 1;\n      FUN_1800c8f10(&DAT_1802b2b50);\n      FUN_1801e8930(&DAT_180202a80);\n    }\n    FUN_1800cae00(&DAT_1802b2b50,&lStack_38,auStackX_10[0]);\n    plVar3 = plStack_30;\n    if (lStack_38 == 0) {\n      if (plStack_30 != (longlong *)0x0) {\n        LOCK();\n        plVar1 = plStack_30 + 1;\n        *(int *)plVar1 = (int)*plVar1 + -1;\n        UNLOCK();\n        if ((int)*plVar1 == 0) {\n          (**(code **)*plStack_30)(plStack_30);\n          LOCK();",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180099550.c",
+          "member": "180099550",
+          "sha256": "017885a6f5f580a859d6754da9639bf084202265fdec8f734858a5d8f2b21dbc",
+          "start": 28,
+          "end": 70,
+          "excerpt": "    if (param_6 != '\\0') {\n      lVar7 = FUN_18009a990(param_1 + 0x18,auStackX_10);\n      lVar7 = FUN_180007510(*(undefined8 *)(lVar7 + 0x18));\n      FUN_18003fc70(lVar7,&DAT_180225f90);\n      *(uint *)(lVar7 + 0x10) = *(uint *)(lVar7 + 0x10) | 1;\n      puVar9 = *(undefined8 **)(lVar7 + 0x18);\n      if (puVar9 == DAT_1802b05e8) {\n        FUN_180001ac0(lVar7 + 0x18,param_3);\n      }\n      else if (puVar9 != param_3) {\n        FUN_180006470(puVar9,param_3,0,0xffffffffffffffff);\n      }\n      lVar10 = 0;\n      if (0 < (longlong)param_5) {\n        do {\n          uVar6 = *(undefined4 *)(param_4 + lVar10 * 4);\n          if (*(int *)(lVar7 + 0x40) == *(int *)(lVar7 + 0x44)) {\n            FUN_18000ee00(lVar7 + 0x40,*(int *)(lVar7 + 0x44) + 1);\n          }\n          *(undefined4 *)(*(longlong *)(lVar7 + 0x48) + 8 + (longlong)*(int *)(lVar7 + 0x40) * 4) =\n               uVar6;\n          *(int *)(lVar7 + 0x40) = *(int *)(lVar7 + 0x40) + 1;\n          lVar10 = lVar10 + 1;\n        } while (lVar10 < param_5);\n      }\n    }\n    iVar5 = FUN_18009a7e0();\n    if ((iVar5 != 0) && (cVar4 = FUN_18001dbc0(4), cVar4 != '\\0')) {\n      puVar9 = param_3;\n      if (0xf < (ulonglong)param_3[3]) {\n        puVar9 = (undefined8 *)*param_3;\n      }\n      uVar8 = FUN_18001db50();\n      FUN_180015b40(uVar8,4,&DAT_180226930,&DAT_180226b58,0x527,auStackX_10[0],puVar9,iVar5,uVar11);\n    }\n    FUN_1801e5430(&DAT_1802b1208);\n    if ((DAT_1802b2b48 & 1) == 0) {\n      DAT_1802b2b48 = DAT_1802b2b48 | 1;\n      FUN_1800c8f10(&DAT_1802b2b50);\n      FUN_1801e8930(&DAT_180202a80);\n    }\n    FUN_1800cae00(&DAT_1802b2b50,&lStack_38,auStackX_10[0]);\n    plVar3 = plStack_30;",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800992e0.c",
+          "member": "1800992e0",
+          "sha256": "be72e210afefe324f89db34c1a033dd0bf3752b18268520ebd4ed5bf15f48a43",
+          "start": 69,
+          "end": 115,
+          "excerpt": "    FUN_1800cae00(&DAT_1802b2b50,&lStack_38,auStackX_10[0]);\n    plVar3 = plStack_30;\n    if (lStack_38 == 0) {\n      if (plStack_30 != (longlong *)0x0) {\n        LOCK();\n        plVar1 = plStack_30 + 1;\n        *(int *)plVar1 = (int)*plVar1 + -1;\n        UNLOCK();\n        if ((int)*plVar1 == 0) {\n          (**(code **)*plStack_30)(plStack_30);\n          LOCK();\n          piVar2 = (int *)((longlong)plVar3 + 0xc);\n          *piVar2 = *piVar2 + -1;\n          UNLOCK();\n          if (*piVar2 == 0) {\n            (**(code **)(*plStack_30 + 8))();\n          }\n        }\n      }\n      uVar6 = 0xe0000003;\n    }\n    else {\n      uVar6 = FUN_1800f4d10(lStack_38,param_3,param_4,param_5);\n      plVar3 = plStack_30;\n      if (plStack_30 != (longlong *)0x0) {\n        LOCK();\n        plVar1 = plStack_30 + 1;\n        *(int *)plVar1 = (int)*plVar1 + -1;\n        UNLOCK();\n        if ((int)*plVar1 == 0) {\n          (**(code **)*plStack_30)(plStack_30);\n          LOCK();\n          piVar2 = (int *)((longlong)plVar3 + 0xc);\n          *piVar2 = *piVar2 + -1;\n          UNLOCK();\n          if (*piVar2 == 0) {\n            (**(code **)(*plStack_30 + 8))();\n          }\n        }\n      }\n    }\n    FUN_1801e5390(&DAT_1802b1208);\n  }\n  return uVar6;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "负数量、附加记录与主记录一致性及0x09a7e0完整准入合同没有运行验证；不从本片段推通用线程安全或失败原子性。"
+      ]
+    },
+    {
+      "id": "VZ03",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "f4d10/f4dc0的数值主写入",
+      "to": "输入每个4字节值复制进所取值记录的内部数组",
+      "behavior": "int写入先经f74b0取得共享值对象，空则返回0xe0000003；非空先调用其虚表+8槽，再对正count循环从原pointer+i*4读取4字节并交fc50。fc50经准备函数后取对象+0x10中的载荷，必要时扩容，并向其数组base+8+当前数目*4写入该值、增加计数。float的f4dc0对应fd30，写入另一组+0x40/+0x44/+0x48数组字段。这个层级已有实际标量复制，不能继续说数值始终只是原pointer转发；也不能把虚表+8未解体的行为擅称完整旧值清空。",
+      "representation": "原数值buffer→逐个4字节值→内部动态数组；输入临时块寿命与已复制记录分开，float/int按实际4字节载体，不外推double。",
+      "cache": "取得的共享值对象和模块仓库可继续持有复制后的数组；本调用只减自己的控制块计数。",
+      "release": "普通退出含共享控制块强/弱计数递减与虚调用；实际载荷析构槽未在此解析，不能宣称输出消费者已经释放或buffer容量立即归还。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f4d10.c",
+          "member": "1800f4d10",
+          "sha256": "86eaede4032804ade0236addb214d8aa6c54b95bbdfe958376c2c272465b4699",
+          "start": 12,
+          "end": 46,
+          "excerpt": "  FUN_1800f74b0(param_1,&plStack_20,param_2,param_4,0xfffffffffffffffe);\n  if (plStack_20 == (longlong *)0x0) {\n    lVar4 = 0xe0000003;\n  }\n  else {\n    (**(code **)(*plStack_20 + 8))();\n    lVar4 = 0;\n    lVar3 = lVar4;\n    if (0 < (longlong)param_4) {\n      do {\n        FUN_18000fc50(plStack_20,*(undefined4 *)(param_3 + lVar3 * 4));\n        lVar3 = lVar3 + 1;\n      } while (lVar3 < param_4);\n    }\n  }\n  if (plStack_18 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plStack_18 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plStack_18)(plStack_18);\n      LOCK();\n      piVar2 = (int *)((longlong)plStack_18 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plStack_18 + 8))(plStack_18);\n      }\n    }\n  }\n  return lVar4;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f4dc0.c",
+          "member": "1800f4dc0",
+          "sha256": "c064667148fbdbaf7a132592527ec9862bca372d4e8ff39579371e98a799ebf2",
+          "start": 12,
+          "end": 36,
+          "excerpt": "  FUN_1800f7650(param_1,&plStack_20,param_2,param_4,0xfffffffffffffffe);\n  if (plStack_20 == (longlong *)0x0) {\n    lVar4 = 0xe0000003;\n  }\n  else {\n    (**(code **)(*plStack_20 + 8))();\n    lVar4 = 0;\n    lVar3 = lVar4;\n    if (0 < (longlong)param_4) {\n      do {\n        FUN_18000fd30(plStack_20,*(undefined4 *)(param_3 + lVar3 * 4));\n        lVar3 = lVar3 + 1;\n      } while (lVar3 < param_4);\n    }\n  }\n  if (plStack_18 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plStack_18 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plStack_18)(plStack_18);\n      LOCK();\n      piVar2 = (int *)((longlong)plStack_18 + 0xc);\n      *piVar2 = *piVar2 + -1;",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000fc50.c",
+          "member": "18000fc50",
+          "sha256": "0da24bcb707f611e9a1715d87603affdbcd54a717de5f3344b43d3011e1d0e84",
+          "start": 7,
+          "end": 16,
+          "excerpt": "  FUN_18000fb90();\n  lVar1 = *(longlong *)(param_1 + 0x10);\n  if (*(int *)(lVar1 + 0x68) == *(int *)(lVar1 + 0x6c)) {\n    FUN_18000ee00(lVar1 + 0x68,*(int *)(lVar1 + 0x6c) + 1);\n  }\n  *(undefined4 *)(*(longlong *)(lVar1 + 0x70) + 8 + (longlong)*(int *)(lVar1 + 0x68) * 4) = param_2;\n  *(int *)(lVar1 + 0x68) = *(int *)(lVar1 + 0x68) + 1;\n  return 0;\n}\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000fd30.c",
+          "member": "18000fd30",
+          "sha256": "f98a139fd3a5009df0928d5914ebdc9135c03382bce36f7031f0249baff172e6",
+          "start": 7,
+          "end": 16,
+          "excerpt": "  FUN_18000fb90();\n  lVar1 = *(longlong *)(param_1 + 0x10);\n  if (*(int *)(lVar1 + 0x40) == *(int *)(lVar1 + 0x44)) {\n    FUN_18000ee00(lVar1 + 0x40,*(int *)(lVar1 + 0x44) + 1);\n  }\n  *(undefined4 *)(*(longlong *)(lVar1 + 0x48) + 8 + (longlong)*(int *)(lVar1 + 0x40) * 4) = param_2;\n  *(int *)(lVar1 + 0x40) = *(int *)(lVar1 + 0x40) + 1;\n  return 0;\n}\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f4d10.asm.txt",
+          "member": "1800f4d10",
+          "sha256": "831b73979dedc21bbbdf92779ceedeeb187331595956331c76957e6a97c56364",
+          "start": 18,
+          "end": 39,
+          "excerpt": "1800f4d53\tMOV RAX,qword ptr [RCX]\n1800f4d56\tCALL qword ptr [RAX + 0x8]\n1800f4d59\tXOR EDI,EDI\n1800f4d5b\tMOV EBX,EDI\n1800f4d5d\tTEST RSI,RSI\n1800f4d60\tJLE 0x1800f4d78\n1800f4d62\tMOV EDX,dword ptr [R14 + RBX*0x4]\n1800f4d66\tMOV RCX,qword ptr [RSP + 0x28]\n1800f4d6b\tCALL 0x18000fc50\n1800f4d70\tINC RBX\n1800f4d73\tCMP RBX,RSI\n1800f4d76\tJL 0x1800f4d62\n1800f4d78\tMOV RBX,qword ptr [RSP + 0x30]\n1800f4d7d\tTEST RBX,RBX\n1800f4d80\tJZ 0x1800f4d9f\n1800f4d82\tDEC.LOCK dword ptr [RBX + 0x8]\n1800f4d86\tJNZ 0x1800f4d9f\n1800f4d88\tMOV RDX,qword ptr [RBX]\n1800f4d8b\tMOV RCX,RBX\n1800f4d8e\tCALL qword ptr [RDX]\n1800f4d90\tDEC.LOCK dword ptr [RBX + 0xc]\n1800f4d94\tJNZ 0x1800f4d9f",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "值对象创建、虚表+8目标、扩容失败和所有其它读者的退役仍需独立追体；本轮未运行数值或并发验证。"
+      ]
+    },
+    {
+      "id": "VZ04",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "BatchString接收体997c0",
+      "to": "描述步长16字节→局部字符串→内部字符串记录副本",
+      "behavior": "接收体在正count循环中每次读取16字节描述的首pointer，再按尾零扫描构造局部字符串；还存在字节参数非零时向辅助列表复制字符串的分支。主分支按模块/名称取得字符串值对象后，汇编明确把当前索引和局部字符串作为参数交00ffe0。该体按索引选择已有或新增的内部字符串，再调用006470复制字符；006470在非同对象分支按实际字符串长度调用原IAT memcpy、更新长度并写尾零。00ffe0随后对临时字符串大容量块调用operator delete并重置它。此处释放的是临时字符串存储，不能当作调用者STRING_UNIT数组或其原pointer的释放。",
+      "representation": "16字节描述只携带pointer/metadata；所选receiver实际读取首pointer并按C字符串扫描，随后已有复制到内部字符串的成员证据。",
+      "cache": "内部字符串与临时字符串、上游描述数组各自持有；源码不支持把所有同名string当同一个缓冲。",
+      "release": "临时字符串delete已见原IAT；内部目的字符串未来退役与嵌套消费者仍未知，不能从局部清理证明最后读者结束。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800997c0.c",
+          "member": "1800997c0",
+          "sha256": "e53bfa2c653dd14efbfe8fd326238182ad1b166ecf61ce0d43017d7915ab9dad",
+          "start": 47,
+          "end": 81,
+          "excerpt": "    if (param_6 != '\\0') {\n      lVar8 = FUN_18009a990(in_RCX + 0x18,auStack_c8);\n      lVar8 = FUN_180007510(*(undefined8 *)(lVar8 + 0x18));\n      param_1 = FUN_18003fc70(lVar8,&DAT_1802260f8);\n      *(uint *)(lVar8 + 0x10) = *(uint *)(lVar8 + 0x10) | 1;\n      puVar10 = *(undefined8 **)(lVar8 + 0x18);\n      if (puVar10 == DAT_1802b05e8) {\n        param_1 = FUN_180001ac0(lVar8 + 0x18,param_3);\n      }\n      else if (puVar10 != param_3) {\n        param_1 = FUN_180006470(puVar10,param_3,0,0xffffffffffffffff);\n      }\n      if (0 < param_5) {\n        puVar10 = param_4;\n        do {\n          pcVar3 = (char *)*puVar10;\n          uVar9 = FUN_18000de60(lVar8 + 0x28);\n          if (*pcVar3 != '\\0') {\n            lVar11 = -1;\n            do {\n              lVar11 = lVar11 + 1;\n            } while (pcVar3[lVar11] != '\\0');\n          }\n          param_1 = FUN_180006300(uVar9,pcVar3);\n          puVar10 = puVar10 + 2;\n          lVar12 = lVar12 + -1;\n        } while (lVar12 != 0);\n      }\n    }\n    iVar6 = FUN_18009a7e0(param_1,auStack_c8[0],param_3,3);\n    if ((iVar6 != 0) && (cVar5 = FUN_18001dbc0(4), cVar5 != '\\0')) {\n      if (0xf < (ulonglong)param_3[3]) {\n        param_3 = (undefined8 *)*param_3;\n      }\n      uVar9 = FUN_18001db50();",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800997c0.c",
+          "member": "1800997c0",
+          "sha256": "e53bfa2c653dd14efbfe8fd326238182ad1b166ecf61ce0d43017d7915ab9dad",
+          "start": 90,
+          "end": 123,
+          "excerpt": "    iVar6 = 0;\n    puVar10 = param_4;\n    if (0 < param_5) {\n      do {\n        lVar8 = 0;\n        pcVar3 = (char *)*puVar10;\n        uStack_58 = 0xf;\n        uStack_70 = 0;\n        lVar12 = lVar8;\n        if (*pcVar3 != '\\0') {\n          lVar12 = -1;\n          do {\n            lVar12 = lVar12 + 1;\n          } while (pcVar3[lVar12] != '\\0');\n        }\n        lStack_60 = lVar8;\n        FUN_180006300(&uStack_70,pcVar3,lVar12);\n        if ((DAT_1802b2b48 & 1) == 0) {\n          DAT_1802b2b48 = DAT_1802b2b48 | 1;\n          FUN_1800c8f10(&DAT_1802b2b50);\n          FUN_1801e8930(&DAT_180202a80);\n        }\n        FUN_1800cae00(&DAT_1802b2b50,&lStack_c0);\n        plVar4 = plStack_b8;\n        if (lStack_c0 == 0) {\n          if (plStack_b8 != (longlong *)0x0) {\n            LOCK();\n            plVar1 = plStack_b8 + 1;\n            *(int *)plVar1 = (int)*plVar1 + -1;\n            UNLOCK();\n            if ((int)*plVar1 == 0) {\n              (**(code **)*plStack_b8)(plStack_b8);\n              LOCK();\n              piVar2 = (int *)((longlong)plVar4 + 0xc);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800997c0.asm.txt",
+          "member": "1800997c0",
+          "sha256": "a99f0a6c88bb0ce69102410e0403e443e63564602e226a4da1073c42d954cf10",
+          "start": 184,
+          "end": 192,
+          "excerpt": "180099a59\tXOR R8D,R8D\n180099a5c\tLEA RDX,[RBP + -0x21]\n180099a60\tLEA RCX,[RBP + -0x51]\n180099a64\tCALL 0x180006470\n180099a69\tLEA R8,[RBP + -0x51]\n180099a6d\tMOV EDX,ESI\n180099a6f\tMOV RCX,qword ptr [RBP + -0x61]\n180099a73\tCALL 0x18000ffe0\n180099a78\tMOV EDI,EAX",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000ffe0.c",
+          "member": "18000ffe0",
+          "sha256": "b5d2695242819c15e30b796652f8cade969cfc8091c3d4aa59b7e5c9e044475d",
+          "start": 17,
+          "end": 47,
+          "excerpt": "  if (param_2 < 0) {\n    if (0xf < (ulonglong)param_3[3]) {\n      __3_YAXPEAX_Z(*param_3);\n    }\n    param_3[3] = 0xf;\n    param_3[2] = 0;\n    *(undefined1 *)param_3 = 0;\n  }\n  else {\n    FUN_18000fb90();\n    iVar1 = (**(code **)(*param_1 + 0x18))(param_1);\n    if (param_2 < iVar1) {\n      FUN_180006470(*(undefined8 *)(*(longlong *)(param_1[2] + 0x38) + 8 + (longlong)param_2 * 8),\n                    param_3,0,0xffffffffffffffff);\n    }\n    else {\n      uVar2 = FUN_18000de60(param_1[2] + 0x28);\n      FUN_180006470(uVar2,param_3,0,0xffffffffffffffff);\n    }\n    if (0xf < (ulonglong)param_3[3]) {\n      __3_YAXPEAX_Z(*param_3);\n    }\n    param_3[3] = 0xf;\n    param_3[2] = 0;\n    *(undefined1 *)param_3 = 0;\n  }\n  FUN_1801e8810(uStack_20 ^ (ulonglong)auStack_68);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180006470.c",
+          "member": "180006470",
+          "sha256": "aca4b3b1c1074a126eba05e4c40708a1c07b120a5017a5bdd126ffddf30d8665",
+          "start": 65,
+          "end": 78,
+          "excerpt": "    if (uVar3 != 0) {\n      memcpy(puVar2,(longlong)param_2 + param_3,uVar3);\n    }\n    param_1[2] = uVar3;\n    puVar2 = param_1;\n    if (0xf < (ulonglong)param_1[3]) {\n      puVar2 = (undefined8 *)*param_1;\n    }\n    *(undefined1 *)((longlong)puVar2 + uVar3) = 0;\n  }\n  return param_1;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "STRING_UNIT长度/容量字段没有在这些读取分支中作为统一边界消费；不能把它们推成全部字符串均带长度安全读取。",
+        "空指针、嵌入尾零、分配失败和字符串剩余分支没有原机运行验证。"
+      ]
+    },
+    {
+      "id": "VZ05",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "VM_M_DelGlobalVar → 127e60",
+      "to": "依次按七个类型值查名称，再交带锁的共享模块仓",
+      "behavior": "Del导出伪码显示void/少参数，但汇编明确把原句柄和名称重排到RDX/R8交127e60，并保存EAX作为返回值。内部读取句柄首int，非-1时对同名依次调用cb820，类型整数次序1/2/7/3/4/5/6。cb820对仓库+0x58执行实际_Mtx_lock，取得模块共享记录，非空才交f82f0；f82f0把七个类型映射到记录内不同map偏移，再调用f9aa0按name求范围、交6eb00擦除。普通返回的0并不包含逐个erase结果聚合证明，map不存在也不等于所有历史结果引用消失。",
+      "representation": "删除分为全局变量模块名称map、ModuleFrame模块仓和七个typed map；与托管VmIO解绑/显示缓存不是一处清空。",
+      "cache": "cb820在查找期间局部持共享模块记录，随后减局部强/弱计数并_Mtx_unlock；其它持有者仍可继续存在。",
+      "release": "erase的实际节点/控制块退役见VZ06；不能在本层把VM_M_DelGlobalVar返回0解释为所有数值/字符串payload已free。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180135660.asm.txt",
+          "member": "180135660",
+          "sha256": "666de7faccdf1eeed9178fc6ffae2d2bd9b0828172a3139bc1825d1f21865976",
+          "start": 21,
+          "end": 27,
+          "excerpt": "1801356b8\tMOV R8,RDI\n1801356bb\tMOV RDX,RBX\n1801356be\tCALL 0x180127e60\n1801356c3\tMOV ESI,EAX\n1801356c5\tTEST EAX,EAX\n1801356c7\tJZ 0x180135728\n1801356c9\tMOV ECX,0x4",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180135660.asm.txt",
+          "member": "180135660",
+          "sha256": "666de7faccdf1eeed9178fc6ffae2d2bd9b0828172a3139bc1825d1f21865976",
+          "start": 72,
+          "end": 82,
+          "excerpt": "18013578e\tMOV EAX,ESI\n180135790\tMOV RSI,qword ptr [RSP + 0x90]\n180135798\tJMP 0x18013579f\n18013579a\tMOV EAX,0xe0000001\n18013579f\tMOV RCX,qword ptr [RSP + 0x60]\n1801357a4\tXOR RCX,RSP\n1801357a7\tCALL 0x1801e8810\n1801357ac\tMOV RBX,qword ptr [RSP + 0x98]\n1801357b4\tADD RSP,0x70\n1801357b8\tPOP RDI\n1801357b9\tRET",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+          "member": "180127e60",
+          "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+          "start": 53,
+          "end": 56,
+          "excerpt": "      FUN_1800cb820(uVar3,iVar1,1,&uStack_48);\n      if (0xf < uStack_30) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_47,uStack_48));\n      }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+          "member": "180127e60",
+          "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+          "start": 69,
+          "end": 72,
+          "excerpt": "      FUN_1800cb820(uVar3,iVar1,2,&uStack_48);\n      if (0xf < uStack_30) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_47,uStack_48));\n      }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+          "member": "180127e60",
+          "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+          "start": 85,
+          "end": 88,
+          "excerpt": "      FUN_1800cb820(uVar3,iVar1,7,&uStack_48);\n      if (0xf < uStack_30) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_47,uStack_48));\n      }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+          "member": "180127e60",
+          "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+          "start": 101,
+          "end": 104,
+          "excerpt": "      FUN_1800cb820(uVar3,iVar1,3,&uStack_48);\n      if (0xf < uStack_30) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_47,uStack_48));\n      }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+          "member": "180127e60",
+          "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+          "start": 117,
+          "end": 120,
+          "excerpt": "      FUN_1800cb820(uVar3,iVar1,4,&uStack_48);\n      if (0xf < uStack_30) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_47,uStack_48));\n      }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+          "member": "180127e60",
+          "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+          "start": 133,
+          "end": 136,
+          "excerpt": "      FUN_1800cb820(uVar3,iVar1,5,&uStack_48);\n      if (0xf < uStack_30) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_47,uStack_48));\n      }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+          "member": "180127e60",
+          "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+          "start": 148,
+          "end": 154,
+          "excerpt": "      FUN_1800cb820(uVar3,iVar1,6,&uStack_48);\n      if (0xf < uStack_30) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_47,uStack_48));\n      }\n      FUN_1801e5390(&DAT_1802b1208);\n    }\n  }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800cb820.c",
+          "member": "1800cb820",
+          "sha256": "095d97da4d3fd9cd8892205a8f4144c94ee9de4c4d63eded6deac96e93dd7106",
+          "start": 12,
+          "end": 44,
+          "excerpt": "  iVar4 = _Mtx_lock(param_1 + 0x58);\n  if (iVar4 != 0) {\n    __Throw_C_error_std__YAXH_Z(iVar4);\n  }\n  FUN_1800cae00(param_1,&lStack_30,param_2);\n  if (lStack_30 != 0) {\n    FUN_1800f82f0(lStack_30,param_3,param_4);\n  }\n  plVar3 = plStack_28;\n  if (plStack_28 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plStack_28 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plStack_28)(plStack_28);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plStack_28 + 8))();\n      }\n    }\n  }\n  iVar4 = _Mtx_unlock(param_1 + 0x58);\n  if (iVar4 != 0) {\n    __Throw_C_error_std__YAXH_Z(iVar4);\n  }\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f82f0.c",
+          "member": "1800f82f0",
+          "sha256": "6c492244cc91214fc15bc5dae7df3cf7a1ae915abc24b182d9535c1a33afba36",
+          "start": 8,
+          "end": 38,
+          "excerpt": "  switch(param_2) {\n  case 1:\n    FUN_1800f9aa0(param_1,param_3);\n    return;\n  case 2:\n    FUN_1800f9aa0(param_1 + 0x10,param_3);\n    return;\n  case 3:\n    FUN_1800f9aa0(param_1 + 0x30,param_3);\n    return;\n  case 4:\n    FUN_1800f9aa0(param_1 + 0x40,param_3);\n    return;\n  case 5:\n    FUN_1800f9aa0(param_1 + 0x50,param_3);\n    return;\n  case 6:\n    FUN_1800f9aa0(param_1 + 0x60,param_3);\n    return;\n  case 7:\n    FUN_1800f9aa0(param_1 + 0x20,param_3);\n    return;\n  }\n  cVar1 = FUN_18001dbc0(4);\n  if (cVar1 != '\\0') {\n    if (0xf < (ulonglong)param_3[3]) {\n      param_3 = (undefined8 *)*param_3;\n    }\n    uVar2 = FUN_18001db50();\n    FUN_180015b40(uVar2,4,&DAT_18022ed40,&DAT_18022ecf0,0x581,param_3);\n  }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "句柄有效性、所有map语义、删除后的已发布结果和native绑定最后读者未运行确认；正常控制流mutex操作不是所有异常分支排空证明。"
+      ]
+    },
+    {
+      "id": "VZ06",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "typed map擦除6eb00→6f290/6e570",
+      "to": "释放节点名称/节点内存；载荷经控制块条件虚析构",
+      "behavior": "范围erase在全范围时交6e570递归处理并复位根/计数，局部范围逐节点交6f290。已恢复两叶实际体与汇编：节点+0x48的共享控制块强计数递减，只有降为0才调用其虚表首槽，再递减弱计数，弱计数为0再调用+8槽。节点名称容量>=16时delete其名称堆块，之后重置字符串字段并operator delete节点本身；局部erase还递减容器数目。因此节点与名称的真实释放已可证明，而payload虚析构的动态接收者未定位，不能把该条件虚调用等同于每份数值/字符串buffer都已销毁。",
+      "representation": "map节点、名称堆块、共享控制块、所指typed载荷四种对象分开。",
+      "cache": "从此map移除仅撤销此节点的一份shared所有权；其它缓存、结果或订阅持有仍可能阻止最终析构。",
+      "release": "明确free/delete证据仅限本体直接释放的节点和名称；payload最后读者、虚析构目标和内部动态数组的真实free仍保留未知。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006eb00.c",
+          "member": "18006eb00",
+          "sha256": "8783ee25769b2ee6fbda54f20af0d486b1a80636bf6c552084fdfcffc9d407f7",
+          "start": 13,
+          "end": 25,
+          "excerpt": "  if ((param_3 == (longlong *)*plVar2) && (param_4 == plVar2)) {\n    FUN_18006e570(param_1,plVar2[1]);\n    *(longlong *)(*param_1 + 8) = *param_1;\n    *(longlong *)*param_1 = *param_1;\n    *(longlong *)(*param_1 + 0x10) = *param_1;\n    param_1[1] = 0;\n    *param_2 = *(undefined8 *)*param_1;\n    return param_2;\n  }\n  while (param_3 != param_4) {\n    plStackX_18 = param_3;\n    if (*(char *)((longlong)param_3 + 0x19) == '\\0') {\n      plStackX_18 = (longlong *)param_3[2];",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006eb00.c",
+          "member": "18006eb00",
+          "sha256": "8783ee25769b2ee6fbda54f20af0d486b1a80636bf6c552084fdfcffc9d407f7",
+          "start": 46,
+          "end": 52,
+          "excerpt": "    FUN_18006f290(param_1,auStackX_8,param_3);\n    param_3 = plStackX_18;\n  }\n  *param_2 = param_3;\n  return param_2;\n}\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006f290.c",
+          "member": "18006f290",
+          "sha256": "ef7abac906a77a95263d69ef8d740e4cff319535ef528521b41a3d61dd4b5009",
+          "start": 203,
+          "end": 234,
+          "excerpt": "  plVar8 = (longlong *)param_3[9];\n  if (plVar8 != (longlong *)0x0) {\n    LOCK();\n    plVar9 = plVar8 + 1;\n    *(int *)plVar9 = (int)*plVar9 + -1;\n    UNLOCK();\n    if ((int)*plVar9 == 0) {\n      (**(code **)*plVar8)(plVar8);\n      LOCK();\n      piVar1 = (int *)((longlong)plVar8 + 0xc);\n      *piVar1 = *piVar1 + -1;\n      UNLOCK();\n      if (*piVar1 == 0) {\n        (**(code **)(*plVar8 + 8))(plVar8);\n      }\n    }\n  }\n  if (0xf < (ulonglong)param_3[7]) {\n    __3_YAXPEAX_Z(param_3[4]);\n  }\n  param_3[7] = 0xf;\n  param_3[6] = 0;\n  *(undefined1 *)(param_3 + 4) = 0;\n  __3_YAXPEAX_Z(param_3);\n  if (param_1[1] != 0) {\n    param_1[1] = param_1[1] + -1;\n  }\n  *param_2 = plStackX_18;\n  return param_2;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006e570.c",
+          "member": "18006e570",
+          "sha256": "2a6c589c27a6ab1e700ac668e0a37d51aca755f55e01460f1f4fd03bc7092037",
+          "start": 14,
+          "end": 45,
+          "excerpt": "    plVar4 = (longlong *)param_2[9];\n    plVar5 = (longlong *)*param_2;\n    if (plVar4 != (longlong *)0x0) {\n      LOCK();\n      plVar1 = plVar4 + 1;\n      *(int *)plVar1 = (int)*plVar1 + -1;\n      UNLOCK();\n      if ((int)*plVar1 == 0) {\n        (**(code **)*plVar4)(plVar4);\n        LOCK();\n        piVar2 = (int *)((longlong)plVar4 + 0xc);\n        *piVar2 = *piVar2 + -1;\n        UNLOCK();\n        if (*piVar2 == 0) {\n          (**(code **)(*plVar4 + 8))(plVar4);\n        }\n      }\n    }\n    if (0xf < (ulonglong)param_2[7]) {\n      __3_YAXPEAX_Z(param_2[4]);\n    }\n    param_2[7] = 0xf;\n    param_2[6] = 0;\n    *(undefined1 *)(param_2 + 4) = 0;\n    __3_YAXPEAX_Z(param_2);\n    param_2 = plVar5;\n    cVar3 = *(char *)((longlong)plVar5 + 0x19);\n  }\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006f290.asm.txt",
+          "member": "18006f290",
+          "sha256": "24d1c12c7aa0dbf80494992d11b71796ba1444248b1daf9608e2ed5d75a0b680",
+          "start": 249,
+          "end": 268,
+          "excerpt": "18006f5ea\tMOV RAX,qword ptr [RBX]\n18006f5ed\tMOV RCX,RBX\n18006f5f0\tCALL qword ptr [RAX]\n18006f5f2\tDEC.LOCK dword ptr [RBX + 0xc]\n18006f5f6\tJNZ 0x18006f601\n18006f5f8\tMOV RAX,qword ptr [RBX]\n18006f5fb\tMOV RCX,RBX\n18006f5fe\tCALL qword ptr [RAX + 0x8]\n18006f601\tCMP qword ptr [RSI + 0x38],0x10\n18006f606\tMOV RDI,qword ptr [RSP + 0x20]\n18006f60b\tMOV RBX,qword ptr [RSP + 0x40]\n18006f610\tJC 0x18006f61c\n18006f612\tMOV RCX,qword ptr [RSI + 0x20]\n18006f616\tCALL qword ptr [0x180204580]\n18006f61c\tMOV qword ptr [RSI + 0x38],0xf\n18006f624\tMOV qword ptr [RSI + 0x30],0x0\n18006f62c\tMOV RCX,RSI\n18006f62f\tMOV byte ptr [RSI + 0x20],0x0\n18006f633\tCALL qword ptr [0x180204580]\n18006f639\tMOV RAX,qword ptr [R14 + 0x8]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006e570.asm.txt",
+          "member": "18006e570",
+          "sha256": "7b28c5cb81c499433047ccc98df1143a9e7b512eadcda05a555385e2bda5071d",
+          "start": 21,
+          "end": 39,
+          "excerpt": "18006e5b4\tMOV RCX,RBX\n18006e5b7\tCALL qword ptr [RAX]\n18006e5b9\tDEC.LOCK dword ptr [RBX + 0xc]\n18006e5bd\tJNZ 0x18006e5c8\n18006e5bf\tMOV RAX,qword ptr [RBX]\n18006e5c2\tMOV RCX,RBX\n18006e5c5\tCALL qword ptr [RAX + 0x8]\n18006e5c8\tCMP qword ptr [RDI + 0x38],0x10\n18006e5cd\tJC 0x18006e5d9\n18006e5cf\tMOV RCX,qword ptr [RDI + 0x20]\n18006e5d3\tCALL qword ptr [0x180204580]\n18006e5d9\tMOV qword ptr [RDI + 0x38],0xf\n18006e5e1\tMOV qword ptr [RDI + 0x30],0x0\n18006e5e9\tMOV RCX,RDI\n18006e5ec\tMOV byte ptr [RDI + 0x20],0x0\n18006e5f0\tCALL qword ptr [0x180204580]\n18006e5f6\tCMP byte ptr [RSI + 0x19],0x0\n18006e5fa\tMOV RDI,RSI\n18006e5fd\tJZ 0x18006e593",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "未恢复这些shared控制块在每个typed map中的具体虚表实例与payload析构体；不宣称已证明全局无悬挂引用、无泄漏或所有存储已回收。"
+      ]
+    },
+    {
+      "id": "VZ07",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "VM_M_SetGlobalVarLockStatus → 9a140",
+      "to": "按键查状态记录，再调用真实mutex与标志写入",
+      "behavior": "导出正常分支把两整数参数与原字节传入静态对象的9a140。该体先读对象+0x10，汇编明确TEST该字段后SETZ临时字节，再与请求字节作TEST决定早返0；不能照伪码含糊的位运算优先级另造布尔公式。成功查到键后，非零请求还需对象启用字节与记录首字节通过门，才_Mtx_lock记录+8并写记录+1=1。零请求在记录+1非零时才做额外准备/清理调用、写+1=0后_Mtx_unlock；重复零/不存在记录另有返回1分支。锁/解锁确为原MSVCP120导入，但只有这些分支被静态核实，不把导出名当全局同步或所有异常必解锁保证。",
+      "representation": "静态管理器状态、按整数键的记录、记录首字节、已锁标志及mutex指针分别读取；参数名称不由函数名填补。",
+      "cache": "按键查找的记录与typed共享结果仓不是已证同一对象；辅助数值/字符串暂存也不能直接当这把mutex拥有的完整事务。",
+      "release": "请求0的部分分支有清理调用及unlock；未取得被调清理函数的全部语义，不称它释放所有变量值。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180148130.asm.txt",
+          "member": "180148130",
+          "sha256": "3d31ef72ffc299dd2c304ff73bd23b6aecd0d37b8c180d3cb7fd3ae6aee177cb",
+          "start": 33,
+          "end": 39,
+          "excerpt": "1801481b8\tLEA RCX,[0x1802b2f80]\n1801481bf\tMOVZX R9D,SIL\n1801481c3\tMOV R8D,EBP\n1801481c6\tMOV EDX,R14D\n1801481c9\tCALL 0x18009a140\n1801481ce\tMOVZX EDI,AL\n1801481d1\tTEST AL,AL",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18009a140.asm.txt",
+          "member": "18009a140",
+          "sha256": "15cb58f3e2f5811955471569da4fbbfc1fe8e35b3c52180e36fccb31bade1597",
+          "start": 6,
+          "end": 19,
+          "excerpt": "18009a14c\tMOVZX EDI,byte ptr [RCX + 0x10]\n18009a150\tMOVZX ESI,R9B\n18009a154\tMOV EBP,EDX\n18009a156\tTEST DIL,DIL\n18009a159\tMOVZX EAX,R9B\n18009a15d\tSETZ R8B\n18009a161\tTEST R9B,R8B\n18009a164\tJZ 0x18009a170\n18009a166\tXOR AL,AL\n18009a168\tADD RSP,0x40\n18009a16c\tPOP RDI\n18009a16d\tPOP RSI\n18009a16e\tPOP RBP\n18009a16f\tRET",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18009a140.c",
+          "member": "18009a140",
+          "sha256": "2223551ecb6e8526d09f2c1fd741a736117bd63cf5c727b230452227d97a9d9e",
+          "start": 33,
+          "end": 80,
+          "excerpt": "  else if (param_4 == 0) {\n    pcVar4 = (char *)FUN_18009a990(plVar1,auStackX_18);\n    if (pcVar4[1] == '\\0') {\n      return 1;\n    }\n    if (*pcVar4 != '\\0') {\n      FUN_18009a300();\n    }\n    FUN_1800069c0(*(longlong *)(pcVar4 + 0x18) + 0x38);\n    pcVar4[1] = '\\0';\n    iVar3 = _Mtx_unlock(*(undefined8 *)(pcVar4 + 8));\n    if (iVar3 != 0) {\n      __Throw_C_error_std__YAXH_Z(iVar3);\n    }\n    cVar2 = FUN_18001dbc0(1);\n    if (cVar2 == '\\0') {\n      return 1;\n    }\n    uVar5 = FUN_18001db50();\n    puVar7 = &DAT_180226c78;\n    uVar6 = 1;\n    uVar8 = 0x5d0;\n  }\n  else {\n    if (cVar2 == '\\0') {\n      return 0;\n    }\n    pcVar4 = (char *)FUN_18009a990(plVar1,auStackX_18);\n    if (*pcVar4 == '\\0') {\n      return 0;\n    }\n    iVar3 = _Mtx_lock(*(undefined8 *)(pcVar4 + 8));\n    if (iVar3 != 0) {\n      __Throw_C_error_std__YAXH_Z(iVar3);\n    }\n    pcVar4[1] = '\\x01';\n    cVar2 = FUN_18001dbc0(1);\n    if (cVar2 == '\\0') {\n      return 1;\n    }\n    uVar5 = FUN_18001db50();\n    puVar7 = &DAT_180226bf0;\n    uVar6 = 1;\n    uVar8 = 0x5b7;\n  }\n  FUN_180015b40(uVar5,uVar6,puVar7,&DAT_180226c18,uVar8,param_2,auStackX_18[0]);\n  return 1;\n}",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18009a140.asm.txt",
+          "member": "18009a140",
+          "sha256": "15cb58f3e2f5811955471569da4fbbfc1fe8e35b3c52180e36fccb31bade1597",
+          "start": 39,
+          "end": 46,
+          "excerpt": "18009a1bc\tMOV RCX,qword ptr [RAX + 0x8]\n18009a1c0\tCALL qword ptr [0x1802042f8]\n18009a1c6\tTEST EAX,EAX\n18009a1c8\tJZ 0x18009a1d2\n18009a1ca\tMOV ECX,EAX\n18009a1cc\tCALL qword ptr [0x1802042f0]\n18009a1d2\tMOV ECX,0x1\n18009a1d7\tMOV byte ptr [RBX + 0x1],0x1",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18009a140.asm.txt",
+          "member": "18009a140",
+          "sha256": "15cb58f3e2f5811955471569da4fbbfc1fe8e35b3c52180e36fccb31bade1597",
+          "start": 79,
+          "end": 88,
+          "excerpt": "18009a258\tCALL 0x1800069c0\n18009a25d\tMOV RCX,qword ptr [RBX + 0x8]\n18009a261\tMOV byte ptr [RBX + 0x1],0x0\n18009a265\tCALL qword ptr [0x180204300]\n18009a26b\tTEST EAX,EAX\n18009a26d\tJZ 0x18009a277\n18009a26f\tMOV ECX,EAX\n18009a271\tCALL qword ptr [0x1802042f0]\n18009a277\tMOV ECX,0x1\n18009a27c\tCALL 0x18001dbc0",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "existing owned offline Ghidra CLI; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "mutex所属线程、重入/重复请求、异常处理以及9a300/69c0对暂存的具体语义未闭合；未运行并发或原始设备。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "VZU01",
+      "target": "typed shared-control-block dynamic destructors",
+      "question": "Map节点/名称delete已见，但payload虚析构目标与数组最终free、已发布消费者最后读者仍未知。"
+    },
+    {
+      "id": "VZU02",
+      "target": "lock-state record and scratch-path semantics",
+      "question": "mutex调用已证，不证明整个更新/删除事务原子、重入或异常必排空。"
+    }
+  ],
+  "provenance": {
+    "original": {
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+      "sha256": "45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+      "byteLength": 2931200
+    },
+    "exports": [
+      {
+        "name": "VM_M_DelGlobalVar",
+        "ordinal": 64,
+        "rva": "0x135660",
+        "va": "0x180135660",
+        "forwarder": null
+      },
+      {
+        "name": "VM_M_BatchSetGlobalVarInt",
+        "ordinal": 43,
+        "rva": "0x134710",
+        "va": "0x180134710",
+        "forwarder": null
+      },
+      {
+        "name": "VM_M_BatchSetGlobalVarFloat",
+        "ordinal": 42,
+        "rva": "0x134880",
+        "va": "0x180134880",
+        "forwarder": null
+      },
+      {
+        "name": "VM_M_BatchSetGlobalVarString",
+        "ordinal": 44,
+        "rva": "0x1349f0",
+        "va": "0x1801349f0",
+        "forwarder": null
+      },
+      {
+        "name": "VM_M_SetGlobalVarLockStatus",
+        "ordinal": 196,
+        "rva": "0x148130",
+        "va": "0x180148130",
+        "forwarder": null
+      }
+    ],
+    "methods": [
+      {
+        "address": "180135660",
+        "name": "VM_M_DelGlobalVar",
+        "bodyBytes": 346,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008f750",
+          "180127e60",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180133cb0",
+        "name": "VM_M_SetGlobalVarInt",
+        "bodyBytes": 380,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008f750",
+          "180126650",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180133e30",
+        "name": "VM_M_SetGlobalVarFloat",
+        "bodyBytes": 398,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008f750",
+          "180126780",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "1801340e0",
+        "name": "VM_M_SetGlobalVarString",
+        "bodyBytes": 391,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008f750",
+          "1801269f0",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180148130",
+        "name": "VM_M_SetGlobalVarLockStatus",
+        "bodyBytes": 314,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "180093820",
+          "18009a140",
+          "1801e8930"
+        ]
+      },
+      {
+        "address": "180127e60",
+        "name": "FUN_180127e60",
+        "bodyBytes": 919,
+        "decompiled": true,
+        "callees": [
+          "180006300",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008e910",
+          "1800b5280",
+          "1800cb820",
+          "1801e5390",
+          "1801e5430",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180126650",
+        "name": "FUN_180126650",
+        "bodyBytes": 298,
+        "decompiled": true,
+        "callees": [
+          "180006300",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008eca0",
+          "180098630",
+          "1800b5280",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180126780",
+        "name": "FUN_180126780",
+        "bodyBytes": 304,
+        "decompiled": true,
+        "callees": [
+          "180006300",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008eca0",
+          "1800987c0",
+          "1800b5280",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "1801269f0",
+        "name": "FUN_1801269f0",
+        "bodyBytes": 300,
+        "decompiled": true,
+        "callees": [
+          "180006300",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008e650",
+          "18008eca0",
+          "180098360",
+          "1801e8810",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "18009a140",
+        "name": "FUN_18009a140",
+        "bodyBytes": 448,
+        "decompiled": true,
+        "callees": [
+          "1800069c0",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18009a300",
+          "18009a990",
+          "18009ab20",
+          "EXTERNAL:00000061",
+          "EXTERNAL:00000062",
+          "EXTERNAL:00000063"
+        ]
+      },
+      {
+        "address": "180134710",
+        "name": "VM_M_BatchSetGlobalVarInt",
+        "bodyBytes": 366,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008f750",
+          "180126f10",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180134880",
+        "name": "VM_M_BatchSetGlobalVarFloat",
+        "bodyBytes": 366,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008f750",
+          "180127050",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "1801349f0",
+        "name": "VM_M_BatchSetGlobalVarString",
+        "bodyBytes": 366,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008f750",
+          "180127340",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180126f10",
+        "name": "FUN_180126f10",
+        "bodyBytes": 314,
+        "decompiled": true,
+        "callees": [
+          "180006300",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008e650",
+          "18008eca0",
+          "1800992e0",
+          "1801e8810",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180127050",
+        "name": "FUN_180127050",
+        "bodyBytes": 314,
+        "decompiled": true,
+        "callees": [
+          "180006300",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008e650",
+          "18008eca0",
+          "180099550",
+          "1801e8810",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "180127340",
+        "name": "FUN_180127340",
+        "bodyBytes": 297,
+        "decompiled": true,
+        "callees": [
+          "180006300",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18008e650",
+          "18008eca0",
+          "1800997c0",
+          "1801e8810",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "1800cb820",
+        "name": "FUN_1800cb820",
+        "bodyBytes": 200,
+        "decompiled": true,
+        "callees": [
+          "1800cae00",
+          "1800f82f0",
+          "EXTERNAL:00000061",
+          "EXTERNAL:00000062",
+          "EXTERNAL:00000063"
+        ]
+      },
+      {
+        "address": "1800992e0",
+        "name": "FUN_1800992e0",
+        "bodyBytes": 611,
+        "decompiled": true,
+        "callees": [
+          "180001ac0",
+          "180006470",
+          "180007510",
+          "18000ee00",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18003fc70",
+          "18009a7e0",
+          "18009a990",
+          "1800c8f10",
+          "1800cae00",
+          "1800f4d10",
+          "1801e5390",
+          "1801e5430",
+          "1801e8930"
+        ]
+      },
+      {
+        "address": "180099550",
+        "name": "FUN_180099550",
+        "bodyBytes": 621,
+        "decompiled": true,
+        "callees": [
+          "180001ac0",
+          "180006470",
+          "180007510",
+          "18000ee00",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18003fc70",
+          "18009a7e0",
+          "18009a990",
+          "1800c8f10",
+          "1800cae00",
+          "1800f4dc0",
+          "1801e5390",
+          "1801e5430",
+          "1801e8930"
+        ]
+      },
+      {
+        "address": "1800997c0",
+        "name": "FUN_1800997c0",
+        "bodyBytes": 1041,
+        "decompiled": true,
+        "callees": [
+          "180001ac0",
+          "180006300",
+          "180006470",
+          "180007510",
+          "18000de60",
+          "18000ffe0",
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "18003fc70",
+          "18009a7e0",
+          "18009a990",
+          "1800c8f10",
+          "1800cae00",
+          "1800f7260",
+          "1801e5390",
+          "1801e5430",
+          "1801e8810",
+          "1801e8930",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "1800f82f0",
+        "name": "FUN_1800f82f0",
+        "bodyBytes": 233,
+        "decompiled": true,
+        "callees": [
+          "180015b40",
+          "18001db50",
+          "18001dbc0",
+          "1800f9aa0"
+        ]
+      },
+      {
+        "address": "1800f4d10",
+        "name": "FUN_1800f4d10",
+        "bodyBytes": 167,
+        "decompiled": true,
+        "callees": [
+          "18000fc50",
+          "1800f74b0"
+        ]
+      },
+      {
+        "address": "1800f4dc0",
+        "name": "FUN_1800f4dc0",
+        "bodyBytes": 182,
+        "decompiled": true,
+        "callees": [
+          "18000fd30",
+          "1800f7650"
+        ]
+      },
+      {
+        "address": "1800f9aa0",
+        "name": "FUN_1800f9aa0",
+        "bodyBytes": 158,
+        "decompiled": true,
+        "callees": [
+          "18006eb00",
+          "18007e660"
+        ]
+      },
+      {
+        "address": "18000ffe0",
+        "name": "FUN_18000ffe0",
+        "bodyBytes": 243,
+        "decompiled": true,
+        "callees": [
+          "180006470",
+          "18000de60",
+          "18000fb90",
+          "1801e8810",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "18000fc50",
+        "name": "FUN_18000fc50",
+        "bodyBytes": 83,
+        "decompiled": true,
+        "callees": [
+          "18000ee00",
+          "18000fb90"
+        ]
+      },
+      {
+        "address": "18006eb00",
+        "name": "FUN_18006eb00",
+        "bodyBytes": 250,
+        "decompiled": true,
+        "callees": [
+          "18006e570",
+          "18006f290"
+        ]
+      },
+      {
+        "address": "180006470",
+        "name": "FUN_180006470",
+        "bodyBytes": 290,
+        "decompiled": true,
+        "callees": [
+          "1800066a0",
+          "180006770",
+          "1801e918e",
+          "EXTERNAL:00000049",
+          "EXTERNAL:0000004a"
+        ]
+      },
+      {
+        "address": "18000fd30",
+        "name": "FUN_18000fd30",
+        "bodyBytes": 86,
+        "decompiled": true,
+        "callees": [
+          "18000ee00",
+          "18000fb90"
+        ]
+      },
+      {
+        "address": "18006f290",
+        "name": "FUN_18006f290",
+        "bodyBytes": 978,
+        "decompiled": true,
+        "callees": [
+          "180020110",
+          "180020170",
+          "EXTERNAL:000000b2"
+        ]
+      },
+      {
+        "address": "18006e570",
+        "name": "FUN_18006e570",
+        "bodyBytes": 164,
+        "decompiled": true,
+        "callees": [
+          "18006e570",
+          "EXTERNAL:000000b2"
+        ]
+      }
+    ],
+    "selectedProcedures": 31,
+    "wholeBinaryAnalysisComplete": false,
+    "sourceProvider": "existing owned offline Ghidra project -process -noanalysis; not REA retained output",
+    "files": [
+      {
+        "path": "tests/ArchitectureRecovery/Recover-VariableModuleFrameStorage.ps1",
+        "sha256": "efbdddbcf2aadfde5a0c6f4a0c3de721158b0e1531cebb86816cc479b63b4449",
+        "byteLength": 2661
+      },
+      {
+        "path": "tests/ArchitectureRecovery/native-pe-inspection.cjs",
+        "sha256": "f933371d4a0b9c66de0dc977c1e8f8f95749689c6d247027fa5f52b2262af5f9",
+        "byteLength": 2058
+      },
+      {
+        "path": "tests/NativeEvidence/VmNativeCapability.java",
+        "sha256": "3f8146857fed4c06c4fbb94a3cbc35a0aacd971a6d8c2a6fc73f1fcd5a177f83",
+        "byteLength": 2377
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180006470.asm.txt",
+        "sha256": "cb9a2646575a8724258c96679e84b4aa8b0ce461ea27461225c99afdeb125732",
+        "byteLength": 2470
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180006470.c",
+        "sha256": "aca4b3b1c1074a126eba05e4c40708a1c07b120a5017a5bdd126ffddf30d8665",
+        "byteLength": 2033
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000fc50.asm.txt",
+        "sha256": "d8a183afad78b20a7f87e104e53b8432f3734b1588551b7bf859f79995861f2b",
+        "byteLength": 737
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000fc50.c",
+        "sha256": "0da24bcb707f611e9a1715d87603affdbcd54a717de5f3344b43d3011e1d0e84",
+        "byteLength": 456
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000fd30.asm.txt",
+        "sha256": "f2e2ec31c63b9dc49252c5228c90ae1b11ffdab9420c0005af5419223494ecb6",
+        "byteLength": 757
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000fd30.c",
+        "sha256": "f98a139fd3a5009df0928d5914ebdc9135c03382bce36f7031f0249baff172e6",
+        "byteLength": 456
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000ffe0.asm.txt",
+        "sha256": "0b7f2ebdca096d889a4ad7bb0cb0b857975fa039eda1139cb63e4c25d385c160",
+        "byteLength": 1855
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18000ffe0.c",
+        "sha256": "b5d2695242819c15e30b796652f8cade969cfc8091c3d4aa59b7e5c9e044475d",
+        "byteLength": 1193
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006e570.asm.txt",
+        "sha256": "7b28c5cb81c499433047ccc98df1143a9e7b512eadcda05a555385e2bda5071d",
+        "byteLength": 1419
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006e570.c",
+        "sha256": "2a6c589c27a6ab1e700ac668e0a37d51aca755f55e01460f1f4fd03bc7092037",
+        "byteLength": 1073
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006eb00.asm.txt",
+        "sha256": "039c652676006177977f99cb235e666d8dbcb40a3144da5babfbfa9c148f01c2",
+        "byteLength": 2243
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006eb00.c",
+        "sha256": "8783ee25769b2ee6fbda54f20af0d486b1a80636bf6c552084fdfcffc9d407f7",
+        "byteLength": 1594
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006f290.asm.txt",
+        "sha256": "24d1c12c7aa0dbf80494992d11b71796ba1444248b1daf9608e2ed5d75a0b680",
+        "byteLength": 9219
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18006f290.c",
+        "sha256": "ef7abac906a77a95263d69ef8d740e4cff319535ef528521b41a3d61dd4b5009",
+        "byteLength": 7555
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800992e0.asm.txt",
+        "sha256": "8d6f0bc840479612bdc5710dc0033d939c74da7d0380b681caf2a8ab67fc6a48",
+        "byteLength": 4708
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800992e0.c",
+        "sha256": "be72e210afefe324f89db34c1a033dd0bf3752b18268520ebd4ed5bf15f48a43",
+        "byteLength": 3463
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180099550.asm.txt",
+        "sha256": "0e2f285d0b615fa3857b64553ae4c181e35ea3bacb9b50729003954338054120",
+        "byteLength": 4777
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180099550.c",
+        "sha256": "017885a6f5f580a859d6754da9639bf084202265fdec8f734858a5d8f2b21dbc",
+        "byteLength": 3463
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800997c0.asm.txt",
+        "sha256": "a99f0a6c88bb0ce69102410e0403e443e63564602e226a4da1073c42d954cf10",
+        "byteLength": 8167
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800997c0.c",
+        "sha256": "e53bfa2c653dd14efbfe8fd326238182ad1b166ecf61ce0d43017d7915ab9dad",
+        "byteLength": 7477
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18009a140.asm.txt",
+        "sha256": "15cb58f3e2f5811955471569da4fbbfc1fe8e35b3c52180e36fccb31bade1597",
+        "byteLength": 3353
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/18009a140.c",
+        "sha256": "2223551ecb6e8526d09f2c1fd741a736117bd63cf5c727b230452227d97a9d9e",
+        "byteLength": 1942
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800cb820.asm.txt",
+        "sha256": "4d605e8b8b388471e1deef01866dcd825c776bd992dd16261ec60aedb42e4977",
+        "byteLength": 1685
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800cb820.c",
+        "sha256": "095d97da4d3fd9cd8892205a8f4144c94ee9de4c4d63eded6deac96e93dd7106",
+        "byteLength": 1018
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f4d10.asm.txt",
+        "sha256": "831b73979dedc21bbbdf92779ceedeeb187331595956331c76957e6a97c56364",
+        "byteLength": 1435
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f4d10.c",
+        "sha256": "86eaede4032804ade0236addb214d8aa6c54b95bbdfe958376c2c272465b4699",
+        "byteLength": 1103
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f4dc0.asm.txt",
+        "sha256": "b8d13f87def3da3f21da6da5c9f6f9db120800a9009b02cd29afb5685d6d513a",
+        "byteLength": 1508
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f4dc0.c",
+        "sha256": "c064667148fbdbaf7a132592527ec9862bca372d4e8ff39579371e98a799ebf2",
+        "byteLength": 1103
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f82f0.asm.txt",
+        "sha256": "516576e87ab4fd40de98b0f2f0fd95c1b1cdc48be5f659fad27c2d2b3b00e4a3",
+        "byteLength": 1532
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f82f0.c",
+        "sha256": "6c492244cc91214fc15bc5dae7df3cf7a1ae915abc24b182d9535c1a33afba36",
+        "byteLength": 884
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f9aa0.asm.txt",
+        "sha256": "79f2c016a05665d70b78816d0a0a1dcc7dcf5bd391f063cab116e6f7f54775e5",
+        "byteLength": 1406
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1800f9aa0.c",
+        "sha256": "1e0e8f388fe5f6ec3066d63753ffddd7d578e06c0116a0788c45974131874f9f",
+        "byteLength": 1259
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180126650.asm.txt",
+        "sha256": "b9db90318b8605bfd8ce950fca6a3caf3be0af80b232470c7daac51fc2d54c6b",
+        "byteLength": 2145
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180126650.c",
+        "sha256": "0d79725100a8615268a7d592ec035eda78a0d637f76fc54b52e477db2121ea30",
+        "byteLength": 1444
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180126780.asm.txt",
+        "sha256": "7472a3c4714ca06e5fb6a35f3b52ec2902677a28d1b58e9d7f78373defe0da62",
+        "byteLength": 2137
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180126780.c",
+        "sha256": "e728330cfda5a70da974d42fcd0d0189718060e0b939b43c9c3fddf525818f7e",
+        "byteLength": 1510
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1801269f0.asm.txt",
+        "sha256": "201e2828323c0770f1aad0a55a8e0df7c710f298f05db100b59fcc0638fdcd72",
+        "byteLength": 2075
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1801269f0.c",
+        "sha256": "3a3a200581b7fb62729fa9cfee48a39a7ae6cebe478e2eaf8acdf89a557ff000",
+        "byteLength": 1360
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180126f10.asm.txt",
+        "sha256": "c4cc91cf68f5ad3809b14ce7bf5f126c72f6fe65b6517775731b113ff4d28f63",
+        "byteLength": 2142
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180126f10.c",
+        "sha256": "5a206e5d858a4d74f544b6da2d74f6a692415ad25ade2703d5d42e689be6a5db",
+        "byteLength": 1480
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127050.asm.txt",
+        "sha256": "2964ce3bcb4d603821b54e115b429fc5fee9ee34f3517c484de53a0d46639bd8",
+        "byteLength": 2142
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127050.c",
+        "sha256": "006ef51a46890d416796d98001b48013aab663fe23b4a86842b347bb41065ee5",
+        "byteLength": 1480
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127340.asm.txt",
+        "sha256": "176a89fdf8c92f8f25e940fb0013d8d25c67d968916b197c72f370e7bd5acbe9",
+        "byteLength": 2092
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127340.c",
+        "sha256": "17db2fe9a4e769afb2bf77a32fa65107750786a738f73bd4f36323929e7f765e",
+        "byteLength": 1480
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.asm.txt",
+        "sha256": "95923b49c0750b26a00c7fe3470546be45769f1134d037d40836cd8190c40926",
+        "byteLength": 7044
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180127e60.c",
+        "sha256": "e730140fe460b583529e6a3f6ec7b353637c76dbb61f6a46a8eaac00e4bc4c40",
+        "byteLength": 4365
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180133cb0.asm.txt",
+        "sha256": "b21d79d4af11f5652a14cc4348ba9c7b6879bcdc3a8d8ae57de097f0aebb437f",
+        "byteLength": 2668
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180133cb0.c",
+        "sha256": "d803374202e54e5faa92ef02276b9bad61351dd63661de669b4c334fe01a3823",
+        "byteLength": 1846
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180133e30.asm.txt",
+        "sha256": "760b639f001a28e909a8795dfcb02810fd1def22677b7bc272042e111c98b390",
+        "byteLength": 2817
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180133e30.c",
+        "sha256": "29961a3cc703d998d21e4e9b6d759e34d7a06aac6a1aea5101975944053e8853",
+        "byteLength": 1864
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1801340e0.asm.txt",
+        "sha256": "b2aef387692fde4b9b2750a05e208eb0b593c9c58a7068ff6fa47e7a465d4915",
+        "byteLength": 2713
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1801340e0.c",
+        "sha256": "c6cd31fa5de6136ab53cc020ca393be8889b73f2f3e62d97fdc0ec4bd06d7384",
+        "byteLength": 1918
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180134710.asm.txt",
+        "sha256": "74090ad1b8b9d6bf9c2a56992a50d31bd72dbff0d35579ce5956bac34b581787",
+        "byteLength": 2627
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180134710.c",
+        "sha256": "4d9e920ef5e855c11a4d723a1408423dcfdf9a2bd112885084c616a1a4a39c96",
+        "byteLength": 1897
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180134880.asm.txt",
+        "sha256": "014037c6b6d9dd83e69c60531c81043f847365edae51dbcc20325eb0ca6bf0e7",
+        "byteLength": 2627
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180134880.c",
+        "sha256": "352fc523449e90961c13f9c224198aa9eb3a1fa0ce588fcc5bfecbdf79c49d92",
+        "byteLength": 1901
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1801349f0.asm.txt",
+        "sha256": "978de3e254d939733dc7ede0df2767069a49cf882eafdd4e25d91724aa824bce",
+        "byteLength": 2627
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/1801349f0.c",
+        "sha256": "f77f5f74ae428e4c82bf26a94fe43140409de10b9ac2ba2e6cb791aeb1688c36",
+        "byteLength": 1903
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180135660.asm.txt",
+        "sha256": "666de7faccdf1eeed9178fc6ffae2d2bd9b0828172a3139bc1825d1f21865976",
+        "byteLength": 2364
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180135660.c",
+        "sha256": "e223a7a41dcda0c414008e2fe079951425f8a85500539dd8a1e90505f9f553b2",
+        "byteLength": 1613
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180148130.asm.txt",
+        "sha256": "3d31ef72ffc299dd2c304ff73bd23b6aecd0d37b8c180d3cb7fd3ae6aee177cb",
+        "byteLength": 2145
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/180148130.c",
+        "sha256": "866ec7cf779b545189e52d410fe9402365fc830ab32a1d5d8fbe0392ebc99464",
+        "byteLength": 995
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-batch-exports.json",
+        "sha256": "086aa830d52ba98d453122fc7662874d172e8950d64a9cc0550a09ee84400cf3",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-batch-storage.json",
+        "sha256": "e22bb76244c00df5eea90815b70203d84eb3629ca79d16687b3ecc43fad13d76",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-containers.json",
+        "sha256": "212078a2c1bf6dfcbffdffbd3fc449f94ddd2908913651e27b7400f841214ec7",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-exports.json",
+        "sha256": "a28f1dd828c35c7a773582ee11edf3243965eeca4dd15f853c3ad6df4cfe7e3f",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-internal-correct.json",
+        "sha256": "e43996847bd2249c6e1f8ad30f01ffbb374c910f573d10fac48e45412ba13161",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-internal.json",
+        "sha256": "b54ab58ea7af3b86ded72751bdb5c225d9ee10af5022533652811f3e77964ba1",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-leaf-copies.json",
+        "sha256": "307cb3b2f37fb1d7eb767dfcfcb77cb9e6bc0e68e2cf0e6423719b4635ccf2f0",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-retire-leaves.json",
+        "sha256": "b1a9f2ba158b82ffa064e2b001307e8c990e1550c5f164c16b2d1e48b0e98521",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-typed-retirement.json",
+        "sha256": "68f5355b070f44689d124b49590373b0b8cb217e83ad46c0b8c5efb7789d322b",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792584832852.tsv",
+        "sha256": "d60d570fcb630b7916ac799c527310922d6a7a21f2166f23b2c69788d0b99312",
+        "byteLength": 666
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792584939163.tsv",
+        "sha256": "59030e4f3edbe3feb401c67ebd0c265ae4f12a7a885a3d14e434ff26c0d378c3",
+        "byteLength": 776
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792584971575.tsv",
+        "sha256": "5730acc5cbbe56b112e58d6d61b410cb86cc552213100c60c6188e388aa0a279",
+        "byteLength": 449
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792585016697.tsv",
+        "sha256": "49d0d81301b09b44c27317b64c5b5cde01b4467f2e2848be594060e37a38ee4a",
+        "byteLength": 545
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792585067157.tsv",
+        "sha256": "68bd5ae929e7934c92ee7572107cff3c19ee5d4e1703d5514acc4b0c1c88199e",
+        "byteLength": 746
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792585118826.tsv",
+        "sha256": "ba4d64630d7ab71f9b337c72277cdffa258dd7029c68cde242894c1def942775",
+        "byteLength": 295
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792585162011.tsv",
+        "sha256": "7390a665e290c5fe22ea1d97a397ac4cc57cdd2fc5656a0cd9a9273a1a4018ed",
+        "byteLength": 249
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/functions-1792585229074.tsv",
+        "sha256": "6200c0f196c9f0d18cdce1aba7d86649f1be1a776d85718f64d2ca485ddc784f",
+        "byteLength": 229
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-batch-exports.json",
+        "sha256": "59d4e3a69b9deaadabcc32a8fe892c251b152b6f094d76a0ad549512d0b10450",
+        "byteLength": 2768
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-batch-storage.json",
+        "sha256": "61db1d25da65e94d122db00d2feef09732fe1a60d1e32c142776e4bb8a1cecb4",
+        "byteLength": 2804
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-containers.json",
+        "sha256": "3880d6c03b8c11f605a6e3223c57b89be8fb61828334ff107252941e005ad231",
+        "byteLength": 2768
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-exports.json",
+        "sha256": "4934c962261274ddad3d48fbb5b927eca519d7e9a44ea30eb4ae9ec016631e6b",
+        "byteLength": 2840
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-internal-correct.json",
+        "sha256": "f44f9a4141d9f820ac4b35b175229bdd121adf85d0836357e870da666e19b8e9",
+        "byteLength": 2840
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-internal.json",
+        "sha256": "93d9f659aa8e39d58bf9171a5b3a13f0f5bac918924ee5ecf0cd045d0417ad19",
+        "byteLength": 2736
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-leaf-copies.json",
+        "sha256": "382eacb0ebb7994743f8310dfe8913b20e5254b6805cd27ed427c09d23101801",
+        "byteLength": 2804
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-retire-leaves.json",
+        "sha256": "f479450599a56dcecafa0e2cc55c320507cc9c68ecbb622fa6021c23d6119d48",
+        "byteLength": 2768
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-typed-retirement.json",
+        "sha256": "e1e3adb9f7b6c1bfb1ef012eb1ce54170f5b62ec51506f3386577ef56174bca9",
+        "byteLength": 2804
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/pe-layout.json",
+        "sha256": "e46582d8df6df69ea4240ebbd3a60b1049cc2e05e5c69ddf05c498c13e958841",
+        "byteLength": 82352
+      }
+    ],
+    "completions": [
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-exports.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:13:53.1157515Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-internal-correct.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:15:39.4032272Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-batch-exports.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:16:11.8096794Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-batch-storage.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:16:56.9653898Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-typed-retirement.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:17:47.4047002Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-leaf-copies.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:18:39.0919979Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-containers.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:19:22.2901955Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/completion-retire-leaves.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T12:20:29.3167376Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      }
+    ],
+    "liveProcessHandle": null,
+    "failedSelection": {
+      "path": "docs/architecture-recovery/variable-moduleframe-storage.resources/invocation-internal.json",
+      "admittedAsEvidence": false,
+      "terminalExitCode": 0,
+      "reason": "Comma-joined seed passed as one address; script reported null address. Corrected capture is internal-correct; terminal zero alone is not decompilation success."
+    },
+    "loggingWarning": "Ghidra logging XML path warning was observed; only nonempty selected C/assembly files and decompiled=true manifest rows are admitted, not terminal status alone.",
+    "originalRuntimeExecuted": false,
+    "targetCodeExecuted": false,
+    "deviceCalled": false,
+    "anotherWorktreeRead": false,
+    "productModified": false,
+    "fullOriginalChainClosed": false,
+    "implementationCredit": 0
+  }
+}

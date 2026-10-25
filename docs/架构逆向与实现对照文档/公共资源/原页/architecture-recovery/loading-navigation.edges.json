@@ -1,0 +1,1037 @@
+{
+  "schemaVersion": 2,
+  "modelVersion": "0.2",
+  "scope": {
+    "domains": [
+      "F-05",
+      "F-06",
+      "F-10",
+      "F-11",
+      "F-15",
+      "F-22"
+    ],
+    "completeFramework": false,
+    "implementationProgress": "41/96 = 42.71%; no change",
+    "manualAcceptanceExcluded": true
+  },
+  "baseline": "da853b5c386f04aba7634b09b2d1716a04f67103",
+  "generatedUtc": "2026-10-21T05:39:24.552Z",
+  "provenance": "Direct inspection of cited source/resources and explicitly labeled metadata/CIL evidence. Artifact identity is limited to each cited manifest; source hashes and binary identities are distinct. No vendor runtime execution or parity claim.",
+  "introduction": "从分类展开、悬停、拖放和 Group 双击出发，区分目录已初始化、原生导入通知、托管模型 Ready 与当前显示画布。",
+  "edges": [
+    {
+      "id": "L01",
+      "route": "原版 · 分类加载",
+      "classification": "source-confirmed",
+      "from": "ToolBox 展开事件",
+      "to": "ToolBoxData.ExpandCommand → UpdateLoad",
+      "behavior": "Expander 的 Expanded 通过资源绑定传当前分组；ExpandCommandExecute 直接进入 UpdateLoad。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ToolBox.xaml",
+          "member": "ToolBox Expander resource",
+          "sha256": "998e9fce93666d53ba8e4905ee851504a525a614745cbd503588e7fad138bbb5",
+          "start": 179,
+          "end": 182,
+          "excerpt": "            <i:EventTrigger EventName=\"Expanded\">\n              <i:InvokeCommandAction Command=\"{Binding ViewData.ExpandCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToolBox}}\" CommandParameter=\"{Binding}\" />\n            </i:EventTrigger>\n          </i:Interaction.Triggers>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs",
+          "member": "ToolBoxData.ExpandCommandExecute",
+          "sha256": "c1b11d2c3bebce66a11769eb0e209455cb1e5d0c4efa7c4a6dad5992eb9cf45b",
+          "start": 62,
+          "end": 65,
+          "excerpt": "\tprivate void ExpandCommandExecute(object param)\n\t{\n\t\tUpdateLoad(param);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L02",
+      "route": "原版 · 分类加载",
+      "classification": "source-confirmed",
+      "from": "IsMouseEnterBehavior.PropertyChangedCallback",
+      "to": "ToolBox.AddHandlers → OnMouseEnter",
+      "behavior": "附加属性回调给父 ToolBox 注册 MouseEnter/Leave；OnMouseEnter 先 UpdateLoad，再关闭其它分组、开放当前分组。若加载抛异常，后续 Popup 状态写入不会自动执行。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/IsMouseEnterBehavior.cs",
+          "member": "IsMouseEnterBehavior.PropertyChangedCallback",
+          "sha256": "a9ada92a355eca8d78ba3d9d10c91648e2b4bc7dc85d5638003e596975a4b6b9",
+          "start": 17,
+          "end": 23,
+          "excerpt": "\tprivate static void PropertyChangedCallback(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs dependencyPropertyChangedEventArgs)\n\t{\n\t\tif (dependencyObject is UIElement uiElement)\n\t\t{\n\t\t\t(dependencyObject as Grid).GetParent<ToolBox>()?.AddHandlers(uiElement);\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ToolBox.xaml.cs",
+          "member": "ToolBox.AddHandlers",
+          "sha256": "67bc6a6d04c88f15aad0633961960a6ca8747f4672fc33f2b1b1e7ae6f6c7215",
+          "start": 162,
+          "end": 171,
+          "excerpt": "\tpublic void AddHandlers(UIElement uiElement)\n\t{\n\t\tif (!_items.Contains(uiElement))\n\t\t{\n\t\t\t_items.Add(uiElement);\n\t\t\tuiElement.MouseEnter += OnMouseEnter;\n\t\t\tuiElement.MouseLeave += OnMouseLeave;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ToolBox.xaml.cs",
+          "member": "ToolBox.OnMouseEnter",
+          "sha256": "67bc6a6d04c88f15aad0633961960a6ca8747f4672fc33f2b1b1e7ae6f6c7215",
+          "start": 185,
+          "end": 201,
+          "excerpt": "\tprivate void OnMouseEnter(object sender, MouseEventArgs mouseEventArgs)\n\t{\n\t\tUIElement uiitem = sender as UIElement;\n\t\tif (uiitem == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tViewData.UpdateLoad((uiitem as FrameworkElement).DataContext);\n\t\tIEnumerable<UIElement> enumerable = _items.Where((UIElement p) => p != uiitem);\n\t\tforeach (UIElement item in enumerable)\n\t\t{\n\t\t\tSetIsMouseLeave(item, value: true);\n\t\t}\n\t\tSetIsMouseLeave(uiitem, value: false);\n\t}\n\n\tpublic void SetIsMouseLeave(DependencyObject item, bool value)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L03",
+      "route": "原版 · 分类加载",
+      "classification": "source-confirmed",
+      "from": "ToolBoxData.UpdateLoad",
+      "to": "IsInit → 目录/XML → 扁平集合替换",
+      "behavior": "null、Lang_Tools 或 IsInit 提前返回；在目录枚举前置 IsInit=true；无首占位项则直接返回。否则清组、解析 XML、排序、插入真实项、移除占位并通知 ToolSource。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs",
+          "member": "ToolBoxData.UpdateLoad",
+          "sha256": "c1b11d2c3bebce66a11769eb0e209455cb1e5d0c4efa7c4a6dad5992eb9cf45b",
+          "start": 77,
+          "end": 120,
+          "excerpt": "\tpublic void UpdateLoad(object GroupObject)\n\t{\n\t\tif (GroupObject == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tToolBoxItemData toolBoxItemData = (GroupObject as CollectionViewGroup).Name as ToolBoxItemData;\n\t\tif (toolBoxItemData.Name == \"Lang_Tools\" || toolBoxItemData.IsInit)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\ttoolBoxItemData.IsInit = true;\n\t\tDirectoryInfo directoryInfo = new DirectoryInfo(toolBoxItemData.DirPath);\n\t\tDirectoryInfo[] directories = directoryInfo.GetDirectories();\n\t\tItemData itemData = (toolBoxItemData.Items as List<ItemData>).FirstOrDefault();\n\t\tif (itemData == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\ttoolBoxItemData.Items.Clear();\n\t\tDirectoryInfo[] array = directories;\n\t\tforeach (DirectoryInfo directoryInfo2 in array)\n\t\t{\n\t\t\tFileInfo fileInfo = directoryInfo2.GetFiles().SingleOrDefault((FileInfo p) => p.Name == \"ToolItemInfo.xml\");\n\t\t\tif (fileInfo != null)\n\t\t\t{\n\t\t\t\tToolBoxItemData toolBoxItemData2 = new ToolBoxItemData();\n\t\t\t\ttoolBoxItemData2.Info = directoryInfo2.Name;\n\t\t\t\ttoolBoxItemData2.DirPath = directoryInfo2.FullName;\n\t\t\t\ttoolBoxItemData2.loadXml(fileInfo.FullName);\n\t\t\t\ttoolBoxItemData.items.Add(toolBoxItemData2);\n\t\t\t\ttoolBoxItemData2.SetParentNode(toolBoxItemData);\n\t\t\t}\n\t\t}\n\t\ttoolBoxItemData.items.Sort(SortItemDateCompare);\n\t\tint num = (toolSource as ObservableCollection<ToolBoxItemData>).IndexOf(itemData as ToolBoxItemData);\n\t\tforeach (ItemData item in toolBoxItemData.items)\n\t\t{\n\t\t\t(toolSource as ObservableCollection<ToolBoxItemData>).Insert(num, item as ToolBoxItemData);\n\t\t\tnum++;\n\t\t}\n\t\t(toolSource as ObservableCollection<ToolBoxItemData>).Remove(itemData as ToolBoxItemData);\n\t\tOnPropertyChanged(\"ToolSource\");\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本地无 catch/finally 不等于全局无异常处理；未做原机故障注入。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L04",
+      "route": "原版 · 分类加载",
+      "classification": "source-confirmed",
+      "from": "Reload / Refresh",
+      "to": "目录缓存失效",
+      "behavior": "Reload 清 global/ordinary/root 缓存并通知；Refresh 仅清 ordinary/root。它们不是对原分组 IsInit=false 的原地重试。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs",
+          "member": "ToolBoxData.Reload",
+          "sha256": "c1b11d2c3bebce66a11769eb0e209455cb1e5d0c4efa7c4a6dad5992eb9cf45b",
+          "start": 67,
+          "end": 76,
+          "excerpt": "\tpublic void Reload()\n\t{\n\t\tLogHelper.Info(\"ToolBoxData.Reload\");\n\t\tglobleToolSource = null;\n\t\ttoolSource = null;\n\t\ttoolBoxSource = null;\n\t\tOnPropertyChanged(\"GlobleToolSource\");\n\t\tOnPropertyChanged(\"ToolSource\");\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs",
+          "member": "ToolBoxData.Refresh",
+          "sha256": "c1b11d2c3bebce66a11769eb0e209455cb1e5d0c4efa7c4a6dad5992eb9cf45b",
+          "start": 122,
+          "end": 128,
+          "excerpt": "\tprivate void Refresh()\n\t{\n\t\tLogHelper.Info(\"ToolBoxData.Refresh\");\n\t\ttoolSource = null;\n\t\ttoolBoxSource = null;\n\t\tOnPropertyChanged(\"ToolSource\");\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "重新物化分组与 UI 可达性未在此完整展开。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L05",
+      "route": "原版 · 创建/导入",
+      "classification": "source-confirmed",
+      "from": "DecoratorBase.DropItemsCommandExecute",
+      "to": "GroupTools 的 VmSolution.LoadGroup",
+      "behavior": "检查运行状态；DirPath.Contains(\"GroupTools\") 时由末级目录构成 gro 路径，调用 LoadGroup 并为返回实例写 Position。该分支在普通创建 try/catch 之外。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/DecoratorBase.cs",
+          "member": "DecoratorBase.DropItemsCommandExecute",
+          "sha256": "25c71c878e2ea21678db2fbf1e69feef0d2892f9356cae443f747f79d0a83299",
+          "start": 198,
+          "end": 215,
+          "excerpt": "\t\t\t\tif (toolBoxData.DirPath.Contains(\"GroupTools\"))\n\t\t\t\t{\n\t\t\t\t\tstring text2 = toolBoxData.DirPath.Substring(toolBoxData.DirPath.LastIndexOf('\\\\'));\n\t\t\t\t\tstring strPath = toolBoxData.DirPath + text2 + \".\" + AppFileExtension.Group;\n\t\t\t\t\tUILogManager.logCreate(\"信息\", \"拖入自定义工具包\");\n\t\t\t\t\tIMVSGroup iMVSGroup = VmSolution.LoadGroup(DecorateSource as IVmModuleSet, strPath);\n\t\t\t\t\tif (iMVSGroup != null)\n\t\t\t\t\t{\n\t\t\t\t\t\tVmModuleDecorator vmModuleDecorator = new VmModuleDecorator\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tDecorateSource = iMVSGroup\n\t\t\t\t\t\t};\n\t\t\t\t\t\tvmModuleDecorator.Position = position;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\ttry",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L06",
+      "route": "原版 · 创建/导入",
+      "classification": "source-confirmed",
+      "from": "普通工具 Drop",
+      "to": "ToolBoxItemData.AddNewItem",
+      "behavior": "Group 在 IVMGroup 内 GetLevel>=2 时拒绝；注册 RootOperation，调用 AddNewItem(DecorateSource)，按结果类型包装 decorator 并设位置。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/DecoratorBase.cs",
+          "member": "DecoratorBase.DropItemsCommandExecute ordinary branch",
+          "sha256": "25c71c878e2ea21678db2fbf1e69feef0d2892f9356cae443f747f79d0a83299",
+          "start": 217,
+          "end": 265,
+          "excerpt": "\t\t\t\t\t\tif (toolBoxData.Info == \"IMVSGroup\" && DecorateSource is IVMGroup vMGroup)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tint level = VmGroupDecorator.GetLevel(vMGroup);\n\t\t\t\t\t\t\tif (level >= 2)\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_GroupMuch\"), MessageButtons.Normal, MessageIcons.Warning);\n\t\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (this is VmSolutionDecorator)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new RootOperation(), AppLocalizationService.GetLang(\"添加流程\") ?? \"\");\n\t\t\t\t\t\t}\n\t\t\t\t\t\telse\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new RootOperation(), AppLocalizationService.GetLang(\"添加模块\") ?? \"\");\n\t\t\t\t\t\t}\n\t\t\t\t\t\tobject obj = toolBoxData.AddNewItem(DecorateSource);\n\t\t\t\t\t\tLogHelper.Info(\"工具箱拖入创建:\" + (obj as IVmModule)?.FullName);\n\t\t\t\t\t\tif (obj is IVmProcedure)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tvmModuleBaseDecorator = new VmProcedureDecorator\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\tDecorateSource = obj\n\t\t\t\t\t\t\t};\n\t\t\t\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"添加流程\") + AppLocalizationService.GetPunctuation(\"：\") + (obj as IVmModule)?.FullName);\n\t\t\t\t\t\t}\n\t\t\t\t\t\telse\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tvmModuleBaseDecorator = new VmModuleDecorator\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\tDecorateSource = obj\n\t\t\t\t\t\t\t};\n\t\t\t\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"添加模块\") + AppLocalizationService.GetPunctuation(\"：\") + (obj as IVmModule)?.FullName);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif ((obj as IVmModule).Parent is IVmModuleSet vmModuleSet && vmModuleSet.Children.Count == 1)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tAutoLinkData(vmModuleSet as IVmModule, obj as IVmModule);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tIoc.Get<IUnRedoService>()?.ModifyDisplayInfo((obj as IVmFrameBase).Name);\n\t\t\t\t\t\tvmModuleBaseDecorator.Position = position;\n\t\t\t\t\t\tif (obj is IVmModule { IsGlobalModu: not false })\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tIoc.Get<IUnRedoService>()?.DeleteLastOperation();\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (decoratorBase != null)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tVmModuleBaseDecorator.AddConnection(decoratorBase.DecorateSource as IVmModule, obj as IVmModule);\n\t\t\t\t\t\t\tVmConnectionDecorator vmConnectionDecorator3 = new VmConnectionDecorator();",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L07",
+      "route": "原版 · 创建/导入",
+      "classification": "source-confirmed",
+      "from": "ToolBoxItemData.AddNewItem",
+      "to": "自定义构造 / Cs 首个 IVmModule 类型",
+      "behavior": "自定义完整类型名时传 param、Name；否则加载 InfoCs、Librarys.Config 中存在的库及可选 Control DLL，取首个可赋给 IVmModule 的类型并传 param 构造。与存量模块缺 Cs 的 fallback 不是同一条链。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxItemData.cs",
+          "member": "ToolBoxItemData.AddNewItem",
+          "sha256": "378a1319599c725eafb5eeae0d105aedb58c8ce0b77f131bc9b480d15abbc409",
+          "start": 279,
+          "end": 315,
+          "excerpt": "\tpublic object AddNewItem(object param)\n\t{\n\t\tif (!string.IsNullOrEmpty(customInstanceFullName))\n\t\t{\n\t\t\treturn ActivatorWrap.CreateInstance(customInstanceFullName, new object[2] { param, Name });\n\t\t}\n\t\tAssembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault((Assembly p) => string.Equals(p.GetName().Name, $\"{Info}Cs\"));\n\t\tAssembly assembly2 = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault((Assembly p) => string.Equals(p.GetName().Name, $\"{Info}Control\"));\n\t\tif (assembly == null)\n\t\t{\n\t\t\tActivatorWrap.LoadAssembly($\"{DirPath}\\\\{Info}Cs.dll\");\n\t\t\tassembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault((Assembly p) => string.Equals(p.GetName().Name, $\"{Info}Cs\"));\n\t\t}\n\t\tif (assembly2 == null)\n\t\t{\n\t\t\tstring text = $\"{DirPath}\\\\Librarys.Config\";\n\t\t\tif (File.Exists(text))\n\t\t\t{\n\t\t\t\tstring[] libs = GetLibs(text);\n\t\t\t\tlibs.ToList().ForEach((string p) =>\n\t\t\t\t{\n\t\t\t\t\tstring text2 = $\"{DirPath}\\\\{p}\";\n\t\t\t\t\tif (File.Exists(text2))\n\t\t\t\t\t{\n\t\t\t\t\t\tActivatorWrap.LoadAssembly(text2);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t\tif (File.Exists($\"{DirPath}\\\\{Info}Control.dll\"))\n\t\t\t{\n\t\t\t\tActivatorWrap.LoadAssembly($\"{DirPath}\\\\{Info}Control.dll\");\n\t\t\t}\n\t\t}\n\t\tType type = assembly.GetTypes().FirstOrDefault((Type p) => typeof(IVmModule).IsAssignableFrom(p));\n\t\treturn ActivatorWrap.CreateInstance(type, new object[1] { param });\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "构造器进入 native 身份/IO 的完整链未在本页取齐。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L08",
+      "route": "原版 · 创建/导入",
+      "classification": "source-confirmed",
+      "from": "internalImportGroup",
+      "to": "CollectionManager.ImportGroup → 等待",
+      "behavior": "父为 IMVSGroup 时传 Root.ID、自身 ID；普通流程传自身 ID、0。调用返回后才置 mbImportGroupEndFlag=false 并 Wait，返回后清 importGroupModuleSet、补 Parent/撤销/文件信息。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.internalImportGroup",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 1810,
+          "end": 1844,
+          "excerpt": "\t\t\t\tinstance.importGroupModuleSet = moduleSet;\n\t\t\t\tif (moduleSet is IMVSGroup)\n\t\t\t\t{\n\t\t\t\t\tServerSDKManager.serverSDKManager.mCollectionManager.ImportGroup(vmModuleSet.Root.ID, vmModuleSet.ID, text, strPassword ?? \"\", nIdAllocateWay);\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tServerSDKManager.serverSDKManager.mCollectionManager.ImportGroup(vmModuleSet.ID, 0u, text, strPassword ?? \"\", nIdAllocateWay);\n\t\t\t\t}\n\t\t\t\tmbImportGroupEndFlag = false;\n\t\t\t\tSyncWaitor.Wait(ref mbImportGroupEndFlag);\n\t\t\t\tinstance.importGroupModuleSet = null;\n\t\t\t\tif (instance.importedGroupModule != null)\n\t\t\t\t{\n\t\t\t\t\tIMVSGroup iMVSGroup = instance.importedGroupModule as IMVSGroup;\n\t\t\t\t\tif (iMVSGroup != null)\n\t\t\t\t\t{\n\t\t\t\t\t\tiMVSGroup.Parent = moduleSet;\n\t\t\t\t\t\tIUnRedoService unRedoService = Ioc.Get<IUnRedoService>();\n\t\t\t\t\t\tif (unRedoService != null && unRedoService.IsNeedExport())\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tobject obj2 = new VmModuleDataInfo\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\tstrModuleFullName = iMVSGroup.FullName\n\t\t\t\t\t\t\t};\n\t\t\t\t\t\t\tstring displayName = string.Format(\"{0}{1}:{2}\", AppLocalizationService.GetLang(\"增加\"), AppLocalizationService.GetLang(\"Lang_Modu\"), iMVSGroup.FullName.Substring(iMVSGroup.FullName.LastIndexOf('.') + 1));\n\t\t\t\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new ModuleUnRedoOperation(iMVSGroup.Import_Module, iMVSGroup.Delete_Module, obj2 as VmModuleDataInfo, iMVSGroup.Update_Module), displayName);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tLogHelper.Info(\"Add module:\" + iMVSGroup.Name);\n\t\t\t\t\t}\n\t\t\t\t\tinstance.importedGroupModule = null;\n\t\t\t\t\tiMVSGroup.ModuleFilePath = text;\n\t\t\t\t\tiMVSGroup.ModuleFilePassword = strPassword;\n\t\t\t\t\treturn iMVSGroup;\n\t\t\t\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/CollectionManager.cs",
+          "member": "CollectionManager.ImportGroup",
+          "sha256": "cecbdbad7fe06dd91f0d7d276dfb96b7bf436b53bc82bc858674354fb5d880cc",
+          "start": 115,
+          "end": 124,
+          "excerpt": "\tpublic void ImportGroup(uint nProcessID, uint nGroupID, string strPath, string strPassword, uint nIdAllocateWay)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_ImportGroupModule(CVmObjectBase.mhandle, nProcessID, nGroupID, strPath, strPassword, nIdAllocateWay);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本段之前的密码/版本/升级分支尚未在本页展开；早回调是否发生需要 native 时序证据。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L09",
+      "route": "原版 · 创建/导入",
+      "classification": "source-confirmed",
+      "from": "MModuleManager_OnImportGroupEndCallBack",
+      "to": "公共 End → AddModuleByInfo → Parent / Ready → 完成旗标",
+      "behavior": "先发 OnGroupImportEndCallBack；成功才构造新 ID/流程 ID/名称并 AddModuleByInfo，设 Parent 和 NotifyReadyStateToParent；最后置 mbImportGroupEndFlag=true。因此公共 End 不是模型已建立的证明。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.MModuleManager_OnImportGroupEndCallBack",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 4583,
+          "end": 4613,
+          "excerpt": "\tinternal static void MModuleManager_OnImportGroupEndCallBack(ImvsSdkDefine.IMVS_IMPORT_GROUP_END_INFO groupImportEndInfo)\n\t{\n\t\tEndEventArgs e = new EndEventArgs();\n\t\te.ClientType = groupImportEndInfo.nClientType;\n\t\te.ErrorCode = groupImportEndInfo.nErrorCode;\n\t\tif (groupImportEndInfo.nErrorCode != 0)\n\t\t{\n\t\t\te.BoxTitle = AppLocalizationService.GetLang(\"Lang_GroupImportError\");\n\t\t}\n\t\tOnGroupImportEndCallBack?.Invoke(SolObj, e);\n\t\tif (groupImportEndInfo.nErrorCode == 0)\n\t\t{\n\t\t\tImvsSdkDefine.IMVS_MODULE_INFO proInfo = new ImvsSdkDefine.IMVS_MODULE_INFO\n\t\t\t{\n\t\t\t\tnNodeID = groupImportEndInfo.nGroupNewId,\n\t\t\t\tnProcessID = groupImportEndInfo.nProcessId,\n\t\t\t\tstrDisplayName = groupImportEndInfo.strGroupNewName,\n\t\t\t\tstrModuleName = Hik.Util.StringUtil.UTF8GetBytesPadZero(\"IMVSGroup\")\n\t\t\t};\n\t\t\tif (Instance != null && Instance.importGroupModuleSet != null)\n\t\t\t{\n\t\t\t\tInstance.importedGroupModule = (Instance.importGroupModuleSet as VmModuleSet).AddModuleByInfo(proInfo);\n\t\t\t\tif (Instance.importedGroupModule != null)\n\t\t\t\t{\n\t\t\t\t\tInstance.importedGroupModule.Parent = Instance.importGroupModuleSet as VmModuleSet;\n\t\t\t\t\tInstance.importedGroupModule.NotifyReadyStateToParent();\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tmbImportGroupEndFlag = true;\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "事件订阅异常、native 回调封装及线程时序未运行确认。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L10",
+      "route": "原版 · 创建/导入",
+      "classification": "source-confirmed",
+      "from": "VmModuleSet.AddModuleByInfo",
+      "to": "构造 → Name+ID 去重 → Modules 替换",
+      "behavior": "先 CreatModuleByInfo，再查 Name+ID；重复时返回旧实例，否则加新实例；最后替换 VmModuleCollection。Modules setter 发 Modules 和 Children 通知。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs",
+          "member": "VmModuleSet.AddModuleByInfo",
+          "sha256": "f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346",
+          "start": 660,
+          "end": 675,
+          "excerpt": "\tinternal VmModule AddModuleByInfo(ImvsSdkDefine.IMVS_MODULE_INFO proInfo)\n\t{\n\t\tVmModule module = CreatModuleByInfo(proInfo);\n\t\tList<VmModule> list = Modules.ToList();\n\t\tVmModule vmModule = list.FirstOrDefault((VmModule x) => x.Name == module.Name && x.ID == module.ID);\n\t\tif (vmModule == null)\n\t\t{\n\t\t\tlist.Add(module);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tmodule = vmModule;\n\t\t}\n\t\tModules = new VmModuleCollection<VmModule>(list);\n\t\treturn module;\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs",
+          "member": "VmModuleSet.Modules setter",
+          "sha256": "f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346",
+          "start": 123,
+          "end": 127,
+          "excerpt": "\t\t\t\t_Modules = value;\n\t\t\t\tmodules_IsLoaded = true;\n\t\t\t\tOnPropertyChanged(\"Modules\");\n\t\t\t\tOnPropertyChanged(\"Children\");\n\t\t\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "L11",
+      "route": "原版 · 创建/导入",
+      "classification": "unknown",
+      "from": "IMVS_ImportGroupModule",
+      "to": "原生导入 / 回调生产",
+      "behavior": "仅恢复了托管入参和回调消费两端，原生导入的对象建立、失败清理和线程顺序仍不能连成已证实调用链。",
+      "refs": [],
+      "unknowns": [
+        "缺原生导出实现、回调生产路径和受控失败观测；不实现猜测补位。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "N01",
+      "route": "原版 · Group 导航",
+      "classification": "source-confirmed",
+      "from": "GROUP 模板 MouseDoubleClick",
+      "to": "SubSource.OpenGroupCommand",
+      "behavior": "GROUP 专用触发器绑定双击、命令及当前 decorator 参数；DiagramArea 的 SubSource 绑定所属 Tab。普通节点的 ItemDoubleClick 参数窗处理不能替代这条绑定。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml",
+          "member": "DiagramItem GROUP trigger",
+          "sha256": "95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9",
+          "start": 1829,
+          "end": 1843,
+          "excerpt": "      <Trigger Property=\"local:DiagramItem.DisplayType\" Value=\"{x:Static DataForUI:ModuleDisplayType.GROUP}\">\n        <Setter Property=\"local:DiagramItem.IsModuleForbidden\" Value=\"{Binding IsForbidden}\" />\n        <Setter Property=\"local:DiagramItem.IsModuleFailed\" Value=\"{Binding IsLoadFailed}\" />\n        <Setter Property=\"local:DiagramItem.RunState\" Value=\"{Binding DecorateSource.IsRunOK}\" />\n        <Setter Property=\"Template\" Value=\"{StaticResource GROUP}\" />\n        <Setter Property=\"local:DiagramItem.Position\" Value=\"{Binding Position}\" />\n        <Setter Property=\"local:DiagramItem.NextItemsSource\" Value=\"{Binding Path=DecorateSource.(VMInterface:IVmModule.NextModules)}\" />\n        <Setter Property=\"Attached:AttachedRoutedEvent.Event\" Value=\"MouseDoubleClick\" />\n        <Setter Property=\"Attached:AttachedRoutedEventBase.Command\" Value=\"{Binding SubSource.OpenGroupCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:DiagramArea}}\" />\n        <Setter Property=\"Attached:AttachedRoutedEventBase.CommandParameter\" Value=\"{Binding}\" />\n        <Setter Property=\"FrameworkElement.ContextMenu\" Value=\"{StaticResource GroupOperateMenu}\" />\n      </Trigger>\n      <Trigger Property=\"local:DiagramItem.DisplayType\" Value=\"{x:Static DataForUI:ModuleDisplayType.GROUPADORNER}\">\n        <Setter Property=\"Template\" Value=\"{StaticResource GROUP}\" />\n      </Trigger>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml",
+          "member": "ProcedureConfigControl DiagramArea binding",
+          "sha256": "a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106",
+          "start": 538,
+          "end": 538,
+          "excerpt": "                  <localBase:DiagramArea ItemDoubleClick=\"DiagramArea_ItemDoubleClick\" Procedure=\"{Binding DisplayModuleSet}\" IsEnabled=\"{Binding IsActive}\" IsLockWorkArea=\"{Binding IsLockWorkArea, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" IsOpenParams=\"{Binding IsOpenParams, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" ZoomIndex=\"{Binding ZoomIndex, Mode=TwoWay, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" SelectedItem=\"{Binding DecoratorSelectedItem, Mode=TwoWay, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" ItemsSource=\"{Binding Path=DisplayModuleSet.DecorateSource.(VMInterface:IChildren.Children)}\" SubSource=\"{Binding}\" SearchModuleInfo=\"{Binding SelectedModule}\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmProcedureDecorator.cs",
+          "member": "VmProcedureDecorator.OpenGroupCommand",
+          "sha256": "a229fe33277eb857a0afa3f6a9fdb56807d2178ad5e6958b28bc63175ce19b5a",
+          "start": 354,
+          "end": 354,
+          "excerpt": "\tpublic ICommand OpenGroupCommand => (ICommand)(openGroupCommand ?? (openGroupCommand = new DelegateCommand<IDecorate>((Action<IDecorate>)OpenGroupCommandExecute)));",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "N02",
+      "route": "原版 · Group 导航",
+      "classification": "source-confirmed",
+      "from": "OpenGroupCommandExecute",
+      "to": "DisplayModuleSet setter",
+      "behavior": "禁用或 IsLoadFailed==true 时拒绝；Group 有密码时仅 IsPasswordOK 才设置；无密码/非 Group 直接设置。DisplayModuleSet setter 先令 IsSelected=true，变化时发三项通知。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmProcedureDecorator.cs",
+          "member": "VmProcedureDecorator.OpenGroupCommandExecute",
+          "sha256": "a229fe33277eb857a0afa3f6a9fdb56807d2178ad5e6958b28bc63175ce19b5a",
+          "start": 537,
+          "end": 565,
+          "excerpt": "\tinternal void OpenGroupCommandExecute(IDecorate obj)\n\t{\n\t\tif (obj is VmGroupDecorator vmGroupDecorator)\n\t\t{\n\t\t\tif (vmGroupDecorator.IsForbidden || !((!vmGroupDecorator.IsLoadFailed) ?? true))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (vmGroupDecorator.IsPasswordEnabledA)\n\t\t\t{\n\t\t\t\tPasswordCheckWindow passwordCheckWindow = new PasswordCheckWindow();\n\t\t\t\tpasswordCheckWindow.OriginalPassword = vmGroupDecorator.PasswordA;\n\t\t\t\tpasswordCheckWindow.ShowInTaskbar = false;\n\t\t\t\tpasswordCheckWindow.ShowDialog();\n\t\t\t\tif (passwordCheckWindow.IsPasswordOK)\n\t\t\t\t{\n\t\t\t\t\tDisplayModuleSet = obj;\n\t\t\t\t}\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tDisplayModuleSet = obj;\n\t\t\t}\n\t\t}\n\t\telse\n\t\t{\n\t\t\tDisplayModuleSet = obj;\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmProcedureDecorator.cs",
+          "member": "VmProcedureDecorator.DisplayModuleSet",
+          "sha256": "a229fe33277eb857a0afa3f6a9fdb56807d2178ad5e6958b28bc63175ce19b5a",
+          "start": 78,
+          "end": 97,
+          "excerpt": "\tpublic IDecorate DisplayModuleSet\n\t{\n\t\tget\n\t\t{\n\t\t\treturn displayModuleSet;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tIsSelected = true;\n\t\t\tif (value != displayModuleSet)\n\t\t\t{\n\t\t\t\tdisplayModuleSet = value;\n\t\t\t\tOnPropertyChanged(\"DisplayModuleSet\");\n\t\t\t\tOnPropertyChanged(\"IsProcedure\");\n\t\t\t\tOnPropertyChanged(\"IsDependentGroup\");\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic bool IsProcedure => DisplayModuleSet.DecorateSource is IVmProcedure;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "N03",
+      "route": "原版 · Group 导航",
+      "classification": "source-confirmed",
+      "from": "Tab Up 按钮 → UpCommandExecute",
+      "to": "父为根 Tab 则 this，否则新 VmGroupDecorator",
+      "behavior": "btnUp 绑定 UpCommand；取显示模块 Parent，若等于本 Tab DecorateSource 则回 this，否则构造父 Group decorator。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml",
+          "member": "ProcedureConfigControl btnUp",
+          "sha256": "a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106",
+          "start": 355,
+          "end": 358,
+          "excerpt": "          <commomcontrol:SuperImageButton ToolTip=\"{DynamicResource Lang_UpLay}\" Margin=\"3,0,4,0\" Command=\"{Binding UpCommand}\">\n            <commomcontrol:SuperImageButton.NormalConnent>\n              <Image Source=\"/Apps.Style;component/Resources/tab_ic_back_normal.png\" Stretch=\"None\" />\n            </commomcontrol:SuperImageButton.NormalConnent>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmProcedureDecorator.cs",
+          "member": "VmProcedureDecorator.UpCommandExecute",
+          "sha256": "a229fe33277eb857a0afa3f6a9fdb56807d2178ad5e6958b28bc63175ce19b5a",
+          "start": 672,
+          "end": 685,
+          "excerpt": "\tprivate void UpCommandExecute()\n\t{\n\t\tobject parent = (displayModuleSet.DecorateSource as IVmFrameBase).Parent;\n\t\tif (parent == DecorateSource)\n\t\t{\n\t\t\tDisplayModuleSet = this;\n\t\t\treturn;\n\t\t}\n\t\tDisplayModuleSet = new VmGroupDecorator\n\t\t{\n\t\t\tDecorateSource = parent\n\t\t};\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "UpCommand 属性/可执行条件与所有输入路由仍需进一步展开。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "N04",
+      "route": "原版 · Group 导航",
+      "classification": "source-confirmed",
+      "from": "DisplayModuleSet",
+      "to": "画布与配置目标",
+      "behavior": "DiagramArea 的 Procedure 和 ItemsSource 均取显示集合；配置按钮把 DisplayModuleSet 传给 ConfigParamsCommand。导航不是改变所属根流程执行对象。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml",
+          "member": "ProcedureConfigControl DiagramArea",
+          "sha256": "a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106",
+          "start": 538,
+          "end": 538,
+          "excerpt": "                  <localBase:DiagramArea ItemDoubleClick=\"DiagramArea_ItemDoubleClick\" Procedure=\"{Binding DisplayModuleSet}\" IsEnabled=\"{Binding IsActive}\" IsLockWorkArea=\"{Binding IsLockWorkArea, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" IsOpenParams=\"{Binding IsOpenParams, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" ZoomIndex=\"{Binding ZoomIndex, Mode=TwoWay, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" SelectedItem=\"{Binding DecoratorSelectedItem, Mode=TwoWay, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" ItemsSource=\"{Binding Path=DisplayModuleSet.DecorateSource.(VMInterface:IChildren.Children)}\" SubSource=\"{Binding}\" SearchModuleInfo=\"{Binding SelectedModule}\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml",
+          "member": "ProcedureConfigControl ConfigButton",
+          "sha256": "a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106",
+          "start": 317,
+          "end": 317,
+          "excerpt": "        <commomcontrol:SuperImageButton ToolTip=\"{DynamicResource Lang_SetCnfg}\" Margin=\"0,0,0,0\" Command=\"{Binding ConfigParamsCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ProcedureConfigControl}}\" CommandParameter=\"{Binding DisplayModuleSet}\" Click=\"SuperImageButton_Click\">",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "配置命令内部、模型替换/释放与模板投影将在配置视图中单独展开。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C01",
+      "route": "当前 · 分类加载",
+      "classification": "independent-implementation",
+      "from": "分类展开 / 悬停 / 右键菜单",
+      "to": "LoadToolCategory",
+      "behavior": "Expander 展开和画布菜单 MouseEnter 直接共用 LoadToolCategory；折叠分类悬停经 ShowToolPicker 再进入同一方法。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolNavigation.cs",
+          "member": "BuildRail expanded event",
+          "sha256": "2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2",
+          "start": 138,
+          "end": 138,
+          "excerpt": "                expander.Expanded+=(_,_)=>{activeToolCategory=group.Id;var loaded=LoadToolCategory(group);if(loaded is not null)expander.Content=CreateToolGrid(loaded);};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolNavigation.cs",
+          "member": "canvas catalog menu event",
+          "sha256": "2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2",
+          "start": 93,
+          "end": 98,
+          "excerpt": "            category.MouseEnter+=(_,_)=>\n            {\n                var loaded=LoadToolCategory(group);if(loaded is null)return;\n                category.Items.Clear();\n                foreach(var tool in loaded.Items)\n                {",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolNavigation.cs",
+          "member": "folded category event",
+          "sha256": "2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2",
+          "start": 146,
+          "end": 146,
+          "excerpt": "            button.MouseEnter+=(_,_)=> { icon.Source=CatalogIcon(group.HoverIcon??group.Icon);ShowToolPicker(group.Id,button); };",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolNavigation.cs",
+          "member": "MainWindow.ShowToolPicker",
+          "sha256": "2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2",
+          "start": 205,
+          "end": 206,
+          "excerpt": "        group=LoadToolCategory(group);if(group is null)return;\n        if(toolPopup is {IsOpen:true}&&toolPopupAnchor==anchor)return;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C02",
+      "route": "当前 · 分类加载",
+      "classification": "independent-implementation",
+      "from": "LoadToolCategory",
+      "to": "ToolCategoryLoadState.EnsureLoaded",
+      "behavior": "分类 ID 持有状态；EnsureLoaded 在枚举前设初始化、记录尝试；异常保留已读项和 Failure 并重抛。首次宿主异常提示并拒绝开窗；后续使用保留项。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolCatalogLoadSession.cs",
+          "member": "ToolCategoryLoadState.EnsureLoaded",
+          "sha256": "c132f8b67c51cd1aacae57e6bd9607d892569cc469194509fa841e6a155a4ba3",
+          "start": 13,
+          "end": 20,
+          "excerpt": "    public void EnsureLoaded(Func<IEnumerable<T>> load)\n    {\n        if(IsInitialized)return;\n        IsInitialized=true;Attempts++;\n        try {foreach(var item in load())items.Add(item);}\n        catch(Exception error){Failure=error;throw;}\n    }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolNavigation.cs",
+          "member": "MainWindow.LoadToolCategory",
+          "sha256": "2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2",
+          "start": 66,
+          "end": 76,
+          "excerpt": "    CatalogGroup? LoadToolCategory(CatalogGroup group)\n    {\n        if(!toolCategoryLoads.TryGetValue(group.Id,out var state))toolCategoryLoads[group.Id]=state=new();\n        try{state.EnsureLoaded(()=>ReadCategoryTools(group.Id));}\n        catch(Exception error)when(error is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or InvalidOperationException)\n        {\n            StatusText.Text=\"工具分类加载失败：\"+error.Message;\n            return null; // First failure aborts opening; no automatic retry or silent recovery.\n        }\n        return group with{Items=(state.Failure is null?state.Items.OrderBy(t=>t.Priority):state.Items.AsEnumerable()).ToArray()};\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "这不证明与原始扁平 ObservableCollection 的通知/部分失败呈现同构。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C03",
+      "route": "当前 · 分类加载",
+      "classification": "independent-implementation",
+      "from": "ReadCategoryTools / RefreshToolCatalog",
+      "to": "显式插件合同注册 / 新分类状态",
+      "behavior": "读取 JSON；声明 Implementation 才按身份加载并注册，拒绝已注册身份；刷新清目录/分类状态与失败会话，重建工具栏。不是执行原 InfoCs 目录协议。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolNavigation.cs",
+          "member": "MainWindow.ReadCategoryTools",
+          "sha256": "2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2",
+          "start": 46,
+          "end": 65,
+          "excerpt": "    IEnumerable<CatalogTool> ReadCategoryTools(string id)\n    {\n        using var json=JsonDocument.Parse(File.ReadAllText(toolCatalogPath));\n        var group=json.RootElement.GetProperty(\"Groups\").EnumerateArray().Single(g=>g.GetProperty(\"Id\").GetString()==id);\n        foreach(var item in group.GetProperty(\"Items\").EnumerateArray())\n        {\n            var tool=item.Deserialize<CatalogTool>()??throw new InvalidDataException(\"Empty tool metadata.\");\n            if(tool.Implementation is {} reference)\n            {\n                if(tool.ModuleId!=reference.ModuleId)throw new InvalidDataException(\"Catalog module identity differs from selected implementation.\");\n                managedToolLoads.EnsureLoaded(reference,loaded=>\n                {\n                    if(plugins.Find(reference.ModuleId) is not null||modules.Descriptors.Any(d=>d.Id==reference.ModuleId))\n                        throw new InvalidOperationException(\"Catalog plugin identity is already registered; refresh cannot replace a live module.\");\n                    plugins.Register(loaded.Plugin,modules,reference.ModuleId,reference.Version);\n                });\n            }\n            yield return tool;\n        }\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolNavigation.cs",
+          "member": "MainWindow.RefreshToolCatalog",
+          "sha256": "2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2",
+          "start": 77,
+          "end": 81,
+          "excerpt": "    void RefreshToolCatalog()\n    {\n        if(toolPopup is not null)toolPopup.IsOpen=false;\n        toolGroups=null;toolCategoryLoads.Clear();managedToolLoads.ClearFailures();BuildRail();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "ManagedToolCatalogLoadSession 内部二进制装载、注册事务和版本合同需另图。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C04",
+      "route": "当前 · Group 导航",
+      "classification": "independent-implementation",
+      "from": "画布双击 / 进入 Group 菜单",
+      "to": "EnterSubprogram",
+      "behavior": "Group 双击进入，普通节点打开参数；EnterSubprogram 拒绝禁用/锁定/运行态。owned Group 使用 EnterOwnedGroup，历史跨流程引用使用 SelectWorkflow。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowCanvas.cs",
+          "member": "MainWindow node double click",
+          "sha256": "123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f",
+          "start": 244,
+          "end": 244,
+          "excerpt": "        if(e.ClickCount==2){if(doc.CurrentProcedure.Nodes.Single(n=>n.Id==id).ModuleId==WorkflowCalls.ModuleId)EnterSubprogram(id);else OpenNode(id);e.Handled=true;return;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/SubprogramCallHost.cs",
+          "member": "MainWindow.EnterSubprogram",
+          "sha256": "b6c36afc73814a8bb1a9a86abbdf129405a1ff3bf394ed42297c0e6ed8a9a387",
+          "start": 52,
+          "end": 52,
+          "excerpt": " void EnterSubprogram(string id){var groupNode=doc.CurrentProcedure.Nodes.Single(n=>n.Id==id);if(!groupNode.Enabled||isLocked||activeRun is not null)return;var call=groupNode.Call;if(call is null){Safe(()=>doc.EnterOwnedGroup(id));}else if(doc.Document.Procedures.FirstOrDefault(p=>p.Id==call.ProcedureId)?.GroupOwner is not null){Safe(()=>doc.EnterOwnedGroup(id));}else SelectWorkflow(call.ProcedureId);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "当前不包含原版 Group 密码/加载失败保护的同构实现，不能把普通 enabled 检查称为全部保护。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C05",
+      "route": "当前 · Group 导航",
+      "classification": "independent-implementation",
+      "from": "GraphEditorDocument.EnterOwnedGroup",
+      "to": "独立 GroupOwnership / 当前 ProcedureId",
+      "behavior": "检验模块类型和 Enabled；已有内部图须匹配 owner 身份；否则生成独立 Guid 的 ProcedureDocument、GroupOwner 和 Call，并事务提交。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.Groups.cs",
+          "member": "GraphEditorDocument.EnterOwnedGroup",
+          "sha256": "48de9ee3c2e861e71e1e27499403341f252212acc132a2cd93db37bb3bfec536",
+          "start": 53,
+          "end": 61,
+          "excerpt": " public string EnterOwnedGroup(string nodeId)\n {\n  var node=Node(nodeId);if(node.ModuleId!=WorkflowCalls.ModuleId||!node.Enabled)throw new InvalidOperationException(\"Group 不可进入。\");\n  if(node.Call is {} existing){var target=Procedure(existing.ProcedureId);if(target.GroupOwner!=new GroupOwnership(CurrentProcedureId,nodeId))throw new InvalidOperationException(\"旧跨流程调用不属于内部 Group；请创建新的 Group。\");SelectProcedure(target.Id);return target.Id;}\n  int level=1;var ancestor=CurrentProcedure;while(ancestor.GroupOwner is {} parent){level++;ancestor=Procedure(parent.ProcedureId);}if(level>3)throw new InvalidOperationException(\"Group 最多嵌套三层。\");\n  var ownerId=CurrentProcedureId;var body=new ProcedureDocument(Guid.NewGuid().ToString(\"N\"),node.Name,[],[],[]){GroupOwner=new(ownerId,nodeId)};\n  Edit(d=>d with{Procedures=d.Procedures.Select(p=>p.Id==ownerId?p with{Nodes=p.Nodes.Select(n=>n.Id==nodeId?n with{Call=WorkflowCalls.From(body)}:n).ToArray()}:p).Append(body).ToArray()},body.Id);return body.Id;\n }\n  public void SetGroupBreak(string nodeId,bool enabled,int dataType,int comparison,GroupBreakBindings? bindings){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "当前 Guid/内部图结构是独立模型，不是原 native 模块 ID 或 .gro 格式。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C06",
+      "route": "当前 · Group 导航",
+      "classification": "independent-implementation",
+      "from": "SelectWorkflow / RememberDisplayedWorkflow",
+      "to": "根 Tab → 内部画布的会话记忆",
+      "behavior": "换 Tab 前记当前根/显示 ID，过滤已删除目标；返回根 Tab 时只恢复仍属于该根的显示 ID。切换清手势、拖影、弹层和选择；不由此声明缩放/滚动持久化。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowTabs.cs",
+          "member": "MainWindow.SelectWorkflow",
+          "sha256": "24a398d5cd2a16ba2ea01ce980df4b7a3c4f4b9afe27c34720195bcd0b48cb45",
+          "start": 54,
+          "end": 63,
+          "excerpt": "    void SelectWorkflow(string id)\n    {\n        if(!doc.Document.Procedures.Any(p=>p.Id==id))return;\n        RememberDisplayedWorkflow();\n        string displayedId=doc.Document.Procedures.Single(p=>p.Id==id).GroupOwner is null?ResolveDisplayedWorkflow(id):id;\n        ResetEditingGesture();ClearToolGhost();\n        if(toolPopup is not null)toolPopup.IsOpen=false;\n        selected=null;selectedNodes.Clear();selectedWire=null;\n        if(doc.CurrentProcedureId!=displayedId)doc.SelectProcedure(displayedId);else {RenderGraph();RefreshRight();}\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/GroupCanvasNavigation.cs",
+          "member": "MainWindow.RememberDisplayedWorkflow / ResolveDisplayedWorkflow",
+          "sha256": "ecaefcc3eda91a4a61f55eb62b482463f9a792de6ea3527b9e2291d47bbdb353",
+          "start": 8,
+          "end": 24,
+          "excerpt": " void RememberDisplayedWorkflow()\n {\n  if(!doc.HasCurrentProcedure)return;\n  var live=doc.Document.Procedures.Select(p=>p.Id).ToHashSet(StringComparer.Ordinal);\n  foreach(var root in displayedWorkflowContainers.Keys.Where(id=>!live.Contains(id)||!live.Contains(displayedWorkflowContainers[id])).ToArray())displayedWorkflowContainers.Remove(root);\n  displayedWorkflowContainers[doc.RootProcedureId(doc.CurrentProcedureId)]=doc.CurrentProcedureId;\n }\n string ResolveDisplayedWorkflow(string rootId)\n {\n  // Explicit owned-container navigation is not a top-level tab selection.\n  if(doc.Document.Procedures.FirstOrDefault(p=>p.Id==rootId)?.GroupOwner is not null)return rootId;\n  if(displayedWorkflowContainers.TryGetValue(rootId,out var displayed)&&doc.Document.Procedures.Any(p=>p.Id==displayed)&&doc.RootProcedureId(displayed)==rootId)return displayed;\n  displayedWorkflowContainers.Remove(rootId);\n  return rootId;\n }\n void ClearDisplayedWorkflows()=>displayedWorkflowContainers.Clear();\n SubprogramCallWindow? displayedGroupConfiguration;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C07",
+      "route": "当前 · Group 导航",
+      "classification": "independent-implementation",
+      "from": "ReturnFromGroup",
+      "to": "GraphEditorDocument.LeaveGroup",
+      "behavior": "不在 Group、参数窗打开或执行中则拒绝；清手势/选择后按 GroupOwner.ProcedureId 回父图。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/GroupCanvasNavigation.cs",
+          "member": "MainWindow.ReturnFromGroup",
+          "sha256": "ecaefcc3eda91a4a61f55eb62b482463f9a792de6ea3527b9e2291d47bbdb353",
+          "start": 36,
+          "end": 37,
+          "excerpt": " void ReturnFromGroup(){if(doc.CurrentProcedure.GroupOwner is null||parameterEditorOpen||activeRun is not null)return;ResetEditingGesture();ClearToolGhost();if(toolPopup is not null)toolPopup.IsOpen=false;selected=null;selectedNodes.Clear();selectedWire=null;doc.LeaveGroup();}\n void GroupBreadcrumbBack(object sender,MouseButtonEventArgs e){if(doc.CurrentProcedure.GroupOwner is null||parameterEditorOpen||activeRun is not null)return;ReturnFromGroup();e.Handled=true;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.Groups.cs",
+          "member": "GraphEditorDocument.LeaveGroup",
+          "sha256": "48de9ee3c2e861e71e1e27499403341f252212acc132a2cd93db37bb3bfec536",
+          "start": 75,
+          "end": 75,
+          "excerpt": " public void LeaveGroup(){var owner=CurrentProcedure.GroupOwner??throw new InvalidOperationException(\"当前不是 Group 内部画布。\");SelectProcedure(owner.ProcedureId);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "C08",
+      "route": "当前 · Group 导航",
+      "classification": "independent-implementation",
+      "from": "OpenDisplayedConfiguration",
+      "to": "当前显示 Group 的 bound window",
+      "behavior": "重用当前可见配置窗；根流程打开流程配置；Group 以其 owner 节点建立 bound window，非模态 Show，关闭清配置身份。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/GroupCanvasNavigation.cs",
+          "member": "MainWindow.OpenDisplayedConfiguration",
+          "sha256": "ecaefcc3eda91a4a61f55eb62b482463f9a792de6ea3527b9e2291d47bbdb353",
+          "start": 25,
+          "end": 35,
+          "excerpt": " void OpenDisplayedConfiguration()\n {\n  if(displayedGroupConfiguration is {IsVisible:true}){displayedGroupConfiguration.Activate();return;}\n  if(!CanEditProcedure(doc.CurrentProcedureId))return;\n  if(doc.CurrentProcedure.GroupOwner is not {} owner){OpenWorkflowConfiguration(doc.CurrentProcedureId);return;}\n  ResetEditingGesture();var window=CreateBoundGroupWindow(owner.ProcedureId,owner.NodeId);\n  displayedGroupConfiguration=window;parameterEditorOpen=true;\n  window.Closed+=(_,_)=>{if(ReferenceEquals(displayedGroupConfiguration,window)){displayedGroupConfiguration=null;parameterEditorOpen=false;if(!windowClosed)RefreshAll();}};\n  try{window.Show();RefreshAll();}catch{displayedGroupConfiguration=null;parameterEditorOpen=false;throw;}\n }\n string GroupBreadcrumb(){var names=new List<string>();var current=doc.CurrentProcedure;names.Add(current.Name);while(current.GroupOwner is {} owner){current=doc.Document.Procedures.Single(p=>p.Id==owner.ProcedureId);names.Insert(0,current.Name);}return string.Join(\" > \",names)+\" > \"+(doc.CurrentProcedure.Nodes.FirstOrDefault(n=>n.Id==selected)?.Name??\"\");}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "插件具体配置模板和 ROI/订阅不在此关闭。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "N05",
+      "route": "原版 · Group 导航",
+      "classification": "unknown",
+      "from": "完整输入 / 状态 / 持久化生命周期",
+      "to": "Group 显示上下文的全部分支",
+      "behavior": "本页已核双击/返回/显示目标，但搜索跳转、树导航、密码事件副作用、集合替换后的 decorator 释放和原机操作仍不完整。",
+      "refs": [],
+      "unknowns": [
+        "后续必须追精确命令/事件/持久化成员；不从截图补规格。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    }
+  ],
+  "hierarchy": {
+    "title": "主界面",
+    "kind": "ui-root",
+    "organization": "independent-reading-organization",
+    "meaning": "按主界面子系统组织证据；成员调用由叶节点对应的证据边表达。",
+    "children": [
+      {
+        "title": "工具箱与模块装载",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "原版 · 分类加载",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "ToolBox 展开事件 → ToolBoxData.ExpandCommand → UpdateLoad",
+                "kind": "edge",
+                "edgeId": "L01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "IsMouseEnterBehavior.PropertyChangedCallback → ToolBox.AddHandlers → OnMouseEnter",
+                "kind": "edge",
+                "edgeId": "L02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "ToolBoxData.UpdateLoad → IsInit → 目录/XML → 扁平集合替换",
+                "kind": "edge",
+                "edgeId": "L03",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "Reload / Refresh → 目录缓存失效",
+                "kind": "edge",
+                "edgeId": "L04",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "原版 · 模块创建与 Group 导入",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "DecoratorBase.DropItemsCommandExecute → GroupTools 的 VmSolution.LoadGroup",
+                "kind": "edge",
+                "edgeId": "L05",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "普通工具 Drop → ToolBoxItemData.AddNewItem",
+                "kind": "edge",
+                "edgeId": "L06",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "ToolBoxItemData.AddNewItem → 自定义构造 / Cs 首个 IVmModule 类型",
+                "kind": "edge",
+                "edgeId": "L07",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "internalImportGroup → CollectionManager.ImportGroup → 等待",
+                "kind": "edge",
+                "edgeId": "L08",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "MModuleManager_OnImportGroupEndCallBack → 公共 End → AddModuleByInfo → Parent / Ready → 完成旗标",
+                "kind": "edge",
+                "edgeId": "L09",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "VmModuleSet.AddModuleByInfo → 构造 → Name+ID 去重 → Modules 替换",
+                "kind": "edge",
+                "edgeId": "L10",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "IMVS_ImportGroupModule → 原生导入 / 回调生产",
+                "kind": "edge",
+                "edgeId": "L11",
+                "classification": "unknown"
+              }
+            ]
+          },
+          {
+            "title": "当前实现 · 分类与插件合同",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "分类展开 / 悬停 / 右键菜单 → LoadToolCategory",
+                "kind": "edge",
+                "edgeId": "C01",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "LoadToolCategory → ToolCategoryLoadState.EnsureLoaded",
+                "kind": "edge",
+                "edgeId": "C02",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "ReadCategoryTools / RefreshToolCatalog → 显式插件合同注册 / 新分类状态",
+                "kind": "edge",
+                "edgeId": "C03",
+                "classification": "independent-implementation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "流程与 Group 画布",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "原版 · 导航与显示目标",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "GROUP 模板 MouseDoubleClick → SubSource.OpenGroupCommand",
+                "kind": "edge",
+                "edgeId": "N01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "OpenGroupCommandExecute → DisplayModuleSet setter",
+                "kind": "edge",
+                "edgeId": "N02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "Tab Up 按钮 → UpCommandExecute → 父为根 Tab 则 this，否则新 VmGroupDecorator",
+                "kind": "edge",
+                "edgeId": "N03",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "DisplayModuleSet → 画布与配置目标",
+                "kind": "edge",
+                "edgeId": "N04",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "完整输入 / 状态 / 持久化生命周期 → Group 显示上下文的全部分支",
+                "kind": "edge",
+                "edgeId": "N05",
+                "classification": "unknown"
+              }
+            ]
+          },
+          {
+            "title": "当前实现 · 所属关系与配置",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "画布双击 / 进入 Group 菜单 → EnterSubprogram",
+                "kind": "edge",
+                "edgeId": "C04",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "GraphEditorDocument.EnterOwnedGroup → 独立 GroupOwnership / 当前 ProcedureId",
+                "kind": "edge",
+                "edgeId": "C05",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "SelectWorkflow / RememberDisplayedWorkflow → 根 Tab → 内部画布的会话记忆",
+                "kind": "edge",
+                "edgeId": "C06",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "ReturnFromGroup → GraphEditorDocument.LeaveGroup",
+                "kind": "edge",
+                "edgeId": "C07",
+                "classification": "independent-implementation"
+              },
+              {
+                "title": "OpenDisplayedConfiguration → 当前显示 Group 的 bound window",
+                "kind": "edge",
+                "edgeId": "C08",
+                "classification": "independent-implementation"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

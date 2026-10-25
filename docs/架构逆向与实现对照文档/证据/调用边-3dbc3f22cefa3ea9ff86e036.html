@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenRecentSolution(path) · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>OpenRecentSolution(path) · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-I05"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>OpenRecentSolution(path) → 停连续标志 → 活动运行/保存门 → 缺文件提示或JSON Load</h2><p>先continuousRun=false，再activeRun门及ConfirmPendingChanges。之后才File.Exists；缺文件可询问移除并刷新列表，存在则doc.Load、Update、刷新。与普通打开先选择并Remember目录再检查活动运行的顺序不同，不能把两入口合并成一个统一选择器路径。</p><p><a href="../专题/entry-routing-security.html#edge-I05">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/entry-routing-security.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/entry-routing-security.edges.json · SHA256 fe606f2f9a763da88f2f5487b7c2208a11138f29a5e2fa09b194c88c9aa25855</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="74859111856e8b257fde0971461172b14060f778052497148eeca4754b0914ee">{
+  &quot;id&quot;: &quot;I05&quot;,
+  &quot;route&quot;: &quot;当前 · 文件菜单与独立载荷&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;OpenRecentSolution(path)&quot;,
+  &quot;to&quot;: &quot;停连续标志 → 活动运行/保存门 → 缺文件提示或JSON Load&quot;,
+  &quot;behavior&quot;: &quot;先continuousRun=false，再activeRun门及ConfirmPendingChanges。之后才File.Exists；缺文件可询问移除并刷新列表，存在则doc.Load、Update、刷新。与普通打开先选择并Remember目录再检查活动运行的顺序不同，不能把两入口合并成一个统一选择器路径。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.ShellRecentSolutions.cs&quot;,
+      &quot;member&quot;: &quot;OpenRecentSolution branching&quot;,
+      &quot;sha256&quot;: &quot;c79b0e63c9133f9270763e696596c694a757caf4f4ac1f9b3e589b3bd5e8cdae&quot;,
+      &quot;start&quot;: 104,
+      &quot;end&quot;: 122,
+      &quot;excerpt&quot;: &quot;    void OpenRecentSolution(string path)\n    {\n        continuousRun = false;\n        if (activeRun is not null) { StatusText.Text = \&quot;请等待当前流程运行结束\&quot;; return; }\n        if (!ConfirmPendingChanges()) return;\n        if (!File.Exists(path))\n        {\n            if (MessageBox.Show(this, \&quot;方案文件不存在。是否从最近打开中移除？\&quot;, \&quot;打开方案\&quot;,\n                    MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)\n                RecentSolutionStore.Remove(path);\n            RefreshRecentSolutionsMenu();\n            return;\n        }\n        doc.Load(path);\n        RecentSolutionStore.Update(path);\n        RefreshRecentSolutionsMenu();\n    }\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.ShellOpenSolution.cs&quot;,
+      &quot;member&quot;: &quot;file open picker ordering&quot;,
+      &quot;sha256&quot;: &quot;84657ebcbffbff703effde8e2f84652ec553e800c0af29b33565b758a5a49f15&quot;,
+      &quot;start&quot;: 62,
+      &quot;end&quot;: 76,
+      &quot;excerpt&quot;: &quot;    void OpenSolutionFromFileMenu()\n    {\n        // The native StopRun command disables continuous run before the file picker.\n        continuousRun = false;\n        var path = solutionFilePicker.Pick(this, OpenSolutionDirectoryPreference.InitialDirectory());\n        if (string.IsNullOrWhiteSpace(path)) return;\n        OpenSolutionDirectoryPreference.Remember(path);\n        // Our independent executor must finish its current round before replacing its document.\n        if (activeRun is not null) { StatusText.Text = \&quot;请等待当前流程运行结束\&quot;; return; }\n        if (!ConfirmPendingChanges()) return;\n        doc.Load(path);\n        RecentSolutionStore.Update(doc.FilePath!);\n        RefreshRecentSolutionsMenu();\n    }\n}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.xaml.cs&quot;,
+      &quot;member&quot;: &quot;ConfirmPendingChanges&quot;,
+      &quot;sha256&quot;: &quot;034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a&quot;,
+      &quot;start&quot;: 174,
+      &quot;end&quot;: 174,
+      &quot;excerpt&quot;: &quot; bool ConfirmPendingChanges(){if(parameterEditorOpen){StatusText.Text=\&quot;请先关闭参数窗口\&quot;;return false;}if(!doc.IsDirty)return true;var answer=MessageBox.Show(this,\&quot;当前方案有未保存的修改。是否先保存？\&quot;,\&quot;未保存的方案\&quot;,MessageBoxButton.YesNoCancel,MessageBoxImage.Warning);if(answer==MessageBoxResult.Cancel)return false;if(answer==MessageBoxResult.No)return true;return Save(false);}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;activeRun与执行scope的实际并发/异常矩阵未在此运行；缺文件Yes/No、保存Cancel和载入通知异常均保留操作验证边界。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,52 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 cea4790cb259 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 cea4790cb259</p><h1>原文证据 cea4790cb259</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 cea4790cb25905074223e043831c88407371482f72b1bf7e60ae0fd28e5c83ea。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/suneye-subprogram-reference.resources/tool.source.txt:358–407
+SHA256 d466151c621cd2eeed17278a04b2d612f4508540a4535edc73e41afe631221c9
+            for (int i = start; i &lt; end; i++)
+            {
+                parameters.CurrentIteration = i;
+                var iterResult = ExecuteSubWorkflowOnce(parameters, inputImage, contextVariables);
+                result.Merge(iterResult);
+
+                if (!iterResult.Success)
+                    break;
+
+                // ===== 逐轮解析输出与图形（循环核心：真正产生 N 轮数据）=====
+                var iterToolResults = ExtractToolResults(iterResult);
+
+                // 输出解析：单轮输出值
+                var iterResolved = new Dictionary&lt;string, object&gt;();
+                if (iterToolResults.Count &gt; 0)
+                {
+                    var iterResultProxy = new SubroutineResults();
+                    ResolveOutputsOnce(iterResultProxy, parameters, iterToolResults, resolver);
+                    iterResolved = iterResultProxy.ResolvedOutputValues;
+                }
+
+                // 累积显示：仅处理勾选&quot;累积显示&quot;的项，逐轮追加到 accumulatedDisplay（按轮次渐变色）
+                BuildAccumulatedDisplay(parameters, iterToolResults, resolver, accumulatedDisplay, i - start, end - start);
+
+                // 累积输出：按 IsAccumulated 逐轮拍平拼接或覆盖最后值
+                AccumulateIteration(parameters, iterResolved, accumulatedLists, accumulatedOutputs);
+
+                // ===== 中断条件判断 =====
+                if (config.EnableBreak)
+                {
+                    bool shouldBreak = EvaluateBreakCondition(config, resolver, nodeResults, iterResult, parameters);
+                    if (shouldBreak)
+                    {
+                        parameters.LogInfo($&quot;循环在第 {i} 次迭代后触发中断条件，提前结束&quot;);
+                        break;
+                    }
+                }
+
+                // ===== 循环间隔 =====
+                if (config.LoopInterval &gt; 0)
+                    Task.Delay(config.LoopInterval).GetAwaiter().GetResult();
+            }
+
+            return (result, accumulatedOutputs, accumulatedDisplay);
+        }
+
+        /// &lt;summary&gt;
+        /// 构建累积显示图形：仅处理勾选 IsAccumulated 的显示项，每轮把该轮图形追加到累积 collector。
+        /// 按轮次对显示项样式做 HSL 色相渐变（第 0 轮 → 第 N 轮），使多轮叠加的图形能按轨迹区分（对齐 Halcon 多色叠加）。
+        /// &lt;/summary&gt;</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/group-data-pipeline--loop-break.html">数据/group-data-pipeline--loop-break.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

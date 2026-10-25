@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平移旋转标定点数与拟合结果端口对照</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/TRANSLATION-RESULT-FIELD-MAP.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#平移旋转标定点数与拟合结果端口对照">平移旋转标定点数与拟合结果端口对照</a></p><p style="margin-left:14px"><a href="#点数门控与点数组">点数门控与点数组</a></p><p style="margin-left:14px"><a href="#完成结果映射">完成结果映射</a></p><p style="margin-left:14px"><a href="#误差数值验证与界限">误差数值验证与界限</a></p></details><h1 id="平移旋转标定点数与拟合结果端口对照">平移旋转标定点数与拟合结果端口对照</h1><p>本报告仅记录 <code>ProcessOutput</code> 完成/不完整输出路径的逐字段映射。证据来自原厂模块反编译、原厂托管结果类型和既有受控 DLL 回放；受控回放使用 synthetic ModuleFrame 宿主，不能代替真实 VM 故障/历史端口值测试。</p>
+<h2 id="点数门控与点数组">点数门控与点数组</h2><p>原厂 <code>CIMVSNPointCalibModu::ProcessOutput</code>（RVA <code>0x3c3f0</code>）先计算 <code>CurNum = min(member current, TotalNum)</code>，其中 <code>TotalNum = CalibPointTotalNum + RotPointTotalNum</code>；随后四次 <code>FUN_180036ae0</code> 分别写图像 X/Y 与物理 X/Y 数组，数组长度均为 <code>CurNum</code>，最后写 <code>CalibCurIndex=CurNum</code> 和 <code>CalibTotalNum=TotalNum</code>。在 <code>0x3a8c0</code> 完成点数门控后，此输出函数在点数未满时也会写当前前缀；未完成路径写误差默认值和 <code>WorldRotateAngle=0</code>，不发布 <code>Rotate</code>；完整路径才读取 SDK 结果。</p>
+<p>插件实现位置 <code>TranslationPlugin.Runtime.ExecuteAsync</code> 使用 <code>Math.Min(state.Current,total)</code> 作为四路数组与 <code>CalibCurIndex</code> 的长度/数值，<code>CalibTotalNum=translation+rotation</code>。数组分别从 <code>Points[i,0..3]</code> 对应 ImageX、ImageY、WorldX、WorldY；<code>Results</code> 只在求解完成后发出结果字段。现有原厂回放按原始 <code>writes</code> 校验输出键集合及数组 float 序列；覆盖空数组、两点/八点未完成、9 点平移、追加 0–3 旋转点、手动运行、相机/组合分支等场景。</p>
+<h2 id="完成结果映射">完成结果映射</h2><p><code>TranslationCalibModuCs.TranslationCalibResult</code> 的 XML 文档注释确认了均值/最大值语义；原生 <code>ProcessOutput</code> 从 SDK 结果对象取值并通过 <code>VM_M_Set*</code> 写端口。插件 <code>TranslationPlugin.Results</code> 使用同名 <code>NPointSolveResult</code> 成员写同名端口。表中“Pixel”及“real/world”是原厂注释用语；源材料未规定长度单位为 mm、inch 等，故不再细化猜测。</p>
+<table>
+<thead>
+<tr>
+<th>输出端口</th>
+<th>原厂 SDK 结果取值点 / VM 写入</th>
+<th>原厂说明</th>
+<th>插件映射</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>TransError</code></td>
+<td><code>+0x08</code> → <code>VM_M_SetFloat</code></td>
+<td>平移估计像素平均误差</td>
+<td><code>OffsetError</code></td>
+</tr>
+<tr>
+<td><code>TransEstMax</code></td>
+<td><code>+0x38</code> → <code>VM_M_SetFloat</code></td>
+<td>平移像素最大误差</td>
+<td><code>OffsetMaxError</code></td>
+</tr>
+<tr>
+<td><code>TransErrMaxPtsNum</code></td>
+<td><code>+0x40</code> → <code>VM_M_SetInt</code></td>
+<td>最大像素误差对应点号；结果类字段声明为 float，但模块端口 setter 为 int</td>
+<td><code>OffsetMaxErrorPointNum</code> → Integer</td>
+</tr>
+<tr>
+<td><code>TransWorldError</code></td>
+<td><code>+0x48</code> → <code>VM_M_SetFloat</code></td>
+<td>平移估计真实误差</td>
+<td><code>OffsetWorldError</code></td>
+</tr>
+<tr>
+<td><code>TransErrWorldMax</code></td>
+<td><code>+0x50</code> → <code>VM_M_SetFloat</code></td>
+<td>平移真实最大误差</td>
+<td><code>OffsetWorldMaxError</code></td>
+</tr>
+<tr>
+<td><code>RotError</code></td>
+<td><code>+0x10</code> → <code>VM_M_SetFloat</code></td>
+<td>旋转估计像素平均误差</td>
+<td><code>RotateError</code></td>
+</tr>
+<tr>
+<td><code>RotErrMax</code></td>
+<td><code>+0x58</code> → <code>VM_M_SetFloat</code></td>
+<td>旋转像素最大误差</td>
+<td><code>RotateMaxError</code></td>
+</tr>
+<tr>
+<td><code>RotErrMaxPtsNum</code></td>
+<td><code>+0x60</code> → <code>VM_M_SetInt</code></td>
+<td>旋转最大像素误差对应点号，结果类和端口均为 int</td>
+<td><code>RotateMaxErrorPointNum</code> → Integer</td>
+</tr>
+<tr>
+<td><code>RotWorldError</code></td>
+<td><code>+0x68</code> → <code>VM_M_SetFloat</code></td>
+<td>旋转真实平均误差</td>
+<td><code>RotateWorldError</code></td>
+</tr>
+<tr>
+<td><code>RotErrWorldMax</code></td>
+<td><code>+0x70</code> → <code>VM_M_SetFloat</code></td>
+<td>旋转真实最大误差</td>
+<td><code>RotateWorldMaxError</code></td>
+</tr>
+<tr>
+<td><code>Scale</code> / <code>DeltaX</code> / <code>DeltaY</code> / <code>Rotate</code> / <code>Tilt</code> / <code>DirectionRatio</code> / <code>PixelPrecision</code></td>
+<td>第二 SDK 结果对象的顺序 getter，分别写同名端口</td>
+<td>尺度、平移、旋转、倾斜、方向比、像素精度</td>
+<td>同名结果属性；<code>Rotate</code> 仅完整分支输出</td>
+</tr>
+</tbody></table>
+<p>结果对象的其他位置字段：SDK <code>+0x18</code> 是图像旋转中心，<code>+0x20</code> 是物理旋转中心；模块拆成 <code>RotCenterImageX/Y</code> 与 <code>RotCenterWorldX/Y</code>。<code>RotDirectionState</code> 取模块成员方向值。所有这些结果在完整分支按原生顺序发布；不完整分支写零而非省略大部分误差/姿态字段。</p>
+<h2 id="误差数值验证与界限">误差数值验证与界限</h2><p><code>TranslationCalibration.PluginChecks.Replay</code> 将每个受控原厂事件的成功 <code>writes</code> 与插件结果逐字段比较：输出键集合必须完全相等（仅排除独立计时和 <code>CalibData</code> 载体）；数组要求与原厂 float 转换后的序列完全相等；整数精确比较；有限标量在 <code>max(0.001, abs(expected)*1e-6)</code> 范围内比较。该报告只基于既有 fixture，不重跑或改写原厂证据文件。已验证完整平移/追加旋转误差、最大误差点号、world error 与当前索引/数组长度在这些回放场景同源；当前未发现可由该证据支持的端口映射差异，故无产品代码改动。</p>
+<p>原厂直接来源 SHA-256：</p>
+<ul>
+<li><code>TranslationCalibModu.dll</code>: <code>a85a7ca08ea265b2cf881b4ff01bf7538a60e9edb7466478476584b08fe25183</code></li>
+<li><code>native/18003c3f0.c</code> (<code>ProcessOutput</code>, RVA <code>0x3c3f0</code>): <code>fce52a352b3fe6013c736157208d175234483c790c69d807fcc742713bb20d47</code></li>
+<li><code>TranslationCalibResult.cs</code>: <code>70653445747beda537303d916f4545de5fe9874258dc1438180edeba383a25c1</code> (反编译托管类型，字段的中英文说明与缺省值)</li>
+</ul>
+<p>点数组在不完整路径的输出前缀长度、完成后的误差字段回放已由以上方法/fixture 覆盖。真实 VM 对一次输出中途某个 <code>VM_M_Set*</code> 失败后的旧字段保留、实际物理量单位，以及 max-error point number 的 UI 展示基数，仍需原厂 VM trace 才能确定；测试中所称 point number 是 SDK 同名值，不自行解释为零基/一基索引。</p>
+<p class="meta">来源：docs/plugins/TRANSLATION-RESULT-FIELD-MAP.md · SHA256 83823402d96cf76b049690f0f17498cdf8e88f067289f4cae46fbb5fcf02fc08<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

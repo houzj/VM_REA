@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十一轮根线自审：N 图像失败恢复、坐标系 ROI、N 点主窗成本 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第十一轮根线自审：N 图像失败恢复、坐标系 ROI、N 点主窗成本</p><h1>第十一轮根线自审：N 图像失败恢复、坐标系 ROI、N 点主窗成本</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十一轮根线自审：N 图像失败恢复、坐标系 ROI、N 点主窗成本</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="20261020-pass11-root-review.html">下载原始文件</a></nav><main><h1 id="第十一轮根线自审n-图像失败恢复坐标系-roin-点主窗成本">第十一轮根线自审：N 图像失败恢复、坐标系 ROI、N 点主窗成本</h1><p>目标仍限定“标定”十工具及其必要的框架交接。本轮三个独占探针都从原源码/资源入口追到当前实现，再用真实图或真实 WPF 配置宿主验证；根线串行复跑两个子线探针，并直接实跑 N 点主窗探针。无产品修复，未触碰 <code>tool-plugins</code> 在制文件。</p>
+<table>
+<thead>
+<tr>
+<th>联合链</th>
+<th>实际复验</th>
+<th>原件边与尚未证实的范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>N 图像第九帧失败→新批次→XML/Group/坐标系</td>
+<td><a href="20261020-pass11-nimage-state-chain.html">状态链报告</a>。原子线与根线各 exit 0、26/26；根线日志 <code>analysis/joint-audit/pass11-cal-nimage-state/root-run.log</code> SHA-256 <code>35D7BA8AA4A9A2CCED4517CDDF0456CAE800EEFA75EDD0ED2708E639573F261E</code>。失败时公开 <code>CurNum</code> 缺席、owned 数=9、无 XML；下一帧重置到 1，完成新九帧后文件被 Group/Coordinate 使用，保存重开再跑成功。</td>
+<td>原 <code>Process 0x180020b90 → ProcessAlg 0x180021450 → ProcessOutput 0x180021850</code> 及 <code>WriteXmlData 0x1800230e0</code> 的批次与结果分支有体/哈希；原 SDK 同图返回码、矩阵位等价和未完会话持久化未证。</td>
+</tr>
+<tr>
+<td>坐标系 Draw ROI→图像/矩阵/显示→Undo/重开</td>
+<td><a href="20261020-pass11-coordinate-roi-chain.html">ROI 报告</a>。子线与根线各 exit 0；根线日志 <code>analysis/joint-audit/pass11-cal-coordinate-roi/root-run.log</code> SHA-256 <code>EC830A794CF398A8EF9B93A40FDBE984C5C15B91C4C19CE087817CE8F224C84B</code>。当前 Normalized ROI 对 100×80 与 200×80 图给像素原点 X=25/50，缺 ROI 暖态保旧，撤销及保存重开恢复。</td>
+<td>原 <code>CoordinateModuleAlgorithmTab.xml</code> 与 native <code>0x18003f4a0/0x180040320/0x180040550</code> 确认模式门、矩阵、输出；原 ROI 的编辑→序列化→native 坐标空间尚未取证。归一化缩放仅为当前宿主适配。</td>
+</tr>
+<tr>
+<td>N 点实际 MainWindow 配置窗按钮→点表→文档</td>
+<td><a href="20261020-pass11-npoint-mainwindow-cost.html">主窗成本报告</a>。根线实际点击 4/12/32 行点表，<code>Revision/Changed</code> 均 +20/+60/+160，单格各 +1，最终 exit 0；日志 <code>analysis/joint-audit/pass11-cal-npoint-mainwindow/final-run.log</code> SHA-256 <code>85D8940022B6495D9A5899C067F272A6B1291F471B2DA51D40E8D60FA9D3AAF6</code>。</td>
+<td>原 <code>NPointList.Init</code> 与 <code>PointList</code> setter 逐字段读写已核；原厂文档历史/同机时延未知。当前开窗调用放大为实测事实，但不能独立归因用户的长期无响应。FCR-033 更新，尚未跨项目实施。</td>
+</tr>
+</tbody></table>
+<p>子线首次编译失败仍留在 <code>analysis/joint-audit/pass11-cal-nimage-state/</code>；N 点第一次仅 4/12 行的日志留在 <code>analysis/joint-audit/pass11-cal-npoint-mainwindow/first-run.log</code>。原始程序集、反编译体和探针产物的身份分别在三份专属报告；根线没有把当前测试通过冒称原机同构图或算法全域等价。</p>
+<p>十工具联合审核的 J01–J12 仍有特有未证边，按<a href="20261020-calibration-only-joint-audit.html">去重索引</a>逐项继续。具名主框架实施进度仍为 <strong>41/96 = 42.71%</strong>：本轮补的是已实现代码的跨层审核，未闭合新的 96 项实施单元。人工验收独立，不计此分母；历史插件 10/10 实施自审亦不等于十工具联合审核完成。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass11-root-review.md · SHA256 0f0003914b9f9346ab30d1dc2123622335df0d73ac3c839101ce38612466a87d<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,69 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C01 第一批：原厂撤销服务的隔离动态证据</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/C01-undo-batch1.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#c01-第一批原厂撤销服务的隔离动态证据">C01 第一批：原厂撤销服务的隔离动态证据</a></p><p style="margin-left:14px"><a href="#原件与执行边界">原件与执行边界</a></p><p style="margin-left:14px"><a href="#实际序列与结果">实际序列与结果</a></p><p style="margin-left:14px"><a href="#保留的失败与方法修正">保留的失败与方法修正</a></p><p style="margin-left:14px"><a href="#未关闭项与下一步">未关闭项与下一步</a></p></details><h1 id="c01-第一批原厂撤销服务的隔离动态证据">C01 第一批：原厂撤销服务的隔离动态证据</h1><p>2026-10-19。工作包仍为 <strong>running</strong>：本批执行的是未修改的原 <code>VM.UnRedo.UnRedoService/UnRedoSchedule</code> 与测试自有合成 root/part，不是真实 Group、SDK 参数、原机窗口或产品重构验收。未修改产品、共享合同或 tool-plugins。</p>
+<h2 id="原件与执行边界">原件与执行边界</h2><p>REA <code>inspect_managed_artifact</code> Evidence <code>ev_dfa8463577a4a813c34d018a98de91a35493282640a53ca9f68b3e15b3c0b8aa</code> 确认安装目录 <code>Applications/myLibs/VM.UnRedo.dll</code>，SHA256 <code>AA719D093C948E8E6573D20C0198B60EF493F2BED8C029CAAB95ED5621A7AAA2</code>，35840 bytes，MVID <code>05297188-764c-48da-a387-1ca4029dd9b8</code>，AnyCPU CIL，.NET Framework 4.6.1。完整 REA 返回保留于 <code>analysis/full-audit/batch1-20261019/C01/rea-managed.json</code>。</p>
+<p>先核对原 CIL <code>analysis/full-audit/mf04-unredo/VM.UnRedo.il:1785–1848,2542–2564</code>：Schedule 构造清除 <code>AppDomain.BaseDirectory/TempFiles</code>，再建两栈和读取 ConfigurationHelper。故探针 exe 和依赖复制在独占 <code>C01/run-&lt;guid&gt;/</code>，marker 校验后只在那里构造服务；TempFiles 只有本探针 sentinel。没有构造安装目录服务、没有设备或 SDK 初始化、没有附加/干预原机或其他任务进程。</p>
+<p>可重跑入口 <code>tests/NativeEvidence/C01/Run.ps1</code>；合成动作 <code>Probe.cs</code>。直接使用系统 Framework64 csc，不触发共享 dotnet 构建。实际 CLR <code>4.0.30319.42000</code>；主服务从探针副本加载，强名依赖 VMControls.Interface 与 VM.Utility 实际由 GAC 解析，完整路径和哈希保留在 <code>loaded-hashes.csv</code>，没有把复制目录假称全部依赖的实际加载位置。原件、探针源码、可执行文件副本执行前后哈希一致。</p>
+<h2 id="实际序列与结果">实际序列与结果</h2><p>正式脚本运行目录：<code>analysis/full-audit/batch1-20261019/C01/run-da13448c6b894eb19f1e6a81e1e1e318/</code>，<code>run.log</code>、<code>compile.log</code>、<code>hashes-before.csv</code>、<code>loaded-hashes.csv</code>。退出 0，13 个断言通过。</p>
+<table>
+<thead>
+<tr>
+<th>原服务操作</th>
+<th>动态观察</th>
+<th>原始成员/CIL 对照</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>构造前建立自有 TempFiles sentinel，构造服务</td>
+<td>自有目录被删</td>
+<td>Schedule::.ctor、ClearTemporaryFiles，1785、2542</td>
+</tr>
+<tr>
+<td>空栈 SetForbidRecord(true)，再 Register root</td>
+<td>新 root ForbidBuild=false</td>
+<td>SetForbidRecord，1849</td>
+</tr>
+<tr>
+<td>同根 true、true、false</td>
+<td>标志为 false，非嵌套计数</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>根标 true 后 Register part</td>
+<td>Actions 仍为 0</td>
+<td>Register，2008–2112</td>
+</tr>
+<tr>
+<td>旧根 true 时 Register 新根，随后 false</td>
+<td>新根建立；false 仅改新根，旧根仍 true</td>
+<td>Register、BuildRoot，2765</td>
+</tr>
+<tr>
+<td>Register 合成未完成 part</td>
+<td>Actions=1，Updates=0</td>
+<td>BuildPart，2807–2864</td>
+</tr>
+<tr>
+<td>首次 Undo</td>
+<td>Update 内已见 IsDataComplete=true，之后才调用 part.Undo；root 入 redo</td>
+<td>UpdateActionData/匿名委托 2865–2906、3085–3110；Undo 2113</td>
+</tr>
+<tr>
+<td>Redo</td>
+<td>Redo 调用一次，Update 总数仍 1</td>
+<td>Redo，2216</td>
+</tr>
+<tr>
+<td>新根 part.Update 主动抛自有异常</td>
+<td>调用方未获异常；IsDataComplete=true、Updates=1、Undos=0；undo 栈数不变，IsInUnRedo=false</td>
+<td>Undo 的 Update 在 Pop 之前，catch 吞异常，finally 清计数</td>
+</tr>
+<tr>
+<td>对同根第二次 Undo</td>
+<td>Updates 仍 1，Undos 变 1</td>
+<td>完成标记导致跳过重新采集；并非安全重试</td>
+</tr>
+</tbody></table>
+<p>最后两项把前轮静态推论提升为此受控原服务运行观察：失败捕获会留下已完成标志，后次仍可能执行动作。这不等于真实 ParamUnRedoOperation 出现相同业务异常，也不证明原 Group 录制命中。</p>
+<h2 id="保留的失败与方法修正">保留的失败与方法修正</h2><p>首轮 <code>probe-run1.log</code> 保留，退出 1：合成 Part 仅实现接口，未继承 DisplayNotify，原 BuildPart 发生 NullReferenceException。CIL 2810–2864 在两个 <code>isinst DisplayNotify</code> 后直接调用 setter，接口实现本身不足。修正探针继承原 DisplayNotify 后，<code>probe-run2.log</code> 和正式脚本皆通过；未修补厂商程序集。首轮日志还保留自有 myLibs 不存在的日志监视器错误，正式脚本预建空 myLibs，不读取或替换安装配置。</p>
+<h2 id="未关闭项与下一步">未关闭项与下一步</h2><p>尚未验证真实 Group Owner/Ioc/动态参数写入到 Register 的实际命中、同模块 predicate 去重、Param_Update 的 SDK 数据内容、CopyModule 优先级、RecoverStack 密码取消、TempFiles 栈淘汰的真实载荷、窗口及跨线程行为。合成 action 的 Update/Undo/Redo 是测试计数器，不是原 Group 或参数实现。</p>
+<p>下一批在专属原机副本被动记录配置打开→root Register→Group 内 UserData/SDK setter→part Register→正常关闭→Undo/Redo 的对象身份与值；先闭合真实命中再决定 main 的全方案快照模型适配。本批不据 13 个断言关闭 C01，不声称运行等价，不把 root bool 改成全局 scope。</p>
+<p class="meta">来源：docs/reverse/C01-undo-batch1.md · SHA256 7da3df1cfdd09a1b59dec8a87431260bab3d42575752fc0bd8622ec1695b7e38<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

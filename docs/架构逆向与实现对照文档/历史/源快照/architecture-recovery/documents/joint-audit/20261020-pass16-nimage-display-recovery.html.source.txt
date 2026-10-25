@@ -1,0 +1,44 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十六轮：N 图像标定 J08/J10 显示失败与恢复</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass16-nimage-display-recovery.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第十六轮n-图像标定-j08j10-显示失败与恢复">第十六轮：N 图像标定 J08/J10 显示失败与恢复</a></p><p style="margin-left:14px"><a href="#原版源码与资源边">原版源码与资源边</a></p><p style="margin-left:14px"><a href="#当前主框架插件主窗">当前主框架→插件→主窗</a></p><p style="margin-left:14px"><a href="#离屏真实主窗探针">离屏真实主窗探针</a></p><p style="margin-left:14px"><a href="#有界结论">有界结论</a></p></details><h1 id="第十六轮n-图像标定-j08j10-显示失败与恢复">第十六轮：N 图像标定 J08/J10 显示失败与恢复</h1><p>本轮只补 N 图像标定同一主窗节点的真实图显示状态，不重复第十一轮批次算法、文件/Group 检验。不改产品、共享文件或 <code>tool-plugins</code>。</p>
+<h2 id="原版源码与资源边">原版源码与资源边</h2><p>原件 <code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSNImageCalibModu/IMVSNImageCalibModuDisplay.xml</code> SHA-256 <code>89A9D3665D9A90CFB751008DA7559F1BD179DBA84A15F134D5117795A62014E8</code>，同当前 <code>src/VisionPlugins.Calibration/Resources/NImageDisplay.xml</code> 字节一致。<code>Display</code> 中 <code>InImage</code> 对象绑定输入图像及宽高/像素格式；<code>Image Point</code> 以 <code>OutImagePointX/Y</code> 与 <code>CornerPairsNum</code> 绘点；Show Text/Data Record/Result List 读 <code>ModuStatus,CalibStatus,CurNum,TotalNum</code> 和误差、旋转中心等输出。这是字段/对象<strong>声明</strong>证据，不等于原厂失败后真实画面。</p>
+<p>原 <code>CIMVSNImageCalibModu::Process</code> RVA <code>0x20b90</code>，反编译 <code>worktrees/tool-plugins/analysis/full-audit/n-image-calibration/native/180020b90.c</code> SHA-256 <code>EED1AE6F4FD0B0A6AC39ECA2F0F9EAC5EDE090B3BA234A2E10798EFFFC37F2C1</code>：新批次达到配置数后清旧帧，逐帧加入内部队列，到总数才 <code>ProcessAlg</code>，随后 <code>ProcessOutput</code>。原 <code>ProcessOutput</code> RVA <code>0x21850</code>，<code>.../180021850.c</code> SHA-256 <code>21A81AFD487ED2C915D19F18842747C0A9297896D699767B8B5EBDDA72A0DAE4</code>：无有效解时仍写当前/总数、状态与占位角点端口；有解时发布误差、中心、点等。原 <code>RenderControlBase.UpdateVMResultShow</code> 和 <code>ModuleDisplayDecorator.GetDisplayList</code> 的图片选择/绘制调用边见 <a href="20261020-pass14-b-four-display.html">第十四轮</a>。原机同一输入序列失败/恢复后 <code>GetDisplayList</code> 的各对象值和可见状态仍未捕获。</p>
+<h2 id="当前主框架插件主窗">当前主框架→插件→主窗</h2><p><code>src/VisionPlugins.Calibration/NImagePlugin.cs</code> SHA-256 <code>EAF3DD0D77D244FBAEA86DE086A7DB52A358FA070BC8A5F38B8588A19FDC1033</code>：<code>ExecuteAsync</code> 在每轮保存 <code>Inputs/Outputs/Diagnostic</code>；失败清本轮输出再写 <code>ModuStatus=0</code> 与计时，而保存本轮输入图；<code>LastDisplay</code> 从同一节点状态构建文本/记录/列表、图形及原资源声明的图像层。<code>src/VisionEditor/ToolDisplays.cs</code> SHA-256 <code>F3AE89186549591A8A025FC8D36D66BC2B5EA959EC3ED293D3E1030BCDD0E656</code>：当前选中节点已有 <code>NodeRunRecord</code> 时，即使失败仍拉 <code>LastDisplay</code>；选节点前先清三个 presenter，避免上节点内容残留。此主框架路径是独立兼容适配器，不能称原 WPF 主窗实现等价。</p>
+<h2 id="离屏真实主窗探针">离屏真实主窗探针</h2><p><code>tests/CalibrationNImageDisplay.Checks/</code> 使用 <code>MainWindow</code>、<code>ImageSourcePlugin.SubmitImage</code>、工作流数值订阅 <code>MovePhysicalPointX/Y/RotateAngle</code> 和实际 <code>RunProcedure</code>。源图 <code>tests/NImageCalibration.PluginChecks/Fixtures/hik-i-help-derived.png</code> SHA-256 <code>CEA3978AF8112865B13E21D76646887DFDEC8D7F1A078BE4F3CB8A39A541912D</code>；九帧平移方式沿第十一轮已证夹具。步骤和本轮新增观察：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>当前运行结果</th>
+<th>当前选中 N 图像时显示</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>前 8 张有效</td>
+<td><code>Success</code>、<code>CurNum=8</code>，待批次完成</td>
+<td><code>InImage</code> 图像层 1、点图形 0、记录 173 字符、列表 8 列。</td>
+</tr>
+<tr>
+<td>第 9 张同尺寸空白图</td>
+<td><code>Failed</code>、<code>0x10103000</code></td>
+<td>frame 仍存在，保<strong>本轮空白输入</strong>图层 1、点图形 0、诊断记录 51 字符、列表 8 列；没有把上一轮点/指标当本轮解。</td>
+</tr>
+<tr>
+<td>下一张有效图</td>
+<td>新批次 <code>Success</code>、<code>CurNum=1</code></td>
+<td>重新显示新图像层；它是<strong>下一轮恢复</strong>，并非失败帧自行成功。</td>
+</tr>
+<tr>
+<td>再补 8 张有效图</td>
+<td><code>Success</code>、<code>CalibStatus=1</code></td>
+<td>图像层 1、校准点图形 1、记录 195 字符、列表 8 列。</td>
+</tr>
+<tr>
+<td>选回图像源</td>
+<td>—</td>
+<td>N 图像 frame、记录、列表 presenter 全空。</td>
+</tr>
+</tbody></table>
+<p>10/10 断言通过。复验命令：</p>
+<p><code>dotnet run --project tests/CalibrationNImageDisplay.Checks/CalibrationNImageDisplay.Checks.csproj -c Release --artifacts-path analysis/joint-audit/pass16-cal-nimage-display/build -- analysis/joint-audit/pass16-cal-nimage-display/run</code></p>
+<p>完整运行日志 <code>analysis/joint-audit/pass16-cal-nimage-display/first-run.log</code> SHA-256 <code>C357901E0C99FC91AA385AB0FBF6E562D0F13E0FF3D8BD36F46BBE01C229B309</code>；摘要 <code>run/summary.json</code> SHA-256 <code>09A3B773C13F3D975AEC7605DFA0BBAF785A4AB461C10BDD82CC29C3C01E43C0</code>。本轮首跑直接通过。测试为离屏主窗，未证明用户交互桌面的可见验收。</p>
+<h2 id="有界结论">有界结论</h2><p>当前这条 J08/J10 状态链已实测：同节点本轮图像、失败诊断、恢复后的点图形及切选清理均能逐次更新。原厂同图失败时 <code>GetDisplayList</code> 图层/点/文本对象保留与否、SelectedImage/CheckedImages 选择状态及原厂像素显示未有运行 trace；原 <code>ProcessOutput</code> 源码只能确认端口写入，不能直接规定 WPF 画面。其他板型、输入格式、取消、保存重开与用户交互桌面验收不在本轮结论中。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass16-nimage-display-recovery.md · SHA256 a23d18aad3bf90a15152b75d2a116953de6adfd694c14ef0cc40754a93f5c540<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

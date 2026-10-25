@@ -1,0 +1,99 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>标定板 EdgeThreshLow/High 原厂模块对照 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 标定板 EdgeThreshLow/High 原厂模块对照</p><h1>标定板 EdgeThreshLow/High 原厂模块对照</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>标定板 EdgeThreshLow/High 原厂模块对照</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.html#标定板-edgethreshlowhigh-原厂模块对照">标定板 EdgeThreshLow/High 原厂模块对照</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.html#受控回放">受控回放</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.html#原厂源码及调用链">原厂源码及调用链</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.html#证据身份">证据身份</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.html#边界与下一步证据">边界与下一步证据</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.html#验证">验证</a></p></details><h1 id="标定板-edgethreshlowhigh-原厂模块对照">标定板 EdgeThreshLow/High 原厂模块对照</h1><p>2026-10-19更正：下方棋盘输出指纹不变的运行事实仍有效，但“SDK没有消费名称/值”的ABI推断已被后续同实例硬件断点推翻。模块和SDK两条setter路径均把name/value通过RDX/R8传给算法；实际圆点877230的options+4/+8精确随Low/High改变。六组新证据、身份与剩余板型边界见 <a href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html">桥接追踪最新节</a>，不可再按下方历史静态反编译参数列表判定值未传入。</p>
+<p>本报告记录 <code>EdgeThreshLow</code> / <code>EdgeThreshHigh</code> 经原厂模块 <code>SetParam</code> 的可观测效果。结果只适用于下述同实例、同一合成棋盘图的受控样本；没有把单一样本未变化外推为全板型等价，也没有改产品实现。</p>
+<h2 id="受控回放">受控回放</h2><p>测试入口：<code>tests/CalibrationBoard.NativeProbe/RunEdgeThresholdModule.ps1</code>，底层由 <code>ModuleProbe.cpp</code> 构造原厂 <code>CIMVSCalibBoardCalibModu</code> 实例并加载真实 <code>MVDCalibBoardCalibCpp.dll</code>。探针只替换原厂模块导入的 <code>ModuleFrame.dll</code> IO 函数，不改模块或 SDK 机器码，不执行平台 Init，不使用设备。</p>
+<p>同一个模块实例、同一个 SDK 工具实例、同一张 480×400 合成棋盘图及相同 ROI 下，依次只改变一项阈值：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th align="right">Low</th>
+<th align="right">High</th>
+<th align="right">原厂 SetParam</th>
+<th>原厂 GetParam</th>
+<th>ProcessAlg</th>
+<th>ProcessOutput 对照</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>基线</td>
+<td align="right">20</td>
+<td align="right">40</td>
+<td align="right">均返回 0</td>
+<td>分别回显 <code>20</code> / <code>40</code></td>
+<td>code 0，status 1</td>
+<td>23 项，点数 99，误差 0.00435560197，首点 (89.5030746, 79.5030746)，FNV-1a64 <code>1e9fa3be488401c6</code></td>
+</tr>
+<tr>
+<td>仅改 Low</td>
+<td align="right">0</td>
+<td align="right">40</td>
+<td align="right">返回 0</td>
+<td>分别回显 <code>0</code> / <code>40</code></td>
+<td>code 0，status 1</td>
+<td>与基线完整输出指纹相同</td>
+</tr>
+<tr>
+<td>仅改 High</td>
+<td align="right">20</td>
+<td align="right">80</td>
+<td align="right">返回 0</td>
+<td>分别回显 <code>20</code> / <code>80</code></td>
+<td>code 0，status 1</td>
+<td>与基线完整输出指纹相同</td>
+</tr>
+</tbody></table>
+<p>回放 JSONL：<code>analysis/calibration-board/edge-threshold-module-run-9da93d937e0f418c80e7f1ccb7b08426/runtime.jsonl</code>；构建日志：同目录 <code>build.log</code>，标准错误为空。原始文件的完整 23 项输出均记录在 JSONL 中。该测试样本说明模块存储和查询的配置值确实改变，但当前合成棋盘输出没有可观测变化。</p>
+<h2 id="原厂源码及调用链">原厂源码及调用链</h2><ol>
+<li>XML <code>AlgorithmTab.xml</code> 中两项默认值是 Low=20、High=40。资源 SHA-256：<code>76c9cd661a359216041b902cce8fae115566726707e749cc42c0bb9722bcbf91</code>。</li>
+<li>原厂模块 <code>IMVSCalibBoardCalibModu.dll</code> 的 <code>SetParam @ RVA 0x20d40</code> 将两个名称纳入识别分支。对于这两个名称，局部别名保持为空；反编译调用 SDK 工具对象 <code>this+0x15d98</code> 的 vtable <code>+0x60</code> 时只传入参数名，没有把 <code>SetParam</code> 的值字符串作为该虚调用实参。原厂模块导出 <code>GetParam</code> 在同一探针实例中则回显存储的值。因此，模块配置存储已被设置，不等价于已证明算法工具句柄收到阈值值。</li>
+<li>SDK 工厂 <code>CreateCalibBoardCalibToolInstance</code> 建立对象 vtable；<code>+0x60</code> 对应 SDK 函数 <code>FUN_180002980</code>。其反编译只读取工具对象 <code>+0x28</code> 算法句柄并调用外部 <code>MVD_Algorithm_SetValueByString(handle)</code>。该函数体不消费传入参数名/值。外部导入函数对句柄内部状态的副作用没有在当前探针中暴露。</li>
+<li>核心算法函数 <code>FUN_1807dda50</code> 会读取输入结构 <code>+0x24/+0x28/+0x2c</code> 参与边缘阈值分类，但当前模块探针只能观测算法结果与模块输出，不能读取该私有结构入口字节。因此尚无可证的 XML 名称/值 → SDK 参数名/句柄/阈值槽位映射。</li>
+</ol>
+<p><code>GetParam</code> 的原厂导出 ABI 由实际 DLL 导出名确认：<code>?GetParam@CIMVSCalibBoardCalibModu@@UEAAHPEBDPEADHPEAH@Z</code>。SetParam 是 <code>?SetParam@CIMVSCalibBoardCalibModu@@UEAAHPEBD0H@Z</code>。</p>
+<h2 id="证据身份">证据身份</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原厂 <code>IMVSCalibBoardCalibModu.dll</code></td>
+<td><code>bd62ee940a2e299c0c47e41909e64ca78c09d7717e7cefc629dbfb9e21105c1d</code></td>
+</tr>
+<tr>
+<td>原厂 <code>MVDCalibBoardCalibCpp.dll</code></td>
+<td><code>0a65d7a9e84a3ec6f662b4f05daa5a88351690ae4fbecd1748427c13c56fa308</code></td>
+</tr>
+<tr>
+<td><code>native-decompile/output/180020d40.c</code> (SetParam)</td>
+<td><code>dcf7ef94f929d6aa28501de637cab5298238a8322ce9b74249ca9993027a3361</code></td>
+</tr>
+<tr>
+<td><code>sdk-decompile/output/180002980.c</code> (SDK vtable +0x60 target)</td>
+<td><code>00cafbfb6be09bdbfc67ba6724bfa6f4353565aef9e02d7feba52cfa17d6bee8</code></td>
+</tr>
+<tr>
+<td>受控 JSONL</td>
+<td><code>45ff3178ac26946c0edad14dd6012a32e1e667d838fe70d608a3da261cc6a40e</code></td>
+</tr>
+<tr>
+<td>专属探针 <code>ModuleProbe.cpp</code></td>
+<td><code>6e0bb35584ad93ac637201b3406b16c29e3b453603e399f59da542c4aa735dfc</code></td>
+</tr>
+<tr>
+<td>专属运行器 <code>RunEdgeThresholdModule.ps1</code></td>
+<td><code>5bbf43a077a2e9bffb795f2ff3a6e0392f5ddc4d1244edfbe8d4090df6af13f0</code></td>
+</tr>
+<tr>
+<td>受控探针二进制 <code>probe.exe</code></td>
+<td><code>ba085350cdfa7e0fd472f84316ef773008282d2ba49b02161ae8607a38de8910</code></td>
+</tr>
+</tbody></table>
+<h2 id="边界与下一步证据">边界与下一步证据</h2><p>尚不能判断阈值是否在其他图案、不同板型或非默认算法模式下改变判定。输出不变只是这个 99 点棋盘样本的结果，不证明内部阈值槽未变；模块 <code>GetParam</code> 也只证明其可查询配置值。继续闭合需要在同一原厂模块实例中使用一组已由原厂 SDK 结果证明对 Low/High 敏感的图像/板型，同时在原厂 SDK 算法入口读取 <code>+0x24/+0x28/+0x2c</code>，并跟踪 <code>MVD_Algorithm_SetValueByString</code> 的具体句柄副作用。当前并无满足该映射的原厂接口或运行 trace，故保留未知，不增加产品映射或放宽测试容差。</p>
+<h2 id="验证">验证</h2><ul>
+<li>专属原厂模块回放：<code>pwsh -NoProfile -File tests/CalibrationBoard.NativeProbe/RunEdgeThresholdModule.ps1</code> 成功，脚本断言 6 次 GetParam 回显及三份完整输出指纹一致；设备测试未做。</li>
+<li>稳定边界回归：<code>pwsh -NoProfile -File tests/CalibrationBoard.Checks/Run.ps1 -BoundaryRuntimeOnly</code>，exit 0，<code>sourceChangedDuringBuild=false</code>，<code>PASS 3 native boundary-runtime aggregate checks.</code> 记录：<code>analysis/calibration-board/verification-60ba47102b614936b496a530c02e8b22/summary.json</code>。</li>
+<li>Windows PowerShell 5.1 执行既有 <code>Run.ps1</code> 时因 .NET Framework 缺少 <code>IO.Path.GetRelativePath</code> 无法开始；以本机 pwsh 7.6.5 重跑成功。这是运行器兼容性问题，本轮未修改其实现。</li>
+</ul>
+<p class="meta">来源：docs/plugins/CALIBRATION-BOARD-EDGE-THRESHOLD-MODULE-REPLAY.md · SHA256 2d5151fa34e81ebeedf8591d842a4d539f3b81c65213fc8d106663a81506273f<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

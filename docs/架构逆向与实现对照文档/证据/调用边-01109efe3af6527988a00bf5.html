@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SDK 0x1806533A0 / GM_SP_LoadLib · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SDK 0x1806533A0 / GM_SP_LoadLib · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-G25"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SDK 0x1806533A0 / GM_SP_LoadLib → 加载GlobalScript.dll → GetProcAddress(GS_M_DealMsg) → +0x18</h2><p>方法通过MSVCP120!_Mtx_lock锁对象+0x28；对象首字段已有handle时进入正常unlock并返回0，本分支不重新验证各函数指针。加载路径取SDK模块GetModuleHandleW/GetModuleFileNameW，调用PathRemoveFileSpecW，原UTF16片段含\..\..\GlobalScript\与GlobalScript.dll；路径构造helper内部未解释，不把字面路径当运行LoadedModule。LoadLibraryW结果写首字段；通过后GetProcAddress原ASCII GS_M_DealMsg，RAX写对象+0x18并检查非空；缺符号置E0000608。正常解锁后非零错误会调用0x180653850清理，具体清理体待取证。</p><p><a href="../专题/execution-storage.html#edge-G25">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/execution-storage.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/execution-storage.edges.json · SHA256 a9ff89e4868a237886b3ceade3029c19466278ee1454727fd4d7198e4fa01ae8</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="a29441208285983b8c360b4adc7425631a9685ff010522b1bcdad4ecc94966c4">{
+  &quot;id&quot;: &quot;G25&quot;,
+  &quot;route&quot;: &quot;原版 · 全局单次注册与候选接收&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;SDK 0x1806533A0 / GM_SP_LoadLib&quot;,
+  &quot;to&quot;: &quot;加载GlobalScript.dll → GetProcAddress(GS_M_DealMsg) → +0x18&quot;,
+  &quot;behavior&quot;: &quot;方法通过MSVCP120!_Mtx_lock锁对象+0x28；对象首字段已有handle时进入正常unlock并返回0，本分支不重新验证各函数指针。加载路径取SDK模块GetModuleHandleW/GetModuleFileNameW，调用PathRemoveFileSpecW，原UTF16片段含\\..\\..\\GlobalScript\\与GlobalScript.dll；路径构造helper内部未解释，不把字面路径当运行LoadedModule。LoadLibraryW结果写首字段；通过后GetProcAddress原ASCII GS_M_DealMsg，RAX写对象+0x18并检查非空；缺符号置E0000608。正常解锁后非零错误会调用0x180653850清理，具体清理体待取证。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/global-run-registration.resources/script_load_6533a0.region0.assembly.txt&quot;,
+      &quot;member&quot;: &quot;Mutex and existing-module early return&quot;,
+      &quot;sha256&quot;: &quot;e2fad5a2a5b1d17556d4b23d0d9f258ef3f5a2dfa8dffc47f47a9df9ac45ce23&quot;,
+      &quot;start&quot;: 41,
+      &quot;end&quot;: 62,
+      &quot;excerpt&quot;: &quot;  0000000180653419: 49 8D 5E 28        lea         rbx,[r14+28h]\n  000000018065341D: 48 89 5C 24 40     mov         qword ptr [rsp+40h],rbx\n  0000000180653422: 48 8B CB           mov         rcx,rbx\n  0000000180653425: FF 15 25 62 3E 00  call        qword ptr [0000000180A39650h]\n  000000018065342B: 85 C0              test        eax,eax\n  000000018065342D: 74 09              je          0000000180653438\n  000000018065342F: 8B C8              mov         ecx,eax\n  0000000180653431: FF 15 01 62 3E 00  call        qword ptr [0000000180A39638h]\n  0000000180653437: 90                 nop\n  0000000180653438: 49 83 3E 00        cmp         qword ptr [r14],0\n  000000018065343C: 74 3F              je          000000018065347D\n  000000018065343E: B9 02 00 00 00     mov         ecx,2\n  0000000180653443: E8 C8 EB F4 FF     call        00000001805A2010\n  0000000180653448: 84 C0              test        al,al\n  000000018065344A: 0F 84 DE 00 00 00  je          000000018065352E\n  0000000180653450: E8 1B E9 F4 FF     call        00000001805A1D70\n  0000000180653455: 48 8B C8           mov         rcx,rax\n  0000000180653458: C7 44 24 20 2F 00  mov         dword ptr [rsp+20h],2Fh\n                    00 00\n  0000000180653460: 4C 8D 0D 29 E7 46  lea         r9,[0000000180AC1B90h]\n                    00\n  0000000180653467: 4C 8D 05 EA E6 46  lea         r8,[0000000180AC1B58h]&quot;,
+      &quot;evidenceType&quot;: &quot;original-native-static-assembly&quot;,
+      &quot;binaryIdentity&quot;: &quot;b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1 / Amd64 / candidate runtime identity unproved&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/global-run-registration.resources/script_load_6533a0.region0.assembly.txt&quot;,
+      &quot;member&quot;: &quot;LoadLibrary and module handle write&quot;,
+      &quot;sha256&quot;: &quot;e2fad5a2a5b1d17556d4b23d0d9f258ef3f5a2dfa8dffc47f47a9df9ac45ce23&quot;,
+      &quot;start&quot;: 162,
+      &quot;end&quot;: 175,
+      &quot;excerpt&quot;: &quot;  00000001806535EC: 48 8D 4C 24 70     lea         rcx,[rsp+70h]\n  00000001806535F1: 48 83 7D 88 08     cmp         qword ptr [rbp-78h],8\n  00000001806535F6: 48 0F 43 4C 24 70  cmovae      rcx,qword ptr [rsp+70h]\n  00000001806535FC: FF 15 B6 5B 3E 00  call        qword ptr [0000000180A391B8h]\n  0000000180653602: 49 89 06           mov         qword ptr [r14],rax\n  0000000180653605: 48 85 C0           test        rax,rax\n  0000000180653608: 75 0A              jne         0000000180653614\n  000000018065360A: BF 07 06 00 E0     mov         edi,0E0000607h\n  000000018065360F: E9 50 01 00 00     jmp         0000000180653764\n  0000000180653614: 4C 8D 3D DD E5 46  lea         r15,[0000000180AC1BF8h]\n                    00\n  000000018065361B: 49 8B D7           mov         rdx,r15\n  000000018065361E: 48 8B C8           mov         rcx,rax\n  0000000180653621: FF 15 99 5B 3E 00  call        qword ptr [0000000180A391C0h]&quot;,
+      &quot;evidenceType&quot;: &quot;original-native-static-assembly&quot;,
+      &quot;binaryIdentity&quot;: &quot;b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1 / Amd64 / candidate runtime identity unproved&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/global-run-registration.resources/script_load_6533a0.region0.assembly.txt&quot;,
+      &quot;member&quot;: &quot;Named command export resolution and slot write&quot;,
+      &quot;sha256&quot;: &quot;e2fad5a2a5b1d17556d4b23d0d9f258ef3f5a2dfa8dffc47f47a9df9ac45ce23&quot;,
+      &quot;start&quot;: 211,
+      &quot;end&quot;: 232,
+      &quot;excerpt&quot;: &quot;  00000001806536B2: 4C 8D 3D E7 E5 46  lea         r15,[0000000180AC1CA0h]\n                    00\n  00000001806536B9: 49 8B D7           mov         rdx,r15\n  00000001806536BC: 49 8B 0E           mov         rcx,qword ptr [r14]\n  00000001806536BF: FF 15 FB 5A 3E 00  call        qword ptr [0000000180A391C0h]\n  00000001806536C5: 49 89 46 18        mov         qword ptr [r14+18h],rax\n  00000001806536C9: 48 85 C0           test        rax,rax\n  00000001806536CC: 75 30              jne         00000001806536FE\n  00000001806536CE: 8D 48 04           lea         ecx,[rax+4]\n  00000001806536D1: E8 3A E9 F4 FF     call        00000001805A2010\n  00000001806536D6: 84 C0              test        al,al\n  00000001806536D8: 0F 84 81 00 00 00  je          000000018065375F\n  00000001806536DE: FF 15 B4 5B 3E 00  call        qword ptr [0000000180A39298h]\n  00000001806536E4: 8B F8              mov         edi,eax\n  00000001806536E6: E8 85 E6 F4 FF     call        00000001805A1D70\n  00000001806536EB: 89 7C 24 30        mov         dword ptr [rsp+30h],edi\n  00000001806536EF: 4C 89 7C 24 28     mov         qword ptr [rsp+28h],r15\n  00000001806536F4: C7 44 24 20 6A 00  mov         dword ptr [rsp+20h],6Ah\n                    00 00\n  00000001806536FC: EB 46              jmp         0000000180653744\n  00000001806536FE: 4C 8D 3D 83 E5 46  lea         r15,[0000000180AC1C88h]\n                    00&quot;,
+      &quot;evidenceType&quot;: &quot;original-native-static-assembly&quot;,
+      &quot;binaryIdentity&quot;: &quot;b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1 / Amd64 / candidate runtime identity unproved&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/global-run-registration-review.json&quot;,
+      &quot;member&quot;: &quot;Static SDK/candidate PE import/string/switch authority&quot;,
+      &quot;sha256&quot;: &quot;f98b45da074d606978919d10e64c783dbf1ba71a102615c7227091ddef949c1c&quot;,
+      &quot;start&quot;: 369,
+      &quot;end&quot;: 373,
+      &quot;excerpt&quot;: &quot;        \&quot;rva\&quot;: 11279368,\n        \&quot;fileOffset\&quot;: 11274760,\n        \&quot;utf16le\&quot;: \&quot;GlobalScript.dll\&quot;\n      }\n    ]&quot;,
+      &quot;evidenceType&quot;: &quot;original-native-static-pe&quot;,
+      &quot;binaryIdentity&quot;: &quot;SDK b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1 / candidate 06d86f51bebfeba357d1b79297e20a3b0a70580a40af7b77c8abdd6c38ca0624&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;路径拼接callee、初始化/卸载及异常互斥量清理仍未闭合；相同名称候选导出不证明实际加载身份。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

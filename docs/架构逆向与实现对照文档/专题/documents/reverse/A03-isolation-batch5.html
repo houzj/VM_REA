@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A03 第五批：初始化隔离退出审查 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / A03 第五批：初始化隔离退出审查</p><h1>A03 第五批：初始化隔离退出审查</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A03 第五批：初始化隔离退出审查</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="A03-isolation-batch5.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="A03-isolation-batch5.html#a03-第五批初始化隔离退出审查">A03 第五批：初始化隔离退出审查</a></p><p style="margin-left:14px"><a href="A03-isolation-batch5.html#固定验收门槛与本批结果">固定验收门槛与本批结果</a></p><p style="margin-left:14px"><a href="A03-isolation-batch5.html#原件证据与复验">原件证据与复验</a></p><p style="margin-left:14px"><a href="A03-isolation-batch5.html#已确认初始化数据流">已确认初始化数据流</a></p><p style="margin-left:14px"><a href="A03-isolation-batch5.html#当前机器只读观察与阻塞条件">当前机器只读观察与阻塞条件</a></p><p style="margin-left:14px"><a href="A03-isolation-batch5.html#进度指标">进度指标</a></p></details><h1 id="a03-第五批初始化隔离退出审查">A03 第五批：初始化隔离退出审查</h1><p>2026-10-19，基线 main <code>e6bf62a</code>。有界子项 <strong>A03.init-isolation = blocked</strong>。阻塞审查已完成，原装饰器绑定运行尚未执行，完整 A03 未关闭。本批不改产品、不访问 tool-plugins。</p>
+<h2 id="固定验收门槛与本批结果">固定验收门槛与本批结果</h2><table>
+<thead>
+<tr>
+<th>门槛</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>识别路径初始化、ModulePathGenerate、日志初始化的入口与读写依赖</td>
+<td>已定位并保全本报告列出的 CIL、配置、注册表只读观察</td>
+</tr>
+<tr>
+<td>证明原装饰器初始化仅使用自有受控副本、实例和输出</td>
+<td>未满足：原日志代码独立选择安装配置并监视其变化；AppBase 重定位不能替换该依赖</td>
+</tr>
+<tr>
+<td>在满足隔离前提后运行原装饰器绑定并记录通知与目标值</td>
+<td>未执行；运行断言 0</td>
+</tr>
+<tr>
+<td>保全结果、未知与解除条件，不以静态方法数替代验收完成</td>
+<td>已满足；原文件未修改，证据哈希随目录保留</td>
+</tr>
+</tbody></table>
+<p>这是一项明确阻塞，不应在后续批次反复追加同一日志静态切片。解除前应调度其他依赖满足的包。不能把本报告作为 Undo 刷新行为已确认的依据。</p>
+<h2 id="原件证据与复验">原件证据与复验</h2><p>本批使用 reverse-engineer-anything；新 REA <code>inspect_managed_artifact</code> Evidence <code>ev_ff90a25ff7174a267deac758048e4cc18f99ed9a1b9aa7d73434aad58f4ed551</code> 确认 VM.Utility.dll（SHA256 <code>65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf</code>，MVID <code>32e8ac89-6335-43c6-aa3e-61d8c0a670e5</code>）。<code>rea-utility-identity-summary.json</code> 明确只是身份摘要，完整结果仍在 REA 本会话账本；不是导出的完整证据包。</p>
+<p><code>tests/NativeEvidence/A03Isolation/Run.ps1</code> 使用 .NET Framework 系统 csc 编译元数据读取器，再 ReflectionOnlyLoadFrom 读取原件，不执行目标函数。最终输出 VM.Utility 10、Apps.Log 11、Apps.BaseLog 11 个定向方法体，共 32 个；其中 ConfigurationHelper 的已知 GetConfig/GetConfigValue/cctor 仅是依赖审查复核，不宣称全部为新增覆盖。VM.Util 0 个匹配，亦保留，不计入有效方法数。stdout-stderr、原 CIL/token/IL 字节哈希、异常区域、4 DLL 前后完整性检查、原资源配置副本及哈希位于 <code>analysis/full-audit/batch5-20261019/A03/</code>。脚本多次调整定向选择只增加依赖读取，未发生目标运行失败。最初读取不存在报告文件及 PowerShell 通配路径 rg 错误只是工作检索错误，不算原厂行为。</p>
+<h2 id="已确认初始化数据流">已确认初始化数据流</h2><ol>
+<li>第四批已确认的 <code>VMControls.WPF.DataForUI.VmModuleBaseDecorator.cctor</code>（原源码 <code>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:485</code>）先构造字典、<code>LogHelper.Info</code>，然后 <code>CurrentPathHelper.Instance.GetCurrentPath()</code>，以 StreamReader 读 <code>ModulePathGenerate.txt</code>，按 <code>&quot; # &quot;</code> 拆每行并使用数组第 0、2 项；正常完成后再次 Info。该路径没有创建/清理目录动作，但日志在路径文件读取之前已经初始化。格式错误/缺文件不能当成安全旁路，因为前置日志仍可发生。</li>
+<li><code>CurrentPathHelper.cctor</code> token <code>060002B8</code> → ctor <code>060002B9</code> → <code>ConfigurationHelper.GetConfig(&quot;StartClientMode&quot;)</code> <code>0600012C</code>。空值或 <code>&quot;1&quot;</code> 设置 IsSDKMode，<code>&quot;2&quot;</code> 设置 IsRpMode，其他值两者保留 false。GetConfig 读取 ConfigurationManager.AppSettings，缺值/异常会调用 LogHelper.Error。构造器本身只写托管字段。</li>
+<li><code>GetCurrentPath</code> <code>060002BA</code> 默认 AppDomain.BaseDirectory；SDK 模式读 HKLM <code>SOFTWARE\\WOW6432Node\\Microsoft\\.NETFramework\\v4.0.30319\\AssemblyFoldersEx\\VisionMaster</code> 的默认值并补反斜杠。GetRegisterValueByName <code>060002BD</code> 用只读 OpenSubKey/GetValue，并 Close；无注册表写入。空注册表字符串补斜杠的分支也按原 CIL 保留，不假设安装路径总有效。GetVMInstallPath <code>060002BC</code> 的 CurrentVersion/Uninstall 查找是另一成员，不是本次装饰器 GetCurrentPath 的直接调用。</li>
+<li><strong>日志路径独立于上面的模式</strong>：<code>Apps.Log.LogHelper.cctor</code> <code>06000001</code> → GetCurrentVersionInstallPath <code>06000002</code> 无条件按同一 HKLM 默认路径寻找 <code>myLibs\\Apps.BaseLog.config</code>，仅当该文件不存在才退回 AppBase。然后 <code>Apps.BaseLog.Config.XmlConfigurator.ConfigureAndWatch(FileInfo)</code>，取得多个 logger，并启动 IsBackground=true 的日志队列线程。两个数组各 10000 个引用；队列闭包 <code>&lt;.cctor&gt;b__14_0</code> <code>0600000B</code> 定期交换、按 Info/Debug/Error 调 objLog，每轮 Sleep(1000)。不是仅一次同步文本写入。</li>
+<li><code>BaseLog.XmlConfigurator.InternalConfigureAndWatch</code> <code>060005BC</code> 先 InternalConfigure，再按配置完整路径建/替换 ConfigureAndWatchHandler。该链说明运行期继续依赖外部安装配置；本批没有执行 watcher 或声称观察过回调。</li>
+<li>日志输出不能被错误描述为“必写安装目录”。<code>FileAppender.ActivateOptions</code> <code>060006AC</code> 调 ConvertToFullPath <code>060006BA</code> → <code>SystemInfo.ConvertToFullPath</code> <code>060001E3</code> → get_ApplicationBaseDirectory <code>060001CB</code>，实际返回 AppDomain.BaseDirectory，再 Path.Combine/GetFullPath。因此受控 AppBase 能重定位普通相对 File 值；OpenFile 后续通过锁模型打开文件。</li>
+</ol>
+<h2 id="当前机器只读观察与阻塞条件">当前机器只读观察与阻塞条件</h2><p><code>registry-observation.json</code> 为 PowerShell 只读注册表观察，没有运行原厂函数。当前默认值为 <code>D:/Program Files/VisionMaster4.4.0/Development/V4.x/ComControls/Assembly</code>；其 <code>myLibs/Apps.BaseLog.config</code> <strong>实际存在</strong>。所以单纯把 DLL/应用配置/ModulePathGenerate 复制到审计目录，即使设置 StartClientMode 为非 SDK 模式，原 LogHelper 仍选择这份安装配置。</p>
+<p>保全了 Applications/myLibs 与上述 registry-selected 两份原配置，分开命名；分析以实际被选中的版本为准。<code>registry-selected-appenders.json</code> 列出各 File 值。目前这些值均为相对路径，因此静态上可结合自有 AppBase 归一化；<strong>这并不能消除安装配置的 watch/reload 和其可变化内容</strong>。本报告未声称已经发生越界写入，也未声称仅因为读安装配置就一定危险。尚未证明自动配置、滚动备份、锁模型、watcher 重载和全部输出端均被强制约束在自有副本/目录；当前四 DLL 定向成员范围不覆盖 BaseLog 全配置器安全证明。</p>
+<p>本次退出决策：遵守原机/SDK 运行只用自有受控副本/实例/输出的要求，<strong>不启动原装饰器，不修改 HKLM，不改安装原件、不用反射跳过/篡改原 cctor 后冒称原运行</strong>。</p>
+<p>解除条件是提供独立 Windows 受控实例（例如专用虚拟机/快照）使 HKLM 默认路径、原 DLL、原日志配置、AppBase、ModulePathGenerate 和全部文件输出都归属该实例；或先取得等价的进程局部注册表/文件系统隔离及输出约束证明，不改宿主 HKLM。到那时只需复验具体绑定问题：同一源实例的模型 ProceZoomIndex 通知是否更新显式接口 PartentZoomIndex 绑定目标，对照直接 setter 与 Undo，并分开 DisplayModuleSet 换源重求值。桌面验收仍需单独核实用户交互桌面，不能把隔离 WPF 事件计为原机桌面等价。</p>
+<h2 id="进度指标">进度指标</h2><p>本有界子项 4 个门槛：满足 2，未满足 1，因前置未满足而未执行 1；最终状态 blocked。新增原装饰器运行 0、产品修复 0、完整 A03 关闭 0。此次新增的是可核验的外部依赖和退出条件，不是整体完成百分比。</p>
+<p class="meta">来源：docs/reverse/A03-isolation-batch5.md · SHA256 a10bfdb8688a2b96eecbfcbd88b673f56dd94cf67d22b33281acd0363098e27a<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

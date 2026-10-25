@@ -1,0 +1,43 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 dfc332741b77 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 dfc332741b77</p><h1>原文证据 dfc332741b77</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 dfc332741b776036614877cdd75e96943524d570e2528e1976a1b123018abc65。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">using System.Diagnostics;
+using System.IO;
+using VisionCore;
+using VisionFramework;
+using VisionPluginContracts;
+namespace VisionPlugins.ImageSource;
+
+/// &lt;summary&gt;Independent implementation; original Process RVA 0xde30 and CopyImage RVA 0xe6a0.&lt;/summary&gt;
+public sealed class ImageBufferPlugin:IVisionToolPlugin,IWpfToolEditorFactory,IToolImageOutputProvider {
+ public const string Id=&quot;vision.image-buffer&quot;;
+ public ToolManifest Manifest{get;}=new(Id,&quot;1.0.0&quot;,&quot;缓存图像&quot;,&quot;collection&quot;,&quot;catalog/ImageBufferModuleImageEnable.png&quot;);
+ public IReadOnlyList&lt;ToolImageOutput&gt; ImageOutputs{get;}=Enumerable.Range(0,15).Select(i=&gt;new ToolImageOutput($&quot;OutImage{i}Image&quot;,&quot;输出图像&quot;+i)).ToArray();
+ public ModuleDescriptor Descriptor{get;}=new(Id,&quot;1.0.0&quot;,&quot;缓存图像&quot;,[new(&quot;InputImage&quot;,DataKind.Image,false),new(&quot;RefreshFlag&quot;,DataKind.Integer,false),new(&quot;BufferCount&quot;,DataKind.Integer,false)],
+  Enumerable.Range(0,15).SelectMany(i=&gt;new[]{new PortDescriptor($&quot;OutImage{i}Image&quot;,DataKind.Image,false),new($&quot;OutImage{i}Width&quot;,DataKind.Integer,false),new($&quot;OutImage{i}Height&quot;,DataKind.Integer,false),new($&quot;OutImage{i}PixelFormat&quot;,DataKind.Integer,false)}).Concat(new[]{new PortDescriptor(&quot;ModuStatus&quot;,DataKind.Integer),new(&quot;ModuRunTime&quot;,DataKind.Number)}).ToArray(),[]);
+ sealed class State {public readonly object Gate=new();public readonly Queue&lt;IImageData&gt; Images=new();}
+ readonly Dictionary&lt;string,State&gt; fallback=new();readonly object gate=new();
+ State GetState(ModuleExecutionContext c){if(c.Scope is {} scope)return scope.State(Id,c.NodeId,()=&gt;new State());lock(gate){string key=Path.GetFullPath(c.BaseDirectory)+&quot;|&quot;+c.NodeId;if(!fallback.TryGetValue(key,out var state))fallback[key]=state=new();return state;}}
+ public void Reset(string nodeId){lock(gate)foreach(string key in fallback.Keys.Where(k=&gt;k.EndsWith(&quot;|&quot;+nodeId,StringComparison.Ordinal)).ToArray())fallback.Remove(key);}
+ public IModule CreateRuntime()=&gt;new Runtime(this);
+ public Form CreateEditor(ToolEditorContext context)=&gt;throw new InvalidOperationException(&quot;Use WPF editor factory.&quot;);
+ public System.Windows.Window CreateWpfEditor(ToolEditorContext context)=&gt;new ImageBufferWindow(context);
+ sealed class Runtime(ImageBufferPlugin owner):IModule {
+  public ModuleDescriptor Descriptor=&gt;owner.Descriptor;
+  public ValueTask&lt;ModuleResult&gt; ExecuteAsync(ModuleExecutionContext c,CancellationToken token){
+   token.ThrowIfCancellationRequested();var clock=Stopwatch.StartNew();var output=new Dictionary&lt;string,PortValue&gt;();uint code=0;string? error=null;
+   int Read(string name,int value)=&gt;c.Inputs.TryGetValue(name,out var p)?checked((int)p.As&lt;long&gt;()):value;
+   int count=Read(&quot;BufferCount&quot;,15),flag=Read(&quot;RefreshFlag&quot;,1);
+   // Native validates count before reading/copying input or mutating cache.
+   if(count is &lt;0 or &gt;15){code=0xe000031c;error=&quot;InvalidBufferCount&quot;;}
+   else {var state=owner.GetState(c);lock(state.Gate){
+    token.ThrowIfCancellationRequested();
+    if(flag==1){
+     if(!c.Inputs.TryGetValue(&quot;InputImage&quot;,out var input)){code=0xe0000510;error=&quot;InputImageMissing&quot;;}
+     else {var image=input.As&lt;IImageData&gt;();IImageData copy=image switch{GrayImage=&gt;new GrayImage(image.Width,image.Height,image.Pixels),RgbImage=&gt;new RgbImage(image.Width,image.Height,image.Pixels),RawImage=&gt;new RawImage(image.Width,image.Height,image.Format,image.Pixels,image.Stride),_=&gt;throw new ArgumentException(&quot;Unsupported image format.&quot;)};state.Images.Enqueue(copy);while(state.Images.Count&gt;count)state.Images.Dequeue();}
+    }
+    if(code==0){int i=0;foreach(var image in state.Images){string prefix=$&quot;OutImage{i++}&quot;;output[prefix+&quot;Image&quot;]=PortValue.Image(image);output[prefix+&quot;Width&quot;]=PortValue.Integer(image.Width);output[prefix+&quot;Height&quot;]=PortValue.Integer(image.Height);output[prefix+&quot;PixelFormat&quot;]=PortValue.Integer((int)image.Format);}}
+   }}
+   output[&quot;ModuStatus&quot;]=PortValue.Integer(code==0?1:0);output[&quot;ModuRunTime&quot;]=PortValue.Number(clock.Elapsed.TotalMilliseconds);
+   return ValueTask.FromResult(new ModuleResult(code==0?ModuleStatus.Success:ModuleStatus.Failed,output,error){NativeErrorCode=code});
+  }
+ }
+}
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Collection-ImageBufferModule-d8e602ab.html">缓存图像 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

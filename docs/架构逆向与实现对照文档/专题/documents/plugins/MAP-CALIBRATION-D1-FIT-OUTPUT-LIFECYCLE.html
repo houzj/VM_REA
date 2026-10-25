@@ -1,0 +1,109 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1第七切片：当前拟合输出别名与失败写回 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D1第七切片：当前拟合输出别名与失败写回</p><h1>D1第七切片：当前拟合输出别名与失败写回</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1第七切片：当前拟合输出别名与失败写回</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.html#d1第七切片当前拟合输出别名与失败写回">D1第七切片：当前拟合输出别名与失败写回</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.html#身份与可复查源">身份与可复查源</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.html#abi与实际不重叠区域">ABI与实际不重叠区域</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.html#首次写回与逐阶段顺序">首次写回与逐阶段顺序</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.html#精化失败谓词与mask保留">精化失败谓词与mask保留</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.html#失败回退中数据是否别名的结论">失败回退中数据是否“别名”的结论</a></p></details><h1 id="d1第七切片当前拟合输出别名与失败写回">D1第七切片：当前拟合输出别名与失败写回</h1><p>2026-10-19。只追model1/strategy2、maxiter20、trim0、cutoff5的70f4e0→70d280→70d2e0；复用既有C/asm，无新取体、微trace、泛化样本或产品改动。量化首分叉和前定位零幅值不在本切片解决。</p>
+<h2 id="身份与可复查源">身份与可复查源</h2><p>MVD_Algorithm.dll SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。沿用已记录私有Ghidra只读fallback，无REA Evidence ID。索引仍108入口记录含10拆块；本轮重新核对70d280/70d2e0/70f4e0汇编及6fc190/72d6b0已取体。原始文件在<code>analysis/map-calibration/d1-source-chain/source/</code>，逐体哈希/行号由source-index.json记录。</p>
+<h2 id="abi与实际不重叠区域">ABI与实际不重叠区域</h2><p>70d280伪代码只显示空参数，不能据此认为输出未传。汇编18070d286保存输入R9=statusPtr到R15，重排栈参数，18070d2ce调用70d2e0，18070d2d3才把EAX写到statusPtr。以W为70f4e0 workspace起点，当前最多30点：</p>
+<table>
+<thead>
+<tr>
+<th>70d2e0参数</th>
+<th>实际含义/地址来源</th>
+<th>当前所用长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p1 RCX</td>
+<td>收集XY，W</td>
+<td>N*8，最多240字节</td>
+</tr>
+<tr>
+<td>p2 EDX</td>
+<td>N，收集点数</td>
+<td>当前3..30才进入拟合</td>
+</tr>
+<tr>
+<td>p3 R8</td>
+<td>70f4e0栈局部3float模型，&amp;fStack_154</td>
+<td>cx/cy/r，12字节</td>
+</tr>
+<tr>
+<td>p4 R9</td>
+<td>外层RMS指针，经70d280第5参数传入</td>
+<td>float，4字节</td>
+</tr>
+<tr>
+<td>p5 stack+20</td>
+<td>W+0x1f80</td>
+<td>N个float残差</td>
+</tr>
+<tr>
+<td>p6 stack+28</td>
+<td>W+0x2f80</td>
+<td>N个byte mask</td>
+</tr>
+<tr>
+<td>p7 stack+30</td>
+<td>70f4e0栈7槽配置，&amp;iStack_7c</td>
+<td>[1,2,20,0,F5,F30,F20]</td>
+</tr>
+<tr>
+<td>p8 stack+38</td>
+<td>70d280局部保存的workspace指针之地址</td>
+<td>*p8=W+0x3380</td>
+</tr>
+</tbody></table>
+<p>这些是当前caller的指针关系，不声称任意API调用都允许或禁止别名。当前XY、残差、mask、scratch之间按地址和N上限不重叠；模型和status位于不同栈槽，RMS是独立caller指针。外层没有用statusPtr代替RMS，也没有把残差float表当mask字节表。</p>
+<p>6fc190通过72d6b0将残差复制到scratch再做选择，输出median到70d2e0局部float；不排序或重排原残差/XY/mask。迭代开始先写绝对残差，最终又在同一p5区域写有符号残差：这是<strong>同缓冲区分阶段复用</strong>，不是p5/p6指针重叠。</p>
+<h2 id="首次写回与逐阶段顺序">首次写回与逐阶段顺序</h2><ol>
+<li>model1初始代数拟合成功先写p3：半径→cx→cy（18070ec48/4e/53），随后才进入鲁棒精化。初始模型M0保存到局部cx0/cy0/r0；此时未向外部p4写迭代RMS，也尚未初始化本轮mask。</li>
+<li>初始拟合失败：18070ec66..9a清p3三float、p4 RMS、N个残差float和N个mask byte，返回0。此路径的清零不能推广到精化失败。</li>
+<li>每轮先按当前局部模型Mi重写p5绝对径向残差；median调用只改scratch。trim0不进入707470排序路径，上限FLT_MAX与cutoff取小后为5。</li>
+<li>strategy2逐点写p6：残差&gt;=5→0，残差&lt;5→1；同时累计权重矩、接受点数、旧模型的残差平方和。满足至少3点/权重和/det/q门时才把新模型Mi+1写到<strong>局部寄存器/栈模型</strong>，尚未对p3再次输出。局部fStack_110用于收敛，不能把它叫外部最终RMS。</li>
+<li>退出精化后按成功标志一次写p3：成功写最终局部模型（18070e398..3a3）；失败写M0（18070e377..388），预置返回码2。不是回退到“最近成功精化模型”。</li>
+<li>然后最终遍历全部XY，用所选输出模型重写p5为有符号<code>distance−radius</code>（18070e3ce..407），只对p6==1累计平方和/数量。Nmask&gt;=3才写最终p4 RMS（e48a..4a9）；不足3则p4=0，返回0（e42e..435）。</li>
+<li>70d280收到返回码才写外部status。70f4e0不论该码是否0，先将局部模型的cy、cx、r复制到外层center/radius指针（18070ff50..77），再做非零status时的半径门/外层退出判断。因此status0也不能推导外层center/radius必为0。</li>
+</ol>
+<h2 id="精化失败谓词与mask保留">精化失败谓词与mask保留</h2><p>当前strategy2失败有：接受点数&lt;3、权重和&lt;DBL_EPS、abs(det)&lt;DBL_EPS、q&lt;DBL_EPS。接受点/权重门跳18070e29c，det/q门经18070da62清成功标志；18070e29e首先据标志决定退出，不继续下一轮。非有限值/COMISS无序分支不在本切片作数学泛化。</p>
+<p>失败后p3恢复M0，但p6没有恢复初始mask或按M0重算。成功时也没有在新模型Mi+1写回后再计算一次残差&lt;5来刷新mask。mask语义始终是<strong>最后一次精化输入模型Mi的筛选</strong>；最终p5/RMS却围绕输出模型计算。这个时序可以造成mask与输出模型的阈值分类不一致，是源码确认行为，不据常见拟合习惯补一次过滤。</p>
+<p>当前trim0使<code>cutoff&lt;=lastThreshold</code>的相等分支跳过后续mask计数/额外trim段（18070e3b5..c2→e3c7），因此这里没有隐藏的重新判点操作。其他trim/strategy路径不扩展。</p>
+<table>
+<thead>
+<tr>
+<th>当前路径</th>
+<th>模型p3</th>
+<th>mask p6</th>
+<th>最终残差p5/RMS p4</th>
+<th>返回</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>初始拟合失败</td>
+<td>全0</td>
+<td>全0</td>
+<td>全0/0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>精化退出成功</td>
+<td>最终局部模型</td>
+<td>最后轮输入模型筛选</td>
+<td>围绕最终模型重算/保留mask上的RMS</td>
+<td>通常1；半径门可2</td>
+</tr>
+<tr>
+<td>精化失败，最后mask&gt;=3</td>
+<td>M0</td>
+<td>最后轮mask</td>
+<td>围绕M0重算/同mask上的RMS</td>
+<td>2</td>
+</tr>
+<tr>
+<td>精化失败，最后mask&lt;3</td>
+<td>M0，仍保留</td>
+<td>最后轮mask</td>
+<td>围绕M0重算/RMS0</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>半径门只把非零候选状态改为2，不清模型/残差/mask/RMS。70d2e0 nominal30/tolerance20门和70f4e0 lo10/hi50门是不同层；80ac20还有独立[15,21]半径门，不可合并成同一个status判定。</p>
+<h2 id="失败回退中数据是否别名的结论">失败回退中数据是否“别名”的结论</h2><p>当前没有证据表明mask/RMS/模型物理地址互相覆盖。此前未决点主要是反编译局部变量和输出缓冲复用导致的<strong>语义时序</strong>：fallback只恢复模型，保留最后mask；残差从绝对值改成有符号值；最终RMS按保留mask重算。汇编确认恢复p3后直接进入最终残差循环，并读取同一个mask地址(RSP+288)，未调用median或阈值重建。</p>
+<p>这闭合当前caller的地址、首次写回、失败回退与最终RMS选择。未执行失败原厂微探针，未声称任意输入数值结果等价；若后续需补证，只需构造当前strategy2的一次精化失败并记录上述缓冲区写序。S1索引不变、S2有限推进完成，产品/S5/S6未变。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D1-FIT-OUTPUT-LIFECYCLE.md · SHA256 96750d101f8efd8facd34d051569b957174c7302b08ba06a7473d23b25cbb703<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,92 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C02 第二批：有效配置来源与等待叶函数 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / C02 第二批：有效配置来源与等待叶函数</p><h1>C02 第二批：有效配置来源与等待叶函数</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C02 第二批：有效配置来源与等待叶函数</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="C02-scheduling-batch2.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="C02-scheduling-batch2.html#c02-第二批有效配置来源与等待叶函数">C02 第二批：有效配置来源与等待叶函数</a></p><p style="margin-left:14px"><a href="C02-scheduling-batch2.html#新闭合的配置链">新闭合的配置链</a></p><p style="margin-left:14px"><a href="C02-scheduling-batch2.html#新闭合的-wait-链">新闭合的 Wait 链</a></p><p style="margin-left:14px"><a href="C02-scheduling-batch2.html#原类隔离验证与副作用审查">原类隔离验证与副作用审查</a></p><p style="margin-left:14px"><a href="C02-scheduling-batch2.html#rea-身份与-cil-锚点">REA 身份与 CIL 锚点</a></p><p style="margin-left:14px"><a href="C02-scheduling-batch2.html#main差异与下一步">main差异与下一步</a></p></details><h1 id="c02-第二批有效配置来源与等待叶函数">C02 第二批：有效配置来源与等待叶函数</h1><p>日期：2026-10-19；main 基线 <code>6e5b05c</code>。本切片为源码和原托管叶方法验证；C02 完整调度包保持开放。无产品修改、SDK 初始化、设备调用、共享构建或其它工作树访问。</p>
+<h2 id="新闭合的配置链">新闭合的配置链</h2><p>此前 MF05 文档把 <code>ConfigurationHelper.GetConfigValue</code> 实现列为缺失，本轮已定位原安装 <code>Applications/myLibs/VM.Utility.dll</code>。</p>
+<p><code>Program.cs:224 → SystemConfigManager.IsClearLastExecuteResult → ConfigurationHelper.GetConfigValue(&quot;IsClearLastExecuteResult&quot;)</code>：</p>
+<ol>
+<li><code>GetConfig(&quot;ApplicationName&quot;)</code> 使用 <code>ConfigurationManager.AppSettings</code>；安装 exe.config 的 ApplicationName 是 <code>VisionMaster</code>。</li>
+<li>拼接 <code>.cfg</code>，对相对路径调用 <code>XDocument.Load</code>，因此解析相对当前工作目录，不是明确拼接 exe 所在目录。成功加载后 <code>_isLazyLoadCfg=true</code>，缓存 <code>_cfgDocument</code>。</li>
+<li>在根的直接子节点按名称 <code>SingleOrDefault</code>，再在其直接子节点选唯一 <code>CurValue</code>，返回 <code>Value</code>。缺节点、重复匹配、解析等 try 内异常均返回 null。不是读取 appSettings 同名键。</li>
+<li>SystemConfigManager 的精确 <code>== &quot;1&quot;</code> 将 null、<code>&quot;0&quot;</code> 等判为 false；该属性另有 nullable 缓存。setter 只更新属性缓存；不是配置保存入口。<code>ConfigurationHelper.SaveConfig</code> 存在并写 cfg，但本切片未执行或证明设置页调用它。</li>
+</ol>
+<p>安装 <code>D:/Program Files/VisionMaster4.4.0/Applications/VisionMaster.cfg:174–177</code> 实际记录 <code>CurValue=0</code>，SHA256 <code>30dccf82c93a1075d19fe0b699c3000a10e31e2b66935579720e094d34bc607e</code>。在此工作目录、该文件不变、正常进入上述初始化链的条件下，源码计算出的启动值为 false。<strong>没有采集真实 VisionMaster 进程的 CWD 或属性值，不能称已观察其实际窗口有效配置。</strong> 更不能把此安装文件值当成所有发行版本的默认。</p>
+<h2 id="新闭合的-wait-链">新闭合的 Wait 链</h2><p><code>Hik.Util.SyncWaitor</code> 实际在 <code>Applications/myLibs/VM.Util.dll</code>，而非找不到的独立 Hik.Util.dll。原 CIL 已可复验：</p>
+<table>
+<thead>
+<tr>
+<th>入口</th>
+<th>原方法行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Wait(ref bool)</code></td>
+<td>每轮检查标志；PeekMessage/TranslateMessage/DispatchMessage；无消息 Sleep(1)，没有时间上限。</td>
+</tr>
+<tr>
+<td><code>PrecisionWait(ref bool,bool)</code></td>
+<td>UI=true 同上；false 包围 TimeBeginPeriod(1)/TimeEndPeriod(1)并 Sleep(1)，仍没有时间上限，后者没有 finally。</td>
+</tr>
+<tr>
+<td><code>Wait(bool[],uint,uint)</code> / <code>PrecisionWait(bool[],uint,uint,bool)</code></td>
+<td>Stopwatch.ElapsedMilliseconds <strong>大于</strong> nTimeout 或标志为 true 就返回；不抛超时、不把 flag 设为 true、没有返回状态；Precision 的非 UI 分支配对计时精度调用。</td>
+</tr>
+<tr>
+<td><code>SyncWait(ref bool)</code></td>
+<td>使用阻塞 <code>GetMessage</code>，不是 PeekMessage；即使其它线程置 flag，也不能由此证明会唤醒阻塞的 GetMessage。</td>
+</tr>
+</tbody></table>
+<p>因此 <code>ProcessManager.SyncExecuteOnce/EX</code> 的普通等待没有托管超时参数；流程 <code>SetProcedureWaitTime</code> 是另一个 native 配置接口，不等于此等待函数内置计时取消。P2P 是带 nTimeout 的数组重载，时间到后可以在 flag 仍 false 时返回，随后正常递减计数。异常路径（如 SDK 提前抛出）仍无 finally，不能据超时返回证明所有路径都释放计数。</p>
+<p><code>RefreshUIStopExecute</code> 的 task 仅在 <code>StopExecute</code> 成功后置 isStopEnd；它调用无上限 <code>Wait(ref bool)</code>。源码不能保证 SDK 抛出后主等待一定结束。<code>GetWorkStatusCallBackInfo</code> 仅 workStatus=0 更新正常标志/完成旗，再派发事件；native 是否发出回调、时序及设备行为未验证。</p>
+<h2 id="原类隔离验证与副作用审查">原类隔离验证与副作用审查</h2><p><code>tests/NativeEvidence/C02/Run.ps1</code> 用 Framework csc 编译专属 Probe，不跑共享 dotnet。先核对 ConfigurationHelper 静态构造仅设置 lazy=false/document=null；只调用 GetConfigValue，未调用任何 Save 方法。脚本把原 cfg 复制进独占 run 目录，原件前后 SHA 不变；更改缓存验证只写专属 <code>Probe.cfg</code>。</p>
+<p>四个独立进程场景：安装 cfg 副本返回0、显式1返回1、缺字段返回null、重复字段返回null。每例另验证原文档缓存不随副本磁盘改写自动刷新、已完成 flag 立即返回、5ms数组等待返回时 flag 仍false。<strong>共20项断言通过，退出0</strong>；实测等待约9–20ms，不把计时量当作精度保证或完整调度验收。probe只将 <code>==&quot;1&quot;</code> 作为调用方表达式计算，未运行 Program/SystemConfigManager/VmSolution。</p>
+<p>强名称解析实际选择 GAC 的 VM.Utility/VM.Util，loaded-hashes.csv 保留全部实际程序集路径与哈希；已核对两者分别与分析安装原件SHA完全相同。本轮没有构造 VmSolution/ProcessManager、未发SDK请求。UI等待仅泵该probe线程队列，没有接管其它任务窗口。</p>
+<p>首轮原类20项亦通过，但脚本生成哈希清单时把正在写出的清单自身纳入枚举而失败；该 run 原样保留，修复为先完成枚举后导出，再跑新run通过，不隐藏失败。</p>
+<p>成功证据目录：<code>analysis/full-audit/batch2-20261019/C02/run-f2f8736123fe475481581ca57ca57da3/</code>。
+首轮目录：<code>analysis/full-audit/batch2-20261019/C02/run-f8ca8a7de3e4424a95723350b33f6827/</code>。</p>
+<h2 id="rea-身份与-cil-锚点">REA 身份与 CIL 锚点</h2><p>完整 inline 记录保留 <code>analysis/full-audit/batch2-20261019/C02/{utility,util,exeJ,sdk}-rea.json</code>；完整 VM.Utility IL 在同目录。Wait IL复用 <code>analysis/full-audit/batch1-20261019/A01/VM.Util.il:9040–9513</code>。哈希为 raw CIL 字节，不包含方法头、异常表或局部变量签名。</p>
+<table>
+<thead>
+<tr>
+<th>原件</th>
+<th>SHA256 / MVID / REA evidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>VM.Utility.dll</td>
+<td><code>65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf</code> / <code>32e8ac89-6335-43c6-aa3e-61d8c0a670e5</code> / <code>ev_17a12d045406658be0d3ec4eaacc51b23a6108dc714f50ac1f3ff3abd51366d1</code></td>
+</tr>
+<tr>
+<td>VM.Util.dll</td>
+<td><code>26b90443046fb2cb7f4cda3d4ef364a93c9a9ba65b492ba90da98abe01b2c3a0</code> / <code>96462886-0dfe-4999-8e3b-5d9df578645f</code> / <code>ev_9927f0ecf14305fc97b57ae6410f9549a32d6a56cc62e9548ecc5c66a92f6252</code></td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>方法 token / RVA</th>
+<th>raw CIL SHA256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ConfigurationHelper.GetConfig <code>0600012c</code> / <code>5230</code></td>
+<td><code>ce78077cd91a260684644a6f1ad1b86166464d6dfffd7a5d88cb805c1369b012</code></td>
+</tr>
+<tr>
+<td>GetConfigValue <code>06000145</code> / <code>59b0</code></td>
+<td><code>e4f35712ad48741f440de25e54a0e208376df47dc376999de060c2819dda6e1f</code></td>
+</tr>
+<tr>
+<td>SyncWaitor.PrecisionWait(refbool,bool) <code>060000a9</code> / <code>68f4</code></td>
+<td><code>dbbf9b45414767f5154ed620059d12a55d454996f346c748af2eb7980248096f</code></td>
+</tr>
+<tr>
+<td>PrecisionWait(array,index,timeout,bool) <code>060000ab</code> / <code>6a10</code></td>
+<td><code>a38a6f4c1ee7d964e5d4247eb8463726790a95d6b9eb0524375e93630bfb4ca2</code></td>
+</tr>
+<tr>
+<td>SyncWait(refbool) <code>060000ad</code> / <code>6b6c</code></td>
+<td><code>08d98f7ddb6f5863b2e389ee1c7d24cd083789526c4fdcec82eaf8c7c5e8b1cb</code></td>
+</tr>
+</tbody></table>
+<p>REA VisionMaster.exe evidence <code>ev_fbe6e3bef56ab98d6f6a7756adbe474d2b6583f820583efa489711898053e0bb</code>；SDK成员检查 evidence <code>ev_de13b657e3113b360efba931e280afdfd22fb5cd1901b38dcf2f58204aa718b7</code> 明确为metadata超过67108864字节预算、coverage unavailable，不能冒充 SDK CIL完整核对。ProcessManager 使用既有反编译源码；本轮不重复诊断未配置native引擎。</p>
+<h2 id="main差异与下一步">main差异与下一步</h2><p><code>src/VisionEditor/WorkflowExecution.cs:31</code> 每轮无条件移除会话及根results；原方案只在开关true且执行计数大于1的begin分支清叶值。<code>SolutionExecutor.cs:22,49</code> 本地CancelAfter及TimedOut状态为独立协作取消，与本轮确认的原托管等待不同。当前不得把UI缓存策略、SDK结果缓存和算法执行输出混成一个开关直接修补；需明确main结果保留合同再由root修改唯一所有者文件。</p>
+<p>建议最小后续子项：以自有实例记录真实CWD和启动读取值；取得单次/连续/停止/超时的SDK回调序列；原生等待配置效果与main协作取消分别验收；另追配置编辑/SaveConfig实际入口。设备、native调度、回调异常恢复和真实窗口结果留存仍开放。没有本轮产品补丁，不宣称native parity。</p>
+<p class="meta">来源：docs/reverse/C02-scheduling-batch2.md · SHA256 403e3329ada5f67c0b51fb0d80fdac3edc0281c8e3556f7daf1d77ba621dafec<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

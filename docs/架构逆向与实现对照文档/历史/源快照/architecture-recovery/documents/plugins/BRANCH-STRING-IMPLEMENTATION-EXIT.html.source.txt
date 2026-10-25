@@ -1,0 +1,114 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>分支字符串：最终源→实施→自审退出</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/BRANCH-STRING-IMPLEMENTATION-EXIT.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#分支字符串最终源实施自审退出">分支字符串：最终源→实施→自审退出</a></p><p style="margin-left:14px"><a href="#原件身份与证据入口">原件身份与证据入口</a></p><p style="margin-left:14px"><a href="#完整退出矩阵">完整退出矩阵</a></p><p style="margin-left:14px"><a href="#本轮验证和快照">本轮验证和快照</a></p><p style="margin-left:14px"><a href="#明确有限边界与独立适配">明确有限边界与独立适配</a></p></details><h1 id="分支字符串最终源实施自审退出">分支字符串：最终源→实施→自审退出</h1><p>2026-10-20。专属实施与本轮自动验证完成，提交根线审计；不自行计入全局工具数量。人工验收另列，不作实施完成门。未装载/执行原厂DLL、未设备测试、未提交推送。</p>
+<h2 id="原件身份与证据入口">原件身份与证据入口</h2><p>原件目录 <code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Logic/BranchStringCpmL</code>。</p>
+<table>
+<thead>
+<tr>
+<th>原件</th>
+<th>SHA256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>native DLL</td>
+<td>8DE8FE3CA4931B8201F52A310939A7C580D2566FF5606A9A7C31033C97B0B9A2</td>
+</tr>
+<tr>
+<td>Cs DLL</td>
+<td>3BE0C1017DAA7F7F001295A9C548636A545CA5BC84B73429E3381EC04C513A96</td>
+</tr>
+<tr>
+<td>Control DLL</td>
+<td>0BF9271E5157D7CFB92C73046D9EFDB429A883F2AE5B08ABCA71F180E3491797</td>
+</tr>
+<tr>
+<td>ToolItemInfo.xml</td>
+<td>3650CCCF4A710F796B66921ECEC3D3E6FD6265228B5E4DA03DD01D7B0D6CD394</td>
+</tr>
+<tr>
+<td>ModuleFrame.dll</td>
+<td>45C57BC46F72FD1F9E0B3A6F9183FF974D14590CFD05ECF4E9FA97A4FF95AE9B</td>
+</tr>
+</tbody></table>
+<p>ToolItemInfo name/主XML ModuleName为BranchStringCpm；目录/DLL/Cs构造base为BranchStringCpmL。既有产品catalog保持后者，映射ModuleId=vision.branch-string，不伪造原统一名称。</p>
+<p>主证据 <code>analysis/branch-string/source-20261020/</code>：cs-decompiled、control-decompiled完整托管源码及BAML-XAML；resources原四XML；native-signatures校正IAT函数签名后的C与asm；frame为Frame保存/GetString具体体。初次native/17890.c误推GetNext仅一个参数导致优化删比较块，保留为失败证据，不能作算法依据；校正GetNext2、SetNext2、GetString7参数并以原asm复核后使用native-signatures/180017890.c。</p>
+<h2 id="完整退出矩阵">完整退出矩阵</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>原具体活动链</th>
+<th>产品实施</th>
+<th>实际验证/结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>身份/注册</td>
+<td>原XML/ToolItemInfo、Cs ctor</td>
+<td>BranchStringPlugin及真实catalog/MainWindow注册</td>
+<td>Host1..2</td>
+</tr>
+<tr>
+<td>配置/模板</td>
+<td>AlgorithmTab→HeadBar/ListParamStr；StringA ButtonSelecter；IndexUserSet整段注释；仅Confirm</td>
+<td>原资源内嵌、共享HeadBar/模板目录、专属ListParamStr工厂；不造执行/Reset/模式</td>
+<td>Plugin39..49、Host12..14；Template1474</td>
+</tr>
+<tr>
+<td>文本/表写入</td>
+<td>Row.InputValue UTF16&lt;=30禁#/$允许空；TextChanged/debug/up/down→ValueChanged→SetParam，无PreRun</td>
+<td>ListModel/Controls/Configuration；保留UI attempt与backend canonical不同</td>
+<td>Plugin25..31、43..47；源码恢复setter18970 strtok空token跳过</td>
+</tr>
+<tr>
+<td>输入/错误</td>
+<td>Process17890→GetString StringA,index0,capacity256；Frame11d440 outLen含NUL；error或Count&lt;1不写输出并清下一表</td>
+<td>typed scope reader优先、Graph callback次之、materialized末位；独立透传Count/RequiredBytes</td>
+<td>Plugin各输入/数组首项/NUL/容量/E314/E12/E14/Count0/outLen0；Contract16</td>
+</tr>
+<tr>
+<td>选路</td>
+<td>byte equality+同长度；flag==1追加(D)，再找真实后继；结果非空判status；GetNext=0保空结果</td>
+<td>Process原条件、SelectedExecutionSuccessors，真实Graph调度</td>
+<td>Plugin比较/顺序/debug孤悬/空串；Host5/9/11/16</td>
+</tr>
+<tr>
+<td>拓扑</td>
+<td>NextModuleListChange→18e30→183c0过滤→18ec0 merge；保旧行、追加空text/flag0；Cs连接32门</td>
+<td>IToolExecutionTopologyProvider事务；相同顺序不重建，真实连接事件更新</td>
+<td>Plugin32..34、Host3/24</td>
+</tr>
+<tr>
+<td>复制</td>
+<td>Cs Paste先ModuleOperate，再map存活目标；PasteFinish重写；Setter实际空字段位移</td>
+<td>IToolNodeCopyProvider，先seed后映射并ApplySetter</td>
+<td>Plugin35..37、Host21..23</td>
+</tr>
+<tr>
+<td>Save/Load</td>
+<td>Save196c0→1df90→Frame12fca0 virtual+20；CurrentConfig1257a0 GetParam(cap0x400)；Load193b0/1e0a0→193d0→SetParam</td>
+<td>PrepareSave不改变参数；真实文件Load的IToolNodeRestoreProvider仅参数roundtrip；打开配置/Undo不假模拟Load</td>
+<td>Plugin54..56；Host6..11。原空默认id##0保存、重开变id#0#0保留</td>
+</tr>
+<tr>
+<td>输出/显示</td>
+<td>Runtime、StringMatch、BranchMatch、ModuStatus；后三CanSubscribe=false；Show Text与Data Record分离</td>
+<td>描述符元数据、scoped display、原文字模板</td>
+<td>Plugin52..53；Host17..20，真实debug同procedure scope</td>
+</tr>
+<tr>
+<td>生命周期</td>
+<td>ctor/init、Reset cause2跳默认、destructor177c0→1a260/1bf40；无正常Reset UI</td>
+<td>无虚构Reset操作；scope所有权/lease，节点删除释放snapshot</td>
+<td>Host25；原native堆销毁不在托管实现域</td>
+</tr>
+</tbody></table>
+<h2 id="本轮验证和快照">本轮验证和快照</h2><p>严格串行、独立短artifacts根 <code>analysis/b-string/artifacts</code>。最终均exit0：BranchSelection.ContractChecks16；VisionConfiguration.TemplateChecks1474（294 XML/group、189模板）；BranchString.PluginChecks56；BranchString.HostChecks25。首两构建0warning/error；Host首次完整宿主编译保留既有MainWindow CS8603两条，后续增量无新增生产警告。</p>
+<p>实际MainWindow检查覆盖真实doc连接、RunProcedure、Save/Load、配置创建/关闭、NodeDebug原图后继与scope、Paste/Undo/Redo、Disconnect/Delete；不是手工代入插件输出。模板元数据通过不等于像素一致。编译PDB五程序集184文档与当时当前源码SHA256核对0差异，见analysis/b-string/{compiled-sources,source-review}.json。最终源码/资源/日志/DLL/PDB清单为final-manifest.json，记录精确哈希。</p>
+<p>失败历史完整保留：host-run-first-path-failure.log测试错误catalog路径；host-run-2.log测试误把catalog根对象当数组；host-run-3.log测试未安装DispatcherSynchronizationContext导致Task.Yield在线程池触发UI Guard；仅专属测试修路径、Groups入口及与既有Host测试相同Dispatcher环境，最终host-run-4.log25通过。未修改产品断言以隐藏失败、未修改算法容差。</p>
+<h2 id="明确有限边界与独立适配">明确有限边界与独立适配</h2><ul>
+<li>原Process/Frame只做静态源码+原指令核实，未执行原厂native。P/Invoke ABI、原平台/远端服务、设备、原生heap、输出setter实际故障注入未运行验证；SetNext/SetOutput错误原体仅log后继续已记录，托管不可失败输出容器不伪装这些故障。</li>
+<li>宿主稳定NodeId目前无原厂numeric instance ID提供者。NumericId已提供才输出原ID%d;并应用原数值过滤；缺失输出明确NodeId:&lt;id&gt;;，消息标独立适配。不得GUID atoi。选路基于真实连接NodeId，非伪造数字ID。</li>
+<li>原Save GetParam固定0x400容量，长表失败只log且仍保存参数entry；GUID字符串字节长与原数值ID串不相等，现JSON保存不按GUID长度冒原native1024门。此容量/身份域明确独立，不称全域持久化等价。</li>
+<li>正常UI文本为有效.NET/UTF8，Ordinal完整相等对应有效编码字节比较。非法原始UTF8、任意native setter畸形flag/溢出和隐藏OutputForEnd native ID通道不伪造；插件只暴露原声明活动输入/结果及正常配置/复制/恢复路径。</li>
+<li>Runtime测时为独立托管耗时，非原CPU逐位计时。UI资源/活动尺寸和绑定已源确认，不宣称整个原桌面像素/本地化全域一致。</li>
+<li>无已确认尚未实施的当前选定正常工具活动缺口；额外动态SDK setter不自动扩大为该工具正常UI要求。以上边界不由PASS测试消除。完整工具是否计数由根线独立审核。</li>
+</ul>
+<p class="meta">来源：docs/plugins/BRANCH-STRING-IMPLEMENTATION-EXIT.md · SHA256 144c18046f83a985213c1a2f0cc9e379917dfc1e90071390c1982fd279fce694<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

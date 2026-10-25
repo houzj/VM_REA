@@ -1,0 +1,108 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-01：运行界面（EditFrontendUI）源码与程序集审计</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../MF01-FRONTEND-UI-SOURCE-AUDIT.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#mf-01运行界面editfrontendui源码与程序集审计">MF-01：运行界面（EditFrontendUI）源码与程序集审计</a></p><p style="margin-left:14px"><a href="#已确认的原始证据">已确认的原始证据</a></p><p style="margin-left:14px"><a href="#定向静态-il-核查">定向静态 IL 核查</a></p><p style="margin-left:14px"><a href="#边界不可混同-runningmode">边界：不可混同 RunningMode</a></p><p style="margin-left:14px"><a href="#gresources-与-baml-资源的静态取证2026-10-19">`.g.resources` 与 BAML 资源的静态取证（2026-10-19）</a></p><p style="margin-left:14px"><a href="#已检查范围与缺口">已检查范围与缺口</a></p><p style="margin-left:14px"><a href="#结论与验收状态">结论与验收状态</a></p></details><h1 id="mf-01运行界面editfrontendui源码与程序集审计">MF-01：运行界面（EditFrontendUI）源码与程序集审计</h1><p>日期：2026-10-19
+状态：入口、窗口托管代码及部分数据/事件调用链已确认；XAML视觉树和完整操作契约未确认，未仿造替代实现。</p>
+<h2 id="已确认的原始证据">已确认的原始证据</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>类型/成员/资源</th>
+<th>确认内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>analysis/decompiled/VisionMaster.Exe.Audit/menuitems.xml:405-415</code></td>
+<td><code>TitleMenueItemData</code>，<code>Lang_FrontEdit</code> → <code>EditFrontendUI</code>；资源 <code>Resources\ToolBar\ic_topbar_fronted_normal.png</code> / <code>_disable.png</code></td>
+<td>运行界面工具栏入口通过本地化键 <code>Lang_FrontEdit</code> 绑定到 <code>EditFrontendUI</code>，并声明正常/禁用图标资源。</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs:1545-1558</code></td>
+<td><code>TitleMenueItemData.EditFrontendUI()</code></td>
+<td>handler <code>new EditFrontendWindow()</code>；若 <code>Application.Current.MainWindow</code> 非空则设为 <code>Owner</code>；随后调用 <code>BaseWindow.ShowDialog().Value</code>。反编译片段中的条件体为空；没有看到对话框返回值之后的持久化、状态写回或其他副作用。</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VisionMasterMain/VisionMasterMain.csproj:171-173</code></td>
+<td><code>FrontendUI.Design</code> 引用</td>
+<td>HintPath 指向 <code>..\..\..\..\..\Program Files\VisionMaster4.4.0\Applications\myLibs\FrontendUI.Design.dll</code>。</td>
+</tr>
+<tr>
+<td><code>D:\Program Files\VisionMaster4.4.0\Applications\myLibs\FrontendUI.Design.dll</code></td>
+<td>实际安装托管 PE</td>
+<td>REA <code>inspect_managed_artifact</code>：managed CIL、.NET Framework 4.6.1、x86 PE/AnyCPU CLI，文件大小 2,980,864 字节，SHA-256 <code>60c0c7b1f404ad8bab4504b9b928148f84c7694a335331c4e4340b7c8017cdf5</code>，MVID <code>0de25f5a-f9cd-4617-9954-2ea69f747be1</code>。REA evidence ID：<code>ev_9ad26df612da33ccfe28a3a7cacc5aae75c7951d2d27b97c890ba2e4436261fa</code>。</td>
+</tr>
+<tr>
+<td>同安装目录 <code>Development\V4.x\ComControls\Assembly\FrontendUI.Design.dll</code></td>
+<td>对照副本</td>
+<td>与 Applications 副本长度相同，SHA-256 相同；确认两份文件字节一致，不代表源码/符号存在。</td>
+</tr>
+<tr>
+<td>程序集 manifest resource</td>
+<td><code>FrontendUI.Design.g.resources</code>（2,000,001 bytes，SHA-256 <code>ee835f8c94dc9a32a31dcf42c29baec7113b47ae5a34792ddfb939327d807197</code>）及 <code>FrontendUI.Design.Properties.Resources.resources</code>（180 bytes，SHA-256 <code>e13ed2c59366d0eea74863fd71a81f0cb977cce1edfde304fc538690a4f6ac89</code>）</td>
+<td>通过 <code>Assembly.ReflectionOnlyLoadFrom</code> 读取资源流；<code>ResourceReader.GetEnumerator().Key</code> 枚举键，<code>GetResourceData</code> 取序列化字节，不访问 <code>.Value</code>。已导出 110 个 <code>.baml</code> payload；名称、长度、哈希见 <code>analysis/full-audit/frontend-ui-inspect/resources/baml-payloads.json</code>。</td>
+</tr>
+<tr>
+<td>REA <code>inspect_managed_members</code></td>
+<td>同一应用 DLL，evidence <code>ev_6192b568ec156c61dd401f8cbf23c3a50baa006193f222f262ff6b28443cb80a</code></td>
+<td>该操作没有返回类型/方法/调用边：CLI metadata 被报告为 unavailable，具体 issue 是 <code>resource-limit</code>，<code>metadata.representation</code> 超过 67,108,864 字节预算（文件偏移 219,932）。因此本次无法确认 <code>EditFrontendWindow</code>、<code>FrontendWindowData.EditFrontendUI</code> 或任何目标方法是否在该模块中，不能把空结果解读为类型不存在。</td>
+</tr>
+<tr>
+<td>REA <code>inspect_pe_resources</code></td>
+<td>同一应用 DLL，evidence <code>ev_c4a964a4386204a0ed9b3713e23ff6d603e3ad6a4edffc57a35f073fe9589e3a</code></td>
+<td>Win32 PE resource tree 检查完成：3 个目录项、1 个资源，type ID 16/name ID 1/language ID 0，payload 长度 896、SHA-256 <code>d0218468635a21989733d049585e0b7924cde43aee37d3981d1a74e8849a945b</code>。该工具声明除图标组外 payload opaque；此资源不能据此识别为 WPF BAML/XAML。</td>
+</tr>
+</tbody></table>
+<h2 id="定向静态-il-核查">定向静态 IL 核查</h2><p>本机现有 <code>dotnet-ildasm</code> 0.12.2 可运行，但要求 .NET Core 3.0；本机只有 8/9/10，因此仅对反编译器进程使用 <code>DOTNET_ROLL_FORWARD=Major</code> 后成功解析 DLL。没有加载或执行 VM 程序集。按类名定向导出：</p>
+<ul>
+<li><code>analysis/full-audit/frontend-ui-inspect/EditFrontendWindow-simple.il</code>：<code>dotnet-ildasm &lt;DLL&gt; --item EditFrontendWindow --output &lt;file&gt;</code>；73,243 字节。</li>
+<li><code>analysis/full-audit/frontend-ui-inspect/FrontendWindowData-simple.il</code>：同一命令 <code>--item FrontendWindowData</code>；134,769 字节。</li>
+<li><code>analysis/full-audit/frontend-ui-inspect/FrontendEdit-simple.il</code>：同一命令 <code>--item FrontendEdit</code>；344,557 字节。</li>
+</ul>
+<p>由这些目标类 IL 可确认的调用链/状态变化：</p>
+<ol>
+<li>主界面路径 <code>TitleMenueItemData.EditFrontendUI()</code> 直接 <code>new EditFrontendWindow()</code>、设 Owner、模态 <code>ShowDialog()</code>；该窗口构造函数调用 <code>InitializeComponent()</code>，把单例 <code>FrontendWindowData.DisplayMode</code> 设为枚举值 <code>1</code>，用 <code>DesignerContext.DisplayStringA</code> 调用 <code>FrontendEdit.InitFrontendWindow(string)</code>，然后先 <code>RemoveHandlerVM()</code> 再 <code>AddHandlerVM()</code>。随后把 <code>VmSolution.Instance.IsRunning</code> 与 <code>ContinuousRunEnable</code> 以 <code>MultiBinding</code>、<code>MulitBoolOrConvert</code> 绑定到窗口 <code>IsBusy</code>。</li>
+<li><code>EditFrontendWindow.OnClosing</code>：若 <code>_isCodeCreating</code> 为 true 则取消关闭；否则调用 <code>mainEditView.Close(true)</code>，仅当返回 true 才继续 <code>BaseWindow.OnClosing</code> 并解绑本窗口所订阅的 VM 事件；返回 false 时设置 <code>Cancel=true</code>。</li>
+<li><code>AddHandlerVM</code>/<code>RemoveHandlerVM</code> 成对订阅/解除 <code>FrontendWindowData.CreateNewDesignEvent</code>，以及 <code>VmSolution</code> 的 solution load/save begin、progress、end 回调。窗口回调经 WPF <code>Dispatcher.Invoke</code> 更新遮罩/进度；Load end 还将 <code>DocumentManager.Instance.isSolutionDesignerBuffer_Loaded</code> 置 false，再触发 <code>FrontendEdit.InitDesignerSurface(...)</code>。创建设计事件也经 Dispatcher 路由到窗口处理器。</li>
+<li><code>InitializeComponent()</code> 通过 WPF <code>Application.LoadComponent</code> 加载 <code>/FrontendUI.Design;component/editfrontendwindow.xaml</code>。生成的 <code>IComponentConnector.Connect</code> 映射到字段 <code>editFrontendWindow</code>、<code>img</code>、<code>PART_View</code>（Grid）和 <code>mainEditView</code>（<code>FrontendEdit</code>）。因此可以确认 XAML 资源路径和几个命名控件，但看不到资源里的实际布局/样式/其余绑定。</li>
+<li>插件宿主存在另一条同名但不同入口：反编译 <code>VMControls.WPF/VMControls.WPF/ToolControl.xaml.cs:1197-1210</code> 的 <code>ToolControl.EditFrontendUI()</code> 加载程序集后反射取得 <code>FrontendUI.Design.FrontendWindowData</code>，调用其 public static <code>EditFrontendUI(parent)</code>。该静态方法同样新建窗口并设 <code>DisplayMode=1</code>，另将 <code>IsSDKMode=true</code>；从传入参数取 <code>Window</code> owner 或 <code>IntPtr</code> owner，设置 <code>ShowInTaskbar=true</code>，模态显示后把 <code>IsSDKMode=false</code>。不要将此 SDK 工具宿主入口和主窗口菜单入口合并描述。此 IL 未显示 try/finally 包围 <code>ShowDialog</code> 与复位。</li>
+<li><code>FrontendEdit</code> 自身是 WPF <code>UserControl</code>，<code>InitializeComponent()</code> 装入 <code>/FrontendUI.Design;component/frontendedit.xaml</code>。<code>IComponentConnector.Connect</code> 可确认 <code>Grid</code>、<code>Border TitleBar</code>、<code>ScrollViewer m_HorScroll</code>、<code>Menu</code>、<code>Slider</code>、Preview/CreateCode 按钮、<code>ToolBox</code>、<code>ICSharpCode.WpfDesign.Designer.DesignSurface</code>、<code>TabControl settingTab</code> 及两个 PropertyGrid 等控件字段；Connect 还把若干菜单项/按钮 Click 接到明确命名的处理器。其余控件位置、样式、具体菜单文本仍在 XAML/BAML 资源内部。</li>
+<li><code>FrontendEdit.Close(bool)</code> 先调用 <code>DoSave(bool)</code>；原生 DialogResult 数值 3 路径返回 false（上层窗口取消关闭），其它结果再进入清理。已初始化时 Dispose ToolBox、清空选中对象、解除 DesignSurface 选择/网格移动/删除/DesignerLoaded 等事件、解绑并 Dispose PropertyGrid、销毁 UI 设计面、清理两类设计期间字典，最后返回 true。<code>DoSave</code> 进一步根据 <code>IsSubDesign</code> 和 <code>DocumentManager.NeedSave()</code> 分支；需要保存时显示 <code>HikMessageBox</code>，确认分支调用 <code>Save(true,null,false,false)</code> 并置 <code>SolutionFileHelper.IsSolutionDesignerModified=true</code>，取消保存分支调用 <code>ResetBuffer()</code>。保存序列化细节另见 <code>FrontendEdit-simple.il</code> 中 <code>Save</code> 方法，本报告不把该 IL 之外行为扩展成 VM 实机结论。</li>
+</ol>
+<p>上述结论由目标 SHA 对应的定向 CIL 导出确认，不等于 C# 原始变量/源码行，也不覆盖动态依赖实现。</p>
+<h2 id="边界不可混同-runningmode">边界：不可混同 RunningMode</h2><p><code>Lang_FrontEdit → EditFrontendUI → EditFrontendWindow.ShowDialog()</code> 是单独的运行界面编辑器入口。它不是右上角运行模式文字，也不是设置页的 <code>RunningMode</code>/ProcedureRunData 状态链。本次没有将运行策略 0/1 的设置页面当作 <code>EditFrontendWindow</code> 来实现。</p>
+<h2 id="gresources-与-baml-资源的静态取证2026-10-19"><code>.g.resources</code> 与 BAML 资源的静态取证（2026-10-19）</h2><p>使用 Windows PowerShell 5.1 的 <code>Assembly.ReflectionOnlyLoadFrom</code> 只读读取已安装程序集的 manifest resource stream；没有普通 <code>Assembly.Load</code>、没有访问资源对象 <code>.Value</code>、没有加载或实例化目标窗口，也没有运行目标程序集代码。通过 <code>ResourceReader.GetResourceData</code> 获取 <code>ResourceTypeCode.Stream</code> 序列化数据，校验前 4 字节 little-endian payload 长度与后续字节数相等后，去除该 4 字节 framing，原样保存 BAML payload 并计算 SHA-256。</p>
+<table>
+<thead>
+<tr>
+<th><code>.g.resources</code> key</th>
+<th align="right">payload 长度</th>
+<th>payload SHA-256</th>
+<th>resource data 序列化字节 SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>editfrontendwindow.baml</code></td>
+<td align="right">3,466</td>
+<td><code>317dcf7ef21751e00ae431952f4faad8dd1054e286bea450ce5f40b1ec4aa028</code></td>
+<td><code>fa787f2cfcf158f493cbc2a106f3e1c76f4a1c9c3d1cf91aeae206ac5df935d7</code></td>
+</tr>
+<tr>
+<td><code>frontendedit.baml</code></td>
+<td align="right">25,751</td>
+<td><code>2afa47cf732663dd44493aae129c210db6d3c8cb0ff5db866958eb691490ab0c</code></td>
+<td><code>1e9c1f7775cf05ba7635a45ec5f9be1b712caae659d97f4fb8923546e7f7350c</code></td>
+</tr>
+</tbody></table>
+<p>原始 <code>.g.resources</code>、resource data、110 份 BAML payload、逐项清单分别保存在 <code>analysis/full-audit/frontend-ui-inspect/resources/</code>；<code>manifest-resources.json</code> 记录 manifest resource 及每个资源键的序列化类型/长度/哈希，<code>baml-payloads.json</code> 记录每个 BAML payload 的 key、payload 长度和 SHA-256。Windows SDK <code>ildasm</code> 定向静态导出本机 .NET Framework 4.8 <code>PresentationFramework.dll</code> 的 <code>System.Windows.Baml2006.Baml2006Reader</code> 到 <code>analysis/full-audit/frontend-ui-inspect/Baml2006Reader-net48.il</code>，仅用于评估 reader，不是目标程序集代码。</p>
+<p>已评估通用 WPF BAML reader 的安全边界：其 <code>Read()</code> 会逐条处理 BAML 并转发 XAML node reader；但反汇编的 <code>Process_OptimizedStaticResource</code> 包含 <code>StaticExtension</code> 构造及 <code>MarkupExtension.ProvideValue(null)</code> 调用（同文件约 IL_0078-IL_007B）；reader 还有其它静态扩展提供值路径。因此无法保证把未知目标 BAML 输入该 reader 不会执行扩展逻辑。本轮未实例化该 reader、未调用 <code>XamlReader.Load</code>，故没有恢复或宣称确认 XAML 控件树。安全下一步是经验证只解码 BAML records、不做 schema/type resolution 或 <code>ProvideValue</code> 的自定义静态 parser，或可信的离线解析结果；在此之前不猜布局、模板、绑定和属性。</p>
+<h2 id="已检查范围与缺口">已检查范围与缺口</h2><ul>
+<li>实际安装路径：<code>D:\Program Files\VisionMaster4.4.0\Applications\myLibs</code>；目录中存在 DLL，但没有同名 <code>.pdb</code> 或其它同名伴随文件。</li>
+<li>开发副本路径：<code>D:\Program Files\VisionMaster4.4.0\Development\V4.x\ComControls\Assembly</code>；同一 DLL 的字节副本，无同名 <code>.pdb</code> 或其它同名伴随文件。</li>
+<li>反编译证据树 <code>D:\MyWork\REA逆向测试\analysis\decompiled</code> 和全文审计树 <code>analysis\full-audit</code> 中检索 <code>EditFrontendWindow</code> / <code>EditFrontendUI</code> / <code>FrontendUI.Design</code>：只找到主程序入口与 <code>ToolControl</code>/<code>GlobalToolDataItem</code> 的同名动态编辑路由，未找到 <code>FrontendUI.Design</code> 的反编译源文件或 <code>EditFrontendWindow</code> 实现。</li>
+<li><code>VisionMasterMain.csproj</code> 的依赖 HintPath 可解析到上述安装 DLL；但源码树中的该默认相对位置没有副本，真实安装 DLL 已定位。</li>
+<li>REA <code>inspect_managed_artifact</code> 返回完整托管元数据和 manifest resource 名称，但不反编译 CIL；REA <code>inspect_managed_members</code> 因 metadata representation budget 超限不可用；因此使用现存 <code>dotnet-ildasm</code> 完成目标类的静态 IL 导出。没有安装工具，没有加载/执行 VM 程序集。</li>
+<li><code>ilspycmd</code> 未在 PATH 检出；Windows SDK <code>ResGen.exe</code> 可用，本轮使用自写只读提取脚本直接枚举并保存资源流，没有改写安装 DLL。REA PE resource 检查只覆盖 Win32 资源目录，不解析 .NET <code>.g.resources</code> 内部；本轮已只读枚举并抽取 110 个 BAML payload，但未安全解码为节点树。由 Connector 和 CIL 可确认部分字段/事件处理器；窗口/编辑器 XAML 布局、样式、模板、尺寸、完整命令绑定及全部按钮文本仍未确认。</li>
+</ul>
+<h2 id="结论与验收状态">结论与验收状态</h2><p><strong>源码确认：</strong> 菜单键/主窗口 handler、目标窗口构造/Close 确认逻辑、DisplayMode 状态设置、绑定对象、VM 事件订阅/清理、进度遮罩回调、XAML URI/命名连接点、<code>FrontendEdit</code> 的控件字段、部分按钮事件及关闭保存/取消分支，以及独立的插件 <code>FrontendWindowData.EditFrontendUI</code> SDK 调用链。
+<strong>未确认：</strong> BAML 解码后的视觉树及样式、控件具体布局尺寸和文案、完整绑定/命令/事件路由、配置持久化与运行时消费位置、VM 实机视觉差异。
+<strong>实现：</strong> 本次仅新增原始资源清单、BAML payload 静态导出和报告，没有新增 <code>EditFrontendWindow</code> 替代 UI。
+<strong>操作验证：</strong> 未点击 VM 入口、未打开 VM 对话框、未改变/检查保存数据；静态 IL 分析不代表 UI 操作通过。
+<strong>下一步：</strong> 需要经验证只解码 BAML records 的离线 parser（不会触发类型构造、转换器或 MarkupExtension）以及运行界面配置保存/消费链的反编译依赖；取得后继续核查控件、按钮事件和实际数据闭环，再实现和做 VM 实机差分。</p>
+<p class="meta">来源：docs/MF01-FRONTEND-UI-SOURCE-AUDIT.md · SHA256 e1448fc34ea7d4f47cf70069dcda466097860b3bda054d4ee9302304adb6851f<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

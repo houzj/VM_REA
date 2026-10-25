@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AccessPage.Permission_Click · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>AccessPage.Permission_Click · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-M01"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>AccessPage.Permission_Click → AccessModuleManager / 递归模块清单</h2><p>按钮打开独立权限窗；构造对每个根VmProcedure调用GetAllModule，包含集合模块及递归后代，按ID排序建代理；Group取直接Parent.FullName。再追加根方案IsGlobalModu代理，Group为全局工具语言文本、IsGlobal=true。它是扁平列表按字符串分组，不是按父子ID建立权限树。</p><p><a href="../专题/module-permissions.html#edge-M01">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/module-permissions.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/module-permissions.edges.json · SHA256 2066af0f66ebd27ff61430b9f9d11b5b774f434366135f41a3237d199c2696cd</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="adfc59e0472648684989a479a125030e3f824a07f83fc270b4cc5987845b0157">{
+  &quot;id&quot;: &quot;M01&quot;,
+  &quot;route&quot;: &quot;原版 · 列表构造与分组&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;AccessPage.Permission_Click&quot;,
+  &quot;to&quot;: &quot;AccessModuleManager / 递归模块清单&quot;,
+  &quot;behavior&quot;: &quot;按钮打开独立权限窗；构造对每个根VmProcedure调用GetAllModule，包含集合模块及递归后代，按ID排序建代理；Group取直接Parent.FullName。再追加根方案IsGlobalModu代理，Group为全局工具语言文本、IsGlobal=true。它是扁平列表按字符串分组，不是按父子ID建立权限树。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs&quot;,
+      &quot;member&quot;: &quot;AccessPage.Permission_Click&quot;,
+      &quot;sha256&quot;: &quot;8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9&quot;,
+      &quot;start&quot;: 245,
+      &quot;end&quot;: 249,
+      &quot;excerpt&quot;: &quot;\tprivate void Permission_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tAccessModuleManager accessModuleManager = new AccessModuleManager();\n\t\taccessModuleManager.ShowDialog();\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessModuleManager.xaml.cs&quot;,
+      &quot;member&quot;: &quot;AccessModuleManager constructor / grouping&quot;,
+      &quot;sha256&quot;: &quot;9fc7e0ef351af75ed867a9b3061f9b2590ae852a9f7bd18e292cd16377315e50&quot;,
+      &quot;start&quot;: 30,
+      &quot;end&quot;: 75,
+      &quot;excerpt&quot;: &quot;\tpublic AccessModuleManager()\n\t{\n\t\tInitializeComponent();\n\t\tList&lt;VmModule> list = new List&lt;VmModule>();\n\t\tforeach (VmProcedure item in VmSolution.Instance.Modules.OfType&lt;VmProcedure>())\n\t\t{\n\t\t\tList&lt;VmModule> list2 = new List&lt;VmModule>();\n\t\t\titem.GetAllModule(list2);\n\t\t\tlist.AddRange(list2);\n\t\t}\n\t\tList&lt;ModuleTagInfoProxy> items = (from p in list\n\t\t\torderby p.ID\n\t\t\tselect new ModuleTagInfoProxy(p)\n\t\t\t{\n\t\t\t\tGroup = FindProcessName(p)\n\t\t\t}).ToList();\n\t\tItems = items;\n\t\tList&lt;VmModule> list3 = VmSolution.Instance.Modules.Where((VmModule w) => w.IsGlobalModu).ToList();\n\t\tforeach (VmModule item2 in list3)\n\t\t{\n\t\t\tItems.Add(new ModuleTagInfoProxy(item2)\n\t\t\t{\n\t\t\t\tGroup = FindResoure(\&quot;Lang_AccessModuleManagerGlobalTool\&quot;),\n\t\t\t\tIsGlobal = true\n\t\t\t});\n\t\t}\n\t\tif (PropertyChanged != null)\n\t\t{\n\t\t\tPropertyChanged(this, new PropertyChangedEventArgs(\&quot;Items\&quot;));\n\t\t}\n\t\tLoaded += (object s, RoutedEventArgs e) =>\n\t\t{\n\t\t\tUpdateGroup();\n\t\t};\n\t}\n\n\tpublic string FindProcessName(VmModule m)\n\t{\n\t\tobject parent = m.Parent;\n\t\treturn (parent == null) ? string.Empty : (parent as VmModule).FullName;\n\t}\n\n\tpublic string FindResoure(string strMsg)\n\t{\n\t\treturn AppLocalizationService.GetLang(strMsg);\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessModuleManager.xaml.cs&quot;,
+      &quot;member&quot;: &quot;AccessModuleManager.FindProcessName&quot;,
+      &quot;sha256&quot;: &quot;9fc7e0ef351af75ed867a9b3061f9b2590ae852a9f7bd18e292cd16377315e50&quot;,
+      &quot;start&quot;: 66,
+      &quot;end&quot;: 70,
+      &quot;excerpt&quot;: &quot;\tpublic string FindProcessName(VmModule m)\n\t{\n\t\tobject parent = m.Parent;\n\t\treturn (parent == null) ? string.Empty : (parent as VmModule).FullName;\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs&quot;,
+      &quot;member&quot;: &quot;VmModuleSet.GetAllModule&quot;,
+      &quot;sha256&quot;: &quot;f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346&quot;,
+      &quot;start&quot;: 1189,
+      &quot;end&quot;: 1208,
+      &quot;excerpt&quot;: &quot;\tpublic void GetAllModule(List&lt;VmModule> allModules)\n\t{\n\t\tforeach (VmModule module in Modules)\n\t\t{\n\t\t\tif (module is VmModuleSet)\n\t\t\t{\n\t\t\t\tallModules.Add(module);\n\t\t\t\t(module as VmModuleSet).GetAllModule(allModules);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tallModules.Add(module);\n\t\t\t}\n\t\t}\n\t\tif (this is VmSolution &amp;&amp; VmSolution.VirtualPro?.Modules != null)\n\t\t{\n\t\t\tVmSolution.VirtualPro?.GetAllModule(allModules);\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;本构造未展示随模块增删刷新；同名直接父分组、IsGlobal与GlobalModuleAccess数组全部消费者仍需核查。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

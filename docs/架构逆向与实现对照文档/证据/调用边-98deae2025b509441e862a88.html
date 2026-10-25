@@ -1,0 +1,98 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RenderThreadPool.ShutDown → SmartThreadPool.Shutdown() · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>RenderThreadPool.ShutDown → SmartThreadPool.Shutdown() · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-V31"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>RenderThreadPool.ShutDown → SmartThreadPool.Shutdown() → ShutdownImpl(false,0)：清队列、发信号、零预算Join</h2><p>无参Shutdown明确传false/0。ShutdownImpl校验后在worker锁中Dispose工作队列、置_shutdown、Set退出事件并复制线程数组；随后按总预算Join，首个Join(0)失败即可退出等待，forceAbort=false不走Abort。队列Cleanup只枚举仍在队列中的项并DisposeOfState后Clear，再移除等待项；已取出/交给waiter/正在执行的任务不在该枚举里。不能宣称全部工作已完成或关闭后绝无工作开始。</p><p><a href="../专题/results-roi.html#edge-V31">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/results-roi.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/results-roi.edges.json · SHA256 0f7e6cedd6b1da4e830e125a9efd001431313b394102b618b5fc6c7ef7afeb9b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="bf3c9e866a0fef8e3cf91de159ea90a5fed992eec89618056f175b49522a7567">{
+  &quot;id&quot;: &quot;V31&quot;,
+  &quot;route&quot;: &quot;原版 · 图像完成、渲染入队与关闭&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;RenderThreadPool.ShutDown → SmartThreadPool.Shutdown()&quot;,
+  &quot;to&quot;: &quot;ShutdownImpl(false,0)：清队列、发信号、零预算Join&quot;,
+  &quot;behavior&quot;: &quot;无参Shutdown明确传false/0。ShutdownImpl校验后在worker锁中Dispose工作队列、置_shutdown、Set退出事件并复制线程数组；随后按总预算Join，首个Join(0)失败即可退出等待，forceAbort=false不走Abort。队列Cleanup只枚举仍在队列中的项并DisposeOfState后Clear，再移除等待项；已取出/交给waiter/正在执行的任务不在该枚举里。不能宣称全部工作已完成或关闭后绝无工作开始。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VMControls.WPF.RenderThreadPool::ShutDown&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 447,
+      &quot;end&quot;: 466,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060000f1\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060000f1\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VMControls.WPF.RenderThreadPool\&quot;,\n            \&quot;name\&quot;: \&quot;ShutDown\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 34,\n          \&quot;ilSha256\&quot;: \&quot;017ad07a752fcca1e2fbc41daaa722ae1cd2cc11485dbc4395f867ac8a43d1ce\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;007e6400000414fe010a062c03002b117e640000046f8501000a001480640000042a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.SmartThreadPool::Shutdown&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 14909,
+      &quot;end&quot;: 14928,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000090\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000090\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.SmartThreadPool\&quot;,\n            \&quot;name\&quot;: \&quot;Shutdown\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 11,\n          \&quot;ilSha256\&quot;: \&quot;17549133a7a04db2d4aabb0796bd5eca09a5914bb4fc8eec92d9d46383389936\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;000216162896000006002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.SmartThreadPool::ShutdownImpl&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 14987,
+      &quot;end&quot;: 15006,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000096\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000096\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.SmartThreadPool\&quot;,\n            \&quot;name\&quot;: \&quot;ShutdownImpl\&quot;,\n            \&quot;parameters\&quot;: 2,\n            \&quot;attributes\&quot;: \&quot;Private, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;2002010208\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 396,\n          \&quot;ilSha256\&quot;: \&quot;4ac79f8dddf0306541cddaa774728199026966d6ec118dc537fe20f50f6ebe0e\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;000228b900000600027b320000040a28f8010006027b32000004fe0116fe01130611062c14000228f80100067d32000004066f5600000a0000027b240000046f4600000a130716130811071208281d00000a0000027b250000046fb40200060002177d2d000004027b2b0000046f3f00000a26027b240000046f3600000a8d310000010b027b240000046f5700000a07166f5800000a0000de0d11082c081107281e00000a00dc040c285900000a0d1504fe0113041613050007130916130a2b581109110a9a130b0011042d060816fe042b0116130d110d2c06001713052b41110b086f5a00000a130c110c16fe01130e110e2c06001713052b26110416fe01130f110f2c0c0004096f5b00000a69590c0000110a1758130a110a11098e6932a01105035f131011102c6000000713111613122b4d111111129a13130011132c0911136f5c00000a2b0116131411142c2a000011136f5d00000a0000de1c13150011156f5300000a2600de0e13160011166f5300000a2600de000000111217581312111211118e6932ab002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.Internal.WorkItemsQueue::Dispose&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 19816,
+      &quot;end&quot;: 19835,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002b4\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002b4\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.Internal.WorkItemsQueue\&quot;,\n            \&quot;name\&quot;: \&quot;Dispose\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, Final, Virtual, HideBySig, VtableLayoutMask\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 31,\n          \&quot;ilSha256\&quot;: \&quot;3dce12904f00be459135132bde4fed325d90ecb9a949ec4636611d189be88dcd\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00027bd400000416fe010a062c09000228ae020006000002177dd40000042a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.Internal.WorkItemsQueue::Cleanup&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 19112,
+      &quot;end&quot;: 19131,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002ae\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002ae\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.Internal.WorkItemsQueue\&quot;,\n            \&quot;name\&quot;: \&quot;Cleanup\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Private, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 172,\n          \&quot;ilSha256\&quot;: \&quot;b6da8ec1ba741eeb9587559d414bfc7061df32a7cbcbff11acc701c39868910d\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00020a160b061201281d00000a0000027bd200000416fe010c082c0600dd8900000002167dd200000400027bd10000046fc50100060d2b17096f6b00000a744000000213040011046f450200060000096f6c00000a2de1de1509752d000001130511052c0811056f5600000a00dc027bd10000046fc4010006002b12000228b2020006130611066f430300062600027bd000000416fe02130711072ddf00de0b072c0706281e00000a00dc2a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/original-managed/utility/VM.Utility.SmartThreadPool.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;Zero-budget non-aborting shutdown&quot;,
+      &quot;sha256&quot;: &quot;715f1eb2dc29bc19e0a2915da39eb9ed6c5cca82db5d0706aae7044bebe47c23&quot;,
+      &quot;start&quot;: 612,
+      &quot;end&quot;: 615,
+      &quot;excerpt&quot;: &quot;\tpublic void Shutdown()\n\t{\n\t\tShutdownImpl(forceAbort: false, 0);\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-offline-ilspy-decompilation&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/original-managed/utility/VM.Utility.SmartThreadPool.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;Queue shutdown, join budget and abort predicate&quot;,
+      &quot;sha256&quot;: &quot;715f1eb2dc29bc19e0a2915da39eb9ed6c5cca82db5d0706aae7044bebe47c23&quot;,
+      &quot;start&quot;: 642,
+      &quot;end&quot;: 705,
+      &quot;excerpt&quot;: &quot;\tprivate void ShutdownImpl(bool forceAbort, int millisecondsTimeout)\n\t{\n\t\tValidateNotDisposed();\n\t\tISTPInstancePerformanceCounters windowsPCs = _windowsPCs;\n\t\tif (NullSTPInstancePerformanceCounters.Instance != _windowsPCs)\n\t\t{\n\t\t\t_windowsPCs = NullSTPInstancePerformanceCounters.Instance;\n\t\t\twindowsPCs.Dispose();\n\t\t}\n\t\tThread[] array;\n\t\tlock (_workerThreads.SyncRoot)\n\t\t{\n\t\t\t_workItemsQueue.Dispose();\n\t\t\t_shutdown = true;\n\t\t\t_shuttingDownEvent.Set();\n\t\t\tarray = new Thread[_workerThreads.Count];\n\t\t\t_workerThreads.Keys.CopyTo(array, 0);\n\t\t}\n\t\tint num = millisecondsTimeout;\n\t\tSystem.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();\n\t\tbool flag = -1 == millisecondsTimeout;\n\t\tbool flag2 = false;\n\t\tThread[] array2 = array;\n\t\tforeach (Thread thread in array2)\n\t\t{\n\t\t\tif (!flag &amp;&amp; num &lt; 0)\n\t\t\t{\n\t\t\t\tflag2 = true;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tif (!thread.Join(num))\n\t\t\t{\n\t\t\t\tflag2 = true;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tif (!flag)\n\t\t\t{\n\t\t\t\tnum = millisecondsTimeout - (int)stopwatch.ElapsedMilliseconds;\n\t\t\t}\n\t\t}\n\t\tif (!(flag2 &amp; forceAbort))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tThread[] array3 = array;\n\t\tforeach (Thread thread2 in array3)\n\t\t{\n\t\t\tif (thread2 != null &amp;&amp; thread2.IsAlive)\n\t\t\t{\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tthread2.Abort();\n\t\t\t\t}\n\t\t\t\tcatch (SecurityException ex)\n\t\t\t\t{\n\t\t\t\t\tex.GetHashCode();\n\t\t\t\t}\n\t\t\t\tcatch (ThreadStateException ex2)\n\t\t\t\t{\n\t\t\t\t\tex2.GetHashCode();\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-offline-ilspy-decompilation&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/original-managed/utility/VM.Utility.Internal.WorkItemsQueue.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;Pending queue cleanup&quot;,
+      &quot;sha256&quot;: &quot;91a4f049af057c9465589b4274f123d2b595ec6e2cb453046599fba3dcd8f619&quot;,
+      &quot;start&quot;: 192,
+      &quot;end&quot;: 213,
+      &quot;excerpt&quot;: &quot;\tprivate void Cleanup()\n\t{\n\t\tlock (this)\n\t\t{\n\t\t\tif (!_isWorkItemsQueueActive)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\t_isWorkItemsQueueActive = false;\n\t\t\tforeach (WorkItem workItem in _workItems)\n\t\t\t{\n\t\t\t\tworkItem.DisposeOfState();\n\t\t\t}\n\t\t\t_workItems.Clear();\n\t\t\twhile (_waitersCount > 0)\n\t\t\t{\n\t\t\t\tWaiterEntry waiterEntry = PopWaiter();\n\t\t\t\twaiterEntry.Timeout();\n\t\t\t}\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-offline-ilspy-decompilation&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;队列状态清理异常、已运行回调中断方式及原机线程结束时刻未验证。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

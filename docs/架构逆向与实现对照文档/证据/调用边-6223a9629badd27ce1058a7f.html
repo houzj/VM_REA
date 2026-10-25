@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ExecuteConfigurationEdit · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ExecuteConfigurationEdit · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C03"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ExecuteConfigurationEdit → 同generation分组 / finally解禁</h2><p>嵌套同solutionGeneration共享ConfigurationHistory；首次成功编辑才建root，ForbidBuild控制合并。finally在generation仍相同时恢复录入与前一session；是当前明确的异常清理选择。</p><p><a href="../专题/history-replay.html#edge-C03">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/history-replay.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/history-replay.edges.json · SHA256 4d277c2ede7629005f4410444f78dbe04978d3e8c02e84c9fefb45183fc728d4</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="01aa2a6b9e732fa668855dfdc45e20dc4e83ca07c023c7f634ac78c69999a507">{
+  &quot;id&quot;: &quot;C03&quot;,
+  &quot;route&quot;: &quot;当前 · 壳与文档适配&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;ExecuteConfigurationEdit&quot;,
+  &quot;to&quot;: &quot;同generation分组 / finally解禁&quot;,
+  &quot;behavior&quot;: &quot;嵌套同solutionGeneration共享ConfigurationHistory；首次成功编辑才建root，ForbidBuild控制合并。finally在generation仍相同时恢复录入与前一session；是当前明确的异常清理选择。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor.Core/GraphEditorDocument.History.cs&quot;,
+      &quot;member&quot;: &quot;GraphEditorDocument.ExecuteConfigurationEdit&quot;,
+      &quot;sha256&quot;: &quot;d4a3f13130e6c9334547ecaf567c5cbf34e122e976166990fa02bb796522411f&quot;,
+      &quot;start&quot;: 25,
+      &quot;end&quot;: 43,
+      &quot;excerpt&quot;: &quot;    public void ExecuteConfigurationEdit(Action&lt;GraphEditorDocument> change)\n    {\n        ArgumentNullException.ThrowIfNull(change);\n        var previous = configurationHistory;\n        var session = previous is not null &amp;&amp; previous.Generation == solutionGeneration\n            ? previous : new ConfigurationHistory(solutionGeneration);\n        configurationHistory = session;\n        session.ForbidBuild = true;\n        if (!session.NeedsRoot) SetHistoryRecordingForbidden(true);\n        try { change(this); }\n        finally\n        {\n            session.ForbidBuild = false;\n            if (session.Generation == solutionGeneration &amp;&amp; !session.NeedsRoot)\n                SetHistoryRecordingForbidden(false);\n            if(session.Generation == solutionGeneration) configurationHistory = previous;\n        }\n    }\n&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor.Core/GraphEditorDocument.History.cs&quot;,
+      &quot;member&quot;: &quot;GraphEditorDocument.RecordEditHistory&quot;,
+      &quot;sha256&quot;: &quot;d4a3f13130e6c9334547ecaf567c5cbf34e122e976166990fa02bb796522411f&quot;,
+      &quot;start&quot;: 50,
+      &quot;end&quot;: 68,
+      &quot;excerpt&quot;: &quot;    void RecordEditHistory()\n    {\n        if (configurationHistory is { NeedsRoot: true } session &amp;&amp; session.Generation == solutionGeneration)\n        {\n            BeginDocumentHistoryRoot();\n            session.NeedsRoot = false;\n            SetHistoryRecordingForbidden(session.ForbidBuild);\n        }\n        else if (history.CurrentRoot is not { ForbidBuild: true })\n            BeginDocumentHistoryRoot();\n    }\n\n    void BeginDocumentHistoryRoot()\n    {\n        if (!history.BeginRoot()) return;\n        history.RegisterPart(\&quot;document\&quot;,Capture,RestoreSnapshot,\n            canRegister:(root,key)=>!root.Parts.Any(part=>part.Key==key));\n    }\n}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

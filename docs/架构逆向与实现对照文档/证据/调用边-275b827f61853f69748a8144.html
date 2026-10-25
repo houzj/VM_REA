@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ToolBoxItemData.AddNewItem · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ToolBoxItemData.AddNewItem · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-L07"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ToolBoxItemData.AddNewItem → 自定义构造 / Cs 首个 IVmModule 类型</h2><p>自定义完整类型名时传 param、Name；否则加载 InfoCs、Librarys.Config 中存在的库及可选 Control DLL，取首个可赋给 IVmModule 的类型并传 param 构造。与存量模块缺 Cs 的 fallback 不是同一条链。</p><p><a href="../专题/loading-navigation.html#edge-L07">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/loading-navigation.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/loading-navigation.edges.json · SHA256 1aa075627c117289aeb061c4bf496955ccab2a4fae0d0b6c4af6d7aba8f13261</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="0e37ecafefb9aa1e95312eb587a34ecbd6d929fb38b201fedb8306174f2db519">{
+  &quot;id&quot;: &quot;L07&quot;,
+  &quot;route&quot;: &quot;原版 · 创建/导入&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;ToolBoxItemData.AddNewItem&quot;,
+  &quot;to&quot;: &quot;自定义构造 / Cs 首个 IVmModule 类型&quot;,
+  &quot;behavior&quot;: &quot;自定义完整类型名时传 param、Name；否则加载 InfoCs、Librarys.Config 中存在的库及可选 Control DLL，取首个可赋给 IVmModule 的类型并传 param 构造。与存量模块缺 Cs 的 fallback 不是同一条链。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxItemData.cs&quot;,
+      &quot;member&quot;: &quot;ToolBoxItemData.AddNewItem&quot;,
+      &quot;sha256&quot;: &quot;378a1319599c725eafb5eeae0d105aedb58c8ce0b77f131bc9b480d15abbc409&quot;,
+      &quot;start&quot;: 279,
+      &quot;end&quot;: 315,
+      &quot;excerpt&quot;: &quot;\tpublic object AddNewItem(object param)\n\t{\n\t\tif (!string.IsNullOrEmpty(customInstanceFullName))\n\t\t{\n\t\t\treturn ActivatorWrap.CreateInstance(customInstanceFullName, new object[2] { param, Name });\n\t\t}\n\t\tAssembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault((Assembly p) => string.Equals(p.GetName().Name, $\&quot;{Info}Cs\&quot;));\n\t\tAssembly assembly2 = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault((Assembly p) => string.Equals(p.GetName().Name, $\&quot;{Info}Control\&quot;));\n\t\tif (assembly == null)\n\t\t{\n\t\t\tActivatorWrap.LoadAssembly($\&quot;{DirPath}\\\\{Info}Cs.dll\&quot;);\n\t\t\tassembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault((Assembly p) => string.Equals(p.GetName().Name, $\&quot;{Info}Cs\&quot;));\n\t\t}\n\t\tif (assembly2 == null)\n\t\t{\n\t\t\tstring text = $\&quot;{DirPath}\\\\Librarys.Config\&quot;;\n\t\t\tif (File.Exists(text))\n\t\t\t{\n\t\t\t\tstring[] libs = GetLibs(text);\n\t\t\t\tlibs.ToList().ForEach((string p) =>\n\t\t\t\t{\n\t\t\t\t\tstring text2 = $\&quot;{DirPath}\\\\{p}\&quot;;\n\t\t\t\t\tif (File.Exists(text2))\n\t\t\t\t\t{\n\t\t\t\t\t\tActivatorWrap.LoadAssembly(text2);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t\tif (File.Exists($\&quot;{DirPath}\\\\{Info}Control.dll\&quot;))\n\t\t\t{\n\t\t\t\tActivatorWrap.LoadAssembly($\&quot;{DirPath}\\\\{Info}Control.dll\&quot;);\n\t\t\t}\n\t\t}\n\t\tType type = assembly.GetTypes().FirstOrDefault((Type p) => typeof(IVmModule).IsAssignableFrom(p));\n\t\treturn ActivatorWrap.CreateInstance(type, new object[1] { param });\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;构造器进入 native 身份/IO 的完整链未在本页取齐。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

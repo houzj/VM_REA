@@ -1,0 +1,49 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A01.3 第23轮：原 Group 导入回调到模型落地复核 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / A01.3 第23轮：原 Group 导入回调到模型落地复核</p><h1>A01.3 第23轮：原 Group 导入回调到模型落地复核</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A01.3 第23轮：原 Group 导入回调到模型落地复核</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="A01-import-callback-batch23.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="A01-import-callback-batch23.html#a013-第23轮原-group-导入回调到模型落地复核">A01.3 第23轮：原 Group 导入回调到模型落地复核</a></p><p style="margin-left:14px"><a href="A01-import-callback-batch23.html#结论">结论</a></p><p style="margin-left:14px"><a href="A01-import-callback-batch23.html#本轮核对的源码链">本轮核对的源码链</a></p><p style="margin-left:14px"><a href="A01-import-callback-batch23.html#main-现状与退出门槛">main 现状与退出门槛</a></p><p style="margin-left:14px"><a href="A01-import-callback-batch23.html#自审核">自审核</a></p></details><h1 id="a013-第23轮原-group-导入回调到模型落地复核">A01.3 第23轮：原 Group 导入回调到模型落地复核</h1><h2 id="结论">结论</h2><p>本轮实施增量 <strong>0</strong>。A01.3 仍不能完整关闭；没有新增可实施的 main 代码。当前 <code>main</code> 基线为 <code>a6aac9d0aaad027ff4c1bf107b4701a230b4caa7</code>，<code>tool-plugins</code> 未访问、未修改。</p>
+<h2 id="本轮核对的源码链">本轮核对的源码链</h2><p>复用已保全的原始反编译源码，不把上一轮静态结论改名为新成果：</p>
+<table>
+<thead>
+<tr>
+<th>原路径和成员</th>
+<th>已确认行为</th>
+<th>仍缺的 main 交付合同</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/DecoratorBase.cs</code>，<code>DecoratorBase</code> 生成 GroupTools <code>.gro</code> 清单段</td>
+<td>导入载荷来自 GroupTools 目录，不是通用 JSON 节点快照</td>
+<td><code>.gro</code> 编码、版本和目录条目到 native 导入参数的解析</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs</code>，<code>LoadGroup</code>/<code>internalImportGroup</code></td>
+<td>传入目标父 ID、<code>nIdAllocateWay=0</code>，设置导入状态并等待 native 完成标志</td>
+<td>native 返回 ID/进程 ID/名称的消费者及等待/超时语义</td>
+</tr>
+<tr>
+<td>同文件 <code>MModuleManager_OnImportGroupEndCallBack</code></td>
+<td>回调先通知公共 <code>OnGroupImportEndCallBack</code>；错误为 0 时才构造 <code>IMVS_MODULE_INFO</code>，经 <code>AddModuleByInfo</code> 建模，设 Parent/Ready，最后置完成标志</td>
+<td>main 没有该回调入口、公共事件顺序、失败时 flag 恢复合同</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs</code>，<code>AddModuleByInfo</code></td>
+<td>按 Name+ID 复用或构造节点，不以 GUID 去重</td>
+<td>main 无 SDK module-info 到节点模型的适配器</td>
+</tr>
+</tbody></table>
+<p>上述文件 SHA256：<code>VmSolution.cs</code> <code>C141E2C53913B233B768782D6757FAE5997ECAF638B35DB2DDF98F5EF951A13E</code>；<code>VmModuleSet.cs</code> <code>F3B98C4436686B0A9BABF8CDE4F5F6C83814664B8F7835DFABBEB02E2A64A346</code>；<code>DecoratorBase.cs</code> <code>25C71C878E2EA21678DB2FBF1E69FEEF0D2892F9356CAE443F747F79D0A83299</code>。</p>
+<h2 id="main-现状与退出门槛">main 现状与退出门槛</h2><p>main 目前只有 <code>ModuleRegistry</code>、<code>OwnedGroups</code> 等独立托管模型；没有 <code>.gro</code> reader、native <code>ImportGroup</code> 适配器、回调载荷（new ID/process/name）或 <code>AddModuleByInfo</code> 等价消费者。<code>OwnedGroups</code> 的 JSON 所有权校验不能替代原 SDK 导入时序，因此本轮不写入独立兼容实现，也不计实施单元。</p>
+<p>完整关闭至少需要取得并实施：</p>
+<ol>
+<li>可复验的 <code>.gro</code> 解码/版本合同；</li>
+<li>native 导入返回的 ID、进程 ID、名称及错误/完成标志；</li>
+<li>公共事件先于模型落地、失败不落地和完成标志恢复的 main 入口；</li>
+<li>Name+ID 复用规则、Parent/Ready 更新及后续引用映射。</li>
+</ol>
+<p>本轮没有运行安装原件 SDK、设备、WPF 主窗口或原生导入；这些人工/原机验收仍不计实施分子。</p>
+<h2 id="自审核">自审核</h2><ul>
+<li><input checked="" disabled="" type="checkbox"> 未修改 <code>src/</code>，未触碰 <code>tool-plugins</code>。</li>
+<li><input checked="" disabled="" type="checkbox"> 未重复派发已关闭的 A01.2 palette 单元。</li>
+<li><input checked="" disabled="" type="checkbox"> 每个未决点绑定原始源码路径和精确成员。</li>
+<li><input checked="" disabled="" type="checkbox"> 未把 JSON Group 或截图当作原 <code>.gro</code> 合同。</li>
+<li><input checked="" disabled="" type="checkbox"> A01.3 实施增量保持 0。</li>
+</ul>
+<p class="meta">来源：docs/reverse/A01-import-callback-batch23.md · SHA256 6b537e41057ade1f4cb64d7f8935b92bf5568fe9a95fa85df8160abe10436a60<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

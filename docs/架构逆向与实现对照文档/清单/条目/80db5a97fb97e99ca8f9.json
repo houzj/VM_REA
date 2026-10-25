@@ -1,0 +1,636 @@
+{
+  "entry": {
+    "id": "communication",
+    "label": "通信",
+    "node": "xGlobal",
+    "families": [
+      "boundary"
+    ],
+    "lifecycleTracks": [],
+    "operations": [],
+    "classification": "independent-implementation",
+    "meaning": "按界面问题组织的研究导航，不证明该控件直接调用全部所列关系。",
+    "sections": [
+      {
+        "id": "boundary",
+        "title": "跨层消息、ABI与返回数据",
+        "gap": "真实加载/COM激活绑定、完整编码/结构布局和所有命令的完成协议仍未知。",
+        "facts": [
+          {
+            "key": "execution-storage:G03",
+            "href": "execution-storage.html#edge-G03",
+            "classification": "source-confirmed",
+            "from": "GlobalScriptStartRunOnce",
+            "to": "NativeMethods.IMVS_ExecuteOnce4GlobalScript",
+            "behavior": "传 CVmObjectBase.mhandle；非零返回码构造并抛出 VmException。"
+          },
+          {
+            "key": "execution-storage:G10",
+            "href": "execution-storage.html#edge-G10",
+            "classification": "source-confirmed",
+            "from": "0x1806C00D0 / 三个同owner unwind区段",
+            "to": "函数指针+0x2398发送 → 响应解析与错误边界",
+            "behavior": "原发送函数3个primary/chained范围共198指令；入口保留命令指针和对象，拒null命令或R8D零，返回0xE0000001。后续重新扫描strlen并读[obj+0x2398]：非零时以RCX=命令、RDX=扫描长度、R8=栈响应缓冲、R9D=0x3ff、第五位置=长度输出指针间接call；无指针置0xE0000010。0xE0000012另走长度/分配/0x180662A70重试路径。正常返回后比较响应前3字节与原常量OK零尾，不同则用导入sscanf_s及原格式%[^*]*%d解析，未得两项置0xE0000108，得两项取解析整数。代码还有临时缓冲释放与EH；这些局部路径不证明真实对端协议或设备/流程运行完成。"
+          },
+          {
+            "key": "execution-storage:G22",
+            "href": "execution-storage.html#edge-G22",
+            "classification": "source-confirmed",
+            "from": "SDK LoadLib同名查找 / 0x180662990",
+            "to": "+0x23C0函数地址 → 注册SDK 0x1806BD820与原R8上下文",
+            "behavior": "SDK在0x180661B9B用ASCII PF_M_SetGlobalscriptCallback及+0x2368模块句柄调用GetProcAddress，结果写+0x23C0。随后检查的是+0x23A8而非+0x23C0，不能称此处已验证全局回调地址。0x180662990方法保留入口对象和R8，读+0x23C0并判空；非空时RCX=SDK函数0x1806BD820，RDX=原R8，call RAX，保留返回码；为空正常路径返回E0000010。这固定了静态候选注册值，入口RDX不按名字臆造用途。"
+          },
+          {
+            "key": "execution-storage:G27",
+            "href": "execution-storage.html#edge-G27",
+            "classification": "source-confirmed",
+            "from": "候选0x1800084B0 / 0x180007CE0",
+            "to": "对象+0x50指针 → 虚表+0x40；分开接口状态/业务结果/输出长度",
+            "behavior": "0x84B0借两个helper检查对象+0x50所含首指针，空时返回E0000001；非空helper取该指针，空指针helper调用带80004003的异常函数。桥接把原第六输出指针的低32位读到局部int，连同命令、payload与原第五值交0x7CE0，原第四参数在此按32位搬运。0x7CE0通过接口虚表+0x40调用，并另传初始0的局部业务结果地址作为第七参数；EAX接口状态按有符号负值转异常helper，正常返回局部业务结果。0x84B0再把局部int长度符号扩展为64位写回原第六指针，并返回业务结果。故接口调用状态、业务返回码和长度输出是三个值，不能把任何一个0直接画为全流程执行完成。"
+          },
+          {
+            "key": "execution-storage:G29",
+            "href": "execution-storage.html#edge-G29",
+            "classification": "source-confirmed",
+            "from": "GScriptComponent.GScriptCom.DealMsg",
+            "to": "HandleMsg → UTF8输出容量门",
+            "behavior": "方法调用GlobalScript.GetInstance().HandleMsg；仅返回码0且输出指针非零时编码reMsg。容量<=字节数时把ref长度改为字节数+1并返回E0000012；足够时Marshal.Copy恰好bytes.Length个字节，所选体未追加零终止符，也未把成功长度改为实际字节数。其它正常路径返回HandleMsg码；catch记录Debugger.Log并返回E00000FF。不能把容量协商或成功复制等同执行完成。"
+          },
+          {
+            "key": "execution-storage:G30",
+            "href": "execution-storage.html#edge-G30",
+            "classification": "source-confirmed",
+            "from": "VMGlobalScript.GlobalScript.HandleMsg",
+            "to": "DLL模式门 → GlobalManager.HandleCmd / 4002 → StartOnce",
+            "behavior": "GlobalScript.HandleMsg转GlobalManager。GlobalManager仅IsSingleProcess为true才调用HandleCmd，否则直接0；StartByDll先置true、创建singleMode管理器、设置sdkHandle并初始化加载计时器。枚举原值ExcuteOnce=4002；HandleCmd对应case调用objScriptManager.StartOnce，把uint结果存局部num，但正常尾部固定return 0，未把num返回。故HandleCmd正常0不表示分支业务成功，更不表示任务结束；EXE消息路径单独存在，不在本切片合并。"
+          },
+          {
+            "key": "execution-storage:G31",
+            "href": "execution-storage.html#edge-G31",
+            "classification": "source-confirmed",
+            "from": "UserGlobalScriptManger.StartOnce",
+            "to": "Task.Run任务 → 等待编译/初始化 → CodeRun",
+            "behavior": "入口仅检查连续运行或切片执行标志，命中即ReportData错误并返回0；否则Task.Run提交实例闭包，丢弃Task后立即返回0。bRunOnceProcess在任务体开始才置true。WaiteLoadCompileEnd返回false时仅记录超时，仍继续初始化；编译标志不通过、外部程序集加载失败会报告并清标志返回。CodeInitFunction成功才进入LoadExternAssembly及CodeRun(ref errorCode)，失败按分支日志/报告；catch后正常尾清标志。所选源码证明这里有异步排队，不能把上游命令返回当任务完成，也不能根据运行标志推定重复单次调用串行。"
+          }
+        ]
+      }
+    ]
+  },
+  "operationBinding": {
+    "id": "communication",
+    "title": "通信管理入口",
+    "meaning": "四个资源变体的具体XML声明与候选接收成员在此完整展开。资源选择是研究选择，不代表已探测原版当前模式，也不等于运行反射绑定已证。",
+    "projection": [
+      "原CommSet是通信管理窗口入口；当前主框架工具栏仍是null动作占位，不能拿原窗口或通用通信API当当前已实现。"
+    ],
+    "original": [],
+    "declarations": [
+      {
+        "resource": "MenuItems.xml",
+        "condition": "appData.IsNeutral=false; RemoteOperate.IsRemoteMode=false",
+        "id": "3.1",
+        "key": "MenuItems.xml:3.1",
+        "label": "通信管理",
+        "fields": {
+          "name": "Lang_CommSet",
+          "methodName": "CommSet",
+          "isShowExternal": "true",
+          "imageEnablePath": "Resources\\ToolBar\\ic_通信管理_normal.png",
+          "imageDisablePath": "Resources\\ToolBar\\ic_通信管理_disable.png"
+        },
+        "classification": "source-confirmed",
+        "declarationRef": {
+          "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\Resources\\MenuItems.xml",
+          "member": "MenuItems.xml / 3.1",
+          "sha256": "d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959",
+          "start": 163,
+          "end": 173,
+          "excerpt": "\t\t\t\t<TitleMenueItemData>\n\t\t\t\t\t<name>Lang_CommSet</name>\n\t\t\t\t\t<methodName>CommSet</methodName>\n\t\t\t\t\t<isShowExternal>true</isShowExternal>\n\t\t\t\t\t<toolGroupItemInfo>\n\t\t\t\t\t\t<groupName>group2</groupName>\n\t\t\t\t\t\t<priority>2</priority>\n\t\t\t\t\t</toolGroupItemInfo>\n\t\t\t\t\t<imageEnablePath>Resources\\ToolBar\\ic_通信管理_normal.png</imageEnablePath>\n\t\t\t\t\t<imageDisablePath>Resources\\ToolBar\\ic_通信管理_disable.png</imageDisablePath>\n\t\t\t\t</TitleMenueItemData>",
+          "evidenceType": "direct-shipped-XML",
+          "binaryIdentity": "resource SHA256 d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959"
+        },
+        "resolvers": [
+          {
+            "role": "methodName",
+            "name": "CommSet",
+            "status": "public-zero-argument-declaration",
+            "members": [
+              {
+                "Id": "TitleMenueItemData.CommSet@781",
+                "Type": "TitleMenueItemData",
+                "Name": "CommSet",
+                "Path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+                "Sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+                "Start": 781,
+                "End": 872,
+                "Public": true,
+                "Static": true,
+                "Parameters": 0,
+                "Signature": "void CommSet()",
+                "Body": "public static void CommSet()\r\n\t{\r\n\t\t//IL_0262: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_0268: Invalid comparison between Unknown and I4\r\n\t\t//IL_01f4: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_01fa: Invalid comparison between Unknown and I4\r\n\t\ttry\r\n\t\t{\r\n\t\t\tif (Program.MainData.IsShowProgressMask)\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = true;\r\n\t\t\tProgram.MainData.MaskMessage = AppLocalizationService.GetLang(\"Lang_LoadingCommManagerModule\");\r\n\t\t\tSystem.Windows.Forms.Application.DoEvents();\r\n\t\t\tVmModule vmModule = null;\r\n\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\tif (CheckConfigAvailable(vmModule))\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tstring path = CurrentPathHelper.Instance.GetCurrentPath() + \"module(sp)\\\\x64\\\\Global\\\\CommManagerModule\\\\CommManagerModuleCs.dll\";\r\n\t\t\t\tAssembly assembly = Assembly.LoadFile(path);\r\n\t\t\t\tType type = assembly.GetTypes().FirstOrDefault((Type p) => typeof(IVmModule).IsAssignableFrom(p));\r\n\t\t\t\tActivator.CreateInstance(type, VmSolution.Instance);\r\n\t\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication != null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = null;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t}\r\n\t\t\tif (vmModule != null)\r\n\t\t\t{\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.IsClosing)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.DecorateSource = vmModule;\r\n\t\t\t\tif (!GlobalCommunicationMgr.Instance.IsGet)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsGet = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.GetData();\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.ResetParamStateFlag();\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t}\r\n\t\tcatch (Exception ex)\r\n\t\t{\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\tVmException ex2 = null;\r\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\r\n\t\t\t{\r\n\t\t\t\tex2 = ex as VmException;\r\n\t\t\t\tif (ex2 == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tex2 = ex.InnerException as VmException;\r\n\t\t\t\t}\r\n\t\t\t\tShowMessage.ShowVmExceptionMessage(ex2);\r\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\r\n\t\t\t}\r\n\t\t\telse\r\n\t\t\t{\r\n\t\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\r\n\t\t\t\tLogHelper.Error(ex.Message);\r\n\t\t\t}\r\n\t\t}\r\n\t}",
+                "SpanStart": 21351,
+                "SpanLength": 3662,
+                "Calls": [
+                  "794: AppLocalizationService.GetLang",
+                  "795: System.Windows.Forms.Application.DoEvents",
+                  "797: VmSolution.Instance.Modules.FirstOrDefault",
+                  "798: CheckConfigAvailable",
+                  "804: CurrentPathHelper.Instance.GetCurrentPath",
+                  "805: Assembly.LoadFile",
+                  "806: assembly.GetTypes().FirstOrDefault",
+                  "806: assembly.GetTypes",
+                  "806: typeof(IVmModule).IsAssignableFrom",
+                  "807: Activator.CreateInstance",
+                  "808: VmSolution.Instance.Modules.FirstOrDefault",
+                  "832: GlobalCommunicationMgr.Instance.GetData",
+                  "833: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "833: string.IsNullOrEmpty",
+                  "833: AppLocalizationService.GetLangParm",
+                  "834: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "834: CodeManager.Instance.GetLoginUser",
+                  "836: GlobalCommunicationMgr.Instance.ResetParamStateFlag",
+                  "838: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "841: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "841: string.IsNullOrEmpty",
+                  "841: AppLocalizationService.GetLangParm",
+                  "842: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "842: CodeManager.Instance.GetLoginUser",
+                  "847: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "863: ShowMessage.ShowVmExceptionMessage",
+                  "864: LogHelper.Error",
+                  "868: HikMessageBox.Show",
+                  "869: LogHelper.Error"
+                ],
+                "Conditions": [
+                  "789: Program.MainData.IsShowProgressMask",
+                  "798: CheckConfigAvailable(vmModule)",
+                  "802: vmModule == null",
+                  "809: GlobalCommunicationMgr.globalCommunication != null",
+                  "814: vmModule == null",
+                  "818: vmModule != null",
+                  "820: GlobalCommunicationMgr.globalCommunication == null",
+                  "824: GlobalCommunicationMgr.globalCommunication.IsClosing",
+                  "829: !GlobalCommunicationMgr.Instance.IsGet",
+                  "843: GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible",
+                  "856: ex is VmException || ex.InnerException is VmException",
+                  "859: ex2 == null"
+                ],
+                "Assignments": [
+                  "793: Program.MainData.IsShowProgressMask =",
+                  "794: Program.MainData.MaskMessage =",
+                  "797: vmModule =",
+                  "808: vmModule =",
+                  "811: GlobalCommunicationMgr.globalCommunication =",
+                  "816: GlobalCommunicationMgr.globalCommunication =",
+                  "822: GlobalCommunicationMgr.globalCommunication =",
+                  "826: GlobalCommunicationMgr.globalCommunication =",
+                  "828: GlobalCommunicationMgr.globalCommunication.DecorateSource =",
+                  "831: GlobalCommunicationMgr.Instance.IsGet =",
+                  "835: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "837: Program.MainData.IsShowProgressMask =",
+                  "845: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "846: Program.MainData.IsShowProgressMask =",
+                  "850: Program.MainData.IsShowProgressMask =",
+                  "854: Program.MainData.IsShowProgressMask =",
+                  "858: ex2 =",
+                  "861: ex2 ="
+                ],
+                "Throws": [],
+                "Catches": [
+                  {
+                    "type": "(Exception ex)",
+                    "filter": null
+                  }
+                ],
+                "HasDecompilerWarnings": true,
+                "SyntaxErrors": 0
+              }
+            ],
+            "runtimeTypeObserved": false,
+            "fullBehaviorClosed": false,
+            "memberIds": [
+              "TitleMenueItemData.CommSet@781"
+            ]
+          }
+        ]
+      },
+      {
+        "resource": "MenuItemsLinux.xml",
+        "condition": "appData.IsNeutral=false; RemoteOperate.IsRemoteMode=true",
+        "id": "3.1",
+        "key": "MenuItemsLinux.xml:3.1",
+        "label": "通信管理",
+        "fields": {
+          "name": "Lang_CommSet",
+          "methodName": "CommSet",
+          "isShowExternal": "true",
+          "imageEnablePath": "Resources\\ToolBar\\ic_通信管理_normal.png",
+          "imageDisablePath": "Resources\\ToolBar\\ic_通信管理_disable.png"
+        },
+        "classification": "source-confirmed",
+        "declarationRef": {
+          "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\Resources\\MenuItemsLinux.xml",
+          "member": "MenuItemsLinux.xml / 3.1",
+          "sha256": "167f90e2479d58bcde66a1a93a8c0e23d4c7bd699821de72a55e155c0b0340d4",
+          "start": 210,
+          "end": 220,
+          "excerpt": "        <TitleMenueItemData>\n          <name>Lang_CommSet</name>\n          <methodName>CommSet</methodName>\n\t\t  <isShowExternal>true</isShowExternal>\n          <toolGroupItemInfo>\n            <groupName>group2</groupName>\n            <priority>2</priority>\n          </toolGroupItemInfo>\n          <imageEnablePath>Resources\\ToolBar\\ic_通信管理_normal.png</imageEnablePath>\n          <imageDisablePath>Resources\\ToolBar\\ic_通信管理_disable.png</imageDisablePath>\n        </TitleMenueItemData>",
+          "evidenceType": "direct-shipped-XML",
+          "binaryIdentity": "resource SHA256 167f90e2479d58bcde66a1a93a8c0e23d4c7bd699821de72a55e155c0b0340d4"
+        },
+        "resolvers": [
+          {
+            "role": "methodName",
+            "name": "CommSet",
+            "status": "public-zero-argument-declaration",
+            "members": [
+              {
+                "Id": "TitleMenueItemData.CommSet@781",
+                "Type": "TitleMenueItemData",
+                "Name": "CommSet",
+                "Path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+                "Sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+                "Start": 781,
+                "End": 872,
+                "Public": true,
+                "Static": true,
+                "Parameters": 0,
+                "Signature": "void CommSet()",
+                "Body": "public static void CommSet()\r\n\t{\r\n\t\t//IL_0262: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_0268: Invalid comparison between Unknown and I4\r\n\t\t//IL_01f4: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_01fa: Invalid comparison between Unknown and I4\r\n\t\ttry\r\n\t\t{\r\n\t\t\tif (Program.MainData.IsShowProgressMask)\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = true;\r\n\t\t\tProgram.MainData.MaskMessage = AppLocalizationService.GetLang(\"Lang_LoadingCommManagerModule\");\r\n\t\t\tSystem.Windows.Forms.Application.DoEvents();\r\n\t\t\tVmModule vmModule = null;\r\n\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\tif (CheckConfigAvailable(vmModule))\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tstring path = CurrentPathHelper.Instance.GetCurrentPath() + \"module(sp)\\\\x64\\\\Global\\\\CommManagerModule\\\\CommManagerModuleCs.dll\";\r\n\t\t\t\tAssembly assembly = Assembly.LoadFile(path);\r\n\t\t\t\tType type = assembly.GetTypes().FirstOrDefault((Type p) => typeof(IVmModule).IsAssignableFrom(p));\r\n\t\t\t\tActivator.CreateInstance(type, VmSolution.Instance);\r\n\t\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication != null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = null;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t}\r\n\t\t\tif (vmModule != null)\r\n\t\t\t{\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.IsClosing)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.DecorateSource = vmModule;\r\n\t\t\t\tif (!GlobalCommunicationMgr.Instance.IsGet)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsGet = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.GetData();\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.ResetParamStateFlag();\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t}\r\n\t\tcatch (Exception ex)\r\n\t\t{\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\tVmException ex2 = null;\r\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\r\n\t\t\t{\r\n\t\t\t\tex2 = ex as VmException;\r\n\t\t\t\tif (ex2 == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tex2 = ex.InnerException as VmException;\r\n\t\t\t\t}\r\n\t\t\t\tShowMessage.ShowVmExceptionMessage(ex2);\r\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\r\n\t\t\t}\r\n\t\t\telse\r\n\t\t\t{\r\n\t\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\r\n\t\t\t\tLogHelper.Error(ex.Message);\r\n\t\t\t}\r\n\t\t}\r\n\t}",
+                "SpanStart": 21351,
+                "SpanLength": 3662,
+                "Calls": [
+                  "794: AppLocalizationService.GetLang",
+                  "795: System.Windows.Forms.Application.DoEvents",
+                  "797: VmSolution.Instance.Modules.FirstOrDefault",
+                  "798: CheckConfigAvailable",
+                  "804: CurrentPathHelper.Instance.GetCurrentPath",
+                  "805: Assembly.LoadFile",
+                  "806: assembly.GetTypes().FirstOrDefault",
+                  "806: assembly.GetTypes",
+                  "806: typeof(IVmModule).IsAssignableFrom",
+                  "807: Activator.CreateInstance",
+                  "808: VmSolution.Instance.Modules.FirstOrDefault",
+                  "832: GlobalCommunicationMgr.Instance.GetData",
+                  "833: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "833: string.IsNullOrEmpty",
+                  "833: AppLocalizationService.GetLangParm",
+                  "834: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "834: CodeManager.Instance.GetLoginUser",
+                  "836: GlobalCommunicationMgr.Instance.ResetParamStateFlag",
+                  "838: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "841: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "841: string.IsNullOrEmpty",
+                  "841: AppLocalizationService.GetLangParm",
+                  "842: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "842: CodeManager.Instance.GetLoginUser",
+                  "847: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "863: ShowMessage.ShowVmExceptionMessage",
+                  "864: LogHelper.Error",
+                  "868: HikMessageBox.Show",
+                  "869: LogHelper.Error"
+                ],
+                "Conditions": [
+                  "789: Program.MainData.IsShowProgressMask",
+                  "798: CheckConfigAvailable(vmModule)",
+                  "802: vmModule == null",
+                  "809: GlobalCommunicationMgr.globalCommunication != null",
+                  "814: vmModule == null",
+                  "818: vmModule != null",
+                  "820: GlobalCommunicationMgr.globalCommunication == null",
+                  "824: GlobalCommunicationMgr.globalCommunication.IsClosing",
+                  "829: !GlobalCommunicationMgr.Instance.IsGet",
+                  "843: GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible",
+                  "856: ex is VmException || ex.InnerException is VmException",
+                  "859: ex2 == null"
+                ],
+                "Assignments": [
+                  "793: Program.MainData.IsShowProgressMask =",
+                  "794: Program.MainData.MaskMessage =",
+                  "797: vmModule =",
+                  "808: vmModule =",
+                  "811: GlobalCommunicationMgr.globalCommunication =",
+                  "816: GlobalCommunicationMgr.globalCommunication =",
+                  "822: GlobalCommunicationMgr.globalCommunication =",
+                  "826: GlobalCommunicationMgr.globalCommunication =",
+                  "828: GlobalCommunicationMgr.globalCommunication.DecorateSource =",
+                  "831: GlobalCommunicationMgr.Instance.IsGet =",
+                  "835: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "837: Program.MainData.IsShowProgressMask =",
+                  "845: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "846: Program.MainData.IsShowProgressMask =",
+                  "850: Program.MainData.IsShowProgressMask =",
+                  "854: Program.MainData.IsShowProgressMask =",
+                  "858: ex2 =",
+                  "861: ex2 ="
+                ],
+                "Throws": [],
+                "Catches": [
+                  {
+                    "type": "(Exception ex)",
+                    "filter": null
+                  }
+                ],
+                "HasDecompilerWarnings": true,
+                "SyntaxErrors": 0
+              }
+            ],
+            "runtimeTypeObserved": false,
+            "fullBehaviorClosed": false,
+            "memberIds": [
+              "TitleMenueItemData.CommSet@781"
+            ]
+          }
+        ]
+      },
+      {
+        "resource": "NeutralMenuItems.xml",
+        "condition": "appData.IsNeutral=true; RemoteOperate.IsRemoteMode=false",
+        "id": "3.1",
+        "key": "NeutralMenuItems.xml:3.1",
+        "label": "通信管理",
+        "fields": {
+          "name": "Lang_CommSet",
+          "methodName": "CommSet",
+          "isShowExternal": "true",
+          "imageEnablePath": "Resources\\ToolBar\\ic_通信管理_normal.png",
+          "imageDisablePath": "Resources\\ToolBar\\ic_通信管理_disable.png"
+        },
+        "classification": "source-confirmed",
+        "declarationRef": {
+          "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\Resources\\NeutralMenuItems.xml",
+          "member": "NeutralMenuItems.xml / 3.1",
+          "sha256": "4574edee6a3b754ff93436d9a31f6b8cac1c1f5dbd739cc17b85bf4ce8b5c17c",
+          "start": 168,
+          "end": 178,
+          "excerpt": "\t\t\t\t<TitleMenueItemData>\n\t\t\t\t\t<name>Lang_CommSet</name>\n\t\t\t\t\t<methodName>CommSet</methodName>\n\t\t\t\t\t<isShowExternal>true</isShowExternal>\n\t\t\t\t\t<toolGroupItemInfo>\n\t\t\t\t\t\t<groupName>group2</groupName>\n\t\t\t\t\t\t<priority>2</priority>\n\t\t\t\t\t</toolGroupItemInfo>\n\t\t\t\t\t<imageEnablePath>Resources\\ToolBar\\ic_通信管理_normal.png</imageEnablePath>\n\t\t\t\t\t<imageDisablePath>Resources\\ToolBar\\ic_通信管理_disable.png</imageDisablePath>\n\t\t\t\t</TitleMenueItemData>",
+          "evidenceType": "direct-shipped-XML",
+          "binaryIdentity": "resource SHA256 4574edee6a3b754ff93436d9a31f6b8cac1c1f5dbd739cc17b85bf4ce8b5c17c"
+        },
+        "resolvers": [
+          {
+            "role": "methodName",
+            "name": "CommSet",
+            "status": "public-zero-argument-declaration",
+            "members": [
+              {
+                "Id": "TitleMenueItemData.CommSet@781",
+                "Type": "TitleMenueItemData",
+                "Name": "CommSet",
+                "Path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+                "Sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+                "Start": 781,
+                "End": 872,
+                "Public": true,
+                "Static": true,
+                "Parameters": 0,
+                "Signature": "void CommSet()",
+                "Body": "public static void CommSet()\r\n\t{\r\n\t\t//IL_0262: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_0268: Invalid comparison between Unknown and I4\r\n\t\t//IL_01f4: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_01fa: Invalid comparison between Unknown and I4\r\n\t\ttry\r\n\t\t{\r\n\t\t\tif (Program.MainData.IsShowProgressMask)\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = true;\r\n\t\t\tProgram.MainData.MaskMessage = AppLocalizationService.GetLang(\"Lang_LoadingCommManagerModule\");\r\n\t\t\tSystem.Windows.Forms.Application.DoEvents();\r\n\t\t\tVmModule vmModule = null;\r\n\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\tif (CheckConfigAvailable(vmModule))\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tstring path = CurrentPathHelper.Instance.GetCurrentPath() + \"module(sp)\\\\x64\\\\Global\\\\CommManagerModule\\\\CommManagerModuleCs.dll\";\r\n\t\t\t\tAssembly assembly = Assembly.LoadFile(path);\r\n\t\t\t\tType type = assembly.GetTypes().FirstOrDefault((Type p) => typeof(IVmModule).IsAssignableFrom(p));\r\n\t\t\t\tActivator.CreateInstance(type, VmSolution.Instance);\r\n\t\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication != null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = null;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t}\r\n\t\t\tif (vmModule != null)\r\n\t\t\t{\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.IsClosing)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.DecorateSource = vmModule;\r\n\t\t\t\tif (!GlobalCommunicationMgr.Instance.IsGet)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsGet = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.GetData();\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.ResetParamStateFlag();\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t}\r\n\t\tcatch (Exception ex)\r\n\t\t{\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\tVmException ex2 = null;\r\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\r\n\t\t\t{\r\n\t\t\t\tex2 = ex as VmException;\r\n\t\t\t\tif (ex2 == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tex2 = ex.InnerException as VmException;\r\n\t\t\t\t}\r\n\t\t\t\tShowMessage.ShowVmExceptionMessage(ex2);\r\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\r\n\t\t\t}\r\n\t\t\telse\r\n\t\t\t{\r\n\t\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\r\n\t\t\t\tLogHelper.Error(ex.Message);\r\n\t\t\t}\r\n\t\t}\r\n\t}",
+                "SpanStart": 21351,
+                "SpanLength": 3662,
+                "Calls": [
+                  "794: AppLocalizationService.GetLang",
+                  "795: System.Windows.Forms.Application.DoEvents",
+                  "797: VmSolution.Instance.Modules.FirstOrDefault",
+                  "798: CheckConfigAvailable",
+                  "804: CurrentPathHelper.Instance.GetCurrentPath",
+                  "805: Assembly.LoadFile",
+                  "806: assembly.GetTypes().FirstOrDefault",
+                  "806: assembly.GetTypes",
+                  "806: typeof(IVmModule).IsAssignableFrom",
+                  "807: Activator.CreateInstance",
+                  "808: VmSolution.Instance.Modules.FirstOrDefault",
+                  "832: GlobalCommunicationMgr.Instance.GetData",
+                  "833: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "833: string.IsNullOrEmpty",
+                  "833: AppLocalizationService.GetLangParm",
+                  "834: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "834: CodeManager.Instance.GetLoginUser",
+                  "836: GlobalCommunicationMgr.Instance.ResetParamStateFlag",
+                  "838: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "841: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "841: string.IsNullOrEmpty",
+                  "841: AppLocalizationService.GetLangParm",
+                  "842: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "842: CodeManager.Instance.GetLoginUser",
+                  "847: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "863: ShowMessage.ShowVmExceptionMessage",
+                  "864: LogHelper.Error",
+                  "868: HikMessageBox.Show",
+                  "869: LogHelper.Error"
+                ],
+                "Conditions": [
+                  "789: Program.MainData.IsShowProgressMask",
+                  "798: CheckConfigAvailable(vmModule)",
+                  "802: vmModule == null",
+                  "809: GlobalCommunicationMgr.globalCommunication != null",
+                  "814: vmModule == null",
+                  "818: vmModule != null",
+                  "820: GlobalCommunicationMgr.globalCommunication == null",
+                  "824: GlobalCommunicationMgr.globalCommunication.IsClosing",
+                  "829: !GlobalCommunicationMgr.Instance.IsGet",
+                  "843: GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible",
+                  "856: ex is VmException || ex.InnerException is VmException",
+                  "859: ex2 == null"
+                ],
+                "Assignments": [
+                  "793: Program.MainData.IsShowProgressMask =",
+                  "794: Program.MainData.MaskMessage =",
+                  "797: vmModule =",
+                  "808: vmModule =",
+                  "811: GlobalCommunicationMgr.globalCommunication =",
+                  "816: GlobalCommunicationMgr.globalCommunication =",
+                  "822: GlobalCommunicationMgr.globalCommunication =",
+                  "826: GlobalCommunicationMgr.globalCommunication =",
+                  "828: GlobalCommunicationMgr.globalCommunication.DecorateSource =",
+                  "831: GlobalCommunicationMgr.Instance.IsGet =",
+                  "835: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "837: Program.MainData.IsShowProgressMask =",
+                  "845: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "846: Program.MainData.IsShowProgressMask =",
+                  "850: Program.MainData.IsShowProgressMask =",
+                  "854: Program.MainData.IsShowProgressMask =",
+                  "858: ex2 =",
+                  "861: ex2 ="
+                ],
+                "Throws": [],
+                "Catches": [
+                  {
+                    "type": "(Exception ex)",
+                    "filter": null
+                  }
+                ],
+                "HasDecompilerWarnings": true,
+                "SyntaxErrors": 0
+              }
+            ],
+            "runtimeTypeObserved": false,
+            "fullBehaviorClosed": false,
+            "memberIds": [
+              "TitleMenueItemData.CommSet@781"
+            ]
+          }
+        ]
+      },
+      {
+        "resource": "NeutralMenuItemsLinux.xml",
+        "condition": "appData.IsNeutral=true; RemoteOperate.IsRemoteMode=true",
+        "id": "3.1",
+        "key": "NeutralMenuItemsLinux.xml:3.1",
+        "label": "通信管理",
+        "fields": {
+          "name": "Lang_CommSet",
+          "methodName": "CommSet",
+          "isShowExternal": "true",
+          "imageEnablePath": "Resources\\ToolBar\\ic_通信管理_normal.png",
+          "imageDisablePath": "Resources\\ToolBar\\ic_通信管理_disable.png"
+        },
+        "classification": "source-confirmed",
+        "declarationRef": {
+          "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\Resources\\NeutralMenuItemsLinux.xml",
+          "member": "NeutralMenuItemsLinux.xml / 3.1",
+          "sha256": "2384dd12f2a9eff04211cf8ebdf50f2da07c0a8ad7c9af87e9c9ea96669619a7",
+          "start": 208,
+          "end": 218,
+          "excerpt": "        <TitleMenueItemData>\n          <name>Lang_CommSet</name>\n          <methodName>CommSet</methodName>\n          <isShowExternal>true</isShowExternal>\n          <toolGroupItemInfo>\n            <groupName>group2</groupName>\n            <priority>2</priority>\n          </toolGroupItemInfo>\n          <imageEnablePath>Resources\\ToolBar\\ic_通信管理_normal.png</imageEnablePath>\n          <imageDisablePath>Resources\\ToolBar\\ic_通信管理_disable.png</imageDisablePath>\n        </TitleMenueItemData>",
+          "evidenceType": "direct-shipped-XML",
+          "binaryIdentity": "resource SHA256 2384dd12f2a9eff04211cf8ebdf50f2da07c0a8ad7c9af87e9c9ea96669619a7"
+        },
+        "resolvers": [
+          {
+            "role": "methodName",
+            "name": "CommSet",
+            "status": "public-zero-argument-declaration",
+            "members": [
+              {
+                "Id": "TitleMenueItemData.CommSet@781",
+                "Type": "TitleMenueItemData",
+                "Name": "CommSet",
+                "Path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+                "Sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+                "Start": 781,
+                "End": 872,
+                "Public": true,
+                "Static": true,
+                "Parameters": 0,
+                "Signature": "void CommSet()",
+                "Body": "public static void CommSet()\r\n\t{\r\n\t\t//IL_0262: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_0268: Invalid comparison between Unknown and I4\r\n\t\t//IL_01f4: Unknown result type (might be due to invalid IL or missing references)\r\n\t\t//IL_01fa: Invalid comparison between Unknown and I4\r\n\t\ttry\r\n\t\t{\r\n\t\t\tif (Program.MainData.IsShowProgressMask)\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = true;\r\n\t\t\tProgram.MainData.MaskMessage = AppLocalizationService.GetLang(\"Lang_LoadingCommManagerModule\");\r\n\t\t\tSystem.Windows.Forms.Application.DoEvents();\r\n\t\t\tVmModule vmModule = null;\r\n\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\tif (CheckConfigAvailable(vmModule))\r\n\t\t\t{\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tstring path = CurrentPathHelper.Instance.GetCurrentPath() + \"module(sp)\\\\x64\\\\Global\\\\CommManagerModule\\\\CommManagerModuleCs.dll\";\r\n\t\t\t\tAssembly assembly = Assembly.LoadFile(path);\r\n\t\t\t\tType type = assembly.GetTypes().FirstOrDefault((Type p) => typeof(IVmModule).IsAssignableFrom(p));\r\n\t\t\t\tActivator.CreateInstance(type, VmSolution.Instance);\r\n\t\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 11000);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication != null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = null;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tif (vmModule == null)\r\n\t\t\t{\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t}\r\n\t\t\tif (vmModule != null)\r\n\t\t\t{\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.IsClosing)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication = new GlobalCommunication();\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.DecorateSource = vmModule;\r\n\t\t\t\tif (!GlobalCommunicationMgr.Instance.IsGet)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsGet = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.GetData();\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.ResetParamStateFlag();\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t\treturn;\r\n\t\t\t\t}\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.UpdateLanguage(string.IsNullOrEmpty(langcur) ? AppLocalizationService.GetLangParm() : langcur);\r\n\t\t\t\tGlobalCommunicationMgr.globalCommunication.SetTechOperate((int)CodeManager.Instance.GetLoginUser() == 2);\r\n\t\t\t\tif (GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible)\r\n\t\t\t\t{\r\n\t\t\t\t\tGlobalCommunicationMgr.Instance.IsOpen = true;\r\n\t\t\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\t\t\tGlobalCommunicationMgr.globalCommunication.ShowDialog();\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t}\r\n\t\tcatch (Exception ex)\r\n\t\t{\r\n\t\t\tProgram.MainData.IsShowProgressMask = false;\r\n\t\t\tVmException ex2 = null;\r\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\r\n\t\t\t{\r\n\t\t\t\tex2 = ex as VmException;\r\n\t\t\t\tif (ex2 == null)\r\n\t\t\t\t{\r\n\t\t\t\t\tex2 = ex.InnerException as VmException;\r\n\t\t\t\t}\r\n\t\t\t\tShowMessage.ShowVmExceptionMessage(ex2);\r\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\r\n\t\t\t}\r\n\t\t\telse\r\n\t\t\t{\r\n\t\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\r\n\t\t\t\tLogHelper.Error(ex.Message);\r\n\t\t\t}\r\n\t\t}\r\n\t}",
+                "SpanStart": 21351,
+                "SpanLength": 3662,
+                "Calls": [
+                  "794: AppLocalizationService.GetLang",
+                  "795: System.Windows.Forms.Application.DoEvents",
+                  "797: VmSolution.Instance.Modules.FirstOrDefault",
+                  "798: CheckConfigAvailable",
+                  "804: CurrentPathHelper.Instance.GetCurrentPath",
+                  "805: Assembly.LoadFile",
+                  "806: assembly.GetTypes().FirstOrDefault",
+                  "806: assembly.GetTypes",
+                  "806: typeof(IVmModule).IsAssignableFrom",
+                  "807: Activator.CreateInstance",
+                  "808: VmSolution.Instance.Modules.FirstOrDefault",
+                  "832: GlobalCommunicationMgr.Instance.GetData",
+                  "833: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "833: string.IsNullOrEmpty",
+                  "833: AppLocalizationService.GetLangParm",
+                  "834: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "834: CodeManager.Instance.GetLoginUser",
+                  "836: GlobalCommunicationMgr.Instance.ResetParamStateFlag",
+                  "838: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "841: GlobalCommunicationMgr.globalCommunication.UpdateLanguage",
+                  "841: string.IsNullOrEmpty",
+                  "841: AppLocalizationService.GetLangParm",
+                  "842: GlobalCommunicationMgr.globalCommunication.SetTechOperate",
+                  "842: CodeManager.Instance.GetLoginUser",
+                  "847: GlobalCommunicationMgr.globalCommunication.ShowDialog",
+                  "863: ShowMessage.ShowVmExceptionMessage",
+                  "864: LogHelper.Error",
+                  "868: HikMessageBox.Show",
+                  "869: LogHelper.Error"
+                ],
+                "Conditions": [
+                  "789: Program.MainData.IsShowProgressMask",
+                  "798: CheckConfigAvailable(vmModule)",
+                  "802: vmModule == null",
+                  "809: GlobalCommunicationMgr.globalCommunication != null",
+                  "814: vmModule == null",
+                  "818: vmModule != null",
+                  "820: GlobalCommunicationMgr.globalCommunication == null",
+                  "824: GlobalCommunicationMgr.globalCommunication.IsClosing",
+                  "829: !GlobalCommunicationMgr.Instance.IsGet",
+                  "843: GlobalCommunicationMgr.globalCommunication.Visibility != Visibility.Visible",
+                  "856: ex is VmException || ex.InnerException is VmException",
+                  "859: ex2 == null"
+                ],
+                "Assignments": [
+                  "793: Program.MainData.IsShowProgressMask =",
+                  "794: Program.MainData.MaskMessage =",
+                  "797: vmModule =",
+                  "808: vmModule =",
+                  "811: GlobalCommunicationMgr.globalCommunication =",
+                  "816: GlobalCommunicationMgr.globalCommunication =",
+                  "822: GlobalCommunicationMgr.globalCommunication =",
+                  "826: GlobalCommunicationMgr.globalCommunication =",
+                  "828: GlobalCommunicationMgr.globalCommunication.DecorateSource =",
+                  "831: GlobalCommunicationMgr.Instance.IsGet =",
+                  "835: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "837: Program.MainData.IsShowProgressMask =",
+                  "845: GlobalCommunicationMgr.Instance.IsOpen =",
+                  "846: Program.MainData.IsShowProgressMask =",
+                  "850: Program.MainData.IsShowProgressMask =",
+                  "854: Program.MainData.IsShowProgressMask =",
+                  "858: ex2 =",
+                  "861: ex2 ="
+                ],
+                "Throws": [],
+                "Catches": [
+                  {
+                    "type": "(Exception ex)",
+                    "filter": null
+                  }
+                ],
+                "HasDecompilerWarnings": true,
+                "SyntaxErrors": 0
+              }
+            ],
+            "runtimeTypeObserved": false,
+            "fullBehaviorClosed": false,
+            "memberIds": [
+              "TitleMenueItemData.CommSet@781"
+            ]
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "current-communication",
+        "from": "当前主工具栏",
+        "to": "null动作占位",
+        "classification": "independent-implementation",
+        "behavior": "当前BuildChrome的通信管理项传入null action，并标注通信模块尚未接入；本页不补造接收者。",
+        "refs": [
+          {
+            "path": "src/VisionEditor/MainWindow.xaml.cs",
+            "member": "Current BuildChrome camera/communication/stop actions",
+            "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+            "start": 52,
+            "end": 52,
+            "excerpt": "  Tool(\"toolbar_toolbarSave_normal.png\",\"保存\",()=>Save(false));Tool(\"toolbar_toolbarOpen_normal.png\",\"打开方案\",Open);undoToolButton=Tool(\"toolbar_ic_topbar_undo_normal.png\",\"撤销\",UndoShell);SetToolbarStateIcon(undoToolButton,\"toolbar_ic_topbar_undo_normal.png\",\"toolbar_ic_topbar_undo_disable.png\");redoToolButton=Tool(\"toolbar_ic_topbar_redo_normal.png\",\"重做\",RedoShell);SetToolbarStateIcon(redoToolButton,\"toolbar_ic_topbar_redo_normal.png\",\"toolbar_ic_topbar_redo_disable.png\");lockToolButton=Tool(\"toolbar_ic_topbar_lock_normal.png\",\"锁定工作区\",RequestWorkAreaLock);Sep();Tool(\"toolbar_ic_topbar_camera_normal.png\",\"相机列表\",()=>RefreshCameraProvider(true));Tool(\"toolbar_ic_全局变量_normal.png\",\"全局变量（变量模型尚未接入）\",null);Tool(\"toolbar_ic_通信管理_normal.png\",\"通信管理（通信模块尚未接入）\",null);Tool(\"toolbar_ic_topbar_全局触发_normal.png\",\"全局触发（触发器尚未接入）\",null);Tool(\"toolbar_ic_script_normal.png\",\"脚本（脚本引擎尚未接入）\",null);Sep();Tool(\"toolbar_toolbarStart_normal.png\",\"运行流程\",()=>{_=Run();});continuousToolButton=Tool(\"toolbar_toolbarRunRepeat_normal.png\",\"连续运行\",StartContinuous);stopToolButton=Tool(\"toolbar_toolBarStop_normal.png\",\"停止\",()=>activeRun?.Cancel());Tool(\"toolbar_ic_topbar_综合配置_normal.png\",\"综合配置（系统配置尚未接入）\",null);",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "本次只读源码与离线页面验证，没有启动相机、厂商SDK、通信设备或当前WPF主窗。"
+        ]
+      }
+    ],
+    "unknowns": [
+      "候选公开零参数成员定位不等于该资源已在原机实例物化或通过反射成功绑定；原模板、权限和运行状态门仍按菜单专题逐关系证据阅读。"
+    ]
+  },
+  "dataFacts": [],
+  "lifecycleTracks": [],
+  "lifecycleFacts": []
+}

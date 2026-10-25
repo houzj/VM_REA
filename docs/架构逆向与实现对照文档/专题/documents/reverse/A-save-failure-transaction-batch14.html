@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十四批 A：保存失败的提交边界 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第十四批 A：保存失败的提交边界</p><h1>第十四批 A：保存失败的提交边界</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十四批 A：保存失败的提交边界</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="A-save-failure-transaction-batch14.html">下载原始文件</a></nav><main><h1 id="第十四批-a保存失败的提交边界">第十四批 A：保存失败的提交边界</h1><p>本次只核验 main 独立格式的 <code>GraphEditorDocument.Save</code> / <code>SolutionStore.Save</code>，不推断原厂重试策略，不重跑413秒长稳，不修改产品，不访问 tool-plugins。所有拒绝夹具仅使用本批自己创建的目标文件与 <code>FileShare.None</code> 锁；每类操作一次。</p>
+<h2 id="源码顺序与预期">源码顺序与预期</h2><p><code>GraphEditorDocument.Save</code> 依次：解析新路径→对文档副本调用PrepareSave→Rebase产生候选→SolutionStore.Save→提交document/BaseDirectory/FilePath/IsDirty/Revision→Changed通知。前四步未改当前文档身份或历史栈。<code>SolutionStore.Save</code> 校验并序列化候选，创建同目录GUID临时文件，写入并Flush(true)，随后 <code>File.Move(temp,full,overwrite:true)</code>；finally仅清理自己的临时文件。</p>
+<p>因此应区分异常阶段：</p>
+<table>
+<thead>
+<tr>
+<th>失败阶段</th>
+<th>本地合同</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PrepareSave抛错或校验/Rebase失败</td>
+<td>编辑器身份/文档/历史尚未提交；外部delegate已产生的副作用不自动回滚</td>
+</tr>
+<tr>
+<td>临时文件写入或File.Move拒绝</td>
+<td>编辑器尚未提交；独占目的文件拒绝应保持原目的文件字节，并清理本次temp</td>
+</tr>
+<tr>
+<td>Changed订阅者抛错</td>
+<td>文件与编辑器身份已经提交；Save仍向调用者抛异常，<strong>不能说所有Save异常都代表未提交</strong></td>
+</tr>
+</tbody></table>
+<p>没有依据把413秒长稳中的UnauthorizedAccessException归因为本夹具的锁；本夹具只制造确定的拒绝输入，核验同一提交前路径。原长稳失败仍保留，不由专项通过覆盖。</p>
+<h2 id="可复验自审核">可复验自审核</h2><p><code>tests/SaveFailureTransactionChecks14</code> 创建GUID独占目录，顺序检查：</p>
+<ol>
+<li>已保存clean文档对当前路径保存，被明确锁拒绝后仍clean；文档、完整undo/redo栈、选择、目录/路径、Revision和Changed事件数均不变。</li>
+<li>已有undo和redo的dirty文档保存到另一个被锁路径；PrepareSave返回不同候选，核验候选不泄漏、无内部重试、源与目的hash不变、temp清理，以及随后Undo/Redo可继续使用。</li>
+<li>PrepareSave自己抛错时，整个编辑器状态不变且不写目的文件。</li>
+<li>无文件锁、Changed订阅者故意抛错：核验确已生成可读文件且编辑器路径/base/dirty/revision已提交，明确postcommit异常边界。</li>
+</ol>
+<p>根线统一构建运行；实际成功/失败、异常完整类型/HResult/堆栈和逐项标签写入 <code>analysis/full-audit/batch14-20261019/A/transaction-&lt;GUID&gt;/summary.json</code>（夹具失败则写failed.json）。本线未执行构建或测试，不提前宣称通过。此专项自身不增加实施完成单元。</p>
+<p>根线实际结果：SaveFailureTransactionChecks14 exit0，22/22通过；完整阶段异常/HResult与目标/事务hash保留A/GUID/summary和D/save-transaction-checks.log。该锁拒绝测试不等于原长稳瞬时根因复现。</p>
+<p class="meta">来源：docs/reverse/A-save-failure-transaction-batch14.md · SHA256 05187a5c8ea3b7113d5dec0f62065720aadae381c616fb22ab5387e1d1d536f7<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

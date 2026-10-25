@@ -1,0 +1,46 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D2首切片：缺槽首次写入、冲突与多层选择</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-D2-GRID-SELECTION-SOURCE.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#d2首切片缺槽首次写入冲突与多层选择">D2首切片：缺槽首次写入、冲突与多层选择</a></p><p style="margin-left:14px"><a href="#s0与索引">S0与索引</a></p><p style="margin-left:14px"><a href="#intmin的首次写入与覆盖顺序">INT_MIN的首次写入与覆盖顺序</a></p><p style="margin-left:14px"><a href="#候选互斥与同槽覆盖不是同一层">候选互斥与同槽覆盖不是同一层</a></p><p style="margin-left:14px"><a href="#三种成功候选选择必须分别读取">三种“成功候选选择”必须分别读取</a></p><p style="margin-left:14px"><a href="#813ca0搜索次数与未执行分支">813ca0搜索次数与未执行分支</a></p><p style="margin-left:14px"><a href="#阶段与后续边界">阶段与后续边界</a></p></details><h1 id="d2首切片缺槽首次写入冲突与多层选择">D2首切片：缺槽首次写入、冲突与多层选择</h1><p>2026-10-19。只恢复当前格网封装与三层选择，复用既有哨兵/mapper/caller原始C，定向补873de0/8bcff0/8bf960原始体；不新增最终图像样本、共享产品修改或原厂探针。历史source-grid测试属于既有有限域证据，不能据其通过宣称D2整卡完成。</p>
+<h2 id="s0与索引">S0与索引</h2><p>原MVD_Algorithm.dll SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。REA配置不可用沿D1记录；私有Ghidra12.1.4 readOnly/noanalysis fallback，未改全局配置，无REA Evidence ID。既有报告指向core的三个格网体在当前磁盘缺失，故只定向重新导出这三体到<code>analysis/map-calibration/d2-grid-selection/source</code>，不以产品源码反代原始证据。</p>
+<p><code>ExportD2SourceIndex.py</code>生成本切片7入口索引：既有80e690/80bcd0/813ca0/813020与新三体；保存原件哈希、C/可用asm哈希、行锚点及本切片未收录的callee。旧80e690/80bcd0没有同目录asm，索引如实null，本轮不伪造汇编确认。缺体范围仍有seed/扩边/剪枝等原始叶体及未触发内存边界；旧专属报告有对应历史隔离实现/运行记录，但未据此计整卡S1/S2完成。</p>
+<h2 id="intmin的首次写入与覆盖顺序">INT_MIN的首次写入与覆盖顺序</h2><p>80e690(HIK7)在873de0输出有序XY/整数格网ID和尺寸后构建两个row-pointer矩阵：一套float XY、一套每槽两个int的格网ID。初始化循环先把<strong>所有整数槽的两个分量</strong>写0x80000000：80e690.c 495..507；80bcd0(HIK9)对应496..508。两板型在此处共同首次建立传给813ca0/813020的缺槽哨兵。</p>
+<p>之后从有效点ID取minColumn/minRow，并按输入点序列循环：</p>
+<pre><code>cellRow=point.Row−minRow; cellColumn=point.Column−minColumn
+integerGrid[cell]=[point.Column,point.Row]
+floatGrid[cell]=[point.X,point.Y]
+</code></pre>
+<p>HIK7对应80e690.c 582..596，HIK9对应80bcd0.c 586..596。这两个写入循环没有“槽已占用”条件，也没有对重复ID抛错/拒绝：同一整数格网ID再次出现时，后项覆盖先项XY。整数ID相同本身不冲突，真正被替换的是该槽像素坐标；不同ID但XY相同不会在此层去重。此为封装循环语义，尚未构造原厂重复输入运行确认，也不说明上游通常会生成这种重复。</p>
+<p>floatGrid缺槽未在上述循环被统一清0/NaN；不能因整数哨兵初始化就推导float XY也有相同哨兵或确定初值。813020通过首整数INT_MIN跳过输出，813ca0计缺槽则检查两个整数任一INT_MIN，二者谓词不同（D1已有微核/源码证据）。</p>
+<h2 id="候选互斥与同槽覆盖不是同一层">候选互斥与同槽覆盖不是同一层</h2><p>8bf960输入预测目标、候选28字节记录、used flags及输出assigned。先依据距离门形成目标×候选cost表；used==1的候选cost置FLT_MAX。按原顺序找各行最小、再用strict &lt;找全表最小；有限相等cost保留先扫描的项。</p>
+<p>接受一个配对后将该<strong>目标整行</strong>及该<strong>候选整列</strong>cost置FLT_MAX，写assigned[target]=candidateIndex，used[candidateIndex]=1，计数加1（8bf960.c 217..322）。该轮分配是一对一，不允许同一个候选索引抢给两个目标；这是对candidate index的互斥，不是对几何XY或最终整数ID的全局去重。全部剩余cost不可选时退出，不用任意次近项填满所有槽。</p>
+<p>8bcff0按内部索引矩阵每cell至多一个candidate index输出，row外层/col内层，跳过负索引；输出整数ID为当前cell列/行，XY直接复制对应候选float。故正常该层输出天然按cell唯一；封装“后写覆盖”只说明若收到同槽重复点时的可观察写序，不应误写成上游确实存在该重复。</p>
+<p>8bcff0种子失败的flags清理会使用矩阵中可能为−2/−1的索引直接寻址；既有报告已记录原厂独立workspace需前缀的边界。本轮不复制跨缓冲写入，也不把托管边界检查声称原厂行为。种子/扩边/剪枝原始叶体的完整失败清理仍需后续定向补证。</p>
+<h2 id="三种成功候选选择必须分别读取">三种“成功候选选择”必须分别读取</h2><table>
+<thead>
+<tr>
+<th>层次</th>
+<th>原始条件</th>
+<th>平分/成功选择</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>8bcff0同一候选集的seed结果</td>
+<td>newScore&lt;=bestScore（c262）</td>
+<td>局部平分由后seed替换</td>
+</tr>
+<tr>
+<td>873de0同尺度两假设及历史尺度</td>
+<td>first&lt;oldBest且first&lt;=second时选first；second&lt;oldBest且second&lt;first时选second</td>
+<td>两新假设平分优先first；与历史best平分保留历史</td>
+</tr>
+<tr>
+<td>813ca0身份decode</td>
+<td>按radius/位置/排列顺序，状态==1即退出</td>
+<td>首成功，后续可成功候选不再decode、不评分比较</td>
+</tr>
+</tbody></table>
+<p>873de0两假设先分别调整局部格网评分，再作上表比较；调整含最小点间距项、scale和完整矩形奖励。第一假设末尾额外读取已分配输出槽的历史边界见CANDIDATE-SOURCE报告，不能用“只遍历声明点”的常见实现改写原厂。此轮重点核选择谓词，并未把所有尾槽/未初始化域闭合。</p>
+<p>873de0每scale输出只更新选中假设，XY乘scale写到源图坐标；scale*=2。完整矩形、与前一轮尺寸相同且count&gt;=10可提前停；图宽/高&lt;=383或达到最大scale也退出。8bcff0有不同提前停：接受2×2 fallback且覆盖量超过约75%候选时可停；接受非fallback且候选&gt;1000可停；count&gt;9时另有seed跳步，不是无条件逐候选穷举。常量和完整失败清理仍沿既有源报告与新体继续细追，不把“至多N种子”写成实际N次成功格网。</p>
+<h2 id="813ca0搜索次数与未执行分支">813ca0搜索次数与未执行分支</h2><p>先radius1，再radius2；每个缺槽proposal先四个正序旋转，再四个反序旋转，至多8次80a7f0尝试，任一output+f0==1即停止其余排列/位置/半径。这不是“找出全部成功后挑最佳payload”。已有真实图仅direction1，不能推导后续排列不可能成功。</p>
+<p>现有813ca0原始C明确radius2内层column仍从1开始，outer row从radius开始；缺槽统计窗口因此可涉及列−1。D1已保留该精确边界，不能把循环正规化为常见r..W−r滑窗再计算测试次数。调用总数还受尺寸、缺槽6/17门及首成功提前停影响；本轮未运行稀疏/失败probe，也不据14×14数学格数宣布实际decode调用数。</p>
+<h2 id="阶段与后续边界">阶段与后续边界</h2><p>S0身份/复用/缺体清单满足。当前S1/S2只是有限切片：明确了最终格网INT_MIN首次写入、封装覆盖顺序、配对互斥、局部/全局平分与decoder首成功；不构成D2整卡完成。下一依赖是seed/扩边/剪枝原始体对重复预测、失败保留与flags释放的具体路径，以及radius2负列与上游padding的关系；按实际callee补，不扩最终图像样本。</p>
+<p>没有新运行、产品实现、宿主验收或提交推送。校验为原件/文件哈希索引和源码对照；局部交接不计整卡S7。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D2-GRID-SELECTION-SOURCE.md · SHA256 fce8c676a400537d1cf776306815d45df712b41ce6837fafc0547cea32aae8bf<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

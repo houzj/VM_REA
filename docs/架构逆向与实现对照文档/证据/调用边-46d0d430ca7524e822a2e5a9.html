@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GetBindGlobalVarParam(13000) / GetUnbindInfo · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GetBindGlobalVarParam(13000) / GetUnbindInfo · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-G06"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GetBindGlobalVarParam(13000) / GetUnbindInfo → 先解绑 → 改All索引/类型 → 128批重绑</h2><p>原结果绑定生成解绑列表，构造的索引已固定All；更新原绑定的All/256字节索引常量及变量类型后先UnBindVarArray，再逐项改结果名，满128重绑并换新数组、余数再绑。没有解绑失败/后续失败的恢复旧绑定事务，非短路异常可能留下部分状态。</p><p><a href="../专题/compatibility-tool.html#edge-G06">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/compatibility-tool.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/compatibility-tool.edges.json · SHA256 6498d618a4b576d430f952a5aa8d65e3e378d653e8429b2b5cd14a4609e3c7ba</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="b9ae2e1214e329bf7e13c4750e23eefdaf74ec96b97fbad293d62c9c574d6e4c">{
+  &quot;id&quot;: &quot;G06&quot;,
+  &quot;route&quot;: &quot;原版 · 全局变量迁移&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;GetBindGlobalVarParam(13000) / GetUnbindInfo&quot;,
+  &quot;to&quot;: &quot;先解绑 → 改All索引/类型 → 128批重绑&quot;,
+  &quot;behavior&quot;: &quot;原结果绑定生成解绑列表，构造的索引已固定All；更新原绑定的All/256字节索引常量及变量类型后先UnBindVarArray，再逐项改结果名，满128重绑并换新数组、余数再绑。没有解绑失败/后续失败的恢复旧绑定事务，非短路异常可能留下部分状态。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/CompatibleTool.Audit/CompatibleTool/GlobalVarUtils.cs&quot;,
+      &quot;member&quot;: &quot;GlobalVarUtils result rebind loop&quot;,
+      &quot;sha256&quot;: &quot;5b8a918bbfd387ddba0ceb47050c9efb885161d0038c5bef7ded6ffd0bbb826f&quot;,
+      &quot;start&quot;: 166,
+      &quot;end&quot;: 214,
+      &quot;excerpt&quot;: &quot;\t\t\t\tImvsSdkDefine.IMVS_BIND_GLOBALVAR_PARAM_INFO[] bindGlobalVarParam = ServerSDKManager.serverSDKManager.mGlobalModuleManager.GetBindGlobalVarParam(13000u);\n\t\t\t\tif (bindGlobalVarParam.Length != 0)\n\t\t\t\t{\n\t\t\t\t\tList&lt;ImvsSdkDefine.IMVS_UNBIND_GLOBALVAR_PARAM_INFO> list5 = new List&lt;ImvsSdkDefine.IMVS_UNBIND_GLOBALVAR_PARAM_INFO>();\n\t\t\t\t\tfor (int num = 0; num &lt; bindGlobalVarParam.Length; num++)\n\t\t\t\t\t{\n\t\t\t\t\t\tlist5.Add(GetUnbindInfo(bindGlobalVarParam[num]));\n\t\t\t\t\t\tbindGlobalVarParam[num].stBindValue.stVariableValue.eIndexType = ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_INDEX_TYPE.SUBSCRIBE_INDEX_ALL;\n\t\t\t\t\t\tbindGlobalVarParam[num].stBindValue.stVariableValue.strIndexConstant = StringUtil.UTF8GetFixLenBytes(\&quot;All\&quot;, 256);\n\t\t\t\t\t\tstring key = StringUtil.UTF8GetString(bindGlobalVarParam[num].strParamName);\n\t\t\t\t\t\tif (dictionary2.ContainsKey(key))\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tbindGlobalVarParam[num].eGlobalVarType = GetBindType(dictionary2[key]);\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tif (list5.Count > 0)\n\t\t\t\t\t{\n\t\t\t\t\t\tServerSDKManager.serverSDKManager.mGlobalModuleManager.UnBindVarArray(list5);\n\t\t\t\t\t}\n\t\t\t\t\tImvsSdkDefine.IMVS_BIND_GLOBALVAR_PARAM_INFO_LIST stGlobalVarInfo = new ImvsSdkDefine.IMVS_BIND_GLOBALVAR_PARAM_INFO_LIST\n\t\t\t\t\t{\n\t\t\t\t\t\tastBindGlobalVarList = new ImvsSdkDefine.IMVS_BIND_GLOBALVAR_PARAM_INFO[128]\n\t\t\t\t\t};\n\t\t\t\t\tint num2 = 0;\n\t\t\t\t\tuint num3 = 0u;\n\t\t\t\t\tfor (int num4 = 0; num4 &lt; bindGlobalVarParam.Length; num4++)\n\t\t\t\t\t{\n\t\t\t\t\t\tnum3++;\n\t\t\t\t\t\tint num5 = num4 - num2 * 128;\n\t\t\t\t\t\tUpdateModuleResultName(ref bindGlobalVarParam[num4]);\n\t\t\t\t\t\tstGlobalVarInfo.astBindGlobalVarList[num5] = bindGlobalVarParam[num4];\n\t\t\t\t\t\tif (num5 + 1 == 128)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tstGlobalVarInfo.nNum = 128u;\n\t\t\t\t\t\t\tServerSDKManager.serverSDKManager.mGlobalModuleManager.BindGlobalVarParam(stGlobalVarInfo);\n\t\t\t\t\t\t\tstGlobalVarInfo.astBindGlobalVarList = new ImvsSdkDefine.IMVS_BIND_GLOBALVAR_PARAM_INFO[128];\n\t\t\t\t\t\t\tnum2++;\n\t\t\t\t\t\t\tnum3 = 0u;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tif (num3 != 0)\n\t\t\t\t\t{\n\t\t\t\t\t\tstGlobalVarInfo.nNum = num3;\n\t\t\t\t\t\tServerSDKManager.serverSDKManager.mGlobalModuleManager.BindGlobalVarParam(stGlobalVarInfo);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tLog.Info(\&quot;GlobalVarToVM4_4: update module result binding end\&quot;);\n\t\t\t}\n\t\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/CompatibleTool.Audit/CompatibleTool/GlobalVarUtils.cs&quot;,
+      &quot;member&quot;: &quot;GlobalVarUtils.GetUnbindInfo&quot;,
+      &quot;sha256&quot;: &quot;5b8a918bbfd387ddba0ceb47050c9efb885161d0038c5bef7ded6ffd0bbb826f&quot;,
+      &quot;start&quot;: 510,
+      &quot;end&quot;: 534,
+      &quot;excerpt&quot;: &quot;\tprivate ImvsSdkDefine.IMVS_UNBIND_GLOBALVAR_PARAM_INFO GetUnbindInfo(ImvsSdkDefine.IMVS_BIND_GLOBALVAR_PARAM_INFO bindInfo)\n\t{\n\t\treturn new ImvsSdkDefine.IMVS_UNBIND_GLOBALVAR_PARAM_INFO\n\t\t{\n\t\t\tnModuleId = bindInfo.nModuleId,\n\t\t\tstrParamName = bindInfo.strParamName,\n\t\t\tstBindValue = new ImvsSdkDefine.IMVS_SUBSCRIBE_MODU_PARAM_INFO\n\t\t\t{\n\t\t\t\teVarType = ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_VAR_TYPE.SUBSCRIBE_VAR_VARIABLE,\n\t\t\t\tstVariableValue = new ImvsSdkDefine.IMVS_VARIABLE_VALUE_INFO\n\t\t\t\t{\n\t\t\t\t\teIndexType = ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_INDEX_TYPE.SUBSCRIBE_INDEX_ALL,\n\t\t\t\t\tstrIndexConstant = StringUtil.UTF8GetFixLenBytes(\&quot;All\&quot;, 256),\n\t\t\t\t\tstModuleParam = new ImvsSdkDefine.IMVS_SUBSCRIBE_MODULE_PARAM_INFO\n\t\t\t\t\t{\n\t\t\t\t\t\tnModuleId = bindInfo.stBindValue.stVariableValue.stModuleParam.nModuleId,\n\t\t\t\t\t\tbyParamName = bindInfo.stBindValue.stVariableValue.stModuleParam.byParamName\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\teGlobalVarType = bindInfo.eGlobalVarType\n\t\t};\n\t}\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;UnBindVarArray/BindGlobalVarParam内部及All匹配语义、原生原子性与资源释放仍待追踪。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

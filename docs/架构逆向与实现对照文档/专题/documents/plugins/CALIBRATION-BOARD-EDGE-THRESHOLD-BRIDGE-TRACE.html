@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>标定板 EdgeThreshLow/High 桥接追踪 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 标定板 EdgeThreshLow/High 桥接追踪</p><h1>标定板 EdgeThreshLow/High 桥接追踪</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>标定板 EdgeThreshLow/High 桥接追踪</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html#标定板-edgethreshlowhigh-桥接追踪">标定板 EdgeThreshLow/High 桥接追踪</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html#2026-10-19-原厂硬件断点补证撤回旧的实参数量推断">2026-10-19 原厂硬件断点补证：撤回旧的实参数量推断</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html#历史静态调查以上述补证为准">历史静态调查（以上述补证为准）</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html#已确认调用链">已确认调用链</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html#证据来源与哈希">证据来源与哈希</a></p><p style="margin-left:14px"><a href="CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.html#可证结论未知与修正判断">可证结论、未知与修正判断</a></p></details><h1 id="标定板-edgethreshlowhigh-桥接追踪">标定板 EdgeThreshLow/High 桥接追踪</h1><h2 id="2026-10-19-原厂硬件断点补证撤回旧的实参数量推断">2026-10-19 原厂硬件断点补证：撤回旧的实参数量推断</h2><p>本节覆盖下方历史“模块/SDK只传名称、值未传入或桥接完全未知”的结论。新增 <code>EdgeSlotsProbe.cpp</code> 与 <code>RunEdgeSlots.ps1</code> 在同一个自有原厂模块及同一个SDK工具实例中，分别通过模块SetParam和直接SDK SetRunParam写入三组Low/High。探针通过自有线程调试寄存器在SDK <code>RVA 0x2980</code>、算法导出 <code>MVD_Algorithm_SetValueByString</code> 及实际圆点候选 <code>RVA 0x877230</code> 观察入口；不改算法机器码或参数缓冲，不初始化平台、不使用设备。模块八个IO导入仍由既有synthetic host适配，故不是原厂平台桌面测试。</p>
+<p>源码汇编 <code>sdk-disassembly.txt:2287</code> 确认SDK函数仅把RCX改为<code>[RCX+0x28]</code>后调用导入函数；<strong>没有给RDX/R8重新赋值不等于没有传参</strong>。本次24条setter入口事件直接证明：两入口的RDX始终指向对应<code>EdgeThreshLow/High</code>名字、R8始终指向对应值字符串，且RDX/R8地址逐次相同。模块调用也传递了值，不只是名字。先前根据Ghidra所示单参调用推出“未传value”的解释错误，现撤回；下方保留的是历史调查材料。</p>
+<table>
+<thead>
+<tr>
+<th>同实例阶段</th>
+<th>调用入口</th>
+<th>Low/High写入</th>
+<th>圆点877230入口实测</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0 / 3</td>
+<td>模块 / SDK</td>
+<td>20 / 40</td>
+<td>options+4=20，options+8=40</td>
+</tr>
+<tr>
+<td>1 / 4</td>
+<td>模块 / SDK</td>
+<td>0 / 40</td>
+<td>options+4=0，options+8=40</td>
+</tr>
+<tr>
+<td>2 / 5</td>
+<td>模块 / SDK</td>
+<td>20 / 80</td>
+<td>options+4=20，options+8=80</td>
+</tr>
+</tbody></table>
+<p>877230的第10个实参来自x64栈<code>RSP+0x50</code>，三个4-byte槽依次是circularity float bits、Low int、High int。此次Circularity=20，第一槽bits为<code>1045220556</code>；六次实际caller返回RVA均<code>0x8785c8</code>（877f90包装内）。每次ProcessAlg均code0/status1。该结果闭合这一路圆点参数传递，不把其他板型函数<code>7dda50</code>的<code>+0x24/+0x28/+0x2c</code>直接等同于此结构，更不推导任意图像的灵敏度或全部默认参数生命周期。</p>
+<p>正式运行：<code>analysis/calibration-board/edge-slots-41513e16a10747518180e96ced68c18c/runtime.jsonl</code>，SHA256 <code>b6d964b5d0ffc495fa5f4573f39c701fa40c757a84d6c8a8468cd66993f5bfcb</code>；脚本断言六次运行成功、24次ABI事件的名称/值/地址原样传递、六对阈值完全一致。源码<code>EdgeSlotsProbe.cpp</code> SHA256 <code>bf8df6a6c08abada1ead9bb2b3280bf6db4489a40e0efcc745d79eaa72f524b7</code>，脚本SHA256 <code>ac529aeab2e716eca9e2d2441802d2c55143fd1f5366c2ab939ed4986b23214c</code>。SDK/模块/核心身份均由运行器校验；核心SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>，其他身份见summary.json。早期未命中7dda50的尝试没有作为通过证据，也不据未命中判定值未传递。</p>
+<p>本轮只新增探针、改正证据/指导，不改产品算法、共享合同或容差；当前独立圆点候选已经消费Low/High。原有棋盘三输出指纹相同仍只说明该图不敏感，不能继续用它支持“setter未传值”。</p>
+<h2 id="历史静态调查以上述补证为准">历史静态调查（以上述补证为准）</h2><p>本报告追踪原厂 XML 中 <code>EdgeThreshLow</code> / <code>EdgeThreshHigh</code> 从模块 <code>SetParam</code> 进入校准板 SDK 的路径。结论只覆盖静态源码和汇编可证实的调用，不据此推断运行时参数槽位。</p>
+<h2 id="已确认调用链">已确认调用链</h2><ol>
+<li>原厂 <code>IMVSCalibBoardCalibModu::SetParam @ 0x180020d40</code> 将 <code>EdgeThreshLow</code> 和 <code>EdgeThreshHigh</code> 列入识别名单。识别后没有对二者重命名或写入本地阈值字段；此分支把模块成员 <code>this+0x15d98</code>（SDK 工具对象）赋给局部变量，并调用该对象 vtable <code>+0x60</code>。这一调用只传入 <code>param_1</code>（参数名），没有把 <code>param_2</code>（字符串值）作为该虚调用实参传递。</li>
+<li>原厂 SDK 工厂 <code>CreateCalibBoardCalibToolInstance @ 0x180001000</code> 把工具对象首字段设为 vtable 地址 <code>0x180007b38</code>。该 vtable 的 <code>+0x60</code> 表项是 <code>0x180002980</code>（RVA <code>0x2980</code>）。表项地址由工厂写入的 vtable 指针和 SDK DLL <code>.rdata</code> 指针表交叉确认。</li>
+<li><code>FUN_180002980 @ 0x180002980</code> 只读取工具对象 <code>this+0x28</code> 的算法句柄，并调用 <code>MVD_Algorithm_SetValueByString(handle)</code>。该函数体没有读取传入名称；反汇编在调用外部例程前只设置 <code>RCX</code> 为句柄，没有把 <code>RDX</code> / <code>R8</code> 中的名称或值传给该例程。</li>
+<li>SDK 初始化函数 <code>FUN_180003b70 @ 0x180003b70</code> 在工具对象 <code>+0x28</code> 建立算法句柄，并把 BasicParam 指针放在 <code>+0x30</code>。模块 <code>SetParam</code> 早先的 <code>GetBasicParam</code> 调用用于固定的板型、坐标模式、物理尺寸等专门字段；<code>EdgeThreshLow/High</code> 走后面的通用分支并重新选用工具对象。不能把这里的工具 vtable <code>+0x60</code> 与 BasicParam vtable 混为一谈。</li>
+<li>原厂 XML 资源只确认这两个字段存在、Low 默认 <code>20</code>、High 默认 <code>40</code>。核心算法路径 <code>FUN_1807dda50</code> 后续读取候选运行结构 <code>+0x24/+0x28/+0x2c</code>，细化路径把其中阈值槽位交给阈值分类器；现有源码仍没有一条从这两个 XML 名称和值到这三个偏移的已证实写入链。</li>
+</ol>
+<h2 id="证据来源与哈希">证据来源与哈希</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>地址/内容</th>
+<th>SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原厂 <code>IMVSCalibBoardCalibModu.dll</code></td>
+<td><code>SetParam @ 0x180020d40</code>，Low/High 名称分支和虚调用</td>
+<td><code>bd62ee940a2e299c0c47e41909e64ca78c09d7717e7cefc629dbfb9e21105c1d</code>（原厂 DLL）；反编译 <code>analysis/calibration-board/native-decompile/output/180020d40.c</code>: <code>dcf7ef94f929d6aa28501de637cab5298238a8322ce9b74249ca9993027a3361</code></td>
+</tr>
+<tr>
+<td>原厂 <code>MVDCalibBoardCalibCpp.dll</code></td>
+<td>SDK 工厂 vtable、工具槽位与 BasicParam 初始化</td>
+<td><code>0a65d7a9e84a3ec6f662b4f05daa5a88351690ae4fbecd1748427c13c56fa308</code></td>
+</tr>
+<tr>
+<td>SDK 工具 <code>vtable+0x60</code> 目标</td>
+<td><code>FUN_180002980</code>，调用算法例程时只传句柄</td>
+<td><code>analysis/calibration-board/sdk-decompile/output/180002980.c</code>: <code>00cafbfb6be09bdbfc67ba6724bfa6f4353565aef9e02d7feba52cfa17d6bee8</code></td>
+</tr>
+<tr>
+<td>SDK 汇编导出</td>
+<td>工厂存入 <code>0x180007b38</code>；工具表 <code>+0x60 -&gt; 0x180002980</code>；目标只把 <code>this+0x28</code> 放入 <code>RCX</code> 后调用导入函数</td>
+<td><code>analysis/calibration-board/sdk-disassembly.txt</code>: <code>fbd12527929dc66773475ff1c0c9e56b702ed10ba76e5fa21efba86671788be2</code></td>
+</tr>
+<tr>
+<td>SDK 初始化反编译</td>
+<td><code>FUN_180003b70</code> 创建算法句柄与独立 BasicParam 对象</td>
+<td><code>analysis/calibration-board/sdk-decompile/output/180003b70.c</code>: <code>48cdfec41f15af2b08482ad0529c9b28d83fd66e86d887ea55a10e96dec2fb4d</code></td>
+</tr>
+<tr>
+<td>原厂 XML</td>
+<td>Low <code>20</code>、High <code>40</code></td>
+<td><code>src/VisionPlugins.CalibrationBoard/Resources/AlgorithmTab.xml</code>: <code>76c9cd661a359216041b902cce8fae115566726707e749cc42c0bb9722bcbf91</code></td>
+</tr>
+<tr>
+<td>定向 Ghidra 导出助手</td>
+<td>导出 SDK 工厂调用链、<code>0x180002690</code> 与 <code>0x180002980</code></td>
+<td><code>tests/CalibrationBoard.NativeProbe/BoardSdkAudit.java</code>（本工作树当前文件）</td>
+</tr>
+</tbody></table>
+<h2 id="可证结论未知与修正判断">可证结论、未知与修正判断</h2><p>可证的是：模块识别了两个名称，随后把名字单独传给 SDK 工具 vtable <code>+0x60</code>；该槽对应函数只以工具对象中的算法句柄调用 <code>MVD_Algorithm_SetValueByString</code>，函数体不消费名称和值。现有证据因此没有显示 Low/High 被映射到算法配置参数，也没有显示被写入 <code>FUN_1807dda50</code> 读取的 <code>+0x24/+0x28/+0x2c</code>。</p>
+<p>未知的是：导入的 <code>MVD_Algorithm_SetValueByString</code> 对句柄内部隐藏状态的副作用；这两个 XML 参数在真实 SDK 运行时是否另由未覆盖调用链写入；以及其与算法阈值结构槽位的任何映射。已有公共 SDK 合成样本只保留最终点数量和首点坐标，没有记录 SetParam 同实例前后状态、句柄参数块原始字节或 <code>FUN_1807dda50</code> 的输入槽值，因此不能用输出差异反推内部偏移。</p>
+<p>目前没有可安全落地的产品修正。将 XML 名称直接映射为 <code>+0x28/+0x2c</code> 会超出原厂证据；也不能仅凭当前虚调用分支判定 SDK 最终运行行为。闭合此差异所需的最小新增证据是：同一原厂 SDK 实例上分别只改 Low、只改 High，并同步记录 <code>SetParam</code> 返回值、工具 vtable <code>+0x60</code> 入参、<code>MVD_Algorithm_SetValueByString</code> 的完整 ABI/副作用，以及 <code>FUN_1807dda50</code> 入口 <code>+0x24/+0x28/+0x2c</code> 原始 4-byte 值。该探针可用合成图像完成，不需要设备。</p>
+<p>本轮是静态逆向证据补充，没有设备测试，没有改产品算法，也没有宣称完整原厂参数行为已复现。此前 <code>CALIBRATION-BOARD-CIRCLE-REFINEMENT-TRACE.md</code> 将 SDK <code>vtable+0x60</code> 目标列为未导出；本报告通过工厂 vtable 指针补出了目标 <code>0x180002980</code>，并将未知边界收敛为该目标和外部算法例程的运行时数据副作用。</p>
+<p class="meta">来源：docs/plugins/CALIBRATION-BOARD-EDGE-THRESHOLD-BRIDGE-TRACE.md · SHA256 579956f9285aee1fc5bf9364a0387464b7b11254b4c1c84ec7fbd9d8d38484c1<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

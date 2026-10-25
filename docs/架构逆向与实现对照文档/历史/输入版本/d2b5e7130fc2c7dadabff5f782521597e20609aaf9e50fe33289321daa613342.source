@@ -1,0 +1,783 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "title": "外部服务与后台入口遗漏审计",
+  "domains": [
+    "F-01",
+    "F-03",
+    "F-04",
+    "F-16",
+    "F-18",
+    "F-21",
+    "F-23"
+  ],
+  "requirement": "C06 / A05: service creation, dispatch, save, stop and resource boundaries",
+  "scope": "Finite source audit of communication-driven solution switching, global-trigger immediate writes, gateway forwarding and distinct script entry paths; not an exhaustive external-entry inventory.",
+  "originalMembers": {
+    "file": "external-entry-audit-original-members.json",
+    "count": 9,
+    "sha256": "7598e9e83bf7deb20e9e614c9e188718c23df32160379f0b774bcab4854a4706"
+  },
+  "counts": {
+    "findings": 13,
+    "references": 27,
+    "originalMethodBodies": 9,
+    "closedEntryChains": 0
+  },
+  "hierarchy": {
+    "title": "主界面 / 外部接收与全局配置",
+    "children": [
+      {
+        "title": "通信回调换方案",
+        "children": [
+          {
+            "id": "EA01",
+            "title": "MainWindowData构造 → InitComTrigger → 静态事件订阅 + IsShowSaveNotice快照"
+          },
+          {
+            "id": "EA02",
+            "title": "CVmObjectBase回调case 1024 → SolutionManager → TempVmSolution → VmSolution静态事件"
+          },
+          {
+            "id": "EA03",
+            "title": "MainWindowData通信回调报文门 → 跳过2字节UTF8 → GetSolItem"
+          },
+          {
+            "id": "EA04",
+            "title": "匹配SolItem且未正在加载 → ProjectManager.LoadSolution精确参数"
+          },
+          {
+            "id": "EA05",
+            "title": "本地isLoading轮询及catch → 等待看到加载开始或明确失败 → 写false"
+          },
+          {
+            "id": "EA06",
+            "title": "InitComTrigger += 与所选DoClose -=列表 → 通信回调解除缺口"
+          },
+          {
+            "id": "EA07",
+            "title": "SolutionCommInfo配置 → Base64解码XML → SolItems / Base64保存"
+          }
+        ]
+      },
+      {
+        "title": "全局触发即时写入",
+        "children": [
+          {
+            "id": "EA08",
+            "title": "GlobalTriggerConfig.AddTrigger / ValueChanged → Add/Modify模块参数并维护界面集合"
+          },
+          {
+            "id": "EA09",
+            "title": "GlobalTriggerConfig.CheckPassword → 空密码放行；已给错误密码清空后仍true"
+          },
+          {
+            "id": "EA10",
+            "title": "SetTriggerItem Modify分支 → 序列化null或字节setter异常仍可返回0"
+          },
+          {
+            "id": "EA11",
+            "title": "RemoveItem → 先解绑弱事件，再Delete，失败不在此重新订阅"
+          }
+        ]
+      },
+      {
+        "title": "网关与脚本边界",
+        "children": [
+          {
+            "id": "EA12",
+            "title": "GlobalCommunicationMgr → GateWayFramework.TitleMenueItemData.Instance转发"
+          },
+          {
+            "id": "EA13",
+            "title": "主菜单GlobalScript vs外部ToolControl.GlobalScript → 两个窗口缓存、两个执行目标必须保留"
+          }
+        ]
+      }
+    ]
+  },
+  "entries": [
+    {
+      "id": "EA01",
+      "group": "通信回调换方案",
+      "classification": "source-confirmed",
+      "from": "MainWindowData构造 → InitComTrigger",
+      "to": "静态事件订阅 + IsShowSaveNotice快照",
+      "behavior": "构造在CheckIsNeutral后调用InitComTrigger；后者将实例回调挂到VmSolution.OnCommunicationRecvCallBackEvent，随后把IsShowSaveNotice配置读入字段。该字段是这里的快照，不是每包通信都重读。Program.InitMainWindow新建MainWindowData后才PreLoad。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs",
+          "member": "Program.InitMainWindow",
+          "sha256": "e9f3671cbf1b65559f855974b2f6c9e45dea434cfa3f89e3b29c2f9824b0ced6",
+          "start": 159,
+          "end": 168,
+          "excerpt": "\tpublic static void InitMainWindow()\n\t{\n\t\tMainData = new MainWindowData();\n\t\tMainData.PreLoad();\n\t\tLogHelper.Info(\"InitServer\");\n\t\tServerManager.Instance.InitServer(TitleMenueItemData.GetToolFunctionSources);\n\t\tNameValueItem.logManager = (ILogManager)LogUIBridge.GetInstance();\n\t}\n\n\tpublic static void ReInitData()",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "MainWindowData constructor",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 469,
+          "end": 493,
+          "excerpt": "\tpublic MainWindowData()\n\t{\n\t\tLogHelper.Info(\"MainWindowData-------begin\");\n\t\tVmSolution.RestoreDefaultDisplay += VmSolution_RestoreDisplay;\n\t\tVmSolution.OnSolutionLoadEndCallBack += VmSolution_LoadEnd;\n\t\tVmSolution.OnSolutionLoadBeginCallBack += VmSolution_LoadBegin;\n\t\tVmSolution.OnGlobalScriptReportCallBack += VmSolution_OnGlobalScriptReportCallBack;\n\t\tVmSolution.OnExecuteAfterLoad += VmSolution_OnExecuteAfterLoad;\n\t\tVmSolution.OnReportModuleData += VmSolution_OnReportModuleData;\n\t\tVmSolution.OnProxyCrashNoticeCallBack += VmSolution_OnProxyCrashNotice;\n\t\tVmSolution.OnServerStatusCallBack += VmSolution_OnServerStatusCallBack;\n\t\tVmSolution.OnProcedureUpgradeBeginCallBack += VmSolution_OnSolutionUpgradeBeginCallBack;\n\t\tVmSolution.OnProcedureUpgradeEndCallBack += VmSolution_OnSolutionUpgradeEndCallBack;\n\t\tVmSolution.OnGroupUpgradeBeginCallBack += VmSolution_OnSolutionUpgradeBeginCallBack;\n\t\tVmSolution.OnGroupUpgradeEndCallBack += VmSolution_OnSolutionUpgradeEndCallBack;\n\t\tVmSolution.OnProcessImportEndCallBack += VmSolution_OnProcessImportEndCallBack;\n\t\tVmSolution.Instance.PropertyChanged += SourcePropertyChanged;\n\t\tLogHelper.Info(\"MainWindowData-------事件注册完毕\");\n\t\tappData = AppDataFactory.Instance(true);\n\t\tCheckIsNeutral();\n\t\tInitComTrigger();\n\t\tLogHelper.Info(\"MainWindowData-------end\");\n\t}\n\n\tprivate void VmSolution_OnExecuteAfterLoad(object sender, ObjectEventArgs args)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "MainWindowData.InitComTrigger",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 1241,
+          "end": 1246,
+          "excerpt": "\tprivate void InitComTrigger()\n\t{\n\t\tVmSolution.OnCommunicationRecvCallBackEvent += VmSolution_OnCommunicationRecvCallBackEvent;\n\t\tisShowSaveNotice = ConfigurationHelper.GetConfig(\"IsShowSaveNotice\");\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原件9个选定成员身份见独立证据；具体实例数、重新初始化和订阅激活次数未运行验证。"
+      ],
+      "nextMembers": [
+        "MainWindowData.InitComTrigger",
+        "Program.InitMainWindow / ReInitData"
+      ],
+      "priorLinks": [
+        {
+          "view": "shell-lifecycle",
+          "id": "L06",
+          "url": "shell-lifecycle.html#edge-L06"
+        },
+        {
+          "view": "entry-routing-security",
+          "id": "R26",
+          "url": "entry-routing-security.html#edge-R26"
+        }
+      ],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA02",
+      "group": "通信回调换方案",
+      "classification": "source-confirmed",
+      "from": "CVmObjectBase回调case 1024",
+      "to": "SolutionManager → TempVmSolution → VmSolution静态事件",
+      "behavior": "选定反编译源显示：case 1024把pData转IMVS_COMMU_REPORT_DATA_INFO后调用OnCommuRecvDataCallBack；SolutionManager构造订阅GetCommuRecvDataCallBack并转发OnCommunicationRecvCallBack；TempVmSolution静态构造注册VmSolution.MSolutionManager_OnCommuRecvData，后者可空Invoke静态事件。这个入口不同于EXE的HkrMQ/Zmq类型，不能由MQ的直接引用缺口推断它不存在。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/CVmObjectBase.cs",
+          "member": "CVmObjectBase.delegateOutputCallBackFunc case1024",
+          "sha256": "59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db",
+          "start": 1167,
+          "end": 1176,
+          "excerpt": "\t\t\tcase 1024u:\n\t\t\t{\n\t\t\t\tImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportDataInfo2 = (ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO)Marshal.PtrToStructure(iMVS_OUTPUT_PLATFORM_INFO.pData, typeof(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO));\n\t\t\t\tif (OnCommuRecvDataCallBack != null)\n\t\t\t\t{\n\t\t\t\t\tOnCommuRecvDataCallBack(reportDataInfo2);\n\t\t\t\t}\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tcase 1025u:",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs",
+          "member": "SolutionManager constructor communication registration",
+          "sha256": "46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a",
+          "start": 204,
+          "end": 207,
+          "excerpt": "\t\tCVmObjectBase.OnCommuRecvDataCallBack += GetCommuRecvDataCallBack;\n\t\tCVmObjectBase.OnCommuStatusCallBack += GetCommuStatusCallBack;\n\t\tCVmObjectBase.OnCameraCollectCallBack += GetCameraCollectCallBack;\n\t\tCVmObjectBase.OnCameraCollectStartCallBack += GetCameraCollectStartCallBack;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs",
+          "member": "SolutionManager.GetCommuRecvDataCallBack",
+          "sha256": "46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a",
+          "start": 1141,
+          "end": 1145,
+          "excerpt": "\tprivate void GetCommuRecvDataCallBack(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportDataInfo)\n\t{\n\t\tOnCommunicationRecvCallBack?.Invoke(reportDataInfo);\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/TempVmSolution.cs",
+          "member": "TempVmSolution static registration",
+          "sha256": "2683dd70dc4aa88fa2d263e9117bdc00b1153deeda52e03417dfa7ee42859721",
+          "start": 51,
+          "end": 54,
+          "excerpt": "\t\tServerSDKManager.serverSDKManager.mSolutionManager.OnCommunicationRecvCallBack += VmSolution.MSolutionManager_OnCommuRecvData;\n\t\tServerSDKManager.serverSDKManager.mSolutionManager.OnCommunicationStatusCallBack += VmSolution.MSolutionManager_OnCommuStatus;\n\t\tServerSDKManager.serverSDKManager.mSolutionManager.OnCameraCollectCallBack += VmSolution.MSolutionManager_OnCameraCollect;\n\t\tServerSDKManager.serverSDKManager.mSolutionManager.OnCameraCollectStartCallBack += VmSolution.MSolutionManager_OnCameraCollectStart;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.MSolutionManager_OnCommuRecvData",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 3759,
+          "end": 3763,
+          "excerpt": "\tinternal static void MSolutionManager_OnCommuRecvData(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportData)\n\t{\n\t\tOnCommunicationRecvCallBackEvent?.Invoke(reportData);\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "这些跨程序集源文件hash已核；本切片未重新核SDK/Core原件方法体，需另取对应原MethodDef/CIL后增强二进制绑定。native回调注册、case值的消息含义、ABI、线程、长度和指针有效性未知。"
+      ],
+      "nextMembers": [
+        "CVmObjectBase.delegateOutputCallBackFunc / native registration",
+        "SolutionManager..ctor / GetCommuRecvDataCallBack",
+        "TempVmSolution..cctor / Init",
+        "VmSolution.MSolutionManager_OnCommuRecvData"
+      ],
+      "priorLinks": [
+        {
+          "view": "external-entries",
+          "id": "T05",
+          "url": "external-entries.html#edge-T05"
+        },
+        {
+          "view": "external-entries",
+          "id": "T08",
+          "url": "external-entries.html#edge-T08"
+        }
+      ],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA03",
+      "group": "通信回调换方案",
+      "classification": "source-confirmed",
+      "from": "MainWindowData通信回调报文门",
+      "to": "跳过2字节UTF8 → GetSolItem",
+      "behavior": "nLen<2或pData==Zero早退，否则分配nLen字节、Marshal.Copy全部字节，再从offset2解码剩余UTF8；这里没有可见的前缀内容校验、Trim或末尾零裁剪。GetSolItem以CommString==command且CommEnable取首个匹配项，未匹配返回，不按文件路径直接执行消息。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "communication receive packet gate",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 1247,
+          "end": 1264,
+          "excerpt": "\tprivate void VmSolution_OnCommunicationRecvCallBackEvent(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportDataInfo)\n\t{\n\t\tif (reportDataInfo.nLen < 2 || reportDataInfo.pData == IntPtr.Zero)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tbyte[] array = new byte[reportDataInfo.nLen];\n\t\tMarshal.Copy(reportDataInfo.pData, array, 0, reportDataInfo.nLen);\n\t\tstring text = Encoding.UTF8.GetString(array, 2, array.Length - 2);\n\t\tSolItem solItem = SolutionData.GetSolItem(text);\n\t\tLogHelper.Debug($\"VmSolutionCommad={text},solcommItemIsNull={solItem == null}\");\n\t\tif (solItem == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tbool loadSolutionResult = true;\n\t\ttry\n\t\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs",
+          "member": "SolutionItemsData.GetSolItem",
+          "sha256": "b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c",
+          "start": 295,
+          "end": 298,
+          "excerpt": "\tpublic SolItem GetSolItem(string command)\n\t{\n\t\treturn SolItems.FirstOrDefault((SolItem x) => x.CommString == command && x.CommEnable);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "前2字节的协议含义、上游长度合法性、最大包长、零/无效UTF8、相同字符串多项的实际排序和远端鉴权未证；不能将无本地校验扩写成整个产品没有校验。"
+      ],
+      "nextMembers": [
+        "IMVS_COMMU_REPORT_DATA_INFO declaration and native producer",
+        "SolItem.CommString / CommEnable setters and XML declarations"
+      ],
+      "priorLinks": [],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA04",
+      "group": "通信回调换方案",
+      "classification": "source-confirmed",
+      "from": "匹配SolItem且未正在加载",
+      "to": "ProjectManager.LoadSolution精确参数",
+      "behavior": "本地isLoading为true早退；否则置true并启动复位轮询Task。只有IVmSolution.IsLoading为false才调用LoadSolution，传SolPath、isGuid=false、SolPassword为null时空串、afterTask=null、remote/start/args均false，以及快照isShowSaveNotice==\"1\"。空串是明确传入密码，不是null触发交互密码窗；后续密码校验/保存提示/兼容转换链见既有方案打开视图，不能跳过。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "receive load state and exact call arguments",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 1262,
+          "end": 1286,
+          "excerpt": "\t\tbool loadSolutionResult = true;\n\t\ttry\n\t\t{\n\t\t\tif (isLoading)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tisLoading = true;\n\t\t\tTask.Run(() =>\n\t\t\t{\n\t\t\t\twhile (!((IVmSolution)VmSolution.Instance).IsLoading && loadSolutionResult)\n\t\t\t\t{\n\t\t\t\t\tThread.Sleep(1);\n\t\t\t\t}\n\t\t\t\tisLoading = false;\n\t\t\t});\n\t\t\tif (!((IVmSolution)VmSolution.Instance).IsLoading && !ProjectManager.GetInstance().LoadSolution(solItem.SolPath, isGuid: false, (solItem.SolPassword == null) ? \"\" : solItem.SolPassword, null, isRemoteMode: false, isFromAppStart: false, isFromAppArgs: false, isShowSaveNotice == \"1\"))\n\t\t\t{\n\t\t\t\tloadSolutionResult = false;\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tVmException ex2 = null;\n\t\t\tif (ex is VmException || ex.InnerException is VmException)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "LoadSolution返回true本身不证明已载入；取消/提示/异步worker与本地复位Task的竞态仍未知，尚未做原机消息注入。"
+      ],
+      "nextMembers": [
+        "ProjectManager.LoadSolution overload and generated load worker",
+        "SolItem.SolPassword XML/binding lifecycle"
+      ],
+      "priorLinks": [
+        {
+          "view": "solution-lifecycle",
+          "id": "O01",
+          "url": "solution-lifecycle.html#edge-O01"
+        }
+      ],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA05",
+      "group": "通信回调换方案",
+      "classification": "source-confirmed",
+      "from": "本地isLoading轮询及catch",
+      "to": "等待看到加载开始或明确失败 → 写false",
+      "behavior": "Task循环条件是!VmSolution.IsLoading && loadSolutionResult，每轮Sleep(1)，退出后才清本地isLoading。LoadSolution返回false或VmException分支会写loadSolutionResult=false；普通Exception仅提示/日志，不写该值。没有本Task的本地超时、取消或finally。因而不能将这段描述为加载完成后解锁，也不能从源码直接断言实际必挂。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "receive wait and exception paths",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 1262,
+          "end": 1304,
+          "excerpt": "\t\tbool loadSolutionResult = true;\n\t\ttry\n\t\t{\n\t\t\tif (isLoading)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tisLoading = true;\n\t\t\tTask.Run(() =>\n\t\t\t{\n\t\t\t\twhile (!((IVmSolution)VmSolution.Instance).IsLoading && loadSolutionResult)\n\t\t\t\t{\n\t\t\t\t\tThread.Sleep(1);\n\t\t\t\t}\n\t\t\t\tisLoading = false;\n\t\t\t});\n\t\t\tif (!((IVmSolution)VmSolution.Instance).IsLoading && !ProjectManager.GetInstance().LoadSolution(solItem.SolPath, isGuid: false, (solItem.SolPassword == null) ? \"\" : solItem.SolPassword, null, isRemoteMode: false, isFromAppStart: false, isFromAppArgs: false, isShowSaveNotice == \"1\"))\n\t\t\t{\n\t\t\t\tloadSolutionResult = false;\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tVmException ex2 = null;\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\n\t\t\t{\n\t\t\t\tloadSolutionResult = false;\n\t\t\t\tex2 = ex as VmException;\n\t\t\t\tif (ex2 == null)\n\t\t\t\t{\n\t\t\t\t\tex2 = ex.InnerException as VmException;\n\t\t\t\t}\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\n\t\t\t\tLogHelper.Error(ex.Message);\n\t\t\t}\n\t\t}\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "跨线程可见性、Task异常、原加载状态是否翻转、取消路径是否返回true及实际等待时长未证；这是一段开始条件轮询而非完整结束通知。"
+      ],
+      "nextMembers": [
+        "MainWindowData.<VmSolution_OnCommunicationRecvCallBackEvent>b__0",
+        "ProjectManager.LoadSolution all early returns"
+      ],
+      "priorLinks": [],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA06",
+      "group": "通信回调换方案",
+      "classification": "source-confirmed",
+      "from": "InitComTrigger += 与所选DoClose -=列表",
+      "to": "通信回调解除缺口",
+      "behavior": "InitComTrigger可见添加通信静态事件；本次选定DoClose的完整体只解除恢复显示/装载/脚本/代理/报告/服务/导入等事件，没有解除OnCommunicationRecvCallBackEvent。该局部不对称需在对象替换、退出与其它解除路径继续审查，不能据此直接宣称全局内存泄漏。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "InitComTrigger subscription",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 1241,
+          "end": 1246,
+          "excerpt": "\tprivate void InitComTrigger()\n\t{\n\t\tVmSolution.OnCommunicationRecvCallBackEvent += VmSolution_OnCommunicationRecvCallBackEvent;\n\t\tisShowSaveNotice = ConfigurationHelper.GetConfig(\"IsShowSaveNotice\");\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "MainWindowData.DoClose complete body",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 701,
+          "end": 712,
+          "excerpt": "\tpublic void DoClose()\n\t{\n\t\tVmSolution.RestoreDefaultDisplay -= VmSolution_RestoreDisplay;\n\t\tVmSolution.OnSolutionLoadEndCallBack -= VmSolution_LoadEnd;\n\t\tVmSolution.OnSolutionLoadBeginCallBack -= VmSolution_LoadBegin;\n\t\tVmSolution.OnGlobalScriptReportCallBack -= VmSolution_OnGlobalScriptReportCallBack;\n\t\tVmSolution.OnProxyCrashNoticeCallBack -= VmSolution_OnProxyCrashNotice;\n\t\tVmSolution.OnReportModuleData -= VmSolution_OnReportModuleData;\n\t\tVmSolution.OnServerStatusCallBack -= VmSolution_OnServerStatusCallBack;\n\t\tVmSolution.OnProcessImportEndCallBack -= VmSolution_OnProcessImportEndCallBack;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "完整程序集/反射解除、MainWindowData全部对象生命周期、重复启动是否存在及GC/真实订阅集合未知。"
+      ],
+      "nextMembers": [
+        "MainWindowData.DoClose callers",
+        "MainWindowData construction/replacement and other callback removals"
+      ],
+      "priorLinks": [],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA07",
+      "group": "通信回调换方案",
+      "classification": "source-confirmed",
+      "from": "SolutionCommInfo配置",
+      "to": "Base64解码XML → SolItems / Base64保存",
+      "behavior": "LoadSolInfo非空时Base64解码后loadXml，为每个SolItem挂DeleteEventHander，再处理定时器与自动保存状态。SaveSolInfo将UTF8 XML转Base64写同一配置键，异常提示并吞掉。GetSolItem读取的正是该集合；编码不是加密，未证明所有方案/密码字段已持久化正确。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs",
+          "member": "SolutionItemsData.LoadSolInfo",
+          "sha256": "b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c",
+          "start": 255,
+          "end": 280,
+          "excerpt": "\tpublic void LoadSolInfo()\n\t{\n\t\ttry\n\t\t{\n\t\t\tstring config = ConfigurationHelper.GetConfig(\"SolutionCommInfo\");\n\t\t\tif (!string.IsNullOrEmpty(config))\n\t\t\t{\n\t\t\t\tbyte[] data = Convert.FromBase64String(config);\n\t\t\t\tloadXml(data);\n\t\t\t\tforeach (SolItem solItem in SolItems)\n\t\t\t\t{\n\t\t\t\t\tsolItem.DeleteEventHander += Item_DeleteEventHander;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (SaveAllSolTimerEnable && !saveTime.IsEnabled)\n\t\t\t{\n\t\t\t\tAddTimer(saveTime);\n\t\t\t}\n\t\t\t_saveSolTimerEnable = GetAutoSaveSolState();\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_CfgErr\"), ex.Message, MessageIcons.Warning);\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs",
+          "member": "SolutionItemsData.SaveSolInfo",
+          "sha256": "b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c",
+          "start": 281,
+          "end": 294,
+          "excerpt": "\tpublic void SaveSolInfo()\n\t{\n\t\ttry\n\t\t{\n\t\t\tbyte[] bytes = Encoding.UTF8.GetBytes(ToXmlStringWithHead(IsShort: true));\n\t\t\tstring defaultValue = Convert.ToBase64String(bytes);\n\t\t\tConfigurationHelper.SaveConfig(\"SolutionCommInfo\", defaultValue);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_CfgSaveErr\"), ex.Message, MessageIcons.Warning);\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs",
+          "member": "SolutionItemsData.GetSolItem",
+          "sha256": "b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c",
+          "start": 295,
+          "end": 298,
+          "excerpt": "\tpublic SolItem GetSolItem(string command)\n\t{\n\t\treturn SolItems.FirstOrDefault((SolItem x) => x.CommString == command && x.CommEnable);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "BaseNode XML字段映射、重复加载集合清理、timer完整生命周期、配置写入原子性及保存后重开未证。"
+      ],
+      "nextMembers": [
+        "SolutionItemsData constructor / LoadSolParam consumer",
+        "SolItem field XML mapping and DeleteEventHander",
+        "SolutionItemsData.AddTimer / auto-save callbacks"
+      ],
+      "priorLinks": [
+        {
+          "view": "settings-lifecycle",
+          "id": "S07",
+          "url": "settings-lifecycle.html#edge-S07"
+        }
+      ],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA08",
+      "group": "全局触发即时写入",
+      "classification": "source-confirmed",
+      "from": "GlobalTriggerConfig.AddTrigger / ValueChanged",
+      "to": "Add/Modify模块参数并维护界面集合",
+      "behavior": "Add根据obj.ToString()==\"0\"选择事件/字符串，数量门通过后先建项并挂弱事件，SetTriggerItem(Add)==0才加入集合。ValueChanged排除三类属性及isSetChange，Command变化时先置防重入并ClearConfig；通过CheckPassword后立即SetTriggerItem(Modify)，末尾再清防重入。不是只在最终确认按钮保存的模型。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs",
+          "member": "GlobalTriggerConfig.AddTrigger",
+          "sha256": "8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d",
+          "start": 151,
+          "end": 192,
+          "excerpt": "\tpublic void AddTrigger(object obj)\n\t{\n\t\tbool flag = obj.ToString() == \"0\";\n\t\tComTriggerItem comTriggerItem;\n\t\tif (flag)\n\t\t{\n\t\t\tif (CommEventTriggerA.Count >= MaxTriEventItemCount)\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"最多添加\") + \" :\" + MaxTriEventItemCount, MessageButtons.Normal, MessageIcons.Warning);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tcomTriggerItem = new GlobalTriggerEventItem(this);\n\t\t\tcomTriggerItem.Index = CommEventTriggerA.Count + 1;\n\t\t\tWeakEventManager<GlobalTriggerEventItem, PropertyChangedEventArgs>.AddHandler((GlobalTriggerEventItem)comTriggerItem, \"PropertyChanged\", ValueChanged);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tif (CommStrTriggerA.Count >= MaxTriStrItemCount)\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"最多添加\") + \" :\" + MaxTriStrItemCount, MessageButtons.Normal, MessageIcons.Warning);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tcomTriggerItem = new GlobalTriggerStrItem(this);\n\t\t\tcomTriggerItem.Index = CommStrTriggerA.Count + 1;\n\t\t\tWeakEventManager<GlobalTriggerStrItem, PropertyChangedEventArgs>.AddHandler((GlobalTriggerStrItem)comTriggerItem, \"PropertyChanged\", ValueChanged);\n\t\t}\n\t\tcomTriggerItem.IsEventTrigger = flag;\n\t\tif (SetTriggerItem(comTriggerItem, ActionType.Add) == 0)\n\t\t{\n\t\t\tif (flag)\n\t\t\t{\n\t\t\t\tCommEventTriggerA.Add(comTriggerItem);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tCommStrTriggerA.Add(comTriggerItem);\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void ValueChanged(object sender, PropertyChangedEventArgs e)\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs",
+          "member": "GlobalTriggerConfig.ValueChanged",
+          "sha256": "8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d",
+          "start": 191,
+          "end": 208,
+          "excerpt": "\tprivate void ValueChanged(object sender, PropertyChangedEventArgs e)\n\t{\n\t\tif (!e.PropertyName.Equals(\"IsEventTrigger\") && !e.PropertyName.Equals(\"IsStrTrigger\") && !isSetChange && !e.PropertyName.Equals(\"EnumEntrysA\"))\n\t\t{\n\t\t\tif (e.PropertyName.Equals(\"Command\"))\n\t\t\t{\n\t\t\t\tisSetChange = true;\n\t\t\t\t(sender as ComTriggerItem).ClearConfig();\n\t\t\t}\n\t\t\tif (sender != null && sender is ComTriggerItem comTriggerItem && CheckPassword(comTriggerItem))\n\t\t\t{\n\t\t\t\tSetTriggerItem(comTriggerItem, ActionType.Modify);\n\t\t\t}\n\t\t\tisSetChange = false;\n\t\t}\n\t}\n\n\tprivate bool CheckPassword(ComTriggerItem tiggerItem)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "弱事件实投、ClearConfig抛错/写入副作用、isSetChange异常恢复和Params最终native消费者尚未覆盖。"
+      ],
+      "nextMembers": [
+        "ComTriggerItem.ClearConfig",
+        "GlobalTriggerConfig.SetTriggerItem / SetTriggerBytes",
+        "VmModule.Params byte/string setters"
+      ],
+      "priorLinks": [
+        {
+          "view": "configuration-hosts",
+          "id": "H04",
+          "url": "configuration-hosts.html#edge-H04"
+        },
+        {
+          "view": "parameter-candidates",
+          "id": "P12",
+          "url": "parameter-candidates.html#edge-P12"
+        }
+      ],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA09",
+      "group": "全局触发即时写入",
+      "classification": "source-confirmed",
+      "from": "GlobalTriggerConfig.CheckPassword",
+      "to": "空密码放行；已给错误密码清空后仍true",
+      "behavior": "SolutionPath为空直接true；有效受保护方案但SolutionPasswd为空也true；密码检查nIsCorrect==0时提示、置isSetChange=true并清SolutionPasswd，仍返回true。仅异常路径记录并false。该bool不能命名为密码验证成功，ValueChanged在true后仍可调用Modify；底层是否拒绝空密码另待证。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs",
+          "member": "GlobalTriggerConfig.CheckPassword",
+          "sha256": "8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d",
+          "start": 208,
+          "end": 245,
+          "excerpt": "\tprivate bool CheckPassword(ComTriggerItem tiggerItem)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (string.IsNullOrEmpty(tiggerItem.SolutionPath))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tuint nHasPwd = 0u;\n\t\t\tuint nValidFormat = 0u;\n\t\t\tServerSDKManager.serverSDKManager.mSolutionManager.CheckSolution(tiggerItem.SolutionPath, ref nHasPwd, ref nValidFormat);\n\t\t\tif (nValidFormat == 1 && nHasPwd == 1)\n\t\t\t{\n\t\t\t\tif (string.IsNullOrEmpty(tiggerItem.SolutionPasswd))\n\t\t\t\t{\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\tint nIsCorrect = -1;\n\t\t\t\tServerSDKManager.serverSDKManager.mSolutionManager.CheckPassword(tiggerItem.SolutionPath, tiggerItem.SolutionPasswd, ref nIsCorrect);\n\t\t\t\tif (nIsCorrect == 0)\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"方案密码错误\"), MessageButtons.Normal, MessageIcons.Error);\n\t\t\t\t\tisSetChange = true;\n\t\t\t\t\ttiggerItem.SolutionPasswd = \"\";\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Error(\"CheckPassword is error.\" + ex.ToString());\n\t\t\treturn false;\n\t\t}\n\t\treturn true;\n\t}\n\n\tpublic void RemoveItem(object item)\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs",
+          "member": "ValueChanged caller of CheckPassword",
+          "sha256": "8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d",
+          "start": 200,
+          "end": 206,
+          "excerpt": "\t\t\tif (sender != null && sender is ComTriggerItem comTriggerItem && CheckPassword(comTriggerItem))\n\t\t\t{\n\t\t\t\tSetTriggerItem(comTriggerItem, ActionType.Modify);\n\t\t\t}\n\t\t\tisSetChange = false;\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "CheckSolution有效格式/保护标志原合同、CheckPassword返回语义、数据发送时空密码载荷及native最终验证未证；未执行文件解密或改密码。"
+      ],
+      "nextMembers": [
+        "SolutionManager.CheckSolution / CheckPassword",
+        "GlobalTriggerConfig.SetTriggerBytes ChangeSolution",
+        "GlobalTriggerData / Load_Solution ABI"
+      ],
+      "priorLinks": [],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA10",
+      "group": "全局触发即时写入",
+      "classification": "source-confirmed",
+      "from": "SetTriggerItem Modify分支",
+      "to": "序列化null或字节setter异常仍可返回0",
+      "behavior": "Add写AddTriggerEvent/AddTriggerString=\"true\"；Delete写零基索引；Modify序列化非null才写ModifyTriggerEvent-/ModifyTriggerString-字节键。Modify内部setter异常只日志，之后仍return0；序列化null也走return0。外层异常才return-1。所以本地返回0不证明成功写入或触发执行。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs",
+          "member": "GlobalTriggerConfig.SetTriggerItem complete body",
+          "sha256": "8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d",
+          "start": 609,
+          "end": 665,
+          "excerpt": "\tprivate int SetTriggerItem(ComTriggerItem item, ActionType action)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (DecorateSource == null)\n\t\t\t{\n\t\t\t\treturn -1;\n\t\t\t}\n\t\t\tbool flag = item is GlobalTriggerEventItem;\n\t\t\tswitch (action)\n\t\t\t{\n\t\t\tcase ActionType.Add:\n\t\t\t\t(DecorateSource as VmModule).Params[flag ? \"AddTriggerEvent\" : \"AddTriggerString\"] = \"true\";\n\t\t\t\tbreak;\n\t\t\tcase ActionType.Delete:\n\t\t\t\t(DecorateSource as VmModule).Params[flag ? \"DeleteTriggerEvent\" : \"DeleteTriggerString\"] = (item.Index - 1).ToString();\n\t\t\t\tbreak;\n\t\t\tcase ActionType.Modify:\n\t\t\t{\n\t\t\t\tbyte[] array = SetTriggerBytes(item, flag);\n\t\t\t\tif (array != null)\n\t\t\t\t{\n\t\t\t\t\tstring key = (flag ? \"ModifyTriggerEvent-\" : \"ModifyTriggerString-\") + (item.Index - 1);\n\t\t\t\t\ttry\n\t\t\t\t\t{\n\t\t\t\t\t\t((IUserBytesData)(DecorateSource as VmModule).Params)[key] = array;\n\t\t\t\t\t}\n\t\t\t\t\tcatch (Exception ex)\n\t\t\t\t\t{\n\t\t\t\t\t\tLogHelper.Error(\"下发数据错误,\" + ex.ToString());\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\t}\n\t\t\treturn 0;\n\t\t}\n\t\tcatch (Exception ex2)\n\t\t{\n\t\t\tif (ex2 is VmException ex3)\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"下发数据错误,\" + ex3.errorMessage);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"下发数据错误,\" + ex2.ToString());\n\t\t\t}\n\t\t\treturn -1;\n\t\t}\n\t}\n\n\tpublic override int SetParamUnit()\n\t{\n\t\treturn base.SetParamUnit();\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "StructToBytes具体布局/限长/原native接收端、返回码到UI反馈和方案保存效果未证。"
+      ],
+      "nextMembers": [
+        "GlobalTriggerConfig.SetTriggerBytes and structures",
+        "VmParams indexers / IUserBytesData",
+        "GlobalTriggerModule native Add/Modify/Delete consumers"
+      ],
+      "priorLinks": [],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA11",
+      "group": "全局触发即时写入",
+      "classification": "source-confirmed",
+      "from": "RemoveItem",
+      "to": "先解绑弱事件，再Delete，失败不在此重新订阅",
+      "behavior": "事件/字符串项先RemoveHandler；SetTriggerItem(Delete)!=0直接返回，不进入集合移除与重新编号。成功才从对应集合移除并从1重新编号。故不能画成Delete失败后UI与订阅完全不变。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs",
+          "member": "GlobalTriggerConfig.RemoveItem",
+          "sha256": "8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d",
+          "start": 244,
+          "end": 280,
+          "excerpt": "\tpublic void RemoveItem(object item)\n\t{\n\t\tif (item is GlobalTriggerEventItem)\n\t\t{\n\t\t\tWeakEventManager<GlobalTriggerEventItem, PropertyChangedEventArgs>.RemoveHandler((GlobalTriggerEventItem)item, \"PropertyChanged\", ValueChanged);\n\t\t}\n\t\telse if (item is GlobalTriggerStrItem)\n\t\t{\n\t\t\tWeakEventManager<GlobalTriggerStrItem, PropertyChangedEventArgs>.RemoveHandler((GlobalTriggerStrItem)item, \"PropertyChanged\", ValueChanged);\n\t\t}\n\t\tif (SetTriggerItem(item as ComTriggerItem, ActionType.Delete) != 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tint num = 1;\n\t\tif ((item as ComTriggerItem).IsEventTrigger)\n\t\t{\n\t\t\tCommEventTriggerA.Remove(item);\n\t\t\t{\n\t\t\t\tforeach (object item2 in CommEventTriggerA)\n\t\t\t\t{\n\t\t\t\t\t(item2 as ComTriggerItem).Index = num;\n\t\t\t\t\tnum++;\n\t\t\t\t}\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n\t\tCommStrTriggerA.Remove(item);\n\t\tforeach (object item3 in CommStrTriggerA)\n\t\t{\n\t\t\t(item3 as ComTriggerItem).Index = num;\n\t\t\tnum++;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 获取所有接收事件列表",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "失败是否发生、其它重新订阅/刷新路径、Index通知是否再次写native与最终资源一致性未知。"
+      ],
+      "nextMembers": [
+        "GlobalTriggerConfig.RemoveItem / GetParamUnit reload",
+        "ComTriggerItem.DeleteItem command and Index property"
+      ],
+      "priorLinks": [],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA12",
+      "group": "网关与脚本边界",
+      "classification": "source-confirmed",
+      "from": "GlobalCommunicationMgr",
+      "to": "GateWayFramework.TitleMenueItemData.Instance转发",
+      "behavior": "此类GetData转GetAllParams再ResetParamStateFlag；CloseComm直接返回GateWayFramework.TitleMenueItemData.Instance.CloseComm，ClearAll和Reset也分别转发。源using明确是GateWayFramework，不是主窗口同名TitleMenueItemData。这里只证明转发，注释所称网关反初始化/设备清空不替代被调成员函数体。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalCommunicationMgr.cs",
+          "member": "GlobalCommunicationMgr namespace and dependencies",
+          "sha256": "6d78791a80348c5cbf803587f6f04041bba999e41c2d1590d5704c5e92ee86c3",
+          "start": 1,
+          "end": 5,
+          "excerpt": "using GateWayFramework;\n\nnamespace VMControls.WPF.GlobalUI;\n\npublic class GlobalCommunicationMgr",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalCommunicationMgr.cs",
+          "member": "GlobalCommunicationMgr data/close/clear/reset forwarding",
+          "sha256": "6d78791a80348c5cbf803587f6f04041bba999e41c2d1590d5704c5e92ee86c3",
+          "start": 61,
+          "end": 91,
+          "excerpt": "\tpublic void GetData()\n\t{\n\t\tTitleMenueItemData.Instance.GetAllParams();\n\t\tResetParamStateFlag();\n\t}\n\n\t/// <summary>\n\t/// 关闭通信网关，关闭方案，清空设备，网关sdk反初始化\n\t/// </summary>\n\tpublic int CloseComm()\n\t{\n\t\tint num = 0;\n\t\treturn TitleMenueItemData.Instance.CloseComm();\n\t}\n\n\t/// <summary>\n\t/// 清空界面设备,仅限于清楚界面的数据\n\t/// </summary>\n\tpublic void ClearAll()\n\t{\n\t\tTitleMenueItemData.Instance.ClearAll();\n\t}\n\n\t/// <summary>\n\t/// 复位参数修改状态标志\n\t/// </summary>\n\tpublic void ResetParamStateFlag()\n\t{\n\t\tTitleMenueItemData.Instance.ResetParamFlag();\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs",
+          "member": "MainWindowData load begin gateway close",
+          "sha256": "aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5",
+          "start": 726,
+          "end": 735,
+          "excerpt": "\tprivate void VmSolution_LoadBegin(object sender, EventArgs e)\n\t{\n\t\tif (GlobalCommunicationMgr.Instance.IsGet)\n\t\t{\n\t\t\tGlobalCommunicationMgr.Instance.CloseComm();\n\t\t\tGlobalCommunicationMgr.Instance.IsGet = false;\n\t\t}\n\t\tTitleMenueItemData.ResetResource();\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "网关程序集精确原件/方法体、SDK反初始化、回调终止和CloseComm返回处理未知；本切片没有启动/停止任何网关或设备。"
+      ],
+      "nextMembers": [
+        "GateWayFramework.TitleMenueItemData.GetAllParams / CloseComm / ClearAll / ResetParamFlag",
+        "GlobalCommunicationMgr.IsGet lifecycle"
+      ],
+      "priorLinks": [
+        {
+          "view": "solution-lifecycle",
+          "id": "N03",
+          "url": "solution-lifecycle.html#edge-N03"
+        }
+      ],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    },
+    {
+      "id": "EA13",
+      "group": "网关与脚本边界",
+      "classification": "source-confirmed",
+      "from": "主菜单GlobalScript vs外部ToolControl.GlobalScript",
+      "to": "两个窗口缓存、两个执行目标必须保留",
+      "behavior": "主菜单GlobalScript创建窗口并把ExcuteEvent挂SigRun，IsClosing时先解除同一命名方法再重建。外部ToolControl现有G12却是三个不同lambda最终VmSolution.Run；不能因两个脚本窗相同或密码门相似就把两入口并为一条执行链。主菜单密码窗ShowDialog结果被丢弃，IsPasswordOK才是继续门。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "TitleMenueItemData.GlobalScript event and password gate",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 1238,
+          "end": 1302,
+          "excerpt": "\tpublic void GlobalScript()\n\t{\n\t\t//IL_000f: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0019: Expected Obj, but got Unknown\n\t\t//IL_0025: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_002f: Expected Obj, but got Unknown\n\t\t//IL_004c: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0056: Expected Obj, but got Unknown\n\t\t//IL_0057: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0061: Expected Obj, but got Unknown\n\t\t//IL_006d: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0077: Expected Obj, but got Unknown\n\t\t//IL_00c4: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00c9: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00d4: Expected Obj, but got Unknown\n\t\ttry\n\t\t{\n\t\t\tif (globalScriptWindow == null)\n\t\t\t{\n\t\t\t\tglobalScriptWindow = new MainWindow();\n\t\t\t\tglobalScriptWindow.ExcuteEvent += SigRun;\n\t\t\t}\n\t\t\tif (((BaseWindow)(object)globalScriptWindow).IsClosing)\n\t\t\t{\n\t\t\t\tglobalScriptWindow.ExcuteEvent -= SigRun;\n\t\t\t\tglobalScriptWindow = new MainWindow();\n\t\t\t\tglobalScriptWindow.ExcuteEvent += SigRun;\n\t\t\t}\n\t\t\tif (globalScriptWindow.GetShellParamer() != 0)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (globalScriptWindow.ObjShellRun != null && globalScriptWindow.ObjShellRun.IsPasswordEnabled)\n\t\t\t{\n\t\t\t\tstring password = globalScriptWindow.ObjShellRun.Password;\n\t\t\t\tPasswordCheckWindow val = new PasswordCheckWindow\n\t\t\t\t{\n\t\t\t\t\tOriginalPassword = password\n\t\t\t\t};\n\t\t\t\t((BaseWindow)(object)val).ShowDialog();\n\t\t\t\tif (val.IsPasswordOK)\n\t\t\t\t{\n\t\t\t\t\t((BaseWindow)(object)globalScriptWindow).ShowDialog();\n\t\t\t\t}\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\t((BaseWindow)(object)globalScriptWindow).ShowDialog();\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tVmException ex2 = null;\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\n\t\t\t{\n\t\t\t\tex2 = ex as VmException;\n\t\t\t\tif (ex2 == null)\n\t\t\t\t{\n\t\t\t\t\tex2 = ex.InnerException as VmException;\n\t\t\t\t}\n\t\t\t\tShowMessage.ShowVmExceptionMessage(ex2);\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\n\t\t\t}\n\t\t\telse\n\t\t\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "主菜单SigRun完整目标已在执行页分片，脚本窗真正发事件/保存ShellRun/关闭生命周期仍需GlobalScriptUI原体；本项不重复宣称外部lambda解除成功。"
+      ],
+      "nextMembers": [
+        "GlobalScriptUI.MainWindow.GetShellParamer / ExcuteEvent producer / Close",
+        "TitleMenueItemData.SigRun and script report callback"
+      ],
+      "priorLinks": [
+        {
+          "view": "global-toolbar",
+          "id": "G11",
+          "url": "global-toolbar.html#edge-G11"
+        },
+        {
+          "view": "global-toolbar",
+          "id": "G12",
+          "url": "global-toolbar.html#edge-G12"
+        },
+        {
+          "view": "execution-storage",
+          "id": "G02",
+          "url": "execution-storage.html#edge-G02"
+        }
+      ],
+      "completion": "not-established",
+      "verification": {
+        "sourceHashesVerified": true,
+        "runtimeExecuted": false,
+        "nativeEquivalent": false,
+        "currentImplementationMapped": false
+      }
+    }
+  ],
+  "implementationProgress": {
+    "completed": 41,
+    "total": 96,
+    "percent": 42.71,
+    "denominator": "32 packages × 3 implementation units; architecture documentation adds zero."
+  },
+  "runtimeExecuted": false,
+  "browserRendered": false,
+  "unknowns": [
+    "No original vendor/SDK/device/service execution.",
+    "Selected EXE CIL bodies are tied to original bytes; other source excerpts retain source hashes and explicitly lack new binary binding.",
+    "No claim that source presence proves runtime reachability, completion, valid native ABI or parity.",
+    "Current implementation mapping and exhaustive entry enumeration are separate unfinished work."
+  ]
+}

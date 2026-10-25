@@ -1,0 +1,69 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 571ca486fafd · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 571ca486fafd</p><h1>原文证据 571ca486fafd</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 571ca486fafd6290179d4ca8c98d04b093a59b140ef694403fd3aa0e64409199。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/image-notification.resources/Apps.XmlParser.Object.decompiled.cs:385–451
+SHA256 feed3ecc1a21de9e05092b5895a7dc369a947c20ca2b3cf63b5d8e7b125ce0c1
+	private object FillImageValue(int index = 0)
+	{
+		byte[] array = null;
+		string text = null;
+		int num = 0;
+		int num2 = 0;
+		int num3 = 0;
+		if (FeaturesDic.Count == 0)
+		{
+			return null;
+		}
+		Feature feature = FeaturesDic[ImageStrCode];
+		object obj = null;
+		if (ValueStore[FeaturesStoreIndexDic[feature.GetHashCode()]] is Array { Length: >0 } array2)
+		{
+			obj = array2.GetValue(index);
+		}
+		if (obj is ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data iMVS_MODULE_CHUNK_VALUE_EX_Data)
+		{
+			if (iMVS_MODULE_CHUNK_VALUE_EX_Data.IsMemory)
+			{
+				text = iMVS_MODULE_CHUNK_VALUE_EX_Data.GetRealMemoryAddress();
+			}
+			else
+			{
+				array = iMVS_MODULE_CHUNK_VALUE_EX_Data.GetData();
+			}
+			num = ((GetValueByType(&quot;Height&quot;, index, typeof(int)) is int num4) ? num4 : 0);
+			num2 = ((GetValueByType(&quot;Width&quot;, index, typeof(int)) is int num5) ? num5 : 0);
+			num3 = ((GetValueByType(&quot;PixelFormat&quot;, index, typeof(int)) is int num6) ? num6 : 0);
+			if (num == 0 || num2 == 0 || (array == null &amp;&amp; text == null))
+			{
+				return null;
+			}
+			ImageData imageData = new ImageData();
+			try
+			{
+				imageData.NeedConvertColor = (int)GetValueByType(&quot;NeedConvertColor&quot;, index, typeof(int)) == 1;
+				imageData.PixelInfoLabel = (string)GetValueByType(&quot;PixelInfoLabel&quot;, index, typeof(string));
+				FeaturesDic.TryGetValue(PixelInfoValueStrCode, out feature);
+				if (feature != null)
+				{
+					int num7 = FeaturesStoreIndexDic[feature.GetHashCode()];
+					int num8 = (ValueStore[num7] as Array)?.Length ?? 0;
+					for (int i = 0; i &lt; num8; i++)
+					{
+						imageData.PixelExtraInfo.Add((string)GetValueByType(&quot;PixelInfoValue&quot;, i, typeof(string)), (string)GetValueByType(&quot;PixelInfo&quot;, i, typeof(string)));
+					}
+				}
+			}
+			catch
+			{
+			}
+			imageData.ImageBuffer = array;
+			imageData.MemoryAddress = text;
+			imageData.Width = num2;
+			imageData.Height = num;
+			imageData.PixelFormat = ImageData.GetPixelFormatByProtocol((uint)num3);
+			imageData.DetailedPixelFormat = (uint)num3;
+			imageData.NeedCheckExecuteCount = true;
+			imageData.ExecuteCount = ExecuteCount ?? 0;
+			return imageData;
+		}
+		if (obj is ImageData)
+		{
+			return obj;
+		}</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/image-pipeline.html">数据/image-pipeline.html</a></li><li><a href="../数据/image-pipeline--results.html">数据/image-pipeline--results.html</a></li><li><a href="../数据/image-pipeline--display.html">数据/image-pipeline--display.html</a></li><li><a href="../数据/image-pipeline--retirement.html">数据/image-pipeline--retirement.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

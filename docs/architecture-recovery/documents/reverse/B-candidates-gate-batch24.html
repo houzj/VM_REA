@@ -1,0 +1,40 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B线第二十四轮：FCR-018/FCR-021 producer 门槛复核</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/B-candidates-gate-batch24.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#b线第二十四轮fcr-018fcr-021-producer-门槛复核">B线第二十四轮：FCR-018/FCR-021 producer 门槛复核</a></p><p style="margin-left:14px"><a href="#检查范围">检查范围</a></p><p style="margin-left:14px"><a href="#可复核哈希">可复核哈希</a></p><p style="margin-left:14px"><a href="#退出门槛">退出门槛</a></p></details><h1 id="b线第二十四轮fcr-018fcr-021-producer-门槛复核">B线第二十四轮：FCR-018/FCR-021 producer 门槛复核</h1><p>日期：2026-10-20<br>基线：<code>6fc5e70</code>（<code>main</code>）<br>结论：<strong>未发现新的 producer 交付；B06.1/B06.2 不实施、不计完成。</strong></p>
+<h2 id="检查范围">检查范围</h2><p>本轮只检查 FCR-018（Group 参数选中后的工具装饰器）和 FCR-021（Group 运行参数候选资格元数据）的 producer 是否已经进入当前 main 可审查范围，避免重复 B06 候选扫描和避免在 main 复制插件配置框架。</p>
+<p>核对结果：</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>当前证据</th>
+<th>门槛结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>producer 提交</td>
+<td><code>git log --all</code> 在 2026-10-19 以后没有出现 FCR-018/FCR-021 producer 提交；<code>tool-plugins</code> 工作树不读取、不修改</td>
+<td>未解除</td>
+</tr>
+<tr>
+<td>FCR-021 consumer</td>
+<td><code>GroupRunConfigurationWindow</code> 仍遍历 descriptor 的 <code>Parameters</code>/<code>Inputs</code>；没有 <code>IGroupRunParam</code>、<code>GroupRunParamEnable</code>、原生类型身份、<code>CloneSource</code>、<code>DisplayForGroupType</code> 生产快照</td>
+<td>不能闭合</td>
+</tr>
+<tr>
+<td>FCR-018 consumer</td>
+<td>main 只有现有 <code>IWpfToolParameterEditorFactory</code> 有限 seam；没有插件侧 <code>GetSupportDisplayForGroupData</code> 等价 producer，也没有可审查的 Group 装饰器生命周期</td>
+<td>不能闭合</td>
+</tr>
+<tr>
+<td>合同文档</td>
+<td><code>docs/CONTRACT-REQUESTS.md</code> 中 FCR-018/FCR-021 仍标记“请求，未实现”；未出现 producer SHA、版本化载荷或交接记录</td>
+<td>未解除</td>
+</tr>
+</tbody></table>
+<h2 id="可复核哈希">可复核哈希</h2><pre><code>src/VisionFramework/Contracts.cs                         664E3AAD63ABB2F8F8C6FB18E90E663D4DA76ABBC27C3F64D83A75E8D9E44299
+src/VisionEditor/GroupRunConfigurationWindow.cs          C151C447B2819258539C2D47532BAAFF2AAD8D272CD8427730CF5B0F452C6BF2
+docs/CONTRACT-REQUESTS.md                                 AADEFCBB5180EFA1E27A8E2177B2D5FD708B97C915DD2F0953A08D5C7CB99E01
+docs/reverse/B-runtime-tab-gate-batch23.md                B906AFED83DA8D59C53452FD270EE899B83CF9C60E2F1AFF22E49DBFF96F1D6E
+</code></pre>
+<h2 id="退出门槛">退出门槛</h2><p>本轮 B 线实施增量为 <strong>0</strong>。只有收到 producer 的完整 SHA 和源码/合同证据后，main 才能实现消费端：先物化稳定身份与资格快照，再按原始谓词过滤，保留不合格存量代理的诊断；在此之前新增字段或筛选器会是未经授权的第二套插件配置模型。</p>
+<p><code>tool-plugins</code> 保持不动；本报告不代表跨项目采用或合流。</p>
+<p class="meta">来源：docs/reverse/B-candidates-gate-batch24.md · SHA256 f86c4e5642ff972d29bd18e82dee0960b81283d85945854647cf8d14a25e232f<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

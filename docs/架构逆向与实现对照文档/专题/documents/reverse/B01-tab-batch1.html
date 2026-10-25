@@ -1,0 +1,62 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B01 batch1：原厂托管 Tab 装配的隔离运行证据 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / B01 batch1：原厂托管 Tab 装配的隔离运行证据</p><h1>B01 batch1：原厂托管 Tab 装配的隔离运行证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B01 batch1：原厂托管 Tab 装配的隔离运行证据</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="B01-tab-batch1.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="B01-tab-batch1.html#b01-batch1原厂托管-tab-装配的隔离运行证据">B01 batch1：原厂托管 Tab 装配的隔离运行证据</a></p><p style="margin-left:14px"><a href="B01-tab-batch1.html#身份与范围">身份与范围</a></p><p style="margin-left:14px"><a href="B01-tab-batch1.html#源码链及执行选择">源码链及执行选择</a></p><p style="margin-left:14px"><a href="B01-tab-batch1.html#新增运行观察">新增运行观察</a></p><p style="margin-left:14px"><a href="B01-tab-batch1.html#可复验产物与下一步">可复验产物与下一步</a></p></details><h1 id="b01-batch1原厂托管-tab-装配的隔离运行证据">B01 batch1：原厂托管 Tab 装配的隔离运行证据</h1><p>2026-10-19；main 基线 <code>2649c3b268df351a1585c30546a0115c4fb3753e</code>。本项推进 B01 的通用装配/候选谓词子问题，<strong>不关闭真实 VM 模块 Params.Data、专用图像源构造或运行窗口验收</strong>。未修改产品、共享台账或 tool-plugins。</p>
+<h2 id="身份与范围">身份与范围</h2><ul>
+<li>原厂 <code>D:/Program Files/VisionMaster4.4.0/Applications/myLibs/Apps.XmlParser.dll</code> SHA256 <code>78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1</code>，MVID <code>d0604401-ab61-48a4-938b-faad16d74e7c</code>。REA target-free 静态身份 <code>ev_b3a71726ac88c3bfa26cb2a7f52cae18a1c0b089aa5306d29d074a63ad2ee5f7</code>，完整记录 <code>analysis/full-audit/batch1-20261019/B01/parser-identity.json</code>。</li>
+<li>VM.Xml 原件 SHA256 <code>4acc568b406e054299d1d22497fb9f069a0b9925503ccedf31fd8382936739c5</code>，MVID <code>c390e0a9-9eed-4e8e-9ac2-0d6f9e61802f</code>；REA 本次身份 <code>ev_a016815cda2ef29734610360e49774b919d4211f73e48f77826367ee0e86680c</code>。</li>
+<li>CLR 实际从 GAC 解析上述两 DLL；探针记录实际路径/哈希/MVID，与安装副本完全相同，未凭 LoadFrom 参数断言实际载入位置。</li>
+<li>owner 是 <code>new object()</code>，参数为本地字典实现 IParamsConfig；不满足 ISubjectModel，不触发 InitLoad、代理寄生构造或真实 ModuleParam。未创建窗口、不初始化 SDK、不调用 DoIniter/GetItemsValueUnit、不加载 ImageSourceModuleControl。不改变安装 XML；loadXml 仅接受本地副本。</li>
+<li>依赖解析会加载 VM.Core/VM.PlatformSDKCS 等<strong>托管程序集</strong>；记录的进程模块路径中未见 iMVS/原生 PlatformSDK/ImageSource 模块。这不是所有托管静态构造副作用均不存在的全局证明。</li>
+</ul>
+<h2 id="源码链及执行选择">源码链及执行选择</h2><p>源码均在仓库 <code>analysis/decompiled/</code>：</p>
+<ol>
+<li><code>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/AlgorithmTabRoot.cs:650</code>：UserStringData/Owner 赋值，ISubjectModel.InitLoad，然后 loadXml，异常记录。plain owner 有意隔离专用模块链。</li>
+<li><code>Apps.XmlParser/Hik.Xml.BaseNode.decompiled.cs:1187</code>：文件 loadXml 设置 IgnoreUnknown，改输入文件 Attributes=Normal，再 Init；复位不在 finally。探针先将副本设为 ReadOnly，执行后确认 Normal，原件内容哈希保持不变。</li>
+<li><code>AlgorithmTabRoot.cs:577</code>：base.Init → XmlLoaded → OnXmlLoaded；以 NeedNotifyLoaded 控制后两者。安装 XML 用 false，只证明通用字段/集合装配；最小合成 XML 用 true，验证正常回调。</li>
+<li><code>NameValueItem.cs:596/693/706</code> 与 <code>Setter.cs:83/92/97</code>：装配可创建 Operation；XmlLoadedTask 调 Setter.Init，主要解析目标并读取原值；InniterBusiness 才调用 Initers.Operate。但 <code>Tab.OnXmlLoaded</code> 后续 NotifyTrigger 可进入 TriggerBusiness（NameValueItem.cs:659），因此不能把正常 XML 装配称为绝无业务副作用。本次不在含真实图像源业务 Trigger 的 XML 上开启回调。</li>
+<li><code>LinkItem.cs:17/31</code>：AfterAddedToArray 订阅 XmlLoaded；事件退订、FindBaseNodeByName、Clone、按原索引替换容器和 Tab.Collection，并重设父节点。</li>
+<li><code>AlgorithmTabRoot.cs:975/999/1030</code>：精确选 <code>Tab_Run Params</code>；集合中动态子项展开；DisplayNameA 非空才包装 Holder；该层不检查 CustomVisible 或 SubscribeVisible。</li>
+</ol>
+<p>最终 probe.json 的 cil 段记录原厂 Init/GetRunParamsTree/AddSubChildToTree、BaseNode.Init、LinkItem.root_XmlLoaded、Setter.Init/Operate 的 metadata token 和原 CIL 字节；不是用本地重新实现的函数代替原函数。输入反编译源哈希另存 source-hashes.csv。</p>
+<h2 id="新增运行观察">新增运行观察</h2><p>最终独占运行目录：<code>analysis/full-audit/batch1-20261019/B01/run-b475ebc57e8044c8bf4c04592a6f1399/</code>。</p>
+<table>
+<thead>
+<tr>
+<th>输入/操作</th>
+<th>源码预期</th>
+<th>实测及边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>安装 ImageSource XML 的逐字节副本，回调关闭</td>
+<td>标准装配不自行改名</td>
+<td>1 个 Tab，仍名 Tab_Basic Params，Collection 23 项，GetRunParamsTree 返回0。专用 Control 未注册，因此原 XML 共25项中的 CameraID、SolSaveImageData 被 ignoreUnknown 跳过；不能外推真实模块最终集合。</td>
+</tr>
+<tr>
+<td>ReadOnly 副本经 loadXml</td>
+<td>Attributes=Normal</td>
+<td>副本变 Normal；副本与安装原件内容哈希仍为 <code>001a57675192867594d3bbc7efa94462c19f056583659d759ceb5648e55091e0</code>。</td>
+</tr>
+<tr>
+<td>合成 RunTab，NeedNotifyLoaded=false</td>
+<td>LinkItem 仍占位</td>
+<td>Collection 为 Hidden、Blank、Visible、LinkItem；未调用其候选方法，避免把未解析占位当 NameValueItem。</td>
+</tr>
+<tr>
+<td>同一合成 XML，NeedNotifyLoaded=true</td>
+<td>XmlLoaded 解决链接</td>
+<td>Collection 仍4项，最后项变 Visible 的独立 Integer 克隆；源项 visible=true，克隆 visible=false，ReferenceEquals=false。</td>
+</tr>
+<tr>
+<td>Hidden(CustomVisible=false、SubscribeVisible=false)、Blank(DisplayName空)、Visible与隐藏克隆</td>
+<td>本层以 DisplayName 非空筛选</td>
+<td>返回3个 Holder：Hidden、Visible源项、Visible克隆；Blank排除。HolderTarget 对象身份与集合一致，未按名称去重。此结论仅是原根树，不覆盖后续 RunParamsSelectData 订阅过滤。</td>
+</tr>
+</tbody></table>
+<p>运行 exit0，13个具名谓词均为 true。前两次开发运行均已保留（一次基础9谓词、一次添加模块/CIL清单）；最终13谓词结果以本节目录为准，不叠加成操作次数。无产品构建、原机桌面、实际 VM 方案或SDK算法执行结果。</p>
+<h2 id="可复验产物与下一步">可复验产物与下一步</h2><p>执行 <code>powershell/pwsh -File tests/NativeEvidence/B01/Run.ps1</code>；仅调用 Framework64 csc 编译独占 EXE，运行限45秒；超时只终止该启动的自有进程。每次生成新 GUID 输出目录，原文件不会覆盖。探针源码与辅助脚本均位于 tests。</p>
+<ul>
+<li>最终 probe.json SHA256 <code>44E054CC46AE04438E99BC45C96AF05C5740FF788FCE80B3379EEE9DCCFE4888</code>。</li>
+<li>TabAssemblyProbe.cs SHA256 <code>F08EE953724CF29C3DD573061765C5B7C5E4B439A74487E94D7B5DCD36A4E553</code>。</li>
+<li>Run.ps1 SHA256 <code>B13BD0FAFCFA5AB2E37E7F443B88C72B538BB37B5717CC3FC920BF508E7A02EF</code>。</li>
+</ul>
+<p>本次独立探针不是产品重构；不据此删除 main 兼容候选，也不创建第二套插件配置框架。B01实际剩余门槛：指定任务自有原厂实例采集 GetParamRoot 前后 Params/Data/XmlPath、代理 InitLoad/寄生对象身份，注册真实专用节点后采集 XmlLoaded 前后 Tabs/Collection，并验证拼接开关与选择窗口重开/类型切换的候选缓存。原厂专用构造是否替换 Tab、订阅关系如何影响候选、实际设备/SDK回调均继续 unknown；后续由 main 消费 FCR-019 合同，插件项目仍是配置模型生产者。</p>
+<p class="meta">来源：docs/reverse/B01-tab-batch1.md · SHA256 1d9d2d0243b8095f0e08686df85dd74a80dcf07897e731218d35c8187f120489<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

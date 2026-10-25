@@ -1,0 +1,45 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C04.1 各根类型回放实施门槛复核（第三十轮 C 线） · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / C04.1 各根类型回放实施门槛复核（第三十轮 C 线）</p><h1>C04.1 各根类型回放实施门槛复核（第三十轮 C 线）</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C04.1 各根类型回放实施门槛复核（第三十轮 C 线）</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="C04-root-replay-batch30.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="C04-root-replay-batch30.html#c041-各根类型回放实施门槛复核第三十轮-c-线">C04.1 各根类型回放实施门槛复核（第三十轮 C 线）</a></p><p style="margin-left:14px"><a href="C04-root-replay-batch30.html#结论">结论</a></p><p style="margin-left:14px"><a href="C04-root-replay-batch30.html#根类型逐项核对">根类型逐项核对</a></p><p style="margin-left:14px"><a href="C04-root-replay-batch30.html#已实施的栈语义与差异">已实施的栈语义与差异</a></p><p style="margin-left:14px"><a href="C04-root-replay-batch30.html#自审核与解除条件">自审核与解除条件</a></p></details><h1 id="c041-各根类型回放实施门槛复核第三十轮-c-线">C04.1 各根类型回放实施门槛复核（第三十轮 C 线）</h1><h2 id="结论">结论</h2><p><strong>本轮不关闭 C04.1，不改产品源码，实施增量 0。</strong> 已交付的 <code>DocumentHistoryEngine&lt;T&gt;</code> 有 root/part 顺序、首次 Undo 补新值、栈迁移和失败边界；实际 <code>GraphEditorDocument</code> 只登记一个 <code>document</code> 快照 part。它能回放 main 自有方案文档，不能代表原程序的各根类型业务载荷。继续把每种根包装成同一个 JSON 快照，会掩盖不同的 SDK Import/Export、模型和密码取消语义。</p>
+<h2 id="根类型逐项核对">根类型逐项核对</h2><table>
+<thead>
+<tr>
+<th>原根/part</th>
+<th>原反编译数据与消费者</th>
+<th>main 当前消费者</th>
+<th>缺少的可执行合同</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>普通模块/Group</td>
+<td><code>VM.Core.ModuleUnRedoOperation</code> 持 <code>VmModuleDataInfo</code>；<code>VmModule.Import_Module/Update_Module</code> 分普通模块内存数据与 Group <code>.gro</code> 路径，导入进入 SDK。见 <code>docs/UNDO-ROUND2-20261019.md</code> 第 2 节。</td>
+<td><code>GraphEditorDocument</code> 整文档快照可恢复自有节点及 Group 文档字段。</td>
+<td>原模块导出字节的结构、SDK 导入结果及 Group <code>.gro</code> writer/reader；没有可消费的原始载荷。</td>
+</tr>
+<tr>
+<td>流程</td>
+<td><code>VmSolution.Delete_Process/Import_Process</code>（反编译 1638–1659）按 <code>UnRedo_ProcessData.Path</code> 选择导出临时流程、<code>ImportProFile(...,1u)</code> 或创建新流程；<code>Export_Procedure</code>（1661 起）等待原生导出结束。</td>
+<td>自有 <code>ProcedureDocument</code> 由整个方案快照回放。</td>
+<td>临时流程文件格式、导入 callback、实际 SDK 流程身份/释放顺序。</td>
+</tr>
+<tr>
+<td>方案</td>
+<td><code>ProjectManager.Redo_Solution/Undo_Solution</code>（1032–1082）检查密码，随后 <code>VmSolution.Import(path,passWord)</code> 或创建新方案；取消时仅调用 <code>RecoverCallBack</code>。<code>SolutionUnRedoOperation</code> 比较 <code>TempPath/Data.Path</code> 决定删除。</td>
+<td>main <code>NewSolution/Load</code> 清本地历史，自有编辑用文档快照。</td>
+<td>原 <code>.sol</code> 导入/导出、密码取消后显示/数据状态、原临时方案路径所有权。</td>
+</tr>
+<tr>
+<td>模型</td>
+<td><code>VmModule.Model_Undo/Redo/Update</code>（5563–5578）调用具体模块的 <code>ImportModel/GetModel</code>。基类 <code>GetModel</code> 返回 null、<code>ImportModel</code> 空实现（3874–3891），需具体模块实现。</td>
+<td>自有节点参数包含在文档快照。</td>
+<td>各模块模型 producer/consumer 属具体工具或 SDK，main 无可回放载荷。</td>
+</tr>
+<tr>
+<td>参数、UserData、动态 IO、订阅</td>
+<td><code>ParamUnRedoOperation</code>、<code>UserDataUnRedoOperation</code> 等各持专用 data；参数经 <code>SetAllParams</code>，UserData 的 <code>[ParamRoot]</code> 首尾在操作的 Undo/Redo 动态判定；详见 <code>docs/UNDO-ROUND2-20261019.md</code>。</td>
+<td>自有配置字段含在单个 <code>document</code> part。</td>
+<td>原 SDK 参数树、UI 数据对象、订阅重载副作用与各根类型间的回放顺序在 main 无逐 part 消费者。</td>
+</tr>
+</tbody></table>
+<h2 id="已实施的栈语义与差异">已实施的栈语义与差异</h2><p><code>analysis/full-audit/mf04-unredo/VM.UnRedo.il</code> 2008–2112、2137 起、2865–2906、3085–3110：准入后登记、首次 Undo 先标完成再 Update、随后移根并按 priority 执行；异常不自动回滚。<code>src/VisionEditor.Core/DocumentHistoryEngine.cs</code> 实际实现此通用调度与显式载荷释放。<code>src/VisionEditor.Core/GraphEditorDocument.History.cs:62–67</code> 仅创建 <code>Edit</code> 根并登记 key=<code>document</code>；<code>GraphEditorDocument.cs:274–305</code> 的 Undo/Redo 和 JSON 快照消费者是 main 独立适配。C04.2 的文件 lease 生命周期已经在第十八轮实施，不在此重复计分。</p>
+<h2 id="自审核与解除条件">自审核与解除条件</h2><p>核对了原反编译操作类型、数据字段、主要调用者及 main 实际登记/恢复路径；未运行安装原件、SDK、设备或密码输入。无产品改动，因此没有新构建结果可作为实施进度。本轮各根类型并未闭合，C04.1 保持 <code>implementation=partial</code>、总计数不变。</p>
+<p>要关闭 C04.1，须取得并核对每一仍属 main 框架的根类型的完整 producer→payload→Import/restore→异常/释放合同，包括受控原始 <code>.sol/.gro</code> writer/reader 与密码取消的真实数据状态；具体工具模型由 <code>tool-plugins</code> 所有，需用户决定版本化合同交接后 main 才消费。<code>tool-plugins</code> 未访问、未修改。精确源文件及 SHA256 见本地 <code>analysis/full-audit/batch30-20261020/C-root/source-manifest.json</code>。</p>
+<p class="meta">来源：docs/reverse/C04-root-replay-batch30.md · SHA256 b87f8d66cdd8594ea3b9f834a5c3d78dcdbce45e3afd5d5dd04958d81271383d<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,51 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>标定板圆点低对比度边界追踪</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/CALIBRATION-BOARD-CIRCLE-LOW-CONTRAST-TRACE.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#标定板圆点低对比度边界追踪">标定板圆点低对比度边界追踪</a></p><p style="margin-left:14px"><a href="#结论范围">结论范围</a></p><p style="margin-left:14px"><a href="#原厂源码链">原厂源码链</a></p><p style="margin-left:14px"><a href="#fixture逐像素复核">fixture逐像素复核</a></p><p style="margin-left:14px"><a href="#实现判断和未知边界">实现判断和未知边界</a></p><p style="margin-left:14px"><a href="#证据索引与验证">证据索引与验证</a></p></details><h1 id="标定板圆点低对比度边界追踪">标定板圆点低对比度边界追踪</h1><h2 id="结论范围">结论范围</h2><p>针对已采集的合成图，低对比度圆/椭圆失败发生在圆点候选提取阶段，早于 <code>FUN_180817c50</code> 的全分辨率窗口和 <code>FUN_1808609a0</code> 梯度/亚像素细化调用。此结论不外推到任意图像、照明条件、ROI或 SDK 未覆盖的参数。</p>
+<p>探针 <code>CircleProbe.cpp</code> 构造 480×400 MONO_08 图，背景灰度255，8×10图案中心距30像素。这里的“contrast”是合成输入参数，图形内像素为 <code>255-contrast</code>，不是原厂 <code>GrayContrast</code> 运行参数。原厂模块资源把 <code>GrayContrast</code> 标为隐藏/废弃；不要混为同一个量。默认factor5时，低对比度样本在每个候选阶段先生成 96×80 的缩小图。</p>
+<h2 id="原厂源码链">原厂源码链</h2><p>公开SDK的圆点分支通过 <code>0x1807e33c0</code>（公开板型2→core kind3）进入 <code>0x1807dda50</code>，然后是 <code>0x180817c50</code>。初始提取链为 <code>0x180812930 → 0x180877f90 → 0x180877230</code>：</p>
+<ol>
+<li><code>0x180812930</code> 按factor构造缩小灰图；<code>0x180727a50 → 0x180727470</code>提供重采样。圆点候选坐标之后仍基于全分辨率图裁局部窗口。</li>
+<li><code>0x180877230</code>对缩小灰图调用 Otsu <code>0x180724460 → 0x180724880</code>；<code>0x180724740</code>按 <code>pixel &lt; threshold</code> 写0，否则写255，接着 <code>0x180720200</code>反相，再由 <code>0x18066bdf0</code>建立连通区域。</li>
+<li><code>0x180877230</code>通过 <code>0x180759880</code>读取每个连通区域面积，首先只把面积 <code>&gt;4</code> 的区域计入平均值；反向过滤时删除面积 <code>&lt;5</code> 或大于该阶段计算的相对上限。故任何面积不超过4的低对比候选都在亚像素局部窗口前被删除。</li>
+<li>存活区域随后进行轮廓相对面积和 <code>0x180722bf0</code> 圆度筛选，再计算裁剪框：以缩小图区域的像素边界乘factor，减6作为局部起点，宽高为区域宽高乘factor加12，按原图边界夹紧。<code>0x180877b20</code>以边缘记录拟合中心，失败时才进入 <code>0x1808620c0</code> fallback。</li>
+<li><code>0x180817c50</code>中只有已通过候选筛选的区域才会在callsite <code>0x180818c1a</code>调用 <code>0x1808609a0</code>。该helper再生成梯度及幅值平面并交给 <code>0x18085fcd0</code>做亚像素峰值、强弱标签和连接。候选列表为空时没有局部灰图或梯度输入，也不会执行这条细化链。</li>
+</ol>
+<h2 id="fixture逐像素复核">fixture逐像素复核</h2><p>原厂 <code>calibration-board-preprocess-fixtures.json</code> 对三种形状的contrast2输入保留factor5输出图和Otsu二值图；现有 <code>PreprocessChecks</code> 将当前实现的缩小图、掩码和原厂fixture逐像素比较。依据该已核验96×80掩码重算8邻接连通域，可复现：</p>
+<table>
+<thead>
+<tr>
+<th>合成形状</th>
+<th align="right">Otsu阈值</th>
+<th align="right"><code>&lt;阈值</code> 像素数</th>
+<th>区域面积分布</th>
+<th align="right">原厂 <code>&gt;4</code> 初筛存活数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>圆，半径9</td>
+<td align="right">254</td>
+<td align="right">320</td>
+<td>80个区域，每个4像素</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>椭圆，9×5</td>
+<td align="right">254</td>
+<td align="right">240</td>
+<td>80个区域，每个3像素</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>方形，边长约18</td>
+<td align="right">254</td>
+<td align="right">640</td>
+<td>80个区域，每个8像素</td>
+<td align="right">80</td>
+</tr>
+</tbody></table>
+<p>因此SDK fixture中contrast2圆/椭圆对所有被测圆度及四组边缘阈值均返回 <code>0x10000107</code>，与候选记录数为0一致；同一contrast的方形保留80点并成功。此“区域面积分布”是由原厂预处理像素fixture与反编译区域过滤规则推导的阶段重建值，不是对SDK内部组件scratch缓冲的直接动态捕获。</p>
+<p>方形control还说明阈值确会影响走到细化路径的输出：<code>EdgeThreshLow/High=0/1</code>的SDK首点为 <code>(89.9690857,79.9624481)</code>；<code>20/40</code>、<code>100/200</code>、<code>127/255</code>的首点均为 <code>(92,82)</code>。现有360组合候选fixture及 <code>CandidateChecks -AllCandidates</code>覆盖相应输入与首点差分。这个观测证明这些SDK setter输入与输出有关联，但并没有证明XML具名值具体写入 <code>param_10+0x28/+0x2c</code> 的哪一槽；映射仍需同实例setter→运行参数块trace。</p>
+<h2 id="实现判断和未知边界">实现判断和未知边界</h2><p>当前 <code>CalibrationBoardCircleCandidates</code> 已按factor5缩图、Otsu、阈值二值化、连通域面积 <code>&gt;4</code>、候选局部窗口和细化/回退分支运行；<code>CandidateChecks</code>以原厂初始候选fixture复核坐标、边缘拟合标志、尺寸、点数及SDK最终首点/失败状态。当前证据未显示本边界存在可安全落地的产品代码修正；因此本轮不更改产品算法。把contrast2圆/椭圆失败“修成”成功会违背当前原厂输入fixture。</p>
+<p>尚未捕获的原厂运行字段包括：实际SDK对象传给 <code>FUN_1807dda50</code> 的ROI矩形和参数块；<code>0x180877230</code>各阶段的实测Otsu阈值、组件面积数组及被过滤ID；每个候选 <code>0x180818c1a</code>的局部crop原始字节、stride、强/弱阈值槽；<code>0x1808609a0</code>返回记录、工作缓冲和fallback选择。现有360行公共SDK日志只保留输入case、异常码或点数/首点；不能当作这些中间缓冲的动态trace。</p>
+<p>如果后续要闭合square等非空低对比样本的阈值/亚像素路径，最低限度需要在原厂SDK进程对同一图像、同一实例记录：①调用 <code>EdgeThreshLow</code>、<code>EdgeThreshHigh</code> setter前后的参数块原始字节；② <code>0x1807dda50</code>入口的ROI四元组、factor和图像尺寸/stride；③ <code>0x180818c1a</code>入口的局部灰图、crop origin/dimensions及float阈值三元组；④<code>0x1808609a0</code>返回码、success标志、结果结构长度/字节、工作区；⑤ caller选择的contour ID、<code>0x180877b20</code>返回值与中心、fallback是否调用。对contrast2圆/椭圆只需trace到 <code>0x180877230</code>组件过滤后为空即可确认提前退出，无需伪造不存在的细化输入。</p>
+<h2 id="证据索引与验证">证据索引与验证</h2><p>机器证据摘要：<a href="../../../../analysis/calibration-board/circle-low-contrast-evidence.json">circle-low-contrast-evidence.json</a>。原厂模块/SDK哈希、反编译函数文件hash、fixture与探针hash均列在该JSON中；反编译符号为Ghidra地址命名，不是厂商原生符号。</p>
+<p>验证使用 <code>tests/CalibrationBoard.Checks/Run.ps1 -AllCandidates</code>：其中 <code>PreprocessChecks</code>覆盖factor2/factor5预处理fixture逐像素比较，<code>CandidateChecks</code>覆盖360组合原厂候选和SDK最终结果差分。设备测试与原厂桌面验收不在此范围。专项全量结果应以本轮运行摘要中的 <code>sourceChangedDuringBuild</code>、<code>exitCode</code>和<code>result</code>为准；通过fixture只证明受测合成输入，不证明未采集图像全等。</p>
+<p class="meta">来源：docs/plugins/CALIBRATION-BOARD-CIRCLE-LOW-CONTRAST-TRACE.md · SHA256 57c09223affa07ab8f2deba50bd4411947e2484815cbe3d115bcfd03d063183d<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,112 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 9b93e6234b1b · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 9b93e6234b1b</p><h1>原文证据 9b93e6234b1b</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 9b93e6234b1bf1bf5a681c0bc3ca0025eca7feafec489a7b9ad505ef67e4cdbb。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/image-chain.resources/Apps.BaseData.Byte2ImageSource.decompiled.cs:815–924
+SHA256 5dc37569de5839aef86821314724afd6d17fedc85863c7337e3ec52d08cc0253
+	public byte[] GetImageBufferByFileName(string fileName, int nWidth, int nHeight, PixelFormat npixelFormats, bool isDirect = true)
+	{
+		int num = 16;
+		try
+		{
+			if (MemoryHelper.Is64)
+			{
+				byte[] array = new byte[16];
+				_ = array.Length;
+				using MemoryMappedFile memoryMappedFile = MemoryMappedFile.OpenExisting(fileName);
+				using MemoryMappedViewAccessor memoryMappedViewAccessor = memoryMappedFile.CreateViewAccessor();
+				memoryMappedViewAccessor.ReadArray(0L, array, 0, array.Length);
+				if (array[8] != 0)
+				{
+					return null;
+				}
+				long num2 = BitConverter.ToInt64(array, 0);
+				if (num2 &lt; 0)
+				{
+					return null;
+				}
+				if (npixelFormats == PixelFormats.Gray8)
+				{
+					if (num2 != (long)nWidth * (long)nHeight)
+					{
+						return null;
+					}
+				}
+				else if (num2 != (long)nWidth * (long)nHeight * 3)
+				{
+					return null;
+				}
+				num = BitConverter.ToInt16(array, 14);
+				IntPtr intPtr = memoryMappedViewAccessor.SafeMemoryMappedViewHandle.DangerousGetHandle();
+				if (intPtr == IntPtr.Zero)
+				{
+					return null;
+				}
+				byte[] result = null;
+				if (isDirect)
+				{
+					if (m_wbBitmap == null)
+					{
+						return null;
+					}
+					if (num2 != (long)nWidth * (long)nHeight * (m_wbBitmap.Format.BitsPerPixel / 8))
+					{
+						return null;
+					}
+					m_wbBitmap.WritePixels(new Int32Rect(0, 0, nWidth, nHeight), intPtr + num, (int)num2, m_wbBitmap.PixelWidth * m_wbBitmap.Format.BitsPerPixel / 8);
+				}
+				else
+				{
+					result = ExternalCallHelper.IntPtr2Bytes(intPtr + num, (int)num2);
+				}
+				return result;
+			}
+			byte[] array2 = new byte[16];
+			_ = array2.Length;
+			using MemoryMappedFile memoryMappedFile2 = MemoryMappedFile.OpenExisting(fileName);
+			using MemoryMappedViewAccessor memoryMappedViewAccessor2 = memoryMappedFile2.CreateViewAccessor();
+			memoryMappedViewAccessor2.ReadArray(0L, array2, 0, array2.Length);
+			if (array2[8] != 0)
+			{
+				return null;
+			}
+			long num3 = BitConverter.ToInt64(array2, 0);
+			if (num3 &lt; 0)
+			{
+				return null;
+			}
+			if (npixelFormats == PixelFormats.Gray8)
+			{
+				if (num3 != (long)nWidth * (long)nHeight)
+				{
+					return null;
+				}
+			}
+			else if (num3 != (long)nWidth * (long)nHeight * 3)
+			{
+				return null;
+			}
+			num = BitConverter.ToInt16(array2, 14);
+			IntPtr intPtr2 = memoryMappedViewAccessor2.SafeMemoryMappedViewHandle.DangerousGetHandle();
+			if (intPtr2 == IntPtr.Zero)
+			{
+				return null;
+			}
+			byte[] result2 = null;
+			if (isDirect)
+			{
+				if (m_wbBitmap == null)
+				{
+					return null;
+				}
+				if (num3 != nWidth * nHeight * (m_wbBitmap.Format.BitsPerPixel / 8))
+				{
+					return null;
+				}
+				m_wbBitmap.WritePixels(new Int32Rect(0, 0, nWidth, nHeight), intPtr2 + num, (int)num3, m_wbBitmap.PixelWidth * m_wbBitmap.Format.BitsPerPixel / 8);
+			}
+			else
+			{
+				result2 = ExternalCallHelper.IntPtr2Bytes(intPtr2 + num, (int)num3);
+			}
+			return result2;
+		}
+		catch
+		{
+			return null;</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/image-pipeline--results.html">数据/image-pipeline--results.html</a></li><li><a href="../数据/image-pipeline--display.html">数据/image-pipeline--display.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

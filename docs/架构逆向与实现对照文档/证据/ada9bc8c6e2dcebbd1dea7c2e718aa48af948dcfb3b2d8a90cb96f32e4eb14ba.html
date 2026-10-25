@@ -1,0 +1,84 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 ada9bc8c6e2d · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 ada9bc8c6e2d</p><h1>原文证据 ada9bc8c6e2d</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 ada9bc8c6e2dcebbd1dea7c2e718aa48af948dcfb3b2d8a90cb96f32e4eb14ba。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/render-bridge.resources/VMControls.WPF.RenderControlBase.decompiled.cs:893–974
+SHA256 0ccc38b55e445f52f50647f3e888ff53d6829e698d93846a43187278b8dd69d6
+	private void OnPreduceResultCallBackArrived(object sender, EventArgs e)
+	{
+		ValueEventArgs valueEventArgs;
+		if ((valueEventArgs = e as ValueEventArgs) == null || !(valueEventArgs.Value is ImvsSdkDefine.IMVS_MODULE_WORK_STAUS { nWorkStatus: 0u } iMVS_MODULE_WORK_STAUS))
+		{
+			return;
+		}
+		if (!needUpdateRender)
+		{
+			needUpdateRender = true;
+			if (tempImageStore.ContainsKey(&quot;SelectedImage&quot;))
+			{
+				lock (_imageslock)
+				{
+					tempImageStore[&quot;SelectedImage&quot;] = null;
+				}
+			}
+			lock (_shapelock)
+			{
+				tempShapeStore.Clear();
+				return;
+			}
+		}
+		lock (_shapelock)
+		{
+			List&lt;object> list = tempShapeStore.Keys.ToList();
+			foreach (object item in list)
+			{
+				if (tempShapeStore.ContainsKey(item) &amp;&amp; tempShapeStore[item] is ValueEventArgs e2 &amp;&amp; e2.ExecuteCount != iMVS_MODULE_WORK_STAUS.nExecuteCount)
+				{
+					tempShapeStore.Remove(item);
+				}
+			}
+		}
+		long timestamp = Stopwatch.GetTimestamp();
+		if (!IsNeedRender(timestamp))
+		{
+			return;
+		}
+		oldTimeStamp = timestamp;
+		Task.Run(() =>
+		{
+			try
+			{
+				uint executeCount = valueEventArgs.ExecuteCount;
+				if (executeCount == 0)
+				{
+					UpdateImageView(null);
+				}
+				else
+				{
+					while (Apps.XmlParser.Object.GetDataSendFinishState(OwnerProcessID, executeCount))
+					{
+						Thread.Sleep(3);
+					}
+					UpdateRender(executeCount);
+				}
+			}
+			catch (Exception ex)
+			{
+				LogHelper.Error(&quot;渲染异常：&quot; + ex.Message + ex.StackTrace);
+			}
+		});
+	}
+
+	private void UpdateRender(uint excuteCount)
+	{
+		ImageData imageData = (tempImageStore.ContainsKey(&quot;SelectedImage&quot;) ? (tempImageStore[&quot;SelectedImage&quot;] as ImageData) : null);
+		if (imageData != ImageDataSource)
+		{
+			if (imageData == null &amp;&amp; ImageListDecorator?.SelectedImage?.DisplayObject is Apps.XmlParser.Object obj &amp;&amp; (obj.Owner as IVmModule)?.ExecuteCount == ExecuteCount)
+			{
+				imageData = obj.GetValue(uint.MaxValue) as ImageData;
+			}
+			if (imageData == null)
+			{
+				LogHelper.Debug($&quot;VmRenderControl:UpdateRender set imageData is null,ExecuteCount = {excuteCount}&quot;);
+			}
+			ImageDataSource = imageData;
+			if (tempImageStore.ContainsKey(&quot;SelectedImage&quot;))
+			{
+				lock (_imageslock)</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/image-pipeline.html">数据/image-pipeline.html</a></li><li><a href="../数据/image-pipeline--results.html">数据/image-pipeline--results.html</a></li><li><a href="../数据/image-pipeline--display.html">数据/image-pipeline--display.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

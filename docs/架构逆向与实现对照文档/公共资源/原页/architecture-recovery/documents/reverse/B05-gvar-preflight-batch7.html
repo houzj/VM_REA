@@ -1,0 +1,46 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B05.3 gvar 源码前置审查（第七批）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/B05-gvar-preflight-batch7.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#b053-gvar-源码前置审查第七批">B05.3 gvar 源码前置审查（第七批）</a></p><p style="margin-left:14px"><a href="#有限问题与退出结论">有限问题与退出结论</a></p><p style="margin-left:14px"><a href="#原源码链">原源码链</a></p><p style="margin-left:14px"><a href="#原件与-cil-审计">原件与 CIL 审计</a></p><p style="margin-left:14px"><a href="#仍缺解除条件与进度">仍缺、解除条件与进度</a></p></details><h1 id="b053-gvar-源码前置审查第七批">B05.3 gvar 源码前置审查（第七批）</h1><p>基线：<code>39a54c8</code>。这是总计划允许的提前源码调查，B01/B04 未关闭，未集成或关闭 B05。固定验收单元仍为 B05.3，不新增分母。<strong>结论：源码 partial 保持，未达到 done；实现未交付、验证阻塞保持。</strong></p>
+<h2 id="有限问题与退出结论">有限问题与退出结论</h2><p>本次只回答导入/导出入口、路径载荷、变量重建、SDK 边界与格式权威，不扩展整个变量服务。托管层并不写 gvar 文件；它把路径传给原生参数消费者。原生 <code>GlobalValueImport</code> / <code>GlobalValueExport</code> 消费函数及文件 reader/writer 未取得，格式/覆盖/密码/磁盘事务不能以托管入口代替。达到该缺体边界即停止，没有启动 SDK、真实实例或文件导入导出。</p>
+<h2 id="原源码链">原源码链</h2><p>原始证据均在 <code>analysis/decompiled/</code>：</p>
+<table>
+<thead>
+<tr>
+<th>源路径 / 成员</th>
+<th>确认行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:549,1578–1753</code>：装饰源、BtnImport_Click、ImportGlobalVar、BtnExport_Click、ExportGlobalVar</td>
+<td><code>VariableManager(DecorateSource)</code>；本地导入选已有 <code>.gvar</code>，Items 非空请求清空确认；FileInfo.Length 被读取但未用作格式校验。异步导入先按旧 Name 收集运行参数绑定；传入逆序 Dispose Outputs 的 UI 回调。成功后清旧 UI 并重读变量/组。导出要求有源且 Items 非空。nRet 初始 0 未被 SDK 返回赋值，不能把 UI 成功消息当实际往返证据。</td>
+</tr>
+<tr>
+<td>同文件 <code>1990–2071</code>：远程导入/导出入口</td>
+<td>本地上传到固定 <code>/root/vmtempfiles/ftp/ModelFiles/temp.gvar</code> 时 <code>bCreatDir=true,bCover=true</code>；导出下载 <code>bCover=true</code> 后检查本地存在，成功移除远端临时文件。该 FTP 覆盖选项不能外推本地 native gvar 覆盖规则。</td>
+</tr>
+<tr>
+<td><code>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VariableManager.cs:1566–1634</code>：ExportVar、ImportVar</td>
+<td>路径空/null 抛 VmException(-536870911)；路径 <code>UTF8GetBytesPadZero</code> 写 DataSource.Params 的 <code>GlobalValueExport</code> / <code>GlobalValueImport</code>。无格式、密码、扩展名解析；不是 managed XML/JSON 序列化。导入 native 写入先于旧输出解绑和重建。</td>
+</tr>
+<tr>
+<td>同文件 <code>1024–</code>：GetAllVar 两重载</td>
+<td><code>VarCount</code> 可解析且 &gt;0 才取 <code>GlobalValueList</code>；长度须整除 IMVS_VARIABLE 大小。读取 Name/Type/Index/Guid/GroupInfo 等 SDK 字段，数组值涉及原生指针复制。Guid 是读取值，不证明导入保留或重生成 GUID 的规则。</td>
+</tr>
+<tr>
+<td><code>VM.Core/VM.Core/ModuleParam.cs:55–111</code>：IUserBytesData setter</td>
+<td>已 Dispose 则直接返回；包含模型时注册模型历史。普通键走 ModuleManager.SetBinaryData(Parent.ID,key,value,TimeOut)，非零抛异常。此处不序列化文件。</td>
+</tr>
+<tr>
+<td><code>VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs:1564–1596</code>、ServerSDKAPI.IMVS_SetBinaryData、NativeMethods.IMVS_SetBinaryData</td>
+<td>名称固定 256 UTF8 字节，byte[] 分配 HGlobal、Copy、原调用、FreeHGlobal；普通返回非零仍释放，但非 finally，调用异常时释放无保证。P/Invoke 声明 <code>.\\iMVS-6000PlatformSDK.dll</code>、StdCall；声明不是 native export/函数体运行验证。</td>
+</tr>
+</tbody></table>
+<p>ImportVar 对 CustomVisibleA 旧输出逆序解绑，解绑异常记录后继续；ChangeToSendReceiveData 后按旧输出 Name 恢复提供的 runParaminfo。其默认 runParaminfo=null，但该分支直接 ContainsKey；UI 路径提供字典，不能据此宣称全部调用安全。之后调用 delIOAct；UI 路径清静态 ModuleVarDict，GetAllVar 并 AddIoByType，以新数据 Name/Type/组合叶名建输出，再设 Index。类型不支持会在 native import 之后抛出，未看到一体回滚。变量附着 DataSource 模块，不应混为已有局部变量实现已支持 gvar。</p>
+<h2 id="原件与-cil-审计">原件与 CIL 审计</h2><p><code>tests/NativeEvidence/B05Gvar/Run.ps1</code> 使用 .NET Framework csc 构建自有元数据导出器；ReflectionOnlyLoadFrom，不调用目标构造、方法或属性。导出9个原方法体：VariableManager 5（含 GetAllVar 双重载）、ModuleParam 字节 setter 1、SDK SetBinaryData 双重载及转发 3。包括 IL 字节摘要、token、异常表、操作数和原件 MVID/SHA256。</p>
+<p>输出：<code>analysis/full-audit/batch7-20261019/B05/run-77efb7b589ec4b1ca3c6a7e69d27a961</code> 与 <code>run-a1eb26d62f3d4dfcafdfa301abf51e50</code>。首次显式接口方法名匹配为0，原日志保留；第二次按元数据后缀修正为1，不能把首次0当完成。以包含9体的 run 作为最终证据，具体各 JSON 记录方法数。三个安装原件前后 SHA256 相等。</p>
+<p>REA 原生边界证据 <code>ev_3d164ee62a60810882e6c7885ea294d96fd5dc0b2cef93878d1aab1c2a296d5f</code> 落盘 <code>rea-native-boundaries.json</code>，其 native import 是 managed declaration only。没有重复失败的 native provider 初始化或大范围方法库存；未取得 native 参数处理体的事实保留。</p>
+<h2 id="仍缺解除条件与进度">仍缺、解除条件与进度</h2><ol>
+<li>取得同版本 native 参数键处理 → gvar 文件读写函数体，证明文件头、版本、字段/变量 GUID、组与作用域、覆盖与密码规则；否则源码仍 partial。</li>
+<li>取得受控自有实例隔离条件后，运行导入前后变量及订阅身份、错误码、损坏文件、重复名、导出重导入；检查原 native 文件往返。不得对安装实例直接试验。</li>
+<li>产品交付须等待 B01/B04 前置和所属主框架合同，不以 JSON 改名 gvar；本批无产品补丁或运行通过数。</li>
+</ol>
+<p>本次新增结果是排除托管格式假设并定位精确 native 缺体，不产生验收项完成数。B05.3 源码/实现/验证三层增量均为0，96项分母不变。tool-plugins 未读取或修改；无构建主产品、提交或推送。</p>
+<p class="meta">来源：docs/reverse/B05-gvar-preflight-batch7.md · SHA256 6a72779c1d1b1701111331fd3e505e01b6ff981c34f88a60d7fb4d0c9207972d<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

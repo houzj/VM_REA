@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RegisterEncryOperation(path,isEbcry) · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>RegisterEncryOperation(path,isEbcry) · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-P06"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>RegisterEncryOperation(path,isEbcry) → 移走原文件 → 解包与根文件变换try → 删除备份/压回</h2><p>File.Exists=false早退。固定VMExtensionTemp派生临时归档/目录，先File.Move，再按目录是否存在创建；这些步骤在try外。try仅含DecompressToFiles和Directory.GetFiles根目录逐项RegisterEncryToFile。catch先递归删临时目录、再移归档回原路径、throw ex；这两次恢复操作也可能抛错。正常路径先File.Delete临时归档，再CompressZipFiles回原路径，压缩不在上述恢复catch内。</p><p><a href="../专题/communication-protection.html#edge-P06">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-protection.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-protection.edges.json · SHA256 78cdc1eaa90290bfce0f1009a8bdde609e5f46002e27f42770a3f3f12b6bb046</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="2a5ee293e6b1e6bd69d1519ce14fef76167f58ca3d4414dea31dff9512f279cb">{
+  &quot;id&quot;: &quot;P06&quot;,
+  &quot;route&quot;: &quot;原版 · 文件重写与恢复&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;RegisterEncryOperation(path,isEbcry)&quot;,
+  &quot;to&quot;: &quot;移走原文件 → 解包与根文件变换try → 删除备份/压回&quot;,
+  &quot;behavior&quot;: &quot;File.Exists=false早退。固定VMExtensionTemp派生临时归档/目录，先File.Move，再按目录是否存在创建；这些步骤在try外。try仅含DecompressToFiles和Directory.GetFiles根目录逐项RegisterEncryToFile。catch先递归删临时目录、再移归档回原路径、throw ex；这两次恢复操作也可能抛错。正常路径先File.Delete临时归档，再CompressZipFiles回原路径，压缩不在上述恢复catch内。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/CommunicationEncryService.cs&quot;,
+      &quot;member&quot;: &quot;CommunicationEncryService.RegisterEncryOperation&quot;,
+      &quot;sha256&quot;: &quot;a1a98bf19b95958cf2b49b96d0f3dfd95e0c5336a6fa89afa85e3b6e675c4aba&quot;,
+      &quot;start&quot;: 12,
+      &quot;end&quot;: 49,
+      &quot;excerpt&quot;: &quot;\tpublic static void RegisterEncryOperation(string path, bool isEbcry)\n\t{\n\t\tif (!File.Exists(path))\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tstring text = \&quot;VMExtensionTemp\&quot;;\n\t\tstring extension = Path.GetExtension(path);\n\t\tstring fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);\n\t\tstring text2 = fileNameWithoutExtension + text;\n\t\tstring directoryName = Path.GetDirectoryName(path);\n\t\tstring text3 = directoryName + \&quot;\\\\\&quot; + text2 + extension;\n\t\tFile.Move(path, text3);\n\t\tstring text4 = directoryName + \&quot;\\\\\&quot; + text2;\n\t\tif (!Directory.Exists(text4))\n\t\t{\n\t\t\tDirectory.CreateDirectory(text4);\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tDecompressToFiles(text3, text4);\n\t\t\tstring[] files = Directory.GetFiles(text4);\n\t\t\tstring[] array = files;\n\t\t\tforeach (string path2 in array)\n\t\t\t{\n\t\t\t\tRegisterEncryToFile(path2, isEbcry);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tDirectory.Delete(text4, recursive: true);\n\t\t\tFile.Move(text3, path);\n\t\t\tthrow ex;\n\t\t}\n\t\tFile.Delete(text3);\n\t\tCompressZipFiles(text4, path, zipFinishRemoved: true);\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-protection-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VMControls.WPF.GlobalUI.CommunicationEncryService::RegisterEncryOperation&quot;,
+      &quot;sha256&quot;: &quot;092ee644f1e760b48ff5ef5727fcc7237a7d09a862137215d9403da5ad54e72a&quot;,
+      &quot;start&quot;: 10499,
+      &quot;end&quot;: 10518,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000578\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000578\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VMControls.WPF.GlobalUI.CommunicationEncryService\&quot;,\n            \&quot;name\&quot;: \&quot;RegisterEncryOperation\&quot;,\n            \&quot;parameters\&quot;: 2,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;0002010e02\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 233,\n          \&quot;ilSha256\&quot;: \&quot;aa088fd390ee799f25df7ae0fcea575e17c9e62e478701aaf5afcf872a154078\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;000228c600000a16fe01130711072c0538d300000072434a00700a0228da00000a0b0228d900000a0c0806284300000a0d0228c700000a130411047208050070090728e800000a1305021105280a05000a001104720805007009283a00000a1306110628df00000a16fe01130811082c0a001106280b05000a2600000011051106287c050006001106280c05000a1309001109130a16130b2b18110a110b9a130c00110c03287d0500060000110b1758130b110b110a8e6932e000de18130d00110617280d05000a00110502280a05000a00110d7a1105280e05000a00110602171c2879050006002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;临时路径碰撞、既有目录/文件混入、移动/删除/恢复失败及重压缩失败的实际磁盘状态未验证；不称原子事务或全异常可恢复。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

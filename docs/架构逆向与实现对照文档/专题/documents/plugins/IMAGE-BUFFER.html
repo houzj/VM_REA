@@ -1,0 +1,72 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>缓存图像（ImageBufferModule） · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 缓存图像（ImageBufferModule）</p><h1>缓存图像（ImageBufferModule）</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>缓存图像（ImageBufferModule）</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="IMAGE-BUFFER.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="IMAGE-BUFFER.html#缓存图像imagebuffermodule">缓存图像（ImageBufferModule）</a></p><p style="margin-left:14px"><a href="IMAGE-BUFFER.html#原厂证据">原厂证据</a></p><p style="margin-left:14px"><a href="IMAGE-BUFFER.html#状态机与运行对照">状态机与运行对照</a></p><p style="margin-left:14px"><a href="IMAGE-BUFFER.html#实现与宿主">实现与宿主</a></p><p style="margin-left:14px"><a href="IMAGE-BUFFER.html#验证与边界">验证与边界</a></p></details><h1 id="缓存图像imagebuffermodule">缓存图像（ImageBufferModule）</h1><p>本工具的代码范围交付：<code>vision.image-buffer@1.0.0</code>。按用户要求不做设备测试；必要的公共调整在插件 worktree 内实施。验收区分原厂源码确认、受控运行确认和独立宿主实现，不以测试通过宣称原生全场景等价。</p>
+<h2 id="原厂证据">原厂证据</h2><ul>
+<li>安装目录：<code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageBufferModule</code>。10 个文件的大小和 SHA256 在 <a href="../../../../plugins/image-buffer-evidence.json">运行证据</a> 中。原生 DLL SHA256 为 <code>ab8850d7a747df693152ef7e095a5e0ef87eff9410c2424e9b7c84e435717869</code>。</li>
+<li>REA 托管身份检查见 <a href="../../../../plugins/image-buffer-managed-evidence.json">managed-evidence</a>，证据 ID <code>ev_55fb472136534032f802d8994577614bd1f68c1c28e44139a4938f0838a55e89</code>。ILSpy 提取 SDK 包装层到当前 <code>analysis/full-audit/image-buffer/managed</code>，产品不加载这些 DLL。</li>
+<li>原生分析采用本地 <strong>Ghidra CLI</strong>，不是 REA 深度提供器。当前 worktree 内的 <code>ghidra-project/buffer</code>、<code>native/*.c</code>、日志保留原始分析输出；不写原证据目录。关键函数：<code>Process</code> RVA <code>0xde30</code>、<code>GetInImage</code> <code>0xe540</code>、<code>CopyImage</code> <code>0xe6a0</code>、<code>SetOutImage</code> <code>0xe760</code>、<code>DeInit</code> <code>0xdd20</code>、<code>LoadModuleData</code> <code>0xe9a0</code>、<code>SaveModuleData</code> <code>0xea80</code>。</li>
+<li>声明是 0 个算法参数、3 个逻辑输入、17 个逻辑输出；展开图像组合后是 62 个端口。SDK <code>ImageBufferParam.InputImage/RefreshFlag/BufferCount</code> 均为输入设置器；后两者取整数列表的第一个元素。</li>
+<li>参数区来自 <code>ImageBufferModuleAlgorithmTab.xml</code>；共享 <code>Applications/Module(sp)/Group.xml</code> 定义图像输入及底部执行组。<code>Apps.XmlParser.ParamTab.GroupLinkItem.AfterAddedToArray</code> 实施组展开，<code>GroupsRoot</code> 默认从应用运行目录寻找文件。独立探针显式加载原始组 XML，解决 SDK 测试程序运行目录导致共享组缺失的问题，未改原文件。</li>
+<li><code>ButtonSelecter</code>、<code>GetFrontFilterTreeOperation</code>、<code>GetSelectedFilterOperation</code>、<code>SetFilterSourceOperation.GetOutputInfo/CheckValue</code> 源码确认支持整数常量、空绑定和订阅。<code>InputItem.SetInputImageValue</code> 源码确认 SDK 把非标准格式标记归为 Mono8，但保留载荷；原生缓存算法本身不做此归一化。</li>
+</ul>
+<h2 id="状态机与运行对照">状态机与运行对照</h2><p>原厂独立 SDK 进程执行 <strong>55 组</strong>合成图像序列及 <strong>2 组</strong>无输入对照，逐槽记录尺寸、格式、长度、所有像素的 SHA256，覆盖 15 路输出。清单包含正常序列、混合尺寸/格式、原始格式元数据以及 SOL 重载。生成器逐文件核对 <code>.pixels</code> 与摘要后才导出可跟踪 JSON。</p>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>原厂源码与受控运行确认的行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>未绑定刷新/数量</td>
+<td>默认刷新 <code>1</code>，默认数量 <code>15</code></td>
+</tr>
+<tr>
+<td><code>RefreshFlag == 1</code></td>
+<td>复制本次输入，追加队尾，然后从队首裁剪到指定数量</td>
+</tr>
+<tr>
+<td>刷新为 <code>0</code>、<code>-1</code>、<code>2</code></td>
+<td>保持缓存；不读取本次图像，不裁剪队列</td>
+</tr>
+<tr>
+<td>输出顺序</td>
+<td><code>OutImage0</code> 最旧，随后依次到最新；未填满的槽位无图像</td>
+</tr>
+<tr>
+<td>数量 <code>0</code></td>
+<td>刷新时仍先读取/复制输入，再清空队列；暂停刷新时不清空</td>
+</tr>
+<tr>
+<td>数量小于 <code>0</code> 或大于 <code>15</code></td>
+<td>先返回 <code>0xe000031c</code>，不读图、不改队列；本次无图像输出、状态为 <code>0</code></td>
+</tr>
+<tr>
+<td>刷新时无图像</td>
+<td><code>GetInImage</code> 返回 <code>0xe0000510</code>；原有队列不变</td>
+</tr>
+<tr>
+<td>尺寸、灰度、RGB、RGB平面变化</td>
+<td>逐帧保留；不要求所有缓存帧同形、同格式</td>
+</tr>
+<tr>
+<td>字节/格式标记</td>
+<td>原生 <code>CopyImage</code> 按输入长度复制；不解码、不归一化格式、不截断多余字节</td>
+</tr>
+<tr>
+<td>保存重载</td>
+<td>只保存动态输入/输出元数据，不保存图像队列；恢复后暂停刷新得到空缓存</td>
+</tr>
+</tbody></table>
+<p>原厂样例加载及重载均报告 <code>0xe0000333</code> 的部分加载错误，已保留，不称为完整样例加载成功。探针继续操作自己创建的流程和缓存模块；自有 SOL 中的该模块能恢复，恢复后的 15 路均为空。没有运行设备、操作原厂桌面或保存安装目录样例。</p>
+<h2 id="实现与宿主">实现与宿主</h2><ul>
+<li><code>ImageBufferPlugin</code> 独立维护每个会话、每个节点的有界 FIFO，复制拥有所有权的图像；运行器重建不会重置队列。删除节点、释放会话、重开方案均清理状态；取消在修改前检查。无会话调用采用插件实例内按目录/节点隔离的兼容缓存，可用 <code>Reset</code> 清理。</li>
+<li>无图像的输出槽在独立框架中以缺席的可选端口表示，不伪造零尺寸图像，也不复用旧结果。成功发布 <code>ModuStatus=1</code> 和运行时间，失败发布状态 <code>0</code> 和原厂错误码。</li>
+<li><code>RawImage</code> 承载不可解码或带额外字节的原始图像；<code>ImagePreview.Packed</code> 仅为预览转换已知灰度/RGB/平面格式，缓存载荷及格式不变。未知标记保持可传递，预览为空；损坏内存与任意非法指针不复刻。</li>
+<li><code>ImageBufferWindow</code> 实现图像输入、缓存使能、缓存数量、整数键入/清空、订阅回填、执行/连续执行/停止/确定。桌面适配有宿主标题，SDK适配不加标题。订阅复用当前宿主选择器，其整体外观和路径键入交互属于独立宿主实现，不声称复刻原厂全部共享弹层。</li>
+<li>宿主注册第三个独立工具并提供 15 路预览；输出提供器不必伪装成图像列表提供器。缓存节点不显示单图列表操作。</li>
+<li><code>WorkflowSourceKind.IntegerConstant</code> 追加在枚举尾部，存储有符号 32 位整数字面值；执行、类型校验、持久化、撤销与标签均接通。它不是新增原厂算法参数。新文档需要更新后的宿主，旧枚举值保持不变。</li>
+<li>模块自执行从当前上游结果、变量或订阅取输入，只执行当前节点并更新预览；不重新运行前序图像源。连续按钮串行调度，停止后不再启动下一次；其调度时序是独立实现，不宣称与原厂线程/回调时序一致。</li>
+</ul>
+<h2 id="验证与边界">验证与边界</h2><p>入口：<code>tests/NativeEvidence/Invoke-OriginalImageBufferProbe.ps1</code>（原厂受控探针，无设备分支）、<code>tests/Export-ImageBufferEvidence.py</code>、<code>tests/ImageBuffer.PluginChecks</code>。原厂完整共享参数区截图、独立两种宿主截图及原始像素留在当前 <code>analysis/full-audit/image-buffer</code>；文件身份见证据及最终验证索引。</p>
+<p>原始程序集、Ghidra 数据库、SOL、像素及 SDK 截图有意不随 Git 分发，需要本地原厂安装重放。未逐像素核对原厂桌面外壳和全部共享订阅弹层；未测试物理设备；VMX不是SOL二进制兼容格式；内存分配失败及非法输入造成的原厂未定义行为不复刻。这些不影响本工具当前明确的代码交付范围，不标记为原生完全等价。</p>
+<p>最终全解决方案构建 <strong>0 警告、0 错误</strong>。19 个检查程序共 <strong>3429 项</strong>通过：缓存图像 <strong>1623</strong>、图像源 <strong>767</strong>、多图采集 <strong>327</strong>、实际 WPF 宿主 <strong>252</strong>、其他 15 程序 <strong>460</strong>。日志、源码与原厂/独立界面摘要见 <a href="../../../../plugins/image-buffer-verification.json">最终验证索引</a>。</p>
+<p class="meta">来源：docs/plugins/IMAGE-BUFFER.md · SHA256 90f7a2c6059d169c5177ee29ac5d57d0466deb79cdfeecd05361bf5b2dfea149<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,46 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D4 文件矩阵方向有限源码切片（2026-10-19） · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D4 文件矩阵方向有限源码切片（2026-10-19）</p><h1>D4 文件矩阵方向有限源码切片（2026-10-19）</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D4 文件矩阵方向有限源码切片（2026-10-19）</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.html#d4-文件矩阵方向有限源码切片2026-10-19">D4 文件矩阵方向有限源码切片（2026-10-19）</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.html#原件与获取">原件与获取</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.html#从文件到原始矩阵实参">从文件到原始矩阵实参</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.html#7d4f20-与-730be0-的实际运算">7d4f20 与 730be0 的实际运算</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.html#caller-的失败与输出">caller 的失败与输出</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.html#严格对照与剩余缺口">严格对照与剩余缺口</a></p></details><h1 id="d4-文件矩阵方向有限源码切片2026-10-19">D4 文件矩阵方向有限源码切片（2026-10-19）</h1><p>本切片补回此前缺失的原厂 <code>1807d4f20</code>，连接模块文件缓存、SDK 双文件接口、核心实际 caller 与乘法 ABI。只做源码/汇编审查，无产品修改、原厂执行或新增图像样本。D4 仍仅 S0 完整；本切片不单独增加阶段分，D 总 5/32，整卡 0/4。</p>
+<h2 id="原件与获取">原件与获取</h2><p>原件 <code>D:/Program Files/VisionMaster4.4.0/MVDAlgorithmSDK/Runtime/x64/MVD_Algorithm.dll</code>，SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。先在当前 <code>analysis/map-calibration</code>、原项目 <code>D:/MyWork/REA逆向测试/analysis</code> 递归检索同名 C，均无 <code>1807d4f20.c</code>；没有用旧报告或托管实现冒充函数体。REA provider 不可用沿用已记录状态，采用身份匹配的私有 Ghidra 12.1.4/JDK21 工程、<code>-noanalysis -readOnly</code> 定向导出，未修改全局配置。无 REA Evidence ID。</p>
+<p>新原始产物位于 <code>analysis/map-calibration/d4-file-direction/source</code>：<code>1807d4f20</code>、<code>180730be0</code>、实际 caller <code>1807fbec0</code> 的 C/asm/cookie tails；<code>file-direction-references.txt</code> 记录唯一直接 CALL <code>1807fbf35</code>，另一 DATA 引用不作为操作号分派证据。源码/汇编 SHA256、原 PE 常量字节由 <code>ExportD4FileDirectionIndex.py</code> 生成 <code>source-index.json</code>。复现入口 <code>RunD4FileDirectionExport.ps1</code>，仅使用现有私有工程。</p>
+<h2 id="从文件到原始矩阵实参">从文件到原始矩阵实参</h2><table>
+<thead>
+<tr>
+<th>链路</th>
+<th>具体源码确认</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模块 <code>ReadFileMatrix</code>，module/1800227d0.c</td>
+<td><code>side==0</code> 写 <code>this+0x17360</code>；其他 side 写 <code>+0x17368</code>。XML 分支逐项写至多 9 个 float；二进制分支读文件原始字节，不在此处做转置或求逆。此处只核方向，完整文件失败/缓存生命周期另列。</td>
+</tr>
+<tr>
+<td>模块 <code>ProcessAlg</code>，module-analyzed/180021c50.c:114–115</td>
+<td>模式 2 取得双文件参数对象后，<code>virtual+0x10(object, this[0x17360])</code>、<code>virtual+0x20(object, this[0x17368])</code>，源码显式保留两个实参。</td>
+</tr>
+<tr>
+<td>原 SDK <code>MapCalibCpp.h:137–174</code></td>
+<td><code>ITwoFileMapBasicParam</code> 析构槽 0，GetSourceCalibFileData +8、SetSource +0x10、GetTarget +0x18、SetTarget +0x20。source/target 命名来自原头文件。</td>
+</tr>
+<tr>
+<td>SDK wrapper/180005860.c</td>
+<td>依次 GetSource(+8)、GetTarget(+0x18)，构造 16 字节 <code>[source pointer,target pointer]</code>；<code>MVD_Algorithm_Process(handle,0x6f,&amp;input,&amp;output)</code>，输出 44 字节先清 0；成功后复制 9 个矩阵 float 和 2 个比例 float 到结果对象。</td>
+</tr>
+<tr>
+<td>核心 7fbec0 / asm 7fbee8–7fbf35</td>
+<td>要求输入 size=0x10、输出 size=0x2c；<code>RCX=[input]</code>、<code>RDX=[input+8]</code>、<code>R8=output</code>，调用 7d4f20。因此实际输入第 1 指针是 source，第 2 指针是 target；不是按旧方向名称猜参数。</td>
+</tr>
+</tbody></table>
+<p>本切片没有重新恢复整个 <code>MVD_Algorithm_Process</code> 的 0x6f 内部分派表。wrapper 操作号和核心 caller 的各自 ABI 是本次原体直接证据；二者的操作注册/转发关联复用既有 SDK 文件模式证据，尚不能称本次静态体逐跳闭合。<code>SetParam(CalibPath*)</code> 某些反编译调用漏掉第 2 实参，本报告不使用该缺参表达式证明缓存绑定，改用 <code>ProcessAlg</code> 显式调用。</p>
+<h2 id="7d4f20-与-730be0-的实际运算">7d4f20 与 730be0 的实际运算</h2><p>修正后的核心签名为 <code>uint32 core(float* source, float* target, float* out9, float* scaleX, float* scaleY, int* success)</code>；反编译 <code>void</code> 由 cookie 后汇编纠正：空参数返回 <code>0x10000014</code>，非空路径最终返回 0。<code>out9</code> 的 16 字节数组类型只是 SIMD 恢复类型，不代表矩阵元素间距16。</p>
+<ol>
+<li><code>7d5054</code> 起只从 RDX（target）读取 9 个行主序 float。行列式按原标量 float 顺序为 <code>(((t22*(t00*t11) + t20*(t01*t12) + t21*t02*t10) - t21*t00*t12) - t22*t01*t10) - t20*t11*t02</code>。不改为 double 行列式或重排公式。</li>
+<li>有限数分支要求 <code>abs(det)&gt;=double epsilon</code>（PE 181628540=2.220446049250313e-16）。<code>7d514c COMISD epsilon,absDet; 7d5151 JBE inverse</code> 是实际谓词；unordered 也跳入 inverse，不能把 C 的有序 <code>&lt;=</code> 外推为 NaN 拒绝策略。</li>
+<li><code>1.0f/det</code> 与伴随矩阵元素以 float 生成局部 inverse(target)。<code>7d5241</code> 先写 success=1；奇异分支 <code>7d5153</code> 只写 success=0，不写 out9、scaleX/Y，核心仍返回0。</li>
+<li><code>7d5247–7d529b</code> 传乘法 ABI：RCX=局部 inverse、EDX=3（左行步长）、R8D=3（内积长度）、R9=入口保留的 source；栈上传 source 行步长3、尺寸(3,3)、out9、输出行步长3、尺寸(3,3)。<code>730be0</code> 的地址索引是左矩阵行 × 右矩阵列，故原体确认 <code>H=inverse(target)*source</code>。其中内积先以 <code>0+a0*b0+a1*b1</code> 累计，再加第3项；本报告未用数学乘法可交换性代替该地址证据。</li>
+<li>原 PE <code>18162854c</code> 与 SIMD <code>181628530</code> 四槽均为 <code>1.1920928955078125e-7f</code>。输出9项除以 <code>oldH[8]+epsilon_float</code>，包括 h33 自身；使用 DIVPS/DIVSS，无另一次精确单位化。正常不重叠 out9 的地址谓词走 <code>7d52c3</code> 分支；另一 SIMD 常量分支数值常量相同，但不据此宣称所有别名输入安全。</li>
+<li>scaleX=<code>sqrt(H[0]^2+H[3]^2)</code>，scaleY=<code>sqrt(H[1]^2+H[4]^2)</code>，均在归一化写回后读矩阵，标量 MULSS/ADDSS/SQRTSS。</li>
+</ol>
+<h2 id="caller-的失败与输出">caller 的失败与输出</h2><p><code>7fbec0</code>：尺寸不符返回 <code>0x1000000e</code>；第5参数为空返回 <code>0x10000002</code>；两矩阵/输出为空返回 <code>0x10000014</code>（输入结构基址自身不额外判空，不能据此承诺任意空调用安全）。初始化两个比例临时值与 success 为0，调用核心；核心非0则透传，核心0但 success!=1 返回 <code>0x10103002</code>。只有 success==1 才将 scaleX/Y 写到 output+0x24/+0x28，返回0。矩阵内容由核心直接写到 output 前36字节。</p>
+<p>这解释源零矩阵无需源行列式检查、目标奇异由外层状态转错的源码条件；没有新增原厂运行来扩展既有72例有限验收。SDK wrapper 预清 output，与直接 caller 输出缓存是否预清不同，不能把 caller 奇异路径说成主动清9项。</p>
+<h2 id="严格对照与剩余缺口">严格对照与剩余缺口</h2><p>旧报告 <code>inverse(target)*source</code> 和 epsilon 结论由新原体独立确认；source/target 方向来自模块虚表、SDK头文件和实际 caller 的输入指针顺序。托管 <code>MapCalibrationSolver.SolveFiles/Compose</code> 仅作为后续产品对照位置，不是本切片证据来源。</p>
+<p>仍开放：0x6f 注册/转发的整段静态桥、文件解析返回码与缓存替换全部分支、双ROI形状所有权/空ROI setter行为、模块复用、显示/释放完整链及真实宿主整卡验收。无需为本文件方向切片扩展所有生命周期，也不因本切片把 D4 S1/S2 标为完成。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D4-FILE-DIRECTION-SOURCE.md · SHA256 2645f78e3f910ed1cce7860049602bc5176878f14be0d20dbfbcf0b6eb2fa77b<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

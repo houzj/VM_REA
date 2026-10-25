@@ -1,0 +1,57 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-05 流程执行调用链逆向 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / MF-05 流程执行调用链逆向</p><h1>MF-05 流程执行调用链逆向</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-05 流程执行调用链逆向</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="MF05-PROCEDURE-RUN-CALLCHAIN.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MF05-PROCEDURE-RUN-CALLCHAIN.html#mf-05-流程执行调用链逆向">MF-05 流程执行调用链逆向</a></p><p style="margin-left:14px"><a href="MF05-PROCEDURE-RUN-CALLCHAIN.html#普通流程单次运行">普通流程单次运行</a></p><p style="margin-left:14px"><a href="MF05-PROCEDURE-RUN-CALLCHAIN.html#其他运行入口的区别">其他运行入口的区别</a></p><p style="margin-left:14px"><a href="MF05-PROCEDURE-RUN-CALLCHAIN.html#原生方案保存完成链">原生方案保存完成链</a></p><p style="margin-left:14px"><a href="MF05-PROCEDURE-RUN-CALLCHAIN.html#主框架当前边界">主框架当前边界</a></p><p style="margin-left:14px"><a href="MF05-PROCEDURE-RUN-CALLCHAIN.html#未知与下一项源级问题">未知与下一项源级问题</a></p><p style="margin-left:14px"><a href="MF05-PROCEDURE-RUN-CALLCHAIN.html#可复验路径">可复验路径</a></p></details><h1 id="mf-05-流程执行调用链逆向">MF-05 流程执行调用链逆向</h1><p>更新：2026-10-19。此记录区分 VM 的托管可见调用链与 native SDK 内部未知行为。它不把独立 WPF 执行器描述成 VM 算法复刻。</p>
+<blockquote>
+<p>2026-10-22 补证：下文“SyncWaitor 实现未取得”是旧断点；第二批已取得原 <code>VM.Util.dll</code> CIL 并运行受控探针，见 <a href="reverse/C02-scheduling-batch2.html">C02 第二批</a>。<code>IMVS_Set/GetProcedureWaitTime</code> 的 x64 导出与下层命令传输也已静态恢复，见 <a href="reverse/C02-native-wait-transport-20261022.html">C02 原生等待传输</a>。服务端消费字段 8 后的实际计时、执行取消和回调归因仍未知。保留以下旧段落作为历史，不再用其描述当前缺证据范围。</p>
+</blockquote>
+<h2 id="普通流程单次运行">普通流程单次运行</h2><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>原始证据</th>
+<th>确认行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>公开入口</td>
+<td><code>analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs::Run()</code></td>
+<td>调用 <code>ProcessManager.SyncExecuteOnce(ID)</code>；异常时置 <code>IsRunning=false</code> 并重新抛出 <code>VmException</code>。</td>
+</tr>
+<tr>
+<td>带选项入口</td>
+<td><code>VmProcedure.Run(string,bool,bool)</code></td>
+<td>非 SDK 模式先置 <code>IsRunning=true</code>，再将触发字符串、是否等待和是否响应 UI 传给 <code>SyncExecuteOnce</code>；异常回滚 <code>IsRunning</code>。</td>
+</tr>
+<tr>
+<td>托管执行入口</td>
+<td><code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ProcessManager.cs::SyncExecuteOnce</code></td>
+<td>流程 ID 先换算为 <code>nProcessID-10000</code> 并检查0..999；先重置该流程完成标志，再调用 <code>ServerSDKAPI.IMVS_ExecuteOnce_V30</code>；native 返回非零抛出；<code>bIsWait=true</code> 时调用 <code>SyncWaitor.PrecisionWait</code>。</td>
+</tr>
+<tr>
+<td>完成回调</td>
+<td><code>ProcessManager.GetWorkStatusCallBackInfo</code></td>
+<td>仅在 <code>nWorkStatus==0</code> 且流程索引有效时写 <code>mProcedureNormalFlag</code> 与 <code>mProcessRunFlag=true</code>；随后派发 <code>OnWorkStatusCallBack</code>。</td>
+</tr>
+<tr>
+<td>等待时间配置</td>
+<td><code>ProcessManager.GetProcedureWaitTime</code> / <code>SetProcedureWaitTime</code></td>
+<td>托管方法转发至 <code>IMVS_GetProcedureWaitTime</code> / <code>IMVS_SetProcedureWaitTime</code>，检查 native 返回码；反编译源码没有给出 native 计时、取消或状态归因逻辑。</td>
+</tr>
+</tbody></table>
+<h2 id="其他运行入口的区别">其他运行入口的区别</h2><ul>
+<li><code>VmProcedure.Run(string, ref uint, bool, bool)</code> 走 <code>SyncExecuteOnceEX</code>，转发至 <code>IMVS_PF_ExecuteOnceEX_V30</code> 并可按 <code>bIsWait</code> 等待。</li>
+<li><code>VmProcedure.RunP2P(uint nTimeout, bool)</code> 走 <code>SyncExecuteOnceP2P</code>：在1024槽位中循环分配命令索引，将其字符串作为 command 传给 <code>IMVS_ExecuteOnce_V30(..., bIsP2P:true)</code>；完成回调按命令字符串解析索引并置对应标志。其等待结束后才递减 <code>NumOfRunP2PFlag</code>。<code>SyncWaitor.PrecisionWait</code> 的实现不在已反编译清单内，因此超时/异常路径中该计数是否总能归还尚不能确认。</li>
+<li><code>VmProcedure.SyncRun()</code> 使用 <code>SyncExecuteOnceGetEx</code> 及 <code>SyncWaitor.SyncWait</code>，不是带超时的普通入口。</li>
+<li><code>SolutionManager.SyncSaveSolution</code> / <code>SyncLoadSolution</code> 也以结果回调旗标同步等待；加载 SDK 模式下额外检查 <code>nSolutionLoadErrorCode</code>。这与普通流程运行标志分开。</li>
+</ul>
+<h2 id="原生方案保存完成链">原生方案保存完成链</h2><p><code>VM.Core/VmSolution.cs::Export</code> 进入 <code>InternalExport</code>，用 <code>_isSaving</code> 防止并发保存；选定或复用路径后调用 <code>SolutionManager.SyncSaveSolution</code>，随后更新 <code>SolutionPassword</code> 与 <code>SolutionPath</code>。托管接口转到 <code>ServerSDKAPI.IMVS_SaveSolution</code>。<code>SolutionManager</code> 初始化时订阅 <code>CVmObjectBase.OnModuleSolutionSaveEndCallBack</code>；底层回调依次经过 <code>CVmObjectBase</code> 分发、<code>SolutionManager.GetSolutionSaveEndCallBackInfo</code> 先同步派发 <code>OnSolutionSaveEndCallBack</code>（其中 <code>VmSolution.MSolutionManager_OnSolutionSaveEndCallBack</code> 处理完成事件并清除 <code>_isSaving</code>），然后才记录 <code>nStatus</code> 并置 <code>mWaitSaveSolutionFlag=true</code>。同步保存在 <code>SyncWaitor.Wait</code> 后仅 SDK 模式检查 <code>nSolutionSaveErrorCode</code>。因此普通模式是否在非零结束状态抛错、等待器超时/线程语义都不能从这段源码推断为成功/失败对称行为。</p>
+<p>保存界面/工程提供的 <code>.vmx.json</code> 是独立托管序列化格式，不是上述原生 <code>.sol</code> 路径；本项目 <code>MainWindow.Save</code> 调用 <code>GraphEditorDocument.Save</code>，写入文件后更新最近文件和另存目录偏好。当前没有证据证明两种文件在格式、原生算法资源或兼容性上等价。</p>
+<h2 id="主框架当前边界">主框架当前边界</h2><p><code>src/VisionFramework/SolutionExecutor.cs::RunAsync</code> 以 <code>GraphExecutor</code> 执行托管节点，使用协作式 <code>CancellationToken</code>；<code>ProcedureDocument.WaitTimeMs</code> 到期时归类为 <code>TimedOut</code> 并等待模块释放。这是本项目自己的异步托管实现。它没有调用 <code>IMVS_ExecuteOnce_V30</code>，也没有证据表明 VM 普通流程使用同样的协作取消语义。</p>
+<p>本次运行数据验证：<code>tests/VisionFramework.ExecutionChecks</code> 的71项执行检查通过；<code>tests/VisionWorkflow.CallChecks</code> 的93项子流程检查通过，包含子流程超时/父流程取消和资源释放。它们证明当前托管行为，不证明 native 等价。此前主窗口 WPF 全量操作序列456项通过，另见 <a href="FRAMEWORK-SOURCE-SELF-AUDIT.html">框架源码自检</a>。</p>
+<h2 id="未知与下一项源级问题">未知与下一项源级问题</h2><ol>
+<li><code>SyncWaitor</code> 具体忙等/消息泵/超时/线程重入实现不在当前 decompiled tree；需定位其真实程序集或记录实机。</li>
+<li><code>IMVS_ExecuteOnce_V30</code> 如何构建流程图执行序、节点失败后的中止/继续条件、设备取消及状态码由 native SDK 决定，当前静态托管层没有实现体。</li>
+<li><code>IMVS_SetProcedureWaitTime</code> 是否限制整个流程、等待回调、设备任务及重入需原版实验；现有 <code>WaitTimeMs</code> 只是一种明确记录的托管实现。</li>
+<li>P2P 槽位环回时的并发保护、wait 抛出时的计数清理需要核实 <code>SyncWaitor</code> 和完整回调时序；当前不据方法结构单独断定泄漏。</li>
+<li>保存结束的 UI 进度回调只在 <code>isDisplayProgress</code> 为真时派发；结束回调清除 <code>_isSaving</code>。<code>InternalExport</code> 的空路径取消分支和 <code>catch</code> 也显式清除 <code>_isSaving</code>，后者另清空 <code>SolutionPath</code> 并重新抛出。若 native 调用持续等待、既未回调也未抛出，托管标志如何恢复仍未知，不能概括成自动复位。同步派发事件在完成标志赋值之前，订阅者若抛出会影响后续赋值；本轮仅记录调用顺序，不推断 native 异常恢复。</li>
+</ol>
+<h2 id="可复验路径">可复验路径</h2><a class="site-evidence-link" data-evidence-key="5a459fb46ec2cf6a4899e0a8e9581c14b67bc0f2d7cb647229656df5f2afa210" href="../../../证据/5a459fb46ec2cf6a4899e0a8e9581c14b67bc0f2d7cb647229656df5f2afa210.html#content">查看完整原文／记录 ↗ <small>5a459fb46ec2</small></a>
+<p class="meta">来源：docs/MF05-PROCEDURE-RUN-CALLCHAIN.md · SHA256 75747442aaa28ee7f8dc712b4092505bdace0c8b2dd7f79d1afc13a7252f19f9<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

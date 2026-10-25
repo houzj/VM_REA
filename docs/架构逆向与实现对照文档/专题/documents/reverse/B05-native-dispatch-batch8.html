@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B05 第八批：原生二进制参数分派 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / B05 第八批：原生二进制参数分派</p><h1>B05 第八批：原生二进制参数分派</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B05 第八批：原生二进制参数分派</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="B05-native-dispatch-batch8.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="B05-native-dispatch-batch8.html#b05-第八批原生二进制参数分派">B05 第八批：原生二进制参数分派</a></p><p style="margin-left:14px"><a href="B05-native-dispatch-batch8.html#原件和范围">原件和范围</a></p><p style="margin-left:14px"><a href="B05-native-dispatch-batch8.html#确认的数据流">确认的数据流</a></p><p style="margin-left:14px"><a href="B05-native-dispatch-batch8.html#搜索边界与未知">搜索边界与未知</a></p></details><h1 id="b05-第八批原生二进制参数分派">B05 第八批：原生二进制参数分派</h1><p>基线 <code>5e76aee5546a29243c9d95c17d29c2e73080bceb</code>；仅提前只读源码调查，B01/B04依赖保持开放，不集成、不关闭B05。上一批停在P/Invoke；本批取得真实导出及下一层，未执行任何目标。</p>
+<h2 id="原件和范围">原件和范围</h2><p><code>D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/iMVS-6000PlatformSDK.dll</code> SHA256 <code>b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1</code>，前后相同。已有REA native provider缺配置证据复用，不重复setup；以下是原PE字节与已有MSVC dumpbin指令，不冒充REA反编译。</p>
+<p>探针 <code>tests/NativeEvidence/B05NativeDispatch/InspectBinaryDispatch.py</code> 按原PE导出名解析入口，按完整pdata/CHAININFO tuple取范围；内部callee由入口的直接call选定。最终输出 <code>analysis/full-audit/batch8-20261019/B05/instructions-abc22ca0df7e4a1782356f1e05017828/</code>。前两次输出保留，分别增加内部callee及直接常量读取，不把重复导出计多次完成。</p>
+<table>
+<thead>
+<tr>
+<th>成员</th>
+<th>RVA范围，右端不含</th>
+<th align="right">指令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IMVS_SetBinaryData</td>
+<td>6471f0–6472ff</td>
+<td align="right">80</td>
+</tr>
+<tr>
+<td>内部callee，未命名原符号</td>
+<td>66f090–66f2fe</td>
+<td align="right">142</td>
+</tr>
+</tbody></table>
+<h2 id="确认的数据流">确认的数据流</h2><p>原托管声明在 <code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs</code>：handle、uint模块ID、ref IMVS_SET_BINARY_DATA_INFO、uint等待时间。<code>ImvsSdkDefine.cs:764</code> 字段依次为256字节Name、IntPtr数据、uint长度及4个reserved。对应原生读偏移100h数据指针、108h长度；不是根据截图或格式猜测。</p>
+<p>导出入口保存EDX模块ID、R8结构体指针、R9D等待值；查handle匹配节点，缺失/失效返回e0000006。VA1806472e3向18066f090传RCX全局对象180ca02e0、EDX模块ID、R8原结构、R9D原等待值。返回EAX经EBX保存后返回；helper180001070/10b0含义未确认，不擅自命名锁。</p>
+<p>内部66f090先检查结构指针非空；模块ID以<strong>有符号jg</strong>相对-1判断，不能说所有uint都合法；失败返回e0000001。随后用模块ID和结构首地址构造命令缓冲区，格式常量RVA ac7c14为 <code>%u\t%s</code>（中间实际09字节）；日志常量RVA ac7cb0为 <code>CServerManager::SM_SetBinaryData</code>。原生未在该函数内根据GlobalValueImport/Export文本分支。</p>
+<p>VA18066f1fd读取对象+23a8h函数指针。存在时，18066f22d间接call参数为ECX=0bd2h、RDX栈命令字符串、R8=结构+100h数据指针、R9D=结构+108h长度，栈第5/6参均0。原入口等待时间在该可见间接调用未转发（在日志参数使用），不外推整个API超时语义。函数指针空则e0000010；间接调用非零返回保留原错误，成功返回0。</p>
+<p>这把gvar的托管UTF8+NUL路径载荷推进到native二进制消息回调边界；并未取得回调实际实现，不能称gvar文件writer/reader已找到。</p>
+<h2 id="搜索边界与未知">搜索边界与未知</h2><p>对既有同哈希SDK和ModuleFrame两原件的ASCII/UTF16LE精确GlobalValueImport/GlobalValueExport搜索均无匹配，保存在key-literals.json。该有限阴性不代表全部模块没有实现，不以字符串缺失猜测加密或不存在。</p>
+<p>直接引用常量原字节保存在direct-constants.json；间接格式化IAT函数名称尚未解析。下一退出条件是对象+23a8h函数指针的注册写入点、实际DLL/导出和0bd2h消费者；不能再次导出本批两函数当进展。当前gvar格式、覆盖、GUID重建、密码、事务、实际导出重导入仍未知。B05.3源码partial、实现未交付、验证blocked不变，96项完成分子增加0。无产品改动、SDK运行或tool-plugins访问。</p>
+<p class="meta">来源：docs/reverse/B05-native-dispatch-batch8.md · SHA256 13aba46fe6b56daad3d53cd3c521298078cb72ba106da9c647bcf011deb0780e<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

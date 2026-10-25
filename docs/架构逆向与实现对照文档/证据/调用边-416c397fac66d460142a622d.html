@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SetTriggerItem Modify分支 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SetTriggerItem Modify分支 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-EA10"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SetTriggerItem Modify分支 → 序列化null或字节setter异常仍可返回0</h2><p>Add写AddTriggerEvent/AddTriggerString=&quot;true&quot;；Delete写零基索引；Modify序列化非null才写ModifyTriggerEvent-/ModifyTriggerString-字节键。Modify内部setter异常只日志，之后仍return0；序列化null也走return0。外层异常才return-1。所以本地返回0不证明成功写入或触发执行。</p><p><a href="../专题/communication-dispatch.html#edge-EA10">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-dispatch.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-dispatch.edges.json · SHA256 d34ac2c9aec1484fb92e82c332d4a27a4d13c63f212939464b494ebfca7769a3</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="2531c4dbe753e054775de9a03219a987ec19211fd341fbb291bcc4eea9544e7f">{
+  &quot;id&quot;: &quot;EA10&quot;,
+  &quot;route&quot;: &quot;原版 · 全局触发即时写入&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;classificationScope&quot;: &quot;Local decompiled source statements; selected EXE method identity and original raw CIL bytes are separately rechecked, without vendor execution.&quot;,
+  &quot;from&quot;: &quot;SetTriggerItem Modify分支&quot;,
+  &quot;to&quot;: &quot;序列化null或字节setter异常仍可返回0&quot;,
+  &quot;behavior&quot;: &quot;Add写AddTriggerEvent/AddTriggerString=\&quot;true\&quot;；Delete写零基索引；Modify序列化非null才写ModifyTriggerEvent-/ModifyTriggerString-字节键。Modify内部setter异常只日志，之后仍return0；序列化null也走return0。外层异常才return-1。所以本地返回0不证明成功写入或触发执行。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs&quot;,
+      &quot;member&quot;: &quot;GlobalTriggerConfig.SetTriggerItem complete body&quot;,
+      &quot;sha256&quot;: &quot;8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d&quot;,
+      &quot;start&quot;: 609,
+      &quot;end&quot;: 665,
+      &quot;excerpt&quot;: &quot;\tprivate int SetTriggerItem(ComTriggerItem item, ActionType action)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (DecorateSource == null)\n\t\t\t{\n\t\t\t\treturn -1;\n\t\t\t}\n\t\t\tbool flag = item is GlobalTriggerEventItem;\n\t\t\tswitch (action)\n\t\t\t{\n\t\t\tcase ActionType.Add:\n\t\t\t\t(DecorateSource as VmModule).Params[flag ? \&quot;AddTriggerEvent\&quot; : \&quot;AddTriggerString\&quot;] = \&quot;true\&quot;;\n\t\t\t\tbreak;\n\t\t\tcase ActionType.Delete:\n\t\t\t\t(DecorateSource as VmModule).Params[flag ? \&quot;DeleteTriggerEvent\&quot; : \&quot;DeleteTriggerString\&quot;] = (item.Index - 1).ToString();\n\t\t\t\tbreak;\n\t\t\tcase ActionType.Modify:\n\t\t\t{\n\t\t\t\tbyte[] array = SetTriggerBytes(item, flag);\n\t\t\t\tif (array != null)\n\t\t\t\t{\n\t\t\t\t\tstring key = (flag ? \&quot;ModifyTriggerEvent-\&quot; : \&quot;ModifyTriggerString-\&quot;) + (item.Index - 1);\n\t\t\t\t\ttry\n\t\t\t\t\t{\n\t\t\t\t\t\t((IUserBytesData)(DecorateSource as VmModule).Params)[key] = array;\n\t\t\t\t\t}\n\t\t\t\t\tcatch (Exception ex)\n\t\t\t\t\t{\n\t\t\t\t\t\tLogHelper.Error(\&quot;下发数据错误,\&quot; + ex.ToString());\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\t}\n\t\t\treturn 0;\n\t\t}\n\t\tcatch (Exception ex2)\n\t\t{\n\t\t\tif (ex2 is VmException ex3)\n\t\t\t{\n\t\t\t\tLogHelper.Error(\&quot;下发数据错误,\&quot; + ex3.errorMessage);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tLogHelper.Error(\&quot;下发数据错误,\&quot; + ex2.ToString());\n\t\t\t}\n\t\t\treturn -1;\n\t\t}\n\t}\n\n\tpublic override int SetParamUnit()\n\t{\n\t\treturn base.SetParamUnit();\n\t}\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;StructToBytes具体布局/限长/原native接收端、返回码到UI反馈和方案保存效果未证。&quot;
+  ],
+  &quot;nextMembers&quot;: [
+    &quot;GlobalTriggerConfig.SetTriggerBytes and structures&quot;,
+    &quot;VmParams indexers / IUserBytesData&quot;,
+    &quot;GlobalTriggerModule native Add/Modify/Delete consumers&quot;
+  ],
+  &quot;priorLinks&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-01 打开方案命令验收</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../MF01-OPEN-SOLUTION.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#mf-01-打开方案命令验收">MF-01 打开方案命令验收</a></p><p style="margin-left:14px"><a href="#原始证据">原始证据</a></p><p style="margin-left:14px"><a href="#独立-wpf-实现">独立 WPF 实现</a></p><p style="margin-left:14px"><a href="#未验证原生差异">未验证原生差异</a></p></details><h1 id="mf-01-打开方案命令验收">MF-01 打开方案命令验收</h1><h2 id="原始证据">原始证据</h2><ul>
+<li><code>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs</code> 的 <code>OpenSolution</code> 先调用 <code>StopRun</code>，再调用 <code>ProjectManager.LoadSolution</code>；<code>StopRun</code> 仅将 <code>ContinuousRunEnable</code> 置为 <code>false</code>，不取消已经执行的一轮。</li>
+<li><code>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs</code> 的 <code>LoadSolution</code> 从 <code>OpenSol</code> 读取选择器初始目录，选择后先保存所选文件目录，然后进入方案加载。</li>
+</ul>
+<h2 id="独立-wpf-实现">独立 WPF 实现</h2><ul>
+<li>文件菜单和工具栏“打开方案”共用一条命令；进入选择器前停止连续运行，取消选择不修改当前方案和目录记忆。</li>
+<li>选择路径后记住目录；当前单次运行尚未结束时等待其结束，不在运行中替换独立执行器的文档。随后才确认待保存修改、加载方案并刷新最近记录。</li>
+<li>选择器通过 <code>ISolutionFilePicker</code> 隔离，专项测试实际点击 WPF 菜单并注入可观察选择器，验证先停连续运行、未取消单次运行、取消不变、运行中保护、成功加载、目录记忆及最近记录。</li>
+</ul>
+<h2 id="未验证原生差异">未验证原生差异</h2><ul>
+<li>原版 WinForms <code>.sol</code> 文件选择器的像素样式和方案数据格式未做一致性声明；当前工程选择 <code>.vmx.json</code>/<code>.json</code>。</li>
+<li>原版对未保存修改的提示由 SDK 流程执行；当前独立编辑器在路径选择及运行状态检查后调用自己的待保存确认。原版活动单次运行期间是否阻止更换方案尚未动态核实，本实现采用文档安全保护。</li>
+</ul>
+<p class="meta">来源：docs/MF01-OPEN-SOLUTION.md · SHA256 7ff8060379434e854ddfd333ff1ae74664dc766c555f3da4f94806674bb1ce2b<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,1474 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>结果历史、当前结果选择与帮助入口</title><style>body{max-width:1320px;margin:auto;padding:24px;background:#101d2e;color:#e2edfa;font:15px/1.7 Microsoft YaHei,sans-serif}a{color:#a3d8ff}article{background:#192e43;padding:18px;margin:16px 0;border:1px solid #49647d}.unknown{border-style:dashed}.notice{padding:15px;border-left:4px solid #dca96a;background:#26394f}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 Consolas,monospace}</style><a href="main-ui-map.html#history-help">主界面历史/帮助</a> · <a href="results-roi.html">结果数据与生命周期</a><h1>结果历史、当前结果选择与帮助入口</h1><p class="notice">历史结果是模块DataRecord生成的文本日志。当前结果表选择重画图形、SDK历史查询请求图像、历史文本行选择是不同入口；尚未找到后者到图像/模块帧回放的直接链，不能互相替代，也不能拿撤销栈当结果历史。</p><p>38个所选原件CIL体；原ModuleResultView BAML解码与本地声明相等。未运行原件、UI、SDK或设备。</p><article id="HRE01" class="source-confirmed"><h2>HRE01 · ModuleResultView.hstTab / m_DataGrid → LogInfo历史文本列表，不是撤销栈或已证帧回放</h2><p>source-confirmed：原ModuleResultView BAML解码与本地XAML字节相等；hstTab中m_DataGrid以OneWay/IsAsync绑定当前装饰器ModuleDisplayInfoList，列为RowIndex/AddTime/Content，菜单Clear/Save。LogInfo原字段仅ulong RowIndex及Content/AddTime字符串、属性通知，不包含图像/模块快照。所选m_DataGrid声明没有SelectionChanged，而m_ResultDataGrid是另一当前结果控件；这不是全程序历史行选择监听不存在的证明。</p><p>待追：历史行→图像/参数/模块帧回放、附加样式/全局事件监听及资源活实例仍未知；不能将RowIndex直接当作已证可重放帧。</p><details><summary>History list, columns and menu · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml:303–329
+SHA256 56ac6bbf9b8839311f4f8eaf0dc4407fc3f9527b39f3ad942080c0bb6c2948ff
+                &lt;TabItem Name=&quot;hstTab&quot; Header=&quot;{DynamicResource Lang_HstRslt}&quot; Height=&quot;40&quot; FontSize=&quot;14&quot; Foreground=&quot;{DynamicResource Col_DisplayImage_Foreground}&quot; BorderThickness=&quot;0&quot; Style=&quot;{StaticResource FrequentTab}&quot;&gt;
+                  &lt;DataGrid Name=&quot;m_DataGrid&quot; Grid.Row=&quot;2&quot; ColumnWidth=&quot;Auto&quot; Style=&quot;{StaticResource ModuleViewDataGridStyle}&quot; ItemsSource=&quot;{Binding m_CurrentInfo.ModuleDisplayInfoList, ElementName=us, Mode=OneWay, IsAsync=True}&quot;&gt;
+                    &lt;DataGrid.Columns&gt;
+                      &lt;DataGridTextColumn MinWidth=&quot;30&quot; CellStyle=&quot;{StaticResource dgCellLeftAlignmentStyle}&quot; Binding=&quot;{Binding Path=RowIndex}&quot;&gt;
+                        &lt;DataGridColumn.Header&gt;
+                          &lt;TextBlock Text=&quot;{DynamicResource Lang_ExecuteNum}&quot; VerticalAlignment=&quot;Center&quot; /&gt;
+                        &lt;/DataGridColumn.Header&gt;
+                      &lt;/DataGridTextColumn&gt;
+                      &lt;DataGridTextColumn MinWidth=&quot;150&quot; CellStyle=&quot;{StaticResource dgCellLeftAlignmentStyle}&quot; Binding=&quot;{Binding Path=AddTime}&quot;&gt;
+                        &lt;DataGridColumn.Header&gt;
+                          &lt;TextBlock Text=&quot;{DynamicResource Lang_Time}&quot; VerticalAlignment=&quot;Center&quot; /&gt;
+                        &lt;/DataGridColumn.Header&gt;
+                      &lt;/DataGridTextColumn&gt;
+                      &lt;DataGridTextColumn MinWidth=&quot;200&quot; CellStyle=&quot;{StaticResource dgCellLeftAlignmentStyle}&quot; Binding=&quot;{Binding Path=Content}&quot;&gt;
+                        &lt;DataGridColumn.Header&gt;
+                          &lt;TextBlock Text=&quot;{DynamicResource Lang_ModuData}&quot; VerticalAlignment=&quot;Center&quot; /&gt;
+                        &lt;/DataGridColumn.Header&gt;
+                      &lt;/DataGridTextColumn&gt;
+                    &lt;/DataGrid.Columns&gt;
+                  &lt;/DataGrid&gt;
+                  &lt;FrameworkElement.ContextMenu&gt;
+                    &lt;vmcontrols:HikContextMenu&gt;
+                      &lt;MenuItem Name=&quot;Menu_Clear&quot; Header=&quot;{DynamicResource Clear}&quot; Click=&quot;Menu_Clear_Click&quot; /&gt;
+                      &lt;MenuItem Name=&quot;Menu_Save&quot; Header=&quot;{DynamicResource Save}&quot; Click=&quot;Menu_Save_Click&quot; /&gt;
+                    &lt;/vmcontrols:HikContextMenu&gt;
+                  &lt;/FrameworkElement.ContextMenu&gt;
+                &lt;/TabItem&gt;</pre></details><details><summary>VMControls.WPF.DataForUI.LogInfo::get_RowIndex · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:17703–17722
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000894&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000894&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.LogInfo&quot;,
+            &quot;name&quot;: &quot;get_RowIndex&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000b&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;c61ee34956918259e808dac121104a9336a8e4cb70461e494852cc671a875fd4&quot;,
+          &quot;ilBytes&quot;: &quot;00027b970400040a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.LogInfo::get_Content · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:17964–17983
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000896&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000896&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.LogInfo&quot;,
+            &quot;name&quot;: &quot;get_Content&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;08c51078f7e2d02b0f3b949da70eed6699cb9e74ddba7a9e7202d34d081be98f&quot;,
+          &quot;ilBytes&quot;: &quot;00027b980400040a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.LogInfo::get_AddTime · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:18218–18237
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000898&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000898&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.LogInfo&quot;,
+            &quot;name&quot;: &quot;get_AddTime&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;dbff06933c25742e1289800121853c58d4aaddd9f4730f06588fe585bf1c59f0&quot;,
+          &quot;ilBytes&quot;: &quot;00027b990400040a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Log entry fields and row identity · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/LogInfo.cs:5–18
+SHA256 0cc4a16f1d0cccd8cbeb9c7cc2ca5498372cbc53c4c58c51fffdf4346f957fcc
+public class LogInfo : INotifyPropertyChanged
+{
+	private ulong _RowIndex;
+
+	private string _Content;
+
+	private string _AddTime;
+
+	public ulong RowIndex
+	{
+		get
+		{
+			return _RowIndex;
+		}</pre></details><details><summary>Original module result resource equality · local-decompiled-source</summary><pre>docs/architecture-recovery/rendering-binding-resource-review.decode.json:36–58
+SHA256 5fa3796e6e415adfa7cbaa897abcef87303ff626dc72835091675fe2607d1ba6
+      &quot;resourceKey&quot;: &quot;moduleresultview.baml&quot;,
+      &quot;payloadSha256&quot;: &quot;b9e08f2f4ec362a4b459a9354629894169c69c99d709241c3c95062cfc943b26&quot;,
+      &quot;payloadByteLength&quot;: 18468,
+      &quot;toolArguments&quot;: [
+        &quot;--disable-updatecheck&quot;,
+        &quot;--resource&quot;,
+        &quot;VMControls.WPF.g.resources/moduleresultview.baml&quot;,
+        &quot;-o&quot;,
+        &quot;docs/architecture-recovery/rendering-binding-resource-review.workspace/decoded/wpf&quot;,
+        &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VMControls.WPF.dll&quot;
+      ],
+      &quot;exitCode&quot;: 0,
+      &quot;stdout&quot;: &quot;&quot;,
+      &quot;stderr&quot;: &quot;&quot;,
+      &quot;decodedPath&quot;: &quot;docs/architecture-recovery/rendering-binding-resource-review.workspace/decoded/wpf/moduleresultview.xaml&quot;,
+      &quot;decodedSha256&quot;: &quot;56ac6bbf9b8839311f4f8eaf0dc4407fc3f9527b39f3ad942080c0bb6c2948ff&quot;,
+      &quot;decodedByteLength&quot;: 32570,
+      &quot;localXamlPath&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml&quot;,
+      &quot;localXamlSha256&quot;: &quot;56ac6bbf9b8839311f4f8eaf0dc4407fc3f9527b39f3ad942080c0bb6c2948ff&quot;,
+      &quot;byteIdenticalToLocalXaml&quot;: true,
+      &quot;independentRawBamlSemanticValidation&quot;: false,
+      &quot;runtimeBindingConfirmed&quot;: false
+    },</pre></details><details><summary>VMControls.WPF.ModuleResultView::System.Windows.Markup.IComponentConnector.Connect · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:6995–7014
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x0600020b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600020b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;System.Windows.Markup.IComponentConnector.Connect&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200201081c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 1332,
+          &quot;ilSha256&quot;: &quot;dde3cd704356c02f8d3ab1214474ec7c519a4ee29537856687160ff0168c4883&quot;,
+          &quot;ilBytes&quot;: &quot;00030a061759452e0000000500000016000000270000003800000049000000720000008300000094000000b1000000da00000003010000200100003101000042010000530100007c010000a5010000ce010000df0100000802000019020000420200006b02000094020000a5020000b6020000c7020000d8020000e9020000fa0200000b0300001c03000045030000560300006703000078030000890300009a030000ab030000d4030000e5030000f303000001040000270400004d0400005b04000038640400000204741f0000027ddc000004385a040000020474340000017ddd0000043849040000020474340000017dde0000043838040000020474b10000017ddf0000043827040000020474b20000017de0000004027be000000402fe06ff010006736300000a6f6400000a0038fe030000020474340000017de100000438ed030000020474a60000017de200000438dc03000004747400000102fe06ec010006736300000a6f6400000a0038bf030000020474360000017de3000004027be300000402fe0605020006735900000a6f5b00000a003896030000020474360000017de4000004027be400000402fe0606020006735900000a6f5b00000a00386d03000004747400000102fe06eb010006736300000a6f6400000a003850030000020474b30000017de5000004383f030000020474b30000017de6000004382e030000020474740000017de7000004381d030000020474360000017de8000004027be800000402fe06dd010006735900000a6f5b00000a0038f4020000020474360000017de9000004027be900000402fe06e0010006735900000a6f5b00000a0038cb020000020474360000017dea000004027bea00000402fe06e1010006735900000a6f5b00000a0038a2020000020474340000017deb0000043891020000020474b40000017dec000004027bec00000402fe0600020006736800000a6f0703000a003868020000020474340000017ded0000043857020000020474b40000017dee000004027bee00000402fe0600020006736800000a6f0703000a00382e020000020474360000017def000004027bef00000402fe06e2010006735900000a6f5b00000a003805020000020474360000017df0000004027bf000000402fe06e3010006735900000a6f5b00000a0038dc010000020474b50000017df100000438cb010000020474340000017df200000438ba010000020474340000017df300000438a9010000020474b60000017df400000438980100000204747c0000017df50000043887010000020474340000017df600000438760100000204740e0000027df70000043865010000020474340000017df80000043854010000020474b20000017df9000004027bf900000402fe06e5010006736300000a6f6400000a00382b010000020474b50000017dfa000004381a010000020474340000017dfb0000043809010000020474b50000017dfc00000438f8000000020474340000017dfd00000438e7000000020474b50000017dfe00000438d6000000020474340000017dff00000438c5000000020474b70000017d00010004027b0001000402fe06e4010006736300000a6f6400000a00389c000000020474b80000017d01010004388b000000020474b50000017d020100042b7d020474b70000017d030100042b6f020474b90000017d04010004027b0401000402fe06e6010006735900000a6f5a00000a002b49020474b90000017d05010004027b0501000402fe06e8010006735900000a6f5a00000a002b23020474b50000017d060100042b15020474ba0000017d070100042b0702177d080100042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details></article><article id="HRE02" class="source-confirmed"><h2>HRE02 · InfoTab切换 / 折叠 / 帮助 → 当前结果刷新门、固定行高与帮助key缓存</h2><p>source-confirmed：InfoTab_SelectionChanged仅!isDecoratorRebuilding且SelectedItem==CurResultTabItem时RefreshDataListResult(datalist,true)；所选体没有历史/帮助选择重放操作。SetFirstVisibleTab找首个可见Tab，写SelectedIndex及当前curTabIndex。IsInfoTabExpand变化通知后将resultRow高度设235或40。Help TextBlock通过Lang.ResourceBinding读取m_CurrentInfo.HelperContent；非流程且缓存null时生成ModuleTypeName+_HELP，替换/trim后缓存，并非该getter直接读取说明文件。</p><p>待追：Lang资源解析、无帮助key回退、全部Tab状态保存/帮助交互与键盘/折叠实际时序未验；不把普通Tab视觉切换补成行为。</p><details><summary>VMControls.WPF.ModuleResultView::InfoTab_SelectionChanged · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:3813–3832
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001e5&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001e5&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;InfoTab_SelectionChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c12817d&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 52,
+          &quot;ilSha256&quot;: &quot;9d246f516d2f680dc65e3092fba6998145a230b6908c1142378cc845493a7e74&quot;,
+          &quot;ilBytes&quot;: &quot;00027bc90000042d15027bf90000046f8a02000a027bfe000004fe012b01160a062c100002027bc10000041728d201000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.ModuleResultView::SetFirstVisibleTab · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:1949–1968
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001cc&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001cc&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;SetFirstVisibleTab&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 125,
+          &quot;ilSha256&quot;: &quot;3410c948373605e52dd81e5ec1bd68a1db218a423722006730032e2d7a1df9c3&quot;,
+          &quot;ilBytes&quot;: &quot;00160a2b6000027bf90000046f6c02000a066f6d02000a75b500000114fe030b072c3d00027bf90000046f6c02000a066f6d02000a75b50000016f6e02000a0c082c1c00027bf9000004066f6f02000a000228a0010006067dea0400042b1d00000617580a06027bf90000046f6c02000a6f8802000afe040d092d892a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.ModuleResultView::set_IsInfoTabExpand · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:6609–6628
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001fe&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001fe&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;set_IsInfoTabExpand&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 74,
+          &quot;ilSha256&quot;: &quot;b075d12ea3c0f53bf7ca03b5518bce9a4c20a25a52c5182affdf5213c383a066&quot;,
+          &quot;ilBytes&quot;: &quot;00027bda00000403fe0116fe010a062c380002037dda0000040272802000706f9d01000600027bdf000004027bda0000042d041f282b0520eb0000006c731d03000a6f1e03000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ModuleDisplayDecorator::get_HelperContent · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:11046–11065
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000940&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000940&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ModuleDisplayDecorator&quot;,
+            &quot;name&quot;: &quot;get_HelperContent&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 126,
+          &quot;ilSha256&quot;: &quot;1c463a32b54e0badfd4928528ffc61fc1069b50b652a4998a79d7c41955d06ee&quot;,
+          &quot;ilBytes&quot;: &quot;0002281b09000675b000000114fe0316fe010a062c5d00027bf904000414fe010b072c4e0002281b0900066fbc00000a7210870070284300000a0c08721c87007072290000706f3300000a0c08178d0702000125161f0a9d6fb307000a0c0828b000002b6f0101000a0c02087df90400040000027bf90400040d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Info tab handler · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:2050–2056
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	private void InfoTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+	{
+		if (!isDecoratorRebuilding &amp;&amp; InfoTab.SelectedItem == CurResultTabItem)
+		{
+			RefreshDataListResult(datalist, needClear: true);
+		}
+	}</pre></details><details><summary>First visible tab selection · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:1318–1329
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	public void SetFirstVisibleTab()
+	{
+		for (int i = 0; i &lt; InfoTab.Items.Count; i++)
+		{
+			if (InfoTab.Items[i] is TabItem &amp;&amp; (InfoTab.Items[i] as TabItem).IsVisible)
+			{
+				InfoTab.SelectedIndex = i;
+				m_CurrentInfo.curTabIndex = i;
+				break;
+			}
+		}
+	}</pre></details><details><summary>Information row expansion · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:365–382
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	public bool IsInfoTabExpand
+	{
+		get
+		{
+			return isInfoTabExpand;
+		}
+		set
+		{
+			if (isInfoTabExpand != value)
+			{
+				isInfoTabExpand = value;
+				OnPropertyChanged(&quot;IsInfoTabExpand&quot;);
+				resultRow.Height = new GridLength(isInfoTabExpand ? 235 : 40);
+			}
+		}
+	}
+
+	public bool IsCanDrawROI =&gt; m_CurrentInfo.IsCanDrawROI;</pre></details><details><summary>Help resource key cache · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs:556–572
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+	public string HelperContent
+	{
+		get
+		{
+			if (!(VMModule is IVmProcedure) &amp;&amp; helperContent == null)
+			{
+				string text = VMModule.ModuleTypeName + &quot;_HELP&quot;;
+				text = text.Replace(&quot;\&quot;\\r\\n\&quot;&quot;, &quot;&quot;);
+				text = text.TrimStart(&#39;\n&#39;);
+				text = text.TrimEnd();
+				helperContent = text;
+			}
+			return helperContent;
+		}
+	}
+
+	/// &lt;summary&gt;</pre></details><details><summary>Localized help declaration · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml:332–332
+SHA256 56ac6bbf9b8839311f4f8eaf0dc4407fc3f9527b39f3ad942080c0bb6c2948ff
+                    &lt;TextBlock Name=&quot;moduleHelp&quot; TextWrapping=&quot;Wrap&quot; Foreground=&quot;{DynamicResource Col_DisplayImage_Foreground}&quot; Text=&quot;{Lang:ResourceBinding m_CurrentInfo.HelperContent, ElementName=us}&quot; /&gt;</pre></details></article><article id="HRE03" class="source-confirmed"><h2>HRE03 · SetCommonModuleView → Background闭包 → 历史查询挂在切模块通用视图，不是选历史行</h2><p>source-confirmed：设置通用视图先保留currentInfo，ClearModuleView/SetCommonViewMode，按datalist显示当前结果Tab，历史Tab可见，尝试还原curTabIndex否则首可见。若当前DecorateSource是IVmProcedure返回；其它入Dispatcher.BeginInvoke Background，在try内RefreshDataListResult(null,true)及当时m_CurrentInfo?.RefreshRecordResult。闭包不捕获/比较装饰器身份、ExecuteCount或generation，不能将查询自动视为与排队时模块同一帧。</p><p>待追：切源后排队回调的实际交错/原调用者身份仍未知；已有结果源异步生命周期V10–V16不因此变为完整安全。</p><details><summary>VMControls.WPF.ModuleResultView::SetCommonModuleView · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:901–920
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001c2&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001c2&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;SetCommonModuleView&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 272,
+          &quot;ilSha256&quot;: &quot;5688bb4a4217f2449485d79aafa19f72edee1356ba78abc79668c14893fefd38&quot;,
+          &quot;ilBytes&quot;: &quot;000228a00100060a0228c8010006000228cd01000600066f1c090006252d0426142b05285102000a0b072c27077e39070004252d17267e32070004fe06c50d0006735202000a258039070004282800002b2b01160c027bfe000004082d03182b01166fb400000a00027b02010004166fb400000a00027b00010004166fb400000a000228c301000600027bf90000046f6c02000a067bea0400046f6d02000a75b50000016f6e02000a0d092c1600027bf9000004067bea0400046f6f02000a00002b09000228cc01000600000228a0010006252d0426142b05280509000675b000000114fe0316fe01130411042c200002289600000a02fe060d02000673aa0d00061a280400002b6fef01000a26002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.ModuleResultView::&lt;SetCommonModuleView&gt;b__86_1 · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:10375–10394
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x0600020d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600020d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;\u003CSetCommonModuleView\u003Eb__86_1&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 66,
+          &quot;ilSha256&quot;: &quot;bfe68e14f65d040bb6266d8fbd9accc6399c99bdf17e32328a03622488fd5274&quot;,
+          &quot;ilBytes&quot;: &quot;000002141728d2010006000228a0010006252d03262b0628450900060000de210a00728a210070066fa300000a066fe700000a283a00000a28a400000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>.&lt;&gt;c::&lt;SetCommonModuleView&gt;b__86_0 · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:18647–18666
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000dc5&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000dc5&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec&quot;,
+            &quot;name&quot;: &quot;\u003CSetCommonModuleView\u003Eb__86_0&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001021c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 33,
+          &quot;ilSha256&quot;: &quot;c6e0281aec46ebbf4142ddb9eff7b47bac0e4ba845f8b77d3dba1ffd245d2869&quot;,
+          &quot;ilBytes&quot;: &quot;0375bc0000012c170375bc0000017b5702000a72181a0070288a00000a2b01162a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.1&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ModuleDisplayDecorator::RefreshRecordResult · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:14605–14624
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000945&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000945&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ModuleDisplayDecorator&quot;,
+            &quot;name&quot;: &quot;RefreshRecordResult&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 490,
+          &quot;ilSha256&quot;: &quot;721b3e31b405fbf2fe9fee27517c5ccfa9f8517c4156a5a496c6d9534d57846c&quot;,
+          &quot;ilBytes&quot;: &quot;007e0701000a0a000228410900066fde02000a0002177dfb04000402281b09000614fe030b07393d01000000160c160d288701000a7bdf02000a02281b0900066f9100000a1617120016166fbf07000a1304120428c007000a13051105390501000000021104171202120328460900061306110613077e0701000a06280801000a130811082c1400288701000a7bdf02000a12006fc107000a260038b4000000000908fe0216fe01130a110a2c060038b20000001720f40100001107596c11066c5b281901000a6d28c207000a1309086a11096e58096afe02130b110b2c0700090859130900288701000a7bdf02000a02281b0900066f9100000a081109120016166fbf07000a1304120428c007000a16fe01130c110c2c03002b4a1107021104161202120328460900065813077e0701000a06280801000a130d110d2c1400288701000a7bdf02000a12006fc107000a260000110720f4010000fe04130e110e3a3affffff000000de4d130f00725a870070110f6fd300000a8cd7010001110f6f3404000a282f02000a28a400000a0000de2413100011106fa300000a729a87007011106fe700000a283a00000a28a400000a0000de00de2f007e0701000a06280801000a131111112c1400288701000a7bdf02000a12006fc107000a260002167dfb04000400dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Common view setup and deferred history query · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:1078–1115
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	public void SetCommonModuleView()
+	{
+		ModuleDisplayDecorator currentInfo = m_CurrentInfo;
+		ClearModuleView();
+		SetCommonViewMode();
+		bool flag = (currentInfo.ModuleParams?.GetDisplayList())?.Any((object x) =&gt; x is Apps.XmlParser.Object &amp;&amp; (x as Apps.XmlParser.Object).Type == &quot;datalist&quot;) ?? false;
+		CurResultTabItem.Visibility = ((!flag) ? Visibility.Collapsed : Visibility.Visible);
+		hstTab.Visibility = Visibility.Visible;
+		m_ResultDataGrid.Visibility = Visibility.Visible;
+		InitSpecialParams();
+		if ((InfoTab.Items[currentInfo.curTabIndex] as TabItem).IsVisible)
+		{
+			InfoTab.SelectedIndex = currentInfo.curTabIndex;
+		}
+		else
+		{
+			SetFirstVisibleTab();
+		}
+		if (m_CurrentInfo?.DecorateSource is IVmProcedure)
+		{
+			return;
+		}
+		Dispatcher.BeginInvoke((BeginInvokeDelegate)(() =&gt;
+		{
+			try
+			{
+				RefreshDataListResult(null, needClear: true);
+				m_CurrentInfo?.RefreshRecordResult();
+			}
+			catch (Exception ex)
+			{
+				LogHelper.Error(&quot;刷新结果列表异常：&quot; + ex.Message + ex.StackTrace);
+			}
+		}), DispatcherPriority.Background);
+	}
+
+	/// &lt;summary&gt;
+	/// 初始化特殊参数控件</pre></details></article><article id="HRE04" class="source-confirmed"><h2>HRE04 · RefreshRecordResult / AnalyzeResultList → SDK分批查询→当年结果文本入队与有限释放</h2><p>source-confirmed：RefreshRecordResult先清ModuleDisplayInfoList，再ignoreTimer=true；VMModule为空/首查询无值即返回，finally仍尝试释放非零buffer并复位ignore=false。先Query(ID,0,1)，Analyze推进index/totalNum，后续在累计记录数&lt;500且totalNum&gt;index时按剩余容量与首批记录数估请求量。Analyze暂存tempInfoList并换新，逆序遍历native结果PreProData(isFilter:true)，仅dtEndTime.Year==当前年才AddRecord，最后把原pending记录加回。catch分VmException/Exception日志；finally释放若抛错会跳过其后的ignore=false，未保证异常时pending恢复或所有释放成功。</p><p>待追：num==0请求量计算、native total/index单位、跨年数据、异常中间状态和最大显示条数时序未知；累计数是生成LogInfo数，非必然等于native执行次数。</p><details><summary>VMControls.WPF.DataForUI.ModuleDisplayDecorator::RefreshRecordResult · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:14605–14624
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000945&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000945&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ModuleDisplayDecorator&quot;,
+            &quot;name&quot;: &quot;RefreshRecordResult&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 490,
+          &quot;ilSha256&quot;: &quot;721b3e31b405fbf2fe9fee27517c5ccfa9f8517c4156a5a496c6d9534d57846c&quot;,
+          &quot;ilBytes&quot;: &quot;007e0701000a0a000228410900066fde02000a0002177dfb04000402281b09000614fe030b07393d01000000160c160d288701000a7bdf02000a02281b0900066f9100000a1617120016166fbf07000a1304120428c007000a13051105390501000000021104171202120328460900061306110613077e0701000a06280801000a130811082c1400288701000a7bdf02000a12006fc107000a260038b4000000000908fe0216fe01130a110a2c060038b20000001720f40100001107596c11066c5b281901000a6d28c207000a1309086a11096e58096afe02130b110b2c0700090859130900288701000a7bdf02000a02281b0900066f9100000a081109120016166fbf07000a1304120428c007000a16fe01130c110c2c03002b4a1107021104161202120328460900065813077e0701000a06280801000a130d110d2c1400288701000a7bdf02000a12006fc107000a260000110720f4010000fe04130e110e3a3affffff000000de4d130f00725a870070110f6fd300000a8cd7010001110f6f3404000a282f02000a28a400000a0000de2413100011106fa300000a729a87007011106fe700000a283a00000a28a400000a0000de00de2f007e0701000a06280801000a131111112c1400288701000a7bdf02000a12006fc107000a260002167dfb04000400dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ModuleDisplayDecorator::AnalyzeResultList · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:16410–16429
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000946&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000946&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ModuleDisplayDecorator&quot;,
+            &quot;name&quot;: &quot;AnalyzeResultList&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20040815118141011185fd0210081008&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 321,
+          &quot;ilSha256&quot;: &quot;c8ceb350b81d375b4303efc0fb8806f0fa45c8dc60b454e9d4c62266a872fe74&quot;,
+          &quot;ilBytes&quot;: &quot;00160a0f0128c007000a0b07392801000000140c027bfe040004130416130511041205281c01000a0000027bfc0400040c0273a307000a7dfc04000400de0d11052c081104281d01000a00dc05054a0f0128c307000a7bc407000a58540e040f0128c307000a7bc507000a540f0128c307000a1306120628c607000a0d0f0128c307000a7bc407000a175913072b5c00288701000a7bdf02000a091107a380010001176fc707000a130812087cb807000a28c807000a287400000a130a120a28c807000afe0116fe01130911092c03002b13060211088cbb00000104162843090006580a00110717591307110716fe0416fe01130b110b2d960814fe03130c110c2c3500027bfe040004130d16130e110d120e281c01000a0000027bfc040004086fc907000a0000de0d110e2c08110d281d01000a00dc000006130f2b00110f2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>History query, catches and finally · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs:856–915
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+	internal void RefreshRecordResult()
+	{
+		IntPtr pstModuleResBuff = IntPtr.Zero;
+		try
+		{
+			ModuleDisplayInfoList.Clear();
+			ignoreRefreshRecordTimerTick = true;
+			if (VMModule == null)
+			{
+				return;
+			}
+			int index = 0;
+			int totalNum = 0;
+			ImvsSdkDefine.IMVS_QUERY_MODULE_RES_INFO_LIST? resultList = ServerSDKManager.serverSDKManager.mModuleManager.QueryModuleHistoryResult(VMModule.ID, 0, 1u, ref pstModuleResBuff);
+			if (!resultList.HasValue)
+			{
+				return;
+			}
+			int num = AnalyzeResultList(resultList, isChangeErrorInfo: true, ref index, ref totalNum);
+			int num2 = num;
+			if (IntPtr.Zero != pstModuleResBuff)
+			{
+				ServerSDKManager.serverSDKManager.mModuleManager.ReleaseModuleHistoryResult(ref pstModuleResBuff);
+			}
+			while (num2 &lt; 500 &amp;&amp; totalNum &gt; index)
+			{
+				uint num3 = Math.Max(1u, (uint)Math.Ceiling((double)(500 - num2) / (double)num));
+				if (index + num3 &gt; totalNum)
+				{
+					num3 = (uint)(totalNum - index);
+				}
+				resultList = ServerSDKManager.serverSDKManager.mModuleManager.QueryModuleHistoryResult(VMModule.ID, index, num3, ref pstModuleResBuff);
+				if (!resultList.HasValue)
+				{
+					break;
+				}
+				num2 += AnalyzeResultList(resultList, isChangeErrorInfo: false, ref index, ref totalNum);
+				if (IntPtr.Zero != pstModuleResBuff)
+				{
+					ServerSDKManager.serverSDKManager.mModuleManager.ReleaseModuleHistoryResult(ref pstModuleResBuff);
+				}
+			}
+		}
+		catch (VmException ex)
+		{
+			LogHelper.Error($&quot;ErrorCode:{ex.errorCode}, ErrorMessage:{ex.errorMessage}&quot;);
+		}
+		catch (Exception ex2)
+		{
+			LogHelper.Error(ex2.Message + &quot;, &quot; + ex2.StackTrace);
+		}
+		finally
+		{
+			if (IntPtr.Zero != pstModuleResBuff)
+			{
+				ServerSDKManager.serverSDKManager.mModuleManager.ReleaseModuleHistoryResult(ref pstModuleResBuff);
+			}
+			ignoreRefreshRecordTimerTick = false;
+		}
+	}</pre></details><details><summary>Query result order and pending queue preservation · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs:917–949
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+	private int AnalyzeResultList(ImvsSdkDefine.IMVS_QUERY_MODULE_RES_INFO_LIST? resultList, bool isChangeErrorInfo, ref int index, ref int totalNum)
+	{
+		int num = 0;
+		if (resultList.HasValue)
+		{
+			List&lt;LogInfo&gt; list = null;
+			lock (_recordlock)
+			{
+				list = tempInfoList;
+				tempInfoList = new List&lt;LogInfo&gt;();
+			}
+			index += resultList.Value.nNum;
+			totalNum = resultList.Value.nTotalNum;
+			ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX[] array = resultList.Value.pastModuResultList();
+			for (int num2 = resultList.Value.nNum - 1; num2 &gt;= 0; num2--)
+			{
+				ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data iMVS_MODULE_RESULT_INFO_LIST_EX_Data = ServerSDKManager.serverSDKManager.mModuleManager.PreProData(array[num2], isFilter: true);
+				if (iMVS_MODULE_RESULT_INFO_LIST_EX_Data.dtEndTime.Year == DateTime.Now.Year)
+				{
+					num += AddRecord(iMVS_MODULE_RESULT_INFO_LIST_EX_Data, isChangeErrorInfo);
+				}
+			}
+			if (list != null)
+			{
+				lock (_recordlock)
+				{
+					tempInfoList.AddRange(list);
+				}
+			}
+		}
+		return num;
+	}
+</pre></details></article><article id="HRE05" class="source-confirmed"><h2>HRE05 · ModuleManager.QueryModuleHistoryResult / PreProData → 需图像请求与过滤后的托管历史不同</h2><p>source-confirmed：所选6参数查询包装实际向SDK传bResBuffFirst=false、bNeedImage=true、bUseResStructMap=false；-536870123返回null，0且指针非零才记buffer并PtrToStructure，其它错误抛VmException。PreProData传isFilter进入NativeData2Data；isFilter=true时type4图像不执行pImageValue复制、type5 chunk也跳过，所以不能据bNeedImage=true声称历史UI保留图像帧。Release返回非0不清指针，0才清零；Decorator忽略返回码，finally可能再次尝试释放。</p><p>待追：底层buffer所有权/释放错误/图像共享内存及其它按执行次数查询入口未知；本报告不否定其它控件可能有回放能力。</p><details><summary>VM.PlatformSDKCS.ModuleManager::QueryModuleHistoryResult · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:23678–23697
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x0600008b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600008b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;QueryModuleHistoryResult&quot;,
+            &quot;parameters&quot;: 6,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20061511510111850c09080910180209&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 151,
+          &quot;ilSha256&quot;: &quot;45f83e67df3d159bdf6ed1241cfd66c999e34b2eed69535565574232fe23e68e&quot;,
+          &quot;ilBytes&quot;: &quot;0020ff0000e00a1201fe15430100027e4600000a0c7e9703000403040512021617160e050e0628300300060a0616fe030d092c28000620150300e0fe01130511052c0e1206fe150e00001b110613072b430673a6060006130411047a7e4600000a08284700000a130811082c18000e0408df081201281c00002b0007738d00000a13072b0f001206fe150e00001b110613072b0011072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ModuleManager::PreProData · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:19139–19158
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000079&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000079&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;PreProData&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20021183b411838802&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 375,
+          &quot;ilSha256&quot;: &quot;b6afd809aa0466a6632840af9dfca1f502a1ed0d32e9a9c59cee27979e88b442&quot;,
+          &quot;ilBytes&quot;: &quot;001200fe15e1000002037b320500047e4600000a284700000a0d092c1d00037b32050004d0e1000002285000000a287900000aa5e10000020a001204fe15ed0000021204037b290500047d690500041204037b2a0500047d6a0500041204037b2b0500047d6b0500041204037b2c0500047d6c0500041204037b340500047d710500041204037b2d0500047d6d0500041204037b2e0500047d6e0500041204037b2f0500047d6f0500041204037b350500047d700500041204037b360500047d720500041204037b380500047d75050004120402067b26050004067b2705000428780000067d730500041204037b380500048de00000027d7605000411040b037b39050004037b38050004281200002b0c1613052b4900077b7605000411058fe00000020811058fdf0000027b0c050004287f0600067d17050004020811058fdf000002077b7605000411058fe000000204287c00000600001105175813051105037b38050004fe04130611062da70713072b0011072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ModuleManager::NativeData2Data · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:20372–20391
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x0600007c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600007c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;NativeData2Data&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2003011011837c1011838002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 941,
+          &quot;ilSha256&quot;: &quot;274a8828001198a1797b2090b84b92bfd06bece0f6ddc55fdaa2a9debcabb681&quot;,
+          &quot;ilBytes&quot;: &quot;0004037b0c050004287f0600067d1705000404037b0d0500047d1805000404037b0e0500047d1905000404037b0b0500047d16050004047b180500040a061759450700000005000000430000008300000022010000a20100003402000023030000384603000000037b0b05000416fe010b072c1200178d6f0000010c04087d1a050004002b190004037b0f050004037b0e050004281500002b7d1a05000400380803000000037b0b05000416fe010d092c1400178d7000000113040411047d1b050004002b190004037b10050004037b0e050004281600002b7d1b0500040038c802000000037b0b05000416fe01130511052c2600178dda00000213061106168fda00000272990000707df60400040411067d1c050004002b6400037b11050004037b0e050004281700002b13070411078e698dda0000027d1c0500041613082b2d00047b1c05000411088fda000002110711088fd90000027bf4040004287f0600067df604000400110817581308110811078e69fe04130911092dc50038290200000005130c110c2c05381c02000016130a037b12050004037b0e050004281800002b130b04037b0e0500048dde0000027d1d05000416130d2b3100047b1d050004110d7348070006a202110b110d8fdb000002047b1d050004110d9a120a287b0000060000110d1758130d110d037b0e050004fe04130e110e2dbf0038a90100000005131111112c05389c01000016130f037b13050004037b0e050004281800002b131004037b0e0500048dde0000027d1e0500041613122b4300047b1e05000411127348070006a202111011128fdb000002047b1e05000411129a120f287b00000600110f131311132c0a0004167d190500042b17001112175813121112037b0e050004fe04131411142dad00381701000000037b14050004037b0e050004281900002b131504037b0e0500048ddd0000027d1f05000416131638ac000000000011151116a3dc000002131711177bfe0400048d66000001131811177bfd04000411181611188e69285d00000a007e7f00000a131911177bfe0400042000100000350911177bfe0400042b052000100000131a111816111a288000000a72e50000707e7f00000a6f8100000a6f8200000a1319047b1f05000411168fdd00000211197d00050004047b1f05000411168fdd00000211187d0205000400de06131b0000de00001116175813161116037b0e050004fe04131c111c3a41ffffff002b2800037b0b05000416fe01131d111d2c1400178d71000001131e04111e7d21050004002b0200002b002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ModuleManager::ReleaseModuleHistoryResult · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:24249–24268
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x0600008c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600008c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;ReleaseModuleHistoryResult&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001081018&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 44,
+          &quot;ilSha256&quot;: &quot;ab5b5a109bde43738f0fedf16d1f1f621dc27a2408450fc1ace749895031f5db&quot;,
+          &quot;ilBytes&quot;: &quot;00160a7e970300041f09034d28110300060a0616fe030b072c0500060c2b0b037e4600000adf060c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Native history query flags and status · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs:969–996
+SHA256 783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922
+	public ImvsSdkDefine.IMVS_QUERY_MODULE_RES_INFO_LIST? QueryModuleHistoryResult(uint nModuleID, int nIndex, uint nRequestNum, ref IntPtr pstModuleResBuff, bool bQueryByRunCount = false, uint nRunCount = 0u)
+	{
+		int num = -536870657;
+		ImvsSdkDefine.IMVS_QUERY_MODULE_RES_INFO_LIST structure = default;
+		IntPtr pQueryModuResInfoList = IntPtr.Zero;
+		num = ServerSDKAPI.IMVS_QueryModuleHistoryResult(CVmObjectBase.mhandle, nModuleID, nIndex, nRequestNum, ref pQueryModuResInfoList, bResBuffFirst: false, bNeedImage: true, bUseResStructMap: false, bQueryByRunCount, nRunCount);
+		switch (num)
+		{
+		case -536870123:
+			return null;
+		default:
+		{
+			VmException ex = new VmException(num);
+			throw ex;
+		}
+		case 0:
+			if (IntPtr.Zero != pQueryModuResInfoList)
+			{
+				pstModuleResBuff = pQueryModuResInfoList;
+				ExternalCallHelper.PtrToStructureWithoutFree(pQueryModuResInfoList, ref structure);
+				return structure;
+			}
+			return null;
+		}
+	}
+
+	/// &lt;summary&gt;
+	/// 释放模块历史结果内存</pre></details><details><summary>Image/chunk filter branches · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs:607–692
+SHA256 783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922
+	private void NativeData2Data(ref ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX nativedata, ref ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX_Data targeData, bool isFilter = false)
+	{
+		targeData.strParamName = StringUtil.UTF8GetString(nativedata.strParamName);
+		targeData.nParamType = nativedata.nParamType;
+		targeData.nValueNum = nativedata.nValueNum;
+		targeData.nValueStatus = nativedata.nValueStatus;
+		switch (targeData.nParamType)
+		{
+		case 1:
+			if (nativedata.nValueStatus == 0)
+			{
+				int[] pIntValue = new int[1];
+				targeData.pIntValue = pIntValue;
+			}
+			else
+			{
+				targeData.pIntValue = ExternalCallHelper.IntPtr2Ts&lt;int&gt;(nativedata.pIntValue, nativedata.nValueNum);
+			}
+			break;
+		case 2:
+			if (nativedata.nValueStatus == 0)
+			{
+				float[] pFloatValue = new float[1];
+				targeData.pFloatValue = pFloatValue;
+			}
+			else
+			{
+				targeData.pFloatValue = ExternalCallHelper.IntPtr2Ts&lt;float&gt;(nativedata.pFloatValue, nativedata.nValueNum);
+			}
+			break;
+		case 3:
+		{
+			if (nativedata.nValueStatus == 0)
+			{
+				ImvsSdkDefine.IMVS_MODULE_STRING_VALUE_EX[] array5 = new ImvsSdkDefine.IMVS_MODULE_STRING_VALUE_EX[1];
+				array5[0].strValue = &quot;&quot;;
+				targeData.pStringValue = array5;
+				break;
+			}
+			ImvsSdkDefine.IMVS_MODULE_STRING_VALUE[] array6 = ExternalCallHelper.PtrToStructurs&lt;ImvsSdkDefine.IMVS_MODULE_STRING_VALUE&gt;(nativedata.pStringValue, nativedata.nValueNum);
+			targeData.pStringValue = new ImvsSdkDefine.IMVS_MODULE_STRING_VALUE_EX[array6.Length];
+			for (int l = 0; l &lt; array6.Length; l++)
+			{
+				targeData.pStringValue[l].strValue = StringUtil.UTF8GetString(array6[l].strValue);
+			}
+			break;
+		}
+		case 4:
+			if (!isFilter)
+			{
+				bool isExcOccur = false;
+				ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX[] array = ExternalCallHelper.PtrToStructurs&lt;ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX&gt;(nativedata.pImageValue, nativedata.nValueNum);
+				targeData.pImageValue = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data[nativedata.nValueNum];
+				for (int i = 0; i &lt; nativedata.nValueNum; i++)
+				{
+					targeData.pImageValue[i] = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data();
+					LargeObject(ref array[i], targeData.pImageValue[i], ref isExcOccur);
+				}
+			}
+			break;
+		case 5:
+		{
+			if (isFilter)
+			{
+				break;
+			}
+			bool isExcOccur2 = false;
+			ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX[] array4 = ExternalCallHelper.PtrToStructurs&lt;ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX&gt;(nativedata.pChunkValue, nativedata.nValueNum);
+			targeData.pChunkValue = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data[nativedata.nValueNum];
+			for (int k = 0; k &lt; nativedata.nValueNum; k++)
+			{
+				targeData.pChunkValue[k] = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data();
+				LargeObject(ref array4[k], targeData.pChunkValue[k], ref isExcOccur2);
+				if (isExcOccur2)
+				{
+					targeData.nValueNum = 0;
+					break;
+				}
+			}
+			break;
+		}
+		case 6:
+		{
+			ImvsSdkDefine.IMVS_MODULE_BYTEDATA_VALUE_EX[] array2 = ExternalCallHelper.PtrToStructurs&lt;ImvsSdkDefine.IMVS_MODULE_BYTEDATA_VALUE_EX&gt;(nativedata.pByteValue, nativedata.nValueNum);
+			targeData.pByteValue = new ImvsSdkDefine.IMVS_MODULE_BYTEDATA_VALUE_EX_Data[nativedata.nValueNum];
+			for (int j = 0; j &lt; nativedata.nValueNum; j++)</pre></details><details><summary>Release pointer only on success · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs:998–1009
+SHA256 783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922
+	public int ReleaseModuleHistoryResult(ref IntPtr pstModuleResBuff)
+	{
+		int num = 0;
+		num = ServerSDKAPI.IMVS_ReleaseDynamicMemory(CVmObjectBase.mhandle, ImvsSdkDefine.IMVS_RELEASE_MEMORY_TYPE.RELEASE_MEMORY_STRUCT_MODU_HISTORY_RES_INFO_LIST, pstModuleResBuff);
+		if (num != 0)
+		{
+			return num;
+		}
+		pstModuleResBuff = IntPtr.Zero;
+		return num;
+	}
+</pre></details></article><article id="HRE06" class="source-confirmed"><h2>HRE06 · RefreshDataRecord / AddRecord / GetRecordContent → 文本记录来源、批次去重与ErrorInfo差异</h2><p>source-confirmed：回调尾部RefreshDataRecord仅当前m_CurrentInfo非null时AddRecord(result,true,true)，异常日志。AddRecord只识别SDK结果结构；callback先写curCallBackExecuteCount，非self且&lt;=maxQuery即跳过；query更新maxQuery后若&lt;=curCallBack也跳过。DataRecord.GetRecordContent在状态非1/5时返错误字符串；同执行次数可读缓存DataRecord.Content数组，否则按Content.MappingArray从result.pInfo取对应值格式化。数组逐项非空才入tempInfoList，num&gt;=500只break该数组循环；标量即使空也入一条后break dataRecords循环。返回num是加入记录数；isChangeErrorInfo时ErrorInfo=text，数组分支可能仍为null，不应按注释称返回执行失败布尔值。</p><p>待追：Feature.GetValue格式化、全部native字段生产者、计数回绕/重复批次及线程交错未闭合；记录文本不等于图像/模块可重放快照。</p><details><summary>VMControls.WPF.ModuleResultView::RefreshDataRecord · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:2450–2469
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001d3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001d3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;RefreshDataRecord&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 71,
+          &quot;ilSha256&quot;: &quot;fc500278e1480c16e52011ce87b9eafee49e623aef18dab498aac3a3441db979&quot;,
+          &quot;ilBytes&quot;: &quot;000228a001000614fe010a062c03002b3500000228a00100060317176f430900062600de210b0072be1d0070076fa300000a076fe700000a283a00000a28a400000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.DataForUI.ModuleDisplayDecorator::AddRecord · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:11553–11572
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000943&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000943&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ModuleDisplayDecorator&quot;,
+            &quot;name&quot;: &quot;AddRecord&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2003081c0202&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 663,
+          &quot;ilSha256&quot;: &quot;79d9b8077b64d7a90fc31b6b650ac57413281baab75991099f43cc10b98cbd70&quot;,
+          &quot;ilBytes&quot;: &quot;00160a140b0325130475bb0000012c0b1104a5bb0000010c172b01160d09395b0200000005130611062c3c0002087bb407000a7d02050004087b2c02000a172e13027b02050004027b01050004fe0316fe012b0116130711072c09001613083830020000002b4400027b01050004087bb407000afe05130911092c0e0002087bb407000a7d0105000400027b01050004027b02050004fe0316fe01130a110a2c090016130838ea0100000002281c0900066f5102000a130500027b000500046fb507000a130b3895010000120b28b607000a130c00110c086fb707000a130d110d756600000114fe03130e110e39e10000000016130f38b900000000739a08000613111111087bb407000a6e6f9508000600111112027cb807000a722a87007028ea02000a6f99080006001111110d7566000001110f6f9a00000a6f3200000a6f97080006001111131011106f96080006283900000a16fe01131211122c3a00027bfe040004131316131411131214281c01000a0000027bfc04000411106fb907000a000617580a00de0d11142c081113281d01000a00dc000620f4010000fe0416fe01131511152c03002b2000110f1758130f110f110d75660000016fbe02000afe04131611163a2effffff00388c00000000739a08000625087bb407000a6e6f95080006002512027cb807000a722a87007028ea02000a6f990800060025110d2d03142b07110d6f3200000a6f97080006001317027bfe040004131816131911181219281c01000a0000027bfc04000411176fb907000a000617580a00de0d11192c081118281d01000a00dc110d2d03142b07110d6f3200000a0b2b0d00120b28ba07000a3a5ffeffffde0f120bfe16e600001b6fa000000a00dc0004131a111a2c0a000207286509000600000613082b0011082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.Object::GetRecordContent · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:25035–25054
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001ee&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001ee&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.Object&quot;,
+            &quot;name&quot;: &quot;GetRecordContent&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011c118249&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 620,
+          &quot;ilSha256&quot;: &quot;3949249582352c4d219599de855950b05b6fde514e7261c2cf029a0b2bf89edc&quot;,
+          &quot;ilBytes&quot;: &quot;00037b5302000a172e0e037b5302000a1bfe0116fe012b01160a062c6c001c8d560100012516721f0c007028c601000aa2251772cf150070a2251872d715007072f315007028c601000a037b5402000a8c74010001285100000aa22519720716007028c601000aa2251a721b160070a2251b037b5402000a285502000aa2283201000a0b38e1010000027bfa000004037b5602000afe010c082c6100027bf9000004755000001b250d14fe03130411042c440009284900002b252d0426142b307e29070004252d17267e24070004fe0629100006735702000a258029070004284a00002b252d0426142b05280600002b0b387401000000385d01000073301000061305000228700100067e2a070004252d17267e24070004fe062a100006736a01000a25802a070004284000002b13061105110675210000022513087d2f07000411082c1111057b2f0700047b4d00000414fe032b01161307110739f80000000011057b2f0700047b4d0000048e69130911098d12000001130a7331100006130b110b11057d31070004110b167d300700042b6e00037b5802000a110bfe0632100006735902000a284b00002b130c110c7b5a02000a110b7b310700047b2f0700047b4d000004110b7b300700049a286300000a130d110d2c1300110a110b7b30070004110c285b02000aa20000110b7b30070004130e110b110e17587d30070004110b7b300700041109fe04130f110f2d81110a7e2b070004252d17267e24070004fe062b10000673ee00000a25802b070004284c00002b16fe02131011102c150011057b2f070004110a1616146fe50000060b2b130000178d5601000125167247030070a20b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>.&lt;&gt;c::&lt;GetRecordContent&gt;b__59_0 · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:27307–27326
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06001029&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001029&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec&quot;,
+            &quot;name&quot;: &quot;\u003CGetRecordContent\u003Eb__59_0&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010e128201&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;24e8586f1fcdb58f70605a3d386ec128d246be4a3df382d717ffffd53c622bb4&quot;,
+          &quot;ilBytes&quot;: &quot;037b1202000a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.1&quot;,</pre></details><details><summary>.&lt;&gt;c__DisplayClass59_1::&lt;GetRecordContent&gt;b__2 · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:27511–27530
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06001032&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001032&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec__DisplayClass59_1&quot;,
+            &quot;name&quot;: &quot;\u003CGetRecordContent\u003Eb__2&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200102118181&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 35,
+          &quot;ilSha256&quot;: &quot;391f6e1102649022d705b1f3f616037656d9a010513c1c34991aea2bf97a79d6&quot;,
+          &quot;ilBytes&quot;: &quot;037b5a02000a027b310700047b2f0700047b4d000004027b300700049a286300000a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.1&quot;,</pre></details><details><summary>Current decorator callback record admission · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:1544–1559
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	public void RefreshDataRecord(object result)
+	{
+		if (m_CurrentInfo == null)
+		{
+			return;
+		}
+		try
+		{
+			m_CurrentInfo.AddRecord(result, isChangeErrorInfo: true, isCallBack: true);
+		}
+		catch (Exception ex)
+		{
+			LogHelper.Error(&quot;RefreshDataRecord异常：&quot; + ex.Message + ex.StackTrace);
+		}
+	}
+</pre></details><details><summary>Record count gates and formatting · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs:755–830
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+	internal int AddRecord(object result, bool isChangeErrorInfo = true, bool isCallBack = false)
+	{
+		int num = 0;
+		string text = null;
+		if (result is ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data result2)
+		{
+			if (isCallBack)
+			{
+				curCallBackExecuteCount = result2.nExecuteCount;
+				if (result2.bIsSelfExecute != 1 &amp;&amp; curCallBackExecuteCount &lt;= maxQueryExecuteCount)
+				{
+					return 0;
+				}
+			}
+			else
+			{
+				if (maxQueryExecuteCount &lt; result2.nExecuteCount)
+				{
+					maxQueryExecuteCount = result2.nExecuteCount;
+				}
+				if (maxQueryExecuteCount &lt;= curCallBackExecuteCount)
+				{
+					return 0;
+				}
+			}
+			IList&lt;object&gt; displayList = ModuleParams.GetDisplayList();
+			foreach (Apps.XmlParser.Object dataRecord in dataRecords)
+			{
+				object recordContent = dataRecord.GetRecordContent(result2);
+				if (recordContent is Array)
+				{
+					for (int i = 0; i &lt; (recordContent as Array).Length; i++)
+					{
+						LogInfo logInfo = new LogInfo();
+						logInfo.RowIndex = result2.nExecuteCount;
+						logInfo.AddTime = result2.dtEndTime.ToString(&quot;yyyy-MM-dd HH:mm:ss:fff&quot;);
+						logInfo.Content = (recordContent as Array).GetValue(i).ToString();
+						LogInfo logInfo2 = logInfo;
+						if (!string.IsNullOrEmpty(logInfo2.Content))
+						{
+							lock (_recordlock)
+							{
+								tempInfoList.Add(logInfo2);
+								num++;
+							}
+						}
+						if (num &gt;= 500)
+						{
+							break;
+						}
+					}
+					continue;
+				}
+				LogInfo item = new LogInfo
+				{
+					RowIndex = result2.nExecuteCount,
+					AddTime = result2.dtEndTime.ToString(&quot;yyyy-MM-dd HH:mm:ss:fff&quot;),
+					Content = recordContent?.ToString()
+				};
+				lock (_recordlock)
+				{
+					tempInfoList.Add(item);
+					num++;
+				}
+				text = recordContent?.ToString();
+				break;
+			}
+		}
+		if (isChangeErrorInfo)
+		{
+			ErrorInfo = text;
+		}
+		return num;
+	}
+
+	private void RefreshRecordTimerTick(object sender, EventArgs e)</pre></details><details><summary>Data Record payload formatting · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/Object.cs:1051–1094
+SHA256 feed3ecc1a21de9e05092b5895a7dc369a947c20ca2b3cf63b5d8e7b125ce0c1
+	public object GetRecordContent(ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_LIST_EX_Data result)
+	{
+		if (result.nStatus != 1 &amp;&amp; result.nStatus != 5)
+		{
+			return AppLocalizationService.GetLang(&quot;Status&quot;) + &quot;:0 &quot; + string.Format(&quot;{0}:{1:X000} &quot;, AppLocalizationService.GetLang(&quot;ErrorCode&quot;), result.nErrorCode) + AppLocalizationService.GetLang(&quot;ErrorInfo&quot;) + &quot;:&quot; + ErrorCodeInfo.GetErrorInfo((int)result.nErrorCode);
+		}
+		if (valueExecuteCount == result.nExecuteCount)
+		{
+			if (value is List&lt;object&gt; source)
+			{
+				return source.OfType&lt;DataRecord&gt;()?.Select((DataRecord p) =&gt; p.Content)?.ToArray();
+			}
+		}
+		else
+		{
+			FeatureBase featureBase = FeaturesB.FirstOrDefault((FeatureBase p) =&gt; p.NameA == &quot;Content&quot;);
+			Feature feature;
+			if ((feature = featureBase as Feature) != null &amp;&amp; feature.MappingArray != null)
+			{
+				int num = feature.MappingArray.Length;
+				object[] array = new object[num];
+				int i;
+				for (i = 0; i &lt; num; i++)
+				{
+					ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX_Data struResultInfo = result.pInfo.FirstOrDefault((ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX_Data p) =&gt; p.strParamName == feature.MappingArray[i]);
+					if (struResultInfo.strParamName == feature.MappingArray[i])
+					{
+						array[i] = ModuleManager.GetValueFromServer(struResultInfo);
+					}
+				}
+				if (array.Count((object p) =&gt; p != null) &gt; 0)
+				{
+					return feature.GetValue(array);
+				}
+			}
+		}
+		return new string[1] { &quot;&quot; };
+	}
+
+	public List&lt;VmIO&gt; GetAllTopMappingIO()
+	{
+		List&lt;VmIO&gt; ios = new List&lt;VmIO&gt;();
+		foreach (FeatureBase item in FeaturesB)
+		{</pre></details></article><article id="HRE07" class="source-confirmed"><h2>HRE07 · RecordTimer与Clear菜单 → pending批量显示、500行裁剪与先清UI后清SDK</h2><p>source-confirmed：timer在ignore标志true时返回，pending非空则锁内交换list再InsertRange(0,items)，最后超过500才RemoveRange。既有Init每300ms启动timer，DeInit停止/置空，Dispose另清历史列表。Menu_Clear仅当前列表及ModuleSource均有值才先列表.Clear再ClearModuleHistoryResult(ID)，SDK非0抛错后UI已经清；菜单体未清tempInfoList/批次计数或取消timer，不能保证清空后pending不再显示。异常弹出错误，不做UI回滚。</p><p>待追：Clear与timer/query/callback实际竞态、native清空范围和重复Dispose安全另未知；生命周期完整移除见已有results-roi V12。</p><details><summary>VMControls.WPF.DataForUI.ModuleDisplayDecorator::RefreshRecordTimerTick · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:13975–13994
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x06000944&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000944&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.DataForUI.ModuleDisplayDecorator&quot;,
+            &quot;name&quot;: &quot;RefreshRecordTimerTick&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c12811d&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 162,
+          &quot;ilSha256&quot;: &quot;fb545977253102a2aa284b5b95eb543f22d393edc615259d2fb8585bc5b4dec7&quot;,
+          &quot;ilBytes&quot;: &quot;00027bfb0400040b072c06003890000000027bfc0400046fbb07000a16fe020c082c4a00140d027bfe040004130416130511041205281c01000a0000027bfc0400040d0273a307000a7dfc04000400de0d11052c081104281d01000a00dc02284109000616096fbc07000a00000228410900066fbd07000a0a0620f4010000fe02130611062c1a0002284109000620f40100000620f4010000596fbe07000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.ModuleResultView::Menu_Clear_Click · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:4041–4060
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001e6&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001e6&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;Menu_Clear_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 175,
+          &quot;ilSha256&quot;: &quot;fd2db3a6557e169eb22f6de99d3dad159f25d7136ad49a4d3a1500c9e1693d67&quot;,
+          &quot;ilBytes&quot;: &quot;00000228a0010006252d0426142b0528410900062c0b0228ac01000614fe032b01160a062c2e000228a00100066f410900066fde02000a00288701000a7bdf02000a0228ac0100066f9100000a6fe002000a000000de570b00076fa300000a0c077552000001250d14fe03130411042c3100096fd300000a28d400000a72281f00707282090070283800000a096fd300000a13051205285200000a28e800000a0c00081916282e01000a2600de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ModuleManager::ClearModuleHistoryResult · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:18970–18989
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x0600006a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600006a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;ClearModuleHistoryResult&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010109&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 32,
+          &quot;ilSha256&quot;: &quot;e6fce32fcced2a50fc19c1af032d64e3234b62c976749aed2d8741a956649f3d&quot;,
+          &quot;ilBytes&quot;: &quot;007e970300040328540300060a0616fe030b072c0a000673a60600060c087a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Pending records and finite trimming · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs:830–852
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+	private void RefreshRecordTimerTick(object sender, EventArgs e)
+	{
+		if (ignoreRefreshRecordTimerTick)
+		{
+			return;
+		}
+		if (tempInfoList.Count &gt; 0)
+		{
+			List&lt;LogInfo&gt; items = null;
+			lock (_recordlock)
+			{
+				items = tempInfoList;
+				tempInfoList = new List&lt;LogInfo&gt;();
+			}
+			ModuleDisplayInfoList.InsertRange(0, items);
+		}
+		int count = ModuleDisplayInfoList.Count;
+		if (count &gt; 500)
+		{
+			ModuleDisplayInfoList.RemoveRange(500, count - 500);
+		}
+	}
+</pre></details><details><summary>Clear order and error handling · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:2058–2080
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	private void Menu_Clear_Click(object sender, RoutedEventArgs e)
+	{
+		try
+		{
+			if (m_CurrentInfo?.ModuleDisplayInfoList != null &amp;&amp; ModuleSource != null)
+			{
+				m_CurrentInfo.ModuleDisplayInfoList.Clear();
+				ServerSDKManager.serverSDKManager.mModuleManager.ClearModuleHistoryResult(ModuleSource.ID);
+			}
+		}
+		catch (Exception ex)
+		{
+			string strMsg = ex.Message;
+			if (ex is VmException ex2)
+			{
+				strMsg = ErrorCodeInfo.GetErrorInfo(ex2.errorCode) + &quot;,&quot; + AppLocalizationService.GetLang(&quot;errCode:&quot;) + ex2.errorCode;
+			}
+			HikMessageBox.Show(strMsg, MessageIcons.Error);
+		}
+	}
+
+	/// &lt;summary&gt;  
+	/// 保存数据data到文件处理过程，返回值为保存的文件名  </pre></details><details><summary>Native clear status check · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs:401–410
+SHA256 783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922
+	public void ClearModuleHistoryResult(uint nModuleID)
+	{
+		int num = ServerSDKAPI.IMVS_ClearModuleHistoryResult(CVmObjectBase.mhandle, nModuleID);
+		if (num != 0)
+		{
+			VmException ex = new VmException(num);
+			throw ex;
+		}
+	}
+</pre></details><details><summary>Existing timer registration context · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/ModuleDisplayDecorator.cs:1207–1209
+SHA256 ceda24b7fb93bcd9f02b77b23d42a839b1f737bf70cf3abc6b7786d11765740e
+		RecordTimer.Tick += RefreshRecordTimerTick;
+		RecordTimer.Interval = TimeSpan.FromMilliseconds(300.0);
+		RecordTimer.Start();</pre></details></article><article id="HRE08" class="source-confirmed"><h2>HRE08 · Menu_Save_Click → SaveProcess → IList文本导出、取消/覆盖及错误边界</h2><p>source-confirmed：ItemsSource非IList返回，空列表警告。构造txt SaveFileDialog，文件名取当前ModuleSource as VmModule.Name和时间；这些步骤在try外。try内仅OK继续，遍历LogInfo格式化RowIndex/AddTime/Content加CRLF，调用SaveProcess；finally Dispose对话框。SaveProcess以append:false开StreamWriter，写数据；catch弹错后仍return传入name，finally Close再Dispose，若Close抛错可能跳过Dispose且向外传播。返回路径不等于文件完整保存。</p><p>待追：覆盖确认/编码/磁盘失败实际对话框、枚举时列表变化、stream Close失败及文件内容验收未知；不执行任何导出。</p><details><summary>VMControls.WPF.ModuleResultView::Menu_Save_Click · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:5142–5161
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001e8&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001e8&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;Menu_Save_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 417,
+          &quot;ilSha256&quot;: &quot;5e1f44f7200964aee4295a52ba207e70098c837adf02e6d88526d5ddaec707dc&quot;,
+          &quot;ilBytes&quot;: &quot;00027b030100046fe502000a757e0000010a0614fe010c082c053881010000066fe602000a17fe040d092c320028ce02000a252d0426142b0528cf02000a722c1f0070283800000a72421f0070283800000a1828e702000a26384201000073e802000a1304110472601f00706fe902000a0011040228ac010006759a0000016f2d01000a720c050070287400000a1305120572981f007028ea02000a283a00000a252d062672290000706feb02000a001104176fec02000a001104176fed02000a0011040b00076fee02000a17fe0113061106399a00000000076fef02000a130773f002000a130800066ff102000a13092b4d11096f3d01000a130a00110a7591000002130b110b14fe03130c110c2c2e00110872c01f0070110b6f940800068c5b020001110b6f98080006110b6f96080006281b01000a6ff202000a26000011096f9f00000a2daade1611097568000001130d110d2c08110d6fa000000a00dc0211086f3200000a110728e7010006260000de1f130e00722c1f0070283800000a110e6fa300000a191628d200000a2600de00de0a00076ff302000a0000dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.ModuleResultView::SaveProcess · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:4733–4752
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001e7&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001e7&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;SaveProcess&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20020e0e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 79,
+          &quot;ilSha256&quot;: &quot;a525c8808d6382076ea7cf6072db5c71be322b07cec138a2d0af73ee0175611a&quot;,
+          &quot;ilBytes&quot;: &quot;00040a140b00061673e102000a0b07036fe202000a0000de130c00086fa300000a1916282e01000a2600de00de1b00072d022b07076fe302000a00072d022b070728e402000a0000dc060d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>History save dialog and body · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:2102–2150
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	private void Menu_Save_Click(object sender, RoutedEventArgs e)
+	{
+		if (!(m_DataGrid.ItemsSource is IList list))
+		{
+			return;
+		}
+		if (list.Count &lt; 1)
+		{
+			HikMessageBox.Show(System.Windows.Application.Current?.MainWindow, AppLocalizationService.GetLang(&quot;Savefailed&quot;), AppLocalizationService.GetLang(&quot;CountingErrors&quot;), MessageIcons.Warning);
+			return;
+		}
+		System.Windows.Forms.SaveFileDialog saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+		saveFileDialog.Filter = &quot;(*.txt)|*.txt|(*.TXT)|*.TXT&quot;;
+		saveFileDialog.FileName = ((ModuleSource as VmModule).Name + &quot;_&quot; + DateTime.Now.ToString(&quot;yyyy-MM-dd_hh-mm-ss&quot;)) ?? &quot;&quot;;
+		saveFileDialog.AddExtension = true;
+		saveFileDialog.RestoreDirectory = true;
+		System.Windows.Forms.SaveFileDialog saveFileDialog2 = saveFileDialog;
+		try
+		{
+			if (saveFileDialog2.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+			{
+				return;
+			}
+			string fileName = saveFileDialog2.FileName;
+			StringBuilder stringBuilder = new StringBuilder();
+			foreach (object item in list)
+			{
+				if (item is LogInfo logInfo)
+				{
+					stringBuilder.Append($&quot;{logInfo.RowIndex}  {logInfo.AddTime}  {logInfo.Content}\r\n&quot;);
+				}
+			}
+			SaveProcess(stringBuilder.ToString(), fileName);
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Savefailed&quot;), ex.Message, MessageIcons.Error);
+		}
+		finally
+		{
+			saveFileDialog2.Dispose();
+		}
+	}
+
+	private void imageListCombobox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+	{
+		ResultViewAddition?.SelectionChangedOut();
+		System.Windows.Controls.ComboBox comboBox = sender as System.Windows.Controls.ComboBox;
+		if (comboBox.SelectedValue == null)</pre></details><details><summary>Non-transactional file writer · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:2082–2102
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	public string SaveProcess(string data, string name)
+	{
+		StreamWriter streamWriter = null;
+		try
+		{
+			streamWriter = new StreamWriter(name, append: false);
+			streamWriter.Write(data);
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(ex.Message, MessageIcons.Error);
+		}
+		finally
+		{
+			streamWriter?.Close();
+			streamWriter?.Dispose();
+		}
+		return name;
+	}
+
+	private void Menu_Save_Click(object sender, RoutedEventArgs e)</pre></details></article><article id="HRE09" class="source-confirmed"><h2>HRE09 · m_ResultDataGrid_SelectionChanged（当前结果） → 当前ExecuteCount图形高亮重绘，不等于历史帧回放</h2><p>source-confirmed：仅当前结果表选项非null才取Items索引+1写selectIndex；取当前ModuleParams显示项，清extern shapes及ShapeList，加十字线，再对IsDisplay且不在exceptTypes的Object清ValueStore、GetValue(ExecuteCount)、SetRectHighLight及DrawCurModuleUIResult。该方法不读取历史m_DataGrid.SelectedItem或LogInfo.RowIndex，也没有从历史项恢复ImageDataSource的调用；不能把它当成所缺的历史条目→图像重放入口。</p><p>待追：其它历史行附加事件/全局监听、图像缓存查询和真正帧身份还未定位；所选体没有该调用不证明全程序不存在。</p><details><summary>VMControls.WPF.ModuleResultView::m_ResultDataGrid_SelectionChanged · original-managed-cil</summary><pre>docs/architecture-recovery/history-results-entry-audit.cil.json:2774–2793
+SHA256 72757cd3f263954e03c6c163edb01597fd93795cfed7605896e82e4395610d36
+          &quot;token&quot;: &quot;0x060001e4&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001e4&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.ModuleResultView&quot;,
+            &quot;name&quot;: &quot;m_ResultDataGrid_SelectionChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c12817d&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 281,
+          &quot;ilSha256&quot;: &quot;466c22bd97bfb2fd18315035a366c7416dd717f85916430e7e9e1d50338b5d27&quot;,
+          &quot;ilBytes&quot;: &quot;00027b000100046f8a02000a14fe010c082c053800010000027b000100046f6c02000a027b000100046f8a02000a6fdd02000a17580a02067dd0000004140b0228a00100066f1c0900066f5102000a250b14fe010d092c060038ba000000027bee0000046f5a02000a000228a00100066f3d0900066f5b02000a000228dc0100060000076f7902000a13042b7311046f7a02000a74bc00000113050011057b5602000a2c167ed500000411057b5702000a280100002b16fe012b0116130611062c3d0011056f5802000a0011050228aa01000615146f4802000a751300001b1307021105110728d80100060002110511057b5702000a110728d701000600000011046f9f00000a2d84de0d11042c0811046fa000000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Current-result row selection and current geometry redraw · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml.cs:2022–2049
+SHA256 e165657162322fd6b1ce15758847bed07f8c1e86a637815df8e87fe19439bb88
+	private void m_ResultDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+	{
+		if (m_ResultDataGrid.SelectedItem == null)
+		{
+			return;
+		}
+		int num = m_ResultDataGrid.Items.IndexOf(m_ResultDataGrid.SelectedItem) + 1;
+		selectIndex = num;
+		IList&lt;object&gt; list = null;
+		if ((list = m_CurrentInfo.ModuleParams.GetDisplayList()) == null)
+		{
+			return;
+		}
+		imageView.ClearExternShapes();
+		m_CurrentInfo.ShapeList.Clear();
+		AddCrossLine();
+		foreach (Apps.XmlParser.Object item in list)
+		{
+			if (item.IsDisplay &amp;&amp; !exceptTypes.Contains(item.Type))
+			{
+				item.ClearValueStore();
+				List&lt;object&gt; shapes = item.GetValue(ExecuteCount) as List&lt;object&gt;;
+				SetRectHighLight(item, shapes);
+				DrawCurModuleUIResult(item, item.Type, shapes);
+			}
+		}
+	}
+</pre></details><details><summary>Distinct current result grid selection declaration · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml:299–299
+SHA256 56ac6bbf9b8839311f4f8eaf0dc4407fc3f9527b39f3ad942080c0bb6c2948ff
+                    &lt;DataGrid Name=&quot;m_ResultDataGrid&quot; Grid.Column=&quot;1&quot; CellStyle=&quot;{StaticResource dgCellCenterAlignmentStyle}&quot; Style=&quot;{StaticResource CurResultDataGridStyle}&quot; ItemsSource=&quot;{Binding ModuleCurrentResultList, Mode=OneWay, IsAsync=True}&quot; SelectionChanged=&quot;m_ResultDataGrid_SelectionChanged&quot; /&gt;</pre></details></article><article id="HRC01" class="independent-implementation"><h2>HRC01 · 当前FrameworkRunHistory / HistoryGrid → 独立流程运行摘要与清理</h2><p>independent-implementation：当前HistoryGrid绑定FrameworkRunHistory.Entries；追加每个流程session状态、耗时和当前时间，独立sequence、最多500行，清空同时sequence归0。方案替换ResetFrameworkRunHistory还归零流程/模块时长并算法时长置不可用。此对象存摘要，无SDK buffer、原DataRecord或图像快照；MainWindow XAML虽声明历史/帮助两Tab，当前这组代码未恢复原ModuleDisplayInfoList/HelperContent切换语义。</p><p>待追：当前可见历史选择/清空菜单/帮助内容与原入口的逐项对应未闭合；不可把撤销历史或这个流程摘要当原模块回放。</p><details><summary>Current host history binding and reset · current-source</summary><pre>src/VisionEditor/MainWindow.FrameworkResultHistory.cs:10–34
+SHA256 f1bdb017f951dcbe5d50e80fa586d61c610b9d2ce90658a7ea8843c4e5f734c8
+    void InitializeFrameworkResultHistory()
+    {
+        HistoryGrid.ItemsSource = frameworkRunHistory.Entries;
+        doc.SolutionReplaced += ResetFrameworkRunHistory;
+        ResetFrameworkRunHistory();
+    }
+
+    void RecordFrameworkRunHistory(string procedureId, ExecutionSessionResult session)
+    {
+        var name = doc.Document.Procedures.FirstOrDefault(procedure =&gt; procedure.Id == procedureId)?.Name ?? procedureId;
+        frameworkRunHistory.Append(procedureId, name, session.Status,
+            session.Nodes.Sum(record =&gt; record.ElapsedMilliseconds), DateTime.Now);
+    }
+
+    void ResetFrameworkRunHistory()
+    {
+        // Independent solution replacement policy for the host&#39;s own summary.
+        // The original native/global module cache is not touched by this method.
+        frameworkRunHistory.Clear();
+        ProcessTimeText.Text = &quot;0.00&quot;;
+        ModuleTimeText.Text = &quot;0.00&quot;;
+        AlgorithmTimeText.Text = FrameworkResultTiming.Unavailable;
+    }
+
+    void RefreshFrameworkResultTiming()</pre></details><details><summary>Independent summary data and append · current-source</summary><pre>src/VisionEditor.Core/FrameworkRunHistory.cs:8–43
+SHA256 59dd728ed5398e4dc1c304340940729ce59d7eeda9e615a2a47690ebef40c5a6
+public sealed class FrameworkRunHistory
+{
+    public const int MaximumRecords = 500;
+    readonly ObservableCollection&lt;FrameworkRunHistoryEntry&gt; entries = new();
+    long sequence;
+
+    public FrameworkRunHistory() =&gt; Entries = new(entries);
+    public ReadOnlyObservableCollection&lt;FrameworkRunHistoryEntry&gt; Entries { get; }
+
+    public void Append(string procedureId, string procedureName, SessionStatus status, double elapsedMilliseconds, DateTime completedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(procedureId);
+        ArgumentNullException.ThrowIfNull(procedureName);
+        if (!double.IsFinite(elapsedMilliseconds) || elapsedMilliseconds &lt; 0)
+            throw new ArgumentOutOfRangeException(nameof(elapsedMilliseconds));
+        long next = checked(sequence + 1);
+        var entry = new FrameworkRunHistoryEntry(next, completedAt.ToString(&quot;yyyy-MM-dd HH:mm:ss:fff&quot;, CultureInfo.InvariantCulture),
+            procedureName + &quot; · &quot; + status, procedureId, elapsedMilliseconds);
+        entries.Insert(0, entry);
+        sequence = next;
+        if (entries.Count &gt; MaximumRecords) entries.RemoveAt(MaximumRecords);
+    }
+
+    /// &lt;summary&gt;Only clears this host&#39;s summary and sequence, not native result caches.&lt;/summary&gt;
+    public void Clear()
+    {
+        entries.Clear();
+        sequence = 0;
+    }
+}
+
+public sealed record FrameworkRunHistoryEntry(long Seq, string Time, string Data, string ProcedureId, double ElapsedMilliseconds);
+
+/// &lt;summary&gt;Times available from current managed results; algorithm-only time is unavailable.&lt;/summary&gt;
+public sealed record FrameworkResultTiming(double? ProcessMilliseconds, double? ModuleMilliseconds)
+{</pre></details><details><summary>Current bottom history/help declaration · current-source</summary><pre>src/VisionEditor/MainWindow.xaml:77–77
+SHA256 3789565bf6bc28b21c4c59a51ba30a0f121328f068cfe4995daea900d5b25c59
+          &lt;Grid Grid.Row=&quot;2&quot;&gt;&lt;Grid.RowDefinitions&gt;&lt;RowDefinition Height=&quot;40&quot;/&gt;&lt;RowDefinition/&gt;&lt;/Grid.RowDefinitions&gt;&lt;TabControl x:Name=&quot;BottomTabs&quot; Style=&quot;{StaticResource VmTabs}&quot; Grid.Row=&quot;0&quot; Background=&quot;#3B3D40&quot; Foreground=&quot;#CCC&quot;&gt;&lt;TabItem Header=&quot;历史结果&quot;/&gt;&lt;TabItem Header=&quot;帮助&quot;/&gt;&lt;/TabControl&gt;&lt;DataGrid x:Name=&quot;HistoryGrid&quot; BorderThickness=&quot;0&quot; Grid.Row=&quot;1&quot; Background=&quot;#3B3D40&quot; Foreground=&quot;#CCC&quot; AutoGenerateColumns=&quot;False&quot; CanUserAddRows=&quot;False&quot; HeadersVisibility=&quot;Column&quot;&gt;&lt;DataGrid.Columns&gt;&lt;DataGridTextColumn Header=&quot;执行序号&quot; Binding=&quot;{Binding Seq}&quot; Width=&quot;86&quot;/&gt;&lt;DataGridTextColumn Header=&quot;时间&quot; Binding=&quot;{Binding Time}&quot; Width=&quot;150&quot;/&gt;&lt;DataGridTextColumn Header=&quot;模块数据&quot; Binding=&quot;{Binding Data}&quot; Width=&quot;*&quot;/&gt;&lt;/DataGrid.Columns&gt;&lt;/DataGrid&gt;&lt;/Grid&gt;</pre></details></article><article id="HRC02" class="independent-implementation"><h2>HRC02 · 当前RefreshToolDisplay → ExecutionOwnerEpoch → 清旧frame、请求代数与owner三维核对</h2><p>independent-implementation：RefreshToolDisplay递增toolDisplayRequestGeneration，捕获owner和当前procedure；Current同时要求请求代数相同、IsCurrentExecutionOwner通过且流程ID未变。先向三个presenter Show(null)并折叠，再只对results含节点的provider调用LastDisplay、应用位置订阅；catch仅Current时写本地诊断，提交frame前再核Current。owner核对窗口未关闭、Epoch对象同一、generation相同、SolutionId序数相等、scope对象引用相同；Invalidate在相同SolutionId重开时也使旧stamp失效。单个Interlocked/Volatile读取不构成整个UI/文档/原生内存的原子快照，门禁不能代替native buffer生命周期。</p><p>待追：LastDisplay为同步调用，仍可能由provider重入造成新请求；此门只拒绝旧提交，不证明native provider释放、跨线程所有UI访问或原历史帧回放等价。</p><p>待追：原HRE03 Background查询重新读取m_CurrentInfo，与此独立owner/request方案保持分别标注。</p><details><summary>Current pull clear/provider/commit ordering · current-source</summary><pre>src/VisionEditor/ToolDisplays.cs:22–53
+SHA256 f3ae89186549591a8a025fc8d36d66bc2b5ea959ec3ed293d3e1030bcdd0e656
+ void RefreshToolDisplay(NodeDocument? node){
+  long request=++toolDisplayRequestGeneration;
+  var owner=CaptureExecutionOwner();string procedure=doc.CurrentProcedureId;
+  bool Current()=&gt;request==toolDisplayRequestGeneration&amp;&amp;IsCurrentExecutionOwner(owner)&amp;&amp;doc.CurrentProcedureId==procedure;
+  // main&#39;s pull-view adapter clears the previous source before asking a new provider.
+  toolDisplayImage.Show(null);toolDisplayRecord.Show(null);toolDisplayList.Show(null);
+  toolDisplayImage.Visibility=toolDisplayRecord.Visibility=toolDisplayList.Visibility=Visibility.Collapsed;
+  Preview.Visibility=PreviewImageName.Visibility=Visibility.Visible;
+  EmptyImage.Visibility=Preview.Source is null?Visibility.Visible:Visibility.Collapsed;
+  var provider=node is null?null:plugins.Find(node.ModuleId) as IToolDisplayProvider;
+  ToolDisplayFrame? frame=null;
+  try{
+   if(provider is not null&amp;&amp;node is not null&amp;&amp;results.ContainsKey(node.Id))frame=provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId));
+   if(frame is not null&amp;&amp;node is not null)frame=ToolConfigurationDisplaySubscriptions.ApplyPositions(frame,node,doc.CurrentProcedureId,(source,port)=&gt;results.GetValueOrDefault(source)?.Outputs.GetValueOrDefault(port));
+  }
+  catch(Exception error){if(!Current())return;StatusText.Text=&quot;结果显示失败：&quot;+error.Message;} // Independent host diagnostic; not native exception parity.
+  if(!Current())return;
+  toolRecordTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
+  toolListTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
+  if(provider is null&amp;&amp;DisplayTabs.SelectedIndex&gt;1)DisplayTabs.SelectedIndex=0;
+  toolDisplayImage.Show(frame);toolDisplayRecord.Show(frame);toolDisplayList.Show(frame);
+  bool overlay=frame is not null&amp;&amp;DisplayTabs.SelectedIndex==0;
+  toolDisplayImage.Visibility=overlay?Visibility.Visible:Visibility.Collapsed;
+  Preview.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;
+  PreviewImageName.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;
+  if(overlay)EmptyImage.Visibility=Visibility.Collapsed;
+  ImagePreviewPane.Visibility=DisplayTabs.SelectedIndex==0?Visibility.Visible:Visibility.Collapsed;
+  ModuleResultsGrid.Visibility=DisplayTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;
+  toolDisplayRecord.Visibility=provider is not null&amp;&amp;DisplayTabs.SelectedIndex==2?Visibility.Visible:Visibility.Collapsed;
+  toolDisplayList.Visibility=provider is not null&amp;&amp;DisplayTabs.SelectedIndex==3?Visibility.Visible:Visibility.Collapsed;
+  toolDisplayImage.LayoutTransform=new ScaleTransform(previewScale,previewScale);
+ }</pre></details><details><summary>Current owner stamp host adapter · current-source</summary><pre>src/VisionEditor/MainWindow.FrameworkExecutionOwnership.cs:11–18
+SHA256 5b628d95732f56404fb07fc4eccd7458666ec0015901b66fb3596905d91b0be1
+    ExecutionOwnerStamp CaptureExecutionOwner() =&gt; executionOwnerEpoch.Capture(doc.SolutionId,executionScope);
+    bool IsCurrentExecutionOwner(ExecutionOwnerStamp stamp) =&gt; !windowClosed &amp;&amp;
+        executionOwnerEpoch.IsCurrent(stamp,doc.SolutionId,executionScope);
+    void DispatchWorkflowCallback(Action callback)
+    {
+        if(windowClosed)return;
+        if(Dispatcher.CheckAccess())callback();
+        else _=Dispatcher.BeginInvoke(callback);</pre></details><details><summary>Current stamp capture and validity predicates · current-source</summary><pre>src/VisionEditor.Core/ExecutionOwnerEpoch.cs:9–30
+SHA256 3a428fe53f2d23de3988fd363efde08134abab0ffa97ce9a303dcc88a6554bfb
+    public ExecutionOwnerStamp Capture(string solutionId, object scopeOwner)
+    {
+        ArgumentNullException.ThrowIfNull(solutionId);
+        ArgumentNullException.ThrowIfNull(scopeOwner);
+        return new(this, Interlocked.Read(ref generation), solutionId, scopeOwner);
+    }
+
+    public bool IsCurrent(ExecutionOwnerStamp stamp, string solutionId, object scopeOwner) =&gt;
+        Volatile.Read(ref closed) == 0 &amp;&amp; ReferenceEquals(stamp.Epoch, this)
+        &amp;&amp; stamp.Generation == Interlocked.Read(ref generation)
+        &amp;&amp; string.Equals(stamp.SolutionId, solutionId, StringComparison.Ordinal)
+        &amp;&amp; ReferenceEquals(stamp.ScopeOwner, scopeOwner);
+
+    /// &lt;summary&gt;Call before replacing or disposing the old execution scope, even for identical document IDs.&lt;/summary&gt;
+    public void Invalidate() =&gt; Interlocked.Increment(ref generation);
+
+    public void Close()
+    {
+        Interlocked.Exchange(ref closed, 1);
+        Invalidate();
+    }
+}</pre></details></article><article id="HRC03" class="independent-implementation"><h2>HRC03 · 当前Attach / ReplaceExecutionScope / OnClosed → 物理解订阅与已排队委托的二次门</h2><p>independent-implementation：DetachExecutionScope从subscribedExecutionScope移除两个保留delegate实例并置空字段。Attach先Detach，再捕获owner，安装ProcedureRefreshRequested/ProcedureRunRequested处理器；两者排Dispatcher.BeginInvoke后在实际执行时再次比较scope引用和ScopeId。refresh另要求当前流程相同；run另拒windowClosed/activeRun，并查请求流程确含NodeId才RunProcedure。Replace先Invalidate再Detach，清计数/调试/配置/结果，Dispose旧scope、新建并Attach。OnClosed先Close epoch/Detach/doc.Dispose，再置windowClosed，关callback queue/配置/scope等；源码不是try/finally，任一步抛错不保证余下清理完成。取消旧run与解事件也不等于撤销Dispatcher已排队项，因此委托内owner门独立保留。</p><p>待追：当前两个插件scope事件与原装饰器弱事件/native回调不是同一协议；跨线程排队、Dispose异常和真实SDK释放未通过本静态切片验收。</p><p>待追：普通切流程并不Dispose整个scope；refresh门拒其它当前流程，run门允许合法请求流程，不能把两者条件混写成一样。</p><details><summary>Current physical detach and queued delegate admission · current-source</summary><pre>src/VisionEditor/ToolExecutionScope.cs:17–32
+SHA256 bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a
+ void DetachExecutionScope(){
+  if(subscribedExecutionScope is {} old){if(scopeRefreshHandler is not null)old.ProcedureRefreshRequested-=scopeRefreshHandler;if(scopeRunHandler is not null)old.ProcedureRunRequested-=scopeRunHandler;}
+  subscribedExecutionScope=null;scopeRefreshHandler=null;scopeRunHandler=null;
+ }
+ void AttachExecutionScope(){
+  doc.PrepareLoad=plugins.PrepareLoad;
+  doc.PreparePasteSubscriptions=PrepareToolPasteSubscriptions;
+  doc.PrepareExecutionTopologyChange=PrepareToolExecutionTopologyChange;
+  DetachExecutionScope();
+  if(!AppContext.TryGetSwitch(&quot;VisionEditor.DisableAutomaticCameraDiscovery&quot;,out bool disabled)||!disabled)
+   RefreshCameraProvider(false);
+  var owner=executionScope;
+  scopeRefreshHandler=request=&gt;Dispatcher.BeginInvoke(()=&gt;{if(!windowClosed&amp;&amp;ReferenceEquals(executionScope,owner)&amp;&amp;request.ScopeId==owner.Id&amp;&amp;request.ProcedureId==doc.CurrentProcedureId)RefreshRight();});
+  scopeRunHandler=request=&gt;Dispatcher.BeginInvoke(()=&gt;{if(windowClosed||activeRun is not null||!ReferenceEquals(executionScope,owner)||request.ScopeId!=owner.Id)return;var procedure=doc.Document.Procedures.FirstOrDefault(p=&gt;p.Id==request.ProcedureId&amp;&amp;p.Nodes.Any(n=&gt;n.Id==request.NodeId));if(procedure is not null)_=RunProcedure(procedure.Id);});
+  subscribedExecutionScope=owner;owner.ProcedureRefreshRequested+=scopeRefreshHandler;owner.ProcedureRunRequested+=scopeRunHandler;
+ }</pre></details><details><summary>Current replace scope ordering · current-source</summary><pre>src/VisionEditor/ToolExecutionScope.cs:44–45
+SHA256 bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a
+ void ReplaceExecutionScope(){executionOwnerEpoch.Invalidate();DetachExecutionScope();activeConfigurationRuns=0;configurationRunsByProcedure.Clear();debugSolution=null;toolDebugRecords.Clear();toolDebugInvalid.Clear();CloseToolConfiguration();activeRun?.Cancel();configurationResults.Clear();pointAliasPresentation.Clear();workflowSessions.Clear();results.Clear();executionScope.Dispose();executionScope=new();AttachExecutionScope();}
+ void RetainExecutionNodes(){var nodes=doc.Document.Procedures.SelectMany(p=&gt;p.Nodes.Select(n=&gt;(p.Id,n.ModuleId,n.Id))).ToHashSet();executionScope.RetainProcedureNodes(nodes);foreach(var key in pointAliasPresentation.Keys.Where(k=&gt;!nodes.Contains(k)).ToArray())pointAliasPresentation.Remove(key);}</pre></details><details><summary>Current close ordering · current-source</summary><pre>src/VisionEditor/WorkflowExecution.cs:92–100
+SHA256 62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4
+ protected override void OnClosed(EventArgs e)
+ {
+  executionOwnerEpoch.Close();DetachExecutionScope();doc.Dispose();
+  windowClosed=true;
+  workflowCallbacks?.Close();
+  CloseToolConfiguration();
+  executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
+ }
+}</pre></details><details><summary>Current close invalidates stamps · current-source</summary><pre>src/VisionEditor.Core/ExecutionOwnerEpoch.cs:25–30
+SHA256 3a428fe53f2d23de3988fd363efde08134abab0ffa97ce9a303dcc88a6554bfb
+    public void Close()
+    {
+        Interlocked.Exchange(ref closed, 1);
+        Invalidate();
+    }
+}</pre></details><details><summary>Current solution replacement registration · current-source</summary><pre>src/VisionEditor/MainWindow.xaml.cs:48–48
+SHA256 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a
+ public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new NImagePlugin(),modules);plugins.Register(new VisionPlugins.CameraMapping.CameraMappingPlugin(),modules);plugins.Register(new VisionPlugins.CalibrationBoard.CalibrationBoardPlugin(),modules);plugins.Register(new VisionPlugins.DistortionCalibration.DistortionCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.MapCalibration.MapCalibrationPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new CoordinateModulePlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);plugins.Register(new VisionPlugins.BranchModule.BranchModulePlugin(),modules);plugins.Register(new VisionPlugins.BranchString.BranchStringPlugin(),modules);plugins.Register(new VisionPlugins.Fixture.FixturePlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=&gt;plugins.PrepareSave(document,baseDirectory,executionScope)};InitializeFrameworkResultHistory();Logo.Source=Asset(&quot;logo_vm.png&quot;);StatusIcon.Source=Asset(&quot;bottombar_run.png&quot;);ZoomIcon.Source=Asset(&quot;zoom_magnifier.png&quot;);Resources[&quot;WorkflowNgOff&quot;]=Asset(&quot;workflow-ng-off.png&quot;);Resources[&quot;WorkflowNgOn&quot;]=Asset(&quot;workflow-ng-on.png&quot;);Resources[&quot;ToolboxCategoryClosed&quot;]=Asset(&quot;toolbox-category-closed.png&quot;);Resources[&quot;ToolboxCategoryOpen&quot;]=Asset(&quot;toolbox-category-open.png&quot;);Resources[&quot;ToolboxExpandNormal&quot;]=Asset(&quot;toolbox-expand-normal.png&quot;);Resources[&quot;ToolboxExpandHover&quot;]=Asset(&quot;toolbox-expand-hover.png&quot;);BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=&gt;RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=&gt;{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshConfigurationRoi();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count&gt;0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=&gt;RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=&gt;{if(DisplayTabs.SelectedIndex==0&amp;&amp;Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}</pre></details></article><article id="HRU01" class="unknown"><h2>HRU01 · 历史列表选择 → 历史图像/模块帧 → 尚缺真实回放入口与实例身份链</h2><p>unknown：本片已恢复历史文本生产/查询、清空、保存、当前结果选择、帮助key与Tab门；所选原历史表资源与连接体未提供选历史行→图像回放调用，LogInfo也不持有图像。SDK查询请求图像与其他run-count API存在，不代替该UI缺口；当前m_CurrentInfo会被异步任务重新读取，仍未证明与排队时来源/历史帧身份一致。</p><p>待追：下一原边：历史表附加样式/事件注册全集；具体条目选择调用者；native历史图像/模块状态取回和释放；执行次数到帧ID映射；切源/清空后旧回调取消与实际呈现。</p></article><p class="notice">主框架实施41/96＝42.71%（32包×3具名单元）；本专题增加0。原历史图像回放、帧身份和操作验收仍未知。</p><a href="history-results-entry-audit.json">机器清单</a></html><script data-document-web src="document-web-links.js"></script>

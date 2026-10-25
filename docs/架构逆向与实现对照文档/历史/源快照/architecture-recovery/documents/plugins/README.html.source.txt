@@ -1,0 +1,101 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>工具插件清单</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/README.md">下载原始文件</a></nav><main><h1 id="工具插件清单">工具插件清单</h1><p>入口：<a href="CHECKLIST.html">逐插件逆向任务表</a> · <a href="../../../plugins/inventory.json">机器可读证据清单</a> · <a href="../../../plugins/catalog.csv">声明计数 CSV</a> · <a href="IMAGE-SOURCE.html">P0 图像源记录</a>。</p>
+<p>证据：D:/MyWork/REA逆向测试/analysis/full-audit/plugin-coverage.csv、plugin-coverage.json；原始安装目录 Applications/Module(sp)/x64。清点边界是该目录的 162 个插件文件夹（含 Global），不是仅工具箱中可见项。逐插件声明与依赖数量见 catalog.csv。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th align="right">插件数</th>
+<th align="right">原生 DLL</th>
+<th align="right">托管 DLL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Calculation</td>
+<td align="right">11</td>
+<td align="right">11</td>
+<td align="right">12</td>
+</tr>
+<tr>
+<td>Calibration</td>
+<td align="right">10</td>
+<td align="right">11</td>
+<td align="right">14</td>
+</tr>
+<tr>
+<td>Collection</td>
+<td align="right">5</td>
+<td align="right">5</td>
+<td align="right">9</td>
+</tr>
+<tr>
+<td>ColorProcessing</td>
+<td align="right">6</td>
+<td align="right">8</td>
+<td align="right">9</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td align="right">5</td>
+<td align="right">5</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td>DefectDetection</td>
+<td align="right">14</td>
+<td align="right">14</td>
+<td align="right">19</td>
+</tr>
+<tr>
+<td>Global</td>
+<td align="right">17</td>
+<td align="right">15</td>
+<td align="right">20</td>
+</tr>
+<tr>
+<td>ImageGeneration</td>
+<td align="right">4</td>
+<td align="right">4</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>ImageProcessing</td>
+<td align="right">21</td>
+<td align="right">21</td>
+<td align="right">26</td>
+</tr>
+<tr>
+<td>Location</td>
+<td align="right">28</td>
+<td align="right">29</td>
+<td align="right">38</td>
+</tr>
+<tr>
+<td>Logic</td>
+<td align="right">20</td>
+<td align="right">29</td>
+<td align="right">230</td>
+</tr>
+<tr>
+<td>Measurement</td>
+<td align="right">11</td>
+<td align="right">11</td>
+<td align="right">12</td>
+</tr>
+<tr>
+<td>Recognition</td>
+<td align="right">4</td>
+<td align="right">4</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td>SplitCombination</td>
+<td align="right">6</td>
+<td align="right">6</td>
+<td align="right">6</td>
+</tr>
+</tbody></table>
+<p>插件目录 DLL 总数 588（173 原生、415 托管）；公共控件 8 个托管 DLL；myLibs 68 个 DLL（4 原生、64 托管）。这是既有静态审计的计数，未重新执行所有插件。</p>
+<h2 id="实现状态">实现状态</h2><p>当前注册图像源、多图采集、缓存图像和光源四个独立工具插件；四者暂共用 VisionPlugins.ImageSource 程序集以复用已验证的解码器和 UI 资源。工具箱映射不代表原生等价。catalog.csv 是初次声明清点状态，后续进度以 CHECKLIST.md 与逐工具证据记录为准。</p>
+<p>图像源当前验证与边界见 <a href="IMAGE-SOURCE.html">IMAGE-SOURCE.md</a>；多图采集的源码、资源、原厂运行、用户桌面截图及实现边界见 <a href="IMAGE-ACQUISITION.html">IMAGE-ACQUISITION.md</a>。缓存图像的原生FIFO、完整SDK参数区、原始图像载荷与55组像素序列见 <a href="IMAGE-BUFFER.html">IMAGE-BUFFER.md</a>。公共服务和宿主调整持续记录在 <a href="../CONTRACT-REQUESTS.html">CONTRACT-REQUESTS.md</a>。</p>
+<p>光源的八通道配置、触发与暂存语义、748字节命令、246组受控原厂运行及24张SDK界面证据见 <a href="LIGHT.html">LIGHT.md</a>。设备测试排除；全局资源管理器和共享弹层边界单独记录。</p>
+<p class="meta">来源：docs/plugins/README.md · SHA256 af64717e119621312ae684c17d19327cdc70ca8d476f9f2675ff26de4e7bd15a<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

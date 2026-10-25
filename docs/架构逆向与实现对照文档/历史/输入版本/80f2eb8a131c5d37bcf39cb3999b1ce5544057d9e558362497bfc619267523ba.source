@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "methods": 35,
+  "instructions": 2068,
+  "artifact": "f972b395b342c84c91569e52a8244f00ddc31debc061410c63304f43edba4195",
+  "reaEvidence": "ev_d5fd23d11f3c80c38bd65068eb9607a7bd29367db158c31c93f04aff395739e3",
+  "facts": [
+    "ZipInputStream.Length is an override reading current ZipEntry.Size. Size returns -1 unless known bit 1 is set. Unknown/negative size throws ZipException; no current entry throws InvalidOperationException. The helper allocates this declared size, not an independently measured decompressed length.",
+    "GetNextEntry closes an existing entry, parses header/extra data, and installs InitialRead or ReadingNotSupported into internalReader. Public Read validates buffer/offset/count then invokes this delegate; constructor starts with ReadingNotAvailable.",
+    "InitialRead checks supported version/method before encrypted flag. A crypted entry with null password throws No password set. The resource helper does not set Password. The optional password branch uses ASCII input and PkzipClassic helpers, separate from resource XML Rijndael; key derivation internals remain unreviewed.",
+    "BodyRead method 8 calls InflaterInputStream.Read. That base body loops Inflate/Fill until request filled or inflater finished; method 0 uses ReadClearTextBuffer and updates remaining sizes. A single outer Read is therefore not a single underlying input read, and its returned length is still not checked by the resource helper.",
+    "BodyRead calls CompleteCloseEntry(true) only when its finish flag is set. CompleteCloseEntry stops decryption, may read descriptor for flags bit 8, sets size=0, then optionally compares CRC. Mismatch throws before crc reset/entry clearing. This is conditional CRC checking, not a guarantee for every resource entry.",
+    "CloseEntry drains via Read when method 8 and flags bit 8 are both set; other paths skip remaining bytes and end in CompleteCloseEntry(false). GetNextEntry can therefore advance without CRC comparison. Close itself replaces reader, clears crc/entry, then calls base Close without draining/CRC.",
+    "InflaterInputStream constructor defaults isStreamOwner=true; base Close marks closed and closes underlying stream when owner. This describes normal body ordering only, not all construction/disposal failure guarantees."
+  ],
+  "unknowns": [
+    "Inflater/InflaterInputBuffer implementation, CRC arithmetic and classic ZIP cryptographic implementation are not fully reviewed here.",
+    "Header/extra-data combinations, ZIP64, data descriptors, size mismatch, empty and multi-entry resources need original-runtime corroboration.",
+    "Resource helper still ignores returned count and concatenates whole buffers; operation-level resource round trip is unverified.",
+    "No original code, ZIP input, resource decryption, file mutation or device operation was executed."
+  ],
+  "semanticBindingsAdded": 0,
+  "closedEntryChainsAdded": 0
+}

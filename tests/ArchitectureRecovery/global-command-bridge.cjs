@@ -1,0 +1,25 @@
+'use strict';
+const fs=require('fs'),path=require('path'),crypto=require('crypto'),assert=require('assert/strict');const {root}=require('./evidence-view.cjs');
+module.exports=function(facts,unknowns,scenarios){
+ const manifestPath='docs/architecture-recovery/global-command-bridge.resources/manifest.json',m=JSON.parse(fs.readFileSync(path.join(root,manifestPath)));
+ function ref(address,ext,anchor,count){const method=m.methods.find(x=>x.address===address);assert(method,address);const f=method.files.find(f=>f.path.endsWith(ext)),b=fs.readFileSync(path.join(root,f.path));assert.equal(crypto.createHash('sha256').update(b).digest('hex'),f.sha256);const lines=b.toString().split(/\r?\n/),start=anchor?lines.findIndex(l=>l.includes(anchor)):0;assert(start>=0,anchor);const end=Math.min(lines.length,start+(count||lines.length));return {path:f.path,member:(method.artifact==='proxy'?'ModuleProxy':'PlatformManager')+'!'+method.name+' @ 0x'+address,start:start+1,end,excerpt:lines.slice(start,end).join('\n'),sha256:f.sha256,evidenceType:ext==='.c'?'offline-ghidra-pseudocode':'offline-ghidra-assembly',binaryIdentity:m.artifacts[method.artifact].sha256};}
+ const both=a=>[ref(a,'.c'),ref(a,'.asm.txt')],add=(id,title,behavior,refs,limits)=>facts.push({id,program:'original',classification:'source-confirmed',title,behavior,refs,limits,verification:{static:true,originalRuntimeExecuted:false,endToEndClosed:false}});
+ add('GEX29','绑定桥接已定位：服务转发 → ModuleProxy 命令 → ModuleFrame 具名导出',
+ '候选服务处理体 0x62b200 将已拆出的消息交 0x5edd00→0x5de710；运输体通过模块句柄 +0x7d510 查询 VM_PROXY_RecvServerCommand 并缓存在 +0x7d518。ModuleProxy 导出 0x20bd0 的汇编保留输入缓冲区、长度、输出缓冲区及输出长度参数，再交 0x49cb0→0x4a610。主路由汇编用 command-0xbb9 索引 RVA 0x6168c 的表；原始 PE 表项确认命令 0xc09 进入 0x5521d 碎片。该碎片经 0x6f440 解析绑定数组和数量，再调用 0x21530 取得包装器并交 0x24850。叶包装汇编将数组放入 RCX、数量放入 EDX，跳到包装器 +0x290。初始化 0x35f60 确实把同一静态包装器 0x180198040 交给加载体 0x21590；加载体用 GetProcAddress("VM_M_BindGlobalVar") 写 +0x290。因此这段不再只是两个同名方法：命令表、实例和具名导出槽已有原体衔接。',
+ [...both('1805de710'),...both('180020bd0'),...both('180049cb0'),ref('18004a610','.asm.txt','18004aaad',12),ref('18005521d','.asm.txt','180055232',58),...both('180024850'),...both('180021530'),ref('180035f60','.c','if ((_DAT_180198030',18),ref('180021590','.asm.txt','180022cd3',10),...both('18006f440')],
+ ['0x5521d 是大型 switch 的处理碎片，不把它反编译出的孤立签名当 ABI。SDK 0x417 到服务候选处理体的首层大型分派、实际加载副本和活模块 ID 对应仍未运行验证。命令桥接本身不保证消费者读到哪一轮。']);
+ add('GEX30','停止消息也经代理转发，但原 SDK 的动态接收对象仍要单独核实',
+ 'PlatformManager 0x5e3640 为请求递增 +0x7d420 计数，并调用 0x670200 构造 0xbc9 消息，再交同一个 0x5de710 运输体；汇编明确保留 EDX 的流程标识、R8D 的请求计数和 R9 的消息输出位置，不能因伪码将构造调用显示成无参就认定参数丢失。ModuleProxy 主路由的原始表项把 0xbc9 指向 0x4d2d1；所取处理碎片解析流程 ID 后调用 0x21530→0x244d0。叶包装从同一包装器 +0x120 取函数指针，非空时把 EDX 移入 ECX 后尾调用；加载体以 GetProcAddress("VM_M_StopRunProcedure") 初始化这个槽。这个过程把选定停止消息接到 ModuleFrame 具名导出，之后的图等待、流程 +0x88 和尾部回调顺序见 GEX27/GEX28；并不额外引入轮次拒收或回调排空屏障。',
+ [...both('1805e3640'),...both('180670200'),ref('18004d2d1','.asm.txt','18004d346',32),...both('1800244d0'),ref('180021590','.asm.txt','18002203f',10)],
+ ['所取 SDK 0x408 服务候选体调用流程对象 +0x218 的动态 virtual +0x10；该对象到这里 0x5e3640 的实际绑定仍须定位，不能将已经确认的代理尾段冒称 SDK 全链已闭合。未执行原 SDK 或原机停止实验。']);
+ add('GEX31','SDK 首层分派及流程内嵌停止接口已按原字节接通',
+ '服务主路由 0x602df0 的汇编以 command-0x3e8 索引 RVA 0x6160bc 的表；原始表项确认 0x408 进入 0x6044ef→0x619670，0x417 进入 0x60d99d→0x62b200。所取处理碎片的实际 CALL 已单独反汇编，不再只依赖大型 case 伪码。停止处理体先按流程 ID 查询流程对象，再 ADD RCX,0x218，经内嵌接口虚表 +0x10 调用；并不是把对象 +0x218 的字段值直接当最终回调。构造函数 0x6a3030 将虚表 0x1807ebc48 写入对象 +0x218，原 PE 的该表 +0x10 项确为 0x6a4120。该虚方法清除接口 +0x88 标志，从接口 -0x78 取流程标识，再尾调用 0x5e3640→0xbc9 消息链。因此在所取构造类型下，SDK 停止命令、服务动态接口、代理命令和 ModuleFrame 停止导出已经静态连通；绑定首层也接到 GEX29 的转发尾段。',
+ [ref('180602df0','.asm.txt','1806030d4',15),...both('1806044ef'),...both('18060d99d'),ref('180619670','.asm.txt','180619975',13),...both('1806a3030'),...both('1806a4120')],
+ ['构造类型与虚表目标是静态原件证据；未执行原 SDK、核对运行中加载地址/模块实例，亦不据此宣称所有流程记录都具有该类型。0x6a4120 末尾为 JMP，反编译会继续并入发送体，结论以其真实汇编范围为准。桥接接通不等于停止后的消息队列全部排空。']);
+ const early=facts.find(f=>f.id==='GEX20');early.behavior+=' 后续已补取首层分派碎片、内嵌接口构造和虚表目标，见 GEX31；这里记载的分派/接收者检索线索不再是当前未取证项。';early.limits=['首层 switch 与所取构造类型的动态目标已静态接通，见 GEX31；原机加载副本、活模块身份和停止竞态仍未运行核对。'];
+ facts.find(f=>f.id==='GEX29').limits=['0x5521d 是大型 switch 处理碎片，不将孤立伪码签名当 ABI。SDK 首层分派后续已由 GEX31 确认；实际加载副本与活模块身份仍未运行验证。命令桥接不保证消费者读到哪一轮。'];
+ const stopMessage=facts.find(f=>f.id==='GEX30');stopMessage.behavior+=' 此请求计数用于消息 requestId／responseId 配对，不能直接充当全局变量的生产轮次或迟到结果拒收代次。';stopMessage.limits=['所取 +0x218 内嵌接口的构造和虚目标后续已由 GEX31 连到 0x5e3640；运行中流程记录是否为该类型、实例身份与停止竞态仍未验证。未执行原 SDK。'];
+ Object.assign(unknowns.find(u=>u.id==='GU01'),{question:'SDK 首层 0x408/0x417 分派、所取流程类型的 +0x218 内嵌停止接口及代理到 ModuleFrame 具名导出已静态接通。剩余是运行中实际加载副本、流程记录的类型/身份对应及原机线程时序；不再把首层分派和虚表目标当缺失原体。',nextEvidence:'仅在需要原机验证时核对选定流程的实际类型、模块/流程 ID 和加载副本，再观察有界停止时序；后续静态追踪转向跨流程依赖和最终提交，不重复已经确认的命令桥接。'});
+ scenarios.find(s=>s.id==='stop').original.push('GEX30','GEX31');scenarios.find(s=>s.id==='same-flow').original.push('GEX29','GEX31');scenarios.find(s=>s.id==='cross-flow').original.push('GEX29');
+ return {manifest:manifestPath,nativeMethods:m.methods.length,rawDirectCallsChecked:m.directCallsChecked,dispatchEntriesChecked:2,originalRuntimeExecuted:false,fullExecutionContractClosed:false};
+};

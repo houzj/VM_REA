@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 1e942ff32ba6 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 1e942ff32ba6</p><h1>原文证据 1e942ff32ba6</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 1e942ff32ba685456c33cfa5ed3f26caef8930fa09ef3031b47e575bc80613e4。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>        private async Task&lt;ExecutionResult> ExecuteWorkflowWithReadyQueue(
+            WorkflowRunSession session,
+            Workflow workflow,
+            WorkflowContext context,
+            WorkflowExecutionDependencyGraph dependencyGraph,
+            IReadOnlyDictionary&lt;string, ToolExecutionProfile> nodeExecutionProfiles)
+        {
+            var result = new ExecutionResult();
+            var order = workflow.Nodes.Select(node => node.Id).ToList();
+            var pending = new HashSet&lt;string>(order, StringComparer.Ordinal);
+            var running = new List&lt;(WorkflowNodeBase Node, IDisposable Lease, Task&lt;NodeExecutionResult> Task)>();
+            var leases = new WorkflowResourceLeaseManager();
+            var pruned = new HashSet&lt;string>(StringComparer.Ordinal);
+            var maxConcurrency = Math.Max(1, Math.Min(4, Environment.ProcessorCount - 1));
+
+            try
+            {
+                while (pending.Count > 0 || running.Count > 0)
+                {
+                    await session.WaitIfPausedAsync();
+                    context.CancellationToken.ThrowIfCancellationRequested();
+
+                    // 条件分支已剪掉的节点、禁用节点、或失败前驱的消费者均不进入执行队列。
+                    bool skippedAny;
+                    do
+                    {
+                        skippedAny = false;
+                        foreach (var nodeId in pending.Where(id =>
+                                 pruned.Contains(id) ||
+                                 !workflow.Nodes.First(node => node.Id == id).IsEnabled ||
+                                 dependencyGraph.GetPredecessors(id).Any(parent =>
+                                     context.GetNodeStatus(parent) is NodeStatus.Failed or NodeStatus.Skipped)).ToList())
+                        {
+                            pending.Remove(nodeId);
+                            skippedAny = true;
+                            context.UpdateNodeStatus(nodeId, NodeStatus.Skipped);
+                            NodeStatusChanged?.Invoke(this, new NodeExecutionStatus { NodeId = nodeId, Status = NodeStatus.Skipped });
+                        }
+                    } while (skippedAny);
+
+                    var madeProgress = true;
+                    while (madeProgress)
+                    {
+                        madeProgress = false;
+                        foreach (var nodeId in order.Where(pending.Contains).ToList())
+                        {
+                            if (!dependencyGraph.GetPredecessors(nodeId)
+                                    .All(parent => context.GetNodeStatus(parent) == NodeStatus.Completed))
+                                continue;
+
+                            var node = workflow.Nodes.First(candidate => candidate.Id == nodeId);
+                            var profile = nodeExecutionProfiles.TryGetValue(nodeId, out var declared)
+                                ? declared : ToolExecutionProfile.LegacyExclusive;
+                            var externalWait = profile.ConcurrencyKind == ToolConcurrencyKind.ExternalDataWait;
+                            var executingCount = running.Count(item =>
+                                !nodeExecutionProfiles.TryGetValue(item.Node.Id, out var activeProfile) ||
+                                activeProfile.ConcurrencyKind != ToolConcurrencyKind.ExternalDataWait);
+                            if (!externalWait &amp;&amp; executingCount >= maxConcurrency)
+                                continue;
+                            var hasExclusive = running.Any(item =>
+                                nodeExecutionProfiles.TryGetValue(item.Node.Id, out var active) &amp;&amp;
+                                active.ConcurrencyKind == ToolConcurrencyKind.WorkflowExclusive);
+                            if ((!externalWait &amp;&amp; ((profile.ConcurrencyKind == ToolConcurrencyKind.WorkflowExclusive &amp;&amp; executingCount > 0) ||
+                                hasExclusive)) ||
+                                !leases.TryAcquire(workflow.Id, node.Id, profile, out var lease))
+                                continue;
+
+                            pending.Remove(nodeId);
+                            PrepareNodeExecution(nodeId, dependencyGraph.GetPredecessors(nodeId));
+                            context.UpdateNodeStatus(nodeId, NodeStatus.Running);
+                            NodeStatusChanged?.Invoke(this, new NodeExecutionStatus { NodeId = nodeId, Status = NodeStatus.Running });
+                            dependencyGraph.InputIssues.TryGetValue(nodeId, out var inputIssues);
+                            running.Add((node, lease, Task.Run(() => ExecuteNode(node, context, workflow, inputIssues))));
+                            madeProgress = true;
+                        }
+                    }
+
+                    if (running.Count == 0)
+                    {
+                        if (pending.Count == 0)
+                            break;
+                        throw new InvalidOperationException(&quot;全局就绪队列中不存在可派发节点；请检查依赖、资源声明或节点状态。&quot;);
+                    }
+
+                    await Task.WhenAny(running.Select(item => item.Task));
+                    foreach (var completed in running.Where(item => item.Task.IsCompleted).ToList())
+                    {
+                        running.Remove(completed);
+                        completed.Lease.Dispose();
+                        var nodeResult = await completed.Task;
+                        context.SetNodeResult(completed.Node.Id, nodeResult);
+                        NodeExecutionFinished?.Invoke(completed.Node, nodeResult);
+                        var status = nodeResult.Success ? NodeStatus.Completed : NodeStatus.Failed;
+                        context.UpdateNodeStatus(completed.Node.Id, status);
+                        NodeStatusChanged?.Invoke(this, new NodeExecutionStatus { NodeId = completed.Node.Id, Status = status });
+                        if (!nodeResult.Success)
+                            result.AddError(nodeResult.ErrorMessages?.FirstOrDefault() ?? &quot;执行失败&quot;, completed.Node.Id);
+
+                        foreach (var (controlNodeId, targets) in TryExtractControlSignals(
+                                     workflow, new List&lt;string> { completed.Node.Id }, context))
+                        {
+                            var protectedNodes = ComputeProtectedNodes(workflow, targets);
+                            pruned.UnionWith(ComputePrunedNodes(workflow, controlNodeId, targets, protectedNodes, pruned));
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var item in running)
+                    item.Lease.Dispose();
+            }
+
+            var allResults = context.GetAllNodeResults().ToDictionary(pair => pair.Key, pair => pair.Value);
+            result.NodeResults = allResults;
+            result.Success = result.Errors.Count == 0 &amp;&amp; allResults.Values.All(node => node.Success);</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis--GEX15.html">数据/global-variable-analysis--GEX15.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

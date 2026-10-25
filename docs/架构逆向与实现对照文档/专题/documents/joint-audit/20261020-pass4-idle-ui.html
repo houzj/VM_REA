@@ -1,0 +1,75 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>J12 第四轮：真实图像流程完成后的空闲 UI 分段取证 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / J12 第四轮：真实图像流程完成后的空闲 UI 分段取证</p><h1>J12 第四轮：真实图像流程完成后的空闲 UI 分段取证</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>J12 第四轮：真实图像流程完成后的空闲 UI 分段取证</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="20261020-pass4-idle-ui.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="20261020-pass4-idle-ui.html#j12-第四轮真实图像流程完成后的空闲-ui-分段取证">J12 第四轮：真实图像流程完成后的空闲 UI 分段取证</a></p><p style="margin-left:14px"><a href="20261020-pass4-idle-ui.html#范围基线和结论">范围、基线和结论</a></p><p style="margin-left:14px"><a href="20261020-pass4-idle-ui.html#源码调用链与边界">源码调用链与边界</a></p><p style="margin-left:14px"><a href="20261020-pass4-idle-ui.html#可复验探针与观测">可复验探针与观测</a></p><p style="margin-left:14px"><a href="20261020-pass4-idle-ui.html#审计定位与未解点">审计定位与未解点</a></p></details><h1 id="j12-第四轮真实图像流程完成后的空闲-ui-分段取证">J12 第四轮：真实图像流程完成后的空闲 UI 分段取证</h1><h2 id="范围基线和结论">范围、基线和结论</h2><ul>
+<li>取证基线：<code>main</code> <code>31f0dee5f345e6c73cf2e2d3e14d91987b049547</code>，工作区另有主线在制文件；本轮只写 <code>tests/WorkflowIdleUi.Checks/</code>、本文和忽略目录 <code>analysis/joint-audit/idle-ui/</code>，未触碰主线源码、插件工作树、用户窗口或用户进程。</li>
+<li><strong>实测发现</strong>：自有离屏 WPF <code>MainWindow</code> 在真实 <code>ImageSource → ImageBinary</code> 流程成功后，空闲 1.5 秒期间持续收到 Dispatcher 心跳；刷新、节点选择、流程切换、文档保存和关闭在本探针中均未出现长停顿。随后打开当前二值化配置窗口，完整宿主调用同步占用 UI 线程 <strong>1.54–5.95 秒</strong>（不同受控运行），明确可造成临时“未响应”。即使 64×64 小图，禁用 dump 的打开仍为 <strong>3.94 秒</strong>。关闭约 <strong>0.30–0.47 秒</strong>。这仅证明当前重建版的离屏配置打开热点；用户那次看似空闲后的永久卡死<strong>未复现、根因未定位</strong>。</li>
+<li>分段工厂探针使用简化 <code>ToolEditorContext</code>：64×64 时 <code>ImageBinaryWindow</code> 构造 <strong>292 ms</strong>，随后 <code>Window.Show()</code> <strong>2599 ms</strong>，关闭 <strong>430 ms</strong>；长段主要在 <code>Show</code> 触发的 WPF 加载/布局/呈现调用中，但简化上下文与完整 <code>OpenToolConfiguration</code> 不同，<strong>不能进一步归咎某个绑定、资源或 ROI 子步骤</strong>。未做任何插件窗口性能修复。</li>
+</ul>
+<h2 id="源码调用链与边界">源码调用链与边界</h2><p><code>src/VisionEditor/WorkflowExecution.cs</code> 的 <code>StartRunCore → RunCore</code> 在 <code>Task.Run</code> 内启动 <code>SolutionExecutor.RunAsync</code>，完成后 UI 延续段将 <code>ExecutionSessionResult</code> 写入 <code>workflowSessions</code>、刷新结果。<code>src/VisionEditor/WorkflowTabs.cs</code> 的 <code>RefreshAll</code>、<code>SelectWorkflowNode</code>、<code>SelectWorkflow</code> 是本探针分段入口。双击节点走 <code>src/VisionEditor/MainWindow.xaml.cs</code> 的 <code>OpenNode → OpenToolConfiguration</code>；<code>src/VisionEditor/ToolConfigurationHost.cs</code> 在 UI 线程创建上下文，接 <code>ConnectToolEditorServices</code> 与 <code>ConnectConfigurationRoi</code>，再由 <code>IWpfToolEditorFactory.CreateWpfEditor</code> 构造窗口。<code>src/VisionPluginContracts/ToolConfigurationWindowHost.cs</code> 的 <code>Open</code> 同步执行 <code>create()</code>、设置 <code>Owner</code>、<code>window.Show()</code>、<code>Changed → RefreshAll</code>；<code>Close</code> 同步调用 <code>Current.Close()</code>，Closed 事件再次 <code>Changed → RefreshAll</code>。<code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs</code> 工厂创建 <code>ImageBinaryWindow</code>；其构造函数在 <code>src/VisionPlugins.ImageBinary/ImageBinaryWindow.xaml.cs</code> 初始化资源、ROI、图像、多个参数页和控件。上述是当前实现的路径，不代表原厂的性能或线程行为。</p>
+<p>原厂入口边仍按前轮已取证路径 <code>VmProcedureDecorator.RunOnceCommandExe → VmProcedure.Run(null,bIsWait:false) → ProcessManager.SyncExecuteOnce → IMVS_ExecuteOnce_V30</code> 保留；<code>bIsWait:false</code> 只排除托管等待，原生调用持续时间未测。本轮无原厂 UI 堆栈，不拿重建版计时推断原厂挂起原因。</p>
+<h2 id="可复验探针与观测">可复验探针与观测</h2><p><code>tests/WorkflowIdleUi.Checks/Program.cs</code> 的自有窗口位于 <code>(-20000,-20000)</code>，禁自动相机发现；内存构造 GrayImage，通过真实 ImageSource 提交并运行二值化，确认节点 <code>Success</code>。<code>DispatcherTimer</code> 每 20 ms 记录心跳；每个同步 UI 操作前后分段计时，段间泵 Dispatcher。后台 watchdog 只监视自有测试 PID，心跳缺失 &gt;1 秒留事件，可选 <code>--dump</code> 生成 <code>MiniDumpWithThreadInfo</code>，自有进程总时限 20 秒。保存使用 <code>GraphEditorDocument.Save</code> 到审计目录，避免主窗口最近文件副作用。详见 <code>analysis/joint-audit/idle-ui/preflight.md</code>。</p>
+<p>从仓库根目录执行 <code>dotnet run --project tests/WorkflowIdleUi.Checks/WorkflowIdleUi.Checks.csproj -c Release -- no-dump-2048 2048</code>；小图将末尾两个参数改为 <code>no-dump-64 64</code>；简化拆段运行 <code>-- split-64 64 --factory-split</code>。测试预期在心跳超 1 秒时退出码 1 并保留分段日志；不要把它当编译或方案执行失败。</p>
+<table>
+<thead>
+<tr>
+<th>运行</th>
+<th align="right">图像</th>
+<th>取证方式</th>
+<th align="right">打开/构造</th>
+<th align="right">Show</th>
+<th align="right">关闭</th>
+<th>其余可比操作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>首轮连续调用</td>
+<td align="right">2048²</td>
+<td>2 秒阈值，dump</td>
+<td align="right">1538.58 ms</td>
+<td align="right">包含在打开</td>
+<td align="right">297.76 ms</td>
+<td>RefreshAll 12.9–35.3 ms、选择 29–47 ms、切换 13–18 ms、保存 30.9 ms；因连续不让步，在关闭段才累计超过 2 秒触发 dump</td>
+</tr>
+<tr>
+<td>分段让步</td>
+<td align="right">2048²</td>
+<td>1 秒阈值，dump</td>
+<td align="right">6087.55 ms</td>
+<td align="right">包含在打开</td>
+<td align="right">424.53 ms</td>
+<td>watchdog 在打开段约 1.07 秒心跳缺失时留 dump；dump 可能增加总时间</td>
+</tr>
+<tr>
+<td>分段让步</td>
+<td align="right">2048²</td>
+<td><strong>不写 dump</strong></td>
+<td align="right">5946.11 ms</td>
+<td align="right">包含在打开</td>
+<td align="right">474.92 ms</td>
+<td>其余刷新/选择/切换约 19–58 ms，保存 38.5 ms</td>
+</tr>
+<tr>
+<td>分段让步</td>
+<td align="right">64²</td>
+<td><strong>不写 dump</strong></td>
+<td align="right">3943.74 ms</td>
+<td align="right">包含在打开</td>
+<td align="right">424.71 ms</td>
+<td>其余刷新/选择/切换约 12–33 ms，保存 21.2 ms</td>
+</tr>
+<tr>
+<td>简化上下文拆段</td>
+<td align="right">64²</td>
+<td><strong>不写 dump</strong></td>
+<td align="right">构造 292.08 ms</td>
+<td align="right">2599.02 ms</td>
+<td align="right">429.75 ms</td>
+<td>不等于完整宿主上下文，只用于定位大段所处同步边界</td>
+</tr>
+</tbody></table>
+<p>首轮 <code>maxPulseGapMs=116.6</code> 的记录不完整：那版只在下一次 Timer.Tick 更新，关闭前停止计时器使长同步段未计入；后续版本记录每段 <code>endGapMs</code>，watchdog 事件证明 &gt;1 秒缺失。探针现将超阈值作为<strong>失败</strong>退出码 1，避免把配置打开卡顿误报 PASS。首次编译曾因测试缺 <code>using System.IO</code> 失败，已仅在测试源中修正；失败历史不覆盖。上述五次均最终正常关闭自有窗口，未触发 20 秒总超时；这也不能证明长期使用不会卡死。</p>
+<h2 id="审计定位与未解点">审计定位与未解点</h2><ul>
+<li>探针：<code>tests/WorkflowIdleUi.Checks/Program.cs</code> SHA256 <code>9F6A76699464A23D7CF778E0C49C40F3A727E4D744CA15F9EDC1C97B5B340165</code>。</li>
+<li>首轮自有 minidump：<code>analysis/joint-audit/idle-ui/idle-ui-threaddump.dmp</code> SHA256 <code>9DC5D06279DDE909231CB2E2EE18C8C766D82B621112F92A85888CB8A5E37414</code>；分段让步 dump：<code>analysis/joint-audit/idle-ui/yielded/idle-ui-threaddump.dmp</code> SHA256 <code>6778FFC7B1217C28E10570C2D0E6C0C6A40D8A809156B6EF592EE52A2CCB09E0</code>。这台机尚未找到可用 <code>cdb</code>、<code>windbg</code>、<code>dotnet-dump</code>，<strong>尚未解析 UI 栈</strong>，不能从 dump 猜测锁或等待链。</li>
+<li>禁 dump 的 2048²、64²、简化拆段完整控制台输出分别为 <code>analysis/joint-audit/idle-ui/no-dump-2048-console.txt</code> SHA256 <code>85AFA083A735ABC66A5A1BA48A3C7F2DA7BA340D32ADD53B9B22E0D4C7CA1F3B</code>、<code>no-dump-64-console.txt</code> SHA256 <code>69A04FA79A093EFB12D0D6A9ED583B04BEF6D48FE678B6C5A0D8E16EC3C1BF97</code>、<code>split-64-console.txt</code> SHA256 <code>506B457E17CFB7D7CFAA7AD19E3DB51E7E7F5DCB71EBD2F320171B66D672EC3B</code>。</li>
+<li>下一最小探针：在<strong>自有进程</strong>加载可用符号调试器或 WPF ETW/采样器，解析上述 dump 的 UI 线程栈；或在独占窗口宿主中按 <code>create()</code>、<code>Show</code> 内部 Loaded/布局/ROI <code>SetImage</code>/<code>Changed</code> 回调分别取时间。须先确认窗口构造中注册的回调副作用，并保留无 dump 对照。用户交互桌面的长期空闲卡死需独立可复现时间窗及 UI 栈/等待链；目前没有证据把该事件归因于 ImageBinary、图像源、GraphExecutor、锁或原生 SDK。</li>
+</ul>
+<p class="meta">来源：docs/joint-audit/20261020-pass4-idle-ui.md · SHA256 d49de0fdf8ad48137239a433efb436a39780a1785828fafc724ab8c2b3ab5082<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

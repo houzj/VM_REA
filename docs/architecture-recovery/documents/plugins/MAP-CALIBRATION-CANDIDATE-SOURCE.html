@@ -1,0 +1,75 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定候选链恢复边界</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-CANDIDATE-SOURCE.md">下载原始文件</a></nav><main><h1 id="映射标定候选链恢复边界">映射标定候选链恢复边界</h1><p>当前Map专属入口已消费完整source候选/格点适配，旧NImage独立候选入口保留原Refine。本文前半是恢复过程的历史证据，最终状态见后续完整选择/产品接线与隔离回归段；不能用微核通过推导全部图像域等价。</p>
+<p>原厂链为873de0逐尺度采样→8b47c0→8bb3a0→8bcff0，再由873de0在两套候选/多个尺度结果中选择，之后813ca0单payload身份锚定。8b47c0内部707c30高斯→Hessian/NMS→8b5330环分类→8b6c80顺序抑制→8b6f30精化→8bb3a0方向描述。</p>
+<p>目前验证的12个实际输入（两图、HIK7/9、尺度1/2/4）：707c30高斯5250000个float逐位相同；Hessian/NMS14322个、环分类7204个、顺序抑制2948个有序X/Y/int radius全部一致；串生产二次精化后2310点、4620个XY float逐位相同。环分类使用原厂median载荷，高斯和精化使用原始灰图。对应检查是MapCalibration.GaussianChecks、MapCalibration.HessianCandidateChecks；仍为源阶段隔离测试，没有替换产品独立格点算法。</p>
+<p>8bb3a0静态证据表明XY原样保留，计算四个方向float并压紧通过点；不能忽略描述字段，因为8bcff0的邻近扩展消费它们。其固定11像素梯度patch、27-bin方向直方图、7-tap圆周平滑和双2×2结构矩阵尚在恢复，不能使用现NImageLattice.Contrast冒充这些字段。来源为只读CLI：1808bb3a0、180756f10→180761ee0、1808bcba0。181647b44=11.0、b58=.5、b60=π、b74=π/2、b78=π、b7c=27/π；PE原始字节及解释已导出74项常量。</p>
+<p>8bcff0不是按最近整数行列聚类。它保持输入候选顺序，iVar22从0开始；从当前候选生成种子（8c1780），评估/扩展（8bdb40/8c1340/8bdef0/8c0880），并用candidate index矩阵记录格点。静态比较 <code>candidateScore &lt;= bestScore</code> 会接受相等分数的后续结果；输出依row外层、col内层扫描有效矩阵cell，直接复制该候选的原floatXY及对应网格col/row。它还有seed跳步、已用标记和提前停止条件，不能将一个hypothesis fixture的结果视为完整选择策略。辅助函数已只读导出到本worktree analysis/map-calibration/ghidra/core。</p>
+<p>873de0在格点评分后进一步扣除间距和稀疏项，并比较同尺度两套候选及前面尺度的最优值。因此产品接入前必须同时恢复8bcff0局部平分规则与873de0全局选择/退出语义，通过真实六个hypothesis调用序列对照；不能只找一个与168点吻合的hypothesis。</p>
+<p>产品现18组全部成功、每图168点，但与原厂实际源点仍最大相差0.00323486328125像素；固定原厂输入点的拟合结果162/162逐位一致仅隔离了拟合与后处理。剩余差异继续追上游候选/描述/格点，不提高误差阈值，也不进入手动验收。</p>
+<p>新增24次8bb3a0原厂实采（image-candidate-descriptor-trace）：第一支真实配置[1,3,30,135]，第二支[1,1.75,65,110]；4494个接受点均为原输入的有序子序列，XY两个float的字节保持不变，radius槽写int11。CompareDescriptorStages.py逐条验证，不以集合匹配代替顺序。四个方向float的独立重建尚未完成。</p>
+<p>方向卷积阶段补证：756f10汇编明确在包装内将两个anchor设为(kernelDimension-1)&gt;&gt;1；调用者栈0x40槽不是anchor，探针只将其标为rawStack40Low/High，未作为算法输入。实际48个23×23补丁的3×3核分别为[1,0,-1;2,0,-2;1,0,-1]及[1,2,1;0,0,0;-1,-2,-1]。CompareConvolutionStages.py确认输入仅为0..255整数的float表示，按源中心anchor/replicate边界重建后25392/25392输出float逐位相同；这只证明该byte-domain梯度相位，未验证通用浮点卷积或后续直方图/特征方向。</p>
+<p>方向描述共享核已抽取为NImageSourceCandidateDescriptor.Describe，载荷NImageSourceCandidate显式区分X/Y float、Radius int、两对方向float，未混入格点Contrast或Hessian score。MapCalibration.DescriptorChecks直接消费该生产核，对24次原厂实际灰图/config/28-byte输入记录的4494个接受点执行全部31458字段严格逐位验证，max0且接受数量相同；测试不使用托管值生成golden。新核当前未接产品FindLattice入口，默认计数&lt;=1000和已采配置/图像域以外的native分支仍需边界取证。</p>
+<p>8bcba0方向矩阵子核另有96次原厂实际2×2矩阵/返回二进制，源码计算顺序重建后576/576 double字段逐位相同。来源符号常量af0=double1e-4、b28=double4、b30=double.5，未用数学等价式重排。生产移植保留上述顺序。</p>
+<p>已抽取共享NImageSourceCandidateDetector.FindCandidates，完全从原始灰图独立执行预处理与候选链。CandidateChainChecks在12输入将共享Median与原厂实采median逐byte比较5250000/5250000；随后源高斯/Hessian/NMS/环分类/顺序抑制/二次精化/方向描述，再按第二套实际参数重新筛选，共24有序输出、31458字段逐位一致。输入仅是raw灰图，原厂中间载荷仅作为golden。生产FindLattice尚未切换，SourceCandidateDescriptor/Detector是可复用已验证相位而不是完整编码板格点识别。NImageSourceCandidate仍与独立Contrast字段分离，未知的90000容量边界、小图/其他板图域不能由这12例外推。</p>
+<p>格点近邻8c0fa0已独立恢复为NImageSourceGridNeighbor.Select：候选间两方向分量差绝对值、欧氏距离、方向法线距离乘6，以及当前seed方向的半平面限制决定cost；used==1排除项置源float1e10。原厂成对&lt;=/&lt;扫描顺序原样保留。GridNeighborChecks对232候选与205奇数候选各48次受控调用，共21168个cost/选中index/score字段逐位相同，含四参考点×四方向×三已用模式及all-used返回index0/1e10。尚未构成完整格点排列。</p>
+<p>8bcff0原输入/倒序/循环1/循环半组四次独立原生回放均正常退出，输出与SDK原hypothesis的168点、14×14尺寸、score全部同位（XY/index合2688字段）。这只是固定输入的受控顺序诊断，不代替源码种子跳步/平分/选择策略。</p>
+<p>该私有原生入口暴露了真实内存前置：种子失败清格子时会以未填索引-2/-1写工作区前面的4/8字节。直接把workspace放heap块首时即使已输出168点仍会在释放阶段失败；受控探针现明确预留128-byte前缀，并记录A5前缀尾部清零的偏移。原SDK指针来自更大总缓冲，不能据独立块首失败推导原SDK同样崩溃；托管实现应保留逻辑状态和已用项清理，不复制跨缓冲写入。</p>
+<h2 id="完整单尺度选择的新增验证2026-10-18">完整单尺度选择的新增验证（2026-10-18）</h2><p>此前“尚在恢复”的段落为取证历史；当前方向描述与完整候选链已完成下述隔离实现，但产品 <code>FindLattice</code> 尚未切换。</p>
+<p>新共享实现将种子、评分、边界扩展、预测分配、剪枝与完整选择分别保留为独立相位。所有测试读取原厂 SDK 自有进程采集的输入/返回二进制，未用托管结果产生 golden；28-byte 候选显式解释为 X/Y float、radius int、四方向 float。</p>
+<table>
+<thead>
+<tr>
+<th>原厂相位</th>
+<th>检查项目</th>
+<th align="right">实际调用/状态用例</th>
+<th>严格对照范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>8c1780 / 8c1340</td>
+<td>GridSeedChecks</td>
+<td align="right">24</td>
+<td>已用 flags、索引矩阵、种子 score 与失败时旧 Count 保留</td>
+</tr>
+<tr>
+<td>8bdb40</td>
+<td>GridScoreChecks</td>
+<td align="right">24</td>
+<td>最差项位置/方向/值及完整 score 工作区</td>
+</tr>
+<tr>
+<td>8c00f0</td>
+<td>GridPaddingChecks</td>
+<td align="right">32</td>
+<td>四方向首次/重复扩边、完整索引/score</td>
+</tr>
+<tr>
+<td>8bf960</td>
+<td>GridAssignmentChecks</td>
+<td align="right">64</td>
+<td>真实线性/曲线预测、候选互斥分配、已用 flags</td>
+</tr>
+<tr>
+<td>8bdef0</td>
+<td>GridExpansionChecks</td>
+<td align="right">64</td>
+<td>真实孔洞/边界扩展，完整输入/返回工作区及目标坐标</td>
+</tr>
+<tr>
+<td>8c0880</td>
+<td>GridPruningChecks</td>
+<td align="right">64</td>
+<td>真实目标移除、阈值、完整输入/返回工作区</td>
+</tr>
+<tr>
+<td>8bcff0</td>
+<td>GridSelectionChecks</td>
+<td align="right">24</td>
+<td>真实六假设×四图：有序点/ID/尺寸/评分，以及每例 90000 flags、90000 indices、270000 scores</td>
+</tr>
+</tbody></table>
+<p>以上检查全部通过；完整选择还额外以新建零初始化工作区重跑24例，最终输出也相同。大量字段包含未改动的工作区，不能将字段数理解为同数量的独立算法场景。原厂种子失败保留的局部计数、源分数槽的特殊写入次序、相等评分接受后续种子，以及非等步 seed 跳步均按已记录源行为保留。托管容量/索引检查和取消属于安全实现，不复制跨数组写入，也不由合法输入对照推导原厂任意非法输入行为。</p>
+<p><code>NImageSourceGridPyramid</code> 暂为未接产品的873de0安全行为实现；<code>GridPyramidChecks</code> 从两类实际图像的四份1000×1000原始灰图，经完整候选、两套方向参数与尺度1/2/4执行，最终4×168点XY、网格ID、顺序、尺寸与873de0返回逐位一致。跨尺度评分源常量为间距系数0.08与完整矩形奖励5；全局相等时保留旧结果，与8bcff0局部相等替换不同。第一假设原厂评分额外读取计数之后的已分配输出槽，而第二假设只遍历声明点的相邻项；补采24个真实尾槽均为(0,0)，其距离均不改变本批最小间距。安全实现现在以显式已分配槽保存各尺度写入，并为首假设传入槽值；初始零填充是托管安全规则，不能外推任意原厂分配器残留。四次原厂options均为filter1、scaleExponent5、max300×300、30f/135f，默认指数已修正为5，实际1000→500→250后因尺寸停止。不能将四例正确输出称为全部跨尺度语义等价。</p>
+<p>新增检查均按 <code>dotnet run --project tests/MapCalibration.&lt;名称&gt;/MapCalibration.&lt;名称&gt;.csproj -c Release</code> 运行；本地 fixture 在 <code>analysis/map-calibration/grid-*</code>、<code>image-grid-*-trace</code>。<code>GridSelectionChecks</code> 依赖 <code>image-grid-workspace-trace/{grid-trace.jsonl,candidates-NNN.bin,workspace-NNN-{used,alignment,indices,scores}-{entry,return}.bin}</code>；<code>GridPyramidChecks</code> 另依赖 <code>image-preprocess-trace/raw-001.gray</code> 和 <code>raw-004.gray</code>。原厂输入/返回只保留在当前worktree的ignored analysis，Git中的检查和摘要不等于携带完整原始fixture。</p>
+<p>跨尺度扩展验证已完成：<code>MapCalibration.GridRoiChecks</code> 直接从标定板线四种真实源图按84个SDK记录的bbox裁灰图，保留原像素、不刷背景，完整重走候选、双参数格点和跨尺度选择。6/7/8/9各21例的原873de0 count、全部网格ID、点顺序和XY float均逐位相同，84/84通过；7/9此前case0/1/5的多余码角及缺点在源grid阶段均消除。本检查尚不包括mask后中心过滤、世界ID映射或身份解码，不能据此称四种板最终识别完全等价。依赖 <code>analysis/calibration-board/encoded-mask-grid-{6,7,8,9}-native/{runtime.jsonl,grid-stage.jsonl}</code> 和已记录的三种源图；输出 <code>analysis/map-calibration/grid-roi/comparison.json</code>。</p>
+<p>关闭过滤（FilterStatus=2、FilterStatus2=2）补证：原厂options确认filter2，候选数量与filter1不同；新增24次完整8bcff0实际输入/工作区回放全部位同，4次完整source图像→decode/anchor的最终点也逐位相同。另2次实际Map Runtime（W3/model1/7与9）对源/目标/投影点、矩阵及所有标量严格通过。默认18组与新增2组分开保存，未用相同candidate数推断过滤分支无效。运行命令可在GridSelectionChecks追加 <code>-- image-grid-filter2-trace</code>、SourceRecognitionChecks追加 <code>-- image-grid-filter2-trace 2</code>；实际产品ImageExecutionChecks追加 <code>-- analysis/map-calibration/image-execution-filter2 --require-exact --filter2</code>。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-CANDIDATE-SOURCE.md · SHA256 408884dea95b75c05cafe8d478d0ffe54f15ef188c21b600d42177f8c45e0f8c<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

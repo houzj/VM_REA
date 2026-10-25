@@ -1,0 +1,504 @@
+{
+  "source": "清单/条目/b0709d8efb0744d0516e.json",
+  "sourceSha256": "46532f57d6d2d7a7bd5a8c9984b5c4782008c42d1be67f9a1a137935dd84edd9",
+  "facts": [
+    {
+      "id": "DP04",
+      "topic": "parameter",
+      "classification": "independent-implementation",
+      "from": "当前GraphExecutor配置快照与订阅消费",
+      "to": "模块入口参数 / EffectiveParameters",
+      "representation": "JsonElement.Clone；节点输入PortValue引用；按Procedure/Module/Node键缓存",
+      "cache": "先复制配置，再按绑定覆盖参数/输入；记Seed与Applied克隆",
+      "release": "RemoveNode/Retain/Scope最终释放会移除有效参数字典",
+      "behavior": "GraphExecutor克隆参数JSON、ROI顶点/配置等；输入端口赋值复用上游PortValue。声明默认值在缺项时Clone，订阅解析后覆盖参数或输入。scope.RememberExecutionParameters克隆seed/applied两份；ReadEffectiveParameters复制缓存并覆盖相对Seed已改的配置字段，不把缓存视作native SDK读回确认。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "Graph and parameter snapshot",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 9,
+          "end": 9,
+          "excerpt": "  var p=procedure with{Nodes=procedure.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(x=>x.Key,x=>x.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices is null?null:Array.AsReadOnly(r.Vertices.ToArray())}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray(),Connections=procedure.Connections.ToArray(),ExecutionLinks=procedure.ExecutionLinks?.ToArray(),Configuration=procedure.Configuration.Snapshot()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "Current independent implementation, not an original runtime layout."
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "Binding resolution",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 30,
+          "end": 30,
+          "excerpt": "   try{foreach(var binding in p.Configuration.Subscriptions.Where(b=>b.NodeId==id)){PortValue value;if(!binding.IsParameter&&d.Inputs.Single(port=>port.Name==binding.Target) is {} deferred&&(deferred.SupportsDeferredNumericRead||deferred.SupportsDeferredIntegerRead||deferred.SupportsDeferredTextRead)){numericIndices.Add(binding.Target,binding.Source.ArrayIndex);try{value=workflow.Resolve(binding.Source with{ArrayIndex=null});}catch(InvalidDataException)when(workflow.CanDeferNumericRead(binding.Source)){continue;}}else value=workflow.Resolve(binding.Source);if(binding.IsParameter)parameters[binding.Target]=WorkflowSubscriptions.Parameter(d.Parameters.Single(p=>p.Name==binding.Target),value);else nodeInputs[binding.Target]=value;}}catch(Exception ex)when(ex is InvalidDataException or OverflowException){Record(NodeRunStatus.Failed,code:\"SubscriptionUnavailable\",message:ex.Message);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "Current independent implementation, not an original runtime layout."
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.Parameters.cs",
+          "member": "Applied parameter cache",
+          "sha256": "ec53ae0a59eff823eaf5f7db488fb9db11f8e33d9763fc9a817704f6d99275e3",
+          "start": 9,
+          "end": 11,
+          "excerpt": " public void RememberExecutionParameters(string module,string node,IReadOnlyDictionary<string,JsonElement> seed,IReadOnlyDictionary<string,JsonElement> applied){var state=Parameters(module,node);lock(state.Gate){state.Seed=seed.ToDictionary(p=>p.Key,p=>p.Value.Clone());state.Values=applied.ToDictionary(p=>p.Key,p=>p.Value.Clone());}}\n public IReadOnlyDictionary<string,JsonElement>? ReadEffectiveParameters(string module,string node,IReadOnlyDictionary<string,JsonElement> current){var state=Parameters(module,node);lock(state.Gate){if(state.Values is null)return null;var result=state.Values.ToDictionary(p=>p.Key,p=>p.Value.Clone());foreach(var pair in current)if(state.Seed is null||!state.Seed.TryGetValue(pair.Key,out var old)||old.GetRawText()!=pair.Value.GetRawText())result[pair.Key]=pair.Value.Clone();return result;}}\n public void RememberConfigurationParameters(string module,string node,IReadOnlyDictionary<string,JsonElement> before,IReadOnlyDictionary<string,JsonElement> after,bool reset=false){var state=Parameters(module,node);lock(state.Gate){if(state.Values is null&&!reset)return;state.Seed??=before.ToDictionary(p=>p.Key,p=>p.Value.Clone());state.Values??=new();foreach(var pair in after)if(reset||!before.TryGetValue(pair.Key,out var old)||old.GetRawText()!=pair.Value.GetRawText()){state.Seed[pair.Key]=pair.Value.Clone();state.Values[pair.Key]=pair.Value.Clone();}}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "Current independent implementation, not an original runtime layout."
+        }
+      ],
+      "unknowns": [
+        "每个工具私有参数状态和配置取消行为须随具体插件确认；此处不证明原版动态参数一致。"
+      ],
+      "stages": {
+        "sourceRecovery": "current independent source",
+        "runtimeCorroboration": "not-executed",
+        "wholeFeatureClosure": "not-established"
+      }
+    },
+    {
+      "id": "DI01",
+      "topic": "image",
+      "classification": "source-confirmed",
+      "from": "SDK ImageBaseData.ImageData / ImageDataPtr",
+      "to": "byte[]与借用指针双向访问",
+      "representation": "SetByte / SetIntPtr / SetSharedMem / UnSet；GCHandle pin",
+      "cache": "指针读byte[]时分配DataLen并Marshal.Copy；byte[]读指针时pin",
+      "release": "setter先Free旧pin；未在这里释放外部IntPtr",
+      "behavior": "ImageData setter保留传入数组引用并置SetByte；ImageDataPtr getter在SetByte时pin该数组并返回地址，随后置UnSet。反向getter在SetIntPtr时复制到新数组并置UnSet，但保留旧指针字段。两个表示不等于自动同步的不可变副本；不能据已有byte[]认定旧指针仍有效。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::get_ImageData",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 9928,
+          "end": 9947,
+          "excerpt": "          \"token\": \"0x0600014e\",\n          \"symbol\": {\n            \"token\": \"0x0600014e\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"get_ImageData\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20001d05\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 132,\n          \"ilSha256\": \"4a5cd3b99854f150c586e8330600c6cf6c6a7acf5b0b93cc020ad5a677916144\",\n          \"ilBytes\": \"00027b8702000419fe010a062c09000228540100060000027b8702000418fe010b072c5500027b880200047e4600000a284700000a0c082c3b000202282c0100068d660000017d86020004027b88020004027b860200041602282c010006285d00000a0002167d87020004027b860200040d2b0e00140d2b09027b860200040d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::set_ImageData",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 10472,
+          "end": 10491,
+          "excerpt": "          \"token\": \"0x0600014f\",\n          \"symbol\": {\n            \"token\": \"0x0600014f\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"set_ImageData\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"2001011d05\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 45,\n          \"ilSha256\": \"188bd79fcecdcdeadda3f0f0f90c301dfef48c80271c110ce1044b4fb5fcdf8d\",\n          \"ilBytes\": \"00027c89020004289200000a0a062c0e00027c89020004289300000a000002037d8602000402177d870200042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::get_ImageDataPtr",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 10671,
+          "end": 10690,
+          "excerpt": "          \"token\": \"0x06000150\",\n          \"symbol\": {\n            \"token\": \"0x06000150\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"get_ImageDataPtr\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"200018\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 173,\n          \"ilSha256\": \"f7064fed54b649d79b35bdceef207a1ddf8c3473606c91de860316e745ab50a0\",\n          \"ilBytes\": \"00027b8702000419fe010a062c09000228540100060000027b8702000417fe010b072c7c00027b860200042c0c027b860200048e16fe032b01160c082c4400027c89020004289200000a0d092c0e00027c89020004289300000a000002027b8602000419289000000a7d8902000402027c89020004289100000a7d88020004002b0d00027e4600000a7d880200040002167d87020004027b8802000413042b0a027b8802000413042b0011042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::set_ImageDataPtr",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 11365,
+          "end": 11384,
+          "excerpt": "          \"token\": \"0x06000151\",\n          \"symbol\": {\n            \"token\": \"0x06000151\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"set_ImageDataPtr\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010118\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 45,\n          \"ilSha256\": \"dbc3955760760b1be3614166251530abd4711c18c97c050748f1510fd49f878b\",\n          \"ilBytes\": \"00027c89020004289200000a0a062c0e00027c89020004289300000a000002037d8802000402187d870200042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "原native借用指针生命周期、DataLen可信度/同步以及所有调用方KeepAlive/Dispose时机未完成运行核对。"
+      ],
+      "stages": {
+        "sourceRecovery": "selected original bodies recovered",
+        "runtimeCorroboration": "not-executed",
+        "wholeFeatureClosure": "not-established"
+      }
+    },
+    {
+      "id": "DI02",
+      "topic": "image",
+      "classification": "source-confirmed",
+      "from": "SharedMemObj / SharedMemoryItemVM.GetDataPtr",
+      "to": "先关闭旧映射，再取新地址",
+      "representation": "OpenHandle/MapHandle/DataPtr/DataLen/ExecuteCountCurrent",
+      "cache": "ImageBaseData共享状态转SetIntPtr；GetDataPtr每次先DisposeRes",
+      "release": "DisposeRes清地址/长度，UnmapViewOfFile后CloseHandle；终结器也调用",
+      "behavior": "SetDataPtrBySharedMem先释放旧pin，再GetDataPtr并取DataLen；共享对象为空则清指针长度。SharedMemoryItemVM.GetDataPtr在打开新映射前销毁旧资源。DisposeRes的返回值可被后一次关闭结果覆盖；本体不比较ExecuteCountExpected与Current，不能凭两个字段存在声称轮次门已执行。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::set_SharedMemObj",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 11564,
+          "end": 11583,
+          "excerpt": "          \"token\": \"0x06000153\",\n          \"symbol\": {\n            \"token\": \"0x06000153\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"set_SharedMemObj\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig, SpecialName\",\n            \"signatureBytes\": \"2001011214\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 16,\n          \"ilSha256\": \"aa8da22c63ddbe5be52abc439aa17a76dfada7543303ab0c1346b9c1a1844f81\",\n          \"ilBytes\": \"0002037d8b02000402197d870200042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::SetDataPtrBySharedMem",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 11653,
+          "end": 11672,
+          "excerpt": "          \"token\": \"0x06000154\",\n          \"symbol\": {\n            \"token\": \"0x06000154\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"SetDataPtrBySharedMem\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 112,\n          \"ilSha256\": \"6c9d58402a3db67cbe4c9054c42ca654325f3a1213a60af7bafa6b8e35697bb6\",\n          \"ilBytes\": \"00027c89020004289200000a0a062c0e00027c89020004289300000a0000027b8b02000414fe030b072c280002027b8b0200046f250000067d8802000402027b8b0200047bd70100046d282d01000600002b1500027e4600000a7d880200040216282d010006000002187d870200042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.SharedMemoryItemVM::GetDataPtr",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 12528,
+          "end": 12547,
+          "excerpt": "          \"token\": \"0x06000025\",\n          \"symbol\": {\n            \"token\": \"0x06000025\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.SharedMemoryItemVM\",\n            \"name\": \"GetDataPtr\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200018\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 60,\n          \"ilSha256\": \"8f3d9bb2231e7ab9f8ab183eb0216f0cd2c58d423e2619e0fd17b084fb79da4a\",\n          \"ilBytes\": \"000228260000062602027bd1010004027cd2010004027cd3010004027cd7010004027cd501000428360000067dd6010004027bd60100040a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.SharedMemoryItemVM::DisposeRes",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 12768,
+          "end": 12787,
+          "excerpt": "          \"token\": \"0x06000026\",\n          \"symbol\": {\n            \"token\": \"0x06000026\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.SharedMemoryItemVM\",\n            \"name\": \"DisposeRes\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200002\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 125,\n          \"ilSha256\": \"07dc234fbdbf24895c3bbd2f2a753f12ea6bf97f8db18e4bbfd9a1e2be66dc1f\",\n          \"ilBytes\": \"00160a02167dd5010004027e4600000a7dd601000402166a7dd70100047e4600000a027bd3010004284700000a0b072c1900027bd3010004282d0000060a027e4600000a7dd3010004007e4600000a027bd2010004284700000a0c082c1900027bd2010004282e0000060a027e4600000a7dd201000400060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.SharedMemoryItemVM::Finalize",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 13258,
+          "end": 13277,
+          "excerpt": "          \"token\": \"0x06000027\",\n          \"symbol\": {\n            \"token\": \"0x06000027\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.SharedMemoryItemVM\",\n            \"name\": \"Finalize\",\n            \"parameters\": 0,\n            \"attributes\": \"Family, Virtual, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 20,\n          \"ilSha256\": \"8d2e701c10cb87e9c99efd0ef7519b8970ae56fc6d44b18af6f67e23bd10ec73\",\n          \"ilBytes\": \"000002282600000626de0802281100000a00dc2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "VMGetMemDataPtr内部和共享生产者的覆写协议待取证；其他消费者重映射可使旧借用地址失效，实际并发未验证。"
+      ],
+      "stages": {
+        "sourceRecovery": "selected original bodies recovered",
+        "runtimeCorroboration": "not-executed",
+        "wholeFeatureClosure": "not-established"
+      }
+    },
+    {
+      "id": "DI03",
+      "topic": "image",
+      "classification": "source-confirmed",
+      "from": "ImageBaseData.Dispose / Finalize",
+      "to": "仅解除GC固定句柄",
+      "representation": "imageGcHandle；imageDataPtr与共享对象引用",
+      "cache": "Dispose不清指针字段或setImageDataFlag",
+      "release": "无FreeHGlobal、无UnmapViewOfFile、无SharedMemObj.DisposeRes调用",
+      "behavior": "所选Dispose和终结器只在IsAllocated时Free GCHandle。它们解除托管数组固定，不等同外部像素地址释放或共享映射关闭。Dispose之后字段仍可能保存旧地址，不能继续把ImageDataPtr当有效租约；共享映射有其自己的GetDataPtr/DisposeRes/终结器路径。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::Dispose",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 12109,
+          "end": 12128,
+          "excerpt": "          \"token\": \"0x0600015b\",\n          \"symbol\": {\n            \"token\": \"0x0600015b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"Dispose\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 31,\n          \"ilSha256\": \"885baa0a477190129e8e555cccf7796b31a96213f0d5d64b362a84e3ad737cbf\",\n          \"ilBytes\": \"00027c89020004289200000a0a062c0e00027c89020004289300000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/data-lifecycle-cil.json",
+          "member": "VM.PlatformSDKCS.ImageBaseData::Finalize",
+          "sha256": "b8fe9b3787451ebb018a383fc5e822a32349289d6246513ada89f3de2176f679",
+          "start": 12254,
+          "end": 12273,
+          "excerpt": "          \"token\": \"0x0600015e\",\n          \"symbol\": {\n            \"token\": \"0x0600015e\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ImageBaseData\",\n            \"name\": \"Finalize\",\n            \"parameters\": 0,\n            \"attributes\": \"Family, Virtual, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 42,\n          \"ilSha256\": \"91e7e926f4cad2a0619f61495d5e735cd340ba4b3df929d1e418d933cfdbed06\",\n          \"ilBytes\": \"0000027c89020004289200000a0a062c0e00027c89020004289300000a0000de0802281100000a00dc2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "基类/调用方的额外释放、外部地址真实所有者和最后引用回收时点仍独立；未实际解除或访问厂商指针。"
+      ],
+      "stages": {
+        "sourceRecovery": "selected original bodies recovered",
+        "runtimeCorroboration": "not-executed",
+        "wholeFeatureClosure": "not-established"
+      }
+    },
+    {
+      "id": "DI06",
+      "topic": "image",
+      "classification": "independent-implementation",
+      "from": "当前GrayImage / RgbImage / RawImage构造",
+      "to": "拥有托管像素数组，再通过PortValue引用传递",
+      "representation": "构造ReadOnlySpan.ToArray；Pixels只读span",
+      "cache": "图像构造发生复制；PortValue.Image和连接赋值不再自动复制",
+      "release": "这三个图像类无IDisposable，托管数组寿命取决于剩余引用/GC",
+      "behavior": "当前三种图像构造复制输入字节。GraphExecutor的nodeInputs[c.ToPort]=v及结果字典复制只复制PortValue引用；ToolDisplayFrame/ImageLayers可继续保留图像引用。不能将ReadonlyDictionary或ReadOnlySpan说成每一层都复制像素，也不能把模块Dispose当作这些托管图像的显式释放。",
+      "refs": [
+        {
+          "path": "src/VisionData/ImageGeometry.cs",
+          "member": "GrayImage owned constructor",
+          "sha256": "0c169c1fe86eb8048fc6b7329d425088c32d2a690535c05962e5276d9907882d",
+          "start": 4,
+          "end": 25,
+          "excerpt": "public sealed class GrayImage:IImageData\n{\n    private readonly byte[] pixels;\n    public int Width { get; }\n    public int Height { get; }\n    public int Stride=>Width;\n    public ImagePixelFormat Format=>ImagePixelFormat.Mono8;\n    public ReadOnlySpan<byte> Pixels => pixels;\n    public byte this[int x, int y] => pixels[Offset(x, y)];\n    private int Offset(int x, int y)\n    {\n        if ((uint)x >= (uint)Width || (uint)y >= (uint)Height) throw new ArgumentOutOfRangeException();\n        return y * Width + x;\n    }\n    public GrayImage(int width, int height, ReadOnlySpan<byte> data)\n    {\n        if (width <= 0 || height <= 0) throw new ArgumentOutOfRangeException(nameof(width));\n        if (data.Length != checked(width * height)) throw new ArgumentException(\"Pixel count must equal width * height.\", nameof(data));\n        Width = width; Height = height; pixels = data.ToArray();\n    }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "Current independent implementation, not an original runtime layout."
+        },
+        {
+          "path": "src/VisionData/ColorImage.cs",
+          "member": "RGB owned constructor",
+          "sha256": "8f2d913e0bfa11edc4c6dd04eef83031b09265a34cc92fac04ca5970c40ba4b6",
+          "start": 11,
+          "end": 23,
+          "excerpt": "public sealed class RgbImage:IImageData {\n readonly byte[] pixels;\n public int Width {get;}\n public int Height {get;}\n public int Stride=>checked(Width*3);\n public ImagePixelFormat Format=>ImagePixelFormat.Rgb24;\n public ReadOnlySpan<byte> Pixels=>pixels;\n public RgbImage(int width,int height,ReadOnlySpan<byte> data){\n  if(width<=0||height<=0)throw new ArgumentOutOfRangeException(nameof(width));\n  if(data.Length!=checked(width*height*3))throw new ArgumentException(\"RGB24 data must contain width * height * 3 bytes.\",nameof(data));\n  Width=width;Height=height;pixels=data.ToArray();\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "Current independent implementation, not an original runtime layout."
+        },
+        {
+          "path": "src/VisionData/RawImage.cs",
+          "member": "Raw owned constructor",
+          "sha256": "e380f1abb06c6f49a8584d37ea8acfd22300ef87fbf66f503c20f3aa0f6f6342",
+          "start": 4,
+          "end": 16,
+          "excerpt": "public sealed class RawImage:IImageData {\n readonly byte[] pixels;\n public int Width{get;}\n public int Height{get;}\n // Zero means that the transport supplied no packed-row stride (for example planar data).\n public int Stride{get;}\n public ImagePixelFormat Format{get;}\n public ReadOnlySpan<byte> Pixels=>pixels;\n public RawImage(int width,int height,ImagePixelFormat format,ReadOnlySpan<byte> data,int stride=0){\n  if(width<=0||height<=0||stride<0||data.IsEmpty)throw new ArgumentOutOfRangeException(nameof(width));\n  Width=width;Height=height;Format=format;Stride=stride;pixels=data.ToArray();\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "Current independent implementation, not an original runtime layout."
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "Input value reference reuse",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 24,
+          "end": 24,
+          "excerpt": "    nodeInputs[c.ToPort]=v;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "Current independent implementation, not an original runtime layout."
+        }
+      ],
+      "unknowns": [
+        "每个provider/历史保留了多少图像引用、峰值内存和GC实际回收时刻未以运行测量；不是原版共享内存等价。"
+      ],
+      "stages": {
+        "sourceRecovery": "current independent source",
+        "runtimeCorroboration": "not-executed",
+        "wholeFeatureClosure": "not-established"
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "managed",
+      "title": "当前图像：构造时复制，传递时保留引用",
+      "factIds": [
+        "DI06"
+      ],
+      "classification": "independent-implementation",
+      "nodes": [
+        [
+          "input",
+          "输入字节",
+          170,
+          30
+        ],
+        [
+          "image",
+          "Gray／Rgb／RawImage：自有托管数组",
+          530,
+          30
+        ],
+        [
+          "port",
+          "PortValue 图像引用",
+          530,
+          165
+        ],
+        [
+          "node",
+          "下游节点输入",
+          190,
+          300
+        ],
+        [
+          "result",
+          "结果字典副本",
+          530,
+          300
+        ],
+        [
+          "display",
+          "ToolDisplayFrame／ImageLayers",
+          870,
+          300
+        ]
+      ],
+      "edges": [
+        [
+          "input",
+          "image",
+          "构造 ToArray：复制像素",
+          "copy"
+        ],
+        [
+          "image",
+          "port",
+          "图像对象引用",
+          "reference"
+        ],
+        [
+          "port",
+          "node",
+          "连接赋值：复用引用",
+          "reference"
+        ],
+        [
+          "port",
+          "result",
+          "复制字典：保留引用",
+          "reference"
+        ],
+        [
+          "image",
+          "display",
+          "显示载荷可继续持有",
+          "reference"
+        ]
+      ],
+      "note": "这些图像类没有 IDisposable；托管数组寿命由剩余引用和 GC 决定。模块 Dispose 不证明图像已回收，峰值内存和实际 GC 时刻未知。"
+    },
+    {
+      "id": "configuration",
+      "title": "当前参数：配置快照与输入值是不同复制边界",
+      "factIds": [
+        "DP04"
+      ],
+      "classification": "independent-implementation",
+      "nodes": [
+        [
+          "config",
+          "节点配置 JSON／ROI",
+          150,
+          30
+        ],
+        [
+          "snapshot",
+          "参数 JSON／ROI 克隆",
+          550,
+          30
+        ],
+        [
+          "upstream",
+          "上游 PortValue",
+          150,
+          180
+        ],
+        [
+          "inputs",
+          "节点输入：引用复用",
+          550,
+          180
+        ],
+        [
+          "applied",
+          "Seed／Applied 参数缓存",
+          550,
+          330
+        ]
+      ],
+      "edges": [
+        [
+          "config",
+          "snapshot",
+          "Clone 配置",
+          "copy"
+        ],
+        [
+          "upstream",
+          "inputs",
+          "绑定消费：PortValue 引用",
+          "reference"
+        ],
+        [
+          "snapshot",
+          "applied",
+          "有效参数记忆：两份克隆",
+          "copy"
+        ]
+      ],
+      "note": "连接输入与参数缓存不是同一份数据。ReadEffectiveParameters 复制缓存并覆盖相对 Seed 改变的字段；缓存不等同 native SDK 读回。"
+    },
+    {
+      "id": "native-boundaries",
+      "title": "原版三条释放边界：解除固定、关闭映射、外部指针",
+      "factIds": [
+        "DI01",
+        "DI02",
+        "DI03"
+      ],
+      "classification": "source-confirmed",
+      "nodes": [
+        [
+          "dispose",
+          "ImageBaseData.Dispose／Finalize",
+          220,
+          30
+        ],
+        [
+          "unpin",
+          "GCHandle.Free：解除数组固定",
+          760,
+          30
+        ],
+        [
+          "mapping",
+          "SharedMemoryItemVM.DisposeRes",
+          220,
+          180
+        ],
+        [
+          "unmap",
+          "UnmapViewOfFile → CloseHandle",
+          760,
+          180
+        ],
+        [
+          "ptr",
+          "外部 IntPtr",
+          220,
+          330
+        ],
+        [
+          "unknown",
+          "真实 Owner／最后读者：未知",
+          760,
+          330
+        ]
+      ],
+      "edges": [
+        [
+          "dispose",
+          "unpin",
+          "仅所选固定句柄路径",
+          "release"
+        ],
+        [
+          "mapping",
+          "unmap",
+          "共享映射单独关闭",
+          "release"
+        ],
+        [
+          "ptr",
+          "unknown",
+          "未证最终释放，不补连接",
+          "unknown"
+        ]
+      ],
+      "note": "Dispose 不清旧指针字段，不调用 SharedMemObj.DisposeRes；不能把解除 GC 固定画成外部像素释放。共享映射重开前先销毁旧资源，原生生产者覆写协议与并发有效期未验证。"
+    }
+  ],
+  "browserVerified": false,
+  "scope": "仅投影所列已捕获事实；不同分支/对象不合并为同帧、租约或最终 native Owner。"
+}

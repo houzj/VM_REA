@@ -1,0 +1,54 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十二批：关闭未完成实施单元A03.3</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/BATCH12-20261019.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第十二批关闭未完成实施单元a033">第十二批：关闭未完成实施单元A03.3</a></p><p style="margin-left:14px"><a href="#实施与关闭依据">实施与关闭依据</a></p><p style="margin-left:14px"><a href="#实际自审核">实际自审核</a></p><p style="margin-left:14px"><a href="#进度及阻塞">进度及阻塞</a></p><p style="margin-left:14px"><a href="#审计及兼容">审计及兼容</a></p></details><h1 id="第十二批关闭未完成实施单元a033">第十二批：关闭未完成实施单元A03.3</h1><p>基线 <code>f53aa7b828807e3dfd20875b24b84b03cc8bc41b</code>。用户要求优先完整关闭未完成实施单元；本批分母固定96，不改既有criterion、不拆小加分。实际并行为A产品、B原源码独立复审、C历史与独立Core测试、D根线持久化/集成及串行构建，三个子槽加主智能。B06/C04候选审查发现真正合同/原生载荷缺口后不做无效小修，也没有用独立JSON存储冒充原SDK历史。</p>
+<h2 id="实施与关闭依据">实施与关闭依据</h2><p>固定A03.3门槛“每显示容器缩放持久化及非活动Tab历史”本批完整实施：</p>
+<ul>
+<li><code>ProcedureDocument.CanvasZoomIndex</code>默认9，每根流程/嵌套Group独立；合法20档0..19，对应0.1..2.0。</li>
+<li><code>GraphEditorDocument.SetContainerZoomIndex</code>同值no-op、指定身份写入、Dirty/Changed；不新建结构撤销root、不清redo、不增结构Revision、不抢当前页。普通文档快照保全并回放非活动页字段。</li>
+<li>真实画布每次RenderGraph从模型读取，缩放/Fit实际写回；首次恢复和同页Undo不会被旧会话scale覆盖；overview/pan保持会话态。</li>
+<li>实际Save/Load/SaveAs保留字段，旧无字段JSON默认9，非法索引事务拒绝；多层owned副本保留值且身份独立，删除/Undo恢复正确。</li>
+</ul>
+<p>原源码入口、字段、绑定、UserData及精确CIL链详见<a href="A03-closure-source-review-batch12.html">A源码复审</a>、<a href="A-container-zoom-implementation-batch12.html">A实施</a>、<a href="C-review-container-zoom-batch12.html">C历史审查</a>。0..19加载检查是本地格式保护，原setter没有范围检查。JSON字段、整方案snapshot和主动重读均为明确的main独立适配，不冒称native.sol/SDK载荷一致。原通知ProceZoomIndex/PartentZoomIndex绑定反馈及原机差分仍未知；依用户最新口径，这些验收未知不计入实施分母。A03整包原厂等价未关闭。</p>
+<h2 id="实际自审核">实际自审核</h2><p>仅根线串行运行，日志本地保留于<code>analysis/full-audit/batch12-20261019/</code>：</p>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th>结果</th>
+<th>日志</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主程序dotnet build，禁止并行及共享编译</td>
+<td>exit0，0错误；既有MainWindow.xaml.cs:123 CS8603在两次编译阶段共2告警</td>
+<td>D/editor-build.log</td>
+</tr>
+<tr>
+<td>ViewportDocumentChecks12</td>
+<td>exit0，29项通过</td>
+<td>C/core-checks.log及GUID目录JSON</td>
+</tr>
+<tr>
+<td>ContainerZoomChecks首轮</td>
+<td>exit1：测试缺System.IO显式引用，保留失败</td>
+<td>A/wpf-checks.log</td>
+</tr>
+<tr>
+<td>ContainerZoomChecks修正引用重跑</td>
+<td>exit0，29/29真实MainWindow/WPF与文档自审核</td>
+<td>A/wpf-checks-retry1.log及checks存读样本</td>
+</tr>
+<tr>
+<td>原有导航回归</td>
+<td>exit0，12/12通过</td>
+<td>D/navigation-regression.log</td>
+</tr>
+</tbody></table>
+<p>WPF用例使用本批测试自有窗口，不是用户交互桌面验收或原机差分。没有运行原厂构造器/SDK、设备服务、安装原件或其他任务进程。测试通过不代表完整VM等价。</p>
+<h2 id="进度及阻塞">进度及阻塞</h2><p><strong>实施31/96=32.29%，本批+1（A03.3），剩余65。</strong> 原源码51/96和验证29/96维持原记录，原机未知保留；不以历史三层交集或0/32覆盖当前实施进度。</p>
+<ul>
+<li>B06.1：FCR-021缺真实资格/类型/CloneSource能力合同，不能用参数描述符或会产生初始化副作用的配置会话推断。详见<a href="B-candidates-closure-batch12.html">B候选审查</a>。解除条件是用户选定交接的源码确认合同，不自动要求/采用工具线在制代码。</li>
+<li>C04.2：原TempFiles内存/文件载荷、同路径共享保留及SDK回放尚未交付。新增独立JSON租约不足以替代原.sol/.prc/.gro。详见<a href="C-temp-history-closure-batch12.html">C候选审查</a>。释放/淘汰源码保留，不按报告关闭实施。</li>
+<li>后续按真实可完成main单元及依赖推进；已关闭A03.3不再作为常规修补选题。未解除的B06/C04不重复派发相同静态审查。</li>
+</ul>
+<h2 id="审计及兼容">审计及兼容</h2><p>FCR-025登记根线唯一修改main视图字段的所有者、数据流和兼容边界。本版本能读旧无字段JSON；旧版main严格拒绝未知字段，不能保证旧可执行程序读本次新增字段文件，独立格式版本号仍为1。</p>
+<p>主台账<code>framework-progress-audit.json</code>、<code>framework-reverse-plan.json</code>及复算报告同步计分；原源码/材料哈希在A/B/C目录，最终交付/日志哈希在D。完整提交SHA保存在本批HEAD-after.txt，避免报告自引用SHA循环。保留首轮失败和此前原机失败，未自动推送，tool-plugins未读未改。</p>
+<p class="meta">来源：docs/reverse/BATCH12-20261019.md · SHA256 dfd4cebc5a3c437a0545e4d8312501f0ca26a9d9bb4e1c1cc8882b97fbba000a<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

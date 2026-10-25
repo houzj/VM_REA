@@ -1,0 +1,24 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十八批 A：未重复设计器阻塞，落地托管目录引用的真实宿主消费</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/A-runtime-editor-batch18.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第十八批-a未重复设计器阻塞落地托管目录引用的真实宿主消费">第十八批 A：未重复设计器阻塞，落地托管目录引用的真实宿主消费</a></p><p style="margin-left:14px"><a href="#原源码和独立适配合同">原源码和独立适配合同</a></p><p style="margin-left:14px"><a href="#新实施">新实施</a></p><p style="margin-left:14px"><a href="#实际消费自审核">实际消费自审核</a></p><p style="margin-left:14px"><a href="#仍独立开放">仍独立开放</a></p></details><h1 id="第十八批-a未重复设计器阻塞落地托管目录引用的真实宿主消费">第十八批 A：未重复设计器阻塞，落地托管目录引用的真实宿主消费</h1><p>A06.1仍依赖实际设计面、XAML快照、三缓冲MD5及事件清理。当前没有新增设计面交付，因此不重复第十三批原厂探针、报告或用空窗口骗完成；根线明确将本线切换到A07.1的真实发现/注册消费者。</p>
+<h2 id="原源码和独立适配合同">原源码和独立适配合同</h2><p><code>ToolBoxItemData.AddNewItem</code> 的原链为目录项Info/DirPath→<code>${Info}Cs.dll</code>或customInstanceFullName→已装载程序集/目标类型→构造；Control.dll/Librarys.Config及IVmModule的SDK参数不是当前公开插件合同。本批复用第十六批已认证原源码与静态方法依据，不执行任何原厂DLL/SDK。</p>
+<p>现main继续使用既有tool-catalog元数据和 <code>IVisionToolPlugin</code>、<code>ToolPluginRegistry</code>、<code>ModuleRegistry</code>。根线在 <code>ToolNavigation</code> 单一写入可选 <code>Implementation</code> 引用，负载为现有 <code>ManagedToolPluginReference</code>：显式绝对程序集路径、精确类型名、SHA256、模块ID、版本。没有自动扫描或探测旁边DLL，不猜原厂目录、不新建参数配置框架或另一种manifest。旧条目缺Implementation时保持现有静态注册行为。</p>
+<p>启动文件MainWindow和公开插件/注册工厂合同本身不改。主框架目录发现/加载的唯一写入者由本批根线负责；原协调锁的适用范围和新接缝须由根线记录FCR。本线仅新增session与自有检查，未触碰tool-plugins。</p>
+<h2 id="新实施">新实施</h2><p><code>ManagedToolCatalogLoadSession.EnsureLoaded(reference,register)</code> 为真实分类首次装载提供完整生命周期：</p>
+<ul>
+<li>缺记录时先发布loading状态，再调用既有ManagedToolPluginLoader；loader保持metadata/hash/精确类型/宿主接口/Manifest/Descriptor核验。</li>
+<li>成功后进入register阶段，调用根线唯一真实注册回调；只有回调成功才发布loaded。相同引用后续分类/刷新消费同一实例，不重复注册。</li>
+<li>原异常以 <code>ManagedToolCatalogLoadException.InnerException</code> 保留，阶段明确为load/register；同引用失败保持sticky，无自动retry。</li>
+<li>显式分类刷新只 <code>ClearFailures</code>，不清成功插件身份。加载或注册正在进行时拒绝重入，不产生第二份插件配置系统。</li>
+</ul>
+<p>本session是当前主机UI线程同步消费者；未声明跨线程并发保证或通用恶意程序集隔离。注册回调仍需根线在两个现有registry预查ID/版本冲突；不改变旧public Register非事务边界。程序以宿主权限执行，此次所有运行对象仅为项目自有fixture。</p>
+<h2 id="实际消费自审核">实际消费自审核</h2><p><code>tests/ManagedToolCatalogHostChecks18</code> 在创建MainWindow前设置 <code>VisionEditor.DisableAutomaticCameraDiscovery=true</code>；使用自有tool-catalog JSON与复用的 <code>ManagedToolFixture16</code>（非静态程序集引用）。15项检查覆盖：</p>
+<ol>
+<li>首次header discovery不装载/注册；错误hash分类失败不污染host。</li>
+<li>真实分类Expanded触发选择程序集→ToolPluginRegistry/ModuleRegistry注册，实际palette tile变enabled。</li>
+<li>实际CanvasSelectionMenu类别复用映射，点击原host菜单路径创建真实节点；GraphExecutor执行输出42。</li>
+<li>正常host保存/重开保留节点身份；修复失败元数据不自动retry，显式刷新允许消费成功身份且不重复注册。</li>
+<li>session单独验证register阶段原异常保全、sticky、不retry、ClearFailures后一次成功、成功缓存不重复callback。</li>
+</ol>
+<p>本线未并行构建或运行WPF；根线串行运行最终 <strong>exit0，15/15</strong>。结果目录：<code>analysis/full-audit/batch18-20261019/A/host-catalog-e6b9d5c328cc4b4f87fa9f556ccde991</code>。自有fixture运行SHA256为 <code>2f0b4545fb95106f284f4159e23d39e1906bc20759833cfd69c1fae047e997cd</code>。首轮测试的MouseEventArgs命名歧义由根线显式全名修复，初始编译失败保留；不把该轮称为通过。</p>
+<p>实际运行之后只读复审 <code>ToolNavigation</code> 与session：模块ID与Implementation.ModuleId先对齐；首次分类通过唯一回调写现有双registry；回调对任何已注册同ID拒绝替换（包括builtin或不同版本），成功的相同引用靠session缓存复用，不重复写registry；Refresh只移失败。该明确支持域内没有阻断动态发现→注册→真实创建执行的剩余缺口，可将A07.1的<strong>当前main公开合同实施</strong>判为done。这里的发现载体为main现有tool-catalog显式引用，非原安装Cs自动扫描；不能据此宣称原厂ABI完成。</p>
+<h2 id="仍独立开放">仍独立开放</h2><p>原Cs/Control程序集ABI、Librarys.Config、原IVmModule构造/native初始化和全部插件覆盖继续未知，不能以当前公开合同fixture外推原厂兼容。A06.1依旧未实施，A07.2全部版本冲突/缺插件恢复矩阵单列。A07.1源码和原厂验证层仍按实际证据边界保留，不因本地实施done自动改成原厂一致；总进度更新由根线统一完成。</p>
+<p class="meta">来源：docs/reverse/A-runtime-editor-batch18.md · SHA256 7f40129b5ccb9abb72dd5c70ea4309a60eb0e482bd4a7330131825f825f7fa84<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

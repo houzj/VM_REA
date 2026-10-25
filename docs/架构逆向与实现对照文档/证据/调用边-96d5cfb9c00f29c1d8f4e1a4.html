@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>当前MainWindow.AttachToolDrag / CreateToolDragData · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>当前MainWindow.AttachToolDrag / CreateToolDragData · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C01"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>当前MainWindow.AttachToolDrag / CreateToolDragData → owner/方案/流程/revision令牌与finally清理</h2><p>当前WPF实现按下armed，首次移动消耗armed，先检查enabled/左键/toolDragStarted，再创建自有格式令牌；payload记录owner、solution、procedure、revision和overview。QueryContinueDrag遇payload失效设Cancel。DoDragDrop(Move)由try/catch/finally包裹，finally解除回调、清ghost、释放token并复位拖动位；这是当前独立寿命/失效策略，与原List&lt;DiagramItem>载荷及无本体finally分开。</p><p><a href="../专题/toolbox-drag.html#edge-C01">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/toolbox-drag.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/toolbox-drag.edges.json · SHA256 c1cb2057bdecdcf2f0dca476b6ff43cdd33d825f6fc5fad1ff950dc55b5c1109</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="e3e3fc12aba8f535f98434fd3ddc35006e97616eb6edf927903677d4197fe39f">{
+  &quot;id&quot;: &quot;C01&quot;,
+  &quot;route&quot;: &quot;当前 · 独立工具拖入&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;当前MainWindow.AttachToolDrag / CreateToolDragData&quot;,
+  &quot;to&quot;: &quot;owner/方案/流程/revision令牌与finally清理&quot;,
+  &quot;behavior&quot;: &quot;当前WPF实现按下armed，首次移动消耗armed，先检查enabled/左键/toolDragStarted，再创建自有格式令牌；payload记录owner、solution、procedure、revision和overview。QueryContinueDrag遇payload失效设Cancel。DoDragDrop(Move)由try/catch/finally包裹，finally解除回调、清ghost、释放token并复位拖动位；这是当前独立寿命/失效策略，与原List&lt;DiagramItem>载荷及无本体finally分开。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolNavigation.cs&quot;,
+      &quot;member&quot;: &quot;current tool drag arming and cleanup&quot;,
+      &quot;sha256&quot;: &quot;2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2&quot;,
+      &quot;start&quot;: 179,
+      &quot;end&quot;: 201,
+      &quot;excerpt&quot;: &quot;    void AttachToolDrag(Button tile,string id,Func&lt;bool> enabled)\n    {\n        bool armed=false;\n        tile.PreviewMouseLeftButtonDown+=(_,e)=> { armed=true;toolDragStarted=false; };\n        tile.PreviewMouseLeftButtonUp+=(_,_)=>armed=false;\n        tile.LostMouseCapture+=(_,_)=>armed=false;\n        tile.PreviewMouseMove+=(_,e)=>\n        {\n            if(!armed)return;\n            armed=false; // ToolItemGrid consumes the first movement after mouse-down.\n            if(!enabled()||e.LeftButton!=MouseButtonState.Pressed||toolDragStarted)return;\n            toolDragStarted=true;\n            if(toolPopup is not null)toolPopup.IsOpen=false;\n            var data=CreateToolDragData(id);\n            System.Windows.QueryContinueDragEventHandler query=(_,args)=>{if(ReadDragPayload(data,ToolDragFormat) is not ToolDragPayload payload||!ValidToolDrag(payload))args.Action=System.Windows.DragAction.Cancel;};\n            tile.QueryContinueDrag+=query;\n            try { DragDrop.DoDragDrop(tile,data,DragDropEffects.Move); }\n            catch(Exception error){if(!windowClosed)StatusText.Text=\&quot;工具拖动已取消：\&quot;+error.Message;}\n            finally { tile.QueryContinueDrag-=query;ClearToolGhost();ReleaseToolDragData();toolDragStarted=false; }\n        };\n    }\n\n    void ShowToolPicker(string category=\&quot;all\&quot;,FrameworkElement? anchor=null)&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolNavigation.cs&quot;,
+      &quot;member&quot;: &quot;current payload owner and revision gate&quot;,
+      &quot;sha256&quot;: &quot;2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2&quot;,
+      &quot;start&quot;: 254,
+      &quot;end&quot;: 262,
+      &quot;excerpt&quot;: &quot;    bool ValidToolDrag(ToolDragPayload payload)=>ReferenceEquals(payload.Owner,this)&amp;&amp;payload.Solution==doc.SolutionId&amp;&amp;payload.Procedure==doc.CurrentProcedureId&amp;&amp;payload.Revision==doc.Revision&amp;&amp;payload.Overview==workflowOverview&amp;&amp;(payload.Module==\&quot;__procedure\&quot;?EditableOverview:EditableCanvas);\n\n    string? DragModule(DragEventArgs e)\n    {\n        if(ReadDragPayload(e.Data,ToolDragFormat) is not ToolDragPayload payload||!ValidToolDrag(payload))return null;\n        if(payload.Module==\&quot;__procedure\&quot;)return EditableOverview?payload.Module:null;\n        if(!EditableCanvas)return null;\n        return modules.Descriptors.Any(d=>d.Id==payload.Module)?payload.Module:null;\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowInputBoundaries.cs&quot;,
+      &quot;member&quot;: &quot;current tool data token lifecycle&quot;,
+      &quot;sha256&quot;: &quot;36efec524ae01be0ae40d35b5ce7b03aec48f4afbab50519098c315c485a8824&quot;,
+      &quot;start&quot;: 94,
+      &quot;end&quot;: 96,
+      &quot;excerpt&quot;: &quot; DataObject CreateToolDragData(string id){ReleaseToolDragData();toolDragToken=Guid.NewGuid().ToString(\&quot;N\&quot;);canvasDragData[toolDragToken]=new ToolDragPayload(this,doc.SolutionId,doc.CurrentProcedureId,doc.Revision,id,workflowOverview);return new(ToolDragFormat,toolDragToken,false);}\n void ReleaseToolDragData(){if(toolDragToken is not null)canvasDragData.Remove(toolDragToken);toolDragToken=null;}\n void HideNodePreview()&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;本轮仅静态源核，不重复宣称原机拖动等价；捕获/窗口关闭/跨Tab等真实操作仍需按已有宿主测试范围分别核对。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

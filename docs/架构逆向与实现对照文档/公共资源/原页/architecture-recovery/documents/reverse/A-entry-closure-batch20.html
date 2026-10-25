@@ -1,0 +1,75 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A05.1 第20批：快捷键原始记录核对</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/A-entry-closure-batch20.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#a051-第20批快捷键原始记录核对">A05.1 第20批：快捷键原始记录核对</a></p><p style="margin-left:14px"><a href="#新解决的实际歧义">新解决的实际歧义</a></p><p style="margin-left:14px"><a href="#其余已追到的上下文入口">其余已追到的上下文入口</a></p><p style="margin-left:14px"><a href="#固定门槛与剩余">固定门槛与剩余</a></p><p style="margin-left:14px"><a href="#复验和证据">复验和证据</a></p></details><h1 id="a051-第20批快捷键原始记录核对">A05.1 第20批：快捷键原始记录核对</h1><p>结论：<strong>A05.1 保持 partial，本批实施完成分子不增加。</strong> 本批交付可复验的原 BAML 属性顺序取证及11项有效快捷键清单，不把已交的第17批53菜单节点、43执行解析项、15工具栏项重复算进度；27项服务实施仍属于 A05.3。探针已冻结，不继续扩大扫描以拖延本批收口。</p>
+<h2 id="新解决的实际歧义">新解决的实际歧义</h2><p><code>VMControls.WPF.Base/DiagramItem.xaml</code> 的7个绑定同时含 Gesture=&quot;Ctrl+L&quot; 和另一个 Key。不能从反编译 XAML 文本猜最终键值。ReflectionOnlyLoadFrom 只取资源流，ResourceReader.GetResourceData 保留原始 BAML 字节；未实例化厂商控件、未构造 XAML schema、未执行厂商 SDK。字节解析器保留偏移和 payload，211条记录到达精确 EOF，11个 KeyBinding 类型号为 -337。原记录先设置 Gesture 后设置 Key。自有标准 Microsoft WPF KeyBinding 逐条同序赋值，实际11/11通过。</p>
+<table>
+<thead>
+<tr>
+<th>有效键</th>
+<th>命令参数</th>
+<th>原最终消费</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Ctrl+M</td>
+<td>M</td>
+<td>explorer.exe 打开 XmlPath 所在目录，异常吞掉</td>
+</tr>
+<tr>
+<td>Ctrl+C</td>
+<td>C</td>
+<td>CheckRunning 后清空并写入 Clipboard CopyInfo 和 Position</td>
+</tr>
+<tr>
+<td>Ctrl+F / Ctrl+A</td>
+<td>F / A</td>
+<td>排除 DataQueueModule、GlobalCameraModule 后设置 IsForbidden true / false</td>
+</tr>
+<tr>
+<td>Ctrl+T / D / I / W / E / R / O</td>
+<td>LevelT / D / I / W / E / C / O</td>
+<td>IMVS_SetParamValue(handle, module.ID, LogLevel, 0..6)</td>
+</tr>
+</tbody></table>
+<p>特别是 <strong>LevelC 对应 Ctrl+R</strong>。每项原偏移、属性顺序、标准框架版本/哈希在 <code>analysis/full-audit/batch20-20261020/A/standard-wpf/resolved-bindings.json</code>，离线门槛输出在 <code>resolved-entry-gate.json</code>。原命令 getter 无 CanExecute 谓词；不能给日志分支补造运行锁条件。SDK 内部作用仍未知。当前 main 的 Ctrl+C 有画布焦点条件，Ctrl+F/A 有框选条件，不能据键名相同宣称一致；Ctrl+M 与七个日志键没有对应原操作实现。</p>
+<h2 id="其余已追到的上下文入口">其余已追到的上下文入口</h2><p>下表路径均相对 <code>analysis/decompiled/VMControls.WPF</code>；它们是实际事件/绑定链，不是词法命中计数。</p>
+<table>
+<thead>
+<tr>
+<th>上下文</th>
+<th>绑定、条件与消费链</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>节点 Delete</td>
+<td><code>VMControls.WPF.Base/DiagramItem.xaml.cs:946</code>：未锁工作区、未开参数、管理员；<code>base/diagramitemtemplate.xaml:1788</code> 将 DeleteCommand 绑定 DeleteItemCommand；<code>VmModuleBaseDecorator.cs:831</code> 检查运行状态、集合删除确认、清剪贴板/登记 undo 后继续模型删除。</td>
+</tr>
+<tr>
+<td>连线 Delete</td>
+<td>原 <code>base/connection/connection.baml</code> 64记录、1绑定；<code>Connection.xaml</code> DeleteConnectionCommand → <code>VmConnectionDecorator.DeleteConnectionCommandExecute</code> → 非全局登记 RootOperation；DeleteConnection 检查两端运行状态后 Source.NextModules.Remove(Target)，清 PathPoints。</td>
+</tr>
+<tr>
+<td>页面 Ctrl+V</td>
+<td><code>ItemsPage.KeyVdown</code> 在未锁工作区时处理，DoPaste(Point(0,0)) → DiagramPage.xaml OnPasteItems → PasteItemsCommand → CheckRunning、登记复制操作、ProcedurePaste、位置处理。0,0 是键盘粘贴分支哨兵，不是最终位置。</td>
+</tr>
+<tr>
+<td>页面 Ctrl+F</td>
+<td>同一 KeyVdown，DataContext 的 IsShowImportGroup 不为 false；SearchOperation 显示搜索窗口，确认路径后 OnSearchModule → ProcedureConfigControl.SearchModuleCommand → VmProcedureDecorator.SearchModuleCommandExecute，设置显示容器、定位模块。</td>
+</tr>
+<tr>
+<td>框选 Delete/Ctrl+C/F/A</td>
+<td>RectDragPanalBase_KeyDown → OnDelete/Copy/Forbidden/ActivateItems；RectDragPanal.xaml:102–112 的 ParamsEventCommand 将 CurBoxOfItemsOfData 传给对应 command。DeleteItemsCommand 经 DecoratorBase.CheckRunning、集合确认/undo、逐项 DeleteItemCommandExecute(false)；CopyItemsCommand 进入 VmModuleBaseDecorator.CopyItemsCommandExecute；Procedure/Group 的 Forbidden/ActivateItemsExecute 逐项设置 IsForbidden。事件方法本身不包含管理员/运行守卫，不能套用节点 Delete 条件。</td>
+</tr>
+<tr>
+<td>搜索下拉 Up/Down/Return</td>
+<td>SearchDryPopup.SearchableTextBox_PreviewKeyDown：popup 开启且列表非空；上下键改索引并滚入视野，Return 选中后关 popup、Handled=true；SetSelectedSearchItem 调 JumpCommand。ZoomArea.xaml:103 绑定 ProcedureConfigControl.JumpTargetCommand → JumpTargetCommandExecute 按 FullPath 首段定位 procedure → SearchModulePopupCommand。属于局部控件键。</td>
+</tr>
+<tr>
+<td>缩放/平移修饰键</td>
+<td>ZoomArea 模板接鼠标事件；Ctrl+左键捕获拖动并按 Scale 改 ViewArea；Shift+滚轮水平滚动，Ctrl+滚轮改缩放；原先调用 OnHoriScroll 再 OnChangeZoom，两修饰键并存可都生效。属于鼠标修饰键，不冒充全局键盘快捷键。</td>
+</tr>
+</tbody></table>
+<p>当前 main 消费入口集中 <code>WorkflowCanvas.CanvasKeyDown</code>：文本/组合框焦点先返回、画布焦点删除/复制/粘贴、框选禁用/启用、未运行且未锁时 Undo/Redo。其 Esc、Ctrl+Z/Y 等现有独立实现不能反向当作原壳全局快捷键证据。第17批 MainWindow BaseWindow_PreviewKeyDown 的原 CIL 只有 nop/ret，只能证明这个具体 handler，无权证明全程序没有其他 dispatcher。</p>
+<h2 id="固定门槛与剩余">固定门槛与剩余</h2><p>已满足本批有限门槛：取原记录而非按 XAML 属性文本猜键；11项绑定→命令→消费；局部事件入口条件/下游绑定；标准 WPF 自有回放；当前缺口显式映射；失败和哈希保留。</p>
+<p>A05.1 完整门槛尚缺：<strong>壳/全局 routed input、命令注册与动态资源载体的完整覆盖证明</strong>。目前仅选定 MainWindow、BaseWindow、DiagramItem、Connection、ItemsPage、RectDragPanal、SearchDryPopup、ZoomArea，未获得全程序 dispatcher/native 输入注册穷尽证据。因此不将有限清单伪称“全部快捷键”，也不以11 PASS关闭整个单元。下一次仅在发现明确的新注册载体/调用链时重开此缺口。原 SDK/native 日志与模型内部行为单独未知，纯 WPF 回放不是原机验收。</p>
+<h2 id="复验和证据">复验和证据</h2><p>新脚本在 <code>tests/EntryClosureChecks20</code>：ExtractBaml.ps1（原资源只读）；ReadBaml.py（有界纯字节解析）；ResolveStandardBindings.ps1（仅标准 WPF）；VerifyResolved.py（离线现存证据门槛）。本批未 build、未改产品、未启动原厂控件或设备。原程序集 VMControls.WPF SHA256 <code>99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d</code>，MainWindow carrier 沿用第17批 SHA256 <code>319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1</code>。最终文件哈希见 A 审计目录 manifest。</p>
+<p>BAML 字段格式参考微软 <a href="https://raw.githubusercontent.com/dotnet/wpf/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Markup/BamlRecords.cs">BamlRecords.cs</a>，并核对本地 net48 Baml2006Reader CIL；解析器只支持本次证据需要的记录，遇未知类型失败，不宣称通用格式工具。</p>
+<p class="meta">来源：docs/reverse/A-entry-closure-batch20.md · SHA256 bc382c72a51e7f7dfe84c359bf4e519177b0d9d37d467d4addff37969d835775<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

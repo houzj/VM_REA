@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>App 启动后台 STA → IsNeedRemind · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>App 启动后台 STA → IsNeedRemind · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-E17"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>App 启动后台 STA → IsNeedRemind → GetAuthTime → OldAuthTime → 到期提醒</h2><p>启动后台 STA 调 IsNeedRemind；软加密启用、授权查询成功、限时类型且剩余天数改变时先写 OldAuthTime，天数&lt;=3 才提醒，用户 Yes 才启动授权工具。GetAuthTime 首次查询，之后300秒内返回0并复用已有结构；到期后才重新查询。</p><p><a href="../专题/entry-routing-security.html#edge-E17">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/entry-routing-security.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/entry-routing-security.edges.json · SHA256 fe606f2f9a763da88f2f5487b7c2208a11138f29a5e2fa09b194c88c9aa25855</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="3c994a397bd688c15583f358cfa7b0aeca53c88544c1b6d1a466ce949e9bd5a9">{
+  &quot;id&quot;: &quot;E17&quot;,
+  &quot;route&quot;: &quot;原版 · 软件授权生命周期&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;App 启动后台 STA → IsNeedRemind&quot;,
+  &quot;to&quot;: &quot;GetAuthTime → OldAuthTime → 到期提醒&quot;,
+  &quot;behavior&quot;: &quot;启动后台 STA 调 IsNeedRemind；软加密启用、授权查询成功、限时类型且剩余天数改变时先写 OldAuthTime，天数&lt;=3 才提醒，用户 Yes 才启动授权工具。GetAuthTime 首次查询，之后300秒内返回0并复用已有结构；到期后才重新查询。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs&quot;,
+      &quot;member&quot;: &quot;App startup reminder thread&quot;,
+      &quot;sha256&quot;: &quot;babebf8e2bef407d7d06105aa4540bb844e32644a25d9a8c8c7faebfe57cf3f7&quot;,
+      &quot;start&quot;: 195,
+      &quot;end&quot;: 211,
+      &quot;excerpt&quot;: &quot;\t\tThread thread3 = new Thread(() =>\n\t\t{\n\t\t\tif (Program.IsNeedRemind())\n\t\t\t{\n\t\t\t\tstring strMsg = AppLocalizationService.GetLang(\&quot;Lang_SoftAuthRemindStart\&quot;) + Convert.ToString(Program._stLicenseTime.nAvailableDay) + AppLocalizationService.GetLang(\&quot;Lang_SoftAuthRemindEnd\&quot;);\n\t\t\t\tDialogResult dialogResult = HikMessageBox.Show(AppLocalizationService.GetLang(\&quot;Lang_Award\&quot;), strMsg, MessageButtons.YesOrNo, MessageIcons.Warning);\n\t\t\t\tif (dialogResult == DialogResult.Yes)\n\t\t\t\t{\n\t\t\t\t\tProgram.StartAuthActivation();\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t\tthread3.SetApartmentState(ApartmentState.STA);\n\t\tthread3.IsBackground = true;\n\t\tthread3.Start();\n\t\tstring text = AppDomain.CurrentDomain.BaseDirectory + ConfigurationHelper.GetConfig(\&quot;UnRedoServiceImplement\&quot;);\n\t\tLogHelper.Info(\&quot;撤销重做注入ioc,准备的dll路径为\&quot; + text);&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs&quot;,
+      &quot;member&quot;: &quot;Program.IsNeedRemind&quot;,
+      &quot;sha256&quot;: &quot;e9f3671cbf1b65559f855974b2f6c9e45dea434cfa3f89e3b29c2f9824b0ced6&quot;,
+      &quot;start&quot;: 426,
+      &quot;end&quot;: 443,
+      &quot;excerpt&quot;: &quot;\tpublic static bool IsNeedRemind()\n\t{\n\t\tif (SystemConfigManager.Instance.IsSoftEncrypt)\n\t\t{\n\t\t\tuint num = uint.Parse(ConfigurationHelper.GetConfig(\&quot;OldAuthTime\&quot;));\n\t\t\tif (GetAuthTime() == 0 &amp;&amp; _stLicenseTime.enLicenseType == EncryptDefine.AUTH_LOCALHOST_LICENSE_TYPE.AUTH_LOCALHOST_LICENSE_LIMIT_VALUE &amp;&amp; num != _stLicenseTime.nAvailableDay)\n\t\t\t{\n\t\t\t\tConfigurationHelper.SaveConfig(\&quot;OldAuthTime\&quot;, _stLicenseTime.nAvailableDay.ToString());\n\t\t\t\tif (_stLicenseTime.nAvailableDay &lt;= 3)\n\t\t\t\t{\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn false;\n\t}\n\n\tprivate static int GetAuthTime()&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs&quot;,
+      &quot;member&quot;: &quot;Program.GetAuthTime&quot;,
+      &quot;sha256&quot;: &quot;e9f3671cbf1b65559f855974b2f6c9e45dea434cfa3f89e3b29c2f9824b0ced6&quot;,
+      &quot;start&quot;: 443,
+      &quot;end&quot;: 473,
+      &quot;excerpt&quot;: &quot;\tprivate static int GetAuthTime()\n\t{\n\t\tif (_isFirstGetTime)\n\t\t{\n\t\t\t_isFirstGetTime = false;\n\t\t\t_startTime = DateTime.Now;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tDateTime now = DateTime.Now;\n\t\t\tint num = (int)now.Subtract(_startTime).TotalSeconds;\n\t\t\tif (num &lt; 300)\n\t\t\t{\n\t\t\t\treturn 0;\n\t\t\t}\n\t\t\t_startTime = now;\n\t\t}\n\t\t_stLicenseTime = default;\n\t\tIntPtr intPtr = Marshal.AllocHGlobal(Marshal.SizeOf(_stLicenseTime));\n\t\tMarshal.StructureToPtr(_stLicenseTime, intPtr, fDeleteOld: false);\n\t\tint licenseTime = EncryptAPI.GetLicenseTime(EncryptDefine.AUTH_MACHINE_TYPE.AUTH_LOCAL_MACHINE, \&quot;\&quot;, intPtr);\n\t\tif (licenseTime == 0)\n\t\t{\n\t\t\t_stLicenseTime = (EncryptDefine.AUTH_LOCALHOST_LICENSE_TIME)Marshal.PtrToStructure(intPtr, typeof(EncryptDefine.AUTH_LOCALHOST_LICENSE_TIME));\n\t\t}\n\t\tMarshal.FreeHGlobal(intPtr);\n\t\treturn licenseTime;\n\t}\n\n\tpublic static void StartAuthActivation()\n\t{&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;查询返回码、结构 ABI、时钟变化及异常内存释放仍需原件/运行验证；不把缓存返回0视作又一次 native 查询成功。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>扩展窗口或 ParamsTabControlBase · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>扩展窗口或 ParamsTabControlBase · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-P04"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>扩展窗口或 ParamsTabControlBase → ParamsConfig / ROI / Owner / Show</h2><p>GetExternTabWin 为空才通用回退；设置 ROIPartUI、编辑状态、ParamsConfig，Owner 取所在窗或主窗，无 Application 时用 HwndSource；启用 modeless keyboard interop 后 Show，再置 IsOpenParams 和 curTabControlBase 并弱订阅 Closed。</p><p><a href="../专题/plugin-sessions.html#edge-P04">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/plugin-sessions.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/plugin-sessions.edges.json · SHA256 f38ce4022185baa192d9fa212b19ce206448c78fad86456922cd51a19a3bd562</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="79df3b2fa7c2d3cd86c689eedc840b0b336ccf49c258c286a3dcfec73ba82a89">{
+  &quot;id&quot;: &quot;P04&quot;,
+  &quot;route&quot;: &quot;原版 · 两种参数窗入口&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;扩展窗口或 ParamsTabControlBase&quot;,
+  &quot;to&quot;: &quot;ParamsConfig / ROI / Owner / Show&quot;,
+  &quot;behavior&quot;: &quot;GetExternTabWin 为空才通用回退；设置 ROIPartUI、编辑状态、ParamsConfig，Owner 取所在窗或主窗，无 Application 时用 HwndSource；启用 modeless keyboard interop 后 Show，再置 IsOpenParams 和 curTabControlBase 并弱订阅 Closed。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml.cs&quot;,
+      &quot;member&quot;: &quot;ProcedureConfigControl window creation and publication&quot;,
+      &quot;sha256&quot;: &quot;36be1620196c60a72efb03dab8afb4fa302ba1ba8ec4acf7eb1f5f61883678bd&quot;,
+      &quot;start&quot;: 739,
+      &quot;end&quot;: 771,
+      &quot;excerpt&quot;: &quot;\t\t\tTabWinBase tabWinBase2 = GetExternTabWin(vmModule) ?? new ParamsTabControlBase();\n\t\t\ttabWinBase2.ROIPartUI = partUI;\n\t\t\ttabWinBase2.IsEditState = IsParamsEditState;\n\t\t\tLogHelper.Info(\&quot;ParamsConfig value start.\&quot;);\n\t\t\ttabWinBase2.ParamsConfig = vmModule.Params;\n\t\t\tLogHelper.Info(\&quot;ParamsConfig value end.\&quot;);\n\t\t\tif (Application.Current != null)\n\t\t\t{\n\t\t\t\tWindow window = Window.GetWindow(this);\n\t\t\t\ttabWinBase2.Owner = window ?? Application.Current.MainWindow;\n\t\t\t\ttabWinBase2.AlongParent = this;\n\t\t\t}\n\t\t\telse if (PresentationSource.FromDependencyObject(this) is HwndSource hwndSource)\n\t\t\t{\n\t\t\t\tWindowInteropHelper windowInteropHelper = new WindowInteropHelper(tabWinBase2)\n\t\t\t\t{\n\t\t\t\t\tOwner = hwndSource.Handle\n\t\t\t\t};\n\t\t\t}\n\t\t\tElementHost.EnableModelessKeyboardInterop(tabWinBase2);\n\t\t\ttabWinBase2.Show();\n\t\t\tSetCurrentValue(IsOpenParamsProperty, true);\n\t\t\tcurTabControlBase = tabWinBase2;\n\t\t\tWeakEventManager&lt;Window, EventArgs>.AddHandler(curTabControlBase, \&quot;Closed\&quot;, CurTabControlBase_Closed);\n\t\t\tif (ROIPartUI is ModuleResultView moduleResultView2)\n\t\t\t{\n\t\t\t\tmoduleResultView2.Tag = curTabControlBase;\n\t\t\t\tmoduleResultView2.SetRoiVisible();\n\t\t\t}\n\t\t\tDecoratorSelectedItem = data;\n\t\t\tLogHelper.Info(\&quot;OpenParamsTabControl end.\&quot;);\n\t\t}\n\t\tcatch (VmException ex)&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SolutionStore.ValidateStructure · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SolutionStore.ValidateStructure · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-I02"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SolutionStore.ValidateStructure → OwnedGroups.Validate / 资源SHA256</h2><p>Group所属关系在方案内部按ProcedureId、NodeId与Call反向一致性验证，owned body只能有一个引用，父链深度最多3且拒绝循环。资源SHA256用于摘要比对；摘要校验不是加密或密码验证。此独立深度约束与原版GetDeepLevel固定0分列。</p><p><a href="../专题/group-file-storage.html#edge-I02">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/group-file-storage.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/group-file-storage.edges.json · SHA256 108c2f010ca802431d85882831edd1281fb1bead8af1b350d25782a196de3cdf</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="a4f52cdf498e22af15c8f9332cea71ddcd7bae85b14a32ae30ae1aad611b5cc6">{
+  &quot;id&quot;: &quot;I02&quot;,
+  &quot;route&quot;: &quot;当前独立实现 · 格式与所属关系&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;SolutionStore.ValidateStructure&quot;,
+  &quot;to&quot;: &quot;OwnedGroups.Validate / 资源SHA256&quot;,
+  &quot;behavior&quot;: &quot;Group所属关系在方案内部按ProcedureId、NodeId与Call反向一致性验证，owned body只能有一个引用，父链深度最多3且拒绝循环。资源SHA256用于摘要比对；摘要校验不是加密或密码验证。此独立深度约束与原版GetDeepLevel固定0分列。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/OwnedGroups.cs&quot;,
+      &quot;member&quot;: &quot;OwnedGroups.Validate&quot;,
+      &quot;sha256&quot;: &quot;2a5eb09166d1d86559d3c092d6aa63ae96b6a6a555215aacb9ca6dc38e2a41f1&quot;,
+      &quot;start&quot;: 4,
+      &quot;end&quot;: 13,
+      &quot;excerpt&quot;: &quot; public static void Validate(SolutionDocument d)\n {\n  var byId=d.Procedures.ToDictionary(p=>p.Id);\n  foreach(var body in d.Procedures.Where(p=>p.GroupOwner is not null)){\n   var owner=body.GroupOwner!;\n   if(!byId.TryGetValue(owner.ProcedureId,out var parent)||parent.Nodes.SingleOrDefault(n=>n.Id==owner.NodeId) is not {} node||node.ModuleId!=WorkflowCalls.ModuleId||node.Call?.ProcedureId!=body.Id)throw new InvalidDataException(\&quot;Group owner is missing or inconsistent.\&quot;);\n   if(d.Procedures.Sum(p=>p.Nodes.Count(n=>n.Call?.ProcedureId==body.Id))!=1)throw new InvalidDataException(\&quot;Owned Group cannot be shared; copy its internal graph instead.\&quot;);\n   var seen=new HashSet&lt;string>();var cursor=body;int depth=0;while(cursor.GroupOwner is {} edge){if(++depth>3||!seen.Add(cursor.Id)||!byId.TryGetValue(edge.ProcedureId,out cursor!))throw new InvalidDataException(\&quot;Invalid Group ownership or nesting depth.\&quot;);}\n  }\n }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/SolutionStore.cs&quot;,
+      &quot;member&quot;: &quot;ValidateStructure resources&quot;,
+      &quot;sha256&quot;: &quot;533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365&quot;,
+      &quot;start&quot;: 31,
+      &quot;end&quot;: 31,
+      &quot;excerpt&quot;: &quot;        OwnedGroups.Validate(solution);var resources=new HashSet&lt;string>(StringComparer.Ordinal);foreach(var r in solution.Resources){if(r is null)throw new InvalidDataException(\&quot;Null resource.\&quot;);Require(r.Id,\&quot;Resource id\&quot;);Require(r.Path,\&quot;Resource path\&quot;);if(!resources.Add(r.Id))throw new InvalidDataException(\&quot;Duplicate resource id.\&quot;);if(r.Sha256 is not null&amp;&amp;!Regex.IsMatch(r.Sha256,\&quot;\\\\A[0-9a-fA-F]{64}\\\\z\&quot;))throw new InvalidDataException(\&quot;Invalid resource digest.\&quot;);if(r.EmbeddedBase64 is {} encoded){if(encoded.Length>MaximumBytes)throw new InvalidDataException(\&quot;Embedded resource exceeds size limit.\&quot;);byte[] bytes;try{bytes=Convert.FromBase64String(encoded);}catch(FormatException ex){throw new InvalidDataException(\&quot;Invalid embedded resource encoding: \&quot;+r.Id,ex);}if(r.Sha256 is not null&amp;&amp;!string.Equals(Convert.ToHexString(SHA256.HashData(bytes)),r.Sha256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException(\&quot;Embedded resource digest mismatch: \&quot;+r.Id);}}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;原版文件容器层级语义与当前内部文档层级没有建立等价关系。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

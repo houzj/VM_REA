@@ -1,0 +1,18 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 6945c067fdde · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 6945c067fdde</p><h1>原文证据 6945c067fdde</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 6945c067fddef047d18be32f835da32e12daba93892096439e6c66c29c2ced98。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence"> internal static IImageData ReadImage(Stream stream,bool rgb)
+ {
+  // Keep the existing strict BMP integrity/resource policy. Native acceptance of
+  // a truncated BMP does not establish defined values for its missing pixels.
+  int first=stream.ReadByte(),second=stream.ReadByte();stream.Position=0;
+  if(first==0xff&amp;&amp;second==0xd8) {
+   var decoded=LocalJpegDecoder.DecodeRgb(stream);
+   if(rgb)return new RgbImage(decoded.Width,decoded.Height,decoded.Rgb);
+   // Original color-to-MONO command 4 (0x18000c4d0) requires both dimensions &gt;=4.
+   // Grayscale JPEG is decoded directly to gray by the original wrapper and bypasses it.
+   if(!decoded.IsGrayscale&amp;&amp;(decoded.Width&lt;4||decoded.Height&lt;4))throw new ImageSourceDecodeException(0x801000ff,&quot;彩色图像转 MONO8 要求宽高均不小于4（原厂 0x801000ff）。&quot;);
+   byte[] mono=new byte[decoded.Width*decoded.Height];
+   for(int i=0;i&lt;mono.Length;i++)mono[i]=(byte)((76*decoded.Rgb[i*3]+150*decoded.Rgb[i*3+1]+30*decoded.Rgb[i*3+2])&gt;&gt;8);
+   return new GrayImage(decoded.Width,decoded.Height,mono);
+  }
+  if(first=='B'&amp;&amp;second=='M') {
+   _=BmpReader.Read(stream);stream.Position=0;
+  }</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../入口/data.html">数据结构与传递总览</a><a href="../工具/Collection-ImageSourceModule-a5e70f22.html">图像源 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

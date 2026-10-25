@@ -1,0 +1,64 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1第八切片：采样量化与累计的最小独立分叉 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D1第八切片：采样量化与累计的最小独立分叉</p><h1>D1第八切片：采样量化与累计的最小独立分叉</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1第八切片：采样量化与累计的最小独立分叉</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html#d1第八切片采样量化与累计的最小独立分叉">D1第八切片：采样量化与累计的最小独立分叉</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html#证据和复现入口">证据和复现入口</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html#限定当前caller的实参">限定当前caller的实参</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html#坐标链先有精度分叉累计使它变化">坐标链先有精度分叉，累计使它变化</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html#固定相同坐标隔离11位权重量化">固定相同坐标，隔离11位权重量化</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html#哪个首先不同必须分开说">哪个“首先不同”必须分开说</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.html#如需原厂补证的精确入口">如需原厂补证的精确入口</a></p></details><h1 id="d1第八切片采样量化与累计的最小独立分叉">D1第八切片：采样量化与累计的最小独立分叉</h1><p>2026-10-19。只用既有普通704de0、通用6bc000/6b5e30公式，选当前caller的一个窗口首点与四个邻接字节。<strong>本报告全部数值为独立源码算术复演，不是原厂DLL运行。</strong> 未增加实图样本、原厂探针、共享产品修改或CPU能力假设。</p>
+<h2 id="证据和复现入口">证据和复现入口</h2><p>原DLL SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。复用第五至第七切片源码/汇编索引108记录含10拆块，未取新体。<code>tests/MapCalibration.NativeProbe/ReplayD1SamplerFirstDivergence.py</code>读取索引中的原始PE常数，以struct强制每个float操作舍入，输出<code>analysis/map-calibration/d1-source-chain/sampler-first-divergence.json</code>（带原件/脚本SHA256）。double sin/cos来自宿主math，float sinf/cosf用其结果转float模拟；原厂CRT的最后位及MXCSR未确认，不能将此模拟宣称原厂结果。</p>
+<p>运行命令：<code>&lt;workspace-python&gt; tests/MapCalibration.NativeProbe/ReplayD1SamplerFirstDivergence.py</code>。脚本不打开/执行目标DLL、不构造或保存图像；有限搜索仅在首采样点的两个字节强度0..255中寻找第一个水平梯度反例，最终证据只需四字节。</p>
+<h2 id="限定当前caller的实参">限定当前caller的实参</h2><p>当前图100×100、stride100、窗口42×6、半径29.5、k0；合法整数前定位中心选(25,50)，作为独立构造条件，不声称现有实图检测到此中心。δ=float(2π/30)，centerAngle≈−0.1047197580，windowAngle≈−3.2463126183，float窗口中心≈(54.33839417,46.91640854)。复演检查四角都严格在0..99内，首点同属像素格(75,47)，排除夹取/像素格切换。</p>
+<p>普通704de0按源码操作顺序算<code>((2*cx−w*cosf)+sinf*h)*.5</code>及<code>((2*cy−sinf*w)−h*cosf)*.5</code>，不能先化简后只做一次舍入。优化6bc000用double三角和double几何，通用6b5e30继续double步进；本例角度走通用，不使用90°轴核。</p>
+<h2 id="坐标链先有精度分叉累计使它变化">坐标链先有精度分叉，累计使它变化</h2><p>在相同float角度输入下，最早数值分叉已发生于sin返回值精度：独立模拟普通float为0.10452867299318314，保留double为0.10452867166589759；此后几何表达的中间float舍入也会产生差异。不能把首个坐标差全归因于后续累计。</p>
+<table>
+<thead>
+<tr>
+<th>row0列</th>
+<th>普通float坐标</th>
+<th>通用double坐标</th>
+<th>普通−通用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>(75.5369338989,47.7048721313)</td>
+<td>(75.5369395228,47.7048720542)</td>
+<td>(−5.62e−6,+7.71e−8)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>(74.5424118042,47.8094024658)</td>
+<td>(74.5424176493,47.8094007259)</td>
+<td>(−5.85e−6,+1.74e−6)</td>
+</tr>
+<tr>
+<td>41</td>
+<td>(34.7615280151,51.9906158447)</td>
+<td>(34.7615427107,51.9905475925)</td>
+<td>(−1.47e−5,+6.83e−5)</td>
+</tr>
+</tbody></table>
+<p>列0之前没有横向累计，故几何差已经存在；列1..41仅作同一行的源码步进快照。没有把累计差、CRT精度或这些坐标差自动等同为输出字节一定变化。</p>
+<h2 id="固定相同坐标隔离11位权重量化">固定相同坐标，隔离11位权重量化</h2><p>把两公式都固定到首点double坐标(75.53693952279573,47.70487205422865)，不允许几何/累计参与对照。float权重wx≈0.4630604684、fy≈0.7048720717；整数公式首次量化为：</p>
+<a class="site-evidence-link" data-evidence-key="2f06857e609df028d20599add41ac5adcc5826e677c7439e4e9b0b179aaf7831" href="../../../../证据/2f06857e609df028d20599add41ac5adcc5826e677c7439e4e9b0b179aaf7831.html#content">查看完整原文／记录 ↗ <small>2f06857e609d</small></a>
+<p>这里<code>int(2048*x/y)</code>截断生成11位权重，已与float权重数值不同。后续整数双线性和+0x200000右移22位采用第五切片取得的原公式；字节范围内本例中间值不溢出有符号32位。</p>
+<p>四邻接字节按[p00,p10,p01,p11]取**[0,68,0,68]**（水平梯度，两行相同，进一步消除Y权重影响）：</p>
+<table>
+<thead>
+<tr>
+<th>同一有限输入的计算</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>普通float几何+普通float权重</td>
+<td>37</td>
+</tr>
+<tr>
+<td>固定通用坐标+float权重</td>
+<td>37</td>
+</tr>
+<tr>
+<td>固定通用坐标+11位权重</td>
+<td>36</td>
+</tr>
+</tbody></table>
+<p>未舍入水平插值约为float36.5119、量化36.4902，分居36.5两边，最终取整不同。此例说明<strong>量化本身足以造成首点1字节差异</strong>；不是因为换了像素格、边界填充值、累计到后续列或误用轴核。</p>
+<h2 id="哪个首先不同必须分开说">哪个“首先不同”必须分开说</h2><p>源码运算轨迹的首个精度不同在三角结果float/double保留；坐标累计前已出现几何差。输出差异的最小隔离反例则在同一坐标、同一像素格、同四字节条件下，由11位权重量化独立产生。没有原厂执行，因此不能据此说真实SDK某次检测已经产生相同1字节差，也不能据此开放/合并产品路径。</p>
+<h2 id="如需原厂补证的精确入口">如需原厂补证的精确入口</h2><p>当前疑点已定位，不需要扩大实图。后续若要确认原厂字节差，只比较上述固定输入对应的704de0与6b5e30：前者传当前rectangle/dims，后者传相同首点double坐标、cos/sin步进、首行段长度42及相应row起点输出指针；邻接源字节为src[47<em>100+75]=0、+76=68、src[48</em>100+75]=0、+76=68。精确记录首点坐标、a/b、最终byte即可，避免把6b5e30伪代码缺参当实际ABI；先按调用点汇编恢复其stack参数再建只读微probe。</p>
+<p>本轮未执行该probe。相位门、拟合mask/RMS生命周期与前定位零幅值保持各自报告，不用量化反例替代这些问题的证据。验证限复演成功、同格/全内条件检查和diff格式检查；产品/宿主状态不变。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D1-SAMPLER-FIRST-DIVERGENCE.md · SHA256 4a01a273da6b0ebc4099f28830704c41e05f19d3886f422a59a91623c0e986a9<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

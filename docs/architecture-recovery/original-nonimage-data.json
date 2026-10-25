@@ -1,0 +1,514 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "VD01",
+      "classification": "source-confirmed",
+      "from": "原VariableManager绑定的DataSource模块",
+      "to": "VarCount/GlobalValueList快照与显示值",
+      "behavior": "构造函数只在dataSource为VmModule时保存DataSource。GetAllVar(ref IMVS_VARIABLE[])通过DataSource.Params先取VarCount：只有正整数才读GlobalValueList，且非空、字节长度可整除IMVS_VARIABLE大小才覆盖调用者ref数组；不是数量相等校验，其他分支保留旧ref。List<VarItem>重载逐条附加元数据，int/float将native数组复制到byte[]再BlockCopy成数值数组，但显示Value只取第0项；string读取描述数组后，仅复制第0项指向的字符串payload作显示。不能把Value文本当成完整数组。",
+      "representation": "变量身份=所属模块+变量名/Guid；VarItem的Value是展示字符串，ValueArray另有object属性，但所选GetAllVar没有把完整数值数组赋给ValueArray。",
+      "cache": "GetAllVar是读取快照而非本地变量存储实现；ref数组未覆盖分支可保留调用者旧快照，list重载附加而非自动Clear。",
+      "release": "已复制的标量数组/文本由GC持有；IMVS_VARIABLE内嵌pointer指向的原payload所有权未由结构快照获得。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 188,
+          "end": 195,
+          "excerpt": "\tpublic VariableManager(object dataSource)\n\t{\n\t\tif (dataSource is VmModule)\n\t\t{\n\t\t\tDataSource = (VmModule)dataSource;\n\t\t}\n\t}\n",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1024,
+          "end": 1037,
+          "excerpt": "\tpublic void GetAllVar(ref IMVS_VARIABLE[] vARIABLEs)\n\t{\n\t\tstring s = ((IUserStringData)DataSource.Params)[\"VarCount\"];\n\t\tint result = 0;\n\t\tif (int.TryParse(s, out result) && result > 0)\n\t\t{\n\t\t\tbyte[] array = ((IUserBytesData)DataSource.Params)[\"GlobalValueList\"];\n\t\t\tif (array != null && array.Length % Marshal.SizeOf(typeof(IMVS_VARIABLE)) == 0)\n\t\t\t{\n\t\t\t\tList<IMVS_VARIABLE> list = ExternalCallHelper.BytesToStructs<IMVS_VARIABLE>(array);\n\t\t\t\tvARIABLEs = list.ToArray();\n\t\t\t}\n\t\t}\n\t}",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1039,
+          "end": 1096,
+          "excerpt": "\tpublic void GetAllVar(ref List<VarItem> varList)\n\t{\n\t\tIMVS_VARIABLE[] vARIABLEs = new IMVS_VARIABLE[0];\n\t\tGetAllVar(ref vARIABLEs);\n\t\tfor (int i = 0; i < vARIABLEs.Length; i++)\n\t\t{\n\t\t\tVarItem varItem = new VarItem();\n\t\t\tIMVS_VARIABLE iMVS_VARIABLE = vARIABLEs[i];\n\t\t\tvarItem.Name = StringUtil.UTF8GetString(iMVS_VARIABLE.chszValueName);\n\t\t\tvarItem.Type = StringUtil.UTF8GetString(iMVS_VARIABLE.chszValueType);\n\t\t\tvarItem.Index = iMVS_VARIABLE.nIndex;\n\t\t\tvarItem.IsCommInit = iMVS_VARIABLE.bCommEnable;\n\t\t\tvarItem.IsCombination = iMVS_VARIABLE.bCombination;\n\t\t\tvarItem.Value = StringUtil.UTF8GetString(iMVS_VARIABLE.chszValue);\n\t\t\tvarItem.RemarkInfo = StringUtil.UTF8GetString(iMVS_VARIABLE.chszRemark);\n\t\t\tvarItem.GroupInfo = StringUtil.UTF8GetString(iMVS_VARIABLE.chsGroupInfo);\n\t\t\tvarItem.Guid = StringUtil.UTF8GetString(iMVS_VARIABLE.chszGuid);\n\t\t\tvarList.Add(varItem);\n\t\t\tif (vARIABLEs[i].stVarValue.nValueNum == 0)\n\t\t\t{\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tif (varItem.Type == \"int\")\n\t\t\t{\n\t\t\t\tint[] array = new int[vARIABLEs[i].stVarValue.nValueNum];\n\t\t\t\tint num = (int)(vARIABLEs[i].stVarValue.nValueNum * Marshal.SizeOf(typeof(int)));\n\t\t\t\tbyte[] array2 = new byte[num];\n\t\t\t\tMarshal.Copy(vARIABLEs[i].stVarValue.pIntValue, array2, 0, num);\n\t\t\t\tBuffer.BlockCopy(array2, 0, array, 0, array2.Length);\n\t\t\t\tvarItem.Value = array[0].ToString();\n\t\t\t}\n\t\t\telse if (varItem.Type == \"float\")\n\t\t\t{\n\t\t\t\tfloat[] array3 = new float[vARIABLEs[i].stVarValue.nValueNum];\n\t\t\t\tint num2 = (int)(vARIABLEs[i].stVarValue.nValueNum * Marshal.SizeOf(typeof(float)));\n\t\t\t\tbyte[] array4 = new byte[num2];\n\t\t\t\tMarshal.Copy(vARIABLEs[i].stVarValue.pFloatValue, array4, 0, num2);\n\t\t\t\tBuffer.BlockCopy(array4, 0, array3, 0, array4.Length);\n\t\t\t\tvarItem.Value = array3[0].ToString();\n\t\t\t}\n\t\t\telse if (varItem.Type == \"string\")\n\t\t\t{\n\t\t\t\tByteDataArray[] array5 = ExternalCallHelper.IntPtr2Structures<ByteDataArray>(vARIABLEs[i].stVarValue.pByteValue, (int)vARIABLEs[i].stVarValue.nValueNum);\n\t\t\t\tif (array5 != null && array5.Length != 0 && array5[0].nDataLen != 0)\n\t\t\t\t{\n\t\t\t\t\tbyte[] array6 = new byte[array5[0].nDataLen];\n\t\t\t\t\tMarshal.Copy(array5[0].pData, array6, 0, array6.Length);\n\t\t\t\t\tstring value = StringUtil.UTF8GetString(array6);\n\t\t\t\t\tvarItem.Value = value;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (varItem.IsCombination && vARIABLEs[i].stVarValue.pIoValue != IntPtr.Zero)\n\t\t\t{\n\t\t\t\tvarItem.SubIOInfos = new List<VarItem>();\n\t\t\t\tIMVS_SUB_VALUE[] array7 = ExternalCallHelper.IntPtr2Structures<IMVS_SUB_VALUE>(vARIABLEs[i].stVarValue.pIoValue, (int)vARIABLEs[i].stVarValue.nValueNum);\n\t\t\t\tArray.ForEach(array7, (IMVS_SUB_VALUE x) =>\n\t\t\t\t{\n\t\t\t\t\tstring name = StringUtil.UTF8GetString(x.chszValueName);",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VarItem.cs",
+          "member": "VarItem.cs",
+          "sha256": "b305c56fa417c8f395c96446c7e88dd9920cc46c395a94a5934776fa5ab96984",
+          "start": 20,
+          "end": 24,
+          "excerpt": "\tpublic string Value { get; set; }\n\n\tpublic object ValueArray { get; set; }\n\n\tpublic List<VarItem> SubIOInfos { get; set; }",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "native变量模块GlobalValueList的生产、稳定快照/锁与内嵌payload回收协议缺体；不能由外层byte[]推断内层pointer已深拷贝。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "id": "VD02",
+      "classification": "source-confirmed",
+      "from": "原SetVarIntValue/SetVarFloatValue数组写入口",
+      "to": "ModifyVar描述+临时HGlobal数值块",
+      "behavior": "两个setter拒绝空名、null和空数组，修复名字后设置VAR_VALUE动作、类型文本int/float及nValueNum。逐数值BitConverter.GetBytes→List<byte>→ToArray，再AllocHGlobal并Marshal.Copy，pBinaryValue指向该临时块；序列化的是IMVS_MODIFY_VAR描述，调用SetBinaryData(\"ModifyVar\",描述bytes)。进入try后finally释放临时块，但分配、复制、StructToBytes位于try之前，不能宣称所有构造异常都会释放。",
+      "representation": "调用载荷包含类型/数量和native地址，而非只有独立的描述byte[]；这些typed setter的单元素输入仍按nValueNum=1数组处理。",
+      "cache": "调用期生成字节数组与HGlobal是实际复制；此包装没有长期缓存该HGlobal。",
+      "release": "finally正常/调用异常路径释放临时数值块，要求native消费或复制在该生命周期内；缺callee不能声称异步保留这个地址安全。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1774,
+          "end": 1816,
+          "excerpt": "\tpublic void SetVarIntValue(string varName, int[] intList, string subIOName = \"\")\n\t{\n\t\tif (string.IsNullOrEmpty(varName) || intList == null || intList.Length < 1)\n\t\t{\n\t\t\tthrow new VmException(-536870911);\n\t\t}\n\t\tvarName = RepairVarName(varName);\n\t\tIMVS_MODIFY_VAR iMVS_MODIFY_VAR = new IMVS_MODIFY_VAR\n\t\t{\n\t\t\tenumAction = MODIFYACTION.VAR_VALUE,\n\t\t\tchszVarName = StringUtil.UTF8GetFixLenBytes(varName, 256),\n\t\t\tchszChangeValue = StringUtil.UTF8GetFixLenBytes(\"int\", 256)\n\t\t};\n\t\tif (!string.IsNullOrEmpty(subIOName))\n\t\t{\n\t\t\tiMVS_MODIFY_VAR.chszSubVarName = StringUtil.UTF8GetFixLenBytes(subIOName, 256);\n\t\t}\n\t\tiMVS_MODIFY_VAR.nValueNum = (uint)intList.Length;\n\t\tList<byte> list = new List<byte>();\n\t\tforeach (int value in intList)\n\t\t{\n\t\t\tlist.AddRange(BitConverter.GetBytes(value));\n\t\t}\n\t\tIntPtr intPtr = Marshal.AllocHGlobal((int)(iMVS_MODIFY_VAR.nValueNum * Marshal.SizeOf(typeof(int))));\n\t\tMarshal.Copy(list.ToArray(), 0, intPtr, list.Count);\n\t\tiMVS_MODIFY_VAR.pBinaryValue = intPtr;\n\t\tbyte[] value2 = ExternalCallHelper.StructToBytes(iMVS_MODIFY_VAR, Marshal.SizeOf(typeof(IMVS_MODIFY_VAR)));\n\t\ttry\n\t\t{\n\t\t\tSetBinaryData(\"ModifyVar\", value2);\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\tthrow ex;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t}\n\n\tpublic void SetVarFloatValue(string varName, float[] floatList, string subIOName = \"\")",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1816,
+          "end": 1857,
+          "excerpt": "\tpublic void SetVarFloatValue(string varName, float[] floatList, string subIOName = \"\")\n\t{\n\t\tif (string.IsNullOrEmpty(varName) || floatList == null || floatList.Length < 1)\n\t\t{\n\t\t\tthrow new VmException(-536870911);\n\t\t}\n\t\tvarName = RepairVarName(varName);\n\t\tIMVS_MODIFY_VAR iMVS_MODIFY_VAR = new IMVS_MODIFY_VAR\n\t\t{\n\t\t\tenumAction = MODIFYACTION.VAR_VALUE,\n\t\t\tchszVarName = StringUtil.UTF8GetFixLenBytes(varName, 256)\n\t\t};\n\t\tif (!string.IsNullOrEmpty(subIOName))\n\t\t{\n\t\t\tiMVS_MODIFY_VAR.chszSubVarName = StringUtil.UTF8GetFixLenBytes(subIOName, 256);\n\t\t}\n\t\tiMVS_MODIFY_VAR.chszChangeValue = StringUtil.UTF8GetFixLenBytes(\"float\", 256);\n\t\tiMVS_MODIFY_VAR.nValueNum = (uint)floatList.Length;\n\t\tList<byte> list = new List<byte>();\n\t\tforeach (float value in floatList)\n\t\t{\n\t\t\tlist.AddRange(BitConverter.GetBytes(value));\n\t\t}\n\t\tIntPtr intPtr = Marshal.AllocHGlobal((int)(iMVS_MODIFY_VAR.nValueNum * Marshal.SizeOf(typeof(float))));\n\t\tMarshal.Copy(list.ToArray(), 0, intPtr, list.Count);\n\t\tiMVS_MODIFY_VAR.pBinaryValue = intPtr;\n\t\tbyte[] value2 = ExternalCallHelper.StructToBytes(iMVS_MODIFY_VAR, Marshal.SizeOf(typeof(IMVS_MODIFY_VAR)));\n\t\ttry\n\t\t{\n\t\t\tSetBinaryData(\"ModifyVar\", value2);\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\tthrow ex;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t}\n",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1683,
+          "end": 1690,
+          "excerpt": "\tprivate void SetBinaryData(string paramName, byte[] value)\n\t{\n\t\tint num = ServerSDKManager.serverSDKManager.mModuleManager.SetBinaryData(DataSource.ID, paramName, value);\n\t\tif (num != 0)\n\t\t{\n\t\t\tthrow new VmException(num);\n\t\t}\n\t}",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        }
+      ],
+      "unknowns": [
+        "ModifyVar的native接收、解析、同步复制/异步消费、底层旧值释放及多线程原子性未取得原体。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "id": "VD03",
+      "classification": "source-confirmed",
+      "from": "原字符串变量写入口",
+      "to": "短文本SDK路径、长文本binary路径与string[]嵌套块",
+      "behavior": "SetVarValue按UTF8字节数<=256选择ServerSDKAPI.IMVS_SetParamValue，超过256改用SetBinaryData与补零UTF8数组，键的固定前缀为GlobalScipt-（按原拼写）。SetVarStringValue则为每个字符串创建补零UTF8数组、独立HGlobal，写入ByteDataArray(pData/nDataLen/nDataSize)；再为整个描述数组分配HGlobal，最后把其地址写到ModifyVar。finally逐项Free再Free外层；分配与序列化在try之前。",
+      "representation": "字符串scalar的直接文本/binary路径与string[]的双层pointer描述不同；nDataLen包含补零UTF8字节长度。",
+      "cache": "这些是临时复制；字符串[]没有在此包装中保存永久native地址。",
+      "release": "finally释放每项及描述块，不代表native保存的旧字符串缓存也已释放；try之前部分分配失败的清理不能假定完备。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1762,
+          "end": 1773,
+          "excerpt": "\tpublic int SetVarValue(string varName, string varValue)\n\t{\n\t\tif (string.IsNullOrEmpty(varName) || varValue == null)\n\t\t{\n\t\t\treturn -536870911;\n\t\t}\n\t\tvarName = RepairVarName(varName);\n\t\tstring text = \"GlobalScipt-\" + varName;\n\t\tint num = 0;\n\t\treturn (Encoding.UTF8.GetByteCount(varValue) <= 256) ? ServerSDKAPI.IMVS_SetParamValue(CVmObjectBase.mhandle, DataSource.ID, text, varValue) : ServerSDKManager.serverSDKManager.mModuleManager.SetBinaryData(DataSource.ID, text, StringUtil.UTF8GetBytesPadZero(varValue));\n\t}\n",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1858,
+          "end": 1922,
+          "excerpt": "\tpublic void SetVarStringValue(string varName, string[] stringList, string subIOName = \"\")\n\t{\n\t\tif (string.IsNullOrEmpty(varName) || stringList == null || stringList.Length < 1)\n\t\t{\n\t\t\tthrow new VmException(-536870911);\n\t\t}\n\t\tvarName = RepairVarName(varName);\n\t\tIMVS_MODIFY_VAR iMVS_MODIFY_VAR = new IMVS_MODIFY_VAR\n\t\t{\n\t\t\tenumAction = MODIFYACTION.VAR_VALUE,\n\t\t\tchszVarName = StringUtil.UTF8GetFixLenBytes(varName, 256)\n\t\t};\n\t\tif (!string.IsNullOrEmpty(subIOName))\n\t\t{\n\t\t\tiMVS_MODIFY_VAR.chszSubVarName = StringUtil.UTF8GetFixLenBytes(subIOName, 256);\n\t\t}\n\t\tiMVS_MODIFY_VAR.chszChangeValue = StringUtil.UTF8GetFixLenBytes(\"string\", 256);\n\t\tiMVS_MODIFY_VAR.nValueNum = (uint)stringList.Length;\n\t\tByteDataArray[] array = new ByteDataArray[stringList.Length];\n\t\tfor (int i = 0; i < stringList.Length; i++)\n\t\t{\n\t\t\tbyte[] array2 = StringUtil.UTF8GetBytesPadZero(stringList[i]);\n\t\t\tarray[i].pData = Marshal.AllocHGlobal(array2.Length);\n\t\t\tarray[i].nDataLen = (uint)array2.Length;\n\t\t\tarray[i].nDataSize = (uint)array2.Length;\n\t\t\tMarshal.Copy(array2, 0, array[i].pData, array2.Length);\n\t\t}\n\t\tList<byte> list = new List<byte>();\n\t\tByteDataArray[] array3 = array;\n\t\tforeach (ByteDataArray byteDataArray in array3)\n\t\t{\n\t\t\tlist.AddRange(DataTransf.Structure2Bytes(byteDataArray));\n\t\t}\n\t\tIntPtr intPtr = Marshal.AllocHGlobal((int)(iMVS_MODIFY_VAR.nValueNum * Marshal.SizeOf(typeof(ByteDataArray))));\n\t\tMarshal.Copy(list.ToArray(), 0, intPtr, list.Count);\n\t\tiMVS_MODIFY_VAR.pBinaryValue = intPtr;\n\t\tbyte[] value = ExternalCallHelper.StructToBytes(iMVS_MODIFY_VAR, Marshal.SizeOf(typeof(IMVS_MODIFY_VAR)));\n\t\ttry\n\t\t{\n\t\t\tSetBinaryData(\"ModifyVar\", value);\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\tthrow ex;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tfor (int k = 0; k < array.Length; k++)\n\t\t\t{\n\t\t\t\tMarshal.FreeHGlobal(array[k].pData);\n\t\t\t\tarray[k].pData = IntPtr.Zero;\n\t\t\t}\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t}\n\n\tpublic void SetVarByteValue(string varName, byte[] byteList, string subIOName = \"\")\n\t{\n\t\tif (string.IsNullOrEmpty(varName) || byteList == null || byteList.Length < 1)\n\t\t{\n\t\t\tthrow new VmException(-536870911);\n\t\t}\n\t\tvarName = RepairVarName(varName);\n\t\tIMVS_MODIFY_VAR iMVS_MODIFY_VAR = new IMVS_MODIFY_VAR",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        }
+      ],
+      "unknowns": [
+        "精确键见源引用；native文本/二进制两入口的一致性、截断/编码与存储深拷贝需接收方原体。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "id": "VD04",
+      "classification": "source-confirmed",
+      "from": "原ModuleManager非图像结果转换",
+      "to": "VmIO保留数值副本或托管字符串数组引用",
+      "behavior": "NativeData2Data对status=0的int/float构造单元素零值数组，字符串构造单元素空字符串数组；非0调用相应pointer→数值数组helper，字符串将固定UTF8 byte字段逐项解码成新string数组。VmIO.SetValueFromServer对int/float再Array.ConvertAll为nullable数组，对string直接把pStringValue传SetValue。SetValue写_value=newValue并将同一个对象追加或替换到_valueList，不能把这一步描述为统一Clone全部payload。SetNoneValueWithoutRaiseEvent只清_value，没有清_valueList。",
+      "representation": "结果nParamType1/2/3、nValueNum、nValueStatus与数据数组分别保存；status=0支路采用默认单元素数组，没有在这条分支构造与原数组等长的全null。",
+      "cache": "_value与循环_valueList可能同时持有同一数组；非IsImageIOParent且列表非空的所选分支继续追加并设needMergeIOLoopValue。",
+      "release": "清一个字段仅移除一条托管引用；有_valueList或其他消费者时不能宣称立即GC，更不能宣称native payload释放。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 618,
+          "end": 620,
+          "excerpt": "\t\t\t\tint[] pIntValue = new int[1];\n\t\t\t\ttargeData.pIntValue = pIntValue;\n\t\t\t}",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "ModuleManager.cs",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 623,
+          "end": 660,
+          "excerpt": "\t\t\t\ttargeData.pIntValue = ExternalCallHelper.IntPtr2Ts<int>(nativedata.pIntValue, nativedata.nValueNum);\n\t\t\t}\n\t\t\tbreak;\n\t\tcase 2:\n\t\t\tif (nativedata.nValueStatus == 0)\n\t\t\t{\n\t\t\t\tfloat[] pFloatValue = new float[1];\n\t\t\t\ttargeData.pFloatValue = pFloatValue;\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\ttargeData.pFloatValue = ExternalCallHelper.IntPtr2Ts<float>(nativedata.pFloatValue, nativedata.nValueNum);\n\t\t\t}\n\t\t\tbreak;\n\t\tcase 3:\n\t\t{\n\t\t\tif (nativedata.nValueStatus == 0)\n\t\t\t{\n\t\t\t\tImvsSdkDefine.IMVS_MODULE_STRING_VALUE_EX[] array5 = new ImvsSdkDefine.IMVS_MODULE_STRING_VALUE_EX[1];\n\t\t\t\tarray5[0].strValue = \"\";\n\t\t\t\ttargeData.pStringValue = array5;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tImvsSdkDefine.IMVS_MODULE_STRING_VALUE[] array6 = ExternalCallHelper.PtrToStructurs<ImvsSdkDefine.IMVS_MODULE_STRING_VALUE>(nativedata.pStringValue, nativedata.nValueNum);\n\t\t\ttargeData.pStringValue = new ImvsSdkDefine.IMVS_MODULE_STRING_VALUE_EX[array6.Length];\n\t\t\tfor (int l = 0; l < array6.Length; l++)\n\t\t\t{\n\t\t\t\ttargeData.pStringValue[l].strValue = StringUtil.UTF8GetString(array6[l].strValue);\n\t\t\t}\n\t\t\tbreak;\n\t\t}\n\t\tcase 4:\n\t\t\tif (!isFilter)\n\t\t\t{\n\t\t\t\tbool isExcOccur = false;\n\t\t\t\tImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX[] array = ExternalCallHelper.PtrToStructurs<ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX>(nativedata.pImageValue, nativedata.nValueNum);\n\t\t\t\ttargeData.pImageValue = new ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data[nativedata.nValueNum];\n\t\t\t\tfor (int i = 0; i < nativedata.nValueNum; i++)",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VmIO.cs",
+          "member": "VmIO.cs",
+          "sha256": "15e1832243422b6bfa2714f300b796d54c365950573639eb1039c5df58e99cb0",
+          "start": 1207,
+          "end": 1237,
+          "excerpt": "\tinternal void SetValueFromServer(ImvsSdkDefine.IMVS_MODULE_RESULT_INFO_EX_Data struResultInfo)\n\t{\n\t\tswitch (struResultInfo.nParamType)\n\t\t{\n\t\tcase 1:\n\t\t\tSetValue(Array.ConvertAll(struResultInfo.pIntValue, (Converter<int, int?>)((int s) => s)));\n\t\t\tbreak;\n\t\tcase 2:\n\t\t\tSetValue(Array.ConvertAll(struResultInfo.pFloatValue, (Converter<float, float?>)((float s) => s)));\n\t\t\tbreak;\n\t\tcase 3:\n\t\t\tSetValue(struResultInfo.pStringValue);\n\t\t\tbreak;\n\t\tcase 4:\n\t\t\tSetValue(struResultInfo.pImageValue);\n\t\t\tbreak;\n\t\tcase 5:\n\t\t\tSetValue(struResultInfo.pChunkValue);\n\t\t\tbreak;\n\t\tcase 6:\n\t\t\tSetValue(struResultInfo.pByteValue);\n\t\t\tbreak;\n\t\tcase 7:\n\t\t\tSetValue(struResultInfo.pDoubleValue);\n\t\t\tbreak;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 添加默认值null\n\t/// </summary>",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VmIO.cs",
+          "member": "VmIO.cs",
+          "sha256": "15e1832243422b6bfa2714f300b796d54c365950573639eb1039c5df58e99cb0",
+          "start": 1177,
+          "end": 1204,
+          "excerpt": "\tprivate void SetValue<T>(IEnumerable<T> newValue, bool needRaiseEvent = true)\n\t{\n\t\tif (newValue is IEnumerable<ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data> enumerable && TypeName != \"image\")\n\t\t{\n\t\t\tforeach (ImvsSdkDefine.IMVS_MODULE_CHUNK_VALUE_EX_Data item in enumerable)\n\t\t\t{\n\t\t\t\titem.FillData();\n\t\t\t}\n\t\t}\n\t\t_value = newValue;\n\t\tneedMergeIOLoopValue = false;\n\t\tif (_valueList.Count == 0)\n\t\t{\n\t\t\t_valueList.Add(newValue);\n\t\t}\n\t\telse if (IsImageIOParent)\n\t\t{\n\t\t\t_valueList[0] = newValue;\n\t\t}\n\t\telse\n\t\t{\n\t\t\t_valueList.Add(newValue);\n\t\t\tneedMergeIOLoopValue = true;\n\t\t}\n\t\tif (needRaiseEvent)\n\t\t{\n\t\t\tInvokeValueChangedEvent();\n\t\t}",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VmIO.cs",
+          "member": "VmIO.cs",
+          "sha256": "15e1832243422b6bfa2714f300b796d54c365950573639eb1039c5df58e99cb0",
+          "start": 934,
+          "end": 940,
+          "excerpt": "\tinternal void SetNoneValueWithoutRaiseEvent()\n\t{\n\t\tif (_value != null)\n\t\t{\n\t\t\t_value = null;\n\t\t}\n\t}",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d"
+        }
+      ],
+      "unknowns": [
+        "数值转换helper的全部异常/长度合法域、循环列表的完整退休门与native结果产生规则不由本切片闭合。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "id": "VD05",
+      "classification": "source-confirmed",
+      "from": "原PointSet变量接口",
+      "to": "ByteDataArray复制→MatchPoint列表；专用setter为空体",
+      "behavior": "GetVarPointset读取VarValue-null-加名字的binary结构，检查变量类型pointset；若nValueNum非0，从pByteValue取ByteDataArray[]，仅第0块nDataLen非0才复制其pData到byte[]。随后按Marshal.SizeOf(MatchPoint)步进，将每段复制到单个临时HGlobal再PtrToStructure并Add到MatchOutlinePoints；正常末尾Free临时块。对应SetVarPointset(string,List<MatchOutline>)本轮新静态提取确认为空方法，不能从getter或POINT坐标数组的setter补造pointset写入协议。",
+      "representation": "pointset在该变量接口由binary MatchPoint序列表示；POINT的x/y float[]是另一结构，不能混用。",
+      "cache": "读取产生独立byte[]和托管MatchPoint列表；只处理第0个ByteDataArray，不因nValueNum>1假定全块已合并。",
+      "release": "临时块正常路径释放且没有finally；未见按MatchPoint大小整除检查，异常退出不保证Free；生产者原块仍独立。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 3452,
+          "end": 3489,
+          "excerpt": "\tpublic MatchOutline GetVarPointset(string varName)\n\t{\n\t\tif (string.IsNullOrEmpty(varName))\n\t\t{\n\t\t\tVmException ex = new VmException(-536870911);\n\t\t\tthrow ex;\n\t\t}\n\t\tvarName = RepairVarName(varName);\n\t\tMatchOutline matchOutline = new MatchOutline();\n\t\tbyte[] binaryData = GetBinaryData(\"VarValue-null-\" + varName);\n\t\tif (binaryData != null && binaryData.Length % Marshal.SizeOf(typeof(IMVS_VARIABLE)) == 0)\n\t\t{\n\t\t\tIMVS_VARIABLE iMVS_VARIABLE = ExternalCallHelper.BytesToStruct<IMVS_VARIABLE>(binaryData, 0, binaryData.Length);\n\t\t\tCheckVarType(iMVS_VARIABLE.chszValueType, \"pointset\");\n\t\t\tif (iMVS_VARIABLE.stVarValue.nValueNum != 0)\n\t\t\t{\n\t\t\t\tByteDataArray[] array = ExternalCallHelper.IntPtr2Structures<ByteDataArray>(iMVS_VARIABLE.stVarValue.pByteValue, (int)iMVS_VARIABLE.stVarValue.nValueNum);\n\t\t\t\tif (array[0].nDataLen != 0)\n\t\t\t\t{\n\t\t\t\t\tbyte[] array2 = new byte[array[0].nDataLen];\n\t\t\t\t\tMarshal.Copy(array[0].pData, array2, 0, array2.Length);\n\t\t\t\t\tint num = Marshal.SizeOf(typeof(MatchPoint));\n\t\t\t\t\tint num2 = array2.Length / num;\n\t\t\t\t\tIntPtr intPtr = Marshal.AllocHGlobal(num);\n\t\t\t\t\tint num3 = 0;\n\t\t\t\t\tfor (int i = 0; i < array2.Length; i += num)\n\t\t\t\t\t{\n\t\t\t\t\t\tMarshal.Copy(array2, i, intPtr, num);\n\t\t\t\t\t\tmatchOutline.MatchOutlinePoints.Add((MatchPoint)Marshal.PtrToStructure(intPtr, typeof(MatchPoint)));\n\t\t\t\t\t\tnum3++;\n\t\t\t\t\t}\n\t\t\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn matchOutline;\n\t}\n",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 2605,
+          "end": 2608,
+          "excerpt": "\tpublic void SetVarPointset(string varName, List<MatchOutline> stMatchOutline)\n\t{\n\t}\n",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        }
+      ],
+      "unknowns": [
+        "native pointset生产者序列格式/版本、MatchPoint ABI和写入入口仍缺体；原空setter不等于整个产品所有pointset入口均不支持。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "id": "VD06",
+      "classification": "source-confirmed",
+      "from": "原DeleteVar/删除IO入口",
+      "to": "native删除命令与托管解绑/节点移除分开执行",
+      "behavior": "DeleteVar先验证非空并RepairVarName，withVar=true才向DataSource.Params[\"DeleteVar\"]写变量名，再调用DeleteIO；withVar=false仍做托管清理。DeleteIO取得输出的Index/TypeName，按可见输出且index更大的规则递减索引，再尝试UnBindGlobarVarItem和RemoveSelf，两个异常各记录后继续ChangeToSendReceiveData与SetRunParamBind。删除不是一个统一Dispose(payload)动作，原顺序也不是先全验证再原子提交。",
+      "representation": "变量名删除命令、订阅/绑定关系、输出节点、通信索引是不同载荷/生命周期域。",
+      "cache": "RemoveSelf与解绑不证明消费者已经放弃此前数组或结果缓存；native命令发送和UI移除也不能合并成同一成功状态。",
+      "release": "本段没有FreeHGlobal变量旧值或遍历数组释放；native删除是否真正退役payload及最后读者另缺原体。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1009,
+          "end": 1022,
+          "excerpt": "\tpublic void DeleteVar(string varName, bool isFromUI = true, VarRunParamInfo[] runParaminfo = null, bool withVar = true)\n\t{\n\t\tif (string.IsNullOrEmpty(varName))\n\t\t{\n\t\t\tthrow new VmException(-536870888);\n\t\t}\n\t\tLogHelper.Info(\"DeleteVar varName:\" + varName);\n\t\tvarName = RepairVarName(varName);\n\t\tif (withVar)\n\t\t{\n\t\t\t((IUserStringData)DataSource.Params)[\"DeleteVar\"] = varName;\n\t\t}\n\t\tDeleteIO(varName, isFromUI, runParaminfo);\n\t}",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 3853,
+          "end": 3897,
+          "excerpt": "\tprivate void DeleteIO(string varName, bool isFromUI = true, VarRunParamInfo[] runParaminfo = null, bool isChangeIndex = true)\n\t{\n\t\tLogHelper.Info(\"DeleteIO varName:\" + varName);\n\t\tVmIO vmIO = DataSource.Outputs[varName];\n\t\tint index = vmIO.Index;\n\t\tstring typeName = vmIO.TypeName;\n\t\tif (isChangeIndex)\n\t\t{\n\t\t\tforeach (VmIO output in DataSource.Outputs)\n\t\t\t{\n\t\t\t\tif (output.CustomVisibleA && output.Index > index)\n\t\t\t\t{\n\t\t\t\t\toutput.Index--;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tif (vmIO == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tUnBindGlobarVarItem(varName, isFromUI);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tif (ex is VmException ex2)\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"UnBindingGlobalVariable is error:\" + ex2.errorMessage);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"UnBindingGlobalVariable is error:\" + ex.ToString());\n\t\t\t}\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tvmIO.RemoveSelf();\n\t\t}\n\t\tcatch (Exception ex3)\n\t\t{\n\t\t\tLogHelper.Error(\"DeleteIO RemoveSelf is exception:\" + ex3.ToString());\n\t\t}\n\t\tLogHelper.Info($\"DeleteIO varName:{varName} varType:{typeName},index:{index}\");\n\t\tChangeToSendReceiveData(index);",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        }
+      ],
+      "unknowns": [
+        "DataSource.Params删除命令在native的检查/存储释放/绑定失效语义未证；不要由节点移除推出像素或非图像数组已释放。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "id": "VD07",
+      "classification": "source-confirmed",
+      "from": "原ModifyType入口",
+      "to": "组合类型重建或标量改TypeName，然后发送ModifyVar",
+      "behavior": "ModifyType验证名字/类型、查现有输出及支持类型，相同类型直接返回。新旧任一为组合枚举时先DeleteIO(isChangeIndex:false)，按新类型重建并恢复Index；否则先修改现有TypeName，再尝试解绑、更新通信与运行参数绑定。随后序列化VAR_TYPE动作、名称和目标类型发送ModifyVar；新组合类型还附带子IO名称/类型描述块，finally仅释放这个临时块。发送前托管状态已经改变，所选catch没有回滚TypeName或重建节点。",
+      "representation": "改型命令的目标类型文本，与新子IO描述结构、旧节点/值引用分开；没有可由此推出的标量自动转换规则。",
+      "cache": "原体未在这里把旧数组逐元素转换为新类型，也未证明旧payload同步回收。",
+      "release": "组合临时块释放不等于旧变量值释放；发送失败时UI/绑定已变的具体一致性需运行/原callee证据。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1108,
+          "end": 1202,
+          "excerpt": "\tpublic void ModifyType(string varName, string varType, bool isFromUI = true, VarRunParamInfo[] runParaminfo = null)\n\t{\n\t\tif (string.IsNullOrEmpty(varName) || string.IsNullOrEmpty(varType))\n\t\t{\n\t\t\tthrow new VmException(-536870888);\n\t\t}\n\t\tvarName = RepairVarName(varName);\n\t\tint num = -1;\n\t\tVmIO vmIO = DataSource.Outputs.FirstOrDefault((VmIO x) => x.Name == varName);\n\t\tif (vmIO == null)\n\t\t{\n\t\t\tthrow new Exception(\"name is not exit\");\n\t\t}\n\t\tnum = vmIO.Index;\n\t\tobject ioType = GetIoType(varType);\n\t\tif (ioType == null)\n\t\t{\n\t\t\tthrow new Exception(\"type is not support\");\n\t\t}\n\t\tobject ioType2 = GetIoType(vmIO.TypeName);\n\t\tif (ioType2 == null)\n\t\t{\n\t\t\tthrow new Exception(\"type is not support\");\n\t\t}\n\t\tif (ioType == ioType2)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tLogHelper.Info(\"ModifyType: srcTyep:\" + vmIO.TypeName + \",dstType:\" + varType);\n\t\tIMVS_MODIFY_VAR iMVS_MODIFY_VAR = new IMVS_MODIFY_VAR\n\t\t{\n\t\t\tenumAction = MODIFYACTION.VAR_TYPE,\n\t\t\tchszVarName = StringUtil.UTF8GetFixLenBytes(varName, 256),\n\t\t\tchszChangeValue = StringUtil.UTF8GetFixLenBytes(varType, 256)\n\t\t};\n\t\tIntPtr zero = IntPtr.Zero;\n\t\tVmIO vmIO2 = null;\n\t\tif (ioType is CombinationIOTypeEnum || ioType2 is CombinationIOTypeEnum || ioType is CombinationIOTypeEnumEx || ioType2 is CombinationIOTypeEnumEx)\n\t\t{\n\t\t\tDeleteIO(varName, isFromUI, runParaminfo, isChangeIndex: false);\n\t\t\tvmIO2 = AddIoByType(ioType, varName, DataSource.Outputs);\n\t\t\tvmIO2.Index = num;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tvmIO.TypeName = varType;\n\t\t\ttry\n\t\t\t{\n\t\t\t\tUnBindGlobarVarItem(varName, isFromUI);\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tif (ex is VmException ex2)\n\t\t\t\t{\n\t\t\t\t\tLogHelper.Error(\"UnBindingGlobalVariable is error:\" + ex2.errorMessage);\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tLogHelper.Error(\"UnBindingGlobalVariable is error:\" + ex.ToString());\n\t\t\t\t}\n\t\t\t}\n\t\t\tLogHelper.Info($\"ModifyType varName:{varName} varType:{varType},index:{vmIO.Index}\");\n\t\t\tChangeToSendReceiveData(vmIO.Index, 0, isDel: false, isReset: false, isSetTop: false, isChangeType: true);\n\t\t\tSetRunParamBind(varName, varType, runParaminfo, null);\n\t\t}\n\t\tIntPtr intPtr = IntPtr.Zero;\n\t\tif ((ioType is CombinationIOTypeEnum || ioType is CombinationIOTypeEnumEx) && vmIO2 != null)\n\t\t{\n\t\t\tList<VmIO> allLeafIO = vmIO2.GetAllLeafIO();\n\t\t\tIMVS_SUB_VALUE[] array = new IMVS_SUB_VALUE[allLeafIO.Count];\n\t\t\tfor (int num2 = 0; num2 < array.Length; num2++)\n\t\t\t{\n\t\t\t\tarray[num2].chszValueName = StringUtil.UTF8GetFixLenBytes(allLeafIO[num2].Name, 256);\n\t\t\t\tarray[num2].emValueType = GetTypeByString(allLeafIO[num2].TypeName);\n\t\t\t}\n\t\t\tbyte[] array2 = ExternalCallHelper.StructsToBytes(array);\n\t\t\tintPtr = Marshal.AllocHGlobal(array2.Length);\n\t\t\tMarshal.Copy(array2, 0, intPtr, array2.Length);\n\t\t\tiMVS_MODIFY_VAR.pBinaryValue = intPtr;\n\t\t\tiMVS_MODIFY_VAR.nValueNum = (uint)array.Length;\n\t\t}\n\t\tbyte[] value = ExternalCallHelper.StructToBytes(iMVS_MODIFY_VAR, Marshal.SizeOf(typeof(IMVS_MODIFY_VAR)));\n\t\ttry\n\t\t{\n\t\t\tSetBinaryData(\"ModifyVar\", value);\n\t\t}\n\t\tcatch (VmException ex3)\n\t\t{\n\t\t\tthrow ex3;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tif (intPtr != IntPtr.Zero)\n\t\t\t{\n\t\t\t\tMarshal.FreeHGlobal(intPtr);",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        }
+      ],
+      "unknowns": [
+        "native VAR_TYPE实际值转换/默认初始化/引用失效与失败回滚仍未知；不得以常规产品设计补齐。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    },
+    {
+      "id": "VD08",
+      "classification": "source-confirmed",
+      "from": "原变量作用域和运行参数引用绑定",
+      "to": "DataSource.ID+变量名作为来源身份，参数类型匹配后绑定ALL",
+      "behavior": "SetRunParamBindForName按目标模块ID获取模型，仅IsSupportSub且变量类型文本与参数Type相同的项继续；调用ParamSubManager.SetModuleParamBinding时来源模块是DataSource.ID、来源名varName、类型SUBSCRIBE_VAR_VARIABLE，下标模式ALL且常量文本All。成功才在目标模块UserData[\"@\"+参数名]存true并重置ISubInfo初始化状态。变量作用域不是单独一个裸字符串名；VarItem显示将Owner.ID==13000标为全局，其他模块标为局部，但显示标签不替代实际来源模块ID。",
+      "representation": "引用绑定传模块身份/名字/下标描述；不是先把源值数组复制到目标参数。",
+      "cache": "绑定描述与消费者本地显示标志各自保留；同名变量在不同DataSource下不能因此合并。",
+      "release": "解绑/删除的载荷退役须看native订阅表，不能把UserData标志清理等同于原值或最后读者释放。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+          "member": "VariableManager.cs",
+          "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+          "start": 1295,
+          "end": 1326,
+          "excerpt": "\tprivate void SetRunParamBindForName(string varName, string varType, VarRunParamInfo[] linkModule)\n\t{\n\t\tif (linkModule == null)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tList<int> BindListId = new List<int>();\n\t\tArray.ForEach(linkModule, (VarRunParamInfo x) =>\n\t\t{\n\t\t\tBindListId.Add(x.nModuleID);\n\t\t});\n\t\tList<VmModule> vmModulesByIDArray = GetVmModulesByIDArray(BindListId);\n\t\tforeach (VarRunParamInfo item in linkModule)\n\t\t{\n\t\t\tif (!item.IsSupportSub || varType != item.Type)\n\t\t\t{\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tVmModule vmModule = vmModulesByIDArray.FirstOrDefault((VmModule p) => p.ID == item.nModuleID);\n\t\t\tif (vmModule != null)\n\t\t\t{\n\t\t\t\tif (vmModule.ParamSubManager.SetModuleParamBinding(item.Name, item.Type, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_VAR_TYPE.SUBSCRIBE_VAR_VARIABLE, \"\", DataSource.ID, varName, ImvsSdkDefine.IMVS_ENUM_SUBSCRIBE_INDEX_TYPE.SUBSCRIBE_INDEX_ALL, \"All\"))\n\t\t\t\t{\n\t\t\t\t\tvmModule.UserData[\"@\" + item.Name] = StringUtil.UTF8GetBytesPadZero(\"true\");\n\t\t\t\t\t(item.Owner as ISubInfo).SetInit();\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tLogHelper.Error(\"SetModuleParamBinding is failed,name:\" + item.Name);\n\t\t\t\t}\n\t\t\t}\n\t\t}",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1"
+        },
+        {
+          "path": "analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VarItem.cs",
+          "member": "VarItem.cs",
+          "sha256": "b305c56fa417c8f395c96446c7e88dd9920cc46c395a94a5934776fa5ab96984",
+          "start": 38,
+          "end": 40,
+          "excerpt": "\t\t\t\treturn (vmModule.ID == 13000) ? (AppLocalizationService.GetLang(\"RunParam_Global\") + \".\" + AppLocalizationService.GetLang(Name)) : (AppLocalizationService.GetLang(\"RunParam_Local\") + \".\" + AppLocalizationService.GetLang(Name));\n\t\t\t}\n\t\t\treturn \"\";",
+          "evidenceType": "static-original-managed-decompilation",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原生局部变量模块创建/调用栈作用域、过程结束销毁与ALL订阅求值时序未取得原体。"
+      ],
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "VDU01",
+      "target": "native variable module ModifyVar/DeleteVar/GlobalValueList",
+      "question": "需取实际接收方body确认标量/数组/字符串存储、同步消费、改型/删除退役与绑定失效。"
+    },
+    {
+      "id": "VDU02",
+      "target": "PointSet生产/写入",
+      "question": "此托管SetVarPointset为空；getter只证明读取复制，不提供native写协议。"
+    },
+    {
+      "id": "VDU03",
+      "target": "variable scope and last readers",
+      "question": "DataSource.ID提供来源身份，但native过程调用作用域、订阅求值、并发与最后持有者未闭合。"
+    }
+  ],
+  "provenance": {
+    "artifacts": [
+      {
+        "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/Apps.XmlParser.dll",
+        "sha256": "78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1",
+        "types": [
+          "VariableManager"
+        ]
+      },
+      {
+        "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+        "sha256": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+        "types": [
+          "VmIO"
+        ]
+      },
+      {
+        "path": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+        "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+        "types": [
+          "ModuleManager"
+        ]
+      }
+    ],
+    "sourceCaptures": [
+      {
+        "path": "docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+        "sha256": "1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38",
+        "command": "& .tools/ilspycmd.exe -t Apps.XmlParser.Variable.VariableManager 'D:/Program Files/VisionMaster4.4.0/Applications/myLibs/Apps.XmlParser.dll' | Out-File -Encoding utf8 docs/architecture-recovery/original-nonimage-data.resources/VariableManager.cs",
+        "exitCode": 0
+      },
+      {
+        "path": "docs/architecture-recovery/original-nonimage-data.resources/VmIO.cs",
+        "sha256": "15e1832243422b6bfa2714f300b796d54c365950573639eb1039c5df58e99cb0",
+        "command": "& .tools/ilspycmd.exe -t VM.Core.VmIO 'D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll' | Out-File -Encoding utf8 docs/architecture-recovery/original-nonimage-data.resources/VmIO.cs",
+        "exitCode": 0
+      }
+    ],
+    "retainedCil": {
+      "path": "docs/architecture-recovery/variable-manager-cil-evidence.json",
+      "sha256": "170401e09c583555e71c45d423b9fd40a8c3b13c9e0bc0d9363c6da9878c6e04",
+      "mvid": "d0604401-ab61-48a4-938b-faad16d74e7c",
+      "reaEvidence": "ev_b3a71726ac88c3bfa26cb2a7f52cae18a1c0b089aa5306d29d074a63ad2ee5f7",
+      "methods": [
+        {
+          "name": ".ctor",
+          "token": "0x06000205",
+          "ilSha256": "58343c2272fa0da496f7e6ba5e034331b9ffcd8040365dd0f547c5932d7cbe79"
+        },
+        {
+          "name": ".ctor",
+          "token": "0x06000206",
+          "ilSha256": "3d03c223ecfc5c10951af5bef128c8657fe435a7232702306089e128a2837f05"
+        },
+        {
+          "name": "RepairVarName",
+          "token": "0x06000207",
+          "ilSha256": "a58dd6039a9053ffadc817535bc27404304d3eea61433e0edaa4b29d6d63ef4f"
+        },
+        {
+          "name": "GetVmModulesByIDArray",
+          "token": "0x06000215",
+          "ilSha256": "45c1c4d92baafa589c27f7a28a8d887d4abda377051b7ab7fbfecca8ff15d75d"
+        },
+        {
+          "name": "GetAllVar",
+          "token": "0x06000223",
+          "ilSha256": "7b9389679e35c19061f084a07b2c69964afa58419340aef2d9a1eef051d3ad08"
+        },
+        {
+          "name": "GetAllVar",
+          "token": "0x06000224",
+          "ilSha256": "d3736d596d0544caca4cefc222974c004830030027a8662ab305eef848d896b1"
+        },
+        {
+          "name": "ModifyLinkModuleByParamBind",
+          "token": "0x0600022c",
+          "ilSha256": "13318ac4c58c6ad2c033660ddc6dcb0219fa60d7ea812b33e1c6a06f97fc0b20"
+        }
+      ],
+      "boundary": "Formal selected CIL covers constructors/GetAllVar/link/RepairVarName; fresh static type captures cover additional cited methods."
+    },
+    "targetCodeExecuted": false,
+    "originalRuntimeExecuted": false,
+    "nativeCliLaunched": false,
+    "liveProcessHandle": null,
+    "anotherWorktreeRead": false,
+    "implementationChanges": false
+  }
+}

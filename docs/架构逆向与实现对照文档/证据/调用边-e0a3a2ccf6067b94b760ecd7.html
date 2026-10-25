@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>scope Enter / Dispose / Exit · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>scope Enter / Dispose / Exit · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C12"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>scope Enter / Dispose / Exit → 取消后等租约归零再释放</h2><p>Enter 在根锁下累加lease；Dispose标closing并取消，finally写cancellationComplete，TryRelease要求leases==0且尚未release。最后Exit可能触发Release，逐资源释放并收CleanupFailures；这属于当前资源合同。</p><p><a href="../专题/plugin-sessions.html#edge-C12">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/plugin-sessions.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/plugin-sessions.edges.json · SHA256 f38ce4022185baa192d9fa212b19ce206448c78fad86456922cd51a19a3bd562</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="b897e4af2671e806b12c1e015244f9e469edadac978d861c57eed70ca722913b">{
+  &quot;id&quot;: &quot;C12&quot;,
+  &quot;route&quot;: &quot;当前 · 隔离执行与释放&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;scope Enter / Dispose / Exit&quot;,
+  &quot;to&quot;: &quot;取消后等租约归零再释放&quot;,
+  &quot;behavior&quot;: &quot;Enter 在根锁下累加lease；Dispose标closing并取消，finally写cancellationComplete，TryRelease要求leases==0且尚未release。最后Exit可能触发Release，逐资源释放并收CleanupFailures；这属于当前资源合同。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/ModuleExecutionScope.cs&quot;,
+      &quot;member&quot;: &quot;ModuleExecutionScope.Enter&quot;,
+      &quot;sha256&quot;: &quot;fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b&quot;,
+      &quot;start&quot;: 40,
+      &quot;end&quot;: 40,
+      &quot;excerpt&quot;: &quot; public IDisposable Enter(){if(owner is not null)return owner.Enter();lock(gate){ObjectDisposedException.ThrowIf(closing,this);leases++;return new Lease(this);}}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/ModuleExecutionScope.cs&quot;,
+      &quot;member&quot;: &quot;ModuleExecutionScope.Dispose and release gate&quot;,
+      &quot;sha256&quot;: &quot;fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b&quot;,
+      &quot;start&quot;: 45,
+      &quot;end&quot;: 49,
+      &quot;excerpt&quot;: &quot; public void Dispose(){if(owner is not null)return;lock(gate){if(closing)return;closing=true;}try{stopping.Cancel();}catch(Exception error){RecordCleanupFailure(\&quot;cancel\&quot;,stopping,error);}finally{bool release;lock(gate){cancellationComplete=true;release=TryRelease();}if(release)Release();}}\n bool TryRelease(){if(!closing||!cancellationComplete||leases!=0||releaseStarted)return false;releaseStarted=true;return true;}\n void Exit(){bool release;lock(gate){leases--;release=TryRelease();}if(release)Release();}\n void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\&quot;resource\&quot;,value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\&quot;token\&quot;,stopping,error);}}\n sealed class Lease(ModuleExecutionScope scope):IDisposable {ModuleExecutionScope? owner=scope;public void Dispose()=>Interlocked.Exchange(ref owner,null)?.Exit();}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

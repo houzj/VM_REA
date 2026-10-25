@@ -1,0 +1,108 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SmartThreadPool.Enqueue / WorkItemsQueue / worker循环 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SmartThreadPool.Enqueue / WorkItemsQueue / worker循环 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-V30"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SmartThreadPool.Enqueue / WorkItemsQueue / worker循环 → 排队、交等待者或取出、StartingWorkItem门与局部清理</h2><p>Enqueue先增加计数，写CanceledSmartThreadPool，再调用队列；忽略EnqueueWorkItem bool后仍WorkItemIsQueued，并可StartThreads(1)。队列在锁中校验释放/active，优先交等待者，否则入优先队列。worker仅循环顶部查_shutdown；取出非null项，StartingWorkItem成功才执行。工作项finally依次DisposeOfState、清当前工作；若已开始则减in-use计数，再FireWorkItemCompleted，最后减总工作计数；任一步抛错可中断后续，不保证整段资源恢复。</p><p><a href="../专题/results-roi.html#edge-V30">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/results-roi.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/results-roi.edges.json · SHA256 0f7e6cedd6b1da4e830e125a9efd001431313b394102b618b5fc6c7ef7afeb9b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="b97ac52ec53baff2579f267eb57f22c71efc94244cc29fb73550eaf60d778c42">{
+  &quot;id&quot;: &quot;V30&quot;,
+  &quot;route&quot;: &quot;原版 · 图像完成、渲染入队与关闭&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;SmartThreadPool.Enqueue / WorkItemsQueue / worker循环&quot;,
+  &quot;to&quot;: &quot;排队、交等待者或取出、StartingWorkItem门与局部清理&quot;,
+  &quot;behavior&quot;: &quot;Enqueue先增加计数，写CanceledSmartThreadPool，再调用队列；忽略EnqueueWorkItem bool后仍WorkItemIsQueued，并可StartThreads(1)。队列在锁中校验释放/active，优先交等待者，否则入优先队列。worker仅循环顶部查_shutdown；取出非null项，StartingWorkItem成功才执行。工作项finally依次DisposeOfState、清当前工作；若已开始则减in-use计数，再FireWorkItemCompleted，最后减总工作计数；任一步抛错可中断后续，不保证整段资源恢复。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.SmartThreadPool::Enqueue&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 11715,
+      &quot;end&quot;: 11734,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000084\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000084\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.SmartThreadPool\&quot;,\n            \&quot;name\&quot;: \&quot;Enqueue\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Assembly, Virtual, HideBySig, CheckAccessOnOverride\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200101128100\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 77,\n          \&quot;ilSha256\&quot;: \&quot;997efbbfaf2741850a3546ad5f9cd069e41a6822c305f2bc894144966a66a006\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;000228850000060003027b310000046f2802000600027b25000004036fac02000626036f380200060002fe137b29000004027b240000046f3600000afe020a062c0a000217288a00000600002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.Internal.WorkItemsQueue::EnqueueWorkItem&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 17258,
+      &quot;end&quot;: 17277,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002ac\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002ac\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.Internal.WorkItemsQueue\&quot;,\n            \&quot;name\&quot;: \&quot;EnqueueWorkItem\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200102128100\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 160,\n          \&quot;ilSha256\&quot;: \&quot;dbc206b83677ea8dfa4215a72017b8c8b3ef8e0ddbf486863c49aba5af173807\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;000314fe010b072c110072551b007072671b007073ca01000a7a170a020c160d081203281d00000a00000228b502000600027bd200000416fe01130411042c0600161305de572b1d000228b202000613061106036f42030006130711072c0500160a2b1000027bd000000416fe02130811082dd406130911092c0f00027bd1000004036fc0010006000000de0b092c0708281e00000a00dc1713052b0011052a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.Internal.WorkItemsQueue::DequeueWorkItem&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 17955,
+      &quot;end&quot;: 17974,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002ad\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002ad\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.Internal.WorkItemsQueue\&quot;,\n            \&quot;name\&quot;: \&quot;DequeueWorkItem\&quot;,\n            \&quot;parameters\&quot;: 2,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;2002128100081280b1\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 276,\n          \&quot;ilSha256\&quot;: \&quot;b5dc0e3824881928a3cce73548e4e4982194865ae829ef014539bbde57dc6759\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00140b02130416130511041205281d00000a00000228b502000600027bd10000046fc301000616fe02130611062c1a00027bd10000046fc101000675400000020b071307ddc800000028b00200060a020628b10200060000de0d11052c081104281e00000a00dc188d2c0000012516066f40030006a2251704a20c08031728d40100060d02130816130911081209281d00000a00000916fe01130a110a16fe01130b110b130c110c2c2400066f43030006130b110b130d110d2c0b0002061628b30200060000110b16fe01130a00110a130e110e2c2600066f410300060b0714fe01130f110f2c1300027bd10000046fc101000675400000020b000000de0d11092c081108281e00000a00dc0713072b0011072a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.SmartThreadPool::Dequeue&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 11555,
+      &quot;end&quot;: 11574,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000083\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000083\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.SmartThreadPool\&quot;,\n            \&quot;name\&quot;: \&quot;Dequeue\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Private, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;2000128100\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 36,\n          \&quot;ilSha256\&quot;: \&quot;b478e96a3623cc895bc4c0e4666f73a2ebd6149dac6e46505e63d9bbc79d03a0\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00027b25000004027b280000046fd3000006027b2b0000046fad0200060a060b2b00072a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.SmartThreadPool::ProcessQueuedItems&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 12045,
+      &quot;end&quot;: 12064,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x0600008b\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x0600008b\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.SmartThreadPool\&quot;,\n            \&quot;name\&quot;: \&quot;ProcessQueuedItems\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Private, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 647,\n          \&quot;ilSha256\&quot;: \&quot;37264d945f59f0a329d049ec37853a570111b7fef8cd6acfebbf77a7bdf2f5de\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00027b24000004284300000a6f5200000a2878000006000228a30000060000160a381e0200000028770000066ffc02000600027b240000046f3600000a027b280000046fd7000006fe020c082c5500027b240000046f4600000a0d161304091204281d00000a0000027b240000046f3600000a027b280000046fd7000006fe02130511052c0d0002288900000600ddc301000000de0c11042c0709281e00000a00dc000228830000060b28770000066ffc020006000714fe01130611062c7800027b240000046f3600000a027b280000046fd5000006fe02130711072c5800027b240000046f4600000a130816130911081209281d00000a0000027b240000046f3600000a027b280000046fd5000006fe02130a110a2c0d0002288900000600dd3101000000de0d11092c081108281e00000a00dc00000714fe01130b110b2c060038fd0000000000160a2877000006076ff902000600076f2902000616fe01130d110d2c0600ddd8000000027c27000004283c00000a130c027b32000004027b240000046f3600000a6a110c6a6fd701000600027b33000004027b240000046f3600000a6a110c6a6fd701000600170a076f2c020006000207288c0000060000de0e130e00110e6f5300000a2600de00de7000076f45020006002877000006146ff90200060006130f110f2c4500027c27000004283e00000a1310027b32000004027b240000046f3600000a6a11106a6fd701000600027b33000004027b240000046f3600000a6a11106a6fd70100060000076f2b020006000228860000060000dc00027b2d00000416fe01131111113ad0fdffff00de1a13120011126f5300000a26285400000a0000de0613130000de00de1100022889000006000228a40000060000dc2a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/render-worker-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.Utility.SmartThreadPool::ExecuteWorkItem&quot;,
+      &quot;sha256&quot;: &quot;3c8666730df7684422c799141972934aad048448066b21d2ca1aedf16d670ddd&quot;,
+      &quot;start&quot;: 14538,
+      &quot;end&quot;: 14557,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x0600008c\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x0600008c\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.Utility.SmartThreadPool\&quot;,\n            \&quot;name\&quot;: \&quot;ExecuteWorkItem\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Private, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200101128100\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 88,\n          \&quot;ilSha256\&quot;: \&quot;e24c817a139a779218d563ace7971b524ec9ff3dca684e619ea7fbc886cdc6b8\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00027b32000004036f1f0200066fd901000600027b33000004036f1f0200066fd90100060000036f2a0200060000de2700027b32000004036f200200066fda01000600027b33000004036f200200066fda0100060000dc2a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/original-managed/utility/VM.Utility.SmartThreadPool.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;Pool enqueue and ignored queue result&quot;,
+      &quot;sha256&quot;: &quot;715f1eb2dc29bc19e0a2915da39eb9ed6c5cca82db5d0706aae7044bebe47c23&quot;,
+      &quot;start&quot;: 384,
+      &quot;end&quot;: 393,
+      &quot;excerpt&quot;: &quot;\tinternal override void Enqueue(WorkItem workItem)\n\t{\n\t\tIncrementWorkItemsCount();\n\t\tworkItem.CanceledSmartThreadPool = _canceledSmartThreadPool;\n\t\t_workItemsQueue.EnqueueWorkItem(workItem);\n\t\tworkItem.WorkItemIsQueued();\n\t\tif (_currentWorkItemsCount > _workerThreads.Count)\n\t\t{\n\t\t\tStartThreads(1);\n\t\t}&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-offline-ilspy-decompilation&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/original-managed/utility/VM.Utility.SmartThreadPool.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;Worker execution and cleanup order&quot;,
+      &quot;sha256&quot;: &quot;715f1eb2dc29bc19e0a2915da39eb9ed6c5cca82db5d0706aae7044bebe47c23&quot;,
+      &quot;start&quot;: 481,
+      &quot;end&quot;: 569,
+      &quot;excerpt&quot;: &quot;\tprivate void ProcessQueuedItems()\n\t{\n\t\tCurrentThreadEntry = _workerThreads[Thread.CurrentThread];\n\t\tFireOnThreadInitialization();\n\t\ttry\n\t\t{\n\t\t\tbool flag = false;\n\t\t\twhile (!_shutdown)\n\t\t\t{\n\t\t\t\tCurrentThreadEntry.IAmAlive();\n\t\t\t\tif (_workerThreads.Count > _stpStartInfo.MaxWorkerThreads)\n\t\t\t\t{\n\t\t\t\t\tlock (_workerThreads.SyncRoot)\n\t\t\t\t\t{\n\t\t\t\t\t\tif (_workerThreads.Count > _stpStartInfo.MaxWorkerThreads)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tInformCompleted();\n\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tWorkItem workItem = Dequeue();\n\t\t\t\tCurrentThreadEntry.IAmAlive();\n\t\t\t\tif (workItem == null &amp;&amp; _workerThreads.Count > _stpStartInfo.MinWorkerThreads)\n\t\t\t\t{\n\t\t\t\t\tlock (_workerThreads.SyncRoot)\n\t\t\t\t\t{\n\t\t\t\t\t\tif (_workerThreads.Count > _stpStartInfo.MinWorkerThreads)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tInformCompleted();\n\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tif (workItem == null)\n\t\t\t\t{\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tflag = false;\n\t\t\t\t\tCurrentThreadEntry.CurrentWorkItem = workItem;\n\t\t\t\t\tif (workItem.StartingWorkItem())\n\t\t\t\t\t{\n\t\t\t\t\t\tint num = Interlocked.Increment(ref _inUseWorkerThreads);\n\t\t\t\t\t\t_windowsPCs.SampleThreads(_workerThreads.Count, num);\n\t\t\t\t\t\t_localPCs.SampleThreads(_workerThreads.Count, num);\n\t\t\t\t\t\tflag = true;\n\t\t\t\t\t\tworkItem.FireWorkItemStarted();\n\t\t\t\t\t\tExecuteWorkItem(workItem);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcatch (Exception ex)\n\t\t\t\t{\n\t\t\t\t\tex.GetHashCode();\n\t\t\t\t}\n\t\t\t\tfinally\n\t\t\t\t{\n\t\t\t\t\tworkItem.DisposeOfState();\n\t\t\t\t\tCurrentThreadEntry.CurrentWorkItem = null;\n\t\t\t\t\tif (flag)\n\t\t\t\t\t{\n\t\t\t\t\t\tint num2 = Interlocked.Decrement(ref _inUseWorkerThreads);\n\t\t\t\t\t\t_windowsPCs.SampleThreads(_workerThreads.Count, num2);\n\t\t\t\t\t\t_localPCs.SampleThreads(_workerThreads.Count, num2);\n\t\t\t\t\t}\n\t\t\t\t\tworkItem.FireWorkItemCompleted();\n\t\t\t\t\tDecrementWorkItemsCount();\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tcatch (ThreadAbortException ex2)\n\t\t{\n\t\t\tex2.GetHashCode();\n\t\t\tThread.ResetAbort();\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tInformCompleted();\n\t\t\tFireOnThreadTermination();\n\t\t}\n\t}\n\n\tprivate void ExecuteWorkItem(WorkItem workItem)\n\t{\n\t\t_windowsPCs.SampleWorkItemsWaitTime(workItem.WaitingTime);&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-offline-ilspy-decompilation&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/original-managed/utility/VM.Utility.Internal.WorkItemsQueue.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;Queue admission and waiter handoff&quot;,
+      &quot;sha256&quot;: &quot;91a4f049af057c9465589b4274f123d2b595ec6e2cb453046599fba3dcd8f619&quot;,
+      &quot;start&quot;: 120,
+      &quot;end&quot;: 154,
+      &quot;excerpt&quot;: &quot;\tpublic bool EnqueueWorkItem(WorkItem workItem)\n\t{\n\t\tif (workItem == null)\n\t\t{\n\t\t\tthrow new ArgumentNullException(\&quot;workItem\&quot;, \&quot;workItem cannot be null\&quot;);\n\t\t}\n\t\tbool flag = true;\n\t\tlock (this)\n\t\t{\n\t\t\tValidateNotDisposed();\n\t\t\tif (!_isWorkItemsQueueActive)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\twhile (_waitersCount > 0)\n\t\t\t{\n\t\t\t\tWaiterEntry waiterEntry = PopWaiter();\n\t\t\t\tif (waiterEntry.Signal(workItem))\n\t\t\t\t{\n\t\t\t\t\tflag = false;\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (flag)\n\t\t\t{\n\t\t\t\t_workItems.Enqueue(workItem);\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}\n\n\tpublic WorkItem DequeueWorkItem(int millisecondsTimeout, WaitHandle cancelEvent)\n\t{\n\t\tWorkItem workItem = null;\n\t\tWaiterEntry threadWaiterEntry;&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-offline-ilspy-decompilation&quot;,
+      &quot;binaryIdentity&quot;: &quot;65ebb5edabf77465fa01f8c6d70efdcbd4b6a87f510911249cd93d73649d1cdf / MVID 32e8ac89-6335-43c6-aa3e-61d8c0a670e5&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;WorkItem.StartingWorkItem/Execute/DisposeOfState内部、回调异常与全队列活性尚未展开。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,27 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B05 第九批：二进制参数跨模块绑定</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/B05-binary-binding-batch9.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#b05-第九批二进制参数跨模块绑定">B05 第九批：二进制参数跨模块绑定</a></p><p style="margin-left:14px"><a href="#原件与范围">原件与范围</a></p><p style="margin-left:14px"><a href="#sdk精确装载来源和字段赋值">SDK：精确装载来源和字段赋值</a></p><p style="margin-left:14px"><a href="#平台0bd2h消费者">平台：0bd2h消费者</a></p><p style="margin-left:14px"><a href="#退出与进度">退出与进度</a></p></details><h1 id="b05-第九批二进制参数跨模块绑定">B05 第九批：二进制参数跨模块绑定</h1><p>基线 <code>f11bc13d413ea82fb074c0c00b3b2f2dffad01ad</code>。提前只读前置调查，B01/B04未关闭，不集成。复用原REA native provider缺配置记录，使用原PE表/字节和已有MSVC dumpbin，不运行LoadLibrary/SDK/原目标。</p>
+<h2 id="原件与范围">原件与范围</h2><table>
+<thead>
+<tr>
+<th>原件（VisionMaster4.4.0根）</th>
+<th>SHA256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Applications/PublicFile/x64/iMVS-6000PlatformSDK.dll</td>
+<td>b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1</td>
+</tr>
+<tr>
+<td>Applications/Server/PlatformManager.dll</td>
+<td>06d86f51bebfeba357d1b79297e20a3b0a70580a40af7b77c8abdd6c38ca0624</td>
+</tr>
+</tbody></table>
+<p>所有取证探针在 <code>tests/NativeEvidence/B05BinaryBinding/</code>。FindCandidates.py仅扫描SDK可执行原始节中LE32位移23a8h，得到11个字节候选，明确不是11个交叉引用；其中有分支相对位移/无pdata候选，未按字节匹配认定对象访问。由候选选择完整6615b0、661d00函数，再用原寄存器流和导入表确认赋值。</p>
+<p>最终SDK指令 <code>analysis/full-audit/batch9-20261019/B05/instructions-15b9673441ce468283b92be9ef55fe5d/</code>：6615b0–661cfd（408行）、661d00–661e4c（71行）。Platform最终 <code>instructions-9618e174e5bc44ecaeeedd0639971047/</code>：PF_M_SetBinaryData 6a0320–6a051f（132行）、下一callee5f62e0（270行）。原件前后hash相同，原段bytes和打印前缀复核479/402行通过；不是独立解码器交叉验证。首次平台仅导出132行的产物保留，不重复累计。</p>
+<h2 id="sdk精确装载来源和字段赋值">SDK：精确装载来源和字段赋值</h2><p>initializer日志身份为 <code>CServerManager::SM_SP_LoadLib</code>。同一LoadLibraryW返回句柄存对象+2368h，之后GetProcAddress以此句柄取多个函数。VA180661b48引用ASCII <code>PF_M_SetBinaryData</code>（RVAac4198），180661b59调用IAT180a391c0，导入表确认为KERNEL32!GetProcAddress；180661b5f将返回RAX写入对象+23a8h。第八批66f090正从该字段调用0bd2h二进制消息，静态跨模块绑定由此连通。</p>
+<p>相邻+2398h取PF_M_MsgDeal，单独由D线追踪，不能与+23a8h混为同一协议。原clear661d00于180661d64清ESI=0，180661d97写+23a8h=0；同区清多个函数槽，后续句柄释放见原指令，不把字段归零当完整并发安全证明。</p>
+<p>DLL构造引用UTF16 <code>\\..\\..\\Server\\</code>、<code>PlatformManager.dll</code>；与SDK目录结合对应安装Applications/Server原件。路径helper的GetModuleHandleW/GetModuleFileNameW/PathRemoveFileSpecW由D线独立取证，见其<a href="D01-save-binding-batch9.html">报告</a>。本批未观察实际Windows装载成功或运行时搜索覆盖。首次字符串读取把wide当ASCII只得前缀，已保留first-ascii-prefix-only输出，修为明确编码后重取；不以首字母推DLL名。</p>
+<h2 id="平台0bd2h消费者">平台：0bd2h消费者</h2><p>原PE导出表确认PlatformManager!PF_M_SetBinaryData RVA6a0320、ordinal5，非forwarder。入口按减法分派；0bd2h路径依次减423h、0ah、45h、2后等75eh，跳1806a03b5，最终1806a03e9调用1805f62e0；未知消息返回e0000007。成功分支还写全局字节180976710=1，其含义不以“dirty”猜名。</p>
+<p>5f62e0日志字符串为 <code>FilterNodeManagerForSP::SPSetBinaryData</code>。入口保存原数据指针R8与R9长度，拒绝两者为0；从输入命令以09字节分隔，要求结果向量存储跨度掩码后40h（两个20h记录），原split helper未完整还原。之后调用66cd10构造新的命令，输出字符串非空才继续。结构中存原数据指针、长度；对象+7d518h缓存的间接目标为空时，利用对象+7d510h句柄GetProcAddress查询 <strong>VM_PROXY_RecvServerCommand</strong>（RVA7e3ba8），查不到返回e000000a；1805f65b9调用该指针。该句柄的实际模块赋值及66cd10命令编码尚缺，不能把代理名当已确认具体ModuleProxy DLL。</p>
+<p>因此本批从托管路径载荷连到了SDK→PlatformManager→代理接口名；仍未到GlobalValueImport/Export真正文件消费者。gvar头/版本/GUID重建/覆盖/密码/事务与实际往返仍未知。下一问题仅需定位+7d510h句柄来源与VM_PROXY_RecvServerCommand实际实现，不能再重复这批函数导出。</p>
+<h2 id="退出与进度">退出与进度</h2><p>有限绑定问题已完成，B05.3源码partial保持；实现未交付、验证blocked。96项完成分子增加0。无产品修改、目标执行、原厂差分、tool-plugins访问。完整字节、导入、常量、候选及SHA保存在本批B05审计目录；失败与修正不删除。</p>
+<p class="meta">来源：docs/reverse/B05-binary-binding-batch9.md · SHA256 bcdfb443ab5c26fe4d80c4b7a074445ac01e33d31c967590344151f937036ab1<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

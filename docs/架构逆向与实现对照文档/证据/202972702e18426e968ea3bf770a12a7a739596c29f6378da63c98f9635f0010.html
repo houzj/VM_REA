@@ -1,0 +1,95 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 202972702e18 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 202972702e18</p><h1>原文证据 202972702e18</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 202972702e18426e968ea3bf770a12a7a739596c29f6378da63c98f9635f0010。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">	public void ModifyType(string varName, string varType, bool isFromUI = true, VarRunParamInfo[] runParaminfo = null)
+	{
+		if (string.IsNullOrEmpty(varName) || string.IsNullOrEmpty(varType))
+		{
+			throw new VmException(-536870888);
+		}
+		varName = RepairVarName(varName);
+		int num = -1;
+		VmIO vmIO = DataSource.Outputs.FirstOrDefault((VmIO x) =&gt; x.Name == varName);
+		if (vmIO == null)
+		{
+			throw new Exception(&quot;name is not exit&quot;);
+		}
+		num = vmIO.Index;
+		object ioType = GetIoType(varType);
+		if (ioType == null)
+		{
+			throw new Exception(&quot;type is not support&quot;);
+		}
+		object ioType2 = GetIoType(vmIO.TypeName);
+		if (ioType2 == null)
+		{
+			throw new Exception(&quot;type is not support&quot;);
+		}
+		if (ioType == ioType2)
+		{
+			return;
+		}
+		LogHelper.Info(&quot;ModifyType: srcTyep:&quot; + vmIO.TypeName + &quot;,dstType:&quot; + varType);
+		IMVS_MODIFY_VAR iMVS_MODIFY_VAR = new IMVS_MODIFY_VAR
+		{
+			enumAction = MODIFYACTION.VAR_TYPE,
+			chszVarName = StringUtil.UTF8GetFixLenBytes(varName, 256),
+			chszChangeValue = StringUtil.UTF8GetFixLenBytes(varType, 256)
+		};
+		IntPtr zero = IntPtr.Zero;
+		VmIO vmIO2 = null;
+		if (ioType is CombinationIOTypeEnum || ioType2 is CombinationIOTypeEnum || ioType is CombinationIOTypeEnumEx || ioType2 is CombinationIOTypeEnumEx)
+		{
+			DeleteIO(varName, isFromUI, runParaminfo, isChangeIndex: false);
+			vmIO2 = AddIoByType(ioType, varName, DataSource.Outputs);
+			vmIO2.Index = num;
+		}
+		else
+		{
+			vmIO.TypeName = varType;
+			try
+			{
+				UnBindGlobarVarItem(varName, isFromUI);
+			}
+			catch (Exception ex)
+			{
+				if (ex is VmException ex2)
+				{
+					LogHelper.Error(&quot;UnBindingGlobalVariable is error:&quot; + ex2.errorMessage);
+				}
+				else
+				{
+					LogHelper.Error(&quot;UnBindingGlobalVariable is error:&quot; + ex.ToString());
+				}
+			}
+			LogHelper.Info($&quot;ModifyType varName:{varName} varType:{varType},index:{vmIO.Index}&quot;);
+			ChangeToSendReceiveData(vmIO.Index, 0, isDel: false, isReset: false, isSetTop: false, isChangeType: true);
+			SetRunParamBind(varName, varType, runParaminfo, null);
+		}
+		IntPtr intPtr = IntPtr.Zero;
+		if ((ioType is CombinationIOTypeEnum || ioType is CombinationIOTypeEnumEx) &amp;&amp; vmIO2 != null)
+		{
+			List&lt;VmIO&gt; allLeafIO = vmIO2.GetAllLeafIO();
+			IMVS_SUB_VALUE[] array = new IMVS_SUB_VALUE[allLeafIO.Count];
+			for (int num2 = 0; num2 &lt; array.Length; num2++)
+			{
+				array[num2].chszValueName = StringUtil.UTF8GetFixLenBytes(allLeafIO[num2].Name, 256);
+				array[num2].emValueType = GetTypeByString(allLeafIO[num2].TypeName);
+			}
+			byte[] array2 = ExternalCallHelper.StructsToBytes(array);
+			intPtr = Marshal.AllocHGlobal(array2.Length);
+			Marshal.Copy(array2, 0, intPtr, array2.Length);
+			iMVS_MODIFY_VAR.pBinaryValue = intPtr;
+			iMVS_MODIFY_VAR.nValueNum = (uint)array.Length;
+		}
+		byte[] value = ExternalCallHelper.StructToBytes(iMVS_MODIFY_VAR, Marshal.SizeOf(typeof(IMVS_MODIFY_VAR)));
+		try
+		{
+			SetBinaryData(&quot;ModifyVar&quot;, value);
+		}
+		catch (VmException ex3)
+		{
+			throw ex3;
+		}
+		finally
+		{
+			if (intPtr != IntPtr.Zero)
+			{
+				Marshal.FreeHGlobal(intPtr);</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../入口/variables.html">变量</a><a href="../入口/data.html">数据结构与传递总览</a><a href="../入口/菜单与工具栏.html">菜单栏与工具栏：声明、入口和差异</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

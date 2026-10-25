@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GroupBreak.Evaluate · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GroupBreak.Evaluate · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C06"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GroupBreak.Evaluate → 首轮内部来源跳过 / 诊断限流</h2><p>未启用直接false；首轮没有 previous 且依赖内部生产者或 Self 时跳过比较；捕获 InvalidDataException 将去重诊断最多保留32条，并返回false继续执行。不能把解析失败写成必定中断。</p><p><a href="../专题/group-control.html#edge-C06">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/group-control.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/group-control.edges.json · SHA256 c6dc5708e08f496256f3b1f356107d578039de6c3ec9fb98c139daabc3c89bed</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="872c119698a1be272e2711bd5018556934a152791cc7e1e05db2403c3dfa7288">{
+  &quot;id&quot;: &quot;C06&quot;,
+  &quot;route&quot;: &quot;当前 · 中断数据流&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;GroupBreak.Evaluate&quot;,
+  &quot;to&quot;: &quot;首轮内部来源跳过 / 诊断限流&quot;,
+  &quot;behavior&quot;: &quot;未启用直接false；首轮没有 previous 且依赖内部生产者或 Self 时跳过比较；捕获 InvalidDataException 将去重诊断最多保留32条，并返回false继续执行。不能把解析失败写成必定中断。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/GroupBreak.cs&quot;,
+      &quot;member&quot;: &quot;GroupBreak.Evaluate&quot;,
+      &quot;sha256&quot;: &quot;0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a&quot;,
+      &quot;start&quot;: 46,
+      &quot;end&quot;: 52,
+      &quot;excerpt&quot;: &quot; internal static bool Evaluate(NodeDocument node,ProcedureDocument body,ExecutionSessionResult? previous,int index,List&lt;string> diagnostics,IReadOnlyDictionary&lt;string,PortValue> inputs,Func&lt;string,int,PortValue> selfOutput){\n  if(!Enabled(node))return false;var bindings=node.GroupBreak;\n  // Native first-round guard excludes values produced by the internal graph.\n  if(previous is null&amp;&amp;new[]{bindings?.Left,bindings?.Right}.Any(o=>o is {Self:true}||(o is {Inside:true,Source:{} source}&amp;&amp;WorkflowSubscriptions.Producer(body,source) is not null)))return false;\n  try{var kind=Kind(node);return Compare(kind,Integer(node,\&quot;CmpType\&quot;,1),Resolve(body,previous,index,bindings?.Left??new(),kind,inputs,selfOutput),Resolve(body,previous,index,bindings?.Right??new(),kind,inputs,selfOutput));}catch(InvalidDataException e){if(diagnostics.Count&lt;32&amp;&amp;!diagnostics.Contains(e.Message))diagnostics.Add(e.Message);return false;}\n }\n public static bool Compare(DataKind kind,int operation,PortValue left,PortValue right){&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

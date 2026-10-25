@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZmqCommand构造 / CallReceived · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ZmqCommand构造 / CallReceived · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-T03"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ZmqCommand构造 / CallReceived → 另一传输 / Task.Run / 1024缓冲</h2><p>另一类使用zmq_ctx_new/socket/bind动态loopback，并在构造中Task.Run接收；每轮分配1024缓冲、recv、按size复制、*拆分、回调、释放、等待。不能把两种实现生命周期混用；长度/截断风险仍需native返回语义。</p><p><a href="../专题/external-entries.html#edge-T03">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/external-entries.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/external-entries.edges.json · SHA256 052b7a33cf9c16fe70321316fdb6b75ebab805521e325bdab4695de07f74740a</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="f2c3bf195044ca1233856adcc73aa8545d985d2302521cf6a2e67fd2e2c9e026">{
+  &quot;id&quot;: &quot;T03&quot;,
+  &quot;route&quot;: &quot;MQ · 传输声明&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;ZmqCommand构造 / CallReceived&quot;,
+  &quot;to&quot;: &quot;另一传输 / Task.Run / 1024缓冲&quot;,
+  &quot;behavior&quot;: &quot;另一类使用zmq_ctx_new/socket/bind动态loopback，并在构造中Task.Run接收；每轮分配1024缓冲、recv、按size复制、*拆分、回调、释放、等待。不能把两种实现生命周期混用；长度/截断风险仍需native返回语义。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/ZmqCommand.cs&quot;,
+      &quot;member&quot;: &quot;ZmqCommand receiver startup&quot;,
+      &quot;sha256&quot;: &quot;6cb9e6e8ff2202acee1d2d2257ba4c409fe56979ec120d27984ffcb987ba166a&quot;,
+      &quot;start&quot;: 98,
+      &quot;end&quot;: 103,
+      &quot;excerpt&quot;: &quot;\t\tzmqTask = Task.Run(async () =>\n\t\t{\n\t\t\tawait CallReceived();\n\t\t});\n\t\tconnectSuccess = true;\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/ZmqCommand.cs&quot;,
+      &quot;member&quot;: &quot;ZmqCommand.CallReceived&quot;,
+      &quot;sha256&quot;: &quot;6cb9e6e8ff2202acee1d2d2257ba4c409fe56979ec120d27984ffcb987ba166a&quot;,
+      &quot;start&quot;: 110,
+      &quot;end&quot;: 136,
+      &quot;excerpt&quot;: &quot;\tpublic async Task CallReceived()\n\t{\n\t\twhile (!_dispose)\n\t\t{\n\t\t\tIntPtr bufferPtr = Marshal.AllocHGlobal(1024);\n\t\t\tint size = Libzmq.zmq_recv(socket, bufferPtr, 1024u, 0);\n\t\t\tZmqResult result = new ZmqResult();\n\t\t\tif (size > 0)\n\t\t\t{\n\t\t\t\tbyte[] recvData = new byte[size];\n\t\t\t\tMarshal.Copy(bufferPtr, recvData, 0, size);\n\t\t\t\tresult.Ok = true;\n\t\t\t\tstring recvStrData = StringUtil.UTF8GetString(recvData);\n\t\t\t\tif (recvStrData != null)\n\t\t\t\t{\n\t\t\t\t\tresult.Command = recvStrData.Split('*');\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (OnZmqReceived != null)\n\t\t\t{\n\t\t\t\tOnZmqReceived(result);\n\t\t\t}\n\t\t\tMarshal.FreeHGlobal(bufferPtr);\n\t\t\tawait Task.Delay(TimeSpan.FromMilliseconds(30.0), _tokenSource.Token);\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

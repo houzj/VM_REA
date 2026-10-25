@@ -1,0 +1,46 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WorkflowRunContext.Resolve / Node / Input · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>WorkflowRunContext.Resolve / Node / Input · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C08"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>WorkflowRunContext.Resolve / Node / Input → 仅本轮记录与实参取值</h2><p>节点来源要求记录为 Success 或 NoMatch 且存在输出；局部变量要求本轮字典已有值。流程输入优先显式实参，否则读绑定节点；常量按当前解析器，索引输入必须走 opt-in primitive reader。</p><p><a href="../专题/workflow-data.html#edge-C08">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/workflow-data.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/workflow-data.edges.json · SHA256 d9ce0fbe5e7700b1ac0583a5d7b40bbe04c3bc80a4d05c6317bccf6cc5f43384</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="2b7091f9394d79b934cec74e45e0342a38c62c7248b85a7fb2489a78b7e67f18">{
+  &quot;id&quot;: &quot;C08&quot;,
+  &quot;route&quot;: &quot;当前 · 单轮取值与发布&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;WorkflowRunContext.Resolve / Node / Input&quot;,
+  &quot;to&quot;: &quot;仅本轮记录与实参取值&quot;,
+  &quot;behavior&quot;: &quot;节点来源要求记录为 Success 或 NoMatch 且存在输出；局部变量要求本轮字典已有值。流程输入优先显式实参，否则读绑定节点；常量按当前解析器，索引输入必须走 opt-in primitive reader。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/WorkflowRunContext.cs&quot;,
+      &quot;member&quot;: &quot;WorkflowRunContext Node current-run guard&quot;,
+      &quot;sha256&quot;: &quot;d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247&quot;,
+      &quot;start&quot;: 18,
+      &quot;end&quot;: 18,
+      &quot;excerpt&quot;: &quot; PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&amp;&amp;r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&amp;&amp;r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException(\&quot;Current-run source unavailable: \&quot;+node+\&quot;.\&quot;+port);&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/WorkflowRunContext.cs&quot;,
+      &quot;member&quot;: &quot;WorkflowRunContext.Resolve&quot;,
+      &quot;sha256&quot;: &quot;d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247&quot;,
+      &quot;start&quot;: 22,
+      &quot;end&quot;: 36,
+      &quot;excerpt&quot;: &quot; public PortValue Resolve(WorkflowValueReference source){if(source.ArrayIndex is not null)throw new InvalidDataException(\&quot;Indexed input requires an opted-in primitive reader.\&quot;);return source.Kind switch\n {\n  WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException(\&quot;Group LoopIndex requires an owned invocation context.\&quot;),\n  WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),\n  WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),\n  WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),\n  WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),\n\n  WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),\n  WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException(\&quot;Current-run variable unavailable: \&quot;+source.Id),\n  WorkflowSourceKind.WorkflowInput=>Input(source.Id),\n  _=>throw new InvalidDataException(\&quot;Unknown source kind.\&quot;)\n };}\n PortValue Input(string id){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==id);return arguments.TryGetValue(spec.Name,out var value)?value:spec.NodeId is not null?Node(spec.NodeId,spec.Port!):throw new InvalidDataException(\&quot;Missing workflow input: \&quot;+spec.Name);}\n public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/WorkflowRunContext.cs&quot;,
+      &quot;member&quot;: &quot;WorkflowRunContext.Input&quot;,
+      &quot;sha256&quot;: &quot;d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247&quot;,
+      &quot;start&quot;: 35,
+      &quot;end&quot;: 35,
+      &quot;excerpt&quot;: &quot; PortValue Input(string id){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==id);return arguments.TryGetValue(spec.Name,out var value)?value:spec.NodeId is not null?Node(spec.NodeId,spec.Port!):throw new InvalidDataException(\&quot;Missing workflow input: \&quot;+spec.Name);}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

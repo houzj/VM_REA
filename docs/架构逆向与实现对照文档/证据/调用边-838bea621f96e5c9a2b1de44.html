@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GuideHelper.OpenSolution(opendemo) · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GuideHelper.OpenSolution(opendemo) · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-S02"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GuideHelper.OpenSolution(opendemo) → INI OpenSample / Demo默认目录 / 选择结果与finally</h2><p>flag初始false，仅opendemo且目录存在置true；目录优先INI值，只有null才回退Base+Demo，空字符串不当null。flag时ShowDialog不检查结果，先取FileName并INISet目录、Dispose，再检查空文件名；finally再Dispose。false分支也保留，不按常规文件选择器补行为。</p><p><a href="../专题/shell-resources.html#edge-S02">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/shell-resources.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/shell-resources.edges.json · SHA256 f438817e98a37909a216ff8c9c4a26d1d5e4efa2eea1a0cd972dc32059a621f9</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="d85db6def2710f4cbeb024a88c81baca6d1c276de99f57d9c588b205d889eaac">{
+  &quot;id&quot;: &quot;S02&quot;,
+  &quot;route&quot;: &quot;原版 · 示例方案&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;GuideHelper.OpenSolution(opendemo)&quot;,
+  &quot;to&quot;: &quot;INI OpenSample / Demo默认目录 / 选择结果与finally&quot;,
+  &quot;behavior&quot;: &quot;flag初始false，仅opendemo且目录存在置true；目录优先INI值，只有null才回退Base+Demo，空字符串不当null。flag时ShowDialog不检查结果，先取FileName并INISet目录、Dispose，再检查空文件名；finally再Dispose。false分支也保留，不按常规文件选择器补行为。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMaster.AppMainWindow/GuideHelper.cs&quot;,
+      &quot;member&quot;: &quot;GuideHelper.OpenSolution&quot;,
+      &quot;sha256&quot;: &quot;275ef68fc4b955884e70821168d534c00cc45aff5237f902513a61157ef45321&quot;,
+      &quot;start&quot;: 68,
+      &quot;end&quot;: 111,
+      &quot;excerpt&quot;: &quot;\tpublic static bool OpenSolution(bool opendemo, out string filename)\n\t{\n\t\tbool flag = false;\n\t\tOpenFileDialog openFileDialog = new OpenFileDialog\n\t\t{\n\t\t\tFilter = string.Format($\&quot;{0}|*.{AppFileExtension.Solution}\&quot;, opendemo ? AppLocalizationService.GetLang(\&quot;示例方案\&quot;) : AppLocalizationService.GetLang(\&quot;方案\&quot;))\n\t\t};\n\t\ttry\n\t\t{\n\t\t\tif (opendemo)\n\t\t\t{\n\t\t\t\tstring text = ConfigurationHelper.INIGetStringValue(\&quot;OpenSample\&quot;);\n\t\t\t\tstring path = ((text == null) ? (AppDomain.CurrentDomain.SetupInformation.ApplicationBase + ConfigurationHelper.GetConfig(\&quot;Demo\&quot;)) : text);\n\t\t\t\tDirectoryInfo directoryInfo = new DirectoryInfo(path);\n\t\t\t\tif (directoryInfo.Exists)\n\t\t\t\t{\n\t\t\t\t\topenFileDialog.InitialDirectory = directoryInfo.FullName;\n\t\t\t\t\tflag = true;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\&quot;Not_Installed_Samples\&quot;));\n\t\t\t\t\tflag = false;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (flag)\n\t\t\t{\n\t\t\t\topenFileDialog.ShowDialog();\n\t\t\t\tfilename = openFileDialog.FileName;\n\t\t\t\tConfigurationHelper.INISetStringValue(\&quot;OpenSample\&quot;, Path.GetDirectoryName(filename));\n\t\t\t\topenFileDialog.Dispose();\n\t\t\t\tif (string.IsNullOrEmpty(filename))\n\t\t\t\t{\n\t\t\t\t\treturn false;\n\t\t\t\t}\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tfilename = \&quot;\&quot;;\n\t\t\treturn false;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\topenFileDialog.Dispose();\n\t\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/app.config&quot;,
+      &quot;member&quot;: &quot;app.config Demo&quot;,
+      &quot;sha256&quot;: &quot;9c5dbc6b41d66ec4e902400299808f5a68356fe35438fbc621444b053f4fea9d&quot;,
+      &quot;start&quot;: 55,
+      &quot;end&quot;: 55,
+      &quot;excerpt&quot;: &quot;    &lt;add key=\&quot;Demo\&quot; value=\&quot;\\Samples\\\&quot; />&quot;,
+      &quot;evidenceType&quot;: &quot;local-extracted-resource&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;选择器取消路径与INI空目录写入/异常未运行验证；不实际打开原文件或写INI。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第九轮根线自审：标定特有图像、文件与 POINT 载荷</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass9-root-review.md">下载原始文件</a></nav><main><h1 id="第九轮根线自审标定特有图像文件与-point-载荷">第九轮根线自审：标定特有图像、文件与 POINT 载荷</h1><p>范围仍是用户指定的十个标定工具及其必需主框架交接。第九轮各审一条前轮未闭合的<strong>特有载荷</strong>，没有把共享 Group、目录、配置逻辑重复算作三个工具的全面完成。根线核对三个探针与原始证据的结论边界，并串行独立复跑；没有修改产品源码或 <code>tool-plugins</code>。</p>
+<table>
+<thead>
+<tr>
+<th>特有链</th>
+<th>本轮实际结果</th>
+<th>原版依据与保留界限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>畸变 IMAGE/ROI→畸变修正图→N图像</td>
+<td>真实 WPF 宿主 11/11，1000×1000 纠正图、76B <code>.iccal</code>、N图像首帧、重开、错误扩展名和恢复。根线独立复跑退出0，日志 <code>analysis/joint-audit/pass9-cal-distortion/root-run.log</code> SHA-256 <code>249D6AE320BD2FD1CEF71D0A35DE10D316DD8B3989E7F480EEDA84415CFABB00</code>。</td>
+<td><a href="20261020-pass9-distortion-chain.html">畸变专项</a> 精确区分原组合端口 <code>PostCorrectionImage</code> 与发布成员/显示键 <code>PostCorrectionImageData</code>；原厂同构运行、全部 ROI/算法/显示分支未证。</td>
+</tr>
+<tr>
+<td>相机映射 36B 文件→旋转标定</td>
+<td>真实图在一个 scope 连续 3 轮，<code>remainCount=2/1/0</code>；缺文件 <code>E0000008</code>，恢复后同 scope 再成功。根线独立复跑退出0，日志 <code>analysis/joint-audit/pass9-cal-rotate/root-run.log</code> SHA-256 <code>9A2162AFE00615D8CCD2646A43D8ABD67A247E38EB833BC07C16B680B1CFF6ED</code>。</td>
+<td><a href="20261020-pass9-rotate-consumer-chain.html">旋转专项</a> 的原 <code>SetParam/LoadCalibFile/LoadFile/Process</code> 分支与原指令核对；三个 XML 仅复用既有文件，不冒充本轮同图生产。原厂同构运行和旋转输出下游未证。</td>
+</tr>
+<tr>
+<td>平移旋转标定点数组→Group→坐标系 POINT</td>
+<td><code>SrcPointX/Y</code> 真实运输，角度订阅 <code>[0]</code>，两只坐标系分别走矩阵/点模式；首跑和保存重开通过。日志 <code>analysis/joint-audit/pass9-cal-coordinate-point/checks.log</code> SHA-256 <code>FB002704126E5CF4E45A5B95C22AEC82A3ABF0CE3C3497B4883FE3E55D0DAB78</code>。</td>
+<td><a href="20261020-pass9-coordinate-point-chain.html">坐标系专项</a> 的原 <code>18003f4a0/180040320</code> 确认读取顺序和矩阵公式；原厂同构图、ROI/缺项与显示未证。</td>
+</tr>
+</tbody></table>
+<p>本轮构建有共享 <code>obj</code> 写锁的首试失败（两个子线错峰成功）；坐标系新工程首次 <code>--no-restore</code> 因缺 assets 文件失败，正常 restore 后成功。这些是测试环境失败，不能篡成产品缺陷或从日志删除。各子线的源码路径、资源 SHA 和失败文件在专项报告及自有 <code>analysis/joint-audit/pass9-*</code> 下。根线自审只确认上述有限切片；本目标的完整 J01–J12 全链尚未逐项关闭，尤其原版同构执行、UI 订阅/显示与算法差分。旧插件项目的 10/10 是既有<strong>实施自审</strong>，不是当前联合审核 10/10。</p>
+<p>框架具名单元实施仍为 <strong>41/96 = 42.71%</strong>；第九轮为已实现代码链的审核，没有证据充分的新完整框架实施单元，分子不增加。人工桌面验收单列，当前未执行。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass9-root-review.md · SHA256 26c520a346f87a67728a07bf523214b036a7ac90966778133ad0b3f1f8c5eccc<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

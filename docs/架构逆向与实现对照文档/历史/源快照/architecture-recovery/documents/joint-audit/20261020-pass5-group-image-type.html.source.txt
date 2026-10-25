@@ -1,0 +1,47 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第五轮 J05/J06/J09/J11：Group 内图像类型传递到真实下游</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass5-group-image-type.md">下载原始文件</a></nav><main><h1 id="第五轮-j05j06j09j11group-内图像类型传递到真实下游">第五轮 J05/J06/J09/J11：Group 内图像类型传递到真实下游</h1><h2 id="问题与证据边界">问题与证据边界</h2><p>原厂 <code>ImageSourceModule.xml</code> 的 <code>ImageData</code> 与 <code>ImageDataMono8</code> 分别是 IMAGE 组合；<code>IMVSBinaryModu.xml</code> 的 <code>InputImage</code> 是 IMAGE 组合并带像素格式叶。原 <code>VM.Core.dll</code> 的 <code>VmModule.GetFrontIOWithLeafItemsByName(&quot;IMAGE&quot;)</code> CIL（<code>analysis/joint-audit/VM.Core.GetFrontIOWithLeafItemsByName.il</code>，SHA-256 <code>A442D5B02176056DC4BC2BA972713B87CF12916BF54F58A1F9ECF8916C79F71C</code>）按组合 TypeName 和可订阅/可见筛候选，不按像素格式叶筛；原版 Binary 运行期的 RGB/Mono8 格式门仍未由该体证明。</p>
+<p>原厂 <code>IMVSBinaryModu.xml</code> SHA-256 <code>30C47A31236E4EA48F6C30DA4FCBA33B03E17B5C3CD470C0A89C2247470DBB86</code> 将 <code>OutputMask.OutMask</code> 及宽、高、格式叶设为 <code>IsForce=false</code>、<code>AllowAutoSubscribeByOther=false</code>。同版本 <code>VM.Core.dll</code> 的 <code>VmProcedure</code> 原体 CIL 新导出于 <code>analysis/joint-audit/group-optional/VM.Core.VmProcedure.il</code> SHA-256 <code>8BFAB5216AC4DF8D35E670256940448E2EB19DDE7FC026C73B86DB6655DBE4CE</code>：<code>SetIoParams</code>（RVA <code>0x2FE10</code>）将 Group 输入/输出交给 <code>GetGroupIoList</code> 后调用 <code>ProcessManager.SetGroupIO</code>；<code>GetGroupIoList</code>（RVA <code>0x30E1C</code>）枚举所有 <code>DynamicVmIO</code> 叶，<code>AddFilterToList</code>（RVA <code>0x30EA4</code>）只写类型号和 128 字节名称。原 <code>IMVS_PROCEDURE_IO_INFO</code> 结构仅有 <code>nValueType</code> 和 <code>strParamName</code>，没有可选标志。故模块端 <code>IsForce=false</code> <strong>并未作为这个 Group IO 声明字段直接传入 SDK</strong>；SDK 执行时缺席值如何影响 Group 状态仍未证。</p>
+<p>当前代码 <code>ImageSourcePlugin.Runtime</code> 在 RGB 且 <code>OutMono8=true</code> 时另发布 <code>ImageMono8</code>，而 <code>GraphExecutor</code> 对接入 <code>GrayImage</code> 的 RGB 实值报 <code>InputTypeMismatch</code>。为检验<strong>工具和主框架交接链</strong>而非算法数值，本轮新增 <code>tests/FrameworkImageTypeGroup.Checks</code>：实际 <code>ImageSource → ImageBinary</code> 位于 owned Group 内，Group 的 <code>GrayImage</code> 输出再连接父流程的第二个 Binary；使用同一图结构切换来源端口和源参数，最后保存/重开并用新 <code>ModuleExecutionScope</code> 执行。没有直接注入 Binary 或伪造 Group 输出。</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>body Binary</th>
+<th>Group</th>
+<th>父流程真实下游</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Gray，经 <code>Image</code></td>
+<td>成功并发布 Gray</td>
+<td>成功</td>
+<td>成功并发布 Gray</td>
+</tr>
+<tr>
+<td>RGB，经 <code>Image</code></td>
+<td><code>InputTypeMismatch</code></td>
+<td><code>SubprogramFailed</code></td>
+<td><code>ExecutionPredecessorUnavailable</code> 跳过</td>
+</tr>
+<tr>
+<td>RGB，经 <code>ImageMono8</code>，转换开关关闭</td>
+<td><code>UpstreamUnavailable</code> 跳过</td>
+<td><code>SubprogramFailed</code></td>
+<td><code>ExecutionPredecessorUnavailable</code> 跳过</td>
+</tr>
+<tr>
+<td>RGB，经 <code>ImageMono8</code>，转换开关开启</td>
+<td>成功并发布 Gray</td>
+<td>成功</td>
+<td>成功并发布 Gray</td>
+</tr>
+<tr>
+<td>保存重开上述成功图，新执行 scope</td>
+<td>成功并发布 Gray</td>
+<td>成功</td>
+<td>成功并发布 Gray</td>
+</tr>
+</tbody></table>
+<p>测试逐态断言真实节点状态、错误码、Binary 和父流程消费者实际 <code>GrayImage</code> 载荷。另将 Binary 的 <code>OutMask</code> 暴露为 Group 第二输出：开关关闭时 Binary 自身成功且普通 <code>Image</code> 输出存在，但当前 <code>WorkflowRunContext.Complete</code> 因 <code>MaskResult</code> 缺席把整个 Group 标为 <code>SubprogramFailed</code>，父流程连接普通 <code>Result</code> 的消费者也被跳过；开关开启时两输出具备、父流程成功。这是<strong>当前主框架与工具可选输出交接的真实七态</strong>，不能由原厂 XML <code>OutMask IsForce=false</code> 单独推定原厂 Group 遇到缺席输出应如何处理。</p>
+<p><code>dotnet run --project tests/FrameworkImageTypeGroup.Checks/FrameworkImageTypeGroup.Checks.csproj -c Release</code> 为 7/7。最终日志 <code>analysis/joint-audit/image-type-group/checks.log</code> SHA-256 <code>50E1118B24C03C295687D8969EFB63E2186A7F5B8F724063103A417EB8F20300</code>，测试源码 SHA-256 <code>3CC7656813F79A421051088F938AF11B9C9F81078F800D8ABF0DD61C288C57A6</code>。首次探针在已接线输入上再次 <code>Connect</code> 收到当前编辑器的 <code>Input already connected</code>，属于测试步骤错误；修正为先 <code>Disconnect</code> 再连接后全部通过，产品代码未改。</p>
+<p>这证明当前主框架连接/Group/执行/保存与可选输出的上述七态，但<strong>不</strong>证明原厂 RGB 应自动转换、原厂 Group 可选输出语义或二值化五模式数值符合，也未覆盖输入 Mask、取消及旧结果释放。下一证据是原版 SDK 的格式门和五模式/错误输出边，以及原版 Group 对 <code>IsForce=false</code> 输出缺席时的状态；有证据后才裁定当前 Group 是否应局部保留普通输出。J05/J06/J09/J11 只关闭这些特定状态切片，整门仍开放。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass5-group-image-type.md · SHA256 0732ce805593a5da4ef93ad44d00763532cb8df0c0f87a4f2335a727442738c1<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,50 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 5a089d464286 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 5a089d464286</p><h1>原文证据 5a089d464286</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 5a089d464286b484df5d86573fceb1490f0ace891fa704c21a39b0f8d23c6595。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence"># 图像二值化源码级自检
+
+## 原厂证据身份
+
+安装清单将模块记录为 `IMVSBinaryModu`，位于 VisionMaster 4.4.0 `ImageProcessing/IMVSBinaryModu`。本地审计树记录六个配置资源：
+
+| 资源 | 原始 SHA-256 | 根/类型 |
+|---|---|---|
+| `IMVSBinaryModu.xml` | `30c47a31236e4ea48f6c30da4fcba33b03e17b5c3cd470c0a89c2247470dbb86` | `ParamRoot` |
+| `IMVSBinaryModuAlgorithm.xml` | `eebee2e22c782dc0247dd5f3c62c96f27e542271b681a2d60aacd1400df07900` | `AlgorithmParamList` |
+| `IMVSBinaryModuAlgorithmTab.xml` | `08ae81e7c8bc57b4e095ae2d0b98f08d8afe8f34ebb065b928dd4336ef87fdd7` | `AlgorithmTabRoot` |
+| `IMVSBinaryModuCs.xml` | `80df3ce60b1386f705c77425cde34d0e15f4fb216fe749f400e7452de5a50443` | `doc` |
+| `IMVSBinaryModuDisplay.xml` | `0d0c41cfcf7897b61041aef0b3fe8035a468c19c892054852001e7ee085f1c8b` | `ParamRoot` |
+| `ToolItemInfo.xml` | `1d5200c180cdcf0e1283e366f52cc78ab61826985406a9391f9f0536129a1834` | `ToolBoxItemData` |
+
+这些哈希和解析后的资源树来自 `analysis/full-audit/plugin-coverage.json`；原始安装 XML 没有提交到本 worktree。公共 SDK 参数封装源码为：
+
+- `analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS.ObjectPlatformSDKCS/ImageBinaryModuParams.cs`, SHA-256 `B1FDBC801659E768D7B84A659FA632077BE8C80D6FC6799DB97C6ED8F113B388`.
+- `analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS.ObjectPlatformSDKCS/ImageBinaryModuTool.cs`, SHA-256 `26C706F81A37E8FEB9893BFD5580970167E9209C13E8DF4C09E33E8BA8CE5739`.
+
+公共 SDK 参数类型公开 `BinaryType`、低/高阈值、核宽/高、高斯核尺寸/标准差、比较类型和阈值偏移。其 `BinaryTypeEnum` 明确将硬阈值/均值/高斯/OTSU 设为 1–4，但它没有 Sauvola 字段，和已安装模块版本不完全相同。
+
+已安装模块的托管封装 `IMVSBinaryModuCs.dll` 有 `ImageBinaryParam.BinaryTypeEnum`，并公开 `SauvolaAdjustCoef`、`SauvolaRange`、`SauvolaSegType`、`SauvolaWinWidth/Height` 等字段。其枚举成员为 HardThreshold、MeanThreshold、GaussianThreshold、Sauvola、OTSU；原厂 `AlgorithmTab` XML 把五者映射为 1、2、3、8、4，并且五个 `EnumEntry` 都标 `IsImplemented=0x1`。所以这五种模式都必须在复刻 UI 中可选择；算法运行是否等价需要另外验证。
+
+原厂页签名为 `Tab_Basic Params`、`Tab_Run Params`、`ResultShow`。解析的 UI 清单有 27 个控件，包括 `OutputMaskImageGroup`、`InputMaskImageGroup`、`RoiSelectGroup`、`ROISelecter RoiType`、`InheritWayGroup`、`ExternROITypeGroup`、`AssistGroup`、`NonROIPrcType`、`BinaryType`、阈值/核参数和结果显示项。原厂 BinaryType 触发器按 1/2/3/8/4 切换字段：硬阈值只显示 Low/HighThreshold；均值显示 KernelWidth/Height、CompareType、ThresholdOffset；高斯显示 GaussKernelSize/Sigma、CompareType、ThresholdOffset；Sauvola 显示 5 个 Sauvola 参数；自动阈值隐藏这些附属参数。这是明确的 XML 绑定条件，不是从算法名称推断。
+
+已安装的托管模块程序集 `IMVSBinaryModuCs.dll`（SHA-256 `7aeaa27038210d58604c4675787048050403ee2885a77b76a5af0575952290d6`）由 REA 只读检查，证据 `ev_0ab04b936fe48e659487b049512013217b52c69bbb102b6969e9f3bacc46db34`。成员检查证据 `ev_10151faecb39fa6f099678a61e1c5b1d9fbee890fb4c01745b4285023d76793d` 识别出 9 个类型和 72 个方法/属性；`IMVSBinaryModuTool.Run` 的 CIL 仅有 7 条指令，取得模块 ID 后调用 `serverSDKManager.SyncSelfRun(ID)`。这确认托管层把执行交给 SDK 管理器；算法主体不在此托管方法里。该成员检查没有执行目标程序集，也不能将 `SyncSelfRun` 展开成 native 算法。
+
+原生 `IMVSBinaryModu.dll` 的 SHA-256 为 `c03bcb19ef456206e3abf4d2a8d5279be37c12eb5662e191f0965029cdabeb48`；Ghidra 12.1.4 对 `Init`、`Process`、`ProcessAlg`、`ProcessOutput`、`SetParam` 的定点反编译已导出至 `analysis/source-audit-regression/20261018/ghidra-binary/output/`。其中 `Init`/`ProcessAlg` 显示模块创建 `IImageBinaryTool` 并把输入图、屏蔽图、ROI/区域图及运行参数送入 SDK 对象；模块自身负责生命周期、输入校验、结果/计时回传和错误处理。反编译文件 `18001ec00.c` 可核对该调用顺序。原厂模块把像素算法委托给 SDK，不包含均值、高斯、Sauvola 或 OTSU 的计算主体。
+
+SDK 头文件 `D:/Program Files/VisionMaster4.4.0/MVDAlgorithmSDK/Includes/Algorithms/ImageBinaryCpp.h` 给出 `IImageBinaryTool` 的完整公开接口：图像、ROI、屏蔽区、运行参数、配置读写、`Run`、结果、区域图和运行时间。`MVDImageBinaryCpp.dll` 导出创建/销毁函数；Ghidra 对创建函数及其初始化路径 `FUN_180002a30` 的反编译确认 SDK 对象创建算法句柄时传入 ID `0x25a`，进一步调用通用 `MVD_Algorithm` 的句柄接口。该 SDK 包装层仍将算法执行委托给通用算法运行库；当前这组反编译没有恢复到各模式的像素循环。SDK 定点分析输出在 `analysis/source-audit-regression/20261018/ghidra-imagebinary-sdk/output/`，调用模块的输出在上述 `ghidra-binary/output/`。原先 Ghidra 脚本的 OSGi `AccessDeniedException` 记录对应早期失败尝试，不再代表当前导出状态；REA provider 的 `GHIDRA_INSTALL_DIR` 配置状态与这次本地 CLI 成功无关。
+
+## 本项目实现及差异
+
+已注册窗口路径为 `ImageBinaryPlugin.CreateWpfEditor` → `ImageBinaryWindow`。它直接用 WPF 构建三个页签，并调用共享 `GroupRoiEditor` 绘制/编辑 ROI。这是依据 XML 字段和用户原厂截图作出的独立实现；由于当前审计证据中没有原厂 WPF 控件实现资源，代码没有实例化原厂控件模板。用户提供的原厂截图可作为运行界面布局证据，但不能说明每个控件的绑定或事件顺序。
+
+`ImageBinaryPlugin.Runtime.ExecuteAsync` 目前只实现硬阈值（`BinaryType == 1`）；选择其余四种模式仍返回 `BinaryModeUnavailable`。`ImageBinaryWindow` 已开放 XML 声明的五种模式，并按 BinaryType 的触发条件重建运行参数区域。当前模型与数值控件也已按 XML 设置参数范围：均值核/高斯核 1–51、高斯 sigma 0.1–100、偏移 −255–255、Sauvola 系数 −1–1、范围 0.1–255、窗口宽高 1–100；硬阈值范围 0–255，枚举选择和范围由 XML 声明确认。该字段映射与范围已由 `tests/RoiTool.Checks` 覆盖，但当前仍是依据 XML 独立实现的窗口，不是原厂 WPF 控件的实例化。
+
+`tests/NativeImageBinaryProbe/Run-Modes.ps1` 在一张 64×48 合成 MONO8 图上固定参数，调用安装目录的 `CImageBinaryTool`。对这组输出做像素候选比较得到：均值模式可由 3×5 邻域局部均值、偏移 7 的比较精确复现；高斯模式可由 5×5、sigma 1.2、偏移 7 的加权均值候选精确复现；OTSU 可由全图经典最大类间方差阈值复现（阈值 125）。这些是特定夹具上与 SDK 输出逐像素相同的候选公式，不是 native 源码证据，也不足以证明核尺寸语义、边界扩展、相等比较、参数限制或所有图像一致。Sauvola 按已证实的默认参数（系数 0.2、范围 128、宽高 15、Dark）对照时，扩展局部窗口、系数、范围、边界和比较候选后最佳仍差 383 像素；候选公式或对 SDK 参数的解释不完整，算法条件未闭合。比较输出保存在 `analysis/source-audit-regression/20261018/native-binary-modes/compare.log`。
+
+## 验证与状态
+
+- `tests/NativeImageBinaryProbe/Run-Modes.ps1` 调用安装目录 MVD SDK 的 `CImageBinaryTool`，五种模式均完成受控执行并输出图像。输入参数和每张输出图哈希位于 `analysis/source-audit-regression/20261018/native-binary-modes/evidence.json`；模式值来自 XML enum 表。这是 SDK 原生组件证据，不等同于原厂 VisionMaster 桌面运行。
+- SDK 托管封装 `MVDImageBinary.NET.dll`（4.2.1.4，SHA-256 `a2f413de33e60095a51ae47d211f32acd344dfa14dcd32a61caa2c1e3db09f92`）的 REA 成员检查证据为 `ev_b861c7fb9181a0210880541c2491c016fe5c9b070f302c59c32f174acc0df13a`。`CImageBinaryTool.Run` 有 343 条 CIL 指令并调用 `MVD_Algorithm_Process_NET`；算法实现仍在 native 边界。静态方法体不能替代 native 算法源码。
+- Native 调用链已推进至通用算法边界：原厂模块 `ProcessAlg` → `CreateImageBinaryToolInstance` → SDK 对象（算法 ID `0x25a`）→ `MVD_Algorithm`。这确认了所有参数/图像如何进入 SDK，但没有看到通用算法库内部的算法实现；因此四种未复刻模式仍不能按单夹具公式候选直接上线。
+- `tests/RoiTool.Checks` 的 221 项检查通过，覆盖实际编辑器/宿主/ROI 交互、来源夹具栅格化、与已采集原厂输出的像素比较、模式选择、字段触发、算法参数范围及整数字段拒绝小数、参数持久化、运行及连续停止、Group 执行和显示设置。最终日志和机器摘要为 `analysis/source-audit-regression/20261018/supplemental/RoiTool.Checks.final.stdout.log`、`RoiTool.Checks.final.summary.json`；本项目窗口截图为 `analysis/full-audit/roi-binary-native-debug-window.png`。
+- 公共配置全回归 63/63 通过；这证明独立实现和已采集夹具回放通过，不等于原厂桌面完全一致。
+- 三个页签的原厂桌面逐像素对照、弹层交互、字段顺序/间距、ROI 类型和确认生命周期仍未闭合。均值/高斯/OTSU 算法只完成单一合成输入候选核对；Sauvola 仍未得到匹配解释。此工具不涉及设备测试。
+
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/ImageProcessing-IMVSBinaryModu-a304d360.html">图像二值化 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

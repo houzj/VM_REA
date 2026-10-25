@@ -1,0 +1,263 @@
+{
+  "title": "原版全局脚本连续运行 setter：分支与状态提交顺序",
+  "source": "清单/条目/5e6e2ba36bf733a10743.json",
+  "sourceSha256": "d31bd253c654956552074b23bade60dc94c29d161758a94e07771121a118e83c",
+  "factId": "execution-storage:Q03",
+  "nodes": [
+    [
+      "compare",
+      "setter：新值与旧值比较",
+      450,
+      30
+    ],
+    [
+      "return",
+      "相同：直接返回",
+      90,
+      160
+    ],
+    [
+      "branch",
+      "不同：判断新值",
+      450,
+      160
+    ],
+    [
+      "start",
+      "true：SDK 开始连续脚本",
+      250,
+      290
+    ],
+    [
+      "stop",
+      "false：SDK 停止脚本",
+      650,
+      290
+    ],
+    [
+      "reset",
+      "按流程 ID 重置／加入状态字典",
+      250,
+      420
+    ],
+    [
+      "clear",
+      "清空流程停止状态字典",
+      650,
+      420
+    ],
+    [
+      "field",
+      "成功后：写连续运行字段",
+      450,
+      550
+    ],
+    [
+      "flags",
+      "逐流程 IsGlobalRuning = value",
+      450,
+      680
+    ],
+    [
+      "notify",
+      "通知三个属性",
+      450,
+      810
+    ]
+  ],
+  "edges": [
+    {
+      "from": "compare",
+      "to": "return",
+      "condition": "同值",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "compare",
+      "to": "branch",
+      "condition": "不同值",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "branch",
+      "to": "start",
+      "condition": "true",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "branch",
+      "to": "stop",
+      "condition": "false",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "start",
+      "to": "reset",
+      "condition": "SDK 返回",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "stop",
+      "to": "clear",
+      "condition": "SDK 返回",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "reset",
+      "to": "field",
+      "condition": "",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "clear",
+      "to": "field",
+      "condition": "",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "field",
+      "to": "flags",
+      "condition": "",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    },
+    {
+      "from": "flags",
+      "to": "notify",
+      "condition": "",
+      "factId": "execution-storage:Q03",
+      "classification": "source-confirmed"
+    }
+  ],
+  "fact": {
+    "id": "execution-storage:Q03",
+    "route": "原版 · 连续运行与停止",
+    "classification": "source-confirmed",
+    "from": "GloalScriptContinusRunEnable setter",
+    "to": "SDK脚本开始/停止 → 状态字典/字段/流程标志/通知",
+    "behavior": "同值直接返回。true先GlobalScriptStartContinueRun再按流程ID重置/加入dictProcessIDStopStatus；false先GlobalScriptStopRun再清字典。之后才写字段、逐流程IsGlobalRuning=value并通知三个属性。SDK异常发生在字段写入前，不能画成失败也必更新标志。",
+    "refs": [
+      {
+        "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+        "member": "VM.Core.VmSolution::set_GloalScriptContinusRunEnable",
+        "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+        "start": 4435,
+        "end": 4454,
+        "excerpt": "          \"token\": \"0x0600005d\",\n          \"symbol\": {\n            \"token\": \"0x0600005d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"set_GloalScriptContinusRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 307,\n          \"ilSha256\": \"6bb35062c24079d5a20dce894a29f00edaf00f7089cd2086ccb441d3736eb938\",\n          \"ilBytes\": \"73200700060a06037ded02000400027b0d000004067bed020004fe0116fe010b07390c01000000067bed0200040c08398d00000000284801000a7bec01000a6fed01000a260002280f060006280d00002b6fee01000a0d2b50096fef01000a130400027b0e00000411046f490200066ff001000a130511052c1800027b0e00000411046f49020006166ff101000a00002b1600027b0e00000411046f49020006166ff201000a000000096fa001000a2da8de0b092c07096f0e01000a00dc002b1e00284801000a7bec01000a6ff301000a26027b0e0000046ff401000a000002067bed0200047d0d00000402280f060006280d00002b281000002b06fe062107000673ea01000a6feb01000a0002722508007028f30400060002723908007028f30400060002726108007028f304000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+        "evidenceType": "original-managed-cil",
+        "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+      },
+      {
+        "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+        "member": ".<>c__DisplayClass73_0::<set_GloalScriptContinusRunEnable>b__0",
+        "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+        "start": 6528,
+        "end": 6547,
+        "excerpt": "          \"token\": \"0x06000721\",\n          \"symbol\": {\n            \"token\": \"0x06000721\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec__DisplayClass73_0\",\n            \"name\": \"\\u003Cset_GloalScriptContinusRunEnable\\u003Eb__0\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001011281b0\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"454ad7021947176258d0ddbd6ffd28d5b49cd98d196e6f3c9b8cf3f44e04d8af\",\n          \"ilBytes\": \"03027bed0200046f73060006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+        "evidenceType": "original-managed-cil",
+        "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+      },
+      {
+        "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+        "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStartContinueRun",
+        "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+        "start": 6619,
+        "end": 6638,
+        "excerpt": "          \"token\": \"0x0600001a\",\n          \"symbol\": {\n            \"token\": \"0x0600001a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStartContinueRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"c42b0f29d2a2fac878d3688cee965e0fdcc96318c23cebd8689c5b7830d6c3c9\",\n          \"ilBytes\": \"007e9703000428b10300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+        "evidenceType": "original-managed-cil",
+        "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+      },
+      {
+        "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+        "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStopRun",
+        "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+        "start": 6809,
+        "end": 6828,
+        "excerpt": "          \"token\": \"0x0600001b\",\n          \"symbol\": {\n            \"token\": \"0x0600001b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStopRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"e351df32875c08dbb2a93c337c5c9d864dd16ab4abc3fa4f754e3bdd00de04ee\",\n          \"ilBytes\": \"007e9703000428b20300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+        "evidenceType": "original-managed-cil",
+        "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+      }
+    ],
+    "unknowns": [
+      "所选SDK管理方法非零抛VmException；native状态、执行回调和通知异常恢复未知。"
+    ],
+    "verification": {
+      "method": "static resource, body and call-site inspection",
+      "runtimeExecuted": false,
+      "nativeEquivalent": false
+    },
+    "member": "VM.Core.VmSolution::set_GloalScriptContinusRunEnable / .<>c__DisplayClass73_0::<set_GloalScriptContinusRunEnable>b__0 / VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStartContinueRun / VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStopRun",
+    "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+    "originalKey": "Q03",
+    "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+    "originalRecord": {
+      "id": "Q03",
+      "route": "原版 · 连续运行与停止",
+      "classification": "source-confirmed",
+      "from": "GloalScriptContinusRunEnable setter",
+      "to": "SDK脚本开始/停止 → 状态字典/字段/流程标志/通知",
+      "behavior": "同值直接返回。true先GlobalScriptStartContinueRun再按流程ID重置/加入dictProcessIDStopStatus；false先GlobalScriptStopRun再清字典。之后才写字段、逐流程IsGlobalRuning=value并通知三个属性。SDK异常发生在字段写入前，不能画成失败也必更新标志。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.Core.VmSolution::set_GloalScriptContinusRunEnable",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 4435,
+          "end": 4454,
+          "excerpt": "          \"token\": \"0x0600005d\",\n          \"symbol\": {\n            \"token\": \"0x0600005d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"set_GloalScriptContinusRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 307,\n          \"ilSha256\": \"6bb35062c24079d5a20dce894a29f00edaf00f7089cd2086ccb441d3736eb938\",\n          \"ilBytes\": \"73200700060a06037ded02000400027b0d000004067bed020004fe0116fe010b07390c01000000067bed0200040c08398d00000000284801000a7bec01000a6fed01000a260002280f060006280d00002b6fee01000a0d2b50096fef01000a130400027b0e00000411046f490200066ff001000a130511052c1800027b0e00000411046f49020006166ff101000a00002b1600027b0e00000411046f49020006166ff201000a000000096fa001000a2da8de0b092c07096f0e01000a00dc002b1e00284801000a7bec01000a6ff301000a26027b0e0000046ff401000a000002067bed0200047d0d00000402280f060006280d00002b281000002b06fe062107000673ea01000a6feb01000a0002722508007028f30400060002723908007028f30400060002726108007028f304000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": ".<>c__DisplayClass73_0::<set_GloalScriptContinusRunEnable>b__0",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 6528,
+          "end": 6547,
+          "excerpt": "          \"token\": \"0x06000721\",\n          \"symbol\": {\n            \"token\": \"0x06000721\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec__DisplayClass73_0\",\n            \"name\": \"\\u003Cset_GloalScriptContinusRunEnable\\u003Eb__0\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001011281b0\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"454ad7021947176258d0ddbd6ffd28d5b49cd98d196e6f3c9b8cf3f44e04d8af\",\n          \"ilBytes\": \"03027bed0200046f73060006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStartContinueRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 6619,
+          "end": 6638,
+          "excerpt": "          \"token\": \"0x0600001a\",\n          \"symbol\": {\n            \"token\": \"0x0600001a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStartContinueRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"c42b0f29d2a2fac878d3688cee965e0fdcc96318c23cebd8689c5b7830d6c3c9\",\n          \"ilBytes\": \"007e9703000428b10300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStopRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 6809,
+          "end": 6828,
+          "excerpt": "          \"token\": \"0x0600001b\",\n          \"symbol\": {\n            \"token\": \"0x0600001b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStopRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"e351df32875c08dbb2a93c337c5c9d864dd16ab4abc3fa4f754e3bdd00de04ee\",\n          \"ilBytes\": \"007e9703000428b20300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "所选SDK管理方法非零抛VmException；native状态、执行回调和通知异常恢复未知。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    "relationEvidence": "formal-edge-reuse"
+  },
+  "unjoined": "此图仅表示这一个 setter 的已证内部顺序；不连接到具体原生回调实例。SDK抛异常发生在字段写入前；native状态与通知异常恢复未知。",
+  "browserVerified": false
+}

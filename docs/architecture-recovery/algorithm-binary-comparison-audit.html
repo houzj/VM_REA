@@ -1,0 +1,1226 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>P0-A 图像二值化代表链：算法与数值基线对比</title><style>body{max-width:1500px;margin:auto;padding:24px;background:#101a29;color:#e3edf8;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#96d1ff}p{color:#b0c6dc}.notice{background:#1c2d43;border-left:4px solid #dfb16e;padding:15px}details{background:#17273c;padding:14px;border:1px solid #3f5671;margin:14px 0}summary{cursor:pointer}.unknown{border-color:#d299ac}.independent-implementation{border-color:#70bef5}pre{font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1524;padding:12px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #405875;padding:10px;text-align:left;vertical-align:top}.table{overflow:auto}code{overflow-wrap:anywhere}</style><a href="index.html">← 架构索引</a><h1>P0-A 图像二值化代表链：算法与数值基线对比</h1><p class="notice">精确选择ImageProcessing / IMVSBinaryModu → vision.image-binary。两份旧原件16×16输出与隔离当前真实源码执行均0像素差，100/150两端相符；生产DLL预检因PDB不符而未执行。其余四模式当前明确不可用，原生深体/外mask/Fixture等仍未知。未运行厂商SDK/设备。</p><p><a href="algorithm-binary-comparison-audit.json">完整专题JSON</a> · <a href="algorithm-binary-comparison-audit.current-replay.json">当前真实源码有限差分</a> · <a href="algorithm-binary-comparison-audit.production-preflight.json">旧生产DLL拒绝记录</a> · <a href="algorithm-binary-comparison-audit.evidence.json">输入/源码/产物摘要</a></p><h2>算法对比与恢复优先级</h2><div class="table"><table><tr><th>维度/优先级</th><th>原版证据</th><th>当前计算路径</th><th>比较结果/边界</th></tr><tr id="M01"><td>身份/注册<br>P0</td><td>ImageProcessing/IMVSBinaryModu；实例ModuleId未知；SDK算法ID602</td><td>vision.image-binary真实注册，catalog Priority0</td><td>exact-selected-identity<br>算法ID/运行实例ID/当前模块ID不混用<br><a href="#B01">B01</a> · <a href="#B02">B02</a> · <a href="#B03">B03</a></td></tr><tr id="M02"><td>模式<br>P0</td><td>资源1/2/3/8/4与旧Mono8格式运行</td><td>仅1执行；其它4个显式失败</td><td>implementation-gap<br>UI/成功基线不是当前实施<br><a href="#B04">B04</a></td></tr><tr id="M03"><td>像素/通道<br>P0</td><td>旧20×16 Mono8成功，RGB201拒绝</td><td>GrayImage/Mono8 byte/stride=width，无内联RGB转换</td><td>finite-format-boundary<br>其它格式/上游运输未知<br><a href="#B05">B05</a></td></tr><tr id="M04"><td>阈值/包含边界<br>P0</td><td>默认100..255；旧16×16的100与150均255</td><td>int low/high，双包含；样本99/100/150/151相符</td><td>two-fixture-match<br>不含全部阈值与native循环<br><a href="#B02">B02</a> · <a href="#B06">B06</a> · <a href="#B10">B10</a></td></tr><tr id="M05"><td>ROI/外mask<br>P0</td><td>原头与矩形输出；外mask未有完整原件夹具</td><td>area0 ROI/屏蔽，area1外mask非零；outside可保留原值</td><td>partial-mapping<br>未做外mask/组合原件数值差分<br><a href="#B07">B07</a></td></tr><tr id="M06"><td>坐标/数值转换<br>P1</td><td>所选native深体不足以证明统一舍入</td><td>float栅格、ToPixels、Fixture反采样独立实现</td><td>not-closed<br>只比整数零角度矩形<br><a href="#B08">B08</a></td></tr><tr id="M07"><td>输出/统计<br>P1</td><td>两原件BMP8bit灰度值可复核</td><td>Image/可选OutMask；ProcessedPixels为inside计数</td><td>limited-output-match<br>原发布门/计时/失败旧结果未知 当前图像输出、主窗准入/点击预览、专用ROI视口独立列证，不自动等同通用frame图文渲染。<br><a href="#B09">B09</a> · <a href="#B10">B10</a> · <a href="#B13">B13</a> · <a href="#B14">B14</a> · <a href="#B15">B15</a> · <a href="#B16">B16</a> · <a href="#B17">B17</a> · <a href="#B18">B18</a> · <a href="#B19">B19</a> · <a href="#B20">B20</a> · <a href="#B21">B21</a></td></tr><tr id="M08"><td>数值基线<br>P0</td><td>保留input/full/rectangle与旧Probe</td><td>隔离真实源码执行2次：0/0差；7源/PDB相符</td><td>current-source-executed<br>旧生产DLL预检失败，未执行该DLL<br><a href="#B10">B10</a> · <a href="#B11">B11</a></td></tr><tr id="M09"><td>参数/输入映射完整性<br>P1</td><td>旧ROI基线部分依赖身份；旧五模式公式产物缺失</td><td>未强跑未映射的Mask/Fixture</td><td>exact-gaps-retained<br>缺失历史产物不重新伪造/文字代替<br><a href="#B11">B11</a></td></tr><tr id="M10"><td>原算法体/错误生命周期<br>P0</td><td>0x180062640→0x180d54d40；深体/EH未恢复</td><td>当前特定catch与取消行为独立</td><td>native-unknown<br>下一静态地址明确，未执行厂商<br><a href="#B03">B03</a> · <a href="#B09">B09</a> · <a href="#U01">U01</a></td></tr><tr id="M11"><td>恢复顺序<br>P0</td><td>核心图像数值优先</td><td>本P0-A退出→深体/模式→ROI数值→UI轨</td><td>independent-priority<br>组织建议，不是原版行为或实施完成率<br><a href="#B12">B12</a></td></tr></table></div><h2>有限差分</h2><div class="table"><table><tr><th>夹具</th><th>尺寸/阈值</th><th>差异像素</th><th>ProcessedPixels</th></tr><tr><td>full</td><td>16×16 / 100..150</td><td>0</td><td>256</td></tr><tr><td>rectangle</td><td>16×16 / 100..150</td><td>0</td><td>48</td></tr></table></div><h2>证据与未闭合</h2><details id="B01" class="independent-implementation"><summary>B01 · 精确catalog与MainWindow注册 → ImageProcessing/IMVSBinaryModu→vision.image-binary · independent-implementation</summary><p>当前目录项的原catalog Id=IMVSBinaryModu，分类ImageProcessing、ModuleId=vision.image-binary、Priority=0；MainWindow显式注册ImageBinaryPlugin，类Id同值。原inventory的moduleId=null不能替换成原运行实例ID；下层算法ID0x25a单列，不能混作ModuleId。</p><p>待核：原实际运行实例数字ID未绑定；本专题只选这一真实注册工具。</p><details><summary>exact current catalog ModuleId · 728–728</summary><p><code>src/VisionEditor/tool-catalog.json · current-source · SHA 8146c56011492dc13d38d73aaa45a3717866818d5f5c78481223f5055b387b34</code></p><pre>          &quot;ModuleId&quot;: &quot;vision.image-binary&quot;</pre></details><details><summary>actual plugin registration · 48–48</summary><p><code>src/VisionEditor/MainWindow.xaml.cs · current-source · SHA 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a</code></p><pre> public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new NImagePlugin(),modules);plugins.Register(new VisionPlugins.CameraMapping.CameraMappingPlugin(),modules);plugins.Register(new VisionPlugins.CalibrationBoard.CalibrationBoardPlugin(),modules);plugins.Register(new VisionPlugins.DistortionCalibration.DistortionCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.MapCalibration.MapCalibrationPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new CoordinateModulePlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);plugins.Register(new VisionPlugins.BranchModule.BranchModulePlugin(),modules);plugins.Register(new VisionPlugins.BranchString.BranchStringPlugin(),modules);plugins.Register(new VisionPlugins.Fixture.FixturePlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=&gt;plugins.PrepareSave(document,baseDirectory,executionScope)};InitializeFrameworkResultHistory();Logo.Source=Asset(&quot;logo_vm.png&quot;);StatusIcon.Source=Asset(&quot;bottombar_run.png&quot;);ZoomIcon.Source=Asset(&quot;zoom_magnifier.png&quot;);Resources[&quot;WorkflowNgOff&quot;]=Asset(&quot;workflow-ng-off.png&quot;);Resources[&quot;WorkflowNgOn&quot;]=Asset(&quot;workflow-ng-on.png&quot;);Resources[&quot;ToolboxCategoryClosed&quot;]=Asset(&quot;toolbox-category-closed.png&quot;);Resources[&quot;ToolboxCategoryOpen&quot;]=Asset(&quot;toolbox-category-open.png&quot;);Resources[&quot;ToolboxExpandNormal&quot;]=Asset(&quot;toolbox-expand-normal.png&quot;);Resources[&quot;ToolboxExpandHover&quot;]=Asset(&quot;toolbox-expand-hover.png&quot;);BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=&gt;RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=&gt;{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshConfigurationRoi();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count&gt;0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=&gt;RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=&gt;{if(DisplayTabs.SelectedIndex==0&amp;&amp;Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}</pre></details><details><summary>ImageBinaryPlugin.Runtime · 9–9</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre> public const string Id=&quot;vision.image-binary&quot;;</pre></details></details><details id="B02" class="source-confirmed"><summary>B02 · 原ToolItemInfo与Algorithm.xml → 排序0与明确默认值；不当作算法公式 · source-confirmed</summary><p>原ToolItemInfo priority=0是目录排序事实。Algorithm.xml声明BinaryType=1、LowThreshold=100、HighThreshold=255、NonROIPrcType=0；当前Descriptor采用这些默认值。排序/字段声明只确定资源和默认输入，不能证明阈值包含关系或算法数值。</p><p>待核：本页分析优先级P0-A是独立组织建议，不改原ToolItemInfo和产品排序。</p><details><summary>original catalog priority · 4–4</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/ToolItemInfo.xml · shipped-resource-or-header · SHA 1d5200c180cdcf0e1283e366f52cc78ab61826985406a9391f9f0536129a1834</code></p><pre>  &lt;priority&gt;0&lt;/priority&gt;</pre></details><details><summary>original BinaryType default · 8–9</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/IMVSBinaryModuAlgorithm.xml · shipped-resource-or-header · SHA eebee2e22c782dc0247dd5f3c62c96f27e542271b681a2d60aacd1400df07900</code></p><pre>		&lt;Name&gt;BinaryType&lt;/Name&gt;
+		&lt;DefaultValue&gt;1&lt;/DefaultValue&gt;</pre></details><details><summary>original low threshold · 28–29</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/IMVSBinaryModuAlgorithm.xml · shipped-resource-or-header · SHA eebee2e22c782dc0247dd5f3c62c96f27e542271b681a2d60aacd1400df07900</code></p><pre>		&lt;Name&gt;LowThreshold&lt;/Name&gt;
+		&lt;DefaultValue&gt;100&lt;/DefaultValue&gt;</pre></details><details><summary>original high threshold · 16–17</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/IMVSBinaryModuAlgorithm.xml · shipped-resource-or-header · SHA eebee2e22c782dc0247dd5f3c62c96f27e542271b681a2d60aacd1400df07900</code></p><pre>		&lt;Name&gt;HighThreshold&lt;/Name&gt;
+		&lt;DefaultValue&gt;255&lt;/DefaultValue&gt;</pre></details><details><summary>ImageBinaryPlugin.Runtime · 16–16</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre> new(&quot;OutputMaskImage&quot;,ParameterKind.Boolean,true,J(false)),P(&quot;ROIAreaType&quot;,0,0,1),P(&quot;BinaryType&quot;,1,1,8),P(&quot;NonROIPrcType&quot;,0,0,1),P(&quot;LowThreshold&quot;,100,0,255) with{Editor=new(ParameterEditorKind.Range,[&quot;LowThreshold&quot;,&quot;HighThreshold&quot;])},P(&quot;HighThreshold&quot;,255,0,255),P(&quot;KernelWidth&quot;,3,1,51),P(&quot;KernelHeight&quot;,3,1,51),P(&quot;GaussKernelSize&quot;,3,1,51),N(&quot;GaussSigma&quot;,1,.1,100),P(&quot;CompareType&quot;,0,0,3),P(&quot;ThresholdOffset&quot;,0,-255,255),N(&quot;SauvolaAdjustCoef&quot;,.2,-1,1),N(&quot;SauvolaRange&quot;,128,.1,255),P(&quot;SauvolaSegType&quot;,0,0,1),P(&quot;SauvolaWinWidth&quot;,15,1,100),P(&quot;SauvolaWinHeight&quot;,15,1,100),P(&quot;RoiType&quot;,0,0,0) with{Editor=new(ParameterEditorKind.Roi){Roi=RoiCapabilities}},new(&quot;Assist0&quot;,ParameterKind.Boolean,true,J(false)),P(&quot;RoiSelect&quot;,0,0,1),P(&quot;ExternRoiSelect&quot;,0,0,1),P(&quot;InheritWay&quot;,0,0,3),P(&quot;SelectWay&quot;,0,0,2)}.Concat(BinaryRegionResolver.NumericFields.Select(n=&gt;new ParameterDescriptor(n,ParameterKind.Number,true,J(n.Contains(&quot;Scale&quot;)?1d:n.Contains(&quot;Width&quot;)||n.Contains(&quot;Height&quot;)||n.Contains(&quot;OuterRadius&quot;)?100d:n.Contains(&quot;AngleExtend&quot;)?360d:0d)))).ToArray());</pre></details></details><details id="B03" class="source-confirmed"><summary>B03 · 原SDK包装/既有通用库反编译 → 算法ID0x25a→缺失深层0x180d54d40 · source-confirmed</summary><p>既有SDK创建与Run实汇编显式使用算法ID0x25a，Run把输入/输出交MVD_Algorithm_Process。既有通用库C输出在0x1800612d0的0x25a分支交0x180062640，后者到FUN_180d54d40；该深层体未取得。通用库所选.asm文件为空，C伪代码的参数显示不能独立当成完整ABI/像素循环证明；上游有实汇编的边与只有C的边分别记录。</p><p>待核：原硬阈值/均值/高斯/Sauvola/OTSU像素循环、通道/边界/Mask规则不能由同名算法或参数UI补全。</p><details><summary>original SDK algorithm ID · 34–36</summary><p><code>analysis/joint-audit/binary-sdk/output-MVDImageBinaryCpp/180002a30.asm.txt · original-native-static-assembly · SHA 20e3bbc1cca6aa3c67e8f5fa770740db90ebeaf28d932935b81fe1e5a73c6e7c</code></p><pre>180002ac5	MOV EDX,0x25a
+180002aca	CALL qword ptr [0x1800072f8]
+180002ad0	MOV EDI,EAX</pre></details><details><summary>SDK run call · 259–261</summary><p><code>analysis/joint-audit/binary-sdk/output-MVDImageBinaryCpp/1800021b0.c · original-native-decompiler-output · SHA 57284fd03398d3df135e475b8ba0f35dab439d4a23edf6582818c5b86a45e9ac</code></p><pre>    iVar3 = MVD_Algorithm_Process(param_1[5],0x25a,&amp;local_2a8,local_2f8);
+    uVar9 = FUN_180004df0(param_1[9],&quot;ImageBinary&quot;,&quot;OutputImg&quot;,*(longlong **)(param_1[7] + 8));
+    if ((int)uVar9 != 0) {</pre></details><details><summary>original algorithm case · 38–47</summary><p><code>analysis/joint-audit/binary-core/focused/1800612d0.c · original-native-decompiler-output · SHA 218d62a47948640d6a3393ab1ac9bacc1857c58d25b1bc58202c6f09cb5a9408</code></p><pre>        case 0x25a:
+        case 0x25b:
+        case 0x25c:
+        case 0x25e:
+        case 0x263:
+        case 0x266:
+          uVar1 = FUN_180062640(param_1,auStackX_8[0],param_3,param_4);
+          FUN_1800622d0(param_1);
+          return (ulonglong)uVar1;
+        case 0x25d:</pre></details><details><summary>next missing algorithm body · 160–162</summary><p><code>analysis/joint-audit/binary-core/focused/180062640.c · original-native-decompiler-output · SHA bbd989090af6dc89045083004d5a358a314de50a827b62892253910557b61e0f</code></p><pre>    iVar2 = FUN_180d54d40(*(undefined8 *)(param_1 + 0x148),param_2,param_3,0x58);
+    dVar12 = (double)FUN_1800061a0();
+    *(double *)(param_1 + 0x798) = dVar12 - dVar11;</pre></details></details><details id="B04" class="independent-implementation"><summary>B04 · 五模式资源/旧SDK格式基线 → 当前只执行模式1，其余显式失败 · independent-implementation</summary><p>原资源与已有格式基线包含1/2/3/8/4。当前Runtime第一门BinaryType!=1即Failed/BinaryModeUnavailable；本次隔离真实源码执行2/3/8/4均复现该状态且0输出。原UI可选项、SDK成功输出和当前已实现算法是三个不同状态。</p><p>待核：不把原SDK五模式成功当作当前五模式已实施；其余四模式为明确实施缺口。</p><details><summary>ImageBinaryPlugin.Runtime · 25–25</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   if(c.Integer(&quot;BinaryType&quot;)!=1)return new(new ModuleResult(ModuleStatus.Failed,new Dictionary&lt;string,PortValue&gt;(),&quot;BinaryModeUnavailable&quot;,&quot;当前独立实现只支持硬阈值，其他原生模式尚未验证。&quot;));</pre></details><details><summary>retained original mode/format results · 1–11</summary><p><code>analysis/joint-audit/binary-core/probe-actualformat/output/results.csv · retained-original-static-evidence · SHA 55cbad3c3deaa4c6a59ab4be263f9b1ac02cb1fe51448fbd4fddb6431876a79d</code></p><pre>requested_format,actual_format,mode,result,error_type,error_code,error_message,output_file
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,1,success,,,,MVD_PIXEL_MONO_08-1.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,2,success,,,,MVD_PIXEL_MONO_08-2.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,3,success,,,,MVD_PIXEL_MONO_08-3.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,8,success,,,,MVD_PIXEL_MONO_08-8.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,4,success,,,,MVD_PIXEL_MONO_08-4.bmp
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,1,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,2,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,3,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,8,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,4,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,</pre></details><details><summary>actual isolated-source mode results · 186–211</summary><p><code>docs/architecture-recovery/algorithm-binary-comparison-audit.current-replay.json · current-source-execution · SHA d5a16a0d053774d9afd3fded12c5c9413da95c8368f8466438266abc10d1e178</code></p><pre>  &quot;modes&quot;: [
+    {
+      &quot;mode&quot;: 2,
+      &quot;status&quot;: &quot;Failed&quot;,
+      &quot;ErrorCode&quot;: &quot;BinaryModeUnavailable&quot;,
+      &quot;outputs&quot;: 0
+    },
+    {
+      &quot;mode&quot;: 3,
+      &quot;status&quot;: &quot;Failed&quot;,
+      &quot;ErrorCode&quot;: &quot;BinaryModeUnavailable&quot;,
+      &quot;outputs&quot;: 0
+    },
+    {
+      &quot;mode&quot;: 8,
+      &quot;status&quot;: &quot;Failed&quot;,
+      &quot;ErrorCode&quot;: &quot;BinaryModeUnavailable&quot;,
+      &quot;outputs&quot;: 0
+    },
+    {
+      &quot;mode&quot;: 4,
+      &quot;status&quot;: &quot;Failed&quot;,
+      &quot;ErrorCode&quot;: &quot;BinaryModeUnavailable&quot;,
+      &quot;outputs&quot;: 0
+    }
+  ],</pre></details></details><details id="B05" class="independent-implementation"><summary>B05 · 原格式探针与当前GrayImage合同 → 单通道8bit与RGB201的有限门 · independent-implementation</summary><p>保留的20×16格式探针记录actual_format，五模式Mono8成功、RGB_RGB24_C3均报MVALG_STS_ERR_IMG_FORMAT；它是旧SDK受控执行，不是桌面端到端或本轮新运行。当前输入端口为DataKind.GrayImage并Input&lt;GrayImage&gt;，GrayImage固定Mono8、stride=width、byte样本；所选Runtime没有RGB到灰度转换。</p><p>待核：RGB候选可见、输入运输/兼容转换和算子拒绝不能混为一件事；未证明其它像素格式、stride或所有Mask格式。</p><details><summary>old format probe actual type · 44–47</summary><p><code>analysis/joint-audit/binary-core/probe-actualformat/runner/BinaryFormatProbe.cs · retained-original-static-evidence · SHA 88c5cee5c9fd6e772ef10065bc87bdd7ba75118828ae64b111e0340e7f754a6f</code></p><pre>                        actualFormat = image.PixelFormat.ToString();
+                        using (var tool = new CImageBinaryTool())
+                        {
+                            tool.InputImage = image;</pre></details><details><summary>retained format outcomes · 1–11</summary><p><code>analysis/joint-audit/binary-core/probe-actualformat/output/results.csv · retained-original-static-evidence · SHA 55cbad3c3deaa4c6a59ab4be263f9b1ac02cb1fe51448fbd4fddb6431876a79d</code></p><pre>requested_format,actual_format,mode,result,error_type,error_code,error_message,output_file
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,1,success,,,,MVD_PIXEL_MONO_08-1.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,2,success,,,,MVD_PIXEL_MONO_08-2.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,3,success,,,,MVD_PIXEL_MONO_08-3.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,8,success,,,,MVD_PIXEL_MONO_08-8.bmp
+MVD_PIXEL_MONO_08,MVD_PIXEL_MONO_08,4,success,,,,MVD_PIXEL_MONO_08-4.bmp
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,1,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,2,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,3,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,8,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,
+MVD_PIXEL_RGB_RGB24_C3,MVD_PIXEL_RGB_RGB24_C3,4,failure,VisionDesigner.MvdException,MVALG_STS_ERR_IMG_FORMAT,&quot;Algorithm error&quot;,</pre></details><details><summary>ImageBinaryPlugin.Runtime · 15–15</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre> public ModuleDescriptor Descriptor{get;}=new(Id,&quot;1.0.0&quot;,&quot;图像二值化&quot;,new[]{new PortDescriptor(&quot;Image&quot;,DataKind.GrayImage),new(&quot;InputMask&quot;,DataKind.GrayImage,false),new(&quot;Region&quot;,DataKind.Region,false),new(&quot;Region2&quot;,DataKind.Region,false),new(&quot;InputBlindRegion&quot;,DataKind.Region,false),new(&quot;CorrectInfo&quot;,DataKind.Fixture,false),new(&quot;OriginPoint&quot;,DataKind.Point,false),new(&quot;RunPoint&quot;,DataKind.Point,false)}.Concat(BinaryRegionResolver.NumericFields.Select(n=&gt;new PortDescriptor(n,DataKind.Number,false))).ToArray(),[new(&quot;Image&quot;,DataKind.GrayImage),new(&quot;OutMask&quot;,DataKind.GrayImage,false),new(&quot;ProcessedPixels&quot;,DataKind.Integer)],new ParameterDescriptor[]{</pre></details><details><summary>ImageBinaryPlugin.Runtime · 28–28</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   var input=c.Input&lt;GrayImage&gt;(&quot;Image&quot;);GrayImage? mask=c.Inputs.TryGetValue(&quot;InputMask&quot;,out var m)?m.As&lt;GrayImage&gt;():null;if(c.Integer(&quot;ROIAreaType&quot;)==1&amp;&amp;mask is not null&amp;&amp;(mask.Width!=input.Width||mask.Height!=input.Height))throw new InvalidDataException(&quot;掩膜尺寸与输入图像不一致。&quot;);</pre></details><details><summary>current mono image contract · 4–27</summary><p><code>src/VisionData/ImageGeometry.cs · current-source · SHA 0c169c1fe86eb8048fc6b7329d425088c32d2a690535c05962e5276d9907882d</code></p><pre>public sealed class GrayImage:IImageData
+{
+    private readonly byte[] pixels;
+    public int Width { get; }
+    public int Height { get; }
+    public int Stride=&gt;Width;
+    public ImagePixelFormat Format=&gt;ImagePixelFormat.Mono8;
+    public ReadOnlySpan&lt;byte&gt; Pixels =&gt; pixels;
+    public byte this[int x, int y] =&gt; pixels[Offset(x, y)];
+    private int Offset(int x, int y)
+    {
+        if ((uint)x &gt;= (uint)Width || (uint)y &gt;= (uint)Height) throw new ArgumentOutOfRangeException();
+        return y * Width + x;
+    }
+    public GrayImage(int width, int height, ReadOnlySpan&lt;byte&gt; data)
+    {
+        if (width &lt;= 0 || height &lt;= 0) throw new ArgumentOutOfRangeException(nameof(width));
+        if (data.Length != checked(width * height)) throw new ArgumentException(&quot;Pixel count must equal width * height.&quot;, nameof(data));
+        Width = width; Height = height; pixels = data.ToArray();
+    }
+}
+
+public readonly record struct Component(int Area, int MinX, int MinY, int MaxX, int MaxY, double CenterX, double CenterY);
+public readonly record struct Point2(double X, double Y);</pre></details></details><details id="B06" class="independent-implementation"><summary>B06 · 硬阈值当前像素谓词 → low≤byte≤high→255，否则0 · independent-implementation</summary><p>当前逐行检查取消，逐像素用value&gt;=low&amp;&amp;value&lt;=high；low/high为整数，先查low&lt;0/high&gt;255/low&gt;high及outside范围。原像素循环缺失，但旧16×16输入包含0..255，保留输出在100/150两端均255，99/151均0；本次真实当前源码对同输入输出有限吻合，不能由此证明全部阈值/边界。</p><p>待核：缺等阈值、0/255极值、非法配置、不同尺寸/步长及原核心循环证据。</p><details><summary>ImageBinaryPlugin.Runtime · 26–26</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   int low=c.Integer(&quot;LowThreshold&quot;),high=c.Integer(&quot;HighThreshold&quot;),outside=c.Integer(&quot;NonROIPrcType&quot;);if(low&lt;0||high&gt;255||low&gt;high||outside is &lt;0 or &gt;1)throw new InvalidDataException(&quot;阈值范围或ROI外处理方式无效。&quot;);RoiGeometry.ValidateForEditor(c.Rois,RoiCapabilities);</pre></details><details><summary>ImageBinaryPlugin.Runtime · 30–30</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   for(int y=0;y&lt;input.Height;y++){token.ThrowIfCancellationRequested();for(int x=0;x&lt;input.Width;x++){int i=y*input.Width+x;byte value=input[x,y];bool inside=outMask[i]!=0&amp;&amp;(areaType==0||mask![x,y]!=0);if(inside){output[i]=(byte)(value&gt;=low&amp;&amp;value&lt;=high?255:0);outMask[i]=255;count++;}else {output[i]=outside==1?value:(byte)0;outMask[i]=0;}}}</pre></details><details><summary>current vs original threshold sample · 86–150</summary><p><code>docs/architecture-recovery/algorithm-binary-comparison-audit.current-replay.json · current-source-execution · SHA d5a16a0d053774d9afd3fded12c5c9413da95c8368f8466438266abc10d1e178</code></p><pre>      &quot;name&quot;: &quot;full&quot;,
+      &quot;comparison&quot;: &quot;compiled-current-production-source-vs-retained-original-sdk-bmp&quot;,
+      &quot;inputPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\input.bmp&quot;,
+      &quot;inputFileSha256&quot;: &quot;c4e90bac0ef38b5d36898c2e9d144edd481178facbd152a9a95605f980578228&quot;,
+      &quot;inputPixelSha256&quot;: &quot;40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880&quot;,
+      &quot;expectedPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\full.bmp&quot;,
+      &quot;expectedFileSha256&quot;: &quot;0189a6d0e9a6294d87237170af445688e7b00d227eb1db8add53c163409fb592&quot;,
+      &quot;expectedPixelSha256&quot;: &quot;c2ed0811360bd3c7f0ff311a44a3248e9badf19b2fc9aefa7e56538e01d2e478&quot;,
+      &quot;actualPixelSha256&quot;: &quot;c2ed0811360bd3c7f0ff311a44a3248e9badf19b2fc9aefa7e56538e01d2e478&quot;,
+      &quot;actualPixelsHex&quot;: &quot;00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&quot;,
+      &quot;diffPixels&quot;: 0,
+      &quot;processedPixels&quot;: 256,
+      &quot;width&quot;: 16,
+      &quot;height&quot;: 16,
+      &quot;parameters&quot;: {
+        &quot;BinaryType&quot;: 1,
+        &quot;LowThreshold&quot;: 100,
+        &quot;HighThreshold&quot;: 150,
+        &quot;NonROIPrcType&quot;: 0,
+        &quot;ROIAreaType&quot;: 0,
+        &quot;Assist0&quot;: false
+      },
+      &quot;roi&quot;: null,
+      &quot;boundaries&quot;: [
+        {
+          &quot;inputValue&quot;: 99,
+          &quot;expectedOutput&quot;: 0,
+          &quot;actualOutput&quot;: 0
+        },
+        {
+          &quot;inputValue&quot;: 100,
+          &quot;expectedOutput&quot;: 255,
+          &quot;actualOutput&quot;: 255
+        },
+        {
+          &quot;inputValue&quot;: 150,
+          &quot;expectedOutput&quot;: 255,
+          &quot;actualOutput&quot;: 255
+        },
+        {
+          &quot;inputValue&quot;: 151,
+          &quot;expectedOutput&quot;: 0,
+          &quot;actualOutput&quot;: 0
+        }
+      ]
+    },
+    {
+      &quot;name&quot;: &quot;rectangle&quot;,
+      &quot;comparison&quot;: &quot;compiled-current-production-source-vs-retained-original-sdk-bmp&quot;,
+      &quot;inputPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\input.bmp&quot;,
+      &quot;inputFileSha256&quot;: &quot;c4e90bac0ef38b5d36898c2e9d144edd481178facbd152a9a95605f980578228&quot;,
+      &quot;inputPixelSha256&quot;: &quot;40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880&quot;,
+      &quot;expectedPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\rectangle.bmp&quot;,
+      &quot;expectedFileSha256&quot;: &quot;610c1ac26c9f4fc27c9a61c4ee658849a3b91166b9405c7b80f61481c2ca14ae&quot;,
+      &quot;expectedPixelSha256&quot;: &quot;4182d081279811a5685e7416e8429a50df04fa9018c72ae0596789b3e70dfb6a&quot;,
+      &quot;actualPixelSha256&quot;: &quot;4182d081279811a5685e7416e8429a50df04fa9018c72ae0596789b3e70dfb6a&quot;,
+      &quot;actualPixelsHex&quot;: &quot;00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&quot;,
+      &quot;diffPixels&quot;: 0,
+      &quot;processedPixels&quot;: 48,
+      &quot;width&quot;: 16,
+      &quot;height&quot;: 16,
+      &quot;parameters&quot;: {
+        &quot;BinaryType&quot;: 1,
+        &quot;LowThreshold&quot;: 100,
+        &quot;HighThreshold&quot;: 150,</pre></details></details><details id="B07" class="independent-implementation"><summary>B07 · ROIAreaType/ROI与外部mask → 原区域接口和当前相交规则分开 · independent-implementation</summary><p>原SDK头声明SetROI(NULL)全区、AddMask只支持多边形并提供RegionImage接口；这些是合同，不自动定义合并/覆盖与数值栅格。当前areaType=1要求同尺寸InputMask，以非零为有效且该分支先建立全区mask；areaType=0由BinaryRegionResolver生成ROI/屏蔽区域mask，InputMask不参与。inside结合两个门，未处理像素按NonROIPrcType选择0或原值。</p><p>待核：本轮只有全区/矩形原件完整参数与输出；外mask/屏蔽/多ROI组合未做原件数值差分，不借当前单元测试充当原算法证据。</p><details><summary>original ROI and polygon mask interface · 79–95</summary><p><code>D:/Program Files/VisionMaster4.4.0/MVDAlgorithmSDK/Includes/Algorithms/ImageBinaryCpp.h · shipped-resource-or-header · SHA 51aed98fdc735fab0808974a9e35540d41431e7e119888dcc8bdf93e67ebc851</code></p><pre>            virtual void SetROI(IMvdShape* pstROI) = 0;
+            /**
+             * @brief 查找结果，未执行或执行失败返回NULL
+             * @par 权限
+             * 只读
+             */
+            virtual IImageBinaryResult* GetResult() = 0;
+            /**
+             * @brief 添加单个屏蔽区
+             * @param pstMask [IN] 拟增加的屏蔽区图形
+             * @return 无，出错时抛出异常
+             * @note 仅支持多边形
+             */
+            virtual void AddMask(IMvdShape* pstMask) = 0;
+            /**
+             * @brief 清空已有屏蔽区
+             * @return 无，出错时抛出异常</pre></details><details><summary>ImageBinaryPlugin.Runtime · 28–28</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   var input=c.Input&lt;GrayImage&gt;(&quot;Image&quot;);GrayImage? mask=c.Inputs.TryGetValue(&quot;InputMask&quot;,out var m)?m.As&lt;GrayImage&gt;():null;if(c.Integer(&quot;ROIAreaType&quot;)==1&amp;&amp;mask is not null&amp;&amp;(mask.Width!=input.Width||mask.Height!=input.Height))throw new InvalidDataException(&quot;掩膜尺寸与输入图像不一致。&quot;);</pre></details><details><summary>ImageBinaryPlugin.Runtime · 29–29</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   int areaType=c.Integer(&quot;ROIAreaType&quot;);if(areaType==1&amp;&amp;mask is null)throw new InvalidDataException(&quot;请订阅输入掩膜图像。&quot;);byte[] output=new byte[input.Width*input.Height],outMask=areaType==1?RoiRasterizer.CreateMask([],input.Width,input.Height,token):BinaryRegionResolver.Mask(c,input.Width,input.Height,token);long count=0;</pre></details><details><summary>ImageBinaryPlugin.Runtime · 30–30</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   for(int y=0;y&lt;input.Height;y++){token.ThrowIfCancellationRequested();for(int x=0;x&lt;input.Width;x++){int i=y*input.Width+x;byte value=input[x,y];bool inside=outMask[i]!=0&amp;&amp;(areaType==0||mask![x,y]!=0);if(inside){output[i]=(byte)(value&gt;=low&amp;&amp;value&lt;=high?255:0);outMask[i]=255;count++;}else {output[i]=outside==1?value:(byte)0;outMask[i]=0;}}}</pre></details></details><details id="B08" class="independent-implementation"><summary>B08 · BinaryRegionResolver→RoiRasterizer/Fixture → 坐标与数值转换是独立需比对路径 · independent-implementation</summary><p>当前继承区域分Region/Region2或数值字段；归一化通过ToPixels，矩形等栅格有float/向int截断与半开span；Fixture启用后以独立仿射解释WarpMask，反向采样Floor(x+.5)。当前源注释明确Fixture原生舍入未验证。P0-A只回放整数、零角度矩形，不将此结果推广到旋转、扇环、负坐标、归一化或Fixture。</p><p>待核：跨坐标/外mask优先做来源和参数完整性核查，再做有限差分；不按常见几何公式认定native相同。</p><details><summary>current ROI resolve · 11–13</summary><p><code>src/VisionPlugins.ImageBinary/BinaryRegionResolver.cs · current-source · SHA 16b0f913cf95ac8bc960ed47cf8a4213418eec36b14901d64fd20a07359aee04</code></p><pre> public static IReadOnlyList&lt;RoiDocument&gt; Resolve(ModuleExecutionContext c,int width,int height){var result=new List&lt;RoiDocument&gt;();if(Mode(c,&quot;RoiSelect&quot;)==0)result.AddRange(c.Rois.Where(r=&gt;!r.Exclusion));else{int way=Mode(c,&quot;InheritWay&quot;);if(way is 0 or 2){var inherited=c.Input&lt;RoiRegionValue&gt;(way==0?&quot;Region&quot;:&quot;Region2&quot;).Regions;if(inherited.Count==0)throw new InvalidDataException(&quot;继承区域为空。&quot;);foreach(var r in inherited){bool compatible=way==0?r.Kind==RoiKind.Rectangle:r.Kind is RoiKind.SectorRing or RoiKind.Annulus or RoiKind.Sector;if(!compatible||r.Exclusion)throw new InvalidDataException(&quot;继承区域类型与继承方式不符。&quot;);result.Add(r.Kind==RoiKind.Annulus?r with{Kind=RoiKind.SectorRing}:r);}}else if(way==1)result.Add(new(&quot;inherited-rectangle&quot;,RoiKind.Rectangle,Number(c,RectangleFields[0]),Number(c,RectangleFields[1]),Number(c,RectangleFields[2]),Number(c,RectangleFields[3]),AngleDegrees:Number(c,RectangleFields[4])));else if(way==3){double sweep=Number(c,CircleFields[5]);result.Add(new(&quot;inherited-annular&quot;,sweep&gt;=360?RoiKind.SectorRing:RoiKind.Sector,Number(c,CircleFields[0]),Number(c,CircleFields[1]),Radius:Number(c,CircleFields[3]),InnerRadius:Number(c,CircleFields[2])){Shape=new(StartAngle:Number(c,CircleFields[4]),SweepAngle:sweep)});}else throw new InvalidDataException(&quot;未知继承方式。&quot;);}
+ if(Mode(c,&quot;ExternRoiSelect&quot;)==0)result.AddRange(c.Rois.Where(r=&gt;r.Exclusion));else{foreach(var r in c.Input&lt;RoiRegionValue&gt;(&quot;InputBlindRegion&quot;).Regions){if(r.Kind!=RoiKind.Polygon)throw new InvalidDataException(&quot;继承屏蔽区必须是多边形。&quot;);result.Add(r with{Exclusion=true});}}
+ if(result.Any(r=&gt;r.CoordinateSpace==RoiCoordinateSpace.Fixture)&amp;&amp;(!c.Parameters.TryGetValue(&quot;Assist0&quot;,out var enabled)||!enabled.GetBoolean()))throw new InvalidDataException(&quot;继承Fixture区域需要启用位置修正。&quot;);RoiGeometry.ValidateForEditor(result,ImageBinaryPlugin.RoiCapabilities);return result.Select(r=&gt;r.CoordinateSpace==RoiCoordinateSpace.Fixture?r with{CoordinateSpace=RoiCoordinateSpace.ImagePixels}:RoiGeometry.ToPixels(r,width,height)).ToArray();}</pre></details><details><summary>current scan conversion · 8–11</summary><p><code>src/VisionFramework/RoiRasterizer.cs · current-source · SHA d4c23efd3c21cf2770d5c5def11aac19270cceb7457ccf2cb0fb6dc74df8d75a</code></p><pre> static void Draw(RoiDocument r,byte[] image,int width,int height,byte value,CancellationToken token,ref bool valid){RoiValidator.Validate(r);switch(r.Kind){case RoiKind.Rectangle:case RoiKind.UprightRectangle:case RoiKind.LineBox:case RoiKind.SequentialBox:
+   if(Math.Abs((float)r.AngleDegrees)&lt;.0001f){float x=(float)r.CenterX,y=(float)r.CenterY,w=(float)r.Width,h=(float)r.Height;if(x-w/2&gt;width||y-h/2&gt;height||x+w/2&lt;0||y+h/2&lt;0)return;int left=(int)Math.Floor(Math.Max(0,x-w*.5f+.5f)),right=(int)Math.Floor(Math.Min(width,x+w*.5f+.5f)),top=(int)Math.Floor(Math.Max(0,y-h*.5f+.5f)),bottom=(int)Math.Floor(Math.Min(height,y+h*.5f+.5f));for(int row=top;row&lt;bottom;row++){token.ThrowIfCancellationRequested();Span(image,width,height,row,left,right,value,ref valid);}}else{var points=new[]{new Point2(-r.Width/2,-r.Height/2),new Point2(r.Width/2,-r.Height/2),new Point2(r.Width/2,r.Height/2),new Point2(-r.Width/2,r.Height/2)}.Select(p=&gt;RoiGeometry.World(r,p.X,p.Y)).ToArray();Polygon(points,image,width,height,value,token,ref valid);}break;
+  case RoiKind.Polygon:Polygon(r.Vertices??[],image,width,height,value,token,ref valid);break;
+  case RoiKind.Annulus:case RoiKind.SectorRing:case RoiKind.Sector:Sector(r,image,width,height,value,token,ref valid);break;</pre></details><details><summary>current independent Fixture warp · 9–9</summary><p><code>src/VisionFramework/RoiRuntimeValues.cs · current-source · SHA c24bce2f5279bf08aedeab1444635cd30275627bc3ae9a7145241eb5afca5156</code></p><pre> public byte[] WarpMask(byte[] source,int width,int height,CancellationToken token=default){Validate();if(source.Length!=checked(width*height))throw new ArgumentException(&quot;位置修正掩膜尺寸无效。&quot;);var origin=Transform(new(0,0),true);var axisX=Transform(new(1,0),true);var axisY=Transform(new(0,1),true);double ax=axisX.X-origin.X,ay=axisX.Y-origin.Y,bx=axisY.X-origin.X,by=axisY.Y-origin.Y;var target=new byte[source.Length];for(int y=0;y&lt;height;y++){token.ThrowIfCancellationRequested();for(int x=0;x&lt;width;x++){int sx=(int)Math.Floor(origin.X+x*ax+y*bx+.5),sy=(int)Math.Floor(origin.Y+x*ay+y*by+.5);if(sx&gt;=0&amp;&amp;sx&lt;width&amp;&amp;sy&gt;=0&amp;&amp;sy&lt;height)target[y*width+x]=source[sy*width+sx];}}return target;}</pre></details><details><summary>current normalized conversion · 32–32</summary><p><code>src/VisionFramework/RoiGeometry.cs · current-source · SHA f7794fde6d06a141c89a22e61e2b506c31b3b752814b743b24dbccca3592fc22</code></p><pre> public static RoiDocument ToPixels(RoiDocument r,int width,int height){if(width&lt;=0||height&lt;=0)throw new ArgumentOutOfRangeException();if(r.CoordinateSpace==RoiCoordinateSpace.ImagePixels)return r;if(r.CoordinateSpace==RoiCoordinateSpace.Fixture)throw new InvalidOperationException(&quot;ROI fixture transform is unavailable.&quot;);if(r.Kind==RoiKind.Box3D)throw new InvalidDataException(&quot;3D ROI cannot use 2D normalized coordinates.&quot;);var s=Parameters(r);var scale=CaliperScale(r.Kind,width,height);return r with{CoordinateSpace=RoiCoordinateSpace.ImagePixels,CenterX=r.CenterX*width,CenterY=r.CenterY*height,Width=r.Width*width,Height=r.Height*height,Radius=r.Radius*width,InnerRadius=r.InnerRadius*width,Vertices=r.Vertices?.Select(p=&gt;new Point2(p.X*width,p.Y*height)).ToArray(),Shape=r.Shape is null?null:s with{EndX=s.EndX*width,EndY=s.EndY*height,CaliperWidth=s.CaliperWidth*scale.Width,CaliperHeight=s.CaliperHeight*scale.Height}};}</pre></details></details><details id="B09" class="independent-implementation"><summary>B09 · 成功输出Image/可选OutMask/ProcessedPixels → 数据和统计意义分别记录 · independent-implementation</summary><p>当前输出保持输入宽高、byte GrayImage；inside像素OutMask=255、outside=0，OutputMaskImage=true才发布OutMask；ProcessedPixels数的是inside处理次数，包含阈值结果为0的像素，不是前景点数。当前catch仅覆盖InvalidDataException/ArgumentException/InvalidOperationException并返回InvalidRoiOrInput；取消及其它异常不被该catch统一处理。</p><p>待核：原输出发布门、失败旧结果清除/计时/原生释放未被当前可选字典输出证明。</p><details><summary>ImageBinaryPlugin.Runtime · 30–30</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   for(int y=0;y&lt;input.Height;y++){token.ThrowIfCancellationRequested();for(int x=0;x&lt;input.Width;x++){int i=y*input.Width+x;byte value=input[x,y];bool inside=outMask[i]!=0&amp;&amp;(areaType==0||mask![x,y]!=0);if(inside){output[i]=(byte)(value&gt;=low&amp;&amp;value&lt;=high?255:0);outMask[i]=255;count++;}else {output[i]=outside==1?value:(byte)0;outMask[i]=0;}}}</pre></details><details><summary>ImageBinaryPlugin.Runtime · 31–31</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>   var outputs=new Dictionary&lt;string,PortValue&gt;{{&quot;Image&quot;,PortValue.Image(new(input.Width,input.Height,output))},{&quot;ProcessedPixels&quot;,PortValue.Integer(count)}};if(c.Boolean(&quot;OutputMaskImage&quot;))outputs[&quot;OutMask&quot;]=PortValue.Image(new(input.Width,input.Height,outMask));return new(new ModuleResult(ModuleStatus.Success,outputs));</pre></details><details><summary>ImageBinaryPlugin.Runtime · 32–32</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>  }catch(Exception e)when(e is InvalidDataException or ArgumentException or InvalidOperationException){return new(new ModuleResult(ModuleStatus.Failed,new Dictionary&lt;string,PortValue&gt;(),&quot;InvalidRoiOrInput&quot;,e.Message));}}</pre></details></details><details id="B10" class="independent-implementation"><summary>B10 · 生产DLL预检→隔离真实源码执行 → 2个保留原件BMP均0像素差；不是生产DLL回放 · independent-implementation</summary><p>现有生产DLL的PDB与ImageBinaryPlugin/Contracts/RoiRuntimeValues现行源码不符，故在执行算法前拒绝该DLL。改在专属目录编译未改动的当前算法及完整Data/Framework源，只给编辑器构造放置必抛占位且没有调用；7关键源/PDB均匹配。全图/矩形两个16×16原件BMP分别0差，ProcessedPixels=256/48；输入/输出像素hash及真实源码/DLL/PDB hash保留。这是隔离当前生产源码执行，既非独立公式复演，也非生产DLL/真实主UI已验证。</p><p>待核：未调用厂商程序集/SDK/设备，原件输出是历史基线；不将2个0差样本算成算法完整率或host集成验收。</p><details><summary>production binary preflight refusal · 6–10</summary><p><code>docs/architecture-recovery/algorithm-binary-comparison-audit.production-preflight.json · current-build-identity-check · SHA 8011462bfac8b39b326192caf694b7807dedfa3cd0fd466082ce9465fa2b9e92</code></p><pre>  &quot;reason&quot;: &quot;Production DLL PDB checksums differ from selected current sources; no algorithm was executed.&quot;,
+  &quot;sourceChecks&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs&quot;,
+      &quot;sha256&quot;: &quot;14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35&quot;,</pre></details><details><summary>isolated current source replay authority · 3–10</summary><p><code>docs/architecture-recovery/algorithm-binary-comparison-audit.current-replay.json · current-source-execution · SHA d5a16a0d053774d9afd3fded12c5c9413da95c8368f8466438266abc10d1e178</code></p><pre>  &quot;executionKind&quot;: &quot;isolated-current-production-source&quot;,
+  &quot;currentImplementationExecuted&quot;: true,
+  &quot;productionDllExecuted&quot;: false,
+  &quot;editorFactoryStubbed&quot;: true,
+  &quot;originalRuntimeExecuted&quot;: false,
+  &quot;vendorSdkExecuted&quot;: false,
+  &quot;editorCreated&quot;: false,
+  &quot;deviceCalled&quot;: false,</pre></details><details><summary>limited two-case original comparison · 84–188</summary><p><code>docs/architecture-recovery/algorithm-binary-comparison-audit.current-replay.json · current-source-execution · SHA d5a16a0d053774d9afd3fded12c5c9413da95c8368f8466438266abc10d1e178</code></p><pre>  &quot;cases&quot;: [
+    {
+      &quot;name&quot;: &quot;full&quot;,
+      &quot;comparison&quot;: &quot;compiled-current-production-source-vs-retained-original-sdk-bmp&quot;,
+      &quot;inputPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\input.bmp&quot;,
+      &quot;inputFileSha256&quot;: &quot;c4e90bac0ef38b5d36898c2e9d144edd481178facbd152a9a95605f980578228&quot;,
+      &quot;inputPixelSha256&quot;: &quot;40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880&quot;,
+      &quot;expectedPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\full.bmp&quot;,
+      &quot;expectedFileSha256&quot;: &quot;0189a6d0e9a6294d87237170af445688e7b00d227eb1db8add53c163409fb592&quot;,
+      &quot;expectedPixelSha256&quot;: &quot;c2ed0811360bd3c7f0ff311a44a3248e9badf19b2fc9aefa7e56538e01d2e478&quot;,
+      &quot;actualPixelSha256&quot;: &quot;c2ed0811360bd3c7f0ff311a44a3248e9badf19b2fc9aefa7e56538e01d2e478&quot;,
+      &quot;actualPixelsHex&quot;: &quot;00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&quot;,
+      &quot;diffPixels&quot;: 0,
+      &quot;processedPixels&quot;: 256,
+      &quot;width&quot;: 16,
+      &quot;height&quot;: 16,
+      &quot;parameters&quot;: {
+        &quot;BinaryType&quot;: 1,
+        &quot;LowThreshold&quot;: 100,
+        &quot;HighThreshold&quot;: 150,
+        &quot;NonROIPrcType&quot;: 0,
+        &quot;ROIAreaType&quot;: 0,
+        &quot;Assist0&quot;: false
+      },
+      &quot;roi&quot;: null,
+      &quot;boundaries&quot;: [
+        {
+          &quot;inputValue&quot;: 99,
+          &quot;expectedOutput&quot;: 0,
+          &quot;actualOutput&quot;: 0
+        },
+        {
+          &quot;inputValue&quot;: 100,
+          &quot;expectedOutput&quot;: 255,
+          &quot;actualOutput&quot;: 255
+        },
+        {
+          &quot;inputValue&quot;: 150,
+          &quot;expectedOutput&quot;: 255,
+          &quot;actualOutput&quot;: 255
+        },
+        {
+          &quot;inputValue&quot;: 151,
+          &quot;expectedOutput&quot;: 0,
+          &quot;actualOutput&quot;: 0
+        }
+      ]
+    },
+    {
+      &quot;name&quot;: &quot;rectangle&quot;,
+      &quot;comparison&quot;: &quot;compiled-current-production-source-vs-retained-original-sdk-bmp&quot;,
+      &quot;inputPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\input.bmp&quot;,
+      &quot;inputFileSha256&quot;: &quot;c4e90bac0ef38b5d36898c2e9d144edd481178facbd152a9a95605f980578228&quot;,
+      &quot;inputPixelSha256&quot;: &quot;40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880&quot;,
+      &quot;expectedPath&quot;: &quot;D:\\MyWork\\REA\u9006\u5411\u6D4B\u8BD5\\analysis/full-audit/roi-binary-native-probe\\rectangle.bmp&quot;,
+      &quot;expectedFileSha256&quot;: &quot;610c1ac26c9f4fc27c9a61c4ee658849a3b91166b9405c7b80f61481c2ca14ae&quot;,
+      &quot;expectedPixelSha256&quot;: &quot;4182d081279811a5685e7416e8429a50df04fa9018c72ae0596789b3e70dfb6a&quot;,
+      &quot;actualPixelSha256&quot;: &quot;4182d081279811a5685e7416e8429a50df04fa9018c72ae0596789b3e70dfb6a&quot;,
+      &quot;actualPixelsHex&quot;: &quot;00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&quot;,
+      &quot;diffPixels&quot;: 0,
+      &quot;processedPixels&quot;: 48,
+      &quot;width&quot;: 16,
+      &quot;height&quot;: 16,
+      &quot;parameters&quot;: {
+        &quot;BinaryType&quot;: 1,
+        &quot;LowThreshold&quot;: 100,
+        &quot;HighThreshold&quot;: 150,
+        &quot;NonROIPrcType&quot;: 0,
+        &quot;ROIAreaType&quot;: 0,
+        &quot;Assist0&quot;: false
+      },
+      &quot;roi&quot;: {
+        &quot;CenterX&quot;: 8,
+        &quot;CenterY&quot;: 8,
+        &quot;Width&quot;: 8,
+        &quot;Height&quot;: 6,
+        &quot;Angle&quot;: 0
+      },
+      &quot;boundaries&quot;: [
+        {
+          &quot;inputValue&quot;: 99,
+          &quot;expectedOutput&quot;: 0,
+          &quot;actualOutput&quot;: 0
+        },
+        {
+          &quot;inputValue&quot;: 100,
+          &quot;expectedOutput&quot;: 255,
+          &quot;actualOutput&quot;: 255
+        },
+        {
+          &quot;inputValue&quot;: 150,
+          &quot;expectedOutput&quot;: 255,
+          &quot;actualOutput&quot;: 255
+        },
+        {
+          &quot;inputValue&quot;: 151,
+          &quot;expectedOutput&quot;: 0,
+          &quot;actualOutput&quot;: 0
+        }
+      ]
+    }
+  ],
+  &quot;modes&quot;: [
+    {
+      &quot;mode&quot;: 2,</pre></details></details><details id="B11" class="unknown"><summary>B11 · 历史模式比较与实际存在产物 → 缺失原产物明确剔除 · unknown</summary><p>旧20261018五模式公式比较evidence.json/compare.log当前不存在；因此“均值/高斯/OTSU某公式精确、Sauvola差383”等历史文字没有纳入本次数值通过。实际采用的是仍存在的16×16原件BMP、其生成Probe.cs/Run.ps1/latest-run，以及另一次20×16格式探针CSV。旧ROI目录还保留failure.txt，与success/latest-run并存，不能删掉失败史或仅凭一个Success字样扩大验证范围。</p><p>待核：旧ROI基线记录了托管依赖摘要，但没有完整当时native依赖逐件hash；本轮不重跑原厂补造历史材料。</p><details><summary>retained fixture generation · 2–4</summary><p><code>tests/NativeImageBinaryProbe/Probe.cs · retained-original-static-evidence · SHA 11fae847079b4451d17f0632e6d85e8f037fe2106c96bb9b06171ba4b8ef97e9</code></p><pre>class Probe {
+ [DllImport(&quot;kernel32&quot;,CharSet=CharSet.Unicode)] static extern bool SetDllDirectory(string path);
+ static int Main(string[] args){string root=args[0],output=args[1];Directory.CreateDirectory(output);SetDllDirectory(Path.Combine(root,&quot;Runtime&quot;,&quot;x64&quot;));try{using(var source=new Bitmap(16,16)){for(int y=0;y&lt;16;y++)for(int x=0;x&lt;16;x++){int n=y*16+x;source.SetPixel(x,y,Color.FromArgb(n,n,n));}source.Save(Path.Combine(output,&quot;input.bmp&quot;),System.Drawing.Imaging.ImageFormat.Bmp);}using(var image=new CMvdImage()){image.InitImage(Path.Combine(output,&quot;input.bmp&quot;),MVD_PIXEL_FORMAT.MVD_PIXEL_MONO_08);using(var tool=new CImageBinaryTool()){tool.InputImage=image;tool.SetRunParam(&quot;BinaryType&quot;,&quot;1&quot;);tool.SetRunParam(&quot;LowThreshold&quot;,&quot;100&quot;);tool.SetRunParam(&quot;HighThreshold&quot;,&quot;150&quot;);tool.Run();tool.Result.OutputImage.SaveImage(Path.Combine(output,&quot;full.bmp&quot;));tool.ROI=new CMvdRectangleF(8,8,8,6);tool.Run();tool.Result.OutputImage.SaveImage(Path.Combine(output,&quot;rectangle.bmp&quot;));tool.SetRunParam(&quot;LowThreshold&quot;,&quot;0&quot;);tool.SetRunParam(&quot;HighThreshold&quot;,&quot;255&quot;);tool.Run();tool.Result.OutputImage.SaveImage(Path.Combine(output,&quot;rectangle-mask.bmp&quot;));var polygon=new CMvdPolygonF();polygon.AddVertex(3,3);polygon.AddVertex(12,3);polygon.AddVertex(10,12);polygon.AddVertex(4,10);tool.ROI=polygon;tool.Run();tool.Result.OutputImage.SaveImage(Path.Combine(output,&quot;polygon-mask.bmp&quot;));var center=new MVD_POINT_F();center.fX=8;center.fY=8;tool.ROI=new CMvdAnnularSectorF(center,3,6,0,90);tool.Run();tool.Result.OutputImage.SaveImage(Path.Combine(output,&quot;sector-mask.bmp&quot;));}}File.WriteAllText(Path.Combine(output,&quot;success.txt&quot;),&quot;Original SDK executed MONO8 hard-threshold and ROI fixtures.&quot;);return 0;}catch(Exception e){File.WriteAllText(Path.Combine(output,&quot;failure.txt&quot;),e.ToString());Console.WriteLine(e);return 1;}}</pre></details><details><summary>historical run provenance · 26–26</summary><p><code>analysis/full-audit/roi-binary-native-probe/latest-run.json · retained-original-static-evidence · SHA 9e5e7331742a01f923ff7dbc6f0a07ac9c6c339c1cd63a95b4de45b402b3f043</code></p><pre>  &quot;Success&quot;: true</pre></details><details><summary>missing source evidence · 440–457</summary><p><code>docs/architecture-recovery/algorithm-binary-comparison-audit.evidence.json · evidence-availability · SHA f5f49bb0357da9829ab0a50fb612646804f97a47af96fe05aae69cb5191fa501</code></p><pre>  &quot;missingEvidence&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/source-audit-regression/20261018/native-binary-modes/evidence.json&quot;,
+      &quot;exists&quot;: false
+    },
+    {
+      &quot;path&quot;: &quot;analysis/source-audit-regression/20261018/native-binary-modes/compare.log&quot;,
+      &quot;exists&quot;: false
+    },
+    {
+      &quot;path&quot;: &quot;analysis/joint-audit/binary-core/focused/180d54d40.c&quot;,
+      &quot;exists&quot;: false
+    }
+  ],
+  &quot;currentReplayKind&quot;: &quot;isolated-current-production-source&quot;,
+  &quot;runnerCommand&quot;: [
+    &quot;dotnet&quot;,
+    &quot;docs/architecture-recovery/algorithm-binary-comparison-audit.runner/bin/Debug/net10.0-windows/Runner.dll&quot;,</pre></details></details><details id="B12" class="independent-implementation"><summary>B12 · P0-A有限退出与下一算法恢复优先级 → 先核心数值/缺模式，再UI整齐 · independent-implementation</summary><p>本专题优先核真实注册链和算法差分，完成P0-A的有限对比矩阵与两夹具回放即退出。后续P0建议先取同原件0x180d54d40的实际像素/模式体，解决当前2/3/8/4未实现；并补输入类型/ROI/外mask/数值边界。参数页资源、编译与UI符合性作为独立轨，不能替代这些证据。优先级属于本专题组织建议，没有改全162库存或产品排序。</p><p>待核：不扩所有算法，不把这张矩阵算全插件完成；实际native循环和格式/Mask分支仍须按下一地址恢复。</p><details><summary>selected core evidence scope · 454–455</summary><p><code>docs/architecture-recovery/algorithm-binary-comparison-audit.evidence.json · audit-organization · SHA f5f49bb0357da9829ab0a50fb612646804f97a47af96fe05aae69cb5191fa501</code></p><pre>  &quot;currentReplayKind&quot;: &quot;isolated-current-production-source&quot;,
+  &quot;runnerCommand&quot;: [</pre></details></details><details id="B13" class="independent-implementation"><summary>B13 · 当前二值化Image输出 → 主窗三类显示入口 → 图像输出不等于ImageSelector或ToolDisplayFrame接入 · independent-implementation</summary><p>ImageBinaryPlugin非partial类只声明IVisionToolPlugin及两个WPF editor接口，IVisionToolPlugin自身不继承显示能力接口。RefreshRight的sources仅接IToolImageListProvider/IToolImageOutputProvider；当前二值化不进入该自动图像源列表。RefreshSelectedImageSourcePreview按所选来源的results及指定port找图，再有限回退文件预览，并非按任意选中算子取图。RefreshToolDisplay只把IToolDisplayProvider当provider，二值化走null分支，清通用presenter后显示普通Preview。主窗另在Preview.MouseLeftButtonDown且图像Tab/Preview.Source非null时调用InputImage(selected)，该函数实际从所选节点结果取首个图像输出并ToBitmap；名字InputImage不能被解释为图连线输入。因此自动源列表、通用frame和点击结果预览是三个不同入口，不能从Runtime输出Image自动连线到frame文字/几何呈现。</p><p>待核：此处证明当前源码的接口准入与独立鼠标路径，不是原版二值化主窗显示合同；未执行当前主UI、也未断言用户点击/切Tab实际差分。</p><p>待核：统一渲染能力若后续实施，应先核原二值化Display.xml及原图像源/显示对象身份，不能仅添加接口就声称等价。</p><details><summary>ImageBinaryPlugin.Runtime · 8–8</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs · current-source · SHA 14f8fea1d216613001341ba6d6794184aec6c9c9ef40319d7d94e0b462cb1a35</code></p><pre>public sealed class ImageBinaryPlugin:IVisionToolPlugin,IWpfToolEditorFactory,IWpfToolParameterEditorFactory {</pre></details><details><summary>Current base plugin contract does not imply display · 13–13</summary><p><code>src/VisionPluginContracts/Contracts.cs · current-source · SHA a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f</code></p><pre>public interface IVisionToolPlugin {ToolManifest Manifest{get;}ModuleDescriptor Descriptor{get;}IModule CreateRuntime();Form CreateEditor(ToolEditorContext context);void Reset(string nodeId);}</pre></details><details><summary>Current editor interface is not display provider · 2–2</summary><p><code>src/VisionPluginContracts/WpfEditor.cs · current-source · SHA b93e2be35185d77af400217cfaeed47e1eb265eb4ebf0f74172c208b67cb85fd</code></p><pre>public interface IWpfToolEditorFactory {System.Windows.Window CreateWpfEditor(ToolEditorContext context);}</pre></details><details><summary>Current parameter editor interface is not display provider · 7–7</summary><p><code>src/VisionPluginContracts/ParameterEditor.cs · current-source · SHA 9e6f1972735c70ab43745487723752d35a9e4662dc3c987e09a23d2268c442f1</code></p><pre>public interface IWpfToolParameterEditorFactory {System.Windows.Window CreateParameterEditor(ToolParameterEditorContext context);}</pre></details><details><summary>Current source list and display refresh sequence · 114–114</summary><p><code>src/VisionEditor/MainWindow.xaml.cs · current-source · SHA 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a</code></p><pre>   void RefreshRight(){ImageSelector.Items.Clear();ModuleResultsGrid.ItemsSource=Array.Empty&lt;object&gt;();var procedure=doc.CurrentProcedure;var node=selected is null?null:procedure.Nodes.FirstOrDefault(n=&gt;n.Id==selected);Breadcrumb.Text=GroupBreadcrumb();if(node is not null)RefreshModuleResults(node);var sources=procedure.Nodes.Where(n=&gt;plugins.Find(n.ModuleId)is IToolImageListProvider or IToolImageOutputProvider).ToArray();refreshingImageSelector=true;NodeDocument? choice=null;try{foreach(var source in sources){if(plugins.Find(source.ModuleId) is IToolImageOutputProvider multi)foreach(var imageOutput in multi.ImageOutputs)ImageSelector.Items.Add(new ComboBoxItem{Content=source.Name+&quot;.&quot;+imageOutput.Label,Tag=source.Id,ToolTip=imageOutput.Port});else ImageSelector.Items.Add(new ComboBoxItem{Content=source.Name+&quot;.输出图像&quot;,Tag=source.Id});}choice=sources.FirstOrDefault(n=&gt;n.Id==activeImageSourceId)??sources.FirstOrDefault(n=&gt;n.Id==selected)??sources.FirstOrDefault();activeImageSourceId=choice?.Id;if(choice is not null)ImageSelector.SelectedItem=ImageSelector.Items.Cast&lt;ComboBoxItem&gt;().FirstOrDefault(item=&gt;(string?)item.Tag==choice.Id&amp;&amp;(string?)item.ToolTip==activeImageOutputPort)??ImageSelector.Items.Cast&lt;ComboBoxItem&gt;().FirstOrDefault(item=&gt;(string?)item.Tag==choice.Id);activeImageOutputPort=(ImageSelector.SelectedItem as ComboBoxItem)?.ToolTip as string;}finally{refreshingImageSelector=false;}RefreshSelectedImageSourcePreview();RefreshImageSourcePanel(choice);RefreshToolDisplay(node);RefreshFrameworkResultTiming();}</pre></details><details><summary>Current selected source preview restrictions · 153–153</summary><p><code>src/VisionEditor/MainWindow.xaml.cs · current-source · SHA 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a</code></p><pre>  void RefreshSelectedImageSourcePreview(){PreviewImageName.Text=&quot;&quot;;Preview.Source=null;EmptyImage.Text=&quot;&quot;;var source=SelectedImageSource();if(source is not null){if(results.TryGetValue(source.Id,out var record)){var output=(activeImageOutputPort is null?record.Outputs.Values.FirstOrDefault(v=&gt;DataKinds.IsImage(v.Kind)):record.Outputs.GetValueOrDefault(activeImageOutputPort))?.As&lt;IImageData&gt;();if(output is not null){Preview.Source=ToBitmap(output);if(source.Parameters.TryGetValue(&quot;ShowImageName&quot;,out var show)&amp;&amp;show.GetBoolean()&amp;&amp;record.Outputs.TryGetValue(&quot;CurImageName&quot;,out var name))PreviewImageName.Text=name.As&lt;string&gt;();}}if(Preview.Source is null&amp;&amp;!results.ContainsKey(source.Id)&amp;&amp;(!source.Parameters.TryGetValue(&quot;ImageSourceType&quot;,out var sourceMode)||sourceMode.ValueKind==JsonValueKind.Number&amp;&amp;sourceMode.TryGetInt32(out var mode)&amp;&amp;mode==1)&amp;&amp;source.Parameters.TryGetValue(&quot;CurrentImagePath&quot;,out var current)&amp;&amp;current.ValueKind==JsonValueKind.String){try{var path=current.GetString();if(!string.IsNullOrWhiteSpace(path))Preview.Source=plugins.Find(source.ModuleId) is IToolImagePreviewProvider provider?ToBitmap(provider.LoadPreview(source,path,doc.BaseDirectory,new ResourceCatalog(doc.BaseDirectory,doc.Document.Resources))):LoadBmp(path);}catch{}}}if(Preview.Source is null)EmptyImage.Text=&quot;暂无图像&quot;;}</pre></details><details><summary>Current optional provider and null branch · 22–51</summary><p><code>src/VisionEditor/ToolDisplays.cs · current-source · SHA f3ae89186549591a8a025fc8d36d66bc2b5ea959ec3ed293d3e1030bcdd0e656</code></p><pre> void RefreshToolDisplay(NodeDocument? node){
+  long request=++toolDisplayRequestGeneration;
+  var owner=CaptureExecutionOwner();string procedure=doc.CurrentProcedureId;
+  bool Current()=&gt;request==toolDisplayRequestGeneration&amp;&amp;IsCurrentExecutionOwner(owner)&amp;&amp;doc.CurrentProcedureId==procedure;
+  // main&#39;s pull-view adapter clears the previous source before asking a new provider.
+  toolDisplayImage.Show(null);toolDisplayRecord.Show(null);toolDisplayList.Show(null);
+  toolDisplayImage.Visibility=toolDisplayRecord.Visibility=toolDisplayList.Visibility=Visibility.Collapsed;
+  Preview.Visibility=PreviewImageName.Visibility=Visibility.Visible;
+  EmptyImage.Visibility=Preview.Source is null?Visibility.Visible:Visibility.Collapsed;
+  var provider=node is null?null:plugins.Find(node.ModuleId) as IToolDisplayProvider;
+  ToolDisplayFrame? frame=null;
+  try{
+   if(provider is not null&amp;&amp;node is not null&amp;&amp;results.ContainsKey(node.Id))frame=provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId));
+   if(frame is not null&amp;&amp;node is not null)frame=ToolConfigurationDisplaySubscriptions.ApplyPositions(frame,node,doc.CurrentProcedureId,(source,port)=&gt;results.GetValueOrDefault(source)?.Outputs.GetValueOrDefault(port));
+  }
+  catch(Exception error){if(!Current())return;StatusText.Text=&quot;结果显示失败：&quot;+error.Message;} // Independent host diagnostic; not native exception parity.
+  if(!Current())return;
+  toolRecordTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
+  toolListTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;
+  if(provider is null&amp;&amp;DisplayTabs.SelectedIndex&gt;1)DisplayTabs.SelectedIndex=0;
+  toolDisplayImage.Show(frame);toolDisplayRecord.Show(frame);toolDisplayList.Show(frame);
+  bool overlay=frame is not null&amp;&amp;DisplayTabs.SelectedIndex==0;
+  toolDisplayImage.Visibility=overlay?Visibility.Visible:Visibility.Collapsed;
+  Preview.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;
+  PreviewImageName.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;
+  if(overlay)EmptyImage.Visibility=Visibility.Collapsed;
+  ImagePreviewPane.Visibility=DisplayTabs.SelectedIndex==0?Visibility.Visible:Visibility.Collapsed;
+  ModuleResultsGrid.Visibility=DisplayTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;
+  toolDisplayRecord.Visibility=provider is not null&amp;&amp;DisplayTabs.SelectedIndex==2?Visibility.Visible:Visibility.Collapsed;
+  toolDisplayList.Visibility=provider is not null&amp;&amp;DisplayTabs.SelectedIndex==3?Visibility.Visible:Visibility.Collapsed;</pre></details><details><summary>Current separate preview mouse handler · 48–48</summary><p><code>src/VisionEditor/MainWindow.xaml.cs · current-source · SHA 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a</code></p><pre> public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new NImagePlugin(),modules);plugins.Register(new VisionPlugins.CameraMapping.CameraMappingPlugin(),modules);plugins.Register(new VisionPlugins.CalibrationBoard.CalibrationBoardPlugin(),modules);plugins.Register(new VisionPlugins.DistortionCalibration.DistortionCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.MapCalibration.MapCalibrationPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new CoordinateModulePlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);plugins.Register(new VisionPlugins.BranchModule.BranchModulePlugin(),modules);plugins.Register(new VisionPlugins.BranchString.BranchStringPlugin(),modules);plugins.Register(new VisionPlugins.Fixture.FixturePlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=&gt;plugins.PrepareSave(document,baseDirectory,executionScope)};InitializeFrameworkResultHistory();Logo.Source=Asset(&quot;logo_vm.png&quot;);StatusIcon.Source=Asset(&quot;bottombar_run.png&quot;);ZoomIcon.Source=Asset(&quot;zoom_magnifier.png&quot;);Resources[&quot;WorkflowNgOff&quot;]=Asset(&quot;workflow-ng-off.png&quot;);Resources[&quot;WorkflowNgOn&quot;]=Asset(&quot;workflow-ng-on.png&quot;);Resources[&quot;ToolboxCategoryClosed&quot;]=Asset(&quot;toolbox-category-closed.png&quot;);Resources[&quot;ToolboxCategoryOpen&quot;]=Asset(&quot;toolbox-category-open.png&quot;);Resources[&quot;ToolboxExpandNormal&quot;]=Asset(&quot;toolbox-expand-normal.png&quot;);Resources[&quot;ToolboxExpandHover&quot;]=Asset(&quot;toolbox-expand-hover.png&quot;);BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=&gt;RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=&gt;{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshConfigurationRoi();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count&gt;0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=&gt;RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=&gt;{if(DisplayTabs.SelectedIndex==0&amp;&amp;Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}</pre></details><details><summary>Current selected node output reader and pixel bitmap · 171–172</summary><p><code>src/VisionEditor/MainWindow.xaml.cs · current-source · SHA 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a</code></p><pre> IImageData? InputImage(string? id)=&gt;id is null?null:results.TryGetValue(id,out var r)?r.Outputs.Values.FirstOrDefault(v=&gt;DataKinds.IsImage(v.Kind))?.As&lt;IImageData&gt;():null;
+ BitmapSource? ToBitmap(IImageData g){var packed=ImagePreview.Packed(g);if(packed is null)return null;g=packed;var b=BitmapSource.Create(g.Width,g.Height,96,96,g.Format==ImagePixelFormat.Rgb24?PixelFormats.Rgb24:PixelFormats.Gray8,null,g.Pixels.ToArray(),g.Stride);b.Freeze();return b;}</pre></details></details><details id="B14" class="independent-implementation"><summary>B14 · 当前ImageBinaryWindow.Present / ShowSelectedImage → 专用ROI视口的图像绘制和UI文本 · independent-implementation</summary><p>专用窗Present在closed时返回；写LastResult和ROI样式后先加历史，最多256条；连续运行且距离上次呈现不足100ms时提前返回，所以LastResult/历史可更新而图像/表格暂未更新。继续时列输入图像和本次GrayImage输出，有Image键默认选输出；结果表/状态Text用控件文字，不是ToolDisplayFrame的Show Text。ShowSelectedImage先清runtime region preview，再用roi.SetImage显示输入或所选输出；辅助标志允许时另Resolve/Fixture构造区域预览，失败清区域并写状态。GroupRoiEditor.SetImage建立96DPI Gray8 BitmapSource、复制像素；尺寸变化或null时Fit，否则InvalidateVisual。Surface.OnRender在clip内DrawImage，随后独立overlay回调和ROI几何；未由该支路生成通用frame TextBlock或证明原TextShape字体/透明度等价。</p><p>待核：100ms是当前连续呈现节流，不是算法耗时、原厂帧率保证或历史帧回放。专用窗历史与主窗流程摘要、原模块DataRecord分别记录。</p><p>待核：原二值化工具实际显示对象、native坐标/字体/DPI/ROI合成及导出尚未闭合；两个算法0像素差夹具不涵盖WPF呈现路径。</p><details><summary>Current dedicated result presentation and throttle · 58–59</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryWindow.xaml.cs · current-source · SHA c8317288955cd619d8e1795383c1dbcc1837c5f865d214df59e6a119829b0b5a</code></p><pre> void Present(NodeRunRecord result){if(closed)return;LastResult=result;roi.SetDisplayStyles(displayStyles,result.Status is NodeRunStatus.Failed or NodeRunStatus.NoMatch);history.Add(new(++executionIndex,DateTime.Now.ToString(&quot;HH:mm:ss.fff&quot;),result.Status+&quot; · &quot;+result.Message));if(history.Count&gt;256)history.RemoveAt(0);if(context.Session?.State==ToolDebugState.RunningContinuous&amp;&amp;presentationClock.ElapsedMilliseconds&lt;100)return;presentationClock.Restart();showing=true;images.ItemsSource=new[]{&quot;输入图像&quot;}.Concat(result.Outputs.Where(p=&gt;p.Value.Kind==DataKind.GrayImage).Select(p=&gt;p.Key==&quot;Image&quot;?&quot;输出图像&quot;:p.Key)).ToArray();images.SelectedIndex=result.Outputs.ContainsKey(&quot;Image&quot;)?1:0;showing=false;resultGrid.ItemsSource=result.Outputs.Select(p=&gt;new{名称=p.Key,值=p.Value.Value is VisionCore.GrayImage image?$&quot;{image.Width} × {image.Height}&quot;:p.Value.Value.ToString()}).ToArray();status.Text=result.Status+&quot; · &quot;+result.Message;ShowSelectedImage();}
+ void ShowSelectedImage(){if(showing)return;string key=images.SelectedItem as string??&quot;输入图像&quot;;roi.SetRuntimeRegionPreview(null);if(key==&quot;输入图像&quot;)roi.SetImage(InputImage());else if(LastResult?.Outputs.TryGetValue(key==&quot;输出图像&quot;?&quot;Image&quot;:key,out var image)==true){roi.SetImage(image.As&lt;VisionCore.GrayImage&gt;());if(values[&quot;RoiSelect&quot;].GetInt32()==1||values[&quot;ExternRoiSelect&quot;].GetInt32()==1||values[&quot;Assist0&quot;].GetBoolean()){try{var inputs=new Dictionary&lt;string,PortValue&gt;();foreach(var port in new ImageBinaryPlugin().Descriptor.Inputs){if(context.PreviewInput?.Invoke(port.Name) is {} value)inputs[port.Name]=value;}var input=InputImage()??image.As&lt;VisionCore.GrayImage&gt;();var execution=new ModuleExecutionContext(context.Node.Id,context.BaseDirectory,inputs,values,roi.Regions);roi.SetRuntimeRegionPreview(BinaryRegionResolver.Resolve(execution,input.Width,input.Height),BinaryRegionResolver.Fixture(execution));}catch(Exception error){roi.SetRuntimeRegionPreview([]);status.Text=&quot;区域预览：&quot;+error.Message;}}}}</pre></details><details><summary>Current dedicated result callback execution · 60–61</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryWindow.xaml.cs · current-source · SHA c8317288955cd619d8e1795383c1dbcc1837c5f865d214df59e6a119829b0b5a</code></p><pre> public async Task RunAsync(){Busy(true);try{Apply();Present(await context.Run(values));}catch(Exception e){status.Text=e.Message;}finally{Busy(false);}}
+ public async Task RunContinuousAsync(){if(context.Session is not {} session){status.Text=&quot;调试会话不可用。&quot;;return;}Busy(true);try{Apply();await session.RunContinuousAsync(()=&gt;values,Present);}catch(OperationCanceledException){}catch(Exception e){status.Text=e.Message;}finally{Busy(false);}}</pre></details><details><summary>Current dedicated pixel bitmap transfer · 44–44</summary><p><code>src/VisionUi/GroupRoiEditor.cs · current-source · SHA 29cd2639d6aa945b69cc85bd34b750aedc5b01dec1f252b58bf1a0d33dd263d2</code></p><pre> public void SetImage(GrayImage? image){bool fieldsChanged=false;if(image is not null){for(int i=0;i&lt;regions.Count;i++){var r=regions[i];if(r.CoordinateSpace==RoiCoordinateSpace.Normalized){regions[i]=RoiGeometry.ToPixels(r,image.Width,image.Height);fieldsChanged=true;}else if(normalizedIds.Contains(r.Id)&amp;&amp;coordinateWidth&gt;0&amp;&amp;(coordinateWidth!=image.Width||coordinateHeight!=image.Height)){regions[i]=RoiGeometry.ToPixels(RoiGeometry.ToNormalized(r,coordinateWidth,coordinateHeight),image.Width,image.Height);fieldsChanged=true;}}coordinateWidth=image.Width;coordinateHeight=image.Height;}if(fieldsChanged)RefreshFields();bool changed=surface.Image?.PixelWidth!=image?.Width||surface.Image?.PixelHeight!=image?.Height;surface.Image=image is null?null:BitmapSource.Create(image.Width,image.Height,96,96,PixelFormats.Gray8,null,image.Pixels.ToArray(),image.Width);if(changed||image is null)surface.Fit();else surface.InvalidateVisual();}</pre></details><details><summary>Current dedicated DrawingContext image and region draw · 73–73</summary><p><code>src/VisionUi/GroupRoiEditor.cs · current-source · SHA 29cd2639d6aa945b69cc85bd34b750aedc5b01dec1f252b58bf1a0d33dd263d2</code></p><pre>  protected override void OnRender(DrawingContext dc){dc.DrawRectangle(background,null,new Rect(RenderSize));for(double y=0;y&lt;ActualHeight;y+=10)for(double x=0;x&lt;ActualWidth;x+=10)if(((int)(x/10)+(int)(y/10))%2==0)dc.DrawRectangle(tile,null,new Rect(x,y,10,10));dc.PushClip(new RectangleGeometry(new Rect(RenderSize)));if(owner.SourceImageVisible&amp;&amp;Image is not null)dc.DrawImage(Image,new Rect(offset,new Size(Image.PixelWidth*Scale,Image.PixelHeight*Scale)));owner.ImageOverlayRenderer?.Invoke(dc,new Matrix(Scale,0,0,Scale,offset.X,offset.Y),Scale);var displayed=owner.previewRegions??owner.regions;for(int i=0;owner.ShowRegions&amp;&amp;i&lt;displayed.Count;i++)Draw(dc,displayed[i],owner.previewRegions is null&amp;&amp;i==owner.SelectedIndex);if(draft is not null)Draw(dc,draft,true);if(polygon.Count&gt;0)for(int i=1;i&lt;polygon.Count;i++)dc.DrawLine(new Pen(blue,1),ToView(new(polygon[i-1].X,polygon[i-1].Y)),ToView(new(polygon[i].X,polygon[i].Y)));dc.Pop();}</pre></details></details><details id="B15" class="source-confirmed"><summary>B15 · 原二值化Display.xml显示对象声明 → ROI样式默认值与图像/数据记录是独立对象 · source-confirmed</summary><p>所选原XML列InputImage、OutputImage、OutputMask三个image对象，分别映射InImage/OutImage/OutMask及各自尺寸格式。ROI/Annular声明OK蓝、NG红、opacity=1、linewidth=2；ExternROI同色且opacity=.5、FillColor=#FF5400。原资源还声明hotcolor、linetype、highLightEnable以及Tips/Status映射，Fixture两点与Data Record各有独立Object。Data Record的Content是Module Status格式映射，不可当成图像叠字；本资源没有Type=text的Object声明，但不据此否定其它资源/运行期文字生产。资源默认值/Mapping存在不证明活对象生成、渲染或保存；linewidth与绘制StrokeThickness不能混为一个字段，见B21。</p><p>待核：原BridgeObj属性写入到具体活Display Object、字段持久化及原.sol消费尚未在该二值化实例闭合；不能由当前JSON恢复路径补原行为。</p><details><summary>Original image mappings · 6–28</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/IMVSBinaryModuDisplay.xml · original-shipped-xml · SHA 0d0c41cfcf7897b61041aef0b3fe8035a468c19c892054852001e7ee085f1c8b</code></p><pre>        &lt;Object Name=&quot;InputImage&quot; Type=&quot;image&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;1&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;Image&quot; Mapping=&quot;InImage&quot; Value=&quot;{0}&quot; /&gt;
+            &lt;Feature Name=&quot;Height&quot; Mapping=&quot;InImageHeight&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Width&quot; Mapping=&quot;InImageWidth&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;PixelFormat&quot; Value=&quot;0&quot; Mapping=&quot;InImagePixelFormat&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt;
+        &lt;Object Name=&quot;OutputImage&quot; Type=&quot;image&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;1&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;Image&quot; Mapping=&quot;OutImage&quot; Value=&quot;{0}&quot; /&gt;
+            &lt;Feature Name=&quot;Height&quot; Mapping=&quot;OutImageHeight&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Width&quot; Mapping=&quot;OutImageWidth&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;PixelFormat&quot; Value=&quot;0&quot; Mapping=&quot;OutImagePixelFormat&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt;
+        &lt;Object Name=&quot;OutputMask&quot; Type=&quot;image&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;1&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;Image&quot; Mapping=&quot;OutMask&quot; Value=&quot;{0}&quot; /&gt;
+            &lt;Feature Name=&quot;Height&quot; Mapping=&quot;OutMaskHeight&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Width&quot; Mapping=&quot;OutMaskWidth&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;PixelFormat&quot; Value=&quot;0&quot; Mapping=&quot;OutMaskPixelFormat&quot; /&gt;
+          &lt;/Features&gt;</pre></details><details><summary>Original ROI and exclusion style declarations · 30–50</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/IMVSBinaryModuDisplay.xml · original-shipped-xml · SHA 0d0c41cfcf7897b61041aef0b3fe8035a468c19c892054852001e7ee085f1c8b</code></p><pre>        &lt;Object Name=&quot;ROI&quot; Type=&quot;rect&quot; okcolor=&quot;#0000ff&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;2&quot; IsDisplay=&quot;true&quot; highLightEnable=&quot;false&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;CenterX&quot; Mapping=&quot;DetectCenterX&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;CenterY&quot; Mapping=&quot;DetectCenterY&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Width&quot; Mapping=&quot;DetectWidth&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Height&quot; Mapping=&quot;DetectHeight&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Angle&quot; Value=&quot;0&quot; Mapping=&quot;DetectAngle&quot; /&gt;
+            &lt;Feature Name=&quot;Tips&quot; Value=&quot;CenterX:{0},CenterY:{1} Width:{2} Height:{3} Angle:{4}&quot; Mapping=&quot;DetectCenterX,DetectCenterY,DetectWidth,DetectHeight,DetectAngle&quot; /&gt;
+            &lt;Feature Name=&quot;Status&quot; Value=&quot;1&quot; Mapping=&quot;ModuStatus&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt;
+        &lt;Object Name=&quot;ExternROI&quot; Type=&quot;polygon&quot; okcolor=&quot;#0000ff&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;0.5&quot; linetype=&quot;1&quot; linewidth=&quot;2&quot; IsDisplay=&quot;true&quot; highLightEnable=&quot;false&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;PointNum&quot; Mapping=&quot;BlindPolygonPointNum&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;PointXArray&quot; Mapping=&quot;BlindPolygonPointsX&quot; Value=&quot;NULL&quot; Type=&quot;Array&quot; /&gt;
+            &lt;Feature Name=&quot;PointYArray&quot; Mapping=&quot;BlindPolygonPointsY&quot; Value=&quot;NULL&quot; Type=&quot;Array&quot; /&gt;
+            &lt;Feature Name=&quot;FillColor&quot; Mapping=&quot;NULL&quot; Value=&quot;#FF5400&quot; /&gt;
+            &lt;Feature Name=&quot;Status&quot; Value=&quot;1&quot; Mapping=&quot;ModuStatus&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt;
+        &lt;Object Name=&quot;Fixtured Point&quot; Type=&quot;point&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;1&quot; IsDisplay=&quot;true&quot;&gt;</pre></details><details><summary>Original data-record content and annular declaration · 66–86</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/IMVSBinaryModuDisplay.xml · original-shipped-xml · SHA 0d0c41cfcf7897b61041aef0b3fe8035a468c19c892054852001e7ee085f1c8b</code></p><pre>        &lt;Object Name=&quot;Data Record&quot; Type=&quot;datarecord&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;2&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;Content&quot; Value=&quot;Module Status:{0} &quot; Mapping=&quot;ModuStatus&quot; /&gt;
+            &lt;Feature Name=&quot;Num&quot; Value=&quot;1&quot; Mapping=&quot;NULL&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt;
+        &lt;Object Name=&quot;Annular&quot; Type=&quot;annularsector&quot; okcolor=&quot;#0000ff&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;2&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;CenterX&quot; Mapping=&quot;DetectAnnulusCenterX&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;CenterY&quot; Mapping=&quot;DetectAnnulusCenterY&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;OuterRadius&quot; Mapping=&quot;DetectAnnulusOuterRadius&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;InnerRadius&quot; Mapping=&quot;DetectAnnulusInnerRadius&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;StartAngle&quot; Mapping=&quot;DetectAnnulusStartAngle&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;AngleRange&quot; Mapping=&quot;DetectAnnulusAngleExtend&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Tips&quot; Value=&quot;CenterX:{0} CenterY:{1} OuterRadius:{2} InnerRadius:{3} StartAngle:{4} AngleRange:{5}&quot; Mapping=&quot;DetectAnnulusCenterX,DetectAnnulusCenterY,DetectAnnulusOuterRadius,DetectAnnulusInnerRadius,DetectAnnulusStartAngle,DetectAnnulusAngleExtend&quot; /&gt;
+            &lt;Feature Name=&quot;Status&quot; Value=&quot;1&quot; Mapping=&quot;ModuStatus&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt;
+      &lt;/Items&gt;
+    &lt;/Category&gt;
+  &lt;/Categorys&gt;</pre></details></details><details id="B16" class="independent-implementation"><summary>B16 · 当前RoiDisplayStyleEditor → BinaryWindow → ApplyDisplayStyles → 显示修改立即写节点，不经过算法参数或确定按钮才生效 · independent-implementation</summary><p>RoiDisplayStyleEditor.Set先Validate、替换current，再发Changed，最后RefreshValue；眼睛及颜色/透明度/粗细提交进入该事件。BinaryWindow.BuildDisplayParameters的handler先写本地displayStyles[key]，再调用context.ApplyDisplayStyles(snapshot)，之后更新roi样式；不等待确定按钮，handler没有本地回滚。真实主窗context把该回调绑定到Guard→doc.SetProcedureDisplayStyles；Guard校验Dispatcher、owner、锁、activeRun、solution/activeScope和节点仍在。文档Snapshot styles后经Edit写NodeDocument.DisplayStyles，不改Parameters或像素；此setter本身不InvalidateToolDebugResult。Guard或后续Edit抛错可发生在本地style赋值之后，不能描述为原子同步。</p><p>待核：此静态handler链不证明实际GUI事件、异常显示或主窗通用frame样式接入；原版是否同样即时保存到活对象须追原Setter/保存消费。</p><details><summary>Current style event order · 47–47</summary><p><code>src/VisionUi/RoiDisplayStyleEditor.cs · current-source · SHA f6ada24e054ea1826015af1900807e80ba192a4a3b9bf7c4ce873c8d99332089</code></p><pre> void Set(RoiDisplayStyle value){value.Validate();current=value;Changed?.Invoke(value);RefreshValue(current);}</pre></details><details><summary>Current immediate display callback · 54–54</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryWindow.xaml.cs · current-source · SHA c8317288955cd619d8e1795383c1dbcc1837c5f865d214df59e6a119829b0b5a</code></p><pre> FrameworkElement BuildDisplayParameters(){var panel=new StackPanel{Margin=new(32,1,32,0)};foreach(var pair in displayStyles){var key=pair.Key;var editor=new RoiDisplayStyleEditor(key switch{&quot;ROI&quot;=&gt;&quot;检测区域&quot;,&quot;Annular&quot;=&gt;&quot;环形区域&quot;,_=&gt;&quot;屏蔽区域&quot;},pair.Value){IsEnabled=context.ApplyDisplayStyles is not null};editor.Changed+=style=&gt;{displayStyles[key]=style;context.ApplyDisplayStyles?.Invoke(RoiDisplayStyles.Snapshot(displayStyles));roi.SetDisplayStyles(displayStyles,LastResult?.Status is NodeRunStatus.Failed or NodeRunStatus.NoMatch);};panel.Children.Add(editor);}return panel;}</pre></details><details><summary>Current owner and UI-thread guard · 32–43</summary><p><code>src/VisionEditor/ToolEditorHost.cs · current-source · SHA 452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3</code></p><pre> ToolEditorContext CreateScopedToolEditorContext(string flow,string id,Func&lt;string&gt; activeScope)
+ {
+  EnsureToolDebugSolution();var owner=CaptureExecutionOwner();string solution=doc.SolutionId;var node=ConfigurationProcedure(flow).Nodes.Single(n=&gt;n.Id==id);
+  void Guard(){Dispatcher.VerifyAccess();if(!IsCurrentExecutionOwner(owner)||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||activeScope()!=doc.CurrentProcedureId||!ConfigurationProcedure(flow).Nodes.Any(n=&gt;n.Id==id))throw new InvalidOperationException(&quot;当前模块调试会话已失效或流程正在运行。&quot;);}
+  ToolDebugSession? session=null;
+  session=new ToolDebugSession(async(values,token)=&gt;{
+   Guard();if(toolDebugSessions.Any(s=&gt;!ReferenceEquals(s,session)&amp;&amp;s.IsBusy))throw new InvalidOperationException(&quot;其他模块正在调试。&quot;);
+   var procedure=ConfigurationProcedure(flow);var cached=ToolDebugInputs(flow);var baseDirectory=doc.BaseDirectory;var invocationInputs=workflowSessions.GetValueOrDefault(flow)?.WorkflowInputs;var invocationIndex=workflowSessions.GetValueOrDefault(flow)?.GroupLoopIndex;InvalidateToolDebugResult(flow,id);NodeRunRecord record;var ownerScope=executionScope;using var scopeLease=ownerScope.Enter();
+   try{record=await Task.Run(()=&gt;new NodeDebugExecutor(modules).RunAsync(procedure,id,baseDirectory,values,cached,invocationInputs,cancellationToken:token,groupLoopIndex:invocationIndex,scope:ownerScope.ForProcedure(flow)));}catch(InvalidDataException e){record=new(id,NodeRunStatus.Failed,new Dictionary&lt;string,PortValue&gt;(),0,&quot;DebugInputUnavailable&quot;,e.Message);}
+   if(IsCurrentExecutionOwner(owner)&amp;&amp;!token.IsCancellationRequested&amp;&amp;session!.State!=ToolDebugState.Disposed&amp;&amp;doc.SolutionId==solution)StoreToolDebugResult(flow,record);return record;
+  });toolDebugSessions.Add(session);
+  return new(node,doc.BaseDirectory,values=&gt;{Guard();doc.SetProcedureNodeParameters(flow,id,values);InvalidateToolDebugResult(flow,id);},values=&gt;session.RunOnceAsync(values),ConfigurationProcedure(flow).Nodes.ToList().FindIndex(n=&gt;n.Id==id)){Session=session,ApplyConfigurationChange=(values,rois,clear)=&gt;{Guard();doc.SetProcedureToolConfiguration(flow,id,values,rois,clear);InvalidateToolDebugResult(flow,id);},ClearInput=port=&gt;{Guard();doc.SetProcedureInputSubscription(flow,id,port,null);InvalidateToolDebugResult(flow,id);},PreviewInput=port=&gt;IsCurrentExecutionOwner(owner)?ResolveToolInput(flow,id,port):null,ApplyDisplayStyles=styles=&gt;{Guard();doc.SetProcedureDisplayStyles(flow,id,styles);},InputLabel=port=&gt;IsCurrentExecutionOwner(owner)?ToolInputLabel(flow,id,port):&quot;&quot;,EditInput=(port,owner)=&gt;{Guard();EditToolInput(flow,id,port,owner);},PreviewImage=()=&gt;IsCurrentExecutionOwner(owner)?ResolveGroupToolImage(flow,id):null,ApplyConfiguration=(values,rois)=&gt;{Guard();doc.SetProcedureToolConfiguration(flow,id,values,rois);InvalidateToolDebugResult(flow,id);}};</pre></details><details><summary>Current style snapshot into node · 5–5</summary><p><code>src/VisionEditor.Core/GraphEditorDocument.ToolConfiguration.cs · current-source · SHA 09724c0d583b0470a29b9beccf681786a6b4ec62dbb9d59e7f75aeecb06b25d1</code></p><pre> public void SetProcedureDisplayStyles(string flow,string id,IReadOnlyDictionary&lt;string,RoiDisplayStyle&gt; styles){_ = Procedure(flow).Nodes.Single(n=&gt;n.Id==id);var copy=RoiDisplayStyles.Snapshot(styles);Edit(doc=&gt;doc with{Procedures=doc.Procedures.Select(p=&gt;p.Id==flow?p with{Nodes=p.Nodes.Select(n=&gt;n.Id==id?n with{DisplayStyles=copy}:n).ToArray()}:p).ToArray()});}</pre></details><details><summary>Current persisted node style member · 20–20</summary><p><code>src/VisionFramework/Contracts.cs · current-source · SHA c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269</code></p><pre>public sealed record NodeDocument(string Id,string ModuleId,string ModuleVersion,string Name,Dictionary&lt;string,JsonElement&gt; Parameters,double X=0,double Y=0,int TimeoutMs=0,bool Enabled=true,IReadOnlyList&lt;RoiDocument&gt;? Rois=null){[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public IReadOnlyDictionary&lt;string,RoiDisplayStyle&gt;? DisplayStyles{get;init;}[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public IReadOnlyDictionary&lt;string,IReadOnlyList&lt;RoiDocument&gt;&gt;? RoiGroups{get;init;}public WorkflowCallDocument? Call{get;init;}[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public GroupBreakBindings? GroupBreak{get;init;}};</pre></details></details><details id="B17" class="independent-implementation"><summary>B17 · 当前Node.DisplayStyles → Save/Load → 新工具窗ROI绘制 → 独立JSON保存与原.sol格式分开 · independent-implementation</summary><p>当前RoiDisplayStyles.Snapshot从ROI/ExternROI/Annular默认字典复制，只接受这三键并Validate值，补齐缺键；颜色允许#RRGGBB/#AARRGGBB，opacity有限0..1、线宽有限1..10。GraphEditorDocument.Copy为非null styles建快照；Save先PrepareSave/Rebase，经SolutionStore验证并序列化完整SolutionDocument，32MiB上限与重复成员门后写同目录temp、Flush(true)、Move overwrite，再提交编辑器FilePath/dirty等。Load反序列化/验证后Copy并触发方案替换。下次BinaryWindow构造从context.Node.DisplayStyles建snapshot并roi.SetDisplayStyles；绘制按Exclusion/Annular类键选择Visible/OK或NG/Opacity/StrokeThickness/FillColor。当前Draw先施加几何矩阵，线宽以StrokeThickness/Scale补偿，不能由同值推得原版DPI/缩放等价。当前结构没有原hotcolor/linetype/highLightEnable/Tips/Status字段；不能把默认值吻合称全显示合同等价。文件写后编辑器通知抛错、文件系统原子性/断电、原native格式均不由源码推为已验收。</p><p>待核：本轮未新执行保存重开；现有RealBinaryHostChecks.VerifyEditors是操作检查定义，不作为本轮通过结果。真实关闭重开/同ID替换/非法字段与字体差分均须独立验收。</p><p>待核：当前JSON不兼容原.sol；通用Object/UserData写入和恢复已见B18—B21，原二值化活实例及native方案落盘仍待原件逐链恢复。</p><details><summary>Current validated three-key style schema · 3–11</summary><p><code>src/VisionFramework/DisplayStyles.cs · current-source · SHA 3b3b147a33257deaa006d90d6ec38d8fe051f6bb084d53d1186911582573adb8</code></p><pre>public sealed record RoiDisplayStyle(bool Visible=true,string OkColor=&quot;#0000FF&quot;,string NgColor=&quot;#FF0000&quot;,double Opacity=1,double StrokeThickness=2,string? FillColor=null){
+ public void Validate(){static bool Color(string? s)=&gt;s is not null&amp;&amp;s.Length is 7 or 9&amp;&amp;s[0]==&#39;#&#39;&amp;&amp;s.Skip(1).All(Uri.IsHexDigit);if(!Color(OkColor)||!Color(NgColor)||FillColor is not null&amp;&amp;!Color(FillColor)||!double.IsFinite(Opacity)||Opacity&lt;0||Opacity&gt;1||!double.IsFinite(StrokeThickness)||StrokeThickness&lt;1||StrokeThickness&gt;10)throw new ArgumentException(&quot;显示样式颜色、透明度或线宽无效。&quot;);}
+}
+public static class RoiDisplayStyles {
+ public static IReadOnlyDictionary&lt;string,RoiDisplayStyle&gt; Defaults=&gt;new Dictionary&lt;string,RoiDisplayStyle&gt;{{&quot;ROI&quot;,new()},{&quot;ExternROI&quot;,new(Opacity:.5,FillColor:&quot;#FF5400&quot;)},{&quot;Annular&quot;,new()}};
+ public static IReadOnlyDictionary&lt;string,RoiDisplayStyle&gt; Snapshot(IReadOnlyDictionary&lt;string,RoiDisplayStyle&gt;? source){var result=Defaults.ToDictionary(p=&gt;p.Key,p=&gt;p.Value);if(source is not null)foreach(var pair in source){if(!result.ContainsKey(pair.Key))throw new ArgumentException(&quot;未知显示对象：&quot;+pair.Key);if(pair.Value is null)throw new ArgumentException(&quot;显示样式不能为空。&quot;);pair.Value.Validate();result[pair.Key]=pair.Value;}return new System.Collections.ObjectModel.ReadOnlyDictionary&lt;string,RoiDisplayStyle&gt;(result);}
+ public static string Key(RoiDocument r)=&gt;r.Exclusion?&quot;ExternROI&quot;:r.Kind is RoiKind.Annulus or RoiKind.Sector or RoiKind.SectorRing or RoiKind.OverSector?&quot;Annular&quot;:&quot;ROI&quot;;
+}
+</pre></details><details><summary>Current independent save and state commit · 68–74</summary><p><code>src/VisionEditor.Core/GraphEditorDocument.cs · current-source · SHA 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558</code></p><pre>    public void Save(string path) {
+        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;
+        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;
+        var rebased = Rebase(prepared, BaseDirectory, directory);
+        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.
+        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();
+    }</pre></details><details><summary>Current independent load and replacement · 59–68</summary><p><code>src/VisionEditor.Core/GraphEditorDocument.cs · current-source · SHA 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558</code></p><pre>    public void Load(string path) {
+        string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);
+        var baseDirectory=Path.GetDirectoryName(full)!;
+        var separated=Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()});
+        var prepared=PrepareLoad?.Invoke(separated,baseDirectory)??separated;
+        SolutionStore.ValidateStructure(prepared);
+        document = Copy(prepared); CurrentProcedureId = prepared.Procedures.FirstOrDefault()?.Id??&quot;&quot;;
+        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; solutionGeneration++;configurationHistory=null;history.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();
+    }
+    public void Save(string path) {</pre></details><details><summary>Current copy of node display styles · 331–331</summary><p><code>src/VisionEditor.Core/GraphEditorDocument.cs · current-source · SHA 4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558</code></p><pre>    static SolutionDocument Copy(SolutionDocument d)=&gt;d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=&gt;p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=&gt;n with {Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=&gt;k.Key,k=&gt;k.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=&gt;r with {Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};</pre></details><details><summary>Current JSON read/validate/write lifecycle · 11–24</summary><p><code>src/VisionFramework/SolutionStore.cs · current-source · SHA 533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365</code></p><pre>    public static SolutionDocument Load(string path) {
+        using var input=File.OpenRead(path);if(input.Length&gt;MaximumBytes)throw new InvalidDataException(&quot;Solution exceeds size limit.&quot;);
+        using var json=JsonDocument.Parse(input);RejectDuplicateProperties(json.RootElement);
+        var solution=json.RootElement.Deserialize&lt;SolutionDocument&gt;(Options)??throw new InvalidDataException(&quot;Missing solution.&quot;);ValidateStructure(solution);return solution;
+    }
+    public static SolutionWorkspace OpenWorkspace(string path)=&gt;new(Load(path),Path.GetDirectoryName(Path.GetFullPath(path))!);
+    public static void Save(string path,SolutionDocument solution) {
+        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length&gt;MaximumBytes)throw new InvalidDataException(&quot;Solution exceeds size limit.&quot;);
+        // Opaque plugin payloads can contain duplicate members. Reject the same
+        // serialized shape as Load before creating directories or replacing a file.
+        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);
+        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,&quot;.&quot;+Path.GetFileName(full)+&quot;.&quot;+Guid.NewGuid().ToString(&quot;N&quot;)+&quot;.tmp&quot;);
+        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}
+    }</pre></details><details><summary>Current style snapshot restoration at construction · 25–25</summary><p><code>src/VisionPlugins.ImageBinary/ImageBinaryWindow.xaml.cs · current-source · SHA c8317288955cd619d8e1795383c1dbcc1837c5f865d214df59e6a119829b0b5a</code></p><pre> public ImageBinaryWindow(ImageBinaryPlugin plugin,ToolEditorContext context){InitializeComponent();Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri(&quot;/VisionUi;component/SourceBottomButtons.xaml&quot;,UriKind.Relative)});SourceWindowWorkArea.Attach(this);Resources.MergedDictionaries.Add(SourceControlResources.Current);this.context=context;foreach(var style in RoiDisplayStyles.Snapshot(context.Node.DisplayStyles))displayStyles.Add(style.Key,style.Value);values=context.Node.Parameters.ToDictionary(p=&gt;p.Key,p=&gt;p.Value.Clone());foreach(var p in plugin.Descriptor.Parameters)if(!values.ContainsKey(p.Name)&amp;&amp;p.DefaultValue is {} v)values[p.Name]=v;Title=Caption.Text=context.Node.Name;ShowInTaskbar=false;System.Windows.Shell.WindowChrome.SetWindowChrome(this,new(){CaptionHeight=0,ResizeBorderThickness=new(5),GlassFrameThickness=new(0),UseAeroCaptionButtons=false});roi=new(context.Node.Rois??[],ImageBinaryPlugin.RoiCapabilities);roi.SetImage(InputImage());roi.SetDisplayStyles(displayStyles);var left=new DockPanel{Background=Background};var roiPane=roi.ReplacePane(0,left);parameterTabs.Items.Add(new TabItem{Header=&quot;基本参数&quot;,Content=BuildBasic(roiPane)});parameterTabs.Items.Add(new TabItem{Header=&quot;运行参数&quot;,Content=BuildRunParameters()});parameterTabs.Items.Add(new TabItem{Header=&quot;显示设置&quot;,Content=BuildDisplayParameters()});var buttons=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Height=32};var confirm=new Button{Content=&quot;确定&quot;,Tag=&quot;ImageBinaryApply&quot;};confirm.Click+=async(_,_)=&gt;{try{if(context.Session is {} session)await session.StopAsync();Apply();Close();}catch(Exception e){status.Text=e.Message;}};run.Click+=async(_,_)=&gt;await RunAsync();repeat.Click+=async(_,_)=&gt;await RunContinuousAsync();stop.Click+=async(_,_)=&gt;{if(context.Session is {} session)await session.StopAsync();};var reset=new Button{Content=&quot;重置参数&quot;,Tag=&quot;ImageBinaryReset&quot;,Visibility=Visibility.Collapsed};reset.Click+=(_,_)=&gt;{try{foreach(var name in new[]{&quot;BinaryType&quot;,&quot;NonROIPrcType&quot;,&quot;LowThreshold&quot;,&quot;HighThreshold&quot;})values[name]=plugin.Descriptor.Parameters.Single(p=&gt;p.Name==name).DefaultValue!.Value;((TabItem)parameterTabs.Items[1]).Content=BuildRunParameters();Apply();}catch(Exception e){status.Text=e.Message;}};parameterTabs.SelectionChanged+=(_,_)=&gt;reset.Visibility=parameterTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;var commands=new DockPanel{Height=32,LastChildFill=false};DockPanel.SetDock(reset,Dock.Left);commands.Children.Add(reset);DockPanel.SetDock(buttons,Dock.Right);commands.Children.Add(buttons);foreach(var command in new[]{reset,repeat,stop,run,confirm}){command.Style=(Style)FindResource(&quot;Orange_ButtonStyle&quot;);command.Height=24;command.MinHeight=24;command.MinWidth=66;command.Margin=new(2.5,0,2.5,0);command.Padding=new(10,0,10,0);}buttons.Children.Add(repeat);buttons.Children.Add(stop);buttons.Children.Add(run);buttons.Children.Add(confirm);DockPanel.SetDock(commands,Dock.Bottom);left.Children.Add(commands);left.Children.Add(parameterTabs);</pre></details><details><summary>Current style state and invalidate · 29–29</summary><p><code>src/VisionUi/GroupRoiEditor.cs · current-source · SHA 29cd2639d6aa945b69cc85bd34b750aedc5b01dec1f252b58bf1a0d33dd263d2</code></p><pre> IReadOnlyDictionary&lt;string,RoiDisplayStyle&gt;? displayStyles;bool displayNg;public void SetDisplayStyles(IReadOnlyDictionary&lt;string,RoiDisplayStyle&gt; styles,bool ng=false){displayStyles=RoiDisplayStyles.Snapshot(styles);displayNg=ng;surface.InvalidateVisual();}</pre></details><details><summary>Current style-to-geometry consumer · 76–76</summary><p><code>src/VisionUi/GroupRoiEditor.cs · current-source · SHA 29cd2639d6aa945b69cc85bd34b750aedc5b01dec1f252b58bf1a0d33dd263d2</code></p><pre>  void Draw(DrawingContext dc,RoiDocument r,bool selected){var matrix=owner.previewRegions is null?Matrix.Identity:owner.previewMatrix;matrix.Append(new Matrix(Scale,0,0,Scale,offset.X,offset.Y));var transform=new MatrixTransform(matrix);dc.PushTransform(transform);var style=owner.displayStyles?.GetValueOrDefault(RoiDisplayStyles.Key(r));if(style is {Visible:false}){dc.Pop();return;}var stroke=style is null?(r.Exclusion?orange:blue):new SolidColorBrush((Color)ColorConverter.ConvertFromString(owner.displayNg?style.NgColor:style.OkColor));Brush? fill=style?.FillColor is {} color?new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)):null;dc.PushOpacity(style?.Opacity??1);dc.DrawGeometry(fill,new Pen(stroke,(style?.StrokeThickness??1)/Scale),Shape(r));dc.Pop();dc.Pop();if(selected)foreach(var point in Handles(r)){var p=ToView(point);dc.DrawRectangle(orange,new Pen(Brushes.White,1),new Rect(p.X-3,p.Y-3,6,6));}}</pre></details></details><details id="B18" class="source-confirmed"><summary>B18 · 原ObjectBase显示属性setter → SaveData → 字段/通知先变，再按对象名和属性名写UserData · source-confirmed</summary><p>原okcolorA/ngcolorA/opacityA/StrokeThicknessA/IsDisplayA仅值变化才进入；先改对应字段并OnPropertyChanged，再调用Save属性方法，之后清缓存并OnValueChanged。SaveData通过GetVmModule找到顶层ParamRoot.Owner as VmModule，写UserData键[ParamRoot]_+对象NameA+属性尾名；data非null时调用参数less ToString及SDK.StringUtil.UTF8GetBytesPadZero。SaveData整个try吞异常，因此setter返回、字段变化或ValueChanged不证明SDK写入成功；原生落盘更不能由此推出。</p><p>待核：原二值化实际BridgeObj实例和运行时Owner仍须确认；此处为原通用类型的静态路径，不冒称原窗口已操作。</p><p>待核：原序列化未在该体显式指定culture；跨语言/数值文本实际往返未知。</p><details><summary>Apps.XmlParser.ObjectBase::set_okcolorA · 1470–1489</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600013b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600013b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;set_okcolorA&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 104,
+          &quot;ilSha256&quot;: &quot;8be0266322e1f9569e2c9f134065135456aa00f2f00c5aaa53fc948c430d3c5e&quot;,
+          &quot;ilBytes&quot;: &quot;00027b7e00000403283900000a0a062c56000203284f010006736201000a7d9400000402037d7e0000040272130900706f760000060002027b7e000004026f77000006283d010006000314fe030b072c1500026f350100060002735d01000a28330100060000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::set_opacityA · 2836–2855</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x06000142&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000142&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;set_opacityA&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 82,
+          &quot;ilSha256&quot;: &quot;7ece6670faf427786aa897e55c074332cef2581180f56f0a3dbad5577e98e7c9&quot;,
+          &quot;ilBytes&quot;: &quot;00027b8100000403fe0116fe010a062c400002037d810000040272570900706f760000060002027b81000004736401000a026f77000006284301000600026f350100060002735d01000a283301000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::set_StrokeThicknessA · 3354–3373</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x06000145&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000145&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;set_StrokeThicknessA&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 82,
+          &quot;ilSha256&quot;: &quot;d597e2083c1cef4914c143e3a955cb4688440f3bfceafe8de5c9d9022a2728e1&quot;,
+          &quot;ilBytes&quot;: &quot;00027b8b00000403fe0116fe010a062c400002037d8b0000040272790900706f760000060002027b8b000004736401000a026f77000006284601000600026f350100060002735d01000a283301000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::set_IsDisplayA · 4238–4257</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600014b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600014b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;set_IsDisplayA&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010102&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 82,
+          &quot;ilSha256&quot;: &quot;7ed0d3e6bd61ca75419fa051bc4005ee86b0958dbe5b786a1153532e510e3f89&quot;,
+          &quot;ilBytes&quot;: &quot;00027b8400000403fe0116fe010a062c400002037d840000040272d90900706f760000060002027b84000004732501000a026f77000006284c01000600026f350100060002735d01000a283301000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::SaveData · 1903–1922</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600013c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600013c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;SaveData&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2003011c0e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 69,
+          &quot;ilSha256&quot;: &quot;1238665838d07040489ab459412d268adba1825849018808cd7891b5555d63c3&quot;,
+          &quot;ilBytes&quot;: &quot;000002282f010006250a14fe030b072c2b00066fd700000a721b070070040528dd00000a032c0d036f7300000a28db00000a2b01146fdc00000a000000de05260000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::GetVmModule · 890–909</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600012f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600012f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;GetVmModule&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20001280fd&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 76,
+          &quot;ilSha256&quot;: &quot;2318fad8117460f034e268c16e897a25fb3d1247320f4b71d3f0b630ce9bdb1e&quot;,
+          &quot;ilBytes&quot;: &quot;00027b9200000414fe010a062c330002283101000a75190000020b0714fe010c082c04140d2b2302076fb2000006753f0000017d92000004027b920000040d2b09027b920000040d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Original setter field/notification/save order · 131–156</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ObjectBase.cs · retained-original-static-evidence · SHA 73168438e06dfd74cae70f910db9aecdabf313db0c376753652180c5bc35d006</code></p><pre>	public virtual string okcolorA
+	{
+		get
+		{
+			return okcolor;
+		}
+		set
+		{
+			if (okcolor != value)
+			{
+				_okColor_int = XmlColorToInt(value);
+				okcolor = value;
+				OnPropertyChanged(&quot;okcolorA&quot;);
+				SaveOkcolor(okcolor, NameA);
+				if (value != null)
+				{
+					ClearTempValue();
+					OnValueChanged(new EventArgs());
+				}
+			}
+		}
+	}
+
+	public virtual string ngcolorA
+	{
+		get</pre></details><details><summary>Original user-data key and swallowed failure · 382–426</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ObjectBase.cs · retained-original-static-evidence · SHA 73168438e06dfd74cae70f910db9aecdabf313db0c376753652180c5bc35d006</code></p><pre>	internal void SaveData(object data, string name, string tailName)
+	{
+		try
+		{
+			VmModule vmModule;
+			if ((vmModule = GetVmModule()) != null)
+			{
+				vmModule.UserData[&quot;[ParamRoot]_&quot; + name + tailName] = ((data == null) ? null : StringUtil.UTF8GetBytesPadZero(data.ToString()));
+			}
+		}
+		catch
+		{
+		}
+	}
+
+	internal void SaveOkcolor(string data, string name)
+	{
+		SaveData(data, name, &quot;okcolor&quot;);
+	}
+
+	internal void SaveNgcolor(string data, string name)
+	{
+		SaveData(data, name, &quot;ngcolor&quot;);
+	}
+
+	internal void SaveOpacity(float? data, string name)
+	{
+		SaveData(data, name, &quot;opacity&quot;);
+	}
+
+	protected void SaveStrokeThickness(float? data, string name)
+	{
+		SaveData(data, name, &quot;StrokeThickness&quot;);
+	}
+
+	protected void SaveIsFill(bool? data, string name)
+	{
+		SaveData(data, name, &quot;IsFill&quot;);
+	}
+
+	protected void SaveIsDisplay(bool? data, string name)
+	{
+		SaveData(data, name, &quot;IsDisplay&quot;);
+	}
+</pre></details></details><details id="B19" class="source-confirmed"><summary>B19 · 原UserData.set_Item → ModuleManager.SetUIParamValue → 普通与动态UI参数分支、字节拷贝和SDK错误 · source-confirmed</summary><p>UserData setter在Parent null/IsOnDispose时返回；全局模块及CheckedImages/DESIGNERBUFFER/ConfigAvailable直接SetUIParamValue，动态模块按历史操作种类录全部/单键，普通模块先取旧值再写并按条件录历史。底层SetUIParamValue按isUsedForDynamicUIParam选动态键拆分或普通模块ID/key。SDK StringUtil string重载以UTF8编码再加1个零字节。ModuleManager普通非空字节路径AllocHGlobal/Copy→ServerSDKAPI.IMVS_SetUIParamValue→Free；空/null转DeleteUIParamValue；返回非0抛VmException，外层ObjectBase.SaveData可吞掉。该体没有finally覆盖SDK调用后的Free，不能把异常路径说成必释放。</p><p>待核：SDK API之后的native UI用户数据所有权、持久化/加密/原.sol写入及失败事务未知；UTF8零尾描述的是用户数据文本，不是方案文件编码。</p><details><summary>VM.Core.UserData::set_Item · 16879–16898</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x060005af&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060005af&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.UserData&quot;,
+            &quot;name&quot;: &quot;set_Item&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e1d05&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 504,
+          &quot;ilSha256&quot;: &quot;6e97df7c27af6b20d1ae693d96e6a27f4483d5f8061152b871f2ceb51738eb22&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0a0200042c10027b0a0200047bf200000416fe012b01160a0639d601000000027b0a0200046f670200062d2703726e2c007028b800000a2d1a03728a2c007028b800000a2d0d03724022007028b800000a2b01170b072c100002030428b30500060000388b01000000027b0a0200046f680200060c08390701000000280500002b252d0426162b0a72010400706fc601000a0d092c17000228b00500060002030428b3050006000038d2000000280500002b252d0426162b0a72842800706fc601000a2d18280500002b252d0426162b0a726a2900706fc601000a2b0117130411042c5c0003724a2100706fba01000a2d1a0372622100706fba01000a2d0d0372762300706fba01000a2b0117130511052c1800020328b20500061306021106040328b105000600002b09000228b0050006000002030428b305000600002b3f000372a82c00706fba01000a130711072c0d0002030428b305000600002b1f00020328b2050006130802030428b305000600021108040328b1050006000000002b7000020328b2050006130902030428b305000600110904fe01130a110a2c022b520372062a007028b800000a130b110b2c3300110914fe01130c110c2c022b3311092c17042c14110928e201000a0428e201000a28b800000a2b0116130d110d2c022b0f00021109040328b1050006000000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.UserData::SetUIParamValue · 19273–19292</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x060005b3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060005b3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.UserData&quot;,
+            &quot;name&quot;: &quot;SetUIParamValue&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e1d05&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 115,
+          &quot;ilSha256&quot;: &quot;5ea1a261a094b61b4852afa69e8a4c7e18d331562c58f2d516822c8359c880b0&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0b0200040a062c4300037e0d020004166f0702000a0b284801000a7b4901000a027b0a0200046f4902000607169a0407285100002b17300772350200702b0307179a6fd104000a00002b2400284801000a7b4901000a027b0a0200046f49020006030420102700006fd204000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ModuleManager::SetUIParamValue · 19927–19946</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x06000081&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000081&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;SetUIParamValue&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200401090e1d0509&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 199,
+          &quot;ilSha256&quot;: &quot;c9a2b174fc8b398a8ef10f37c6c054cc2a6acb0ecea5e0bb44fbf6328120da5e&quot;,
+          &quot;ilBytes&quot;: &quot;00047249010070282300000a2c060514fe032b01160b072c22000516058e69281a00002b0c082d03172b01160d020309286700000600388b00000020ff0000e00a052c07058e16fe032b0116130411042c3e00058e69284400000a130505161105058e69288700000a007e9703000403041105058e690e0428200300060a1105284800000a007e4600000a1305002b20000002030416288400000600160a00de0e13060011066fa70600060a00de00000616fe03130711072c0c000673a6060006130811087a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.StringUtil::UTF8GetBytesPadZero · 22165–22184</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600067c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600067c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.StringUtil&quot;,
+            &quot;name&quot;: &quot;UTF8GetBytesPadZero&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00011d050e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 51,
+          &quot;ilSha256&quot;: &quot;f87c1e70c1f20b33f87d7c17751e15a2ee383f740bbc6baf511bf3e2611f080f&quot;,
+          &quot;ilBytes&quot;: &quot;00283e01000a026f3f01000a0a068e6917588d660000010b06160716068e6928df00000a0007078e691759169c070c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Original key write/history branches · 26–118</summary><p><code>analysis/decompiled/VM.Core/VM.Core/UserData.cs · retained-original-static-evidence · SHA 8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394</code></p><pre>	public virtual byte[] this[string key]
+	{
+		get
+		{
+			if (!Parent.IsActive || Parent.IsOnDispose)
+			{
+				return null;
+			}
+			try
+			{
+				LogHelper.Info($&quot;获取userdata模块ID名为{Parent.ID} {Parent.Name},key为{key}&quot;);
+				return GetUIParamValue(key);
+			}
+			catch (VmException ex)
+			{
+				LogHelper.Error(ex.errorMessage);
+				throw ex;
+			}
+			catch (Exception ex2)
+			{
+				LogHelper.Error(ex2.Message);
+				throw VmSolution.GetVmException(ex2);
+			}
+		}
+		set
+		{
+			if (Parent == null || Parent.IsOnDispose)
+			{
+				return;
+			}
+			if (Parent.IsGlobalModu || key == &quot;CheckedImages&quot; || key == &quot;DESIGNERBUFFER&quot; || key == &quot;ConfigAvailable&quot;)
+			{
+				SetUIParamValue(key, value);
+			}
+			else if (Parent.IsDynamicModu)
+			{
+				IUnRedoService unRedoService = Ioc.Get&lt;IUnRedoService&gt;();
+				if (unRedoService != null &amp;&amp; unRedoService.ValiteType(&quot;ModifyConfig&quot;))
+				{
+					RecordAllUserData();
+					SetUIParamValue(key, value);
+					return;
+				}
+				IUnRedoService unRedoService2 = Ioc.Get&lt;IUnRedoService&gt;();
+				if (unRedoService2 == null || !unRedoService2.ValiteType(&quot;DeleteModule&quot;))
+				{
+					IUnRedoService unRedoService3 = Ioc.Get&lt;IUnRedoService&gt;();
+					if (unRedoService3 == null || !unRedoService3.ValiteType(&quot;CopyModule&quot;))
+					{
+						if (key.Contains(&quot;DynamicIO&quot;))
+						{
+							SetUIParamValue(key, value);
+							return;
+						}
+						byte[] uIParamValue = GetUIParamValue(key);
+						SetUIParamValue(key, value);
+						RecordSingleData(uIParamValue, value, key);
+						return;
+					}
+				}
+				if (key.Contains(&quot;SourceIndex&quot;) || key.Contains(&quot;TargetIndex&quot;) || key.Contains(&quot;Position&quot;))
+				{
+					byte[] uIParamValue2 = GetUIParamValue(key);
+					RecordSingleData(uIParamValue2, value, key);
+				}
+				else
+				{
+					RecordAllUserData();
+				}
+				SetUIParamValue(key, value);
+			}
+			else
+			{
+				byte[] uIParamValue3 = GetUIParamValue(key);
+				SetUIParamValue(key, value);
+				if (uIParamValue3 != value &amp;&amp; (!(key == &quot;CheckItemParamReady&quot;) || (uIParamValue3 != null &amp;&amp; (uIParamValue3 == null || value == null || !(Hik.Util.StringUtil.UTF8GetString(uIParamValue3) == Hik.Util.StringUtil.UTF8GetString(value))))))
+				{
+					RecordSingleData(uIParamValue3, value, key);
+				}
+			}
+		}
+	}
+
+	private void RecordAllUserData()
+	{
+		Expression&lt;Func&lt;object&gt;&gt; oldValue = () =&gt; Parent.GetAllUserData();
+		string displayName = string.Format(&quot;{0}{1}:{2}ALL_USERDATA&quot;, AppLocalizationService.GetLang(&quot;Lang_Edit&quot;), AppLocalizationService.GetLang(&quot;界面数据&quot;), Parent.FullName.Substring(Parent.FullName.LastIndexOf(&#39;,&#39;) + 1));
+		Ioc.Get&lt;IUnRedoService&gt;()?.Register(new UserDataUnRedoOperation(UserData_Redo, UserData_Undo, new UnRedo_UserData
+		{
+			ModuleFullName = Parent.FullName,
+			IsAllUserData = true,
+			PropertyKey = &quot;ALL_USERDATA&quot;,
+			OldValue = oldValue,</pre></details><details><summary>Original dynamic versus regular transport · 146–158</summary><p><code>analysis/decompiled/VM.Core/VM.Core/UserData.cs · retained-original-static-evidence · SHA 8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394</code></p><pre>	private void SetUIParamValue(string key, byte[] value)
+	{
+		if (isUsedForDynamicUIParam)
+		{
+			string[] array = key.Split(SplitStrs, StringSplitOptions.None);
+			ServerSDKManager.serverSDKManager.mModuleManager.SetDynamicUIParamValue(Parent.ID, array[0], value, (array.Count() &gt; 1) ? array[1] : &quot;&quot;);
+		}
+		else
+		{
+			ServerSDKManager.serverSDKManager.mModuleManager.SetUIParamValue(Parent.ID, key, value);
+		}
+	}
+</pre></details><details><summary>Original byte transport, delete and error · 765–800</summary><p><code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs · retained-original-static-evidence · SHA 783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922</code></p><pre>	public void SetUIParamValue(uint nObjectID, string strParamName, byte[] data, uint nRecvWaitTime = 10000u)
+	{
+		if (strParamName == &quot;IsForbidden&quot; &amp;&amp; data != null)
+		{
+			uint nEnableFlag = ((!ExternalCallHelper.BytesToStruct&lt;bool&gt;(data, 0, data.Length)) ? 1u : 0u);
+			EnableModule(nObjectID, nEnableFlag);
+			return;
+		}
+		int num = -536870657;
+		if (data != null &amp;&amp; data.Length != 0)
+		{
+			IntPtr intPtr = Marshal.AllocHGlobal(data.Length);
+			Marshal.Copy(data, 0, intPtr, data.Length);
+			num = ServerSDKAPI.IMVS_SetUIParamValue(CVmObjectBase.mhandle, nObjectID, strParamName, intPtr, (uint)data.Length, nRecvWaitTime);
+			Marshal.FreeHGlobal(intPtr);
+			intPtr = IntPtr.Zero;
+		}
+		else
+		{
+			try
+			{
+				DeleteUIParamValue(nObjectID, strParamName);
+				num = 0;
+			}
+			catch (VmException ex)
+			{
+				num = ex.errorCode;
+			}
+		}
+		if (num != 0)
+		{
+			VmException ex2 = new VmException(num);
+			throw ex2;
+		}
+	}
+</pre></details></details><details id="B20" class="source-confirmed"><summary>B20 · 原ParamRoot.InitNode → ReloadProperty → UpdateResultShowParam → 加载显示XML后读取SDK用户数据覆盖字段 · source-confirmed</summary><p>InitNode要求datas为IVmModule，以ModuleDir/ModuleTypeName拼Display.xml loadXml(ignoreUnknown:true)，设owner，InitDynamicObject后ReloadProperty，再InitVmIOs。ReloadProperty按模块ID GetUIParamValueByObject，按对象NameA Contains预筛后交UpdateResultShowParam；后者用精确[ParamRoot]_Name+后缀找IsDisplay/okcolor/ngcolor/opacity/Type/IsFill/StrokeThickness，直接写字段、转换bool/float及颜色缓存。另读取Feature.Value/Mapping并Initializer。UpdateResultShowParam整体catch为空，前面已改字段不回滚；ReloadProperty另catch日志。它是SDK用户数据覆盖资源默认的恢复路径，不是直接读.sol，也不保证所有字段/失败序列完成。</p><p>待核：原实际userdata来源/Native缓冲释放、用户数据更改事件触发及显示UI同实例仍未完整闭合；参数根复载顺序不等于文件级事务。</p><details><summary>Apps.XmlParser.ParamRoot::InitNode · 9672–9691</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x060000c1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000c1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamRoot&quot;,
+            &quot;name&quot;: &quot;InitNode&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 87,
+          &quot;ilSha256&quot;: &quot;169706bbbf2e25f41bf8ca42073ba816284e05e01f64df49f692e0c0c070959b&quot;,
+          &quot;ilBytes&quot;: &quot;0003754b000001250a14fe030b072c4600066f0201000a0c066f0301000a727f04007008729306007028e400000a0d02091728c400000a0002067d3b000004020628c6000006000228c4000006000228c200000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamRoot::ReloadProperty · 10050–10069</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x060000c4&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000c4&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamRoot&quot;,
+            &quot;name&quot;: &quot;ReloadProperty&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 302,
+          &quot;ilSha256&quot;: &quot;b42b3c4df5f69f10eae213f62aeebe30435abef49c00a6fc41cf8ed2bcd36c2a&quot;,
+          &quot;ilBytes&quot;: &quot;0000140a027b3b000004754b000001250b14fe030d092c1800280601000a7b0701000a076f0801000a6f0901000a0a000228c8000006282000002b282200002b0c0814fe03130411042c7d00062d03142b0606280a01000a130500086ffa00000a13062b4873f70f000613071107120628fb00000a7d0a0700040011052d03142b1911051107fe06f80f0006730b01000a282600002b282700002b130811077b0a07000411086f510100060000120628fd00000a2dafde0f1206fe163200001b6f6200000a00dc0000de6213090011096f5900000a130a1109754d00000125130b14fe03130c110c2c38001a8d1200000125167257060070a22517110b6ffe00000a8c5d010001a225187271060070a22519110b6fff00000aa2280001000a130a00110a280101000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::UpdateResultShowParam · 4680–4699</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x06000151&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000151&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;UpdateResultShowParam&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010115126501128141&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 898,
+          &quot;ilSha256&quot;: &quot;402792ff77ece31ab157570dd111db570c208164421a98145fa612cacfe0bcd9&quot;,
+          &quot;ilBytes&quot;: &quot;0000032d03142b1e0302fe067a010006730b01000a283f00002b252d0426142b05286701000a0a032d03142b1e0302fe067b010006730b01000a283f00002b252d0426142b05286701000a0b032d03142b1e0302fe067c010006730b01000a283f00002b252d0426142b05286701000a0c032d03142b1e0302fe067d010006730b01000a283f00002b252d0426142b05286701000a0d032d03142b1e0302fe067e010006730b01000a283f00002b252d0426142b05286701000a1304032d03142b1e0302fe067f010006730b01000a283f00002b252d0426142b05286701000a1305032d03142b1e0302fe0680010006730b01000a283f00002b252d0426142b05286701000a13060614fe03130811082c1300020628e600000a286801000a7d84000004000714fe03130911092c2400020728e600000a7d7e00000402027b7e000004284f010006736201000a7d94000004000814fe03130a110a2c2400020828e600000a7d7f00000402027b7f000004284f010006736201000a7d95000004000914fe03130b110b2c1300020928e600000a286901000a7d8100000400110414fe03130c110c2c0f0002110428e600000a7d7d00000400110514fe03130d110d2c140002110528e600000a286801000a7d8a00000400110614fe03130e110e2c140002110628e600000a286901000a7d8b0000040014130702751800000214fe03130f110f2c240028910000067b2c000004282000002b02fe068101000673ef00000a282a00002b130700000228700100066fd400000a1310381f010000730b1000061311111111106fd500000a7d1707000400141312110714fe03131411142c1d0011076f700100061111fe060c100006736a01000a284000002b131200032d03142b1f031111fe060d100006730b01000a283f00002b252d0426142b05286701000a1313111314fe03131511152c170011117b17070004111328e600000a7d41000004002b20111214fe03131611162c150011117b1707000411127b410000047d4100000400032d03142b1f031111fe060e100006730b01000a283f00002b252d0426142b05286701000a1313111314fe03131711172c150011117b17070004111328e600000a7d4000000400111214fe03131811182c150011117b1707000411127b450000047d450000040011117b170700046fce000006000011106f6d00000a3ad5feffffde0d11102c0811106f6200000a00dc00de05260000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.ModuleManager::GetUIParamValueByObject · 20824–20843</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x06000086&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000086&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.ModuleManager&quot;,
+            &quot;name&quot;: &quot;GetUIParamValueByObject&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011284e409&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 172,
+          &quot;ilSha256&quot;: &quot;65c1e3c17a69fcd74d20ca8d6e20ed96bcc9a0d1f9d872031d19a6cdd68eea0d&quot;,
+          &quot;ilBytes&quot;: &quot;000020ff0000e00a1201fe15380100027e4600000a0c7e9703000403120228250300060a0616fe030d092c0c000673a6060006130411047a087e4600000a284700000a130511052c5300081201281b00002b0007734f07000628520700067439010002130611066f50070006007e97030004190828110300060a0616fe03130711072c0c000673a6060006130811087a7e4600000a0c11061309de0d00141309de072600141309de0011092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Original XML load, owner, dynamic objects and reload order · 221–232</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ParamRoot.cs · retained-original-static-evidence · SHA 41d349894d2cfcb017f2840ebeb79d922a71b09a3f77f905f68dfd619435a24a</code></p><pre>	private void InitNode(object datas)
+	{
+		if (datas is IVmModule { ModuleTypeName: var moduleTypeName } vmModule)
+		{
+			string fileName = vmModule.ModuleDir + &quot;\\&quot; + moduleTypeName + &quot;Display.xml&quot;;
+			loadXml(fileName, ignoreUnknown: true);
+			owner = vmModule;
+			InitDynamicObject(vmModule);
+			ReloadProperty();
+			InitVmIOs();
+		}
+	}</pre></details><details><summary>Original SDK read and per-object filtering · 263–294</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ParamRoot.cs · retained-original-static-evidence · SHA 41d349894d2cfcb017f2840ebeb79d922a71b09a3f77f905f68dfd619435a24a</code></p><pre>	private void ReloadProperty()
+	{
+		try
+		{
+			ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO_LIST iMVS_UI_OBJECT_PARAM_INFO_LIST = null;
+			if (owner is IVmModule vmModule)
+			{
+				iMVS_UI_OBJECT_PARAM_INFO_LIST = ServerSDKManager.serverSDKManager.mModuleManager.GetUIParamValueByObject(vmModule.ID);
+			}
+			List&lt;Object&gt; list = GetDisplayList().OfType&lt;Object&gt;().ToList();
+			if (list == null)
+			{
+				return;
+			}
+			ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO[] array = iMVS_UI_OBJECT_PARAM_INFO_LIST?.pUIObjParamInfo();
+			foreach (Object item in list)
+			{
+				List&lt;ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO&gt; infos = array?.Where((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName).Contains(item.NameA)).ToList();
+				item.UpdateResultShowParam(infos);
+			}
+		}
+		catch (Exception ex)
+		{
+			string message = ex.Message;
+			if (ex is VmException ex2)
+			{
+				message = &quot;ErrorCode = &quot; + ex2.errorCode + &quot;.ErrorMessage = &quot; + ex2.errorMessage;
+			}
+			LogHelper.Error(message);
+		}
+	}
+</pre></details><details><summary>Original direct style restore and feature overlays · 454–537</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ObjectBase.cs · retained-original-static-evidence · SHA 73168438e06dfd74cae70f910db9aecdabf313db0c376753652180c5bc35d006</code></p><pre>	public void UpdateResultShowParam(List&lt;ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO&gt; infos)
+	{
+		try
+		{
+			byte[] array = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + NameA + &quot;IsDisplay&quot;)?.pData;
+			byte[] array2 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + NameA + &quot;okcolor&quot;)?.pData;
+			byte[] array3 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + NameA + &quot;ngcolor&quot;)?.pData;
+			byte[] array4 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + NameA + &quot;opacity&quot;)?.pData;
+			byte[] array5 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + NameA + &quot;Type&quot;)?.pData;
+			byte[] array6 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + NameA + &quot;IsFill&quot;)?.pData;
+			byte[] array7 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + NameA + &quot;StrokeThickness&quot;)?.pData;
+			if (array != null)
+			{
+				IsDisplay = Convert.ToBoolean(StringUtil.UTF8GetString(array));
+			}
+			if (array2 != null)
+			{
+				okcolor = StringUtil.UTF8GetString(array2);
+				_okColor_int = XmlColorToInt(okcolor);
+			}
+			if (array3 != null)
+			{
+				ngcolor = StringUtil.UTF8GetString(array3);
+				_ngColor_int = XmlColorToInt(ngcolor);
+			}
+			if (array4 != null)
+			{
+				opacity = Convert.ToSingle(StringUtil.UTF8GetString(array4));
+			}
+			if (array5 != null)
+			{
+				Type = StringUtil.UTF8GetString(array5);
+			}
+			if (array6 != null)
+			{
+				IsFill = Convert.ToBoolean(StringUtil.UTF8GetString(array6));
+			}
+			if (array7 != null)
+			{
+				StrokeThickness = Convert.ToSingle(StringUtil.UTF8GetString(array7));
+			}
+			Object obj = null;
+			if (this is DynamicObject)
+			{
+				obj = DisplayRoot.GetInstance().Items.OfType&lt;Object&gt;().FirstOrDefault((Object p) =&gt; p.Type == Type);
+			}
+			foreach (FeatureBase feature in FeaturesB)
+			{
+				FeatureBase featureBase = null;
+				if (obj != null)
+				{
+					featureBase = obj.FeaturesB.FirstOrDefault((FeatureBase p) =&gt; p.Name == feature.Name);
+				}
+				byte[] array8 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + (feature.GetParentNode() as Object).NameA + &quot;.&quot; + feature.NameA + &quot;.Value&quot;)?.pData;
+				if (array8 != null)
+				{
+					feature.Value = StringUtil.UTF8GetString(array8);
+				}
+				else if (featureBase != null)
+				{
+					feature.Value = featureBase.Value;
+				}
+				array8 = infos?.FirstOrDefault((ImvsSdkDefine.IMVS_UI_OBJECT_PARAM_INFO p) =&gt; StringUtil.UTF8GetString(p.strParamName) == &quot;[ParamRoot]_&quot; + (feature.GetParentNode() as Object).NameA + &quot;.&quot; + feature.NameA + &quot;.Mapping&quot;)?.pData;
+				if (array8 != null)
+				{
+					feature.Mapping = StringUtil.UTF8GetString(array8);
+				}
+				if (featureBase != null)
+				{
+					feature.Type = featureBase.Type;
+				}
+				feature.Initializer();
+			}
+		}
+		catch
+		{
+		}
+	}
+
+	public object GetValue(uint excuteCount, int index = -1, Dictionary&lt;string, string&gt; customConfig = null)
+	{
+		switch (TypeA)
+		{
+		case &quot;image&quot;:</pre></details></details><details id="B21" class="source-confirmed"><summary>B21 · 原linewidth字段 / StrokeThickness字段与绘制消费者 → 纠正同名中文线宽造成的字段合并 · source-confirmed</summary><p>原ObjectBase分别声明XmlMark的float linewidth与StrokeThickness=1f；get_LineWidth返回(int)linewidth，set_LineWidth写linewidth并通知LineWidth。StrokeThicknessA读写另一StrokeThickness，保存尾键为StrokeThickness。ObjectBase.SetBaseProperty按StrokeThicknessA赋shape.StrokeThickness；派生Object.SetBaseProperty直接读StrokeThickness。故二值化Display.xml的linewidth=2不能单独证明实际StrokeThickness=2，更不能据此认定当前RoiDisplayStyle默认2与原显示等价；实际加载/用户数据覆盖后的值另查。</p><p>待核：尚未执行原窗口以观察最终字段、DPI或缩放；BaseNode加载映射和其它配置覆盖仍可能改变实例值。</p><details><summary>Apps.XmlParser.ObjectBase::.ctor · 466–485</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600012e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600012e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 108,
+          &quot;ilSha256&quot;: &quot;0ba6cdbfbafc99159e6e6c4fecd54a687d5a4a7b1215ac23438ded6433959b69&quot;,
+          &quot;ilBytes&quot;: &quot;02177d8700000402177d8800000402167d8900000402167d8a00000402220000803f7d8b00000402167d8d00000402167d8e00000402167d8f00000402167d9000000402167d9100000402147d9200000402736001000a7d9c0000040228820000060000022834010006262a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::get_LineWidth · 9311–9330</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x06000169&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000169&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;get_LineWidth&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200008&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 13,
+          &quot;ilSha256&quot;: &quot;d9672ccf33f256f3a58adb9d5b444441478078b4665902eee143eede2cf09d61&quot;,
+          &quot;ilBytes&quot;: &quot;00027b83000004690a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::set_LineWidth · 9394–9413</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600016a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600016a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;set_LineWidth&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20010108&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 41,
+          &quot;ilSha256&quot;: &quot;aefb90ce67685e2fb5a85d3af6938b317b484c9c288fec670302e111082e6dc4&quot;,
+          &quot;ilBytes&quot;: &quot;00027b83000004036bfe0116fe010a062c160002036b7d830000040272730d00706f7600000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::get_StrokeThicknessA · 3278–3297</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x06000144&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000144&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;get_StrokeThicknessA&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 12,
+          &quot;ilSha256&quot;: &quot;0995ba43c9065c29f30a6cfbce1ae9107ada80dd0cc69510a3fd3896d03843b0&quot;,
+          &quot;ilBytes&quot;: &quot;00027b8b0000040a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ObjectBase::SetBaseProperty · 8017–8036</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x0600015a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600015a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ObjectBase&quot;,
+            &quot;name&quot;: &quot;SetBaseProperty&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20040108091281a5151275020e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 391,
+          &quot;ilSha256&quot;: &quot;b11836ee7647265b31998e75333e65432eedc7b548d2211f03d193ad52340563&quot;,
+          &quot;ilBytes&quot;: &quot;00050272c50600700304d056010001285f01000a286101000674560100017d8501000a050272cd0b00700304d073010001285f01000a2861010006a5730100017d8601000a050272dd0b00700304d073010001285f01000a2861010006a5730100017d8701000a05020272ed0b00700304d056010001285f01000a2861010006285b0100067d8801000a05020e047257090070285c010006a5730100016c7d8901000a0502720b0c00700304d056010001285f01000a286101000674560100017d8a01000a05020e047279090070285c010006a5730100016c7d8b01000a05756a000001250a14fe030b072c350006020e047213090070285c01000675560100017d8c01000a06020e047235090070285c01000675560100016f8d01000a00002b64000502721f0c00700304d05d010001285f01000a2861010006a55d0100012c14020e047213090070285c01000675560100012b12020e047235090070285c01000675560100017d8c01000a027b8a0000040c082c0e0005057b8c01000a7d8a01000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.Object::SetBaseProperty · 15673–15692</summary><p><code>docs/architecture-recovery/display-userdata-cil.json · original-managed-cil · SHA 46ecae52fe4bde0221c794d22840601abb056501ad0b23e6944df5edb0365cb8</code></p><pre>          &quot;token&quot;: &quot;0x060001ea&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060001ea&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.Object&quot;,
+            &quot;name&quot;: &quot;SetBaseProperty&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200401081281a5151281f1040e081281a11c151275020e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 339,
+          &quot;ilSha256&quot;: &quot;de0eabb2f1e6eb9306cd714f1ba674c88b21d44df9f3d2cbc2a4f80c9e36413f&quot;,
+          &quot;ilBytes&quot;: &quot;000414fe010b072c06003843010000040572c506007003d056010001285f01000a6f0502000a74560100017d8501000a040572cd0b007003d073010001285f01000a6f0502000aa5730100017d8601000a040572dd0b007003d073010001285f01000a6f0502000aa5730100017d8701000a04020572ed0b007003d056010001285f01000a6f0502000a285b0100067d8801000a04026f410100066c7d8901000a0405720b0c007003d056010001285f01000a6f0502000a74560100017d8a01000a04027b8b0000046c7d8b01000a04027b8f0000047d5202000a04756a000001250a14fe030c082c1d0006027b7e0000047d8c01000a06027b7f0000046f8d01000a00002b4b000405721f0c007003d05d010001285f01000a6f0502000aa55d0100012c08027b7e0000042b06027b7f0000047d8c01000a027b8a0000040d092c0e0004047b8c01000a7d8a01000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Original distinct XML fields and constructor default · 43–70</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ObjectBase.cs · retained-original-static-evidence · SHA 73168438e06dfd74cae70f910db9aecdabf313db0c376753652180c5bc35d006</code></p><pre>	public float linewidth;
+
+	[XmlMark(true)]
+	public bool IsDisplay;
+
+	[XmlMark(true)]
+	public double arrowSize;
+
+	[XmlMark(true)]
+	public bool needLabel;
+
+	[XmlMark(true)]
+	public int highLightRowNum = 1;
+
+	[XmlMark(true)]
+	public bool highLightEnable = true;
+
+	[XmlMark(true)]
+	public bool needContentTip = false;
+
+	[XmlMark(true)]
+	public bool IsFill = false;
+
+	[XmlMark(true)]
+	public float StrokeThickness = 1f;
+
+	[XmlMark(true)]
+	public bool ROIDisable;</pre></details><details><summary>Original stroke thickness restore key · 412–415</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ObjectBase.cs · retained-original-static-evidence · SHA 73168438e06dfd74cae70f910db9aecdabf313db0c376753652180c5bc35d006</code></p><pre>	protected void SaveStrokeThickness(float? data, string name)
+	{
+		SaveData(data, name, &quot;StrokeThickness&quot;);
+	}</pre></details><details><summary>Original shape consumes StrokeThicknessA · 616–634</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ObjectBase.cs · retained-original-static-evidence · SHA 73168438e06dfd74cae70f910db9aecdabf313db0c376753652180c5bc35d006</code></p><pre>	private void SetBaseProperty(int index, uint excuteCount, Shape shape, Dictionary&lt;string, string&gt; customConfig = null)
+	{
+		shape.Tips = (string)GetValueByType(&quot;Tips&quot;, index, excuteCount, typeof(string));
+		shape.CenterX = (float)GetValueByType(&quot;CenterX&quot;, index, excuteCount, typeof(float));
+		shape.CenterY = (float)GetValueByType(&quot;CenterY&quot;, index, excuteCount, typeof(float));
+		shape.HighLightIndex = GetStringFromStruct(GetValueByType(&quot;HighLightIndex&quot;, index, excuteCount, typeof(string)));
+		shape.Opacity = (float)SetCustomPropertyValueByName(customConfig, &quot;opacityA&quot;);
+		shape.FillColor = (string)GetValueByType(&quot;FillColor&quot;, index, excuteCount, typeof(string));
+		shape.StrokeThickness = (float)SetCustomPropertyValueByName(customConfig, &quot;StrokeThicknessA&quot;);
+		if (shape is Outlinepoint outlinepoint)
+		{
+			outlinepoint.Color = SetCustomPropertyValueByName(customConfig, &quot;okcolorA&quot;) as string;
+			outlinepoint.NgColorA = SetCustomPropertyValueByName(customConfig, &quot;ngcolorA&quot;) as string;
+			return;
+		}
+		shape.Color = (((int)GetValueByType(&quot;Status&quot;, index, excuteCount, typeof(int)) == 0) ? (SetCustomPropertyValueByName(customConfig, &quot;ngcolorA&quot;) as string) : (SetCustomPropertyValueByName(customConfig, &quot;okcolorA&quot;) as string));
+		if (IsFill)
+		{
+			shape.FillColor = shape.Color;</pre></details><details><summary>Original derived shape consumes StrokeThickness · 930–944</summary><p><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/Object.cs · retained-original-static-evidence · SHA feed3ecc1a21de9e05092b5895a7dc369a947c20ca2b3cf63b5d8e7b125ce0c1</code></p><pre>	private void SetBaseProperty(int index, Shape shape, Func&lt;string, int, Type, object&gt; getValueByType, Dictionary&lt;string, string&gt; customConfig = null)
+	{
+		if (shape == null)
+		{
+			return;
+		}
+		shape.Tips = (string)getValueByType(&quot;Tips&quot;, index, typeof(string));
+		shape.CenterX = (float)getValueByType(&quot;CenterX&quot;, index, typeof(float));
+		shape.CenterY = (float)getValueByType(&quot;CenterY&quot;, index, typeof(float));
+		shape.HighLightIndex = GetStringFromStruct(getValueByType(&quot;HighLightIndex&quot;, index, typeof(string)));
+		shape.Opacity = opacityA;
+		shape.FillColor = (string)getValueByType(&quot;FillColor&quot;, index, typeof(string));
+		shape.StrokeThickness = StrokeThickness;
+		shape.MatrixConvertEnable = UseConvertMatrix;
+		if (shape is Outlinepoint outlinepoint)</pre></details></details><details id="U01" class="unknown"><summary>U01 · 所选原算法链与有限当前差分 → 全模式/全输入与原生数值语义仍未闭合 · unknown</summary><p>原native深层像素函数体缺失，现有两个已映射输入输出只证明限定夹具结果。原件运行、生产DLL及当前主UI集成没有在本轮执行，保留非等价范围。</p><p>待核：完整像素循环、模式2/3/8/4、通道、ROI/mask与Fixture、边界、错误/生命周期、所有数值输入仍未闭合。</p></details><p>主框架实施41/96＝42.71%（32包×3具名单元），本专题增量0；两个夹具不是算法完整率，人工/主UI验收另列。</p></html><script data-document-web src="document-web-links.js"></script>

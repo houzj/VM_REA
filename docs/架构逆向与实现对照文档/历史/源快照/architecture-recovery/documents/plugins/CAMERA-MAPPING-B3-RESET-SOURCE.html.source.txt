@@ -1,0 +1,103 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B3：配置复位、绑定与模块缓存的有限源码切片</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/CAMERA-MAPPING-B3-RESET-SOURCE.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#b3配置复位绑定与模块缓存的有限源码切片">B3：配置复位、绑定与模块缓存的有限源码切片</a></p><p style="margin-left:14px"><a href="#实际入口和成功失败顺序">实际入口和成功/失败顺序</a></p><p style="margin-left:14px"><a href="#平台实际-callee尚未到达模块-resetmember">平台实际 callee，尚未到达模块 ResetMember</a></p><p style="margin-left:14px"><a href="#resetmember-的实际边界">ResetMember 的实际边界</a></p><p style="margin-left:14px"><a href="#可复核产物与下一依赖">可复核产物与下一依赖</a></p><p style="margin-left:28px"><a href="#同日接续回调注册已定位不能称跨进程-rpc">同日接续：回调注册已定位，不能称跨进程 RPC</a></p><p style="margin-left:28px"><a href="#同日接续json-0xc0b-到-moduleframe-导出">同日接续：JSON 0xc0b 到 ModuleFrame 导出</a></p><p style="margin-left:28px"><a href="#最新叶体读取默认-xml逐项-setparam-而非-resetmember">最新叶体：读取默认 XML，逐项 SetParam 而非 ResetMember</a></p></details><h1 id="b3配置复位绑定与模块缓存的有限源码切片">B3：配置复位、绑定与模块缓存的有限源码切片</h1><p>2026-10-19。仅获取原厂源码/原指令与被动 PE 元数据；本切片未执行原厂平台初始化、设备、配置复位或生产构建，未修改产品代码。数值 B1/B2 的验证不用于证明复位等价。</p>
+<p>最新结论：已穿过平台、PlatformManager、ModuleProxy、ModuleFrame 到默认 XML 读取和逐项 CameraMap.SetParam 路径。空 CalibPathName 默认值不被过滤，原模块拒绝该写入；后续项继续，旧点缓存/路径不会因这一默认写入路径执行 ResetMember 清零。以下前半节保留取证顺序的未知说明，由末节最新具体叶体覆盖；完整 UI 响应/框架其他事件和最后帧仍待定点证实，未据此修改产品。</p>
+<h2 id="实际入口和成功失败顺序">实际入口和成功/失败顺序</h2><p>原相机映射配置资源确有 <code>BottomExcuteButtonsLeft/Button_ResetAlgoParams</code>。<code>Apps.XmlParser.ParamTab.Button_ResetAlgoParams.get_ClickCommand</code> 创建指向 <code>ClickCommandCmdExecute</code> 的 DelegateCommand。相机映射不在三个不支持模块名中。确认 Yes 后依次调用 <code>AlgorithmTabRoot.ResetRunParamBind()</code>、<code>VmModule.ResetParam()</code>；异常显示错误并返回，已清的绑定没有回滚。成功后才置静态 <code>_IsResetAlgoParamsing=true</code>、<code>GetItemsValueUnit()</code>、置 false、显示成功。刷新在前一个 try/catch 外，源码没有 finally；不能声明刷新异常仍能恢复该标记。</p>
+<p><code>ResetRunParamBind</code> 只枚举 <code>Tabs.SelectMany(Tab.Collection)</code> 的 <code>ISubInfo</code> 或 <code>ISubInfoCollection</code>；集合仅遍历直接 <code>SubChildren</code>，不是任意递归清所有数组订阅。相机映射原资源及已有原解析模型 <code>analysis/camera-mapping/parser/model/probe.json</code> 中：</p>
+<table>
+<thead>
+<tr>
+<th>参数/控件</th>
+<th>原类型</th>
+<th>本入口处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WeightFactor</td>
+<td>Integer → ValueBase : ISubInfo</td>
+<td>IsSubA 为 true 才设 false</td>
+</tr>
+<tr>
+<td>RefreshFileEnable</td>
+<td>Boolean → ValueBase : ISubInfo</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>CalibPathName</td>
+<td>OpenFileForCalibDialog : ISubInfo</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>HomoFreedom、WeightFun</td>
+<td>Enumeration : NameValueItem, IGroupRunParam</td>
+<td>不实现 ISubInfo</td>
+</tr>
+<tr>
+<td>Data1…Data8</td>
+<td>PointPair : NameValueItem</td>
+<td>本入口不清 PointPair 的逐叶 IO 订阅</td>
+</tr>
+</tbody></table>
+<p>被动元数据额外确认 <code>VMControls.Interface.IGroupRunParam</code> 没有继承接口，因此不能因名称是运行参数就把 Enumeration 算入此集合。当前产品配置代码已经使用上述三项；本轮无需更改。若旧审计把“3 项”写成 HomoFreedom/WeightFun/WeightFactor，应以上述具体类型为准；当前 CONTRACTS 中三项结论正确。</p>
+<p>ValueBase 和 OpenFileForCalibDialog 的 <code>IsSubA=false</code> 先更改本地模式；若已有 SubData 且 CurValueA 非空，则清 CurValueA，并读回模块值，再写 UserData 的 <code>@ComName</code> 模式。它们内部 catch 仅记录异常，然后通知 IsSubA；并非宿主复位的一体事务。具体订阅删除叶体留给后续数组索引切片。</p>
+<h2 id="平台实际-callee尚未到达模块-resetmember">平台实际 callee，尚未到达模块 ResetMember</h2><p>已恢复调用链：</p>
+<p><code>VmModule.ResetParam</code> → <code>ModuleManager.SetDefaultParamList(ID)</code> → <code>ServerSDKAPI.IMVS_SetDefaultParamList</code> → P/Invoke <code>iMVS-6000PlatformSDK.dll!IMVS_SetDefaultParamList</code>（RVA 0x64a2e0）→ <code>FUN_1806b7970</code> → <code>FUN_1806c00d0</code> → manager 偏移 <code>+0x2398</code> 函数指针。</p>
+<p>平台导出先验证 handle 注册表；无匹配对象返回 0xe0000006。管理器尚未构造时经 0x660680 初始化。0x6b7970 在 0x6b79f6/0x6b79fa 分别把 moduleID、0x419 放入 x64 varargs 栈位；格式字符串 VA 0x180ac54ec 为 <code>%d-%u</code>，因此请求为 <code>1049-&lt;moduleID&gt;</code>。0x6b7a22…0x6b7a2e 计算长度到 R8，0x6b7a38 调用 0x6c00d0；反编译遗漏的第三参数由原指令补齐，不能照伪码两参签名实现。</p>
+<p>0x6c00d0 检查请求指针/长度，0x6c01d9 取 <code>[manager+0x2398]</code>，0x6c0200 <code>CALL RAX</code>；传请求、长度、响应缓冲、0x3ff 和容量输出指针。无回调分支为 0xe0000010；返回 0xe0000012 且提供长度时分配较大响应，再经 0x662a70 重试。请求的服务端分派、此函数指针注册来源及最终模块默认参数写入仍未闭合，不能把它描述为直接调用 CameraMap.ResetMember。</p>
+<h2 id="resetmember-的实际边界">ResetMember 的实际边界</h2><p>复用原模块 <code>CIMVSCameraMapModu::ResetMember</code> RVA 0xcaf0 原体：清 <code>+0x14</code> qword（包括 +0x18 有效标记）、+0x1c…+0x54 数据区、+0x60/+0x68 点指针、+0x70 容量、+0x74 刷新标记、+0x78/+0x80 路径指针/长度、+0x88/+0x90 与 +0x98/+0xa0 缓冲字段。该体没有 free，也没有改 +0xc0/+0xc8 SDK 对象指针。因此“ResetMember 清 SDK BasicParam/全部 native 状态”超出此函数体证据；先前 RESIDUALS 对“这些字段全清”的宽泛措辞在此收窄。</p>
+<p>原 SetParam RVA 0xce30 的 CalibPathName 空值分支返回 0xe0000204，不能根据 XML 默认路径为空就推断平台默认复位经普通 SetParam 清了缓存。显式 SaveCalibPath 受 +0x18 有效标记控制，并使用缓存点重新求解；UI reset 后它是否仍可成功、旧尾点/矩阵/输出帧是否保留，需要服务端默认参数叶体或受控实际 reset 证据。现有 ResetMember 引用只有导出/数据，尚没有 UI reset 的实际调用证明。</p>
+<h2 id="可复核产物与下一依赖">可复核产物与下一依赖</h2><ul>
+<li>索引、身份、方法 token/RVA、SHA256：<a href="../../../plugins/CAMERA-MAPPING-B3-RESET-SOURCE.json">CAMERA-MAPPING-B3-RESET-SOURCE.json</a>。</li>
+<li>新原生体/原指令：<code>analysis/camera-mapping/b3-reset-source-20261019/platform/</code>；平台 SHA256 <code>B62D7E15588CCDA6671228AEBC11FEC3E27ACA878F0E03067E44B17D5A54A9A1</code>。</li>
+<li>原厂程序集只由 PEReader 读取，没有加载执行；脚本 <code>tests/CameraMapping.NativeProbe/Inspect-B3ManagedMetadata.ps1</code>，含 IGroupRunParam 的继承证明。</li>
+<li>私有 Ghidra 项目无自动分析、明确入口反汇编；指令文件是入口后 0x800 窗口，可能包含相邻函数，引用时须用上列精确地址。<code>B3ResetSourceAudit.java</code> 保留复现脚本。</li>
+</ul>
+<h3 id="同日接续回调注册已定位不能称跨进程-rpc">同日接续：回调注册已定位，不能称跨进程 RPC</h3><p>被动扫描 executable 区的 +0x2398 位移候选，再用 PE exception table 定位实际函数入口：0x6615b0…0x661cfd、0x661d00…0x661e4c；已获取两体和原指令。<code>SM_SP_LoadLib</code>（0x6615b0）构造 SDK 所在目录加 <code>\\..\\..\\Server\\PlatformManager.dll</code>，调用 LoadLibraryW；0x661a9c 附近 GetProcAddress 的名称 VA 0x180ac41c8 为 <code>PF_M_MsgDeal</code>，返回值在 0x661ab3 写 manager+0x2398。因此这里确认为同进程 DLL 函数指针调用，目录名 Server 不证明跨进程。<code>SM_SP_UnloadLib</code>（0x661d00）先清 +0x2370…+0x23a8 的函数指针，再 FreeLibrary、清 +0x2368 模块句柄。字符串原字节由 PEReader 被动读取，见 callback-strings.json；候选扫描脚本不把裸字节命中当作指令证据。</p>
+<p><code>PlatformManager.dll</code> SHA256 为 <code>06D86F51BEBFEBA357D1B79297E20A3B0A70580A40AF7B77C8ABDD6C38CA0624</code>。已取其 <code>PF_M_MsgDeal</code> RVA 0x6a0250：输出缓冲为空或容量小于 0x200 返回 0xe0000012；否则惰性构造单例 +0x8f6af0，转交 0x602df0（原入口参数再加 this），由 0x6a02a2…0x6a02c1 原指令确认栈参数传递。</p>
+<p>0x602df0 已完整导出为 739679 字节 C 体，case 0x419 在 7901 行开始。原日志字符串确认其保护条件包括 solution loading/saving、procedure importing/exporting、Group importing/exporting；保护失败构造 <code>Err*%d</code> 响应。通过保护后分派至 0x62b600，原日志名 <code>CiMVSWorkJob::ControlResetModuleAlgParam</code>。该体要求拆分请求恰好两项（vector 的 0x20 字节元素，总跨度 0x40），第二项经 atoi 得 moduleID，再转 0x5ee170。成功响应 <code>OK</code>，失败 <code>Err*%d</code>，均回写响应长度；请求数量错误为 0xe0000109。</p>
+<p>0x5ee170 原指令 0x5ee1a2 原子递增 manager+0x7d420 序号，0x5ee207…0x5ee211 把 moduleID、序号及消息字符串输出传入 0x687670；之后 0x5ee216…0x5ee241 按 small-string 指针/长度、该序号、响应字符串与 false 标记调用 0x5de710。反编译在两处遗漏活跃寄存器参数，不能按伪码无参调用复现。此时仍未见模块默认参数实际写入。</p>
+<p>0x687670 已取体，日志原名 <code>CModuleJson::BuildResetModuleAlgParam</code>；构造对象的 <code>head.command=0xc0b</code>、<code>head.description=&quot;Reset module algorithm parameter&quot;</code>、<code>head.type=&quot;request&quot;</code>、<code>head.requestId=序号</code>、<code>body.moduleId=moduleID</code>。字段名/描述均由同一原二进制只读提取，见 manager-reset-strings.json。该构造函数清理的是自己的 JSON 临时分配，不是相机映射缓存。</p>
+<p>0x5de710 已取体，日志原名 <code>FilterNodeManagerForSP::SPSendCmdPairMessage</code>。经 manager+0x7d510 模块句柄 GetProcAddress <code>VM_PROXY_RecvServerCommand</code>，缓存到 +0x7d518 后调用；初始化响应为 512 字节缓冲、容量 511，不足返回 0xe0000012 时存在扩容/再次调用分支。实际接收函数所属模块、其 JSON 0xc0b 分派仍待取体；这里再次经过动态 native 边界，不能只凭 Server/Proxy 名字判跨进程。</p>
+<h3 id="同日接续json-0xc0b-到-moduleframe-导出">同日接续：JSON 0xc0b 到 ModuleFrame 导出</h3><p><code>Applications/ModuleProxy/x64/ModuleProxy.dll</code> SHA256 <code>76F09A40184B2B5F99B7173EDDE23A716D339E3C64955696D6927495EFDF68A9</code> 提供匹配导出 <code>VM_PROXY_RecvServerCommand</code>，RVA 0x20bd0。其原指令 0x20bea…0x20c40 保留原参数并转交 0x49cb0；伪码无参 void 不可作为 ABI。0x49cb0 调单例 0x4a5b0→0x4a610 生成响应字符串，再按容量复制，容量不足回写字符串长度+3。</p>
+<p>0x4a610 已导出 794870 字节 C 体，case0xc0b（7472 行附近）取 <code>body.moduleId</code>，调用单例 0x21530 的 helper 0x24a30。后者是 <code>JMP [this+0x398]</code>。被动字节候选+PE exception table 将该槽写入定位到 0x235dc，所属加载体 0x21590…0x241ff；原体确认 GetProcAddress <code>VM_M_ResetModuleNodeAlgParam</code> 返回值写 this+0x398，加载路径为传入根路径加 <code>\\..\\..\\ModuleProxy\\x64\\ModuleFrame.dll</code>。这条重置链仍未见跨进程 API。PlatformManager+0x7d510 如何绑定到本 Proxy 的完整 loader 上游仍需补证，匹配导出源码不能代替运行绑定 trace。</p>
+<h3 id="最新叶体读取默认-xml逐项-setparam-而非-resetmember">最新叶体：读取默认 XML，逐项 SetParam 而非 ResetMember</h3><p>ModuleFrame SHA256 <code>45C57BC46F72FD1F9E0B3A6F9183FF974D14590CFD05ECF4E9FA97A4FF95AE9B</code>。<code>VM_M_ResetModuleNodeAlgParam</code> RVA0x141ee0→0x581e0→默认参数构造0x125100→XML读取0xe5cb0→pair-vector插入0xe8220；构造成功后0x581e0调用0x42760写入。0x581e0分配/释放0x58484字节临时参数缓冲，0x125100每项名称0x104字节、值0x400字节，stride0x584，最多256项。XML读取按ParamItem顺序取Name/DefaultValue；DefaultValue没有文本时保留已初始化空字符串，0xe8220仍复制两字符串并将vector终点增加0x40，没有过滤空值。</p>
+<p>原厂 <code>IMVSCameraMapModuAlgorithm.xml</code> 的实际七项顺序是 RefreshFileEnable=False、CalibPathName空、Data1=Data1#1、Data2=Data2#1、HomoFreedom=1、WeightFun=3、WeightFactor=20；SaveCalibPath是注释，Data3…Data8没有默认项。它不同于配置 AlgorithmTab 控件树。</p>
+<p>0x42760正常模块分支取节点+0x128的算法接口，逐项调用vtable+0x18。原指令0x429a8…0x429c6明确参数为 this、name、value、strlen(value)。失败只更新EBP中的最后非零错误并继续，0x42a45返回该错误，没有回滚。CameraMap构造0x8ce0的0x8cf8/0x8cff将vtable VA0x117b8写this；该表+0x18（VA0x117d0）原字节为SetParam VA0xce30（候选扫描与构造原指令相互核对）。因此对正常CameraMap算法对象，此路径落在已复用的原 <code>CIMVSCameraMapModu::SetParam</code>。</p>
+<p>该默认写入路径的模块内效果可按原分支区分：</p>
+<table>
+<thead>
+<tr>
+<th>对象/字段</th>
+<th>源码效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>+0x74 RefreshFileEnable</td>
+<td>写false</td>
+</tr>
+<tr>
+<td>+0x78/+0x80 缓存文件路径</td>
+<td>CalibPathName空分支在写入前返回0xe0000204，旧路径保留</td>
+</tr>
+<tr>
+<td>+0x1c/+0x20 Data1/Data2</td>
+<td>按Data%d#%d置为1</td>
+</tr>
+<tr>
+<td>Data3…Data8标志</td>
+<td>本默认XML没有对应SetParam项；不据此声称重置到仅两组</td>
+</tr>
+<tr>
+<td>SDK +0xc0 BasicParam</td>
+<td>按1/3/20设置HomoFreedom/WeightFun/WeightFactor；不是SDK对象销毁/清零</td>
+</tr>
+<tr>
+<td>+0x18有效标记、+0x60/+0x68点缓存、+0x70容量</td>
+<td>上述七项SetParam分支没有清理/释放/失效操作</td>
+</tr>
+<tr>
+<td>最后一帧、框架输出/显示缓存</td>
+<td>已取这条调用链未见清帧；框架其他通知/回调仍未知</td>
+</tr>
+</tbody></table>
+<p>Frame0x581e0与导出0x141ee0的原指令分别在0x5856c、0x141faa恢复被调返回码，不能按反编译void签名忽略错误。静态源链提示复位可能在清绑定后出现空路径错误且参数已部分更新，但本轮没有执行完整UI reset；外层JSON响应解析及平台绑定上游仍有待核细节，暂不把此预测写成用户已观察事实，不修改当前原子复位适配。</p>
+<p>当前下一依赖为补PlatformManager+0x7d510的Proxy loader来源、完整返回映射与一次指定入口的受控确认，再独立继续B3数组/索引/模式/文件其他分支。B3整卡目前仅S0满足；B1、B2各S0–S5/S7，B4仅S0，相机线保守16/32阶段（50%），由根线汇入总128阶段统计。</p>
+<p class="meta">来源：docs/plugins/CAMERA-MAPPING-B3-RESET-SOURCE.md · SHA256 760f29a404db9739d9a646f33ba774538868f07debfc7b589179e433faf366fd<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

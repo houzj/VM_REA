@@ -1,0 +1,10 @@
+// Offline PE file inspection only: never loads the inspected image.
+const fs=require('fs'),crypto=require('crypto');
+module.exports=function(path){
+ const b=fs.readFileSync(path),pe=b.readUInt32LE(0x3c);if(b.toString('ascii',pe,pe+4)!=='PE\0\0')throw Error('Not PE');const opt=pe+24,magic=b.readUInt16LE(opt);if(magic!==0x20b)throw Error('Expected PE32+');const base=b.readBigUInt64LE(opt+24),sections=[];
+ for(let i=0;i<b.readUInt16LE(pe+6);i++){const p=opt+b.readUInt16LE(pe+20)+i*40;sections.push({name:b.toString('ascii',p,p+8).replace(/\0.*$/,''),rva:b.readUInt32LE(p+12),virtualSize:b.readUInt32LE(p+8),rawOffset:b.readUInt32LE(p+20),rawSize:b.readUInt32LE(p+16)});}
+ const offset=r=>{const s=sections.find(s=>r>=s.rva&&r<s.rva+s.rawSize);if(!s)throw Error('RVA not file backed '+r.toString(16));return s.rawOffset+r-s.rva;},str=p=>b.toString('utf8',p,b.indexOf(0,p));
+ const exports=[],er=b.readUInt32LE(opt+112),es=b.readUInt32LE(opt+116);if(er){const p=offset(er),f=offset(b.readUInt32LE(p+28)),names=offset(b.readUInt32LE(p+32)),ord=offset(b.readUInt32LE(p+36));for(let i=0;i<b.readUInt32LE(p+24);i++){const o=b.readUInt16LE(ord+i*2),r=b.readUInt32LE(f+o*4);exports.push({name:str(offset(b.readUInt32LE(names+i*4))),ordinal:b.readUInt32LE(p+16)+o,rva:'0x'+r.toString(16),va:'0x'+(base+BigInt(r)).toString(16),forwarder:r>=er&&r<er+es?str(offset(r)):null});}}
+ const imports=[],ir=b.readUInt32LE(opt+120);if(ir)for(let p=offset(ir);b.readUInt32LE(p+12);p+=20){const dll=str(offset(b.readUInt32LE(p+12))),lookup=b.readUInt32LE(p)||b.readUInt32LE(p+16),iat=b.readUInt32LE(p+16);for(let n=0;;n++){const v=b.readBigUInt64LE(offset(lookup)+n*8);if(!v)break;imports.push({dll,name:v>>63n?'ordinal:'+Number(v&0xffffn):str(offset(Number(v))+2),iatRva:'0x'+(iat+n*8).toString(16),iatVa:'0x'+(base+BigInt(iat+n*8)).toString(16)});}}
+ return{path,sha256:crypto.createHash('sha256').update(b).digest('hex'),byteLength:b.length,machine:'0x'+b.readUInt16LE(pe+4).toString(16),imageBase:'0x'+base.toString(16),sections,exports,imports,loadedOrExecuted:false};
+};

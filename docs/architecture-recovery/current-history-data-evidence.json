@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "HP01",
+      "classification": "independent-implementation",
+      "stages": [
+        "history",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "GraphEditorDocument.Capture → CaptureSnapshot",
+      "to": "配置文档副本 → 内存快照或独占JSON文件载荷",
+      "behavior": "Capture先Copy(document)，再SerializeToUtf8Bytes。仅当没有显式historyPayloadParentDirectory且字节数小于64KiB时，Snapshot直接保存传入的文档副本；其余情况创建HistoryPayloadStore并写独占.payload。Snapshot还保存ProcedureId和BaseDirectory。Restore通过Snapshot.Document读取/反序列化，再从旧BaseDirectory重基到当前BaseDirectory，替换document并Dirty/Revision/Changed；没有把workflowSessions、scope或工具像素FIFO装进这个Snapshot。",
+      "representation": "MemoryDocument是SolutionDocument结构副本；Parameters逐JsonElement.Clone，Resources复制数组，ResourceDocument承载路径/哈希/可选EmbeddedBase64字符串；文件型Snapshot持HistoryPayloadLease，不是原生sol。",
+      "cache": "快照捕获配置、文档资源表示与当时的基目录，不捕获所有运行对象。64KiB边界以序列化字节计，不是图像像素缓存容量。",
+      "release": "Snapshot.Dispose只Dispose文件载荷租约；内存快照没有逐字段资源Dispose协议。结果会话、provider和scope各自退役。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Snapshot representation",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 15,
+          "end": 21,
+          "excerpt": "    sealed record Snapshot(SolutionDocument? MemoryDocument, string ProcedureId, string BaseDirectory,\n        [property:System.Text.Json.Serialization.JsonIgnore] HistoryPayloadLease? Payload = null) : IDisposable\n    {\n        public SolutionDocument Document => MemoryDocument ?? JsonSerializer.Deserialize<SolutionDocument>(Payload!.ReadBytes())\n            ?? throw new InvalidDataException(\"Invalid owned history document payload.\");\n        public void Dispose() => Payload?.Dispose();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Capture and CaptureSnapshot",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 307,
+          "end": 315,
+          "excerpt": "    Snapshot Capture()=>CaptureSnapshot(Copy(document),CurrentProcedureId,BaseDirectory);\n    Snapshot CaptureSnapshot(SolutionDocument value,string procedure,string directory)\n    {\n        ObjectDisposedException.ThrowIf(disposed,this);\n        var bytes=JsonSerializer.SerializeToUtf8Bytes(value);\n        if(historyPayloadParentDirectory is null && bytes.Length<64*1024)return new(value,procedure,directory);\n        historyPayloadStore??=new(historyPayloadParentDirectory??Path.Combine(Path.GetTempPath(),\"VisionEditor-History\"));\n        return new(null,procedure,directory,historyPayloadStore.CreateFile(bytes));\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "RestoreSnapshot",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 316,
+          "end": 319,
+          "excerpt": "    void RestoreSnapshot(Snapshot snapshot) {\n        var next=Rebase(snapshot.Document,snapshot.BaseDirectory,BaseDirectory);\n        document=next;CurrentProcedureId=snapshot.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Copy document fields",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 331,
+          "end": 331,
+          "excerpt": "    static SolutionDocument Copy(SolutionDocument d)=>d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=>p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with {Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "ResourceDocument",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 19,
+          "end": 19,
+          "excerpt": "public sealed record ResourceDocument(string Id,string Path,string? Sha256=null){[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public string? EmbeddedBase64{get;init;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "仅源码级配置快照合同；不证明原版undo载荷或当前完整GUI操作等价，也未据此测量内存峰值。"
+      ]
+    },
+    {
+      "id": "HP02",
+      "classification": "independent-implementation",
+      "stages": [
+        "history",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "HistoryPayloadStore.CreateMemory / AcquireFile / Retain",
+      "to": "字节复制、共享Entry引用数与借用文件权限分开",
+      "behavior": "CreateMemory调用bytes.ToArray，Read内存条目再次ToArray；文件Read调用File.ReadAllBytes。AcquireFile把路径归一并按OrdinalIgnoreCase查既有Entry，命中只增加References并返回新租约；未命中且文件存在时登记BorrowedFile，不取得删除权。Retain同样增加Entry引用数；它不会产生新文件或复制原文件内容。",
+      "representation": "HistoryPayloadLease是单个持有者，Entry是同路径/内存载荷的共享计数项；Memory、OwnedFile、BorrowedFile三个Kind决定载荷与权限。",
+      "cache": "同路径命中复用原Entry的Kind，包括已有OwnedFile的删除权；不能把每次AcquireFile都说成借用或深复制。",
+      "release": "只有最后引用退出才进入该Entry的实际清理；BorrowedFile不删外部文件，Memory只清自身数组持有。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+          "member": "Payload kinds",
+          "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af",
+          "start": 3,
+          "end": 3,
+          "excerpt": "public enum HistoryPayloadKind { Memory, OwnedFile, BorrowedFile }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+          "member": "CreateMemory copies bytes",
+          "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af",
+          "start": 26,
+          "end": 31,
+          "excerpt": "    public HistoryPayloadLease CreateMemory(byte[] bytes)\n    {\n        ArgumentNullException.ThrowIfNull(bytes);\n        lock (gate) { EnsureOpen(); return Add(new(HistoryPayloadKind.Memory, bytes.ToArray(), null)); }\n    }\n    public HistoryPayloadLease CreateFile(byte[] bytes)",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+          "member": "AcquireFile identity and ownership",
+          "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af",
+          "start": 62,
+          "end": 75,
+          "excerpt": "    public HistoryPayloadLease AcquireFile(string path)\n    {\n        ArgumentException.ThrowIfNullOrWhiteSpace(path);\n        string full = Path.GetFullPath(path);\n        lock (gate)\n        {\n            EnsureOpen();\n            var existing = entries.FirstOrDefault(entry => entry.Path is not null && StringComparer.OrdinalIgnoreCase.Equals(entry.Path, full));\n            if (existing is not null) { existing.References++; return new(this, existing); }\n            if (!File.Exists(full)) throw new FileNotFoundException(\"History payload does not exist.\", full);\n            return Add(new(HistoryPayloadKind.BorrowedFile, null, full));\n        }\n    }\n    HistoryPayloadLease Add(Entry entry) { entries.Add(entry); return new(this, entry); }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+          "member": "Retain and Read",
+          "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af",
+          "start": 77,
+          "end": 85,
+          "excerpt": "    internal HistoryPayloadLease Retain(Entry entry)\n    {\n        lock (gate) { EnsureOpen(); Verify(entry); entry.References++; return new(this, entry); }\n    }\n    internal byte[] Read(Entry entry)\n    {\n        lock (gate) { Verify(entry); return entry.Kind == HistoryPayloadKind.Memory ? entry.Bytes!.ToArray() : File.ReadAllBytes(entry.Path!); }\n    }\n    void Verify(Entry entry) { if (!entries.Contains(entry)) throw new ObjectDisposedException(nameof(HistoryPayloadLease)); }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "路径大小写策略是当前实现的比较器选择，不是原版路径或跨平台文件身份等价证明；外部修改/删除借用文件的运行竞争未验证。"
+      ]
+    },
+    {
+      "id": "HP03",
+      "classification": "independent-implementation",
+      "stages": [
+        "history",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "HistoryPayloadLease.Dispose → Store.Release",
+      "to": "先删除owned文件再撤Entry；失败可保留可重试租约",
+      "behavior": "Entry.References>1时只减计数；最后引用若OwnedFile先File.Delete，成功后才entries.Remove、Bytes=null、References=0。删除抛错时Entry仍live，Lease.Dispose保留owner并重抛；如果Entry已移除而随后目录清理抛错，catch依据IsLive=false把owner清空，不能把两类异常都当文件仍有可重试租约。Store.Dispose只closing，尚有Entry时等待最后租约，不强制遍历删除。",
+      "representation": "租约owner、Entry成员资格、文件是否已删及目录是否已释放是四种状态；异常不是统一回滚。",
+      "cache": "最后租约退出可能才触发ReleaseDirectory；目录还有未知文件时只返回，不递归删除。目录清理还验证.owner内容等于当前identity。",
+      "release": "本Store仅有独占目录/owned文件的权限；失败保留与重复Dispose是否重试取决于异常发生在Entry移除之前还是之后。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+          "member": "Release entry ordering",
+          "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af",
+          "start": 87,
+          "end": 98,
+          "excerpt": "    internal void Release(Entry entry)\n    {\n        lock (gate)\n        {\n            Verify(entry);\n            if (entry.References > 1) { entry.References--; return; }\n            // Failure keeps ownership/reference alive so the caller can retain the exact failed payload.\n            if (entry.Kind == HistoryPayloadKind.OwnedFile) File.Delete(entry.Path!);\n            entries.Remove(entry); entry.Bytes = null; entry.References = 0;\n            if (closing && entries.Count == 0) ReleaseDirectory();\n        }\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+          "member": "Store closing and directory ownership",
+          "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af",
+          "start": 101,
+          "end": 116,
+          "excerpt": "        lock (gate) { closing = true; if (entries.Count == 0) ReleaseDirectory(); }\n    }\n    void ReleaseDirectory()\n    {\n        if (directoryReleased || !Directory.Exists(DirectoryPath)) { directoryReleased = true; return; }\n        // Never recursively delete or remove unknown files. Even this directory may contain new audit material.\n        if (Directory.EnumerateFileSystemEntries(DirectoryPath).Any(path => !StringComparer.OrdinalIgnoreCase.Equals(path, marker))) return;\n        if (!File.Exists(marker) || File.ReadAllText(marker) != identity) throw new IOException(\"Owned history marker changed; cleanup refused.\");\n        File.Delete(marker); Directory.Delete(DirectoryPath, recursive: false); directoryReleased = true;\n    }\n    internal sealed class Entry(HistoryPayloadKind kind, byte[]? bytes, string? path)\n    {\n        internal HistoryPayloadKind Kind { get; } = kind;\n        internal byte[]? Bytes = bytes;\n        internal string? Path { get; } = path;\n        internal int References = 1;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+          "member": "Lease.Dispose checks live state",
+          "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af",
+          "start": 122,
+          "end": 144,
+          "excerpt": "public sealed class HistoryPayloadLease : IDisposable\n{\n    readonly object gate = new();\n    HistoryPayloadStore? owner;\n    readonly HistoryPayloadStore.Entry entry;\n    internal HistoryPayloadLease(HistoryPayloadStore owner, HistoryPayloadStore.Entry entry) { this.owner = owner; this.entry = entry; }\n    public HistoryPayloadKind Kind => entry.Kind;\n    public string? FilePath => entry.Path;\n    public byte[] ReadBytes() { lock (gate) return Active.Read(entry); }\n    public HistoryPayloadLease Retain() { lock (gate) return Active.Retain(entry); }\n    HistoryPayloadStore Active => owner ?? throw new ObjectDisposedException(nameof(HistoryPayloadLease));\n    public void Dispose()\n    {\n        lock (gate)\n        {\n            if (owner is null) return;\n            var current = owner;\n            try { current.Release(entry); owner = null; }\n            catch { if (!current.IsLive(entry)) owner = null; throw; }\n        }\n    }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "源码中两个Dispose方法处于不同类型，引用会保留各自完整区段；未用真实文件占用、权限故障或GUI并发作本轮运行验证。"
+      ]
+    },
+    {
+      "id": "HP04",
+      "classification": "independent-implementation",
+      "stages": [
+        "history",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "DocumentHistoryPart.AdaptOldValue / AdaptNewValue",
+      "to": "先换当前payload，旧payload释放失败则单独保留",
+      "behavior": "AdaptOldValue先调用adapt产生next，非同引用时先将OldValue=next，再ReleaseReplaced(previous)；AdaptNewValue同理且要求IsDataComplete。ReleaseReplaced失败把旧值加入retainedValues并重抛，因此适配失败不表示原payload仍是当前值。Release分别尝试OldValue、已捕获newValue和retainedValues，成功项设标志或移出；Root逐part聚合错误，Engine把失败Root加入retainedReleaseFailures。显式ReleaseRetainedPayloads才重试这些Root。",
+      "representation": "当前旧/新值、待释放旧值列表、根级失败保留列表分层持有；DocumentHistoryRoot/Part不是框架执行session。",
+      "cache": "View-only快照适配可保留缩放而替换快照载荷；失败Root仍保留未成功释放的payload，不把已切栈当全部文件释放完成。",
+      "release": "此处有显式重试接口，区别于ModuleExecutionScope重复Dispose不自动重试的合同；不能跨模块套用同一种失败策略。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "Part adaptation and retained payloads",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 179,
+          "end": 215,
+          "excerpt": "    public void AdaptOldValue(Func<T, T> adapt)\n    {\n        ArgumentNullException.ThrowIfNull(adapt);\n        var previous = OldValue; var next = adapt(previous);\n        if (ReferenceEquals(previous,next)) return;\n        OldValue = next;\n        ReleaseReplaced(previous);\n    }\n    /// <summary>Explicit host view-only adaptation; it never recaptures an action's new structure.</summary>\n    public void AdaptNewValue(Func<T, T> adapt)\n    {\n        ArgumentNullException.ThrowIfNull(adapt);\n        if (!IsDataComplete) throw new InvalidOperationException(\"The new payload has not been completed.\");\n        var previous = newValue; var next = adapt(previous);\n        if (ReferenceEquals(previous,next)) return;\n        newValue = next;\n        ReleaseReplaced(previous);\n    }\n    internal void CompleteNewValue()\n    {\n        IsDataComplete = true; // Source sets this before Update, including when capture throws.\n        newValue = capture();\n        hasNewValue = true;\n    }\n    void ReleaseReplaced(T value)\n    {\n        if (release is null) return;\n        try { release(value); } catch { retainedValues.Add(value); throw; }\n    }\n    internal void Release()\n    {\n        if (release is null) return;\n        List<Exception>? errors = null;\n        if (!oldReleased) try { release(OldValue); oldReleased = true; } catch (Exception e) { (errors ??= new()).Add(e); }\n        if (hasNewValue && !newReleased) try { release(newValue); newReleased = true; } catch (Exception e) { (errors ??= new()).Add(e); }\n        foreach (var value in retainedValues.ToArray())\n            try { release(value); retainedValues.Remove(value); } catch (Exception e) { (errors ??= new()).Add(e); }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "ReleaseReplaced and Part.Release",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 203,
+          "end": 218,
+          "excerpt": "    void ReleaseReplaced(T value)\n    {\n        if (release is null) return;\n        try { release(value); } catch { retainedValues.Add(value); throw; }\n    }\n    internal void Release()\n    {\n        if (release is null) return;\n        List<Exception>? errors = null;\n        if (!oldReleased) try { release(OldValue); oldReleased = true; } catch (Exception e) { (errors ??= new()).Add(e); }\n        if (hasNewValue && !newReleased) try { release(newValue); newReleased = true; } catch (Exception e) { (errors ??= new()).Add(e); }\n        foreach (var value in retainedValues.ToArray())\n            try { release(value); retainedValues.Remove(value); } catch (Exception e) { (errors ??= new()).Add(e); }\n        if (errors is not null) throw new AggregateException(errors);\n    }\n    internal void Undo() => restore(OldValue);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "Root.Release aggregates part errors",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 146,
+          "end": 166,
+          "excerpt": "public sealed class DocumentHistoryRoot<T>\n{\n    readonly List<DocumentHistoryPart<T>> parts = new();\n    internal DocumentHistoryRoot(string operation) { Operation = operation; Parts = parts.AsReadOnly(); }\n    public string Operation { get; }\n    public bool ForbidBuild { get; internal set; }\n    public IReadOnlyList<DocumentHistoryPart<T>> Parts { get; }\n    internal void Add(DocumentHistoryPart<T> part) => parts.Add(part);\n    internal void Release()\n    {\n        List<Exception>? errors = null;\n        foreach (var part in parts)\n            try { part.Release(); } catch (Exception error) { (errors ??= new()).Add(error); }\n        if (errors is not null) throw new AggregateException(\"History root payload release failed; ownership retained.\",errors);\n    }\n}\n\npublic sealed class DocumentHistoryPart<T>\n{\n    readonly Func<T> capture;\n    readonly Action<T> restore;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+          "member": "Root failure retention and explicit retry",
+          "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa",
+          "start": 132,
+          "end": 144,
+          "excerpt": "    void ReleaseRoot(DocumentHistoryRoot<T> root)\n    {\n        try { root.Release(); }\n        catch (Exception error) { releaseErrors.Add(error); retainedReleaseFailures.Add(root); }\n    }\n    // Explicit cleanup retry retains failed payload ownership; no silent filesystem retry loop.\n    public void ReleaseRetainedPayloads()\n    {\n        var roots = retainedReleaseFailures.ToArray(); retainedReleaseFailures.Clear();\n        foreach (var root in roots) ReleaseRoot(root);\n    }\n    public void Dispose() => Clear();\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "未穷举adapt/capture/restore的全部异常组合；原动作历史与当前JSON载荷的全量对应继续未知。"
+      ]
+    }
+  ],
+  "provenance": {
+    "sourceFiles": [
+      {
+        "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558"
+      },
+      {
+        "path": "src/VisionFramework/Contracts.cs",
+        "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269"
+      },
+      {
+        "path": "src/VisionEditor.Core/HistoryPayloadStore.cs",
+        "sha256": "baf68b7c651ff11f15fe714847db29436ac419a554805ef0733891afb48af6af"
+      },
+      {
+        "path": "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+        "sha256": "4f33d5d51a205be0c36e042cd8a25f024e93f0ffce1f81c9ebe29667216953aa"
+      }
+    ],
+    "currentRuntimeExecuted": false,
+    "originalRuntimeExecuted": false,
+    "guiStarted": false,
+    "productModified": false,
+    "implementationCredit": 0
+  }
+}

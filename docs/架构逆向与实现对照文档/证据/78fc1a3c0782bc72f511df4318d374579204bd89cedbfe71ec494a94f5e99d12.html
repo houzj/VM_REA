@@ -1,0 +1,65 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 78fc1a3c0782 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 78fc1a3c0782</p><h1>原文证据 78fc1a3c0782</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 78fc1a3c0782bc72f511df4318d374579204bd89cedbfe71ec494a94f5e99d12。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTab/RunParamsSelectData.cs:127–187
+证据类型 local-decompiled-source
+程序集身份 not revalidated in this slice
+SHA256 9068df3ca820e4ed01c8b128b6291fda1e362e169787093ced4d5f555ca81439
+	public virtual bool GetSelectedRunParams()
+	{
+		List&lt;RunParamsBaseNode> list = new List&lt;RunParamsBaseNode>();
+		if (AllModuleRunParams != null)
+		{
+			foreach (KeyValuePair&lt;int, IList&lt;RunParamsBaseNode>> allModuleRunParam in AllModuleRunParams)
+			{
+				if (allModuleRunParam.Value != null)
+				{
+					list.AddRange(allModuleRunParam.Value.Where((RunParamsBaseNode x) => x.OutputEnabled).ToList());
+				}
+			}
+		}
+		if (list != null &amp;&amp; list.Count > MaxCheckedCount)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;最多添加&quot;) + &quot;:&quot; + MaxCheckedCount);
+			return false;
+		}
+		if (list != null &amp;&amp; IsFromVarBind)
+		{
+			if (OtherSelectedRunParmas != null)
+			{
+				List&lt;RunParamsBaseNode> list2 = list.Where((RunParamsBaseNode m) => OtherSelectedRunParmas.Exists((RunParamsBaseNode n) => n.ModuleID == m.ModuleID &amp;&amp; n.Name == m.Name)).ToList();
+				if (list2.Count() > 0)
+				{
+					string msg = &quot;&quot;;
+					list2.ForEach((RunParamsBaseNode x) =>
+					{
+						msg = msg + x.FunllParamsNameA + &quot;\r&quot;;
+					});
+					HikMessageBox.Show(string.Format(&quot;{0}:\r{1}&quot;, AppLocalizationService.GetLang(&quot;Lang_ExitDuplicateBindParam&quot;), msg.Substring(0, msg.Length - 1)), MessageIcons.Warning);
+					return false;
+				}
+			}
+			List&lt;RunParamsBaseNode> list3 = list.Where((RunParamsBaseNode m) => m.IsSupportSub &amp;&amp; m.RunParamIoType != SelectedVarType).ToList();
+			if (list3.Count() > 0)
+			{
+				string msg2 = &quot;&quot;;
+				list3.ForEach((RunParamsBaseNode x) =>
+				{
+					msg2 = msg2 + x.FunllParamsNameA + &quot;\r&quot;;
+				});
+				HikMessageBox.Show(string.Format(&quot;{0}:\r{1}&quot;, AppLocalizationService.GetLang(&quot;Land_ExitCannotSubscribe&quot;), msg2.Substring(0, msg2.Length - 1)), MessageIcons.Warning);
+				return false;
+			}
+		}
+		if (SelectRunParams != null)
+		{
+			SelectRunParams.Clear();
+		}
+		SelectRunParams = list;
+		return true;
+	}
+
+	public virtual string[] GetValueType(int index)
+	{
+		return (searchType)index switch
+		{
+			searchType.AllType => allType, 
+			searchType.IntType => intType, 
+			searchType.FloatType => floatType, </pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/domain-data-obligations--F-15.html">数据/domain-data-obligations--F-15.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

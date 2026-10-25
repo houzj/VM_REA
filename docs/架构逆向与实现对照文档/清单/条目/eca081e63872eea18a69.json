@@ -1,0 +1,1152 @@
+{
+  "entry": {
+    "id": "save",
+    "label": "保存",
+    "node": "oResult",
+    "families": [
+      "persistence"
+    ],
+    "lifecycleTracks": [],
+    "operations": [
+      {
+        "key": "execution-storage:B01",
+        "href": "execution-storage.html#edge-B01",
+        "from": "保存/另存 Local/Native/Remote六包装",
+        "to": "忙状态门 / ProjectManager调用 / bool为true才ResetParamStateFlag",
+        "classification": "source-confirmed",
+        "behavior": "六包装都要求非IsCreating/IsSaving/IsLoading。保存传SaveSolution，另存传AnotherSaveSolution；远程显式isRemoteSave=true。只有其返回true才重置全局通信参数状态。本页不把同名外部ToolControl包装当相同合同。"
+      },
+      {
+        "key": "execution-storage:J01",
+        "href": "execution-storage.html#edge-J01",
+        "from": "MainWindow.Save",
+        "to": "GraphEditorDocument.Save",
+        "classification": "independent-implementation",
+        "behavior": "另存或无路径时先选 .vmx.json，取消不保存；doc.Save 成功后才记目录偏好和最近文件。"
+      }
+    ],
+    "classification": "independent-implementation",
+    "meaning": "按界面问题组织的研究导航，不证明该控件直接调用全部所列关系。",
+    "sections": [
+      {
+        "id": "persistence",
+        "title": "文件格式、资源路径与保存事务",
+        "gap": "原.sol完整schema、原native事务与插件私有资产完整往返未恢复。",
+        "facts": [
+          {
+            "key": "execution-storage:J01",
+            "href": "execution-storage.html#edge-J01",
+            "classification": "independent-implementation",
+            "from": "MainWindow.Save",
+            "to": "GraphEditorDocument.Save",
+            "behavior": "另存或无路径时先选 .vmx.json，取消不保存；doc.Save 成功后才记目录偏好和最近文件。"
+          },
+          {
+            "key": "execution-storage:J02",
+            "href": "execution-storage.html#edge-J02",
+            "classification": "independent-implementation",
+            "from": "GraphEditorDocument.Save",
+            "to": "SolutionStore.Save",
+            "behavior": "PrepareSave 接收文档副本，随后 Rebase 并落盘；返回后才替换 document、基目录、路径、Dirty、Revision 并发 Changed。"
+          },
+          {
+            "key": "execution-storage:J03",
+            "href": "execution-storage.html#edge-J03",
+            "classification": "independent-implementation",
+            "from": "SolutionStore.Save",
+            "to": "临时文件 → Flush(true) → File.Move",
+            "behavior": "先校验/序列化、限制 32MiB、检查重复键；同目录独占新临时文件写入和 Flush(true)，Move(overwrite:true)，finally 清临时文件。"
+          },
+          {
+            "key": "execution-storage:S01",
+            "href": "execution-storage.html#edge-S01",
+            "classification": "source-confirmed",
+            "from": "VmSolution.InternalExport",
+            "to": "SolutionManager.SyncSaveSolution",
+            "behavior": "Init 触发静态订阅；_isSaving 已置位则拒绝；取消路径清旗标。传路径、密码、零附加数据；同步调用返回后写 SolutionPassword / SolutionPath。异常清旗标、清路径再抛。"
+          },
+          {
+            "key": "execution-storage:S02",
+            "href": "execution-storage.html#edge-S02",
+            "classification": "source-confirmed",
+            "from": "TempVmSolution 静态构造",
+            "to": "OnSolutionSaveEndCallBack 订阅",
+            "behavior": "把 VmSolution.MSolutionManager_OnSolutionSaveEndCallBack 加入 SolutionManager 保存完成事件。"
+          },
+          {
+            "key": "workflow-data:U01",
+            "href": "workflow-data.html#edge-U01",
+            "classification": "unknown",
+            "from": "订阅描述 / native 生产与回调",
+            "to": "实际值、持久化与生命周期",
+            "behavior": "本页闭合到托管订阅结构/调用，不声明 native 上游准备、同轮值可用时刻、重复/失败回滚、变量存储及 .sol 往返已恢复。"
+          }
+        ]
+      }
+    ]
+  },
+  "operationBinding": null,
+  "dataFacts": [
+    {
+      "id": "IS10",
+      "classification": "independent-implementation",
+      "from": "LoadPreview / PrepareSave",
+      "to": "预览临时解码与持久化编码资源是另外两条支路",
+      "behavior": "LoadPreview每次独立OpenEncodedImage并解码，不查询State.Cache。PrepareSave克隆节点参数，取配置列表或文件夹目录列表；SolSaveImageData为true时最多取120条路径，复制编码流到byte[]，计算hash并Base64写ResourceDocument，返回新参数与资源快照。它保存编码文件资源，而不是把正在运行的Cache、PendingFrame或StitchBuffer序列化。预览流在using退出关闭；保存中的stream和MemoryStream各自using，输出ResourceDocument继续持有Base64字符串。",
+      "representation": "运行像素缓存 / 预览解码像素 / 保存的编码文件字节与Base64是三种载荷。",
+      "cache": "预览不表示当前工具已经运行；保存列表和首N像素缓存的准入/容量彼此独立。",
+      "release": "using关闭编码流，不消灭资源字符串、最终预览图像或主运行缓存；这些由后续文档/显示持有者决定寿命。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+          "member": "public VisionCore.IImageData LoadPreview(",
+          "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7",
+          "start": 46,
+          "end": 46,
+          "excerpt": " public VisionCore.IImageData LoadPreview(NodeDocument node,string path,string baseDirectory,ResourceCatalog? resources=null){using var stream=OpenEncodedImage(node,path,baseDirectory,resources);return LocalImageDecoder.ReadImage(stream,node.Parameters[\"PixelFormat\"].GetInt32()==2);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourceAssets.cs",
+          "member": "public ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources,ModuleExecutionScope? scope)",
+          "sha256": "6f7c81db9e3e07c47121a4520127c2aba84ac1e03d61c0a0f1f8d02829f82e30",
+          "start": 16,
+          "end": 31,
+          "excerpt": " public ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources,ModuleExecutionScope? scope){\n  var values=Descriptor.Parameters.ToDictionary(p=>p.Name,p=>p.DefaultValue!.Value.Clone());foreach(var pair in node.Parameters)values[pair.Key]=pair.Value.Clone();var paths=ReadPaths(values[\"ImagePaths\"].GetString()??\"[]\");\n  if(values[\"ImageSourceType\"].GetInt32()==1&&values[\"IsSubscribeFolderMode\"].GetBoolean()){\n   var state=scope?.State(Manifest.Id,node.Id,()=>new State());string configured=values[\"SubscribeFolderPath\"].GetString()??\"\";string? folder=string.IsNullOrWhiteSpace(configured)?null:Path.GetFullPath(configured,baseDirectory);\n   paths=folder is null?[]:state?.Folder?.DirectoryPath==folder?state.FolderPaths:Directory.Exists(folder)?LocalFolderCatalog.Read(folder):[];\n  }\n  var embedded=new Dictionary<string,string>(StringComparer.Ordinal);var assets=new Dictionary<string,ResourceDocument>(StringComparer.Ordinal);\n  if(values[\"SolSaveImageData\"].GetBoolean())foreach(string path in paths.Take(120)){\n   string full=Path.GetFullPath(path,baseDirectory);using var stream=File.Exists(full)?File.OpenRead(full):OpenEncodedImage(node,path,baseDirectory,resources);if(stream.Length>256L*1024*1024)throw new InvalidDataException(\"Embedded image exceeds encoded resource limit.\");using var copy=new MemoryStream();stream.CopyTo(copy);byte[] bytes=copy.ToArray();string hash=Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant(),id=\"plugin:\"+Manifest.Id+\":\"+node.Id+\":\"+hash;\n   assets[id]=new(id,full,hash){EmbeddedBase64=Convert.ToBase64String(bytes)};embedded[full]=id;\n  }\n  values[\"ImagePaths\"]=J(JsonSerializer.Serialize(paths.Select(path=>Path.GetFullPath(path,baseDirectory))));\n  values[\"SelectedPaths\"]=J(JsonSerializer.Serialize(ReadPaths(values[\"SelectedPaths\"].GetString()??\"[]\").Select(path=>Path.GetFullPath(path,baseDirectory))));\n  if(values[\"CurrentImagePath\"].GetString() is {Length:>0} current)values[\"CurrentImagePath\"]=J(Path.GetFullPath(current,baseDirectory));\n  if(values[\"SubscribeFolderPath\"].GetString() is {Length:>0} folderPath)values[\"SubscribeFolderPath\"]=J(Path.GetFullPath(folderPath,baseDirectory));\n  values[\"EmbeddedImageResources\"]=J(JsonSerializer.Serialize(embedded));return new(node with{Parameters=values},assets.Values.ToArray());",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "方案加载、资源验证实现、资源删除/去重及主窗预览释放需沿其消费者继续核；这条保存分支不证明原.sol格式兼容。"
+      ],
+      "stages": [
+        "input",
+        "display",
+        "retirement"
+      ],
+      "modes": [
+        "local"
+      ],
+      "organizationMeaning": "stages/modes为研究分组，不是额外已证运行调用边。",
+      "evidenceGroup": "图像源",
+      "reused": false
+    },
+    {
+      "id": "SP05",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原模块参数快照与保存/加载入口",
+      "to": "配置列表获取、加载回放及基类保存边界",
+      "behavior": "GetAllParamList通过VM_M_GetCurrentConfigByFile(...,\"ImageSourceModuleAlgorithm.xml\",param_1,0)返回当前配置。LoadModuleData明确先调用SetAllParamList(this,(PARAM_VALUE_INFO_LIST*)param_1)，其检查非空，按0x584字节条目步进，最多处理256项；除SetCameraParamWaitTime外，向虚表+0x18传入name@条目+4、value@+0x108及0x400长度。SaveModuleData明确调用CAbstractUserModule::SaveModuleData，再设置保存完成回调和owner等字段。三者证明可定位的快照/回放/保存边界，但未取基类保存原体，不能声称已逐项证明PathCache与拼接参数落盘编码。",
+      "representation": "PARAM_VALUE_INFO_LIST是name/value参数列表；与SaveModuleData额外附件、DynamicInData/OutData二进制描述不同。",
+      "cache": "加载回放setter不等于恢复运行时缓存像素；本条不把参数快照当作图像缓存快照。",
+      "release": "加载调用与保存完成回调不代表释放旧处理缓冲；并发保存时参数/像素快照一致性未验证。",
+      "refs": [
+        {
+          "path": "analysis/full-audit/image-source-native-extra-11.c",
+          "member": "CMyAlgorithmManager::GetAllParamList",
+          "sha256": "ebbef09bdc04f0b000ee34994f58cb417d940073e0dfcfea4b6c53137aeef74f",
+          "start": 15,
+          "end": 18,
+          "excerpt": "  iVar1 = VM_M_GetCurrentConfigByFile\n                    (*(undefined8 *)(this + 8),\"ImageSourceModuleAlgorithm.xml\",param_1,0);\n  return iVar1;\n}",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_2ca45acc532e850f29d1a7df77d701acfc29887b9edc5f08e7b44aed7a80e8e6"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-extra-8.c",
+          "member": "CMyAlgorithmManager::LoadModuleData",
+          "sha256": "6625abfa9124a309bc2538e0f1666b732db67896c538d538d827cfb3d612d23a",
+          "start": 150,
+          "end": 153,
+          "excerpt": "  SetAllParamList(this,(PARAM_VALUE_INFO_LIST *)param_1);\n  pCVar20 = this + 0x3b8;\n  plVar28 = (longlong *)**(longlong **)pCVar20;\n  local_cc8 = pCVar20;",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_b043344e5e22661c2e697de856892d7d32e95d6eb685a42419af2b962f6fea56"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-extra-10.c",
+          "member": "CMyAlgorithmManager::SetAllParamList",
+          "sha256": "2209f7ff9a5c44613207713272e09ee6960a63da762457b5168289f40812a34f",
+          "start": 15,
+          "end": 36,
+          "excerpt": "  if (param_1 == (PARAM_VALUE_INFO_LIST *)0x0) {\n    return -0x1fffffff;\n  }\n  iVar2 = 0;\n  if (0 < *(int *)param_1) {\n    do {\n      if (0xff < iVar2) {\n        return 0;\n      }\n      lVar3 = (longlong)iVar2 * 0x584;\n      iVar1 = _stricmp((char *)(param_1 + lVar3 + 4),\"SetCameraParamWaitTime\");\n      if (iVar1 != 0) {\n        (**(code **)(*(longlong *)this + 0x18))\n                  (this,param_1 + lVar3 + 4,param_1 + lVar3 + 0x108,0x400);\n      }\n      iVar2 = iVar2 + 1;\n    } while (iVar2 < *(int *)param_1);\n  }\n  return 0;\n}\n\n",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_18a2d0c1d24eb44eab431fab5399681fb20320011ca082652006712277e7e31c"
+        },
+        {
+          "path": "analysis/full-audit/image-source-native-extra-7.c",
+          "member": "CMyAlgorithmManager::SaveModuleData",
+          "sha256": "b556956b29291be7b20b64f97f8193c3bfb8f2f1960f41d1d8d20d042fce81ed",
+          "start": 101,
+          "end": 109,
+          "excerpt": "    CAbstractUserModule::SaveModuleData((CAbstractUserModule *)this,param_1);\n    *(code **)(param_1 + 0x61118) = FUN_18000c9d0;\n    *(CMyAlgorithmManager **)(param_1 + 0x61120) = this;\n    *(undefined4 *)(param_1 + 0x58488) = 1;\n    *(undefined4 *)(param_1 + 0x58490) = 0;\n    GetRootPath(this);\n    if ((LPCRITICAL_SECTION)(this + 0x248e8) != (LPCRITICAL_SECTION)0x0) {\n      EnterCriticalSection((LPCRITICAL_SECTION)(this + 0x248e8));\n    }",
+          "evidenceType": "retained-native-pseudocode",
+          "binaryIdentity": "91ea3659be97e51edeab0c913779d4555d51dcd0d6288086fbf9916d35b942db",
+          "reaEvidenceId": "ev_a0e93820826834da6a4b6b5343a2e58d87e625fad229b4d5996127072756afe0"
+        }
+      ],
+      "unknowns": [
+        "虚表+0x18实际目标/ABI需按完整虚表/汇编核；本调用点具name/value实参，不能只按名称擅称每一条setter成功。",
+        "SetAllParamList伪码忽略单项setter返回码；全局返回0不能证明每个参数已有效应用。",
+        "CAbstractUserModule保存序列化实现与存档实际字节未在本轮恢复，配置保存/重开原版验收仍独立。"
+      ]
+    },
+    {
+      "id": "PS01",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "processing"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原ModuleParam.SetValueBySDK",
+      "to": "ModuleManager.SetParamValue → ServerSDKAPI → NativeMethods.IMVS_SetParamValue",
+      "behavior": "普通参数键由ModuleParam传Parent.ID/key/value并强制bThrowException:true；仅VmModuleSet且键以%开头转另一动态参数入口。ModuleManager将全局CVmObjectBase.mhandle、uint模块ID、参数名和值原样传ServerSDKAPI，后者直接调用NativeMethods.IMVS_SetParamValue。P/Invoke明确绑定.\\iMVS-6000PlatformSDK.dll、StdCall，名称和值声明UTF8Marshaler；这是应用内部IMVS_*入口，不能拼接成Public SDK的IMVS_PF_*链。native返回非0且throw开启时抛VmException；关闭throw时，即使native返回非0仍会到ParamSeted=true，故该标志不等于参数已成功生效。",
+      "representation": "handle + uint moduleID + 两个UTF8文本参数；不是字节图像或输入订阅结构。",
+      "cache": "ModuleParam走真实SDK setter；ModuleManager.ParamSeted是修改标记，不能替代底层返回码。",
+      "release": "此调用点没有证明native保存了文本副本还是只在调用内读取；原插件SetParam仍在尚未恢复的native分发之后。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleParam.cs",
+          "member": "VM.Core.ModuleParam",
+          "sha256": "af392bf2d3af006c6a16021a271d67dd8ef2017b268580841874ab6fede1da48",
+          "start": 155,
+          "end": 166,
+          "excerpt": "\tprivate void SetValueBySDK(string key, string value)\n\t{\n\t\tif (Parent is VmModuleSet && key.StartsWith(\"%\"))\n\t\t{\n\t\t\tstring[] array = key.Split(',');\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetDynamicRunParamValue(Parent.ID, array[0], value, bThrowException: true, (array.Count() > 1) ? array[1] : \"\");\n\t\t}\n\t\telse\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetParamValue(Parent.ID, key, value, bThrowException: true);\n\t\t}\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "VM.PlatformSDKCS.ModuleManager",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 721,
+          "end": 739,
+          "excerpt": "\tpublic void SetParamValue(uint nModuleId, string strParamName, string strParamValue, bool bThrowException = false)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_SetParamValue(CVmObjectBase.mhandle, nModuleId, strParamName, strParamValue);\n\t\tif (num != 0 && bThrowException)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t\tstring text = strParamName.ToLower();\n\t\tif (!(text == \"password\") && !(text == \"pwd\") && !(text == \"key\"))\n\t\t{\n\t\t\tLogHelper.Info($\"设置参数:(ID){nModuleId} (参数名){strParamName} (参数值){strParamValue}\");\n\t\t}\n\t\tParamSeted = true;\n\t}\n\n\tpublic void SetParamValueForImageSource(uint nModuleId, string strParamName, string strParamValue)\n\t{",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 348,
+          "end": 351,
+          "excerpt": "\tpublic static int IMVS_SetParamValue(IntPtr handle, uint nModuleID, string strName, string strValue)\n\t{\n\t\treturn NativeMethods.IMVS_SetParamValue(handle, nModuleID, strName, strValue);\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 164,
+          "end": 164,
+          "excerpt": "\tpublic static extern int IMVS_SetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strValue);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "P/Invoke的厂商DLL导出实现、消息传输与到ImageSourceModule.SetParam的原生调用栈尚缺，不能据同名参数声称闭合。",
+        "该P/Invoke声明之前的StdCall属性另由PS02引用覆盖；x64机器级寄存器ABI不由C#签名替代。"
+      ]
+    },
+    {
+      "id": "PS02",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原UTF8Marshaler.MarshalManagedToNative",
+      "to": "UTF8临时HGlobal副本与清理回调",
+      "behavior": "自定义marshaller对null返回IntPtr.Zero，对非string抛InvalidOperationException；string用Encoding.UTF8.GetBytes生成byte[]，AllocHGlobal(bytes.Length+1)，Marshal.Copy复制所有字节并写末尾0。CleanUpNativeData实现FreeHGlobal。NativeMethods的Set/Get参数名及Set值显式使用此marshaller；因此参数跨边界存在UTF8字节临时副本，不能描述成直接共享托管string地址。",
+      "representation": "托管UTF16 string → 托管UTF8 byte[] → native HGlobal NUL结尾副本。",
+      "cache": "marshaller实例是静态单例，但每次MarshalManagedToNative重新分配临时文本；单例不意味着字符串缓冲缓存。",
+      "release": "声明的清理回调释放HGlobal，byte[]和原string由托管GC管理；没有证据允许native在调用后保存这个临时地址。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 26,
+          "end": 45,
+          "excerpt": "\tpublic IntPtr MarshalManagedToNative(object managedObj)\n\t{\n\t\tif (managedObj == null)\n\t\t{\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\t\tif (!(managedObj is string))\n\t\t{\n\t\t\tthrow new InvalidOperationException();\n\t\t}\n\t\tbyte[] bytes = Encoding.UTF8.GetBytes(managedObj as string);\n\t\tIntPtr intPtr = Marshal.AllocHGlobal(bytes.Length + 1);\n\t\tMarshal.Copy(bytes, 0, intPtr, bytes.Length);\n\t\tMarshal.WriteByte(intPtr, bytes.Length, 0);\n\t\treturn intPtr;\n\t}\n\n\tpublic object MarshalNativeToManaged(IntPtr pNativeData)\n\t{\n\t\tif (pNativeData == IntPtr.Zero)",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 16,
+          "end": 19,
+          "excerpt": "\tpublic void CleanUpNativeData(IntPtr pNativeData)\n\t{\n\t\tMarshal.FreeHGlobal(pNativeData);\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 10,
+          "end": 10,
+          "excerpt": "\tprivate static UTF8Marshaler instance = new UTF8Marshaler();",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 161,
+          "end": 167,
+          "excerpt": "\tpublic static extern int IMVS_GetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, uint nStrValueSize, IntPtr strValue);\n\n\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\", CallingConvention = CallingConvention.StdCall)]\n\tpublic static extern int IMVS_SetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strValue);\n\n\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\", CallingConvention = CallingConvention.StdCall)]\n\tpublic static extern int IMVS_SetParamValueForImageSource(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strPath);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "本条证明marshaller分配/复制/清理函数和声明，不是实际CLR/native异常路径的动态寿命验收。",
+        "字符串内嵌NUL和native截断处理仍需接收方原体；不能把UTF8编码等同于所有文本无损生效。"
+      ]
+    },
+    {
+      "id": "PS03",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原ModuleManager.GetParamValue",
+      "to": "4096默认接收缓冲 → UTF8解码副本 → FreeHGlobal",
+      "behavior": "无尺寸重载显式调用4096尺寸重载；ServerSDKAPI分配nStrValueSize字节HGlobal，将handle/moduleID/参数名/uint尺寸/指针送NativeMethods.IMVS_GetParamValue。只在native返回0时调用UTF8Marshaler.MarshalNativeToManaged赋给ref string，非0保留调用者原字符串；随后正常控制流FreeHGlobal并返原错误码。ModuleManager收到错误且throw开启才抛VmException。解码器逐字节读取到NUL，List<byte>再ToArray并Encoding.UTF8.GetString，读回值独立于临时native块。",
+      "representation": "调用者尺寸限定的接收缓冲 → 字节列表/数组 → 托管string；默认4096是分配容量，不是缓存条目数。",
+      "cache": "所选读参数包装每次新分配；没有在这段保留native接收块作为长期缓存。",
+      "release": "正常路径在SDK返回及解码之后FreeHGlobal。没有try/finally包围分配/调用/解码；异常路径不能说已保证释放。解码循环本身没有nStrValueSize边界，依赖native成功输出NUL终止。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "VM.PlatformSDKCS.ModuleManager",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 749,
+          "end": 764,
+          "excerpt": "\tpublic void GetParamValue(uint nModuleID, string strName, int nStrValueSize, ref string strValue, bool bThrowException = false)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_GetParamValue(CVmObjectBase.mhandle, nModuleID, strName, nStrValueSize, ref strValue);\n\t\tif (num != 0 && bThrowException)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}\n\n\tpublic void GetParamValue(uint nModuleID, string strName, ref string strValue, bool bThrowException = false)\n\t{\n\t\tGetParamValue(nModuleID, strName, 4096, ref strValue, bThrowException);\n\t}\n",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 331,
+          "end": 346,
+          "excerpt": "\tpublic static int IMVS_GetParamValue(IntPtr handle, uint nModuleID, string strName, int nStrValueSize, ref string strValue)\n\t{\n\t\tIntPtr intPtr = Marshal.AllocHGlobal(nStrValueSize);\n\t\tint num = NativeMethods.IMVS_GetParamValue(handle, nModuleID, strName, (uint)nStrValueSize, intPtr);\n\t\tif (num == 0)\n\t\t{\n\t\t\tstrValue = (string)UTF8Marshaler.GetInstance(\"cookie\").MarshalNativeToManaged(intPtr);\n\t\t}\n\t\tMarshal.FreeHGlobal(intPtr);\n\t\treturn num;\n\t}\n\n\tpublic static int IMVS_GetParamValue(IntPtr handle, uint nModuleID, string strName, ref string strValue)\n\t{\n\t\treturn IMVS_GetParamValue(handle, nModuleID, strName, 4096, ref strValue);\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 43,
+          "end": 65,
+          "excerpt": "\tpublic object MarshalNativeToManaged(IntPtr pNativeData)\n\t{\n\t\tif (pNativeData == IntPtr.Zero)\n\t\t{\n\t\t\treturn null;\n\t\t}\n\t\tList<byte> list = new List<byte>();\n\t\tint num = 0;\n\t\twhile (true)\n\t\t{\n\t\t\tbyte b = Marshal.ReadByte(pNativeData, num);\n\t\t\tif (b == 0)\n\t\t\t{\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tlist.Add(b);\n\t\t\tnum++;\n\t\t}\n\t\treturn Encoding.UTF8.GetString(list.ToArray(), 0, list.Count);\n\t}\n\n\tpublic static ICustomMarshaler GetInstance(string cookie)\n\t{",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 161,
+          "end": 161,
+          "excerpt": "\tpublic static extern int IMVS_GetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, uint nStrValueSize, IntPtr strValue);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "native失败是否写部分缓冲、返回0是否始终NUL终止、异常清理及各参数真实最大文本长度未取得callee证明。",
+        "不把Public SDK另一实现使用Ansi解码的规则套到本应用内部UTF8读参数桥。"
+      ]
+    },
+    {
+      "id": "PS04",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "processing",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原VmParamSubManager.SetModuleParamBinding",
+      "to": "绑定描述结构 → 临时HGlobal → IMVS_SetModuleParamBinding",
+      "behavior": "引用订阅不走PS01的name/value setter。VmParamSubManager构建nNum=1且128槽数组：目标Owner.ID、参数类型、128字节参数名；绑定值另含变量类型、256字节常量、目标模块ID/128字节来源名、下标类型与256字节常量或下标来源。StringUtil.UTF8GetFixLenBytes先建定长数组，再复制min(UTF8字节长度,len)，超长是按字节截断，满长度不额外加NUL。ModuleManager.SetModuleParamBinding→ServerSDKAPI构造并复制描述列表，AllocHGlobal(Marshal.SizeOf(...))、StructureToPtr、PInvoke IMVS_SetModuleParamBinding(handle,ptr)，正常路径释放outer HGlobal；native错误由ModuleManager抛VmException，VmParamSubManager捕获并返回false。",
+      "representation": "订阅载荷=目标参数身份+来源/常量/索引的结构化描述；数组字段复制不代表复制来源图像数据。",
+      "cache": "SDK包装复制的是128槽绑定描述数组，本段不证明native长期保留关系的内部数据结构或运行时如何逐帧解引用。",
+      "release": "本地outer HGlobal正常返回后Free；native是否已深拷贝描述、nested marshalling的完整清理及解绑后数据最后读者均未证明。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/VmParamSubManager.cs",
+          "member": "VM.Core.VmParamSubManager",
+          "sha256": "42b0363c9a4ff1376fc5980865ace43fbae7d5a2fdf00156c55cefc5ccc6703e",
+          "start": 37,
+          "end": 70,
+          "excerpt": "\t\tImvsSdkDefine.IMVS_SUBSCRIBE_MODU_PARAM_INFO stBindValue = default;\n\t\tstBindValue.eVarType = subType;\n\t\tstBindValue.strConstantValue = StringUtil.UTF8GetFixLenBytes(constantValue, 256);\n\t\tstBindValue.stVariableValue.stModuleParam.nModuleId = (int)targetModuleId;\n\t\tstBindValue.stVariableValue.stModuleParam.byParamName = StringUtil.UTF8GetFixLenBytes(targetParamName, 128);\n\t\tstBindValue.stVariableValue.eIndexType = indexType;\n\t\tstBindValue.stVariableValue.strIndexConstant = StringUtil.UTF8GetFixLenBytes(indexConstantValue, 256);\n\t\tstBindValue.stVariableValue.stIndexVariable.nModuleId = (int)indexModuleId;\n\t\tstBindValue.stVariableValue.stIndexVariable.byParamName = StringUtil.UTF8GetFixLenBytes(indexParamName, 128);\n\t\tImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST moduleParamBinding = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST\n\t\t{\n\t\t\tnNum = 1u,\n\t\t\tastBindModuVarList = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO[128]\n\t\t};\n\t\tmoduleParamBinding.astBindModuVarList[0].nModuleId = Owner.ID;\n\t\tmoduleParamBinding.astBindModuVarList[0].eVarType = GetVarType(paramType);\n\t\tmoduleParamBinding.astBindModuVarList[0].strParamName = StringUtil.UTF8GetFixLenBytes(paramName, 128);\n\t\tmoduleParamBinding.astBindModuVarList[0].stBindValue = stBindValue;\n\t\ttry\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetModuleParamBinding(moduleParamBinding);\n\t\t\treturn true;\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\tLogHelper.Error(ex.errorCode + ex.errorMessage);\n\t\t}\n\t\tcatch (Exception ex2)\n\t\t{\n\t\t\tLogHelper.Error(ex2.Message);\n\t\t}\n\t\treturn false;\n\t}\n",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/StringUtil.cs",
+          "member": "VM.PlatformSDKCS.StringUtil",
+          "sha256": "a7c8631e83c9f4d515b2e51ec5d337caf4b77c569385086af44e7ddb173006e4",
+          "start": 42,
+          "end": 52,
+          "excerpt": "\tpublic static byte[] UTF8GetFixLenBytes(string str, int len)\n\t{\n\t\tif (str == null)\n\t\t{\n\t\t\treturn null;\n\t\t}\n\t\tbyte[] array = new byte[len];\n\t\tbyte[] bytes = Encoding.UTF8.GetBytes(str);\n\t\tBuffer.BlockCopy(bytes, 0, array, 0, Math.Min(bytes.Length, len));\n\t\treturn array;\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "VM.PlatformSDKCS.ModuleManager",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 1953,
+          "end": 1962,
+          "excerpt": "\tpublic void SetModuleParamBinding(ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST stModuleVarInfo)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_SetModuleParamBinding(CVmObjectBase.mhandle, stModuleVarInfo);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 592,
+          "end": 614,
+          "excerpt": "\tpublic static int IMVS_SetModuleParamBinding(IntPtr handle, ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST stModuleVarInfo)\n\t{\n\t\tImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST structure = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST\n\t\t{\n\t\t\tastBindModuVarList = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO[128],\n\t\t\tnNum = stModuleVarInfo.nNum\n\t\t};\n\t\tif (stModuleVarInfo.astBindModuVarList != null)\n\t\t{\n\t\t\tfor (int i = 0; i < stModuleVarInfo.nNum; i++)\n\t\t\t{\n\t\t\t\tstructure.astBindModuVarList[i] = stModuleVarInfo.astBindModuVarList[i];\n\t\t\t}\n\t\t}\n\t\tIntPtr intPtr = new IntPtr(0);\n\t\tintPtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST)));\n\t\tMarshal.StructureToPtr(structure, intPtr, fDeleteOld: true);\n\t\tint result = NativeMethods.IMVS_SetModuleParamBinding(handle, intPtr);\n\t\tMarshal.FreeHGlobal(intPtr);\n\t\tintPtr = IntPtr.Zero;\n\t\treturn result;\n\t}\n",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 482,
+          "end": 482,
+          "excerpt": "\tpublic static extern int IMVS_SetModuleParamBinding(IntPtr handle, IntPtr pstModuParamInfo);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "不从描述复制推断来源像素深拷贝；native关系存储、订阅值更新时序和解绑所有权需实际nativecallee。",
+        "定长UTF8在多字节边界的截断可能形成不完整编码；是否UI前置校验避免此输入，本条没有端到端证明。"
+      ]
+    },
+    {
+      "id": "CP06",
+      "stages": [
+        "input",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "classification": "independent-implementation",
+      "from": "用户保存方案",
+      "to": "插件持久化投影→JSON方案文件→编辑器提交",
+      "behavior": "MainWindow将doc.PrepareSave接到plugins.PrepareSave(document,baseDirectory,executionScope)。GraphEditorDocument.Save向PrepareSave传入Copy(document)，插件注册表只对IToolAssetPersistence参与者调用其PrepareSave(node,catalog,procedureScope)，回收这些插件前缀资源并采用返回Node/Resources。随后重基路径、SolutionStore验证和序列化方案，经同目录临时文件Flush(true)+Move覆盖成功后编辑器才提交rebased文档。框架没有把scope有效参数或运行结果字典统一自动拷回所有节点。",
+      "representation": "被保存的是SolutionDocument及插件显式返回的ToolAssetSnapshot；不是整个运行scope、图像对象或原生指针堆的序列化。",
+      "cache": "参与者可通过传入scope选择保留的工具状态；实际保存哪些有效参数/资产取决于各工具PrepareSave实现。",
+      "release": "临时方案文件在finally中清理；写出JSON不会主动清空scope有效参数、运行缓存或释放其图像。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": "MainWindow.PrepareSave wiring",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 48,
+          "end": 48,
+          "excerpt": " public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new NImagePlugin(),modules);plugins.Register(new VisionPlugins.CameraMapping.CameraMappingPlugin(),modules);plugins.Register(new VisionPlugins.CalibrationBoard.CalibrationBoardPlugin(),modules);plugins.Register(new VisionPlugins.DistortionCalibration.DistortionCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.MapCalibration.MapCalibrationPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new CoordinateModulePlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);plugins.Register(new VisionPlugins.BranchModule.BranchModulePlugin(),modules);plugins.Register(new VisionPlugins.BranchString.BranchStringPlugin(),modules);plugins.Register(new VisionPlugins.Fixture.FixturePlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=>plugins.PrepareSave(document,baseDirectory,executionScope)};InitializeFrameworkResultHistory();Logo.Source=Asset(\"logo_vm.png\");StatusIcon.Source=Asset(\"bottombar_run.png\");ZoomIcon.Source=Asset(\"zoom_magnifier.png\");Resources[\"WorkflowNgOff\"]=Asset(\"workflow-ng-off.png\");Resources[\"WorkflowNgOn\"]=Asset(\"workflow-ng-on.png\");Resources[\"ToolboxCategoryClosed\"]=Asset(\"toolbox-category-closed.png\");Resources[\"ToolboxCategoryOpen\"]=Asset(\"toolbox-category-open.png\");Resources[\"ToolboxExpandNormal\"]=Asset(\"toolbox-expand-normal.png\");Resources[\"ToolboxExpandHover\"]=Asset(\"toolbox-expand-hover.png\");BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=>RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=>{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshConfigurationRoi();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count>0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=>RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=>{if(DisplayTabs.SelectedIndex==0&&Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Save",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 68,
+          "end": 74,
+          "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPluginContracts/Contracts.cs",
+          "member": "ToolPluginRegistry.PrepareSave",
+          "sha256": "a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f",
+          "start": 64,
+          "end": 70,
+          "excerpt": " public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){\n  var catalog=new ResourceCatalog(baseDirectory,document.Resources);var resources=document.Resources.Where(r=>!plugins.Values.Any(p=>p is IToolAssetPersistence&&r.Id.StartsWith(\"plugin:\"+p.Manifest.Id+\":\",StringComparison.Ordinal))).ToDictionary(r=>r.Id,StringComparer.Ordinal);\n  var procedures=document.Procedures.Select(procedure=>procedure with{Nodes=procedure.Nodes.Select(node=>{\n   if(Find(node.ModuleId) is not IToolAssetPersistence participant)return node;\n   var snapshot=participant.PrepareSave(node,baseDirectory,catalog,scope?.ForProcedure(procedure.Id));foreach(var resource in snapshot.Resources)resources[resource.Id]=resource;return snapshot.Node;\n  }).ToArray()}).ToArray();return document with{Procedures=procedures,Resources=resources.Values.ToArray()};\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "Save",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 17,
+          "end": 25,
+          "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }\n    public static void ValidateStructure(SolutionDocument solution){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本片段不展开每个IToolAssetPersistence参与者；不能宣称所有最后运行参数、缓存图像、SDK内部状态都能保存和重开恢复。",
+        "插件PrepareSave在最终方案文件提交前可能有自身资产写入副作用；此处只证明方案文件提交顺序，不宣称全资产跨文件事务。"
+      ]
+    },
+    {
+      "id": "OP01",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原UserData[key]",
+      "to": "按Parent.ID普通键或动态复合键读写SDK界面数据",
+      "behavior": "UserData不是一个本地Dictionary。getter在Parent非活动或正在Dispose时返回null，否则调用SDK；setter在Parent为空或Dispose时直接返回。isUsedForDynamicUIParam决定路由：动态key用字面分隔符&?;?拆分，array[0]为名字、array[1]（若有）为optional，更多片段没有继续传递；普通路由传完整key和Parent.ID。Parent.IsDynamicModu控制撤销分支，是另一项判断，不能等同isUsedForDynamicUIParam。",
+      "representation": "对外载荷byte[]；键是字符串，具体编码/布局由每个生产者决定。getter的null还可能表示非活动/Dispose，不能只解释为文件缺键。",
+      "cache": "所选UserData索引器没有本地值字典缓存；具体模型另有nullable字段或数组持有。",
+      "release": "setter的Dispose门只阻止这次写入，不释放先前SDK值或撤销记录。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "UserData getter/setter lifecycle gate",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 26,
+          "end": 64,
+          "excerpt": "\tpublic virtual byte[] this[string key]\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!Parent.IsActive || Parent.IsOnDispose)\n\t\t\t{\n\t\t\t\treturn null;\n\t\t\t}\n\t\t\ttry\n\t\t\t{\n\t\t\t\tLogHelper.Info($\"获取userdata模块ID名为{Parent.ID} {Parent.Name},key为{key}\");\n\t\t\t\treturn GetUIParamValue(key);\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex.errorMessage);\n\t\t\t\tthrow ex;\n\t\t\t}\n\t\t\tcatch (Exception ex2)\n\t\t\t{\n\t\t\t\tLogHelper.Error(ex2.Message);\n\t\t\t\tthrow VmSolution.GetVmException(ex2);\n\t\t\t}\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (Parent == null || Parent.IsOnDispose)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (Parent.IsGlobalModu || key == \"CheckedImages\" || key == \"DESIGNERBUFFER\" || key == \"ConfigAvailable\")\n\t\t\t{\n\t\t\t\tSetUIParamValue(key, value);\n\t\t\t}\n\t\t\telse if (Parent.IsDynamicModu)\n\t\t\t{\n\t\t\t\tIUnRedoService unRedoService = Ioc.Get<IUnRedoService>();\n\t\t\t\tif (unRedoService != null && unRedoService.ValiteType(\"ModifyConfig\"))\n\t\t\t\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "UserData dynamic key routing",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 136,
+          "end": 160,
+          "excerpt": "\tprivate byte[] GetUIParamValue(string key)\n\t{\n\t\tif (isUsedForDynamicUIParam)\n\t\t{\n\t\t\tstring[] array = key.Split(SplitStrs, StringSplitOptions.None);\n\t\t\treturn ServerSDKManager.serverSDKManager.mModuleManager.GetDynamicUIParamValue(Parent.ID, array[0], (array.Count() > 1) ? array[1] : \"\");\n\t\t}\n\t\treturn ServerSDKManager.serverSDKManager.mModuleManager.GetUIParamValueByKey(Parent.ID, key);\n\t}\n\n\tprivate void SetUIParamValue(string key, byte[] value)\n\t{\n\t\tif (isUsedForDynamicUIParam)\n\t\t{\n\t\t\tstring[] array = key.Split(SplitStrs, StringSplitOptions.None);\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetDynamicUIParamValue(Parent.ID, array[0], value, (array.Count() > 1) ? array[1] : \"\");\n\t\t}\n\t\telse\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetUIParamValue(Parent.ID, key, value);\n\t\t}\n\t}\n\n\tinternal bool CanRegisterUserData(IBuilder builder, IUnRedoOperation unRedoOperation)\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/UserData.cs",
+          "member": "UserData split delimiter",
+          "sha256": "8b5099c298b336a6576f9c6ff0c02090ec48c5e4e06b3127d8129dc4c1a79394",
+          "start": 22,
+          "end": 24,
+          "excerpt": "\tpublic const string SplitStr = \"&?;?\";\n\n\tprivate static string[] SplitStrs = new string[1] { \"&?;?\" };",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "SDK界面数据的最终native容器/落盘结构不在这些托管体内；不把写入等同.sol保存完成。"
+      ]
+    },
+    {
+      "id": "OP02",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原ModuleManager.SetUIParamValue / SetDynamicUIParamValue",
+      "to": "临时非托管字节副本 → native setter；空载荷改走删除",
+      "behavior": "两setter对非null且Length非0的byte[]按实际Length分配HGlobal并Marshal.Copy，传pointer和uint Length调用native；调用正常返回后FreeHGlobal，再检查返回码抛错。null和空数组都走对应删除方法，不能保存为可区分的零长度值。普通路由另有IsForbidden特殊分支：非null载荷先BytesToStruct<bool>再EnableModule，绕过一般UI键存储。",
+      "representation": "管理数组→独立临时HGlobal按Length复制；key的UTF8 custom marshaler与payload任意bytes是不同合同。",
+      "cache": "托管体调用后不保留HGlobal；native是否复制、如何保留以及setter何时提交到方案存储仍未知。",
+      "release": "FreeHGlobal位于native正常返回后而非finally；native调用或Marshal.Copy抛异常时此体不保证走到Free。仅证明潜在异常路径，不宣称原机已泄漏。Delete成功只证明该SDK操作返回0，不证明所有历史副本已释放。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+          "member": "ModuleManager.SetUIParamValue",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 765,
+          "end": 803,
+          "excerpt": "\tpublic void SetUIParamValue(uint nObjectID, string strParamName, byte[] data, uint nRecvWaitTime = 10000u)\n\t{\n\t\tif (strParamName == \"IsForbidden\" && data != null)\n\t\t{\n\t\t\tuint nEnableFlag = ((!ExternalCallHelper.BytesToStruct<bool>(data, 0, data.Length)) ? 1u : 0u);\n\t\t\tEnableModule(nObjectID, nEnableFlag);\n\t\t\treturn;\n\t\t}\n\t\tint num = -536870657;\n\t\tif (data != null && data.Length != 0)\n\t\t{\n\t\t\tIntPtr intPtr = Marshal.AllocHGlobal(data.Length);\n\t\t\tMarshal.Copy(data, 0, intPtr, data.Length);\n\t\t\tnum = ServerSDKAPI.IMVS_SetUIParamValue(CVmObjectBase.mhandle, nObjectID, strParamName, intPtr, (uint)data.Length, nRecvWaitTime);\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t\telse\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tDeleteUIParamValue(nObjectID, strParamName);\n\t\t\t\tnum = 0;\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tnum = ex.errorCode;\n\t\t\t}\n\t\t}\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex2 = new VmException(num);\n\t\t\tthrow ex2;\n\t\t}\n\t}\n\n\tpublic bool CheckUIParamExist(uint nObjectID, string strParamName)\n\t{\n\t\tint num = -536870657;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+          "member": "ModuleManager.SetDynamicUIParamValue",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 2224,
+          "end": 2255,
+          "excerpt": "\tpublic void SetDynamicUIParamValue(uint nObjectId, string strName, byte[] data, string strOptionalParam = \"\")\n\t{\n\t\tint num = -536870657;\n\t\tif (data != null && data.Length != 0)\n\t\t{\n\t\t\tIntPtr intPtr = Marshal.AllocHGlobal(data.Length);\n\t\t\tMarshal.Copy(data, 0, intPtr, data.Length);\n\t\t\tnum = ServerSDKAPI.IMVS_SetDynamicUIParamValue(CVmObjectBase.mhandle, nObjectId, strName, intPtr, (uint)data.Length, strOptionalParam);\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t\telse\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tDeleteDynamicRelateUIParamValue(nObjectId, strName, strOptionalParam);\n\t\t\t\tnum = 0;\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tnum = ex.errorCode;\n\t\t\t}\n\t\t}\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex2 = new VmException(num);\n\t\t\tthrow ex2;\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 获取动态UI参数值",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+          "member": "native UI setter byte length and key marshaler",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 317,
+          "end": 317,
+          "excerpt": "\tpublic static extern int IMVS_SetUIParamValue(IntPtr handle, uint nObjectID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strParamName, IntPtr pData, uint nDataLen, uint nRecvWaitTime);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "native setter保存副本或租用pointer的协议、删除最终析构、原.sol打包时点未闭合；本片不重新推断Writer/mdata。"
+      ]
+    },
+    {
+      "id": "OP05",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原具体UI模型字段",
+      "to": "字段级布局、默认值与缓存规则必须分列",
+      "behavior": "IsReady使用1字节0/1，缺键保留nullable未知，null setter删除。GUID初始化先CheckUIParamExist，存在时new Guid(bytes)，不存在创建Guid.NewGuid().ToByteArray再写入。ProceZoomIndex缺键返回backing字段初值9；getter读取并int.Parse后不回填该字段，setter先改字段再尝试写入且吞为消息框，故字段与SDK值不必事务一致。IsSubscribeInWindow按nullable缓存首次读取，缺失或TryParse失败为false；setter先更新缓存和通知，再尝试写入且吞异常。",
+      "representation": "GUID是Guid.ToByteArray二进制，不是GUID文本；IsReady固定1字节。缩放调用Hik.Util.StringUtil.UTF8GetBytesPadZero/UTF8GetString；订阅窗口调用Hik.Util.ByteUtil.GetBytes/GetStringFromByte，不能拿SDK同名StringUtil源码替代Hik helper确切编码/补零。",
+      "cache": "IsReady与IsSubscribeInWindow存在模型字段缓存；ProceZoomIndex读SDK但缺失回退backing值。缓存与原生键存储分别持有。",
+      "release": "把IsReady设null经UserData删除键，不等于清除外部撤销副本；字段缓存更新可先于SDK写入成功。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.IsReady",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 248,
+          "end": 280,
+          "excerpt": "\tpublic virtual bool? IsReady\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!_IsReady.HasValue)\n\t\t\t{\n\t\t\t\tbyte[] array = UserData[\"IsReady\"];\n\t\t\t\tif (array != null)\n\t\t\t\t{\n\t\t\t\t\t_IsReady = array[0] == 1;\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn _IsReady;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (_IsReady != value)\n\t\t\t{\n\t\t\t\t_IsReady = value;\n\t\t\t\tif (!value.HasValue)\n\t\t\t\t{\n\t\t\t\t\tUserData[\"IsReady\"] = null;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tUserData[\"IsReady\"] = ((!_IsReady.Value) ? new byte[1] : new byte[1] { 1 });\n\t\t\t\t}\n\t\t\t\tNotifyReadyStateToParent();\n\t\t\t\tOnPropertyChanged(\"IsReady\");\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "VmModule.Init GUID",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 1764,
+          "end": 1773,
+          "excerpt": "\t\tif (ServerSDKManager.serverSDKManager.mModuleManager.CheckUIParamExist(ID, \"GUID\"))\n\t\t{\n\t\t\tGUID = new Guid(UserData[\"GUID\"]).ToString();\n\t\t\treturn;\n\t\t}\n\t\tGuid guid = Guid.NewGuid();\n\t\tUserData[\"GUID\"] = guid.ToByteArray();\n\t\tGUID = guid.ToString();\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution zoom backing default",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 131,
+          "end": 131,
+          "excerpt": "\tprivate int proceZoomIndex = 9;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.ProceZoomIndex",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 273,
+          "end": 303,
+          "excerpt": "\tinternal int ProceZoomIndex\n\t{\n\t\tget\n\t\t{\n\t\t\tbyte[] array = ((IVmModule)this).UserData[\"ProceZoomIndex\"];\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn proceZoomIndex;\n\t\t\t}\n\t\t\treturn int.Parse(Hik.Util.StringUtil.UTF8GetString(array));\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (proceZoomIndex != value)\n\t\t\t{\n\t\t\t\tproceZoomIndex = value;\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\t((IVmModule)this).UserData[\"ProceZoomIndex\"] = Hik.Util.StringUtil.UTF8GetBytesPadZero(proceZoomIndex.ToString());\n\t\t\t\t}\n\t\t\t\tcatch (Exception ex)\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(ex.Message);\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"PartentZoomIndex\");\n\t\t\t}\n\t\t}\n\t}\n\n\tinternal static bool FailReflashFlag => _failReflashFlag;\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.IsSubscribeInWindow",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 841,
+          "end": 885,
+          "excerpt": "\tbool IVmSolution.IsSubscribeInWindow\n\t{\n\t\tget\n\t\t{\n\t\t\tif (!isSubscribeInWindow.HasValue)\n\t\t\t{\n\t\t\t\tbyte[] array = null;\n\t\t\t\tbool result = false;\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tarray = Instance.UserData[\"IsSubscribeInWindow\"];\n\t\t\t\t\tif (array != null)\n\t\t\t\t\t{\n\t\t\t\t\t\tbool.TryParse(ByteUtil.GetStringFromByte(array), out result);\n\t\t\t\t\t}\n\t\t\t\t\tisSubscribeInWindow = result;\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn isSubscribeInWindow ?? false;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tisSubscribeInWindow = value;\n\t\t\tOnPropertyChanged(\"IsSubscribeInWindow\");\n\t\t\ttry\n\t\t\t{\n\t\t\t\tbyte[] value2 = null;\n\t\t\t\tif (isSubscribeInWindow.HasValue)\n\t\t\t\t{\n\t\t\t\t\tvalue2 = ByteUtil.GetBytes(isSubscribeInWindow.ToString());\n\t\t\t\t}\n\t\t\t\tInstance.UserData[\"IsSubscribeInWindow\"] = value2;\n\t\t\t}\n\t\t\tcatch (Exception)\n\t\t\t{\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic event ContinuousRunStatusCallBack OnContinuousRunStatusCallBack;\n\n\tpublic static event EventHandler InstanceChanged;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "Hik.Util两个编码helper完整体未在本片取得，因此缩放/订阅确切字节长度及尾零不宣称已证；异常载荷（空数组IsReady、无效GUID、不可解析缩放）不伪造容错。"
+      ]
+    },
+    {
+      "id": "OP06",
+      "classification": "source-confirmed",
+      "stages": [
+        "persistence",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原CalibrationGuideData / VmProcedure.CalibData",
+      "to": "保存前UI flush到UserData，再进入独立方案Export阶段",
+      "behavior": "VmProcedure恢复时将UserData[CalibData]数组直接赋calibrationData；缺失则清该字段返回，存在则isBootMode=true。SaveCalibData在calibrationData为null时写null删除，否则仅调用可空delegate，不能保证必有写入。CalibrationGuideData.Parent为VmProcedure时去重追加SaveData，SaveData将ToXmlStringWithHead()经ByteUtil.GetBytes写入该键。ProjectManager.SaveSolution在Dispatcher同步遍历各流程SaveCalibData后，才调用VmSolution.Export；仅Export为true后才更新路径通知/启动后续Task。",
+      "representation": "CalibData是XML字符串经Hik.Util.ByteUtil形成的byte[]，不是原.sol/mdata格式；读取数组与calibrationData字段在这条赋值处共享引用。",
+      "cache": "calibrationData字段和SaveCalibDataToUserData delegate持有不同状态；缺少delegate时非null数据并不触发重新序列化。本条flush是保存前步骤，非磁盘提交确认。",
+      "release": "calibrationData为null的SaveCalibData请求删除SDK键；Export失败并无本段回滚已flush UserData的操作。不把XML生成、SDK键写入、异步保存回调和文件最终写入混成同一事务。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "VmProcedure CalibData restore",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 698,
+          "end": 712,
+          "excerpt": "\t\t\tbyte[] array = UserData[\"CalibData\"];\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\tcalibrationData = null;\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tcalibrationData = array;\n\t\t\tisBootMode = true;\n\t\t}\n\t\tcatch\n\t\t{\n\t\t}\n\t}\n\n\t/// <summary>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "IVmProcedure.SaveCalibData",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 1792,
+          "end": 1803,
+          "excerpt": "\tvoid IVmProcedure.SaveCalibData()\n\t{\n\t\tif (calibrationData == null)\n\t\t{\n\t\t\tUserData[\"CalibData\"] = null;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tSaveCalibDataToUserData?.Invoke();\n\t\t}\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.CalibGuide/CalibrationGuideData.cs",
+          "member": "CalibrationGuideData.Parent hook",
+          "sha256": "d140b44e4fa7aa0c03565dc82b71784b933a9379b42f40857608469330b50c55",
+          "start": 536,
+          "end": 537,
+          "excerpt": "\t\t\t\t\tvmProcedure.SaveCalibDataToUserData = (VmProcedure.SaveCalibrationData)Delegate.Remove(vmProcedure.SaveCalibDataToUserData, new VmProcedure.SaveCalibrationData(SaveData));\n\t\t\t\t\tvmProcedure.SaveCalibDataToUserData = (VmProcedure.SaveCalibrationData)Delegate.Combine(vmProcedure.SaveCalibDataToUserData, new VmProcedure.SaveCalibrationData(SaveData));",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.CalibGuide/CalibrationGuideData.cs",
+          "member": "CalibrationGuideData.SaveData",
+          "sha256": "d140b44e4fa7aa0c03565dc82b71784b933a9379b42f40857608469330b50c55",
+          "start": 543,
+          "end": 549,
+          "excerpt": "\tprivate void SaveData()\n\t{\n\t\tif (Parent != null && Parent is VmProcedure vmProcedure)\n\t\t{\n\t\t\tvmProcedure.UserData[\"CalibData\"] = ByteUtil.GetBytes(ToXmlStringWithHead());\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d; retained decompiled source; not newly decoded CIL in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs",
+          "member": "ProjectManager.SaveCalibUserData + SaveSolution",
+          "sha256": "1ae41a0841dd65f5dfa7461078c370822e61826877c42e299939af1fd47f9370",
+          "start": 189,
+          "end": 219,
+          "excerpt": "\tprivate void SaveCalibUserData()\n\t{\n\t\tforeach (VmProcedure item in VmSolution.Instance.Modules.OfType<VmProcedure>())\n\t\t{\n\t\t\t((IVmProcedure)item).SaveCalibData();\n\t\t}\n\t}\n\n\tpublic bool SaveSolution(string strPath, string strPassWord = null, Task afterSaveTask = null)\n\t{\n\t\tif (!VmSolution.Instance.IsHasPassword && strPassWord == null)\n\t\t{\n\t\t\tstrPassWord = \"\";\n\t\t}\n\t\tApplication.Current.Dispatcher.Invoke(() =>\n\t\t{\n\t\t\tSaveCalibUserData();\n\t\t});\n\t\tif (VmSolution.Export(strPath, strPassWord))\n\t\t{\n\t\t\tProgram.MainData.OnPropertyChanged(\"SolutionPath\");\n\t\t\tProgram.MainData.OnPropertyChanged(\"SolutionName\");\n\t\t\tafterSaveTask?.Start();\n\t\t\tstrCurrentSolutionFileName = strPath;\n\t\t\treturn true;\n\t\t}\n\t\treturn false;\n\t}\n\n\tpublic bool AnotherSaveSolution(Task afterSaveTask = null, bool bDisplayProgress = true, bool isRemoteSave = false)\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5; retained decompiled source; not newly decoded CIL in this slice"
+        }
+      ],
+      "unknowns": [
+        "CalibData XML schema、ByteUtil具体编码和长度、delegate在全部关闭路径的解除以及原native writer对userdata的磁盘打包仍未知；既有S01–S06与save-native-boundary保持独立。"
+      ]
+    },
+    {
+      "id": "PST01",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "ToolPluginRegistry.PrepareSave旧资源目录",
+      "to": "逐节点资产投影与新Resources容器",
+      "behavior": "先以输入document.Resources构造ResourceCatalog，之后另建resources字典：过滤所有已注册IToolAssetPersistence插件的plugin:<Manifest.Id>:前缀资源，不要求这些插件当前一定还有节点。逐procedure/node调用participant.PrepareSave，并传scope.ForProcedure；每个snapshot.Resources按Id覆盖新字典，snapshot.Node成为新节点。旧catalog仍允许后面的参与者读取输入资源。任何参与者异常会中断ToArray与return，但此前参与者对scope或自身state的副作用没有跨参与者回滚代码。",
+      "representation": "旧ResourceCatalog字典、新resources字典、节点投影是不同容器；catalog保存ResourceDocument引用，不复制编码文件字节。新snapshot.Node没有PrepareLoad式Id/ModuleId/版本一致性检查，最终结构校验是另一步。",
+      "cache": "旧输入资源不因过滤即被删除；新字典的Id覆盖只改变拟保存文档。尚未返回的新投影不能算编辑器已提交。",
+      "release": "此入口没有外部文件删除、旧document/history清理或参与者state恢复事务。局部容器失去引用不能表述为已观察到GC释放。",
+      "refs": [
+        {
+          "path": "src/VisionPluginContracts/Contracts.cs",
+          "member": "ToolPluginRegistry.PrepareSave scoped projection",
+          "sha256": "a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f",
+          "start": 64,
+          "end": 70,
+          "excerpt": " public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){\n  var catalog=new ResourceCatalog(baseDirectory,document.Resources);var resources=document.Resources.Where(r=>!plugins.Values.Any(p=>p is IToolAssetPersistence&&r.Id.StartsWith(\"plugin:\"+p.Manifest.Id+\":\",StringComparison.Ordinal))).ToDictionary(r=>r.Id,StringComparer.Ordinal);\n  var procedures=document.Procedures.Select(procedure=>procedure with{Nodes=procedure.Nodes.Select(node=>{\n   if(Find(node.ModuleId) is not IToolAssetPersistence participant)return node;\n   var snapshot=participant.PrepareSave(node,baseDirectory,catalog,scope?.ForProcedure(procedure.Id));foreach(var resource in snapshot.Resources)resources[resource.Id]=resource;return snapshot.Node;\n  }).ToArray()}).ToArray();return document with{Procedures=procedures,Resources=resources.Values.ToArray()};\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GeometryResources.cs",
+          "member": "ResourceCatalog retains resource records",
+          "sha256": "8fb2332a37eb758d5dabe6a99659b62cbdba2cded9dea7bc372e7740a525200f",
+          "start": 25,
+          "end": 25,
+          "excerpt": "    public ResourceCatalog(string baseDirectory,IEnumerable<ResourceDocument> resources){this.baseDirectory=Path.GetFullPath(baseDirectory);this.resources=new(StringComparer.Ordinal);foreach(var r in resources){if(string.IsNullOrWhiteSpace(r.Id)||string.IsNullOrWhiteSpace(r.Path)||!this.resources.TryAdd(r.Id,r))throw new InvalidDataException(\"Invalid resource identity.\");if(r.Sha256 is not null&&(r.Sha256.Length!=64||r.Sha256.Any(c=>!Uri.IsHexDigit(c))))throw new InvalidDataException(\"Invalid resource hash.\");}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "未枚举所有已注册参与者的副作用；PST02/03只给两个实际插件族的具体分支。",
+        "当前独立实现的静态合同，未以真实保存失败运行注入验证，不证明原版等价。"
+      ]
+    },
+    {
+      "id": "PST02",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "ImageSourcePlugin.PrepareSave路径选择",
+      "to": "编码资源副本、Base64文档字段及scope状态",
+      "behavior": "先Clone默认值及节点参数。订阅文件夹模式会通过scope.State取得或创建State；路径来自匹配目录的state.FolderPaths，否则读取存在的目录，否则空表。SolSaveImageData为true时仅paths.Take(120)嵌入：优先现存磁盘文件，文件不存在才经旧节点EmbeddedImageResources/旧catalog回读；单个编码流超过256MiB即抛错。CopyTo内存流后ToArray产生byte[]，SHA256及Base64得到ResourceDocument与路径→Id映射。ImagePaths仍写入全部paths的绝对路径，故120条嵌入上限不等于路径表截断。",
+      "representation": "新嵌入的是编码文件字节及Base64字符串，不是GrayImage像素缓存；资源Id包含插件Id、nodeId和编码SHA。SelectedPaths、CurrentImagePath、SubscribeFolderPath也转绝对路径；EmbeddedImageResources每次重建。关闭SolSaveImageData时新assets/map为空，不自行删除磁盘原图。",
+      "cache": "旧catalog作为缺失磁盘文件的读取后备；save可能新建的scope.State在后续保存失败时仍由scope持有。此方法没有清理既有解码Cache、PendingFrame或显示结果的调用。",
+      "release": "输入流和复制MemoryStream均using；成功时返回的资源持有Base64字符串。临时bytes/流缓冲的GC时点未指定。后续方案32MiB限制可能在插件已投影之后拒绝保存，不逆向撤销此前scope.State创建。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourceAssets.cs",
+          "member": "ImageSource scoped PrepareSave full branch",
+          "sha256": "6f7c81db9e3e07c47121a4520127c2aba84ac1e03d61c0a0f1f8d02829f82e30",
+          "start": 16,
+          "end": 33,
+          "excerpt": " public ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources,ModuleExecutionScope? scope){\n  var values=Descriptor.Parameters.ToDictionary(p=>p.Name,p=>p.DefaultValue!.Value.Clone());foreach(var pair in node.Parameters)values[pair.Key]=pair.Value.Clone();var paths=ReadPaths(values[\"ImagePaths\"].GetString()??\"[]\");\n  if(values[\"ImageSourceType\"].GetInt32()==1&&values[\"IsSubscribeFolderMode\"].GetBoolean()){\n   var state=scope?.State(Manifest.Id,node.Id,()=>new State());string configured=values[\"SubscribeFolderPath\"].GetString()??\"\";string? folder=string.IsNullOrWhiteSpace(configured)?null:Path.GetFullPath(configured,baseDirectory);\n   paths=folder is null?[]:state?.Folder?.DirectoryPath==folder?state.FolderPaths:Directory.Exists(folder)?LocalFolderCatalog.Read(folder):[];\n  }\n  var embedded=new Dictionary<string,string>(StringComparer.Ordinal);var assets=new Dictionary<string,ResourceDocument>(StringComparer.Ordinal);\n  if(values[\"SolSaveImageData\"].GetBoolean())foreach(string path in paths.Take(120)){\n   string full=Path.GetFullPath(path,baseDirectory);using var stream=File.Exists(full)?File.OpenRead(full):OpenEncodedImage(node,path,baseDirectory,resources);if(stream.Length>256L*1024*1024)throw new InvalidDataException(\"Embedded image exceeds encoded resource limit.\");using var copy=new MemoryStream();stream.CopyTo(copy);byte[] bytes=copy.ToArray();string hash=Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant(),id=\"plugin:\"+Manifest.Id+\":\"+node.Id+\":\"+hash;\n   assets[id]=new(id,full,hash){EmbeddedBase64=Convert.ToBase64String(bytes)};embedded[full]=id;\n  }\n  values[\"ImagePaths\"]=J(JsonSerializer.Serialize(paths.Select(path=>Path.GetFullPath(path,baseDirectory))));\n  values[\"SelectedPaths\"]=J(JsonSerializer.Serialize(ReadPaths(values[\"SelectedPaths\"].GetString()??\"[]\").Select(path=>Path.GetFullPath(path,baseDirectory))));\n  if(values[\"CurrentImagePath\"].GetString() is {Length:>0} current)values[\"CurrentImagePath\"]=J(Path.GetFullPath(current,baseDirectory));\n  if(values[\"SubscribeFolderPath\"].GetString() is {Length:>0} folderPath)values[\"SubscribeFolderPath\"]=J(Path.GetFullPath(folderPath,baseDirectory));\n  values[\"EmbeddedImageResources\"]=J(JsonSerializer.Serialize(embedded));return new(node with{Parameters=values},assets.Values.ToArray());\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourceAssets.cs",
+          "member": "OpenEncodedImage old embedded resource fallback",
+          "sha256": "6f7c81db9e3e07c47121a4520127c2aba84ac1e03d61c0a0f1f8d02829f82e30",
+          "start": 11,
+          "end": 14,
+          "excerpt": " public Stream OpenEncodedImage(NodeDocument node,string path,string baseDirectory,ResourceCatalog? resources=null){\n  if(node.Parameters.TryGetValue(\"SolSaveImageData\",out var save)&&save.GetBoolean()&&resources is not null&&EmbeddedMap(node).TryGetValue(path,out var id))return resources.OpenVerified(id);\n  return File.OpenRead(Path.GetFullPath(path,baseDirectory));\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GeometryResources.cs",
+          "member": "OpenVerified ownership and hash verification",
+          "sha256": "8fb2332a37eb758d5dabe6a99659b62cbdba2cded9dea7bc372e7740a525200f",
+          "start": 28,
+          "end": 28,
+          "excerpt": "    public Stream OpenVerified(string id){var r=resources.TryGetValue(id,out var value)?value:throw new KeyNotFoundException(\"Unknown resource: \"+id);Stream stream=r.EmbeddedBase64 is {} embedded?new MemoryStream(Convert.FromBase64String(embedded),writable:false):File.OpenRead(Resolve(id));try{if(r.Sha256 is not null){string actual=Convert.ToHexString(SHA256.HashData(stream));if(!string.Equals(actual,r.Sha256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException(\"Resource digest mismatch: \"+id);stream.Position=0;}return stream;}catch{stream.Dispose();throw;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "Post-plugin document size limit",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 17,
+          "end": 24,
+          "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "文件夹监控并发更新与120条外图的可移植性未运行验证；不能声称所有路径均已嵌入。",
+        "不会从本分支推断GrayImage最终释放；编码临时分配与像素/结果持有分属不同链。"
+      ]
+    },
+    {
+      "id": "PST03",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "标定插件PrepareSave",
+      "to": "持久scope/fallback状态先同步，随后输出参数副本",
+      "behavior": "ReadCalibFile.Save先GetState，再在state.Gate内Configure；Configure会先置Initialized/Requested，再按首次缓存、空路径或磁盘读取分支Apply，更新LoadError及按ReplaceData/CommitPath条件更新Data/Path/Cache。随后才克隆节点参数并按SaveCalibDataEnable输出CachedFileData。Rotate.PrepareSave同样Get并Synchronize：首次可从36字节CachedMatrix恢复9个float，否则按AppliedPath差异Session.Load并写AppliedPath，随后把当前Matrix序列化为新Base64 CachedMatrix及Loaded标志。故参数字典的隔离不等于插件state也隔离。",
+      "representation": "scope存在时state放入按插件/节点/流程定位的ModuleExecutionScope；无scope时各插件fallback字典以绝对directory|node为key。Read缓存XML字符串/typed Data；Rotate缓存会话矩阵，再复制成byte[]及Base64参数。",
+      "cache": "保存触发的Initialized/Requested/AppliedPath等同步可留在原state；SolutionStore尚未开始时就可能发生。随后序列化、写文件或Move失败，没有由GraphEditorDocument.Save恢复这些state的代码。",
+      "release": "此处锁保护插件state同步，不是跨文档/文件事务。新参数仅随最终文档提交；state的生命期仍由scope或fallback持有者控制，不因投影失败自动Dispose。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.Calibration/ReadCalibFilePlugin.cs",
+          "member": "ReadCalibFile GetState/Apply/Configure",
+          "sha256": "b6df11d12ace8ca5f3537764f97aeddc52d03873e5b0d387f01610fd4a12dc02",
+          "start": 22,
+          "end": 24,
+          "excerpt": " State GetState(string node,string directory,ModuleExecutionScope? scope){if(scope is not null)return scope.State(Id,node,()=>new State());lock(gate){string key=System.IO.Path.GetFullPath(directory)+\"|\"+node;if(!states.TryGetValue(key,out var state))states[key]=state=new();return state;}}\n static void Apply(State state,ReadCalibFileLoad load,string path,bool disk){state.LoadError=load.ErrorCode;if(load.ReplaceData&&load.Data is {} data)state.Data=data;if(load.CommitPath){if(disk)state.Path=path;state.Cache=load.Data!.Xml;}}\n static void Configure(State state,IReadOnlyDictionary<string,JsonElement> values,string directory){string requested=values[\"FilePath\"].GetString()??\"\";if(state.Initialized&&state.Requested==requested)return;bool first=!state.Initialized;state.Initialized=true;state.Requested=requested;if(first&&values.TryGetValue(\"CachedFileData\",out var cached)&&!string.IsNullOrEmpty(cached.GetString())){state.Path=requested.Length==0?\"\":System.IO.Path.GetFullPath(requested,directory);Apply(state,ReadCalibFileData.Parse(cached.GetString()!),state.Path,false);}else if(requested.Length==0){state.Path=state.Cache=\"\";state.Data=new();state.LoadError=0;}else{string path=System.IO.Path.GetFullPath(requested,directory);Apply(state,ReadCalibFileData.Read(path),path,true);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/ReadCalibFilePlugin.cs",
+          "member": "ReadCalibFile save synchronizes before parameter clone",
+          "sha256": "b6df11d12ace8ca5f3537764f97aeddc52d03873e5b0d387f01610fd4a12dc02",
+          "start": 29,
+          "end": 29,
+          "excerpt": " ToolAssetSnapshot Save(NodeDocument node,string directory,ResourceCatalog resources,ModuleExecutionScope? scope){var state=GetState(node.Id,directory,scope);lock(state.Gate){Configure(state,node.Parameters,directory);var values=node.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone());values[\"CachedFileData\"]=JsonSerializer.SerializeToElement(values[\"SaveCalibDataEnable\"].GetBoolean()?state.Cache:\"\");return new(node with{Parameters=values},[]);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/RotateCalibrationPlugin.cs",
+          "member": "Rotate scoped and fallback state",
+          "sha256": "9a35f92d3d4c4689f7c6eaafc2d688a907c9068e3f79165856e5c2a5ce9387fb",
+          "start": 25,
+          "end": 29,
+          "excerpt": "    State Get(string node, string directory, ModuleExecutionScope? scope)\n    {\n        if (scope is not null) return scope.State(Id, node, () => new State());\n        lock (gate) { string key = Path.GetFullPath(directory) + \"|\" + node; if (!fallback.TryGetValue(key, out var state)) fallback[key] = state = new(); return state; }\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/RotateCalibrationPlugin.cs",
+          "member": "Rotate Synchronize mutations",
+          "sha256": "9a35f92d3d4c4689f7c6eaafc2d688a907c9068e3f79165856e5c2a5ce9387fb",
+          "start": 30,
+          "end": 46,
+          "excerpt": "    static void Synchronize(State state, IReadOnlyDictionary<string, JsonElement> p, string directory)\n    {\n        string path = p[\"FilePath\"].GetString() ?? \"\";\n        if (!state.Initialized)\n        {\n            state.Initialized = true;\n            string cache = p.TryGetValue(\"CachedMatrix\", out var json) ? json.GetString() ?? \"\" : \"\";\n            if (cache.Length > 0)\n            {\n                try { var bytes = Convert.FromBase64String(cache); if (bytes.Length == 36) { state.Session.Restore(Enumerable.Range(0, 9).Select(i => BitConverter.ToSingle(bytes, 4 * i)).ToArray(), p[\"CachedMatrixLoaded\"].GetBoolean(), path.Length == 0 ? \"\" : Path.GetFullPath(path, directory)); state.AppliedPath = path; } }\n                catch (FormatException) { /* Invalid persisted cache falls back to normal file loading. */ }\n            }\n        }\n        if (state.AppliedPath != path) { state.Session.Load(path.Length == 0 ? \"\" : Path.GetFullPath(path, directory)); state.AppliedPath = path; }\n    }\n    public void UpdateConfiguration(ToolEditorContext context, IReadOnlyDictionary<string, JsonElement> values)\n    { var state = Get(context.Node.Id, context.BaseDirectory, context.Scope); lock (state.Gate) Synchronize(state, values, context.BaseDirectory); }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/RotateCalibrationPlugin.cs",
+          "member": "Rotate PrepareSave caches matrix",
+          "sha256": "9a35f92d3d4c4689f7c6eaafc2d688a907c9068e3f79165856e5c2a5ce9387fb",
+          "start": 83,
+          "end": 93,
+          "excerpt": "    public ToolAssetSnapshot PrepareSave(NodeDocument node, string directory, ResourceCatalog resources, ModuleExecutionScope? scope)\n    {\n        var state = Get(node.Id, directory, scope); lock (state.Gate)\n        {\n            Synchronize(state, node.Parameters, directory);\n            var parameters = node.Parameters.ToDictionary(p => p.Key, p => p.Value.Clone());\n            parameters[\"CachedMatrix\"] = JsonSerializer.SerializeToElement(Convert.ToBase64String(state.Session.Matrix.SelectMany(BitConverter.GetBytes).ToArray()));\n            parameters[\"CachedMatrixLoaded\"] = JsonSerializer.SerializeToElement(state.Session.Loaded);\n            return new(node with { Parameters = parameters }, []);\n        }\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Save has no participant rollback",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 68,
+          "end": 74,
+          "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本条只确认当前两个插件族；Session内部Load/Restore数值算法和全部异常不在本切片展开。",
+        "未执行保存失败探针；静态无回滚不等于所有失败都会改变state，取决于具体分支和旧状态。"
+      ]
+    },
+    {
+      "id": "PST04",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "SaveAs的Copy/Rebase与SolutionStore.Save",
+      "to": "路径字段变换、文件提交、编辑器提交分离",
+      "behavior": "Copy给Resources建立新数组但仍使用原资源record引用；参数JsonElement.Clone、ROI顶点数组等另行快照。Rebase再次Copy，只改每个ResourceDocument.Path及ModuleId恰为vision.image-file的字符串Path参数：绝对路径原样保留，相对路径先按旧base解析，再相对新base表示。任意插件私有路径不被通用Rebase扫描；ImageSource自己的绝对化来自PST02。Rebase不复制外部图像或标定文件。SolutionStore.Save完成结构/JSON检查、临时文件写入Flush(true)、Move覆盖且finally正常结束后，doc才写document/BaseDirectory/FilePath/IsDirty/Revision并发Changed。",
+      "representation": "旧document、prepared、rebased、UTF8 json及磁盘临时文件各是不同层；当前实际API名是SolutionStore.Save，没有独立SaveAtomic方法。",
+      "cache": "PrepareSave/Rebase/store在返回前抛错，doc这行提交未执行，旧编辑器字段仍保留；这不撤销PST02/03状态副作用。若Changed订阅者抛错，则编辑器字段与文件已提交，调用仍可异常结束；外层目录偏好/Recent更新只在doc.Save正常返回后发生。",
+      "release": "临时文件由finally尝试Delete，异常仍可传播；不把该单方案文件替换协议扩展为插件state、外部资产、历史payload或偏好文件的全域原子事务。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Copy container and JsonElement identities",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 331,
+          "end": 331,
+          "excerpt": "    static SolutionDocument Copy(SolutionDocument d)=>d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=>p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with {Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Selective Rebase path transformation",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 332,
+          "end": 335,
+          "excerpt": "    static SolutionDocument Rebase(SolutionDocument d,string oldBase,string newBase) {\n        var copy=Copy(d); string PathValue(string path)=>Path.IsPathFullyQualified(path)?path:Path.GetRelativePath(newBase,Path.GetFullPath(path,oldBase));\n        return copy with { Resources=copy.Resources.Select(r=>r with {Path=PathValue(r.Path)}).ToArray(),Procedures=copy.Procedures.Select(p=>p with {Nodes=p.Nodes.Select(n=> {if(n.ModuleId!=\"vision.image-file\"||!n.Parameters.TryGetValue(\"Path\",out var v)||v.ValueKind!=JsonValueKind.String)return n; var values=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone());values[\"Path\"]=JsonSerializer.SerializeToElement(PathValue(v.GetString()!));return n with {Parameters=values};}).ToArray()}).ToArray() };\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "File then editor fields then Changed",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 68,
+          "end": 74,
+          "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "Exact persisted file write boundary",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 17,
+          "end": 24,
+          "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/MainWindow.ShellSaveSolution.cs",
+          "member": "Outer Save preferences after doc.Save",
+          "sha256": "f550855c25ec424dc1bbc66268ed1099596896179529fd5ad6ca112de96aba2f",
+          "start": 65,
+          "end": 83,
+          "excerpt": "    bool Save(bool asNew)\n    {\n        var file = doc.FilePath;\n        var selectedPath = asNew || file is null;\n        if (selectedPath)\n        {\n            file = solutionSavePicker.Pick(this, SaveSolutionDirectoryPreference.InitialDirectory());\n            if (string.IsNullOrWhiteSpace(file)) return false;\n        }\n        if (file is null) return false;\n        doc.Save(file);\n        if (selectedPath)\n            SaveSolutionDirectoryPreference.Remember(file);\n        RecentSolutionStore.Update(doc.FilePath!);\n        RefreshRecentSolutionsMenu();\n        return true;\n    }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原子覆盖的文件系统/崩溃持久性未在本切片实测；源码Flush/Move不能证明多文件事务。",
+        "通用路径规则不保证每个插件资源的跨机器可移植性；只能按其具体参与者分支判断。"
+      ]
+    },
+    {
+      "id": "PST05",
+      "classification": "independent-implementation",
+      "stages": [
+        "history",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "GraphEditorDocument.Save保留既有history",
+      "to": "旧BaseDirectory快照与SaveAs之后的RestoreSnapshot",
+      "behavior": "Save没有history.Clear、solutionGeneration递增或SolutionReplaced事件，而Load在提交时明确执行这些操作。Snapshot保留ProcedureId与创建时BaseDirectory，并持有MemoryDocument或payload；Capture把Copy(document)作为快照输入。因此已有历史快照可继续保留旧Resources/嵌入Base64，即使保存投影的新Resources已过滤或替换；并非每次Save必有这样的快照。RestoreSnapshot用snapshot.Document及snapshot.BaseDirectory按当前BaseDirectory重新Rebase，然后替换document/选择流程/标dirty/Revision/Changed，不修改当前FilePath/BaseDirectory，也不写方案文件。",
+      "representation": "编辑器当前document与历史快照是不同持有层。快照保存的是文档数据，不是ModuleExecutionScope/state、GrayImage或运行结果的自动副本。",
+      "cache": "SaveAs改变当前base后，旧快照仍携自己的旧base，恢复时转换到当前base；不能说保存成功就清空旧资源或刷新全部运行期缓存。历史payload的租约与删除失败由专门HP事实另述。",
+      "release": "Save本身不Dispose历史；快照退役由历史引擎/编辑器生命周期处理。本事实不声称字节、文件或资源在Save成功时已经释放。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Snapshot document and base-directory holder",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 15,
+          "end": 20,
+          "excerpt": "    sealed record Snapshot(SolutionDocument? MemoryDocument, string ProcedureId, string BaseDirectory,\n        [property:System.Text.Json.Serialization.JsonIgnore] HistoryPayloadLease? Payload = null) : IDisposable\n    {\n        public SolutionDocument Document => MemoryDocument ?? JsonSerializer.Deserialize<SolutionDocument>(Payload!.ReadBytes())\n            ?? throw new InvalidDataException(\"Invalid owned history document payload.\");\n        public void Dispose() => Payload?.Dispose();",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Save keeps history while Load clears it",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 59,
+          "end": 74,
+          "excerpt": "    public void Load(string path) {\n        string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);\n        var baseDirectory=Path.GetDirectoryName(full)!;\n        var separated=Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()});\n        var prepared=PrepareLoad?.Invoke(separated,baseDirectory)??separated;\n        SolutionStore.ValidateStructure(prepared);\n        document = Copy(prepared); CurrentProcedureId = prepared.Procedures.FirstOrDefault()?.Id??\"\";\n        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; solutionGeneration++;configurationHistory=null;history.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();\n    }\n    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Capture copied document",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 307,
+          "end": 307,
+          "excerpt": "    Snapshot Capture()=>CaptureSnapshot(Copy(document),CurrentProcedureId,BaseDirectory);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "CaptureSnapshot memory or payload holder",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 308,
+          "end": 315,
+          "excerpt": "    Snapshot CaptureSnapshot(SolutionDocument value,string procedure,string directory)\n    {\n        ObjectDisposedException.ThrowIf(disposed,this);\n        var bytes=JsonSerializer.SerializeToUtf8Bytes(value);\n        if(historyPayloadParentDirectory is null && bytes.Length<64*1024)return new(value,procedure,directory);\n        historyPayloadStore??=new(historyPayloadParentDirectory??Path.Combine(Path.GetTempPath(),\"VisionEditor-History\"));\n        return new(null,procedure,directory,historyPayloadStore.CreateFile(bytes));\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Restore uses snapshot old base and current base",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 316,
+          "end": 319,
+          "excerpt": "    void RestoreSnapshot(Snapshot snapshot) {\n        var next=Rebase(snapshot.Document,snapshot.BaseDirectory,BaseDirectory);\n        document=next;CurrentProcedureId=snapshot.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "历史中是否实际存在含旧嵌入资源的快照取决于此前操作，未把条件持有推成所有Save的必然内存驻留。",
+        "这里只确认文档历史与路径边界；payload文件租约/删除失败、GUI回放与原版行为分别保留其独立证据。"
+      ]
+    }
+  ],
+  "lifecycleTracks": [],
+  "lifecycleFacts": []
+}

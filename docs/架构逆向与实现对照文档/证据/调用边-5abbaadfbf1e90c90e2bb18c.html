@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SolutionManager检测/取key包装 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SolutionManager检测/取key包装 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-P14"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SolutionManager检测/取key包装 → 固定16字节key缓冲、pin及错误码返回</h2><p>CheckDataEncryptByDongle先GCHandle.Alloc(dataByte,Pinned)，try内AddrOfPinnedObject/IsAllocated门再调用SDK，非零直接return；finally在已分配时Free。GetEncryptionFromDongle先keyBuff=new byte[16]并pin，SDK入参buffSize=16，返回非零同样直接return，finally Free。分配在try外；上层服务丢弃这些int，不能把返回0与数据/存在位有效合成一个结论。</p><p><a href="../专题/communication-protection.html#edge-P14">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-protection.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-protection.edges.json · SHA256 78cdc1eaa90290bfce0f1009a8bdde609e5f46002e27f42770a3f3f12b6bb046</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="a05c3d4e5d216c21c35cd1500306ed834ea4524fe46380e2ef1e60a2e78479dc">{
+  &quot;id&quot;: &quot;P14&quot;,
+  &quot;route&quot;: &quot;原版 · SDK托管与native边界&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;SolutionManager检测/取key包装&quot;,
+  &quot;to&quot;: &quot;固定16字节key缓冲、pin及错误码返回&quot;,
+  &quot;behavior&quot;: &quot;CheckDataEncryptByDongle先GCHandle.Alloc(dataByte,Pinned)，try内AddrOfPinnedObject/IsAllocated门再调用SDK，非零直接return；finally在已分配时Free。GetEncryptionFromDongle先keyBuff=new byte[16]并pin，SDK入参buffSize=16，返回非零同样直接return，finally Free。分配在try外；上层服务丢弃这些int，不能把返回0与数据/存在位有效合成一个结论。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs&quot;,
+      &quot;member&quot;: &quot;SolutionManager.CheckDataEncryptByDongle&quot;,
+      &quot;sha256&quot;: &quot;46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a&quot;,
+      &quot;start&quot;: 812,
+      &quot;end&quot;: 848,
+      &quot;excerpt&quot;: &quot;\tpublic int CheckDataEncryptByDongle(byte[] dataByte, ref bool isEncrypted)\n\t{\n\t\tint num = -536870657;\n\t\tGCHandle gCHandle = GCHandle.Alloc(dataByte, GCHandleType.Pinned);\n\t\ttry\n\t\t{\n\t\t\tIntPtr pData = gCHandle.AddrOfPinnedObject();\n\t\t\tif (!gCHandle.IsAllocated)\n\t\t\t{\n\t\t\t\treturn -536870911;\n\t\t\t}\n\t\t\tnum = ServerSDKAPI.IMVS_CheckDataEncryptByDongle(CVmObjectBase.mhandle, pData, (uint)dataByte.Length, ref isEncrypted);\n\t\t\tif (num != 0)\n\t\t\t{\n\t\t\t\treturn num;\n\t\t\t}\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t\tthrow;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tif (gCHandle.IsAllocated)\n\t\t\t{\n\t\t\t\tgCHandle.Free();\n\t\t\t}\n\t\t}\n\t\treturn num;\n\t}\n\n\t/// &lt;summary>\n\t/// 获取加密狗内密钥\n\t/// &lt;/summary>\n\t/// &lt;param name=\&quot;keyBuff\&quot;>密钥数据&lt;/param>\n\t/// &lt;param name=\&quot;bIsContainKey\&quot;>是否设置有密钥&lt;/param>\n\t/// &lt;returns>错误码&lt;/returns>&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs&quot;,
+      &quot;member&quot;: &quot;SolutionManager.GetEncryptionFromDongle&quot;,
+      &quot;sha256&quot;: &quot;46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a&quot;,
+      &quot;start&quot;: 849,
+      &quot;end&quot;: 887,
+      &quot;excerpt&quot;: &quot;\tpublic int GetEncryptionFromDongle(ref byte[] keyBuff, ref bool bIsContainKey)\n\t{\n\t\tint num = -536870657;\n\t\tkeyBuff = new byte[16];\n\t\tGCHandle gCHandle = GCHandle.Alloc(keyBuff, GCHandleType.Pinned);\n\t\ttry\n\t\t{\n\t\t\tIntPtr pKeyBuff = gCHandle.AddrOfPinnedObject();\n\t\t\tif (!gCHandle.IsAllocated)\n\t\t\t{\n\t\t\t\treturn -536870911;\n\t\t\t}\n\t\t\tnum = ServerSDKAPI.IMVS_GetEncryptionFromDongle(CVmObjectBase.mhandle, pKeyBuff, 16u, ref bIsContainKey);\n\t\t\tif (num != 0)\n\t\t\t{\n\t\t\t\treturn num;\n\t\t\t}\n\t\t}\n\t\tcatch (Exception)\n\t\t{\n\t\t\tthrow;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tif (gCHandle.IsAllocated)\n\t\t\t{\n\t\t\t\tgCHandle.Free();\n\t\t\t}\n\t\t}\n\t\treturn num;\n\t}\n\n\t/// &lt;summary>\n\t/// 通过加密狗加密数据\n\t/// &lt;/summary>\n\t/// &lt;param name=\&quot;dataIn\&quot;>明文数据&lt;/param>\n\t/// &lt;param name=\&quot;keyBuff\&quot;>密钥数据&lt;/param>\n\t/// &lt;param name=\&quot;dataOut\&quot;>密文数据&lt;/param>\n\t/// &lt;returns>错误码&lt;/returns>&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-protection-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.PlatformSDKCS.SolutionManager::CheckDataEncryptByDongle&quot;,
+      &quot;sha256&quot;: &quot;092ee644f1e760b48ff5ef5727fcc7237a7d09a862137215d9403da5ad54e72a&quot;,
+      &quot;start&quot;: 384,
+      &quot;end&quot;: 403,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060005f3\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060005f3\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.PlatformSDKCS.SolutionManager\&quot;,\n            \&quot;name\&quot;: \&quot;CheckDataEncryptByDongle\&quot;,\n            \&quot;parameters\&quot;: 2,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;2002081d051002\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 124,\n          \&quot;ilSha256\&quot;: \&quot;2f65f1feb2791133c2549471f81382e477989ee1febbc33f65448696ff36d854\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0020ff0000e00a0319289000000a0b001201289100000a0c1201289200000a0d092c24007e9703000408038e690428130300060a0616fe03130411042c0600061305de35002b0a0020010000e01305de2800de042600fe1ade1a001201289200000a130611062c0a001201289300000a000000dc0613052b0011052a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-protection-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VM.PlatformSDKCS.SolutionManager::GetEncryptionFromDongle&quot;,
+      &quot;sha256&quot;: &quot;092ee644f1e760b48ff5ef5727fcc7237a7d09a862137215d9403da5ad54e72a&quot;,
+      &quot;start&quot;: 926,
+      &quot;end&quot;: 945,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060005f4\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060005f4\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VM.PlatformSDKCS.SolutionManager\&quot;,\n            \&quot;name\&quot;: \&quot;GetEncryptionFromDongle\&quot;,\n            \&quot;parameters\&quot;: 2,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200208101d051002\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 133,\n          \&quot;ilSha256\&quot;: \&quot;caff7654ac59ab8011236a6b21fa73819980ba3542d57030427b4694411f4a02\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0020ff0000e00a031f108d6600000151035019289000000a0b001201289100000a0c1201289200000a0d092c23007e97030004081f100428140300060a0616fe03130411042c0600061305de35002b0a0020010000e01305de2800de042600fe1ade1a001201289200000a130611062c0a001201289300000a000000dc0613052b0011052a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;native bool写回、mhandle来源、分配/固定失败与真实调用仍未验证；分配16字节不是取得有效秘密材料的运行证据。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

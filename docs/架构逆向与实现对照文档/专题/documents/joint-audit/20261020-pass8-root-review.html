@@ -1,0 +1,32 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第八轮根线自审：四类标定生产者的文件/图像载荷 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第八轮根线自审：四类标定生产者的文件/图像载荷</p><h1>第八轮根线自审：四类标定生产者的文件/图像载荷</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第八轮根线自审：四类标定生产者的文件/图像载荷</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="20261020-pass8-root-review.html">下载原始文件</a></nav><main><h1 id="第八轮根线自审四类标定生产者的文件图像载荷">第八轮根线自审：四类标定生产者的文件/图像载荷</h1><p>范围仍是用户指定的“标定”十工具及必需框架边。四个生产者类别按实际载荷分开审，共同目录、配置、Group 历史及坐标系矩阵消费者引用第六、七轮证据，不重复计数。原安装源码/资源只读，<code>tool-plugins</code> 在制工作树未改。</p>
+<table>
+<thead>
+<tr>
+<th>生产者链</th>
+<th>本轮源码和当前实际结果</th>
+<th>明确不计完成的边</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平移旋转标定</td>
+<td>原 <code>Process/ProcessAlg/WriteXmlData</code> RVA <code>0x3a8c0/0x3b0e0/0x3e660</code> 支持成功后九项文件矩阵；<a href="20261020-pass8-translation-result-chain.html">独占报告</a>。当前真实图 <code>平移旋转→XML→标定加载→owned Group→坐标系</code> 首跑及方案保存重开均 Success，九项矩阵逐边核对；日志 SHA-256 <code>909B59085C9BE6791989FA71ED18B493203281010F7C3920E5A5AFD22F7D1783</code>。</td>
+<td>原版同构整图、组合/示教/异常及逐位数值。</td>
+</tr>
+<tr>
+<td>相机映射＋映射标定文件模式</td>
+<td>原相机模块 <code>GetProcessInput/ProcessAlg/WriteCalibFile</code> 形成 36B float32 文件，Map 文件模式 <code>ReadFileMatrix/ProcessAlg/WriteXmlData</code> 形成 XML；两工具均无直接 <code>CalibMatrix</code> 输出端口。<a href="20261020-pass8-camera-map-chain.html">独占报告</a> SHA-256 <code>694A49C55012D7CF265C8EDCE4918F9CAA326DC4F1332ABBD047C2F81CCC91EA</code>。当前双相机文件→Map XML→标定加载→owned Group→坐标系全部 Success；删除三份产物后保存重开重新生成并成功，根线独立 Release 复跑 exit 0；分线 stdout SHA-256 <code>91A75D6C263B0DAF08D9463578F14D39A6D7A1C9FC5413CFCB21C87DD6A5725B</code>。</td>
+<td>Map 的图像/ROI 模式、同夹具原生数值差分、原版同构调度。相机 <code>.iwcal</code> 不能直接交 XML 标定加载。</td>
+</tr>
+<tr>
+<td>N 图像标定</td>
+<td>原 <code>IMVSNImageCalibModu::WriteXmlData</code> RVA <code>0x230e0</code> 输出 <code>CalibOutputParam/CalibMatrix</code> 九项；原 XML 的 IMAGE/点位端口与当前独立 <code>CalibData</code> 分开。<a href="20261020-pass8-nimage-board-chain.html">独占报告</a> SHA-256 <code>C618A2353CB469DFCA2A062B6C61907995A254A39240495F36C7E05D431E7DB0</code>。既有真实主窗九帧专项此轮 49 项通过，实际 XML 被新图的标定加载/坐标系消费；根线另外独立复跑主窗专项 exit 0，日志 <code>analysis/joint-audit/pass8-cal-image/root-host-rerun.log</code> SHA-256 <code>6364F879D589B1D5DF89AAF0F416EBBF61B74544ECDB27266BCE495A93403E35</code>。</td>
+<td>原厂同构图、N 图像 <code>ProcessAlg/ProcessOutput</code> 全分支、其他运动帧/失败；不能用旧专项通过替代这些分支。</td>
+</tr>
+<tr>
+<td>标定板</td>
+<td>原 <code>ProcessAlg/ProcessOutput</code> 输入 IMAGE/ROI，输出点列；自有 SDK 导出 36B <code>.iwcal</code>。当前 Gray8 图真实执行检测 99 点、写二进制矩阵，XML 加载器精确拒绝 <code>.iwcal</code>。同一探针保存重开保留三条 typed 边；分线 stdout SHA-256 <code>A207E61CFDE120B09690792F0A15FC1DAFD423B8E9D947536A3234651AC7FE92</code>，根线复跑 exit 0。首次错连灰度图的可选 <code>ImageMono8</code> 导致 <code>UpstreamUnavailable</code>，旧失败日志 SHA-256 <code>358A598D37CFC1CA3398AABD756C36CE2BA13608BD37D4D0D8BD799409CBAA57</code> 保留，修成普通 <code>Image</code> 后通过。</td>
+<td>其他板型、彩色/ROI、Group 与失败后旧结果、原版同构整图；板二进制与 N 图像 XML 不可互换。</td>
+</tr>
+</tbody></table>
+<p>第八轮只关闭上述<strong>具名结果交接切片</strong>，不宣称十工具完整 J01–J12 或算法全域符合。无原版依据支持且属于 main 独占的产品修复，框架实施进度仍 <strong>41/96=42.71%</strong>；人工验收单列。下一步优先畸变标定的独有图像/ROI/文件与旋转标定的文件消费者，再核标定加载/坐标系剩余动态分支；非标定工具放下一目标。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass8-root-review.md · SHA256 376bf5ac556df048c28103686494dc6c3ef09de410ff329c989fcc0fdd9f4eeb<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

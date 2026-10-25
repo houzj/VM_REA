@@ -1,0 +1,56 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 808d2967d239 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 808d2967d239</p><h1>原文证据 808d2967d239</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 808d2967d2399de77ca17268d53f02b66bfcf03c7a723570936e8788d7a8abd3。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>        public async System.Threading.Tasks.Task&lt;bool> PrepareSolutionTransitionAsync()
+        {
+            if (_transitionPreparationInProgress) return false;
+            _transitionPreparationInProgress = true;
+            try
+            {
+                var manager = SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.SolutionManager;
+                if (_executionManager.IsAnyRunning() &amp;&amp;
+                    ThemeMessageDialog.Show(&quot;方案正在运行。停止全部执行后继续？&quot;, &quot;切换方案&quot;, MessageBoxButton.OKCancel,
+                        ThemeMessageDialog.MessageIcon.Question) != MessageBoxResult.OK) return false;
+                _solutionTransitionLease ??= _executionManager.BeginSolutionTransition();
+                await _executionManager.StopAndWaitAsync(TimeSpan.FromSeconds(30));
+                if (manager.CurrentSolution == null)
+                {
+                    if (_isWorkflowModified || WorkflowTabViewModel.Tabs.Any(tab => tab.WorkflowNodes.Count > 0))
+                    {
+                        var answer = ThemeMessageDialog.Show(&quot;工作区尚未保存为方案。是否保存？&quot;, &quot;保存方案&quot;, MessageBoxButton.YesNoCancel, ThemeMessageDialog.MessageIcon.Question);
+                        if (answer == MessageBoxResult.Cancel || answer == MessageBoxResult.None) { EndSolutionTransition(); return false; }
+                        if (answer == MessageBoxResult.Yes)
+                        {
+                            SaveCurrentSolutionCommand.Execute(null);
+                            if (manager.CurrentSolution == null || manager.HasUnsavedChanges) { EndSolutionTransition(); return false; }
+                        }
+                    }
+                    return true;
+                }
+                SaveSolutionData(manager);
+                if (!manager.HasUnsavedChanges) return true;
+                var result = ThemeMessageDialog.Show(&quot;当前方案有未保存修改。是否保存？&quot;, &quot;保存方案&quot;, MessageBoxButton.YesNoCancel, ThemeMessageDialog.MessageIcon.Question);
+                if (result == MessageBoxResult.Cancel || result == MessageBoxResult.None) { EndSolutionTransition(); return false; }
+                if (result == MessageBoxResult.Yes &amp;&amp; !manager.SaveSolution())
+                {
+                    var target = new Microsoft.Win32.SaveFileDialog { Filter = &quot;解决方案 (*.solution)|*.solution&quot;,
+                        InitialDirectory = manager.SolutionsDirectory, FileName = manager.CurrentSolution.Name + &quot;_副本&quot; };
+                    if (ThemeMessageDialog.Show(&quot;原位置无法保存。是否另存到可写位置？&quot;, &quot;保存失败&quot;, MessageBoxButton.YesNo, ThemeMessageDialog.MessageIcon.Warning) != MessageBoxResult.Yes ||
+                        target.ShowDialog() != true || manager.SaveAsSolution(target.FileName, System.IO.Path.GetFileNameWithoutExtension(target.FileName), manager.CurrentSolution.Description) == null)
+                    { EndSolutionTransition(); return false; }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                EndSolutionTransition();
+                ThemeMessageDialog.Show(&quot;操作未完成，原方案保持打开：&quot; + ex.Message, &quot;方案切换&quot;, MessageBoxButton.OK, ThemeMessageDialog.MessageIcon.Error);
+                return false;
+            }
+            finally { _transitionPreparationInProgress = false; }
+        }
+
+        /// &lt;summary>External file activation reuses existing stop/save and identity-conflict rules.&lt;/summary>
+        internal async Task&lt;bool> OpenExternalSolutionAsync(string path)
+        {
+            var manager = SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.SolutionManager;
+            if (!string.IsNullOrEmpty(manager.CurrentFilePath) &amp;&amp;
+                string.Equals(Path.GetFullPath(manager.CurrentFilePath), Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase))
+                return true;</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis--GEX14.html">数据/global-variable-analysis--GEX14.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

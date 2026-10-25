@@ -1,0 +1,50 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定真实搜索到锚定 caller 捕获（2026-10-19）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-ANCHOR-CALLER.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#映射标定真实搜索到锚定-caller-捕获2026-10-19">映射标定真实搜索到锚定 caller 捕获（2026-10-19）</a></p><p style="margin-left:14px"><a href="#原始证据和身份">原始证据和身份</a></p><p style="margin-left:14px"><a href="#捕获相位及严格核对">捕获相位及严格核对</a></p><p style="margin-left:14px"><a href="#源码确认并在这组调用观察到的关系">源码确认并在这组调用观察到的关系</a></p><p style="margin-left:14px"><a href="#未知及交接边界">未知及交接边界</a></p><p style="margin-left:14px"><a href="#复现与输出">复现与输出</a></p></details><h1 id="映射标定真实搜索到锚定-caller-捕获2026-10-19">映射标定真实搜索到锚定 caller 捕获（2026-10-19）</h1><p>本轮在实际 SDK 图像执行中关联 <code>813ca0</code> 的 opening/payload 与 <code>813020</code> 的方向、锚点、原点、完整格网和最终 SDK 点序列。前轮 320 例微核结论保留其独立范围；本轮没有修改产品入口或共享识别器，不开放八向产品识别。</p>
+<h2 id="原始证据和身份">原始证据和身份</h2><p>目标为本机 VisionMaster 4.4.0 <code>MVD_Algorithm.dll</code>，SHA-256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。在 probe 自己创建的 <code>MVDMapCalibCpp</code> SDK 进程设置可恢复软件断点，未修改磁盘 SDK、其他进程或设备。</p>
+<p>沿原厂 Map <code>7d3e90 → 7e3f50 → 816650 → 80e690(HIK7)/80bcd0(HIK9) → 813ca0 → 813020</code>。最终 caller 返回地址 RVA 观测为 HIK7 <code>0x80f8ed</code>、HIK9 <code>0x80cf17</code>。本地反编译身份：</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>当前导出 C 文本 SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>18080e690</td>
+<td>ea3ac6e70964dedf4fdcd98115d98ad8ad88e6462d1ecaac34b273f962443ff5</td>
+</tr>
+<tr>
+<td>18080bcd0</td>
+<td>8cc66bd8bd89c70c74061d176d0547518befa73672f5317a9b56b55dea1cd920</td>
+</tr>
+<tr>
+<td>180813ca0</td>
+<td>10fc7623e3e1bdd0ae0110d244b1f83be33d848506b37ccdc80a9766e2625012</td>
+</tr>
+<tr>
+<td>180813020</td>
+<td>b82cdb0817acbc5181f96844c465970a102c4df764ee10a784a9e4ee7b45d5fb</td>
+</tr>
+</tbody></table>
+<p>沿用实际本地 fixture <code>analysis/full-audit/n-image-calibration/solver-fixture/frame-0.bmp</code> 与 <code>frame-4.bmp</code>，文件 SHA-256 分别为 <code>86e175cd993f9737380690a60f7bada49935196691ca4509c93ff0066fadcc40</code> 和 <code>d1ed36d2cf24a57ab541191e1fde147c826ab182f0d4e6560b5fc69a304e73af</code>；补充现有 <code>frame-r0.bmp/frame-r4.bmp</code>，未新造图像。各输入身份保存于独立输出目录 <code>identity.json</code>。</p>
+<h2 id="捕获相位及严格核对">捕获相位及严格核对</h2><p>每次以同一 sequence 记录 <code>search-entry → decode-attempt → selected-tag → map-entry → map-return</code>：</p>
+<ul>
+<li>search-entry：完整整数格网、width/height、caller 搜索偏移；</li>
+<li>selected-tag：解码状态、尝试次数、六字节 payload、选定 opening 八个 float、搜索 anchor；</li>
+<li>map-entry：相同序号的方向、decode 方向、搜索 radius、调整后 anchor、origin、所有格点槽的整数索引和像素；</li>
+<li>map-return：状态、尺寸、依据输入第一整数哨兵计数的完整点序列；另与 SDK 公开 Source/Target 点序列核对。</li>
+</ul>
+<p>对比以捕获的 map-entry 槽和原厂八向微核规则计算输出，全部 ID/顺序精确比对，像素按 float32 位比较；不是容差验收。公开 SDK 点从 SDK 原生输出读取，不使用托管产品作为 golden。基础图 4 次真实调用 <strong>5429 个字段零差异</strong>；补充 r 图 4 次 <strong>5285 个字段零差异</strong>，合计 8 次、10714 个检查字段。两组不重放既有 source-grid/18 组/7361 ROI 回归。</p>
+<h2 id="源码确认并在这组调用观察到的关系">源码确认并在这组调用观察到的关系</h2><p>两图×HIK7/9 每次一次解码就成功，payload 均为 <code>[3,3,0,10,0,0]</code>，方向均为 <strong>1</strong>；搜索选定 anchor 为 <code>(4,4)</code>。caller 搜索偏移 <code>(1,1)</code>、radius=1，因此传给 mapper 的 anchor 是 <code>(3,3)</code>：方向 1 的源码调整为 <code>offset + selectedAnchor - 2*radius</code>。这个减 1 结果来自实际偏移和 radius，不能将“搜索 anchor 一律减 1”写成一般规则。源码其他方向组合见 caller switch，但本轮未命中它们。</p>
+<p>D1 后续源码复核纠正字段命名：<code>813ca0</code> 的栈 param5（入口 RSP+0x28）贡献 Y，param6（RSP+0x30）贡献 X；本轮原始 trace 曾分别标为 offsetColumn/offsetRow，两个值恰都为1，故原始数值与本轮核对结果不变，但不能据这个对称输入证明标签正确。保留原始 trace 不重写；未来 header 已交换标签并增加 <code>offsetAxisLabels=source-confirmed</code>，比对器明确兼容旧标签。详见 D1 源码链报告。</p>
+<p>HIK7 origin <code>(3,3)</code>；同 payload 的 HIK9 origin 为 <strong>(192,768)</strong>，由 <code>(b0 &amp; 15)*64 + (b1 &gt;&gt; 2)</code> 和 <code>(b1 &amp; 3)*256 + b2</code> 得到，与实际 mapper 参数完全一致。这闭合了一个非平凡原点的真实 payload→caller→mapper 路径，不是只在微核中人为传 origin。</p>
+<p>基础两图的格网均 14×14、196 槽，其中 28 个第一整数为 INT_MIN；mapper 发出 168 点。<strong>search-entry 与 map-entry 的全部整数槽逐项一致</strong>，说明这些具体调用中的 28 个缺失槽在 <code>813ca0</code> 搜索之前已经存在，该阶段没有新增/删除格点哨兵。不能把“选定 opening 后 mask 所有成功标签”当作本轮原厂行为，也不能仅凭这些槽推断更早阶段为什么排除它们。</p>
+<p>基础源图 opening 第一角为 <code>(222.496078,227.963120)</code>，最近有效原生格点槽为 <code>(2,2)</code>、格点整数 <code>(3,3)</code>、像素 <code>(222.485886,227.975266)</code>，距离约 0.01586 像素。目标图相应约 0.01588 像素。这是图像上的几何关联观察；opening 是拟合提案坐标，不能把它直接当最终精化格点或据此规定任意 opening 的角索引。mapper 直接复制槽内像素，和 SDK 最终点逐位相同。</p>
+<h2 id="未知及交接边界">未知及交接边界</h2><p>补充 r 图仍全部方向 1，图像文件名带 r 不证明原厂走其他方向。本轮未建立方向 2..8 的真实图像/解码方向对应关系、失败或多成功 proposal 搜索顺序、任意 payload 锚定、缺失哨兵的更早生成原因、共享独立 opening/decoder 与原厂 proposal 的对应关系。不能由微核八向通过和本轮方向 1 的真实 caller 通过推导全部八向图像等价。</p>
+<p>共享 <code>WorldIndex</code> 的整数公式无需修改。本轮无产品/共享接口/持久化变更，无提交 SHA；根线统一向用户指定的“框架层逆向”聊天通知文档和证据，由用户决定集成。收到通知不等于另一工作树已经同步。</p>
+<h2 id="复现与输出">复现与输出</h2><pre><code class="language-powershell">&amp; tests/MapCalibration.NativeProbe/RunImageAnchorCallerTrace.ps1
+&amp; &quot;$env:USERPROFILE/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe&quot; tests/MapCalibration.NativeProbe/CompareAnchorCaller.py
+&amp; tests/MapCalibration.NativeProbe/RunImageAnchorCallerTrace.ps1 -SourceRelative analysis/full-audit/n-image-calibration/solver-fixture/frame-r0.bmp -TargetRelative analysis/full-audit/n-image-calibration/solver-fixture/frame-r4.bmp -OutputName image-anchor-caller-rotated-trace
+&amp; &quot;$env:USERPROFILE/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe&quot; tests/MapCalibration.NativeProbe/CompareAnchorCaller.py image-anchor-caller-rotated-trace
+</code></pre>
+<p>当前工作树 <code>analysis/map-calibration/image-anchor-caller-trace/</code> 与 <code>image-anchor-caller-rotated-trace/</code> 保存 <code>tag-trace.jsonl</code>（原始相位）、<code>image-results.jsonl</code>（SDK 公开结果）、<code>identity.json</code>、<code>comparison.json</code>（严格对照与原始 trace/函数哈希）。这些为 ignored 本地证据；原厂 SDK 与本机 Ghidra 导出不随 Git 分发。SDK 头文件两条既有 C4091 声明警告不改变运行结果；probe 不请求托管构建或桌面/设备测试。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-ANCHOR-CALLER.md · SHA256 a1f3eb7aecc7a09dda6fe818195abed84f3bac34fdbdc6faec7334d702cbc339<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

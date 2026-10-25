@@ -1,0 +1,610 @@
+{
+  "schemaVersion": 2,
+  "modelVersion": "0.2",
+  "scope": {
+    "domains": [
+      "F-03",
+      "F-04",
+      "F-21",
+      "F-23"
+    ],
+    "completeFramework": false,
+    "implementationProgress": "41/96 = 42.71%; no change",
+    "manualAcceptanceExcluded": true
+  },
+  "baseline": "da853b5c386f04aba7634b09b2d1716a04f67103",
+  "generatedUtc": "2026-10-21T05:39:30.982Z",
+  "provenance": "Original VisionMaster.exe identity and fourteen selected CIL bodies, including four language-parser lambdas, plus four hashed shipped menu resources and local source. No vendor execution or current-implementation parity claim.",
+  "introduction": "从原20个外部工具声明进入初始化检查、资源可见性、语言选择、命令分派、进程参数和独立窗口/授权门；可见性、启动与工具有效性分开。",
+  "edges": [
+    {
+      "id": "D01",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "四份模式菜单的ExternTitleMenueItemData",
+      "to": "20个声明 / 7种工具名 / init与click分派",
+      "behavior": "默认/中性本地资源含训练、环境检测、标定板生成、运行异常采集及查找表；两Linux资源用远程升级/日志收集替换后两项。四份共20声明，是原214项的子集，不新增入口分母。各项保留info、initMethodName、methodName，不按标题推断启动目标。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/external-tool-declarations.json",
+          "member": "four-mode external tool declaration subset",
+          "sha256": "0fc05eb0314fb547183ca188e3cbb22105686225004105418effeafbe008fc31",
+          "start": 7,
+          "end": 25,
+          "excerpt": "  \"declarations\": [\n    {\n      \"resource\": \"MenuItems.xml\",\n      \"source\": {\n        \"path\": \"D:\\\\Program Files\\\\VisionMaster4.4.0\\\\Applications\\\\Resources\\\\MenuItems.xml\",\n        \"sha256\": \"d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959\"\n      },\n      \"id\": \"2.1\",\n      \"name\": \"深度学习训练工具\",\n      \"hierarchy\": [\n        \"Lang_Tools\",\n        \"深度学习训练工具\"\n      ],\n      \"fields\": {\n        \"name\": \"深度学习训练工具\",\n        \"info\": \"DeepLearningTool\\\\Hik.VM.DeepLearningTool.exe\",\n        \"initMethodName\": \"CheckPath\",\n        \"methodName\": \"OpenExe\"\n      },",
+          "evidenceType": "shipped-resource-declaration-projection",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "external item fields",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 19,
+          "end": 26,
+          "excerpt": "\tpublic string initMethodName;\n\n\tpublic string info;\n\n\tpublic string InitMethodName => initMethodName;\n\n\tpublic string Info => info;\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "资源存在不证明当前模式选择、可见或原机事件投递；未枚举动态扩展程序集。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D02",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "ExternTitleMenueItemData.Init",
+      "to": "base.Init后反射调用InitMethodName",
+      "behavior": "先base.Init(node)再ExcuteMethodByName(InitMethodName)。原反射函数按GetType().GetMethod(name)并Invoke(this,null)，局部catch Exception为空；初始化检查失败和点击调用失败可能被同一反射壳吞掉。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "Init and initialization dispatch",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 27,
+          "end": 33,
+          "excerpt": "\tpublic override BaseNode Init(XmlNode node)\n\t{\n\t\tbase.Init(node);\n\t\tExcuteMethodByName(InitMethodName);\n\t\treturn this;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::Init",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 87,
+          "end": 106,
+          "excerpt": "          \"token\": \"0x06000195\",\n          \"symbol\": {\n            \"token\": \"0x06000195\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"Init\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig\",\n            \"signatureBytes\": \"2001128245128249\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 28,\n          \"ilSha256\": \"63e919e805039c829bfaa929cf8580de6841b5de56e05f20e6726f31a2eaa5d8\",\n          \"ilBytes\": \"000203286302000a260202289601000628a302000600020a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.TitleMenueItemData::ExcuteMethodByName",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 2706,
+          "end": 2725,
+          "excerpt": "          \"token\": \"0x060002a3\",\n          \"symbol\": {\n            \"token\": \"0x060002a3\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"ExcuteMethodByName\",\n            \"parameters\": 1,\n            \"attributes\": \"Family, HideBySig\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 35,\n          \"ilSha256\": \"5d59bfadb3bf6099e71d451931ae0e3d2e4b1416da1cf094a41c71cf376b3718\",\n          \"ilBytes\": \"0002286702000a0a0006036f2103000a0b0702146f2203000a2600de050c0000de002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        }
+      ],
+      "unknowns": [
+        "反射解析实际接收者/BAML及所有加载路径仍未验证；没有把异常吞掉解释成初始化成功。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D03",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "CheckPath(Info)",
+      "to": "File.Exists(ApplicationBase + path) → 仅隐藏缺失项",
+      "behavior": "public无参CheckPath转私有path重载，检查原始字符串拼接路径；文件不存在才设IsDisplayInMenu=false，没有存在时重设true的else。基类该属性setter改字段并发属性通知。可用性检查与真正启动的GetFullPath分列。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::CheckPath",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 236,
+          "end": 255,
+          "excerpt": "          \"token\": \"0x06000198\",\n          \"symbol\": {\n            \"token\": \"0x06000198\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"CheckPath\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"3e7a8d092d44e53468d53d708ebfa1f3ebf1c8e2f1f9637b52ff64d42d6bc6b5\",\n          \"ilBytes\": \"00020228970100062899010006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::CheckPath",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 322,
+          "end": 341,
+          "excerpt": "          \"token\": \"0x06000199\",\n          \"symbol\": {\n            \"token\": \"0x06000199\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"CheckPath\",\n            \"parameters\": 1,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 45,\n          \"ilSha256\": \"2267e8b369d0262956b17b1cf91f6c9c97bec7a67842919c9bd20bc5b2b37ae2\",\n          \"ilBytes\": \"00283f00000a6f7e00000a6f7f00000a03283600000a288100000a16fe010a062c0a0002166f9602000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "path existence hiding",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 39,
+          "end": 45,
+          "excerpt": "\tprivate void CheckPath(string path)\n\t{\n\t\tif (!File.Exists(AppDomain.CurrentDomain.SetupInformation.ApplicationBase + path))\n\t\t{\n\t\t\tIsDisplayInMenu = false;\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "IsDisplayInMenu setter",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 209,
+          "end": 225,
+          "excerpt": "\tpublic virtual bool IsDisplayInMenu\n\t{\n\t\tget\n\t\t{\n\t\t\treturn isDisplayInMenu;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (isDisplayInMenu != value)\n\t\t\t{\n\t\t\t\tisDisplayInMenu = value;\n\t\t\t\tOnPropertyChanged(\"IsDisplayInMenu\");\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic bool IsShowSeparator",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "CheckPath public wrapper",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 34,
+          "end": 38,
+          "excerpt": "\tpublic void CheckPath()\n\t{\n\t\tCheckPath(Info);\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "不读取实际工具文件可用性；已有对象再次Init与资源重新构建的状态差异未知。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D04",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "CheckPathByLang / GetPathByLang",
+      "to": "分号/冒号严格两段 → CultureInfo → Single匹配",
+      "behavior": "GetPathByLang按分号分条、冒号分段，只保留长度恰2；GetCultureInfo生成culture/path元组，读取GetLangParm，以CultureInfo.Equals条件Single取唯一匹配，再返回Item2。无缺省语言回退；零个/多个匹配或无效culture异常不在该体catch。四个lambda原CIL一并恢复。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "localized path parser",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 98,
+          "end": 108,
+          "excerpt": "\tprivate string GetPathByLang()\n\t{\n\t\tIEnumerable<Tuple<CultureInfo, string>> source = from p in info.Split(';')\n\t\t\tselect p.Split(':') into p\n\t\t\twhere p.Length == 2\n\t\t\tselect new Tuple<CultureInfo, string>(CultureInfo.GetCultureInfo(p[0]), p[1]);\n\t\tstring langSet = AppLocalizationService.GetLangParm();\n\t\tTuple<CultureInfo, string> tuple = source.Single((Tuple<CultureInfo, string> p) => p.Item1.Equals(CultureInfo.GetCultureInfo(langSet)));\n\t\treturn tuple.Item2;\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::GetPathByLang",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 1729,
+          "end": 1748,
+          "excerpt": "          \"token\": \"0x0600019f\",\n          \"symbol\": {\n            \"token\": \"0x0600019f\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"GetPathByLang\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 179,\n          \"ilSha256\": \"9611f44d967edcefb3f75aea933cccdf05a3b269d4fa714d43d467d144d81a0f\",\n          \"ilBytes\": \"73580300060a00027b8b000004178d1701000125161f3b9d6fde00000a7ec1010004252d17267ec0010004fe065c030006736c02000a2580c1010004282200002b7ec2010004252d17267ec0010004fe065d030006736d02000a2580c2010004282300002b7ec3010004252d17267ec0010004fe065e030006736e02000a2580c3010004282400002b0b06280c01000a7dbf0100040706fe0659030006736f02000a282500002b0c086f7102000a0d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::CheckPathByLang",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 1643,
+          "end": 1662,
+          "excerpt": "          \"token\": \"0x0600019e\",\n          \"symbol\": {\n            \"token\": \"0x0600019e\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"CheckPathByLang\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"921849eee8036167fc911b407bbc199badb423546f2f586ce9539d206561a933\",\n          \"ilBytes\": \"000202289f0100062899010006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": ".<>c::<GetPathByLang>b__14_0",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 2951,
+          "end": 2970,
+          "excerpt": "          \"token\": \"0x0600035c\",\n          \"symbol\": {\n            \"token\": \"0x0600035c\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec\",\n            \"name\": \"\\u003CGetPathByLang\\u003Eb__14_0\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"20011d0e0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 18,\n          \"ilSha256\": \"e9a9692bc7f3d211ff238b47528e03d6407155f8cddc8841f870113a85df24da\",\n          \"ilBytes\": \"03178d1701000125161f3a9d6fde00000a2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": ".<>c::<GetPathByLang>b__14_1",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 3046,
+          "end": 3065,
+          "excerpt": "          \"token\": \"0x0600035d\",\n          \"symbol\": {\n            \"token\": \"0x0600035d\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec\",\n            \"name\": \"\\u003CGetPathByLang\\u003Eb__14_1\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001021d0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 7,\n          \"ilSha256\": \"3f3a3963d40840e02baa0b15bd93642360fbc6c24d0d582dc569288e6897ab34\",\n          \"ilBytes\": \"038e6918fe012a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": ".<>c::<GetPathByLang>b__14_2",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 3109,
+          "end": 3128,
+          "excerpt": "          \"token\": \"0x0600035e\",\n          \"symbol\": {\n            \"token\": \"0x0600035e\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec\",\n            \"name\": \"\\u003CGetPathByLang\\u003Eb__14_2\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"20011512825902127d0e1d0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 17,\n          \"ilSha256\": \"b73fa46d404cf430f86414fa91e037e4414248240275a4877abeff95a2d1a8c5\",\n          \"ilBytes\": \"03169a28e803000a03179a73e903000a2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": ".<>c__DisplayClass14_0::<GetPathByLang>b__3",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 3230,
+          "end": 3249,
+          "excerpt": "          \"token\": \"0x06000359\",\n          \"symbol\": {\n            \"token\": \"0x06000359\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec__DisplayClass14_0\",\n            \"name\": \"\\u003CGetPathByLang\\u003Eb__3\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001021512825902127d0e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 23,\n          \"ilSha256\": \"d374e7e1aae0828a9cf31ae2c45f0e0af026ba9d8ccc6333c215df1a6e5fd836\",\n          \"ilBytes\": \"036fe703000a027bbf01000428e803000a6f8102000a2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "CheckPathByLang public wrapper",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 93,
+          "end": 97,
+          "excerpt": "\tpublic void CheckPathByLang()\n\t{\n\t\tCheckPath(GetPathByLang());\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "带额外冒号的配置不按Windows绝对路径另写兼容规则；实际当前语言及所有外部配置未读取。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D05",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "OpenExe(Info)",
+      "to": "规范化可执行路径 / Language参数 / Process.Start",
+      "behavior": "无参包装把Info传入私有OpenExe；内部GetFullPath(ApplicationBase+path)，构造ProcessStartInfo(fullPath,GetLang(\"Language\"))，CreateNoWindow=false，WorkingDirectory取最后反斜杠前缀，然后Process.Start。异常由此体catch并显示消息；没有等待进程退出或验证工具功能的代码。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::OpenExe",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 519,
+          "end": 538,
+          "excerpt": "          \"token\": \"0x0600019a\",\n          \"symbol\": {\n            \"token\": \"0x0600019a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"OpenExe\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"31fe72287759b1a8ed72d55a14f0a51146c97dc0179965f814b16743e663de96\",\n          \"ilBytes\": \"0002022897010006289b010006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::OpenExe",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 605,
+          "end": 624,
+          "excerpt": "          \"token\": \"0x0600019b\",\n          \"symbol\": {\n            \"token\": \"0x0600019b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"OpenExe\",\n            \"parameters\": 1,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 109,\n          \"ilSha256\": \"614194a6212c1b6ba5bfdcfffa8bcd9d39058b26800c98dcf1529a1ed14d8d70\",\n          \"ilBytes\": \"0000283f00000a6f7e00000a6f7f00000a03283600000a288000000a0a067243060070282d00000a738200000a0b07166f8300000a000706160672550600706f8400000a6f8500000a6f8600000a0007288700000a2600de130c00086f7c00000a1916282c01000a2600de002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "process launch arguments",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 52,
+          "end": 67,
+          "excerpt": "\tprivate void OpenExe(string path)\n\t{\n\t\ttry\n\t\t{\n\t\t\tstring fullPath = Path.GetFullPath(AppDomain.CurrentDomain.SetupInformation.ApplicationBase + path);\n\t\t\tProcessStartInfo processStartInfo = new ProcessStartInfo(fullPath, AppLocalizationService.GetLang(\"Language\"));\n\t\t\tprocessStartInfo.CreateNoWindow = false;\n\t\t\tprocessStartInfo.WorkingDirectory = fullPath.Substring(0, fullPath.LastIndexOf(\"\\\\\"));\n\t\t\tProcess.Start(processStartInfo);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "OpenExe public wrapper",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 47,
+          "end": 51,
+          "excerpt": "\tpublic void OpenExe()\n\t{\n\t\tOpenExe(Info);\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "参数是Language资源值，不是GetLangParm文化标记；源CreateNoWindow=false如实记录，本任务不启动任何进程。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D06",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "OpenExeByLang的参数求值",
+      "to": "GetPathByLang异常发生在私有OpenExe的try之外",
+      "behavior": "OpenExeByLang先求GetPathByLang结果再进入OpenExe。语言映射错误不会进入OpenExe内部显示消息的catch；若经通用菜单反射触发，外层ExcuteMethodByName会吞Exception。不能将所有启动失败统一画为弹窗。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::OpenExeByLang",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 1042,
+          "end": 1061,
+          "excerpt": "          \"token\": \"0x0600019c\",\n          \"symbol\": {\n            \"token\": \"0x0600019c\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"OpenExeByLang\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"23688d553c8c5ff3abba0445d0f0d2e80e4afce1e2b4fba5628f72633e2fda56\",\n          \"ilBytes\": \"000202289f010006289b010006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::GetPathByLang",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 1729,
+          "end": 1748,
+          "excerpt": "          \"token\": \"0x0600019f\",\n          \"symbol\": {\n            \"token\": \"0x0600019f\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"GetPathByLang\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 179,\n          \"ilSha256\": \"9611f44d967edcefb3f75aea933cccdf05a3b269d4fa714d43d467d144d81a0f\",\n          \"ilBytes\": \"73580300060a00027b8b000004178d1701000125161f3b9d6fde00000a7ec1010004252d17267ec0010004fe065c030006736c02000a2580c1010004282200002b7ec2010004252d17267ec0010004fe065d030006736d02000a2580c2010004282300002b7ec3010004252d17267ec0010004fe065e030006736e02000a2580c3010004282400002b0b06280c01000a7dbf0100040706fe0659030006736f02000a282500002b0c086f7102000a0d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::OpenExe",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 605,
+          "end": 624,
+          "excerpt": "          \"token\": \"0x0600019b\",\n          \"symbol\": {\n            \"token\": \"0x0600019b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"OpenExe\",\n            \"parameters\": 1,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 109,\n          \"ilSha256\": \"614194a6212c1b6ba5bfdcfffa8bcd9d39058b26800c98dcf1529a1ed14d8d70\",\n          \"ilBytes\": \"0000283f00000a6f7e00000a6f7f00000a03283600000a288000000a0a067243060070282d00000a738200000a0b07166f8300000a000706160672550600706f8400000a6f8500000a6f8600000a0007288700000a2600de130c00086f7c00000a1916282c01000a2600de002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.TitleMenueItemData::ExcuteMethodByName",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 2706,
+          "end": 2725,
+          "excerpt": "          \"token\": \"0x060002a3\",\n          \"symbol\": {\n            \"token\": \"0x060002a3\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"ExcuteMethodByName\",\n            \"parameters\": 1,\n            \"attributes\": \"Family, HideBySig\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 35,\n          \"ilSha256\": \"5d59bfadb3bf6099e71d451931ae0e3d2e4b1416da1cf094a41c71cf376b3718\",\n          \"ilBytes\": \"0002286702000a0a0006036f2103000a0b0702146f2203000a2600de050c0000de002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "OpenExeByLang public wrapper",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 68,
+          "end": 72,
+          "excerpt": "\tpublic void OpenExeByLang()\n\t{\n\t\tOpenExe(GetPathByLang());\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "直接API调用者可能没有反射壳；原机错误/空配置/重复语言矩阵未跑。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D07",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "OpenModuleParamTool",
+      "to": "精确窗口类型存在门 / PRO授权 → ModuleParamTool.MainWindow.Show",
+      "behavior": "先枚举Application.Current.Windows，对GetType()==typeof(ModuleParamTool.MainWindow)直接返回；并非IsAssignableFrom，也不激活已有窗。之后按DongleSeriesEnum.PRO权限门提示或new该类型并BaseWindow.Show，非ShowDialog。原CIL已消除提取源码MainWindow同名歧义。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::OpenModuleParamTool",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 1128,
+          "end": 1147,
+          "excerpt": "          \"token\": \"0x0600019d\",\n          \"symbol\": {\n            \"token\": \"0x0600019d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"OpenModuleParamTool\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 139,\n          \"ilSha256\": \"c6f9ff0cbc94cfd278c1f753e6558124a80144c63a9f49b84ad7fc2c53f92e99\",\n          \"ilBytes\": \"0000286000000a6f6402000a6f6502000a0b2b2a076f6602000a74260000010c00086f6702000ad094000001285e00000a286802000a0d092c0300de4d00076fad00000a2dcede15077561000001130411042c0811046fa200000a00dc1f32286902000a130511052c13007203260070282d00000a283801000a262b0d736a02000a0a066f6b02000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/ExternTitleMenueItemData.cs",
+          "member": "module parameter tool gate",
+          "sha256": "b62901491d062c0209b09179fdab4b30672c2407c5aa06dae5ff2f9c0e97b491",
+          "start": 73,
+          "end": 94,
+          "excerpt": "\tpublic void OpenModuleParamTool()\n\t{\n\t\t//IL_007d: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0083: Expected Obj, but got Unknown\n\t\tforeach (Window window in Application.Current.Windows)\n\t\t{\n\t\t\tif (window.GetType() == typeof(MainWindow))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n\t\tif (UIVersionControlManagerCS.IsDongleLowerThanConfig(UIVersionControlManagerCS.DongleSeriesEnum.PRO))\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_InsufficientDonglePermissions\"));\n\t\t\treturn;\n\t\t}\n\t\tMainWindow val = new MainWindow();\n\t\t((BaseWindow)(object)val).Show();\n\t}\n\n\tpublic void CheckPathByLang()\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "窗口枚举与授权函数真实状态、窗体内部初始化/关闭生命周期及程序集运行绑定未知。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "D08",
+      "route": "原版 · 外部工具菜单",
+      "classification": "source-confirmed",
+      "from": "查找表菜单Info与实际处理器",
+      "to": "存在检查指VMCollector，点击处理器不使用Info",
+      "behavior": "两本地模式的查找表声明info为Tools\\VMCollector\\VMCollector.exe、initMethodName=CheckPath，但methodName=OpenModuleParamTool。该处理器原体没有读取Info，而是显示ModuleParamTool.MainWindow。因此检查目标与执行目标不能按字段名或标题合并。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/external-tool-declarations.json",
+          "member": "four-mode external tool declaration subset",
+          "sha256": "0fc05eb0314fb547183ca188e3cbb22105686225004105418effeafbe008fc31",
+          "start": 7,
+          "end": 25,
+          "excerpt": "  \"declarations\": [\n    {\n      \"resource\": \"MenuItems.xml\",\n      \"source\": {\n        \"path\": \"D:\\\\Program Files\\\\VisionMaster4.4.0\\\\Applications\\\\Resources\\\\MenuItems.xml\",\n        \"sha256\": \"d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959\"\n      },\n      \"id\": \"2.1\",\n      \"name\": \"深度学习训练工具\",\n      \"hierarchy\": [\n        \"Lang_Tools\",\n        \"深度学习训练工具\"\n      ],\n      \"fields\": {\n        \"name\": \"深度学习训练工具\",\n        \"info\": \"DeepLearningTool\\\\Hik.VM.DeepLearningTool.exe\",\n        \"initMethodName\": \"CheckPath\",\n        \"methodName\": \"OpenExe\"\n      },",
+          "evidenceType": "shipped-resource-declaration-projection",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::OpenModuleParamTool",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 1128,
+          "end": 1147,
+          "excerpt": "          \"token\": \"0x0600019d\",\n          \"symbol\": {\n            \"token\": \"0x0600019d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"OpenModuleParamTool\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 139,\n          \"ilSha256\": \"c6f9ff0cbc94cfd278c1f753e6558124a80144c63a9f49b84ad7fc2c53f92e99\",\n          \"ilBytes\": \"0000286000000a6f6402000a6f6502000a0b2b2a076f6602000a74260000010c00086f6702000ad094000001285e00000a286802000a0d092c0300de4d00076fad00000a2dcede15077561000001130411042c0811046fa200000a00dc1f32286902000a130511052c13007203260070282d00000a283801000a262b0d736a02000a0a066f6b02000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/external-tools-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.ExternTitleMenueItemData::CheckPath",
+          "sha256": "0f5a683ff91e1eb89be8b7919f319a23318033c533c197b6046b2461ecaae418",
+          "start": 236,
+          "end": 255,
+          "excerpt": "          \"token\": \"0x06000198\",\n          \"symbol\": {\n            \"token\": \"0x06000198\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.ExternTitleMenueItemData\",\n            \"name\": \"CheckPath\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 15,\n          \"ilSha256\": \"3e7a8d092d44e53468d53d708ebfa1f3ebf1c8e2f1f9637b52ff64d42d6bc6b5\",\n          \"ilBytes\": \"00020228970100062899010006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/menuitems.xml",
+          "member": "lookup tool actual info and method fields",
+          "sha256": "d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959",
+          "start": 146,
+          "end": 151,
+          "excerpt": "\t\t\t\t\t<name>查找表工具</name>\n\t\t\t\t    <info>Tools\\VMCollector\\VMCollector.exe</info>\n\t\t\t\t\t<initMethodName>CheckPath</initMethodName>\n\t\t\t\t\t<methodName>OpenModuleParamTool</methodName>\n\t\t\t\t</ExternTitleMenueItemData>\n\t\t\t</items>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "这只是配置/方法数据流差异，不推定设计意图，也未据此改动原资源或当前产品。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "U01",
+      "route": "原版 · 外部工具菜单",
+      "classification": "unknown",
+      "from": "外部进程 / ModuleParamTool / 当前实现映射",
+      "to": "完整入口和效果仍未关闭",
+      "behavior": "本页恢复选定原件14方法及四模式20项资源投影；不执行目标工具，不将进程启动调用当作外部功能可用。",
+      "refs": [],
+      "unknowns": [
+        "外部工具文件版本/功能/退出/错误、动态入口、原机菜单路由、授权变化以及当前实现对应均未验证；当前未映射不等于全程序不存在。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    }
+  ],
+  "hierarchy": {
+    "title": "主界面",
+    "kind": "ui-root",
+    "organization": "independent-reading-organization",
+    "meaning": "按主界面子系统组织证据；成员调用由叶节点对应的证据边表达。",
+    "children": [
+      {
+        "title": "主菜单外部工具",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "声明、初始化与可见性",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "四份模式菜单的ExternTitleMenueItemData → 20个声明 / 7种工具名 / init与click分派",
+                "kind": "edge",
+                "edgeId": "D01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "ExternTitleMenueItemData.Init → base.Init后反射调用InitMethodName",
+                "kind": "edge",
+                "edgeId": "D02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "CheckPath(Info) → File.Exists(ApplicationBase + path) → 仅隐藏缺失项",
+                "kind": "edge",
+                "edgeId": "D03",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "语言路径、进程参数及异常边界",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "CheckPathByLang / GetPathByLang → 分号/冒号严格两段 → CultureInfo → Single匹配",
+                "kind": "edge",
+                "edgeId": "D04",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "OpenExe(Info) → 规范化可执行路径 / Language参数 / Process.Start",
+                "kind": "edge",
+                "edgeId": "D05",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "OpenExeByLang的参数求值 → GetPathByLang异常发生在私有OpenExe的try之外",
+                "kind": "edge",
+                "edgeId": "D06",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "独立窗口、授权与目标差异",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "OpenModuleParamTool → 精确窗口类型存在门 / PRO授权 → ModuleParamTool.MainWindow.Show",
+                "kind": "edge",
+                "edgeId": "D07",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "查找表菜单Info与实际处理器 → 存在检查指VMCollector，点击处理器不使用Info",
+                "kind": "edge",
+                "edgeId": "D08",
+                "classification": "source-confirmed"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "未关闭范围",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "运行效果和当前对应",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "外部进程 / ModuleParamTool / 当前实现映射 → 完整入口和效果仍未关闭",
+                "kind": "edge",
+                "edgeId": "U01",
+                "classification": "unknown"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

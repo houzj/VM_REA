@@ -1,0 +1,69 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Proposed single1390 trainer oracle: source precheck, not executed · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / Proposed single1390 trainer oracle: source precheck, not executed</p><h1>Proposed single1390 trainer oracle: source precheck, not executed</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Proposed single1390 trainer oracle: source precheck, not executed</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="GRAY-MATCH-TRAINING-ORACLE-ABI-PRECHECK.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="GRAY-MATCH-TRAINING-ORACLE-ABI-PRECHECK.html#proposed-single1390-trainer-oracle-source-precheck-not-executed">Proposed single1390 trainer oracle: source precheck, not executed</a></p><p style="margin-left:14px"><a href="GRAY-MATCH-TRAINING-ORACLE-ABI-PRECHECK.html#exact-abi">Exact ABI</a></p><p style="margin-left:14px"><a href="GRAY-MATCH-TRAINING-ORACLE-ABI-PRECHECK.html#fixed-case-ranges-and-capacities">Fixed-case ranges and capacities</a></p><p style="margin-left:14px"><a href="GRAY-MATCH-TRAINING-ORACLE-ABI-PRECHECK.html#ownership-and-dependencies">Ownership and dependencies</a></p></details><h1 id="proposed-single1390-trainer-oracle-source-precheck-not-executed">Proposed single1390 trainer oracle: source precheck, not executed</h1><p>Target core SHA85D17ECC87D52E9A62D8BB86C8D5208AC999BCD31EC6D0806453F8165733F549, direct <code>befbb0→befdc0</code>. Root requires this ABI/address/ownership review before execution. Proposed input is one16x16 tight gray image with byte <code>(13*x+19*y+7)%181</code>, mask256 bytes all1, requested level1, angle start0/end0/step2, version1390, fixpoint(7.5f,7.5f). It is an isolated generator fixture, not a final matching score sample.</p>
+<h2 id="exact-abi">Exact ABI</h2><p>Windows x64 first4 arguments: RCX=image pointer, EDX=image stride16, R8=mask pointer, R9D=mask stride16. <code>befbb0</code> prolog delta0xA8; following caller-entry stack argument offsets0x28..0x60 correspond to its current offsets0xD0..0x108. <code>befdc0</code> prolog delta0x4B8; corresponding offsets0x4E0..0x518.</p>
+<table>
+<thead>
+<tr>
+<th>Arg</th>
+<th>Type/payload</th>
+<th>befbb0 current stack</th>
+<th>befdc0 current stack</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5</td>
+<td>uint64 packed width16,height16</td>
+<td>D0</td>
+<td>4E0</td>
+</tr>
+<tr>
+<td>6</td>
+<td>uint64 packed float fixpoint bits</td>
+<td>D8</td>
+<td>4E8</td>
+</tr>
+<tr>
+<td>7</td>
+<td>int32 version1390</td>
+<td>E0</td>
+<td>4F0</td>
+</tr>
+<tr>
+<td>8</td>
+<td>pointer to16-byte <code>{int level; float start,end,step;}</code></td>
+<td>E8</td>
+<td>4F8</td>
+</tr>
+<tr>
+<td>9</td>
+<td>caller-owned writable model buffer</td>
+<td>F0</td>
+<td>500</td>
+</tr>
+<tr>
+<td>10</td>
+<td>uint64* used length output</td>
+<td>F8</td>
+<td>508</td>
+</tr>
+<tr>
+<td>11</td>
+<td>void** model pointer output</td>
+<td>100</td>
+<td>510</td>
+</tr>
+<tr>
+<td>12</td>
+<td>caller-owned writable workspace</td>
+<td>108</td>
+<td>518</td>
+</tr>
+</tbody></table>
+<p>Original <code>befbb0</code> calls trainer with its own zero-initialized temporary used length and writes that value to argument10 after return, preserving EAX. It does not clear argument11 on every failure. Success return0 and failure10100000 are confirmed by explicit decoded epilogs. Buffer/no-pointer errors10000014, dimensions1000001A, stride1000001B, level10000019, version10100001 and contrast10100000 remain earlier guards. Fixed proposed input passes these guards by construction; do not simulate other malformed calls.</p>
+<h2 id="fixed-case-ranges-and-capacities">Fixed-case ranges and capacities</h2><p>All pointer owners are the probe. Allocate separate aligned blocks with prefix/suffix guards, at least1MiB each for model and workspace, and256-byte logical image/mask plus128 owned slack. No pointers refer to module globals or another process. Record untouched guards and exact returned relative pointers. Initial sentinel bytes are probe input, not a claim about original SDK allocator initialization.</p>
+<p>Image/mask source reads are within256 bytes for the tight16x16 fixture. <code>c97550</code> sees selected image contrast&gt;1. <code>c96ce0(level1,16x16,1390)</code> returns384 bytes: header128+aligned256; image pyramid model-relative <code>[0x27700,0x27880)</code>, mask pyramid <code>[0x27880,0x27A00)</code>. Base metadata lies below0x27700; version writes at0x276B8, level quality arrays start0x276C0. One angle&#39;s reserved selected-byte payload is384 bytes atmodel+0x27A00; subsequent angle header starts0x27B80.</p>
+<p>At angle0 the destination is16x16; mask lookup rounds source coordinates within0..15. Full mask yields one contiguous span per row,16 spans total,256 selected pixels. Expected record end/used size is0x27B80+0x40+16*0x18=0x27D40. This is a <strong>source-derived expected fixed-case bound</strong>, not an observed returned value. Exact model bytes/unknown header holes cannot be asserted before original execution. Even a conservative256 one-pixel-span upper bound ends below0x29400, well inside1MiB. No unseen angle table beyond one entry is created; no quarter-turn group variant is generated because c978c0 single-angle branch returnscount1/index0 directly.</p>
+<p><code>c97840(16x16)</code> gives align128(17²+17²)=640 bytes=A. Workspace reserves four such plane regions <code>[0,4*A)</code>. <code>c978a0(720,&amp;size)</code> returnsalign128(720<em>20)=14464; angle group buffer starts4</em>A=2560. <code>c97890(720,&amp;size)</code> returnsalign128(720)=768; visited starts4<em>A+14464=17024. Reserved workspace end is17792. *<em>Visited does not start5</em>A*</em>; pointer-order asm and output-pointer size helpers establish this. Fixed one-angle group writes20 bytes and visited branch does not touch its byte array. Remaining scratch accesses are bounded by their640-byte planes; full-case output image/mask are256 bytes each.</p>
+<h2 id="ownership-and-dependencies">Ownership and dependencies</h2><p>No allocation/free operation occurs in these direct trainer bodies. They consume caller storage; result model pointer should alias argument9, and used length is an integer. Probe must not call a vendor destructor on returned pointer. Probe owns freeing its blocks, or exits its own process after flushing; it never releases another process or shared object. Its SetDllDirectory/LoadLibrary is the established isolated same-hash SDK resolution, without PlatformInit, licensing, camera or device APIs.</p>
+<p>Concrete dependencies: c97550 contrast; c96ce0 capacity; c96ef0 dimensions; c97840/90/A0 workspace sizes; c97090 builds image/mask pyramids;6e7ca0 copy;62f260 selects the image pyramid CPU backend; d46a10/d472b0 or c96f20 samplers (actual original oracles already recorded); c96e60 extracts layer0; c9ace0/c9ad00 compute training statistics (original bit oracles recorded); c978c0 single-angle grouping; bf2610 small-template pixel/span record generator;6ebb90 scratch fill; imported cosf/sinf/ceilf and security cookie. Large&gt;=64 inline path and old versions are not reached. bf2610 exact20-argument stack surface and original bounds are in the dedicated small-template source report.</p>
+<p>Remaining review gates before execution: root verifies this fixed-case pointer ledger and source chain; probe then logs load/error/return/guards and complete bounded bytes in isolated output. Any unexpected return, size, pointer or guard stops without trying more inputs. An original allocation-policy guarantee outside this explicitly owned fixture is not inferred.</p>
+<p class="meta">来源：docs/plugins/GRAY-MATCH-TRAINING-ORACLE-ABI-PRECHECK.md · SHA256 ecd8ff149d21d5af14dcdbc4498c3da2569dcca5dd5bc0a6e69d084e800dd8df<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

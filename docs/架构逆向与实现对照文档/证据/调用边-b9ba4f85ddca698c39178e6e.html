@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ApplicationOperation.Dispose · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ApplicationOperation.Dispose · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-L17"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ApplicationOperation.Dispose → DoClose → WatchDog → 屏蔽回调 → 方案释放</h2><p>先解绑 MainData 所列事件、Dispose 看门狗，再 ShieldModuleCbResult；读取 IsRunBackground，非后台显示关闭遮罩，然后 RunSyncWithEvent 内调用 VmSolution.Dispose(isRunBackground)。</p><p><a href="../专题/shell-lifecycle.html#edge-L17">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/shell-lifecycle.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/shell-lifecycle.edges.json · SHA256 d4050d32ac1fe0ba42816c4783d277a5d9983a815c2fb0106874cffd0e589286</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="c10a4f527caa88a63fbab13f9fb253dc8f35ea552e8d7ab7982dfc9c5a46d182">{
+  &quot;id&quot;: &quot;L17&quot;,
+  &quot;route&quot;: &quot;原版 · 清理与失败&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;ApplicationOperation.Dispose&quot;,
+  &quot;to&quot;: &quot;DoClose → WatchDog → 屏蔽回调 → 方案释放&quot;,
+  &quot;behavior&quot;: &quot;先解绑 MainData 所列事件、Dispose 看门狗，再 ShieldModuleCbResult；读取 IsRunBackground，非后台显示关闭遮罩，然后 RunSyncWithEvent 内调用 VmSolution.Dispose(isRunBackground)。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/ApplicationOperation.cs&quot;,
+      &quot;member&quot;: &quot;ApplicationOperation.Dispose setup&quot;,
+      &quot;sha256&quot;: &quot;b6633fabfdf9aea95469a40a85b988ff69add07183c2d8a7f241ef764dea9926&quot;,
+      &quot;start&quot;: 37,
+      &quot;end&quot;: 60,
+      &quot;excerpt&quot;: &quot;\tpublic void Dispose()\n\t{\n\t\tProgram.MainData.DoClose();\n\t\tWatchDogService.Instance.Dispose();\n\t\tServerSDKManager.serverSDKManager.mSolutionManager.ShieldModuleCbResult();\n\t\tbool isDispose = false;\n\t\tstring config = ConfigurationHelper.GetConfig(\&quot;IsRunBackground\&quot;);\n\t\tbool isRunBackground = config == \&quot;1\&quot;;\n\t\tif (!isRunBackground)\n\t\t{\n\t\t\tProgram.MainData.IsShowProgressMask = true;\n\t\t\tProgram.MainData.MaskMessage = \&quot;正在关闭方案\&quot;;\n\t\t}\n\t\tRunSyncWithEvent(() =>\n\t\t{\n\t\t\tLogHelper.Info(\&quot;SDK destroy handle start.\&quot;);\n\t\t\tVmSolution.Instance.Dispose(isRunBackground);\n\t\t\tisDispose = true;\n\t\t\tLogHelper.Info(\&quot;SDK destroy handle end.\&quot;);\n\t\t});\n\t\tLogHelper.Info(\&quot;ComPatibleTool destroy start\&quot;);\n\t\tProcess[] processesByName = Process.GetProcessesByName(\&quot;CompatibleTool\&quot;);\n\t\tProcess[] array = processesByName;\n\t\tforeach (Process process in array)&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs&quot;,
+      &quot;member&quot;: &quot;MainWindowData.DoClose&quot;,
+      &quot;sha256&quot;: &quot;aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5&quot;,
+      &quot;start&quot;: 701,
+      &quot;end&quot;: 712,
+      &quot;excerpt&quot;: &quot;\tpublic void DoClose()\n\t{\n\t\tVmSolution.RestoreDefaultDisplay -= VmSolution_RestoreDisplay;\n\t\tVmSolution.OnSolutionLoadEndCallBack -= VmSolution_LoadEnd;\n\t\tVmSolution.OnSolutionLoadBeginCallBack -= VmSolution_LoadBegin;\n\t\tVmSolution.OnGlobalScriptReportCallBack -= VmSolution_OnGlobalScriptReportCallBack;\n\t\tVmSolution.OnProxyCrashNoticeCallBack -= VmSolution_OnProxyCrashNotice;\n\t\tVmSolution.OnReportModuleData -= VmSolution_OnReportModuleData;\n\t\tVmSolution.OnServerStatusCallBack -= VmSolution_OnServerStatusCallBack;\n\t\tVmSolution.OnProcessImportEndCallBack -= VmSolution_OnProcessImportEndCallBack;\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

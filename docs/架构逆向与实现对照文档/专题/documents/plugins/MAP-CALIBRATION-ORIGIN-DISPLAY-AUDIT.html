@@ -1,0 +1,50 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定 CalibOriPoint* 显示字段源码审计 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 映射标定 CalibOriPoint* 显示字段源码审计</p><h1>映射标定 CalibOriPoint* 显示字段源码审计</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定 CalibOriPoint* 显示字段源码审计</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-ORIGIN-DISPLAY-AUDIT.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-ORIGIN-DISPLAY-AUDIT.html#映射标定-caliboripoint-显示字段源码审计">映射标定 CalibOriPoint* 显示字段源码审计</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-ORIGIN-DISPLAY-AUDIT.html#结论">结论</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-ORIGIN-DISPLAY-AUDIT.html#源码和资源证据">源码和资源证据</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-ORIGIN-DISPLAY-AUDIT.html#运行-trace-与未知">运行 trace 与未知</a></p></details><h1 id="映射标定-caliboripoint-显示字段源码审计">映射标定 CalibOriPoint* 显示字段源码审计</h1><h2 id="结论">结论</h2><p>原厂结果显示 XML 引用了 <code>CalibOriPointX/Y</code> 与四个轴向量分量，但当前检查到的 Map 原厂模块契约、原生 <code>ProcessOutput</code> 生产函数和托管 <code>MapCalibResult</code> 结果装配类型中均没有这些字段的声明/写入路径。原生模块 DLL 与托管 DLL 的 ASCII、UTF-16LE 字符串扫描也没有命中这些字段名。因而，现有静态证据不支持它们通过 Map 模块常规输出被生产。</p>
+<p>这仍不足以证明显示对象必然是遗留项或永远不可见：尚未取得原厂 UI 的运行结果面板/坐标对象截图和该模块在 VM 壳层中的完整动态输出 trace；也不能排除未检查的外部/通用坐标接口在某个运行模式中提供值。没有为这些字段伪造输出值，产品实现保持不变。</p>
+<h2 id="源码和资源证据">源码和资源证据</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>可复核内容</th>
+<th>SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原厂 <code>IMVSMapCalibModu.xml</code></td>
+<td>Output 列表在 <code>ModuRunTime</code> 后声明 <code>ModuStatus</code>、<code>CalibStatus</code>、比率、误差、三组角点、计数、ROI、状态及像素比例；无 <code>CalibOriPoint*</code></td>
+<td><code>228BF45A24691C0CD13C2201E516941F20E6B1E5352478CCB60ED01C774B4F5F</code></td>
+</tr>
+<tr>
+<td>原厂 <code>IMVSMapCalibModuDisplay.xml</code></td>
+<td>第 53–59 行将 <code>CenterX/Y</code>、<code>CoorDX/DYVecX/Y</code> 和提示文本绑定到这组 <code>CalibOriPoint*</code> 名称；这是显示侧引用证据</td>
+<td><code>D630451CD94D6D6EB4B1A69F5B9204707B18B083799B6218E4493A84700CA0A4</code></td>
+</tr>
+<tr>
+<td>原厂 <code>IMVSMapCalibModu.dll</code></td>
+<td>Ghidra 反编译 <code>CIMVSMapCalibModu::ProcessOutput</code> 位于 <code>analysis/map-calibration/ghidra/module-analyzed/1800220b0.c</code>。第 44–45 行写 <code>ModuStatus</code>、<code>CalibStatus</code>；第 110–190 行写 X/YRatio、MapError、三组角点及计数、CalibStatus1/2、PixelScale1/2；函数中没有 origin 字段写出。原生 DLL 中未发现目标字段的 ASCII 或 UTF-16LE 字符串</td>
+<td><code>658D63E2C4E2378E7EB1776D27B966990C0D0E01E29CA57ED82FE9ACC740FDE8</code></td>
+</tr>
+<tr>
+<td><code>ProcessOutput</code> 反编译产物</td>
+<td>上述函数来自本工作树 Ghidra <code>module-analyzed</code> 输出，便于定位检查行；它是反编译结果，不是原厂源码</td>
+<td><code>12F085ABAC1773CD4D3D93A7B158FDFE527317B3A0E0FFCDF9C177CE344DC9F4</code></td>
+</tr>
+<tr>
+<td>原厂 <code>IMVSMapCalibModuCs.dll</code> 的 IL</td>
+<td>对 <code>MapCalibResult</code> 类型作定向 IL 导出：字段/构造器只含状态、比率、误差、角点列表/计数、ROI、像素比例，没有 origin/axis properties。<code>IMVSMapCalibModuTool.ModuResult</code> 创建此类型，再 <code>QueryModuleOneResult</code>；有结果时交给 <code>ModuleResultManager.SetModuleResult</code>。安装目录与 Development 目录中的此 DLL 字节一致。该 DLL 中目标字段名也未命中 ASCII 或 UTF-16LE 扫描</td>
+<td><code>6C8EA8FD06A2FA0D9E2C2F9A2F4B23D735E0D4FCB4D838721592B401B1C429F6</code></td>
+</tr>
+<tr>
+<td>SDK <code>ModuleResultManager.cs</code></td>
+<td>第 1407–1413 行的一般点映射把 <code>PosXVector</code>、<code>PosYVector</code> 分量映射为 <code>CalibOriPointXVecX/Y</code>、<code>CalibOriPointYVecX/Y</code>。这是可疑的通用类型映射候选，但不是 Map 字段值生产证据：Map 的公开结果类没有这些源属性，Map 原生结果输出函数也未写这些字段。该映射没有 <code>CalibOriPointX/Y</code> 原点本身</td>
+<td><code>FD3960EE308FB739729AF43589035D628544BB5B26941BE5EB6F3250A41739E7</code></td>
+</tr>
+</tbody></table>
+<h2 id="运行-trace-与未知">运行 trace 与未知</h2><p>对当前 <code>analysis/map-calibration</code> 下已保存的文本证据检索这六个确切输出名，没有发现 Map 原厂 runtime 记录其值；现存算法 probe 不是原厂桌面动态输出/显示链的完整 trace，所以不能据此断言其运行时必定为空。</p>
+<p>要判定显示对象运行时是否会取值，最小证据是同一原厂 Map 节点在成功双图运行后保存的：</p>
+<ol>
+<li>原厂结果/显示面板中 Coordinate System 对象的可见状态和对应数值；</li>
+<li>VM 壳层实际返回的 Map 动态输出名、类型和值（包括六个目标名，即使值缺省也需记录）；</li>
+<li>若这些动态输出由订阅的点/向量对象产生，记录实际对象类型和绑定/写值调用链，特别是 SDK <code>PosXVector</code>/<code>PosYVector</code> 到模块输出的传递点。</li>
+</ol>
+<p>在得到这些证据前，保留显示 XML 引用与当前产品实现，不增加目标输出端口、不填充默认值，也不将显示元素标成“遗留/无效”。本报告仅登记源证据边界，没有修改共享框架、实现代码或测试。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-ORIGIN-DISPLAY-AUDIT.md · SHA256 588819f19250f0a8546fda32ce7b4280684e42df19d59631570e57d14ecb599b<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

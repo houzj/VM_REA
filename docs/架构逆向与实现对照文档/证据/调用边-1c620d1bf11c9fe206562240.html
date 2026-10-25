@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SelectWorkflow / RememberDisplayedWorkflow · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SelectWorkflow / RememberDisplayedWorkflow · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C06"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SelectWorkflow / RememberDisplayedWorkflow → 根 Tab → 内部画布的会话记忆</h2><p>换 Tab 前记当前根/显示 ID，过滤已删除目标；返回根 Tab 时只恢复仍属于该根的显示 ID。切换清手势、拖影、弹层和选择；不由此声明缩放/滚动持久化。</p><p><a href="../专题/loading-navigation.html#edge-C06">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/loading-navigation.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/loading-navigation.edges.json · SHA256 1aa075627c117289aeb061c4bf496955ccab2a4fae0d0b6c4af6d7aba8f13261</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="26f63d7aa4b04ba05680925e0f92a90ae4dde08728a70b239cae21b8d65e3e54">{
+  &quot;id&quot;: &quot;C06&quot;,
+  &quot;route&quot;: &quot;当前 · Group 导航&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;SelectWorkflow / RememberDisplayedWorkflow&quot;,
+  &quot;to&quot;: &quot;根 Tab → 内部画布的会话记忆&quot;,
+  &quot;behavior&quot;: &quot;换 Tab 前记当前根/显示 ID，过滤已删除目标；返回根 Tab 时只恢复仍属于该根的显示 ID。切换清手势、拖影、弹层和选择；不由此声明缩放/滚动持久化。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowTabs.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.SelectWorkflow&quot;,
+      &quot;sha256&quot;: &quot;24a398d5cd2a16ba2ea01ce980df4b7a3c4f4b9afe27c34720195bcd0b48cb45&quot;,
+      &quot;start&quot;: 54,
+      &quot;end&quot;: 63,
+      &quot;excerpt&quot;: &quot;    void SelectWorkflow(string id)\n    {\n        if(!doc.Document.Procedures.Any(p=>p.Id==id))return;\n        RememberDisplayedWorkflow();\n        string displayedId=doc.Document.Procedures.Single(p=>p.Id==id).GroupOwner is null?ResolveDisplayedWorkflow(id):id;\n        ResetEditingGesture();ClearToolGhost();\n        if(toolPopup is not null)toolPopup.IsOpen=false;\n        selected=null;selectedNodes.Clear();selectedWire=null;\n        if(doc.CurrentProcedureId!=displayedId)doc.SelectProcedure(displayedId);else {RenderGraph();RefreshRight();}\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/GroupCanvasNavigation.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.RememberDisplayedWorkflow / ResolveDisplayedWorkflow&quot;,
+      &quot;sha256&quot;: &quot;ecaefcc3eda91a4a61f55eb62b482463f9a792de6ea3527b9e2291d47bbdb353&quot;,
+      &quot;start&quot;: 8,
+      &quot;end&quot;: 24,
+      &quot;excerpt&quot;: &quot; void RememberDisplayedWorkflow()\n {\n  if(!doc.HasCurrentProcedure)return;\n  var live=doc.Document.Procedures.Select(p=>p.Id).ToHashSet(StringComparer.Ordinal);\n  foreach(var root in displayedWorkflowContainers.Keys.Where(id=>!live.Contains(id)||!live.Contains(displayedWorkflowContainers[id])).ToArray())displayedWorkflowContainers.Remove(root);\n  displayedWorkflowContainers[doc.RootProcedureId(doc.CurrentProcedureId)]=doc.CurrentProcedureId;\n }\n string ResolveDisplayedWorkflow(string rootId)\n {\n  // Explicit owned-container navigation is not a top-level tab selection.\n  if(doc.Document.Procedures.FirstOrDefault(p=>p.Id==rootId)?.GroupOwner is not null)return rootId;\n  if(displayedWorkflowContainers.TryGetValue(rootId,out var displayed)&amp;&amp;doc.Document.Procedures.Any(p=>p.Id==displayed)&amp;&amp;doc.RootProcedureId(displayed)==rootId)return displayed;\n  displayedWorkflowContainers.Remove(rootId);\n  return rootId;\n }\n void ClearDisplayedWorkflows()=>displayedWorkflowContainers.Clear();\n SubprogramCallWindow? displayedGroupConfiguration;&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

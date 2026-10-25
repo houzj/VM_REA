@@ -1,0 +1,45 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原生方案保存边界与独立格式验收 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原生方案保存边界与独立格式验收</p><h1>原生方案保存边界与独立格式验收</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原生方案保存边界与独立格式验收</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="SOLUTION-PERSISTENCE-BOUNDARY.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="SOLUTION-PERSISTENCE-BOUNDARY.html#原生方案保存边界与独立格式验收">原生方案保存边界与独立格式验收</a></p><p style="margin-left:14px"><a href="SOLUTION-PERSISTENCE-BOUNDARY.html#原生调用链证据">原生调用链证据</a></p><p style="margin-left:14px"><a href="SOLUTION-PERSISTENCE-BOUNDARY.html#当前独立格式">当前独立格式</a></p><p style="margin-left:14px"><a href="SOLUTION-PERSISTENCE-BOUNDARY.html#mf-05-独立嵌入资源校验增量">MF-05 独立嵌入资源校验增量</a></p></details><h1 id="原生方案保存边界与独立格式验收">原生方案保存边界与独立格式验收</h1><p>2026-10-19新增原厂样本证据：8个随包 <code>.sol</code> 的ZIP及98个UI条目已只读检查；第二轮进一步闭合122个MoudleFrame外层记录边界，两份独立解析器对名称、偏移、长度和载荷哈希完全一致。详见 <a href="SOL-ROUND2-20261019.html">SOL第二轮</a>。<code>tests/Inspect-NativeSolutionSample.ps1</code> 只作测试审计，候选结构不代表mdata内部、密码/旧版本或原机往返已兼容；下文228字节拒绝用例仍不能算原厂样本。</p>
+<p>2026-10-17。范围：主框架 F-18/F-19。本文区分反编译可确认的调用链与本项目独立格式的行为；它不宣布 <code>.sol</code> / <code>.solx</code> 已兼容。</p>
+<h2 id="原生调用链证据">原生调用链证据</h2><table>
+<thead>
+<tr>
+<th>原始文件与位置</th>
+<th>可确认行为</th>
+<th>边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs:160-193,307-319</code></td>
+<td>已有路径时调用 <code>VmSolution.Export</code> 或包装的保存命令；另存对话框显示 <code>.solx</code> 过滤项，保存前处理标定用户数据</td>
+<td>UI 与调用可见，文件容器字节布局不可见</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs:1535-1604</code></td>
+<td><code>CheckSol</code> 调用 SDK <code>CheckSolution</code> 判密码；<code>InternalExport</code> 管理保存中状态、密码、路径，最终调用 <code>mSolutionManager.SyncSaveSolution</code></td>
+<td>托管层没有序列化容器、校验块或压缩算法实现</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs:2924-2990</code></td>
+<td><code>Import</code> 调用 <code>SyncLoadSolution</code> 并通过加载结束回调更新路径、密码；特殊错误码有条件接受</td>
+<td>无法仅由此推出 <code>.sol/.solx</code> 完整导入语义</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS/ImvsSdkPFDefine.cs:1382-1403</code></td>
+<td>保存输入 ABI 有路径、密码、附加数据指针和长度、保留字段</td>
+<td>结构体是 SDK 入参，并非磁盘格式声明</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS/ImvsNativeMethods.cs:69,78</code></td>
+<td>保存与加载的托管出口均为原生 P/Invoke</td>
+<td>磁盘格式及真正读写逻辑位于尚未完整分析的原生引擎</td>
+</tr>
+</tbody></table>
+<p>因此不能从已反编译的托管代码声称可以完整读写原生方案。要关闭 F-19，需要同版本真实样例、原生保存/加载实现的静态与运行取证、未知字段保留策略、密码与资源矩阵、往返差分。未获得这些证据之前不得把独立 JSON 改名为 <code>.sol</code> 或 <code>.solx</code>。</p>
+<p>当前工作区发现的 <code>analysis/rejected-input-check.sol</code> 仅 228 字节，是包含 <code>SolutionFile/VmServer.xml</code> 的 ZIP；XML 正文为外部实体拒绝测试（<code>file:///does-not-exist</code>）。它不能作为原厂保存方案的有效样本，也不能据此推断 <code>.sol</code> 容器格式。</p>
+<h2 id="当前独立格式">当前独立格式</h2><p><code>src/VisionFramework/SolutionStore.cs</code> 使用版本化 <code>.vmx.json</code>，校验后写同目录临时文件再替换；<code>src/VisionEditor.Core/GraphEditorDocument.cs:37-44,251-254</code> 在另存时重定位通用资源和内置文件图像节点的相对路径，仅成功写入后更新编辑器基目录与文件路径。这些是本项目的独立实现，不是原生实现证据。</p>
+<p><code>tests/VisionProcedure.Checks/Program.cs</code> 新增实际保存、另存、重开、按新目录读取同一资源，以及准备阶段失败时编辑器状态和目标文件不变的检查。测试不覆盖掉电、跨卷重命名、全部插件私有路径和原生文件兼容。插件私有持久化归插件线，不在主线重复实现。</p>
+<h2 id="mf-05-独立嵌入资源校验增量">MF-05 独立嵌入资源校验增量</h2><p><code>SolutionStore.ValidateStructure</code> 现在在保存前和加载后检查 <code>EmbeddedBase64</code> 编码，并在有 SHA256 声明时校验解码字节与摘要。损坏数据在进入执行器前失败；已有方案不能因失败保存而被替换。这是 <code>.vmx.json</code> 的独立格式一致性保护，不是从原生 <code>.sol/.solx</code> 推断出的规则。<code>tests/VisionFramework.PersistenceChecks</code> 以实际二进制资源验证保存、离线重开、摘要不符与非法 Base64 拒绝，27 项通过；真实图像源含嵌入保存的 773 项插件检查亦通过。超大资源、掉电和原生容器格式仍未闭合。</p>
+<p>后续增加同进程独占文件锁的异常写入检查：覆盖目标被占用时保存失败，原文件字节保持不变，生成的临时文件被清理；解除占用后再次保存成功。该 Windows 文件锁场景的实际持久化检查现为 30 项通过。此项只验证本项目独立格式的写入边界，未验证断电、跨卷或原生 SDK 保存事务。</p>
+<p>编辑器层也用实际保存路径复验同一失败场景：失败后 <code>FilePath</code>、资源基目录、修订号与脏状态不变，已保存字节不变；解除占用再保存后，编辑内容真正写入且脏状态清除。<code>VisionProcedure.Checks</code> 现为 26 项通过。该操作验证补上“底层文件未损坏但编辑器误标记为已保存”的风险边界；并未改变原生 <code>.sol</code> 格式判断。</p>
+<p>再以损坏 JSON 实际调用编辑器 <code>Load</code>：解析失败后当前方案、选中流程、文件路径、资源基目录、修订号与未保存修改保持不变，原有 Undo 仍可撤销。<code>VisionProcedure.Checks</code> 现为 28 项通过。这是独立格式编辑器的失败原子性验收；原生 VM 加载错误窗口与恢复策略仍未验证。</p>
+<p class="meta">来源：docs/SOLUTION-PERSISTENCE-BOUNDARY.md · SHA256 138f7d551fad9fb11a7f4faa6cf3c87191d32f9fc027ad45fd60cb3cbd8cdc10<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

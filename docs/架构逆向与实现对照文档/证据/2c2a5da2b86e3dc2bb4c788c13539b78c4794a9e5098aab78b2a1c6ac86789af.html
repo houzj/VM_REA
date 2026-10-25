@@ -1,0 +1,43 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 2c2a5da2b86e · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 2c2a5da2b86e</p><h1>原文证据 2c2a5da2b86e</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 2c2a5da2b86e3dc2bb4c788c13539b78c4794a9e5098aab78b2a1c6ac86789af。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using VisionFramework;
+using VisionPluginContracts;
+namespace VisionPlugins.BranchModule;
+// NodeId routing adapter over the source-confirmed integer branch. NumericId
+// absence is explicit and never parsed from a GUID or silently represented as 0.
+internal sealed class BranchModuleRuntime(Action&lt;ModuleExecutionContext,ModuleResult&gt;? completed=null):IModule {
+ public static readonly ModuleDescriptor Description=new(&quot;vision.branch-module&quot;,&quot;1.0.0&quot;,&quot;分支模块&quot;,
+  new[]{new PortDescriptor(&quot;inputint&quot;,DataKind.Integer,false){SupportsDeferredIntegerRead=true}},
+  new[]{new PortDescriptor(&quot;ModuRunTime&quot;,DataKind.Number,false),new(&quot;outputint&quot;,DataKind.Integer,false){CanSubscribe=false},new(&quot;ModuStatus&quot;,DataKind.Integer,false){CanSubscribe=false},new(&quot;BranchMatch&quot;,DataKind.Text,false){CanSubscribe=false}},
+  new[]{new ParameterDescriptor(&quot;IndexUserSet&quot;,ParameterKind.Integer,true,System.Text.Json.JsonSerializer.SerializeToElement(0)),new(&quot;ModuleInfoList&quot;,ParameterKind.Text,true,System.Text.Json.JsonSerializer.SerializeToElement(&quot;&quot;))});
+ public ModuleDescriptor Descriptor=&gt;Description;
+ static ToolIntegerInputReadResult Read(ModuleExecutionContext c){
+  if(c.Scope?.Service&lt;IToolIntegerInputReader&gt;() is {} service)return service.Read(c,&quot;inputint&quot;,0);
+  if(c.ReadIntegerInput?.Invoke(&quot;inputint&quot;,0) is {} result)return new(result.ErrorCode,result.Count,result.Value);
+  if(c.Inputs.TryGetValue(&quot;inputint&quot;,out var value)&amp;&amp;value.Kind==DataKind.Integer){var elements=value.Elements().ToArray();if(elements.Length&gt;0)return new(0,elements.Length,unchecked((int)elements[0].As&lt;long&gt;()));}
+  return new(0xe0000314,0,0);
+ }
+ public System.Threading.Tasks.ValueTask&lt;ModuleResult&gt; ExecuteAsync(ModuleExecutionContext c,System.Threading.CancellationToken cancellationToken){
+  cancellationToken.ThrowIfCancellationRequested();System.Threading.Tasks.ValueTask&lt;ModuleResult&gt; Done(ModuleResult value){completed?.Invoke(c,value);return System.Threading.Tasks.ValueTask.FromResult(value);}var read=Read(c);
+  if(read.ErrorCode!=0||read.Count&lt;1)return Done(new ModuleResult(read.ErrorCode==0?ModuleStatus.Success:ModuleStatus.Failed,new Dictionary&lt;string,PortValue&gt;(),read.ErrorCode==0?null:&quot;BranchInputRead&quot;){NativeErrorCode=read.ErrorCode,SelectedExecutionSuccessors=Array.Empty&lt;string&gt;()});
+  var timer=Stopwatch.StartNew();var rows=BranchRouteTable.Parse(c.Text(&quot;ModuleInfoList&quot;));int mode=c.Integer(&quot;IndexUserSet&quot;);
+  var selected=new List&lt;string&gt;();var match=new StringBuilder();bool nodeIdAdapter=false;
+  for(int row=0;row&lt;rows.Count;row++){
+   // The normal UI admits only signed Int32 text; Defaults/N has native atoi=0.
+   int value=rows[row].Value;
+   bool accepts=mode==0?read.Value==value:mode==1&amp;&amp;((read.Value&gt;&gt;(row&amp;31))&amp;1)!=0;if(!accepts)continue;
+   foreach(var next in c.ExecutionSuccessors)if(next.NodeId==rows[row].NodeId){
+    selected.Add(next.NodeId);if(next.NumericId is int id)match.Append(&quot;ID&quot;).Append(id.ToString(CultureInfo.InvariantCulture)).Append(';');else{nodeIdAdapter=true;match.Append(&quot;NodeId:&quot;).Append(next.NodeId).Append(';');}
+   }
+  }
+  var outputs=new Dictionary&lt;string,PortValue&gt;{{&quot;ModuRunTime&quot;,PortValue.Number((float)timer.Elapsed.TotalMilliseconds)},{&quot;outputint&quot;,PortValue.Integer(read.Value)},{&quot;ModuStatus&quot;,PortValue.Integer(selected.Count&gt;0?1:0)},{&quot;BranchMatch&quot;,PortValue.Text(selected.Count&gt;0?match.ToString():&quot;No Module&quot;)}};
+  var result=new ModuleResult(ModuleStatus.Success,outputs,Message:nodeIdAdapter?&quot;Independent NodeId identity adapter: BranchMatch is not native ID%d; NumericId source remains unverified.&quot;:null){NativeErrorCode=0,SelectedExecutionSuccessors=selected.AsReadOnly()};return Done(result);
+ }
+}
+
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Logic-BranchModule_STD-6eac6a91.html">分支模块 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,168 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C02.2：流程等待时间的原生导出与命令传输 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / C02.2：流程等待时间的原生导出与命令传输</p><h1>C02.2：流程等待时间的原生导出与命令传输</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C02.2：流程等待时间的原生导出与命令传输</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="C02-native-wait-transport-20261022.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="C02-native-wait-transport-20261022.html#c022流程等待时间的原生导出与命令传输">C02.2：流程等待时间的原生导出与命令传输</a></p><p style="margin-left:14px"><a href="C02-native-wait-transport-20261022.html#已确认的入口至传输链">已确认的入口至传输链</a></p><p style="margin-left:14px"><a href="C02-native-wait-transport-20261022.html#对先前缺口记录的更正">对先前缺口记录的更正</a></p><p style="margin-left:14px"><a href="C02-native-wait-transport-20261022.html#复验与下一取证点">复验与下一取证点</a></p></details><h1 id="c022流程等待时间的原生导出与命令传输">C02.2：流程等待时间的原生导出与命令传输</h1><p>2026-10-22。取证对象是安装原件 <code>D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/iMVS-6000PlatformSDK.dll</code>，SHA-256 <code>b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1</code>。本次只静态读取 PE 并反编译指定地址；没有加载 DLL、建立 SDK 实例、连接设备或修改安装目录。REA <code>open_binary</code> 确认该 PE 身份；其深度 provider 在本机报告 <code>provider_unavailable</code>（Ghidra 未配置到 REA、Hopper 不支持 Windows、IDA 未配置），故使用仓库既有受控 Ghidra 12.1.4 脚本 <code>tests/NativeImageBinaryProbe/Run-GhidraFunctions.ps1</code>，输出留在 <code>analysis/full-audit/reverse-c02-20261022/</code>。伪代码是反编译结果，不是原始 C++ 源码。</p>
+<h2 id="已确认的入口至传输链">已确认的入口至传输链</h2><ol>
+<li><p>原托管 <code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ProcessManager.cs::SetProcedureWaitTime(uint,uint)</code> 将 <code>CVmObjectBase.mhandle</code>、流程 ID、等待值传入 <code>ServerSDKAPI.IMVS_SetProcedureWaitTime</code>；非零返回转成 <code>VmException</code>。<code>NativeMethods.cs</code> 的 P/Invoke 目标是 <code>.\\iMVS-6000PlatformSDK.dll</code>。读取方法同样转发，并以 <code>ref uint</code> 接收结果。</p>
+</li>
+<li><p>x64 PE 导出表给出 <code>IMVS_SetProcedureWaitTime</code> VA <code>0x18064ed60</code>、<code>IMVS_GetProcedureWaitTime</code> VA <code>0x18064ee70</code>。两者先从列表按传入 handle 寻找对象、取得次级句柄，并再次核对；失败路径返回 <code>0xE0000006</code>。这是本导出体的判断，不能据此概括服务端错误全集。</p>
+</li>
+<li><p>设置导出的汇编 <code>0x18064ed7a–0x18064ed80</code> 保存 <code>R8D</code>（等待值）、<code>EDX</code>（流程 ID）、<code>RCX</code>（handle）；<code>0x18064ee43–0x18064ee50</code> 显式把 <code>R8D/EDX</code> 送至 <code>0x1806abda0</code>。所以第三参数没有因伪代码签名而消失。读取导出对应把 <code>R8</code> 输出指针传给 <code>0x1806abf40</code>。</p>
+</li>
+<li><p><code>0x1806abda0</code> 拒绝 <code>processID &lt; 1</code>，正常路径以 <code>sprintf_s</code> 格式串 <code>%d-%u-%u-%u</code>、常数 <code>0x41f</code>、流程 ID、字段号 <code>8</code>、传入等待值组装命令，再调用 <code>0x1806c00d0</code> 发送；返回该传输调用的错误码或 0。字符串来自该 PE 的 RVA <code>0xac9560</code>，不是根据产品 UI 猜测。</p>
+</li>
+<li><p>读取路径 <code>0x1806abf40</code> 拒绝空输出指针或 <code>processID &lt; 1</code>，以 <code>%d-%u-%u</code>、常数 <code>0x420</code>、流程 ID、字段号 <code>8</code> 组装查询，经 <code>0x1806c1f30</code> 获取返回；响应满足 <code>OK</code> 前缀时把第二字段的 <code>atoi</code> 结果写到输出指针。字符串分别位于 RVA <code>0xac5830</code>、<code>0xac5258</code>，扫描格式 <code>%[^*]*%d</code> 位于 <code>0xac5208</code>。Ghidra 对复杂响应分支的局部变量恢复不够稳定，具体错误码/所有畸形响应路径尚不作结论。</p>
+</li>
+<li><p>后续定向反编译 <code>0x1806c00d0</code> 表明设置命令使用 SDK 对象偏移 <code>+0x2398</code> 的函数指针发送。汇编 <code>0x1806c01d9–0x1806c0204</code> 显示先检查该指针，再将命令字符串、长度、响应缓冲与输出指针交给 <code>CALL RAX</code>，并将其返回码存入 <code>EDI</code>；<code>0x1806c0424</code> 将 <code>EDI</code> 送回 <code>EAX</code>。Ghidra 伪代码把函数恢复为 <code>void</code> 是错误的，不能据此说下层错误被丢弃。特定返回码 <code>0xE0000012</code> 进入 <code>0x180662a70</code> 重发路径；读取命令经 <code>0x1806c1f30</code> 转入 <code>0x1806c20b0</code> 并持有返回缓冲。当前证据只到<strong>客户端传输回调边界</strong>，没有定位真正处理命令的进程或计时器。</p>
+</li>
+<li><p>定向反编译和原汇编进一步消除了“备用传输”的歧义：<code>0x180662a70</code> 在 <code>0x180662a7a</code> 读取同一个 <code>+0x2398</code> 回调；存在时于 <code>0x180662ab1</code> 以尾跳转传递重排后的原参数，不存在时返回 <code>0xE0000010</code>。它不是已证实的另一接收通道。查询下层 <code>0x1806c20b0</code> 首先分配并清零 <code>0x2000</code> 字节、用容量 <code>0x1fff</code> 调用同一回调；只有回调给出 <code>0xE0000012</code> 时才检查所需长度、释放初始缓冲、分配 <code>required+1</code> 并第二次调用同一回调；成功把缓冲和响应长度交给上层，失败释放缓冲并传回错误码。这里可确认的是客户端的变长响应重试与所有权转移，仍不能推断服务端计时策略。<code>0x180662a70</code> 的伪代码把尾跳转显示为一次普通调用，其实汇编是 <code>JMP R10</code>；按汇编解释。</p>
+</li>
+<li><p>对客户端 <code>.text</code> 中位移 <code>0x2398</code> 的有界字节扫描共得 8 个候选，并以 x64 <code>.pdata</code> 函数范围校验：<code>0x180661ab3</code> 是唯一取得非零回调的直接写入点，函数 <code>0x1806615b0</code> 先构造 <code>..\\..\\Server\\PlatformManager.dll</code> 路径、<code>LoadLibraryW</code>，再以 <code>GetProcAddress</code> 查导出 <code>PF_M_MsgDeal</code>，写入 SDK 对象 <code>+0x2398</code>；失败时 <code>0x180661d00</code> 将 <code>+0x2370</code> 至 <code>+0x23a8</code> 的函数指针清零，并 <code>FreeLibrary</code> 句柄 <code>+0x2368</code>。扫描的另外一处写入正是这个清理分支；其余候选为读取或非该字段指令。字面量在客户端 PE 的 RVA <code>0xac0aa8</code>、<code>0xac40d0</code>、<code>0xac41c8</code>，<code>tests/NativeEvidence/C02/FindTransportSlotRefs.cjs</code> 可只读复验。此结论只涵盖该 DLL 的直接位移写入；间接内存复制仍未穷尽。</p>
+</li>
+<li><p>原安装件 <code>D:/Program Files/VisionMaster4.4.0/Applications/Server/PlatformManager.dll</code> SHA-256 <code>06D86F51BEBFEBA357D1B79297E20A3B0A70580A40AF7B77C8ABDD6C38CA0624</code>。REA <code>open_binary</code> 确认 x64 PE 身份；本机深反编译继续用独立受控 Ghidra 输出。PE 导出表确认 <code>PF_M_MsgDeal</code> RVA <code>0x6a0250</code>（VA <code>0x1806a0250</code>），并非转发导出。该导出拒绝空响应缓冲或容量 <code>&lt;0x200</code>，返回 <code>0xE0000012</code>；正常路径将五参数传给 <code>0x180602df0</code>。该分派函数的 <code>case 0x41f</code> 进入 <code>0x18061a320</code>，<code>case 0x420</code> 进入 <code>0x18061a8b0</code>。原分派伪代码约 1.6 万行，记录具体 case 和下层函数，而不把整个分派树宣称已审核。</p>
+</li>
+<li><p><code>0x18061a320</code> 要求命令拆出四字段（流程 ID、字段号、值），经 <code>0x1805e5c10</code> 操作流程配置容器并 <code>0x1805dd580</code> 找流程对象；字段号 <code>8</code> 时 <code>atoi</code> 值最终以 <code>MOV [RSI+0x2a8],EBX</code> 写入该对象。<code>0x18061a8b0</code> 要求三字段，调用 <code>0x1805e5de0</code> 取值，同样找流程对象；字段号 <code>8</code> 时把转换值写入对象 <code>+0x2a8</code>，再格式化响应。两处理函数还处理字段号 <code>4</code>，但这不是本次等待时间结论。这里定位了<strong>服务端存储字段</strong>；后续读取位置见第 11 条，计时、取消和回调关系仍未知。Ghidra 对处理函数返回型恢复为 <code>void</code>，本报告不据此推断成功码完整集合。<code>node tests/NativeEvidence/C02/PlatformManagerDispatchProbe.cjs</code> 复验服务端 PE 身份、导出、分派 case 与原汇编写入点。</p>
+</li>
+<li><p>继续静态扫描服务端 <code>.text</code> 中 <code>0x2a8</code> 位移，得到 393 个<strong>原始字节候选</strong>；大量位于栈访问或其他结构，绝不能把 393 当成实际字段引用。<code>tests/NativeEvidence/C02/FindWaitFieldRefs.cjs</code> 默认只显示已定向检查的函数，<code>--all</code> 给出全部字节候选和 <code>.pdata</code> 函数起点。汇编证实 <code>0x1805dda30</code> 在 <code>0x1805ddc00</code> 从流程对象读 <code>+0x2a8</code>，置入临时记录并交 <code>0x1805d2890</code> 建立列表元素；<code>0x1805eec10</code> 在 <code>0x1805eee8c</code> 从流程对象读 <code>+0x2a8</code>，写到其第三参数所指记录的 <code>+0x10</code>，随后才继续调用对象虚方法。<code>0x1806a32e0</code> 还在初始化对象时写 <code>+0x2a8</code>。另一个 <code>0x180651750</code> 虽有 <code>LEA [RDI+0x2a8]</code>，同时成组处理 <code>+0x298/+0x2b8/+0x2c8</code> 的容器元素，尚不能把这个偏移认作同一流程对象字段。以上确定了<strong>保存后的值至少进入两条下游记录构造链</strong>，但记录如何供执行器计时、超时是否停止/仅报告、是否影响回调仍未证实；<code>FUN_1805eec10</code> 的反编译数组别名把 <code>+0x2a8</code> 表示为 <code>plVar13[0x55]</code>，以原汇编为准。</p>
+</li>
+<li><p>对两条读函数做 PE <code>.text</code> 的 <code>E8 rel32</code> 反向候选搜索，并以 Ghidra 函数汇编复核，得到 <code>0x1805aa6f0</code> 在 <code>0x1805ab371</code> 调用 <code>0x1805eec10</code>；<code>0x1805b7770</code> 在 <code>0x1805b86ca</code>、<code>0x180622e70</code> 在 <code>0x180622f41</code> 调用 <code>0x1805dda30</code>。<code>0x1805aa6f0</code> 在调用时传入流程配置容器和一个本地输出记录，成功分支准备一个 <code>0x7fe</code> 格式的后续消息；仅凭此调用上下文，尚不能给该函数命名为执行超时回调。另两位调用者在多个配置容器操作间生成流程列表，不能直接视为计时器。<code>tests/NativeEvidence/C02/FindServerDirectCallers.cjs</code> 复验同 SHA PE 的相对调用位移；它不能找到间接调用或证明仅有这些调用者。</p>
+</li>
+</ol>
+<h2 id="对先前缺口记录的更正">对先前缺口记录的更正</h2><p><code>docs/reverse/C02-scheduling-batch2.md</code> 早已从原 <code>VM.Util.dll</code> CIL 和受控探针取得 <code>Hik.Util.SyncWaitor</code> 的实际实现：普通 <code>Wait/PrecisionWait(ref bool)</code> 无托管超时；P2P 数组重载有独立 nTimeout，超时返回时 flag 可保持 false。<code>docs/reverse/C-timeout-boundary-batch25.md</code> 及 <code>docs/MF05-PROCEDURE-RUN-CALLCHAIN.md</code> 中“SyncWaitor 实现未在反编译树/未取得”的描述已过期；准确缺口是 <strong>native 服务端如何消费 0x41f/0x420 命令、何时开始计时、超时如何改变执行/回调/错误状态</strong>。此更正不覆盖第二批历史运行结果，也不证明整个原生调度器行为。</p>
+<p>当前 main 的 <code>ProcedureDocument.WaitTimeMs</code>、<code>SolutionExecutor.RunAsync</code> 仍为独立的 <code>CancellationTokenSource.CancelAfter</code> 协作式流程预算；已确认的原导出只是把字段 8 传给下层，未见在导出体内取消执行。不能把两者宣称等价，也不能仅因传输格式已知就改写产品超时逻辑。C02.2 保持 <code>implementation=partial</code>，总实施进度不增加。</p>
+<h2 id="复验与下一取证点">复验与下一取证点</h2><p><code>node tests/NativeEvidence/C02/ProcedureWaitTransportProbe.cjs</code> 对同 SHA 原 PE 静态核对导出地址、命令字符串以及保存的伪代码/汇编关键数据流，实测退出 0。取证产物：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-wait/output/18064ed60.c</code></td>
+<td><code>D5D37876DD9EA6EE7C0B7BD3DF23DC972C874C57F2C68FDEAB01F4FA925E1C64</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-wait/output/18064ed60.asm.txt</code></td>
+<td><code>B820F497D8687B84FB039E110DB4CED0A98EEBDA6B39DE21C241E4DD73CF3FD0</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-wait-callees/output/1806abda0.c</code></td>
+<td><code>CC2C1CBF8435626C48D782261CB196487A15210869001607B2F5D334A6071EFA</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-wait-callees/output/1806abf40.c</code></td>
+<td><code>FBF82DC683DEC0ABC0A63517363403704D25BC19963CF62266F99A614A2D7EAD</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport/output/1806c00d0.c</code></td>
+<td><code>00DA7DEB7E8B35F2C98B7C83323E6FA30C02FCF87B82E915F5C4D08484763053</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport/output/1806c00d0.asm.txt</code></td>
+<td><code>D2EF29B0AE20ED85E78BD692E110CF28AD4EE7E197AACFCF3DC3F121B35DBC14</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport/output/1806c1f30.c</code></td>
+<td><code>2FA0821E3B4D908A5852944145AAE41AFF20DDAD38754EA21ECF0E6E793AFEAC</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/180662a70.c</code></td>
+<td><code>A63422BEEB789175A4B840B3C9A0A1D00CA606D4C3CE298BC86489BE74242B4B</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/180662a70.asm.txt</code></td>
+<td><code>E08BB31038A926A5B83460E19D056912B8A82B930A546CE5F6DB7EC9D5C12D71</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/1806c20b0.c</code></td>
+<td><code>CDEF9D4FD64C594B4831ACE760C151C73A3B4DAEBD51993FF5BEFC3ADEFA5930</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-fallback/output/1806c20b0.asm.txt</code></td>
+<td><code>C0E8FE6D5A48D7B76F52B2F2E035FF3772E6C0CD41E0C1D2C22179C5A65AE875</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/1806615b0.c</code></td>
+<td><code>7A0BF7CAFEA848CF456C3F4EE84FCA67E9AF996593778F83DCBB5D9B6694BFF6</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/1806615b0.asm.txt</code></td>
+<td><code>E01B03F86BB972705EAE2D98AC80FD5BA6604748C68E89F4FFC2916EE34CB5A2</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/180661d00.c</code></td>
+<td><code>6290DA1844F198E910D40D0F99E0F818F7B793D0A416D4C96E05D75F7461CE4A</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/native-transport-writers/output/180661d00.asm.txt</code></td>
+<td><code>AF520D8D8ADBBDBB9AEE42526430AC410835724A098AE6A3EC7AC77DA99D4B8F</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-message-export/output/1806a0250.c</code></td>
+<td><code>0BE6BCBC9C25545ABB38AD1C4818E52184789F4796EF18D5E2F324F3AF4A982B</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-message-export/output/1806a0250.asm.txt</code></td>
+<td><code>4394E7DE22E263778D1A9DC779A258153A6C4C3E37A7EB02A4DD1FBB13B05629</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-message-dispatch/output/180602df0.c</code></td>
+<td><code>AF99B707CB47309609C63D83992826728CD1190F27A381A6AD25A811B0517C46</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a320.c</code></td>
+<td><code>0F37DAFAB4C96D7C529FBB6A347D52B6DEA1A3B1F5F6AC2331AB669747B1D642</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a320.asm.txt</code></td>
+<td><code>657E5C24C5142FA923517539C7B02B406070FDE10A67924B85E7D46C3AEFB10C</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a8b0.c</code></td>
+<td><code>DCC18D71986441CE0FCD5D94172E324724315A46B262F31AAF80A8D686E078A1</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-handlers/output/18061a8b0.asm.txt</code></td>
+<td><code>8B6D9FB79152E40F0E88BC80D9E2465D0F3C2FDA1CD07CF88C815FCCF10CD774</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805dda30.c</code></td>
+<td><code>E510FA79451361C8EFDD9E63F9FA0A0D71FA3F1A2E29E22A4AC1A2B76166771C</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805dda30.asm.txt</code></td>
+<td><code>6B525056585DEC891011B4F4937C799137E4F86EDFB02C2FA754CAF303ECCCA0</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805eec10.c</code></td>
+<td><code>CAFB54C49085221CC6F4518C0AC426B43CB56F3CEF4C285CE317CD1D7F6532B9</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1805eec10.asm.txt</code></td>
+<td><code>9DEE5580FE02BE7AE65921BC6B491F3777AC361088BBBEF953D3ECD57E8BA33B</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/1806a32e0.c</code></td>
+<td><code>3C7BEC711BB2160F62E6D0D92050952BB7112B5CA448297DA576EA180EAF8A65</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-field-consumers/output/180651750.c</code></td>
+<td><code>E15F7FE1FF5D9025100E439088CFD34DEA48C8F90793FBCB1E3CAF34C24B4C18</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-snapshot/output/1805d2890.c</code></td>
+<td><code>F1EDBDA8DC367B235C126325DAB1315F2531E179FCCC868B2371460B5E0912A7</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/1805aa6f0.asm.txt</code></td>
+<td><code>CAD64373914E1621CB69DEF8116ACEC508B5D7F3919A4F101BF53C56B9D47F51</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/1805b7770.asm.txt</code></td>
+<td><code>9D05863DF06D363B69AC90C33FD4D59CC77DEB40BD9DD7BA844EF67B419D746C</code></td>
+</tr>
+<tr>
+<td><code>analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/180622e70.asm.txt</code></td>
+<td><code>B2412AB0A69EF436EAFFC978D7570A5490995E961D08CE57CC6CCD063BB132B1</code></td>
+</tr>
+</tbody></table>
+<p>下一步沿 <code>0x1805aa6f0</code> 的外层消息入口和它产生的记录消费方，及两个流程列表调用者的后续用途，追实际计时消费者；还需校验 <code>0x1805e5c10/0x1805e5de0</code> 的配置容器变更及失败时状态。不能从字段已被复制或发送侧 <code>OK</code> 推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。</p>
+<p class="meta">来源：docs/reverse/C02-native-wait-transport-20261022.md · SHA256 6b068e91b831899c23384851802f80b146675cd2850d5f9435eaeb6c1829257c<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,75 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 7ea35c617aff · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 7ea35c617aff</p><h1>原文证据 7ea35c617aff</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 7ea35c617affc27d72404a002ab4add81c66671d2e93803809a3ffd200a65e60。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">	public unsafe ImageSource BuiltImageSourceA(IImageData image, int width, int height, ref bool status, int offSetXPixel = 0, int offSetYPixel = 0, int clipXPixel = 0, int clipYPixel = 0, bool isDirect = false)
+	{
+		if (image == null)
+		{
+			return null;
+		}
+		uint executeCount = 0u;
+		if (image is IImageDataExtern imageDataExtern)
+		{
+			if (imageDataExtern.NeedConvertColor)
+			{
+				CovertToClassImageSource(image);
+			}
+			executeCount = (imageDataExtern.NeedCheckExecuteCount ? imageDataExtern.ExecuteCount : 0u);
+		}
+		PixelFormat pixelFormat = StringToPixelFormat(image.PixelFormat);
+		if (image.Width &lt; width || image.Height &lt; height)
+		{
+			width = image.Width;
+			height = image.Height;
+		}
+		double num = (double)image.Width / (double)width;
+		double num2 = (double)image.Height / (double)height;
+		int num3 = (int)((double)offSetXPixel / num);
+		int num4 = width - num3;
+		int num5 = (int)((double)offSetYPixel / num2);
+		int num6 = height - num5;
+		int num7 = (int)((double)clipXPixel / num);
+		num4 -= num7;
+		int num8 = (int)((double)clipYPixel / num2);
+		num6 -= num8;
+		WriteableBitmap writeableBitmap = Init(num4, num6, pixelFormat);
+		if (writeableBitmap == null)
+		{
+			return null;
+		}
+		if (image.Buffer == null)
+		{
+			if (string.IsNullOrEmpty(image.MemoryAddress))
+			{
+				return null;
+			}
+			int num9 = ((pixelFormat == PixelFormats.Gray8) ? 1 : 3);
+			if (isDirect || (long)image.Width * (long)image.Height * num9 &gt; int.MaxValue)
+			{
+				if (GetImageBufferByFileNameDirectly(writeableBitmap, width, height, image.MemoryAddress, image.Width, image.Height, pixelFormat, image.PixelFormat, executeCount, ref status, offSetXPixel, offSetYPixel, clipXPixel, clipYPixel, num4, num6) == null)
+				{
+					return null;
+				}
+				return writeableBitmap;
+			}
+			image.Buffer = GetImageBufferByFileName(image.MemoryAddress, image.Width, image.Height, pixelFormat, isDirect: false);
+		}
+		if (image.Buffer == null)
+		{
+			return null;
+		}
+		int num10 = ((pixelFormat == PixelFormats.Gray8) ? 1 : 3);
+		if (image.Buffer.Length != image.Width * image.Height * num10)
+		{
+			return null;
+		}
+		writeableBitmap.Lock();
+		fixed (byte* buffer = image.Buffer)
+		{
+			Resize(buffer, (byte*)(void*)writeableBitmap.BackBuffer, image.Width, image.Height, width, height, Interpolation.NearestNeighbor, pixelFormat, image.PixelFormat, offSetXPixel, offSetYPixel, clipXPixel, clipYPixel, num4, num6);
+		}
+		if (num4 &gt; 0 &amp;&amp; num6 &gt; 0)
+		{
+			writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, num4, num6));
+		}
+		writeableBitmap.Unlock();
+		return writeableBitmap;
+	}
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../入口/preview.html">图像源 / 预览</a><a href="../入口/result.html">结果树 / 表</a><a href="../入口/status.html">状态栏</a><a href="../入口/data.html">数据结构与传递总览</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

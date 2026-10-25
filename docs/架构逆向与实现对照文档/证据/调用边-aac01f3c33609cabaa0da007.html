@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AccessPage启停权限 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>AccessPage启停权限 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-A17"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>AccessPage启停权限 → 管理员验证 / 二次确认 / ResetAccess或SetAdminEnable</h2><p>已启用时先恢复勾选，CheckPassAdminAccess后Yes才清UI并ResetAccess；未启用需ADMIN，再AccessCodeSet非false及Yes才启用管理员并切角色。CheckPassAdminAccess只有ShowDialog==false拒绝；不把nullable非true改成拒绝。</p><p><a href="../专题/role-access.html#edge-A17">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/role-access.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/role-access.edges.json · SHA256 4984da42c75ab531507f0974797fa811932b13982ae101c36799f832b3ef2d5f</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="24db838114b469b4871a9af6b7b9137acb9f68bcc26f9f070197511153239892">{
+  &quot;id&quot;: &quot;A17&quot;,
+  &quot;route&quot;: &quot;原版 · 外部入口与权限设置&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;AccessPage启停权限&quot;,
+  &quot;to&quot;: &quot;管理员验证 / 二次确认 / ResetAccess或SetAdminEnable&quot;,
+  &quot;behavior&quot;: &quot;已启用时先恢复勾选，CheckPassAdminAccess后Yes才清UI并ResetAccess；未启用需ADMIN，再AccessCodeSet非false及Yes才启用管理员并切角色。CheckPassAdminAccess只有ShowDialog==false拒绝；不把nullable非true改成拒绝。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml&quot;,
+      &quot;member&quot;: &quot;AccessPage enable toggle&quot;,
+      &quot;sha256&quot;: &quot;aa65cb083ac3986b8dd56a92e6c24e36c876ac352e1512f956d36001243ef546&quot;,
+      &quot;start&quot;: 37,
+      &quot;end&quot;: 37,
+      &quot;excerpt&quot;: &quot;          &lt;ToggleButton Name=\&quot;autoAccessEnable\&quot; Margin=\&quot;20,0,0,0\&quot; Template=\&quot;{StaticResource switchbutton}\&quot; Width=\&quot;80\&quot; Click=\&quot;autoAccessEnable_Click\&quot; />&quot;,
+      &quot;evidenceType&quot;: &quot;local-extracted-resource&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs&quot;,
+      &quot;member&quot;: &quot;AccessPage.autoAccessEnable_Click&quot;,
+      &quot;sha256&quot;: &quot;8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9&quot;,
+      &quot;start&quot;: 192,
+      &quot;end&quot;: 234,
+      &quot;excerpt&quot;: &quot;\tprivate void autoAccessEnable_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tif (IsChecked)\n\t\t{\n\t\t\tautoAccessEnable.IsChecked = true;\n\t\t\tif (CheckPassAdminAccess())\n\t\t\t{\n\t\t\t\tDialogResult dialogResult = HikMessageBox.Show(AppLocalizationService.GetLang(\&quot;Lang_CancelAuthr\&quot;), AppLocalizationService.GetLang(\&quot;Lang_AuthrCelAward\&quot;), MessageButtons.YesOrNo, MessageIcons.Warning, isTranslate: true);\n\t\t\t\tif (dialogResult == DialogResult.Yes)\n\t\t\t\t{\n\t\t\t\t\tautoAccessEnable.IsChecked = false;\n\t\t\t\t\tIsChecked = false;\n\t\t\t\t\tClearXamlData();\n\t\t\t\t\taccessparam.Visibility = Visibility.Collapsed;\n\t\t\t\t\tCodeManager.GetInstance().ResetAccess();\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t\tautoAccessEnable.IsChecked = false;\n\t\tif (!ADMIN)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tAccessCodeSet accessCodeSet = new AccessCodeSet();\n\t\tif (false != accessCodeSet.ShowDialog())\n\t\t{\n\t\t\tDialogResult dialogResult2 = HikMessageBox.Show(AppLocalizationService.GetLang(\&quot;Lang_StartAuthr\&quot;), AppLocalizationService.GetLang(\&quot;Lang_ScrAward\&quot;), MessageButtons.YesOrNo, MessageIcons.Warning, isTranslate: true);\n\t\t\tif (dialogResult2 == DialogResult.Yes)\n\t\t\t{\n\t\t\t\tautoAccessEnable.IsChecked = true;\n\t\t\t\tIsChecked = true;\n\t\t\t\tClearXamlData();\n\t\t\t\taccessparam.Visibility = Visibility.Visible;\n\t\t\t\tadminparam.Visibility = Visibility.Visible;\n\t\t\t\ttechparam.Visibility = Visibility.Visible;\n\t\t\t\toperatparam.Visibility = Visibility.Visible;\n\t\t\t\ttitleparam.Visibility = Visibility.Visible;\n\t\t\t\tCodeManager.GetInstance().SetAdminEnable(bEnable: true, accessCodeSet.AccessAdministatorCode);\n\t\t\t\tAccessManagerHelper.SetLoginUser(AccessUser.Admin);\n\t\t\t}\n\t\t}\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs&quot;,
+      &quot;member&quot;: &quot;AccessPage.CheckPassAdminAccess&quot;,
+      &quot;sha256&quot;: &quot;8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9&quot;,
+      &quot;start&quot;: 364,
+      &quot;end&quot;: 381,
+      &quot;excerpt&quot;: &quot;\tprivate bool CheckPassAdminAccess()\n\t{\n\t\tbool bEnable = false;\n\t\tstring adminCode = \&quot;\&quot;;\n\t\tCodeManager.GetInstance().GetAdminCode(out bEnable, out adminCode);\n\t\tif (bEnable)\n\t\t{\n\t\t\tAccesssCodeCheck accesssCodeCheck = new AccesssCodeCheck();\n\t\t\taccesssCodeCheck.AccessAdministatorCode = adminCode;\n\t\t\tif (false == accesssCodeCheck.ShowDialog())\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\treturn true;\n\t\t}\n\t\treturn true;\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;ADMIN初始化、SetAdminEnable/ResetAccess副作用和原窗口返回状态还须细化。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

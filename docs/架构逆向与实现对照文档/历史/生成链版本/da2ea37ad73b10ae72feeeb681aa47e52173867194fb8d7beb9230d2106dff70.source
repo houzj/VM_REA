@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('fs'),path=require('path');const site=path.resolve(__dirname,'../../../docs/架构逆向与实现对照文档'),json=p=>JSON.parse(fs.readFileSync(path.join(site,p)));
+const scenes=json('清单/场景分页检查.json'),anchors=json('清单/锚点定位检查.json'),drift=json('清单/当前来源漂移.json');
+const audit={scope:'原授权七项完成标准；本表不修改产品分母，不将静态检查升级为浏览器验收',requirements:[
+ {id:1,title:'目录隔离与专用生成链',state:'implemented-review-pending',evidence:['tests/ArchitectureRecovery/DocumentSplit/README.md','清单/构建清单.json'],remaining:'最终核对所有新增资源与报告入清单及脚本身份。'},
+ {id:2,title:'界面示意、具体工具分类与直达',state:'implemented-vm-verified',evidence:['index.html','工具/index.html','清单/导航操作检查.json'],remaining:'实际浏览器键盘、场景切换和工具选择验收。'},
+ {id:3,title:'合理分页及适配关系图',state:'partial',evidence:['清单/场景分页检查.json','执行/全局脚本连续状态.html','数据/图像与参数持有关系.html','清单/关系图盘点.json'],counts:{exactScenes:scenes.scenes},remainingItems:[{id:'T3-GROUP',issue:'核对Group循环／退出的关系表达是否充分；如补图，只能使用已有正文事实。'},{id:'T3-DEPENDENCY',issue:'核对既有工程依赖图的方向、程序侧、引用模型与原生边界，不能只凭图标题计完成。'},{id:'T3-LONGFIGURE',issue:'通用执行关系图过长；静态布局需按可读单元分块，实际打印另验。'}]},
+ {id:4,title:'完整正文、来源、分类与未知',state:'static-verified-with-drift',evidence:['清单/证据保留.json','清单/调用边定位检查.json','清单/当前来源漂移.json'],changedInputs:drift.changedInputs,remaining:'原主页面新版本漂移只记录，不自行合入新证据；最终交接须注明捕获版本。'},
+ {id:5,title:'旧路由、查询、锚点及增量更新',state:'static-vm-verified-browser-pending',evidence:['清单/旧路由映射.json','清单/锚点定位检查.json','清单/导航操作检查.json','清单/增量更新-owner.json'],routeTargets:anchors.verified,remaining:'41条模板/标记登记明确未知；浏览器刷新、历史和离线待验。'},
+ {id:6,title:'390／768／桌面、打印、键盘和历史',state:'unverified',evidence:['清单/静态与路由检查.json'],remaining:'先前file://访问被拒；不得以localhost或替代浏览器绕过，不据静态检查关闭。'},
+ {id:7,title:'首页清单、覆盖、未知与验收状态',state:'implemented-final-refresh-pending',evidence:['index.html','清单/目标验收.json'],remaining:'最终同步来源漂移、具体未闭合项与兼容交接记录。'}
+],nextBatch:['T3-GROUP','T3-DEPENDENCY','T3-LONGFIGURE'],browserBlocked:true,complete:false,implementationCredit:0};
+const dependencyFile=path.join(site,'清单/工程依赖图检查.json'),chunksFile=path.join(site,'清单/长图分块检查.json');
+const finished=[];if(fs.existsSync(dependencyFile)&&JSON.parse(fs.readFileSync(dependencyFile)).passed)finished.push('T3-DEPENDENCY');if(fs.existsSync(chunksFile)&&JSON.parse(fs.readFileSync(chunksFile)).passed)finished.push('T3-LONGFIGURE');const groupFile=path.join(site,'清单/Group逐轮图检查.json');if(fs.existsSync(groupFile)&&JSON.parse(fs.readFileSync(groupFile)).passed)finished.push('T3-GROUP');
+audit.requirements[2].completedItems=finished;audit.requirements[2].remainingItems=audit.requirements[2].remainingItems.filter(x=>!finished.includes(x.id));audit.nextBatch=audit.nextBatch.filter(x=>!finished.includes(x));const linkCheck=path.join(site,'清单/动态模板链接检查.json');if(fs.existsSync(linkCheck)&&JSON.parse(fs.readFileSync(linkCheck)).passed){audit.requirements[4].dynamicTemplateLinks='2 scripts repaired; 28 operations verified in VM DOM substitute; external self-developed sources explicitly labeled';audit.requirements[4].evidence.push('清单/动态模板链接检查.json');}else{audit.requirements[4].remaining+=' 已发现2份既有动态脚本保留编码后的模板URL，修复与操作验证尚未完成。';audit.nextBatch.push('T3-DYNAMICLINK');}
+if(!audit.requirements[2].remainingItems.length)audit.requirements[2].state='implemented-static-verified-browser-pending';
+fs.writeFileSync(path.join(site,'清单/逐要求审计.json'),JSON.stringify(audit,null,2)+'\n');console.log(JSON.stringify({requirements:audit.requirements.length,nextBatch:audit.nextBatch,completedItems:finished,complete:false}));

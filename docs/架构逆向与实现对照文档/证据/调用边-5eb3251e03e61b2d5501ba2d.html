@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BaseNode.loadXml · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>BaseNode.loadXml · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-E09"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>BaseNode.loadXml → 加密 XML / 同名 ZIP / Init</h2><p>XML 存在时检查 NodeNameplate 并调用 xmlEncrypt.Decrypt 后 LoadXml；XML 不存在时用同名 ZIP 解压流；随后 Init。此方法还改文件 Attributes 和静态 IgnoreUnknown，不能用于所谓无副作用的只读探针。</p><p><a href="../专题/entry-routing-security.html#edge-E09">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/entry-routing-security.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/entry-routing-security.edges.json · SHA256 fe606f2f9a763da88f2f5487b7c2208a11138f29a5e2fa09b194c88c9aa25855</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="46efa0b45e04918508cef8f3e276f37a266e013806714f94afa8f47f732a17f8">{
+  &quot;id&quot;: &quot;E09&quot;,
+  &quot;route&quot;: &quot;原版 · 资源与授权&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;BaseNode.loadXml&quot;,
+  &quot;to&quot;: &quot;加密 XML / 同名 ZIP / Init&quot;,
+  &quot;behavior&quot;: &quot;XML 存在时检查 NodeNameplate 并调用 xmlEncrypt.Decrypt 后 LoadXml；XML 不存在时用同名 ZIP 解压流；随后 Init。此方法还改文件 Attributes 和静态 IgnoreUnknown，不能用于所谓无副作用的只读探针。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlParser/Hik.Xml.BaseNode.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;BaseNode.xmlEncrypt provider&quot;,
+      &quot;sha256&quot;: &quot;2994d6ac9669ef78305e3bc4cab998a4f42e15a0b2b95ebb669c870dc2ab8968&quot;,
+      &quot;start&quot;: 29,
+      &quot;end&quot;: 29,
+      &quot;excerpt&quot;: &quot;\tprotected IXmlEncrypt xmlEncrypt = AesCryptHelper.GetInstance();&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlParser/Hik.Xml.BaseNode.decompiled.cs&quot;,
+      &quot;member&quot;: &quot;BaseNode.loadXml&quot;,
+      &quot;sha256&quot;: &quot;2994d6ac9669ef78305e3bc4cab998a4f42e15a0b2b95ebb669c870dc2ab8968&quot;,
+      &quot;start&quot;: 1182,
+      &quot;end&quot;: 1227,
+      &quot;excerpt&quot;: &quot;\tpublic void loadXml(string fileName, bool ignoreUnknown = false)\n\t{\n\t\tActivatorWrap.IgnoreUnknown = ignoreUnknown;\n\t\tdefaultFileName = fileName;\n\t\tlock (syncObj)\n\t\t{\n\t\t\tstring text = fileName.Replace(\&quot;.xml\&quot;, \&quot;.zip\&quot;);\n\t\t\tbool flag = false;\n\t\t\tif (!File.Exists(fileName))\n\t\t\t{\n\t\t\t\tflag = true;\n\t\t\t}\n\t\t\tif (!File.Exists(fileName) &amp;&amp; !File.Exists(text))\n\t\t\t{\n\t\t\t\tthrow new FileNotFoundException(\&quot;文件\&quot; + fileName + \&quot;不存在。\&quot;);\n\t\t\t}\n\t\t\ttry\n\t\t\t{\n\t\t\t\tFileInfo fileInfo = new FileInfo(fileName);\n\t\t\t\tfileInfo.Attributes = FileAttributes.Normal;\n\t\t\t\tXmlDocument xmlDocument = new XmlDocument();\n\t\t\t\tif (!flag)\n\t\t\t\t{\n\t\t\t\t\txmlDocument = CreateXmlDoc(fileName);\n\t\t\t\t\tif (xmlDocument.LastChild.Name == xmlEncrypt.NodeNameplate)\n\t\t\t\t\t{\n\t\t\t\t\t\tstring xml = xmlEncrypt.Decrypt(xmlDocument.LastChild.InnerText.Trim());\n\t\t\t\t\t\txmlDocument = new XmlDocument();\n\t\t\t\t\t\txmlDocument.LoadXml(xml);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\txmlDocument.Load(CompressUtil.DecompressToStream(text));\n\t\t\t\t}\n\t\t\t\tInit(xmlDocument.LastChild);\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tthrow ex;\n\t\t\t}\n\t\t\tdefaultFileName = fileName;\n\t\t}\n\t\tActivatorWrap.IgnoreUnknown = false;\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;资源提供器原件方法见E33–E35；BaseNode原件属于VM.Xml.dll，ZIP引用属于VM.Compress.dll。全部资源清单、派生类替换提供器、运行绑定、失败恢复及原生.sol算法仍未闭合。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

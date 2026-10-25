@@ -1,0 +1,60 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1第六切片：90°候选相位实参与CPU来源 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D1第六切片：90°候选相位实参与CPU来源</p><h1>D1第六切片：90°候选相位实参与CPU来源</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1第六切片：90°候选相位实参与CPU来源</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html#d1第六切片90候选相位实参与cpu来源">D1第六切片：90°候选相位实参与CPU来源</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html#身份与证据">身份与证据</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html#90候选的实际参数来源">90°候选的实际参数来源</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html#相位门的汇编与复演结果">相位门的汇编与复演结果</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html#cpu分派来源与执行边界">CPU分派来源与执行边界</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.html#完成与后续">完成与后续</a></p></details><h1 id="d1第六切片90候选相位实参与cpu来源">D1第六切片：90°候选相位实参与CPU来源</h1><p>2026-10-19。承接第五切片唯一90°角候选，只追其角点相位实参与CPU来源。没有原厂微trace、泛化实图、产品修改或其他进程操作；量化首分叉和拟合mask/RMS别名仍留后续。</p>
+<h2 id="身份与证据">身份与证据</h2><p>原DLL SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。沿用REA不可用后的私有Ghidra12.1.4 readOnly/noanalysis来源，不改全局配置。新增180630120 C/asm/cookie-tail，索引108条入口记录含10拆块。630120伪代码大量“unreachable”警告及void签名不可信；cookie后180630673明确<code>MOV EAX,EBX</code>，随后恢复栈/RET。下文CPU返回结论取自汇编，而非void伪代码。</p>
+<p>本轮复用80a7f0、80ac20、870b90、72b170、70f4e0、6c9d90、6bc000与6b7ea0；证据路径/哈希见<code>analysis/map-calibration/d1-source-chain/source-index.json</code>。新增复演脚本<code>tests/MapCalibration.NativeProbe/ReplayD1SamplerPhase.py</code>及输出<code>phase-source-replay.json</code>均明确标为独立源码算术复演，无REA Evidence ID，不是原厂运行证据。</p>
+<h2 id="90候选的实际参数来源">90°候选的实际参数来源</h2><p>80a7f0调用80ac20时尺寸packed <code>0xc8000000c8</code>，即200×200；80ac20按float*.5截断拆四象限，局部图100×100，stride100（80ac20.c的uStack_5d8/uStack_5d4与870b90调用）。870b90先执行前定位6eea70，只有pre-status1才调用6a3a70；中心来自<code>iStack_e0/iStack_dc</code>两整数，再分别float转换打包。优化72b170只在定位成功时写<code>peakX*d,peakY*d</code>到int输出，当前d1。当前有效中心为图内整数，复演使用其0..99×0..99的包含域，未预置任意小数中心。</p>
+<p>70f4e0当前slot2=0，外层一次；对本次前定位中心，不进入后续圆拟合结果反馈产生的新小数中心轮次。δ=float(2π/30)，初中心角<code>θ0=−float(.5*δ)</code>；窗口方向<code>ω0=float(θ0−π)</code>。中心循环角在方向2时从<code>float(ω0+π)</code>开始逐次减δ，窗口方向独立逐次减δ。因此不能用<code>ωk+π</code>代替实际centerAngle，也不能直接k*δ重算。</p>
+<p>独立最近偶数算术复演在k7得到centerAngle≈−1.5707964897155762、windowAngle≈−4.71238899230957；窗口长宽经6c9d90为42×6，中心为float(precenter +29.5*cosf/sinf(centerAngle))。6bc000再用该float中心转double计算首角：</p>
+<a class="site-evidence-link" data-evidence-key="0d56e96f77302e82abf7b6ae3530254d411e0180e24acb1a3be9145f3964f90e" href="../../../../证据/0d56e96f77302e82abf7b6ae3530254d411e0180e24acb1a3be9145f3964f90e.html#content">查看完整原文／记录 ↗ <small>0d56e96f7730</small></a>
+<p>这些是6b7ea0相位门的具体实参。全内/触边标志不替代相位门，两者都依赖角点，但用于不同分支。</p>
+<h2 id="相位门的汇编与复演结果">相位门的汇编与复演结果</h2><p>6b7ea0汇编1806b809f取首角X（RSP+1e0）到XMM6，1806b80fa取首角Y（+1e8）到XMM7。两轴均先CVTTSD2SI截断整数，再double相减，CVTSD2SS成float残差。不是对rectangle中心检查，也不是对角度检查。</p>
+<p>原始残差r=v−int(v)，按float顺序折回：</p>
+<a class="site-evidence-link" data-evidence-key="8470b1312945073b0f1f4cf234f0671cbc7be75e06a39f51209c9cde9910298b" href="../../../../证据/8470b1312945073b0f1f4cf234f0671cbc7be75e06a39f51209c9cde9910298b.html#content">查看完整原文／记录 ↗ <small>8470b1312945</small></a>
+<p>门常数实际float值为−0.0010000000474974513、0.9990000128746033、0.0010000000474974513、1。X门失败跳回通用LAB_1806b8ade；Y门在1806b8151..8161也以COMISS/JA回通用；两门通过后1806b816f才比较bucket90，并在1806b8600调用CPU分类器。</p>
+<p>独立复演使用宿主math sin/cos后按float转换，枚举全部10000个整数前定位中心：X相位约[−7.87e−6,−4.05e−6]、Y相位约[0.49999994,0.49999997]，两门同时通过0例。例precenter(25,25)：窗口中心约(24.99999428,−4.5)，首角约(27.99999403,−25.50000004)，X通过、Y失败。</p>
+<p>静态几何解释为29.5半径、偶数6高/42宽与整数前定位中心使该角的首角Y保持约半整数；相位距.001门约.499，不是临界一两个ulp问题。故当前参数的90°候选有明确的相位拒绝链；在所述独立复演环境下30窗都回通用旋转路径。仍不把它写成实际原厂30次分派trace，也不声称其他MXCSR/非有限输入/不同参数均排除轴核。</p>
+<h2 id="cpu分派来源与执行边界">CPU分派来源与执行边界</h2><p>684b50入口直接调用630120；返回7、10、11进6c9d90，其他走704de0。6b7ea0轴路径也<strong>再次调用</strong>同一630120，未从插件参数或前定位结果读取CPU类。当前相位门失败时不会执行其90°内部那次CPU查询；上层684b50的CPU查询仍执行。</p>
+<p>630120汇编包含CPUID叶0、1、7、0xD和Windows VerSetConditionMask/VerifyVersionInfoW查询。返回通过EBX最后移EAX，不是查询函数的BOOL原样返回：</p>
+<table>
+<thead>
+<tr>
+<th>分类阶段</th>
+<th>汇编谓词/优先级</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>首轮高优先级</td>
+<td>R12指向的局部byte==1</td>
+<td>11（1806304ab→6de）</td>
+</tr>
+<tr>
+<td>次优先级</td>
+<td>RSP+26a byte==1</td>
+<td>10（4b6→4c0）</td>
+</tr>
+<tr>
+<td>其后</td>
+<td>+267,+266,+265,+264,+263,+262依次为1</td>
+<td>7,6,5,4,3,2</td>
+</tr>
+<tr>
+<td>最低</td>
+<td>+261 byte或0</td>
+<td>1或0</td>
+</tr>
+<tr>
+<td>第二次Windows版本检查</td>
+<td>18063060a返回非零</td>
+<td>保留首轮class</td>
+</tr>
+<tr>
+<td>第二次检查返回零</td>
+<td>60e起按+267..+261重分类</td>
+<td>降到7..0集合</td>
+</tr>
+</tbody></table>
+<p>R12指向+26b，其值由CPUID叶7调用后的EBX低位第5位提取；+26a来自更早读出的ECX位掩码0x18000000判等。后续CPUID会覆盖栈槽、存在多个寄存器备份，报告保留精确槽位与赋值地址，不把所有class直接命名为某ISA或按本机CPU型号猜class。叶0xD/版本分支还参与特征路径；完整硬件能力策略不作为本切片产品需求。</p>
+<p>如果相位与角度都满足90°，CPU11分到7165b0/71b390，CPU7/10分到713eb0/715250，按全内/边界条件二选一（第五切片已有体）。本次并未执行该查询，不能把“源码可分派”写成“当前图已进入”。</p>
+<h2 id="完成与后续">完成与后续</h2><p>已恢复当前caller的整数中心→窗口角/中心→首角→双相位门→轴CPU查询的完整有限数据流。原件哈希/索引/PE常数及两份独立复演完成；没有必要为了已可静态解释的相位拒绝增加原厂微trace。若后续原厂trace出现90°轴核，则应优先核实前定位中心是否仍为整数、轮次是否仍0、环境与角度实参是否匹配，而非扩大样本掩盖分叉。</p>
+<p>量化首分叉、拟合失败回退mask/RMS、前定位vector/scalar零幅值分别保留既有后续任务。无产品实现或宿主验收结论。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D1-SAMPLER-PHASE-SOURCE.md · SHA256 7a34fe23b255354d07745b7a33289d13a049a1bcd133ff68e6028317fee26aef<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,119 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 44ff8ee86768 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 44ff8ee86768</p><h1>原文证据 44ff8ee86768</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 44ff8ee86768a503b099539f5d17d4755db0b2329222758215f7ea0ff3fa11fb。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using VisionFramework;
+using VisionPluginContracts;
+namespace VisionPlugins.Calibration;
+
+public sealed class RotateCalibrationPlugin : IVisionToolPlugin, IWpfToolEditorFactory, IToolAssetPersistence, IToolDisplayProvider, IToolPointInputAliasProvider, IToolConfigurationProvider
+{
+    public const string Id = &quot;vision.rotate-calibration&quot;;
+    public IReadOnlyList&lt;ToolPointInputAlias&gt; PointInputAliases { get; } = [new(&quot;Image Point&quot;, &quot;ImagePointX&quot;, &quot;ImagePointY&quot;)];
+    public ToolManifest Manifest { get; } = new(Id, &quot;1.0.0&quot;, &quot;旋转标定&quot;, &quot;calibration&quot;, &quot;catalog/RotateCalibModuImageEnable.png&quot;);
+    public ToolDisplayDefinition DisplayDefinition { get; } = new(
+        &quot;模块状态:{0}, 旋转轴图像坐标X:{1}, 旋转轴图像坐标Y:{2}, 旋转中心物理坐标X:{3}, 旋转中心物理坐标Y:{4}, 旋转像素平均误差:{5}, 旋转真实平均误差:{6},剩余标定次数:{7}&quot;,
+        [&quot;ModuStatus&quot;, &quot;RotCenterImageX&quot;, &quot;RotCenterImageY&quot;, &quot;RotCenterWorldX&quot;, &quot;RotCenterWorldY&quot;, &quot;RotError&quot;, &quot;RotWorldError&quot;, &quot;remainCount&quot;],
+        [&quot;ModuStatus&quot;, &quot;RotCenterImageX&quot;, &quot;RotCenterImageY&quot;, &quot;RotCenterWorldX&quot;, &quot;RotCenterWorldY&quot;, &quot;RotError&quot;, &quot;RotWorldError&quot;]);
+    static ParameterDescriptor P&lt;T&gt;(string name, ParameterKind kind, T value, double? min = null, double? max = null) =&gt; new(name, kind, true, JsonSerializer.SerializeToElement(value), min, max);
+    public ModuleDescriptor Descriptor { get; } = new(Id, &quot;1.0.0&quot;, &quot;旋转标定&quot;,
+        new[] { &quot;ImagePointX&quot;, &quot;ImagePointY&quot;, &quot;WorldRotateAngle&quot; }.Select(n =&gt; new PortDescriptor(n, DataKind.NumberArray, false){SupportsDeferredNumericRead=true}).Concat(new[] { &quot;Image Point&quot; }.Select(n =&gt; new PortDescriptor(n, DataKind.Point, false) { Cardinality = ValueCardinality.Array })).Concat(new[] { &quot;RotNum&quot;, &quot;RefreshSignal&quot; }.Select(n =&gt; new PortDescriptor(n, DataKind.Integer, false){SupportsDeferredIntegerRead=true})).Concat(new[] { ToolDisplayService.PositionXInput, ToolDisplayService.PositionYInput }.Select(n =&gt; new PortDescriptor(n, DataKind.Number, false, AcceptInteger: true))).Append(new(&quot;InputImage&quot;, DataKind.Image, false)).ToArray(),
+        new[] { &quot;ModuStatus&quot;, &quot;remainCount&quot; }.Select(n =&gt; new PortDescriptor(n, DataKind.Integer, false)).Concat(new[] { &quot;ModuRunTime&quot;, &quot;RotCenterImageX&quot;, &quot;RotCenterImageY&quot;, &quot;RotCenterWorldX&quot;, &quot;RotCenterWorldY&quot;, &quot;RotError&quot;, &quot;RotWorldError&quot; }.Select(n =&gt; new PortDescriptor(n, DataKind.Number, false))).ToArray(),
+        [P(&quot;InputWay&quot;, ParameterKind.Integer, 0, 0, 1), P(&quot;RevOutputFlag&quot;, ParameterKind.Boolean, false), P(&quot;FilePath&quot;, ParameterKind.Text, &quot;&quot;), P(&quot;CachedMatrix&quot;, ParameterKind.Text, &quot;&quot;), P(&quot;CachedMatrixLoaded&quot;, ParameterKind.Boolean, false), P(ToolDisplayService.SettingsParameter, ParameterKind.Text, &quot;&quot;)]);
+    sealed class State { public readonly object Gate = new(); public readonly RotateCalibrationSession Session = new(); public string? AppliedPath; public bool Initialized; public Dictionary&lt;string, PortValue&gt;? DisplayInputs, DisplayOutputs; public ToolDisplayDiagnostic? DisplayDiagnostic; }
+    readonly Dictionary&lt;string, State&gt; fallback = new(); readonly object gate = new();
+    public void Reset(string nodeId) { lock (gate) foreach (var key in fallback.Keys.Where(k =&gt; k.EndsWith(&quot;|&quot; + nodeId, StringComparison.Ordinal)).ToArray()) fallback.Remove(key); }
+    State Get(string node, string directory, ModuleExecutionScope? scope)
+    {
+        if (scope is not null) return scope.State(Id, node, () =&gt; new State());
+        lock (gate) { string key = Path.GetFullPath(directory) + &quot;|&quot; + node; if (!fallback.TryGetValue(key, out var state)) fallback[key] = state = new(); return state; }
+    }
+    static void Synchronize(State state, IReadOnlyDictionary&lt;string, JsonElement&gt; p, string directory)
+    {
+        string path = p[&quot;FilePath&quot;].GetString() ?? &quot;&quot;;
+        if (!state.Initialized)
+        {
+            state.Initialized = true;
+            string cache = p.TryGetValue(&quot;CachedMatrix&quot;, out var json) ? json.GetString() ?? &quot;&quot; : &quot;&quot;;
+            if (cache.Length &gt; 0)
+            {
+                try { var bytes = Convert.FromBase64String(cache); if (bytes.Length == 36) { state.Session.Restore(Enumerable.Range(0, 9).Select(i =&gt; BitConverter.ToSingle(bytes, 4 * i)).ToArray(), p[&quot;CachedMatrixLoaded&quot;].GetBoolean(), path.Length == 0 ? &quot;&quot; : Path.GetFullPath(path, directory)); state.AppliedPath = path; } }
+                catch (FormatException) { /* Invalid persisted cache falls back to normal file loading. */ }
+            }
+        }
+        if (state.AppliedPath != path) { state.Session.Load(path.Length == 0 ? &quot;&quot; : Path.GetFullPath(path, directory)); state.AppliedPath = path; }
+    }
+    public void UpdateConfiguration(ToolEditorContext context, IReadOnlyDictionary&lt;string, JsonElement&gt; values)
+    { var state = Get(context.Node.Id, context.BaseDirectory, context.Scope); lock (state.Gate) Synchronize(state, values, context.BaseDirectory); }
+    public ToolDisplayFrame? LastDisplay(NodeDocument node, string baseDirectory, ModuleExecutionScope? scope)
+    { var state = Get(node.Id, baseDirectory, scope); lock (state.Gate) return state.DisplayInputs is null || state.DisplayOutputs is null ? null : ToolDisplayService.Build(DisplayDefinition, ToolDisplayService.Read(node.Parameters, DisplayDefinition), state.DisplayInputs, state.DisplayOutputs, diagnostic: state.DisplayDiagnostic); }
+    static string NativeErrorInfo(uint code) =&gt; code switch { 0xe0000001 =&gt; &quot;参数错误&quot;, 0xe0000008 =&gt; &quot;资源未初始化或未准备好&quot;, 0xe0000201 =&gt; &quot;文件无法打开&quot;, 0xe000031c =&gt; &quot;订阅参数有误&quot;, _ =&gt; &quot;&quot; };
+    public IModule CreateRuntime() =&gt; new Runtime(this);
+    public Form CreateEditor(ToolEditorContext context) =&gt; throw new InvalidOperationException(&quot;Use WPF editor factory.&quot;);
+    public System.Windows.Window CreateWpfEditor(ToolEditorContext context) =&gt; new ToolConfigurationModelWindow(context, CreateConfiguration(context));
+    public ToolConfigurationSession CreateConfiguration(ToolEditorContext context) =&gt; new CalibrationToolConfigurationProvider(Id, &quot;旋转标定&quot;, Descriptor, DisplayDefinition, &quot;RotateCalibModuAlgorithmTab.xml&quot;, UpdateConfiguration, algorithmResetResource:&quot;RotateCalibModuAlgorithm.xml&quot;, resetParameterWriter:CheckResetParameter, parameterWriter:WriteFilePathParameter, calibrationPathError:message=&gt;ShowPathError(context,message)).CreateConfiguration(context);
+    // Frame 42760 passes strlen(value); the sole Rotate default is empty FilePath.
+    // Original SetParam 38980 rejects length zero before touching matrix/path/sample state.
+    internal static ConfigurationOperationResult? CheckResetParameter(ConfigurationOperationRequest operation) =&gt;
+        operation.Kind==ConfigurationOperationKind.WriteParameter &amp;&amp; operation.Source.Name==&quot;FilePath&quot; &amp;&amp; string.IsNullOrEmpty(operation.Value)
+            ? new(true,Error:&quot;0xe0000001&quot;) : null;
+    void ShowPathError(ToolEditorContext context,string message)
+    {
+        if(context.ConfigurationNotifications is null||context.ConfigurationNotifications.GetType()==typeof(WpfConfigurationNotificationService))
+            RotateCalibrationFileErrorDialog.Show(message,ConfigurationLocalization.ForLanguage(&quot;Chinese&quot;).Get(&quot;Confirm&quot;),context.Mode);
+        else context.ConfigurationNotifications.Notify(null,new(ConfigurationNotificationKind.Error,message,Manifest.Name,context.Mode));
+    }
+    // Original 38980: after its suffix branch, Load* return is reported but FilePath
+    // is committed even on failure. Explicit writes reload even the same path.
+    ConfigurationOperationResult? WriteFilePathParameter(ToolEditorContext context,IToolConfigurationDispatcher adapter,ConfigurationOperationRequest operation)
+    {
+        if(operation.Kind!=ConfigurationOperationKind.WriteParameter||operation.Source.Name!=&quot;FilePath&quot;)return null;
+        var state=Get(context.Node.Id,context.BaseDirectory,context.Scope);
+        lock(state.Gate){
+            string path=operation.Value??&quot;&quot;;
+            uint code=state.Session.Load(path.Length==0?&quot;&quot;:Path.GetFullPath(path,context.BaseDirectory));
+            state.Initialized=true;state.AppliedPath=path;
+            // Native cache changes above are source behavior; host document rejection
+            // below is an independent transport failure, not a native rollback promise.
+            var committed=adapter.Dispatch(operation);
+            if(!committed.Handled||committed.Error is not null)return committed;
+            return code==0?committed:new(true,Error:&quot;0x&quot;+code.ToString(&quot;x8&quot;)){KeepAttemptedValueOnError=true};
+        }
+    }
+    public ToolAssetSnapshot PrepareSave(NodeDocument node, string directory, ResourceCatalog resources) =&gt; PrepareSave(node, directory, resources, null);
+    public ToolAssetSnapshot PrepareSave(NodeDocument node, string directory, ResourceCatalog resources, ModuleExecutionScope? scope)
+    {
+        var state = Get(node.Id, directory, scope); lock (state.Gate)
+        {
+            Synchronize(state, node.Parameters, directory);
+            var parameters = node.Parameters.ToDictionary(p =&gt; p.Key, p =&gt; p.Value.Clone());
+            parameters[&quot;CachedMatrix&quot;] = JsonSerializer.SerializeToElement(Convert.ToBase64String(state.Session.Matrix.SelectMany(BitConverter.GetBytes).ToArray()));
+            parameters[&quot;CachedMatrixLoaded&quot;] = JsonSerializer.SerializeToElement(state.Session.Loaded);
+            return new(node with { Parameters = parameters }, []);
+        }
+    }
+    sealed class Runtime(RotateCalibrationPlugin owner) : IModule
+    {
+        public ModuleDescriptor Descriptor =&gt; owner.Descriptor;
+        public ValueTask&lt;ModuleResult&gt; ExecuteAsync(ModuleExecutionContext context, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested(); var watch = Stopwatch.StartNew(); var state = owner.Get(context.NodeId, context.BaseDirectory, context.Scope); RotateCalibrationStep step;
+            lock (state.Gate)
+            {
+                Synchronize(state, context.Parameters, context.BaseDirectory);
+                step = state.Session.Run(name=&gt;RotateCalibrationInputReader.Float(context,name),name=&gt;RotateCalibrationInputReader.Integer(context,name),context.Boolean(&quot;RevOutputFlag&quot;));
+            }
+            var nonFinite = step.Outputs.Where(p =&gt; !double.IsFinite(p.Value)).ToArray();
+            var outputs = step.Outputs.Where(p =&gt; double.IsFinite(p.Value)).ToDictionary(p =&gt; p.Key, p =&gt; p.Key is &quot;ModuStatus&quot; or &quot;remainCount&quot; ? PortValue.Integer((int)p.Value) : PortValue.Number(p.Value));
+            outputs[&quot;ModuRunTime&quot;] = PortValue.Number(watch.Elapsed.TotalMilliseconds);
+            lock (state.Gate) { state.DisplayInputs = context.Inputs.ToDictionary(p =&gt; p.Key, p =&gt; p.Value); state.DisplayOutputs = outputs; state.DisplayDiagnostic = nonFinite.Length &gt; 0 ? new(step.ErrorCode, &quot;有限数值接口无法表示原厂结果：&quot; + string.Join(&quot;, &quot;, nonFinite.Select(p =&gt; p.Key + &quot;=&quot; + p.Value))) : step.ErrorCode != 0 ? new(step.ErrorCode, NativeErrorInfo(step.ErrorCode)) : null; }
+            // Preserve native code 0 while reporting the explicit host representation boundary.
+            // Do not substitute zero for the original NaN/Infinity diagnostic fields.
+            if (nonFinite.Length &gt; 0) return ValueTask.FromResult(new ModuleResult(ModuleStatus.Failed, outputs, &quot;NativeNonFiniteResult&quot;, &quot;原厂结果超出有限数值接口：&quot; + string.Join(&quot;, &quot;, nonFinite.Select(p =&gt; p.Key + &quot;=&quot; + p.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)))) { NativeErrorCode = step.ErrorCode });
+            return ValueTask.FromResult(new ModuleResult(step.ErrorCode == 0 ? ModuleStatus.Success : ModuleStatus.Failed, outputs, step.ErrorCode == 0 ? null : &quot;RotateCalibration&quot;, null) { NativeErrorCode = step.ErrorCode });
+        }
+    }
+}
+
+
+
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Calibration-RotateCalibModu-f9965622.html">旋转标定 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

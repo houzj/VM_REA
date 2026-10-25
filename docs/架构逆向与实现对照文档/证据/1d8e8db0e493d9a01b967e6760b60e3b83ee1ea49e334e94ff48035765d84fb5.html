@@ -1,0 +1,17 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 1d8e8db0e493 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 1d8e8db0e493</p><h1>原文证据 1d8e8db0e493</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 1d8e8db0e493d9a01b967e6760b60e3b83ee1ea49e334e94ff48035765d84fb5。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>src/VisionFramework/GroupBreak.cs:52–64
+证据类型 current-source
+程序集身份 not revalidated in this slice
+SHA256 0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a
+ public static bool Compare(DataKind kind,int operation,PortValue left,PortValue right){
+  if(left.Kind!=kind||right.Kind!=kind||left.Cardinality!=ValueCardinality.Scalar||right.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException(&quot;Break comparison type mismatch.&quot;);int order;bool equal;
+  if(kind==DataKind.Text){var a=Encoding.UTF8.GetBytes(left.As&lt;string>());var b=Encoding.UTF8.GetBytes(right.As&lt;string>());order=a.AsSpan().SequenceCompareTo(b);equal=order==0;}
+  else if(kind==DataKind.Number){float a=(float)left.As&lt;double>(),b=(float)right.As&lt;double>();if(!float.IsFinite(a)||!float.IsFinite(b))throw new InvalidDataException(&quot;Break float operand exceeds native range.&quot;);order=a.CompareTo(b);equal=MathF.Abs(a-b)&lt;1.1920929E-07f;}
+  else{if(left.As&lt;long>() is &lt;int.MinValue or >int.MaxValue||right.As&lt;long>() is &lt;int.MinValue or >int.MaxValue)throw new InvalidDataException(&quot;Break integer operand exceeds native int32 range.&quot;);
+   // IsBreakLoop compares the two int32 registers directly with CMP/SETcc.
+   // Floating-point decompiler output for this branch is misleading.
+   var a=(int)left.As&lt;long>();var b=(int)right.As&lt;long>();
+   order=a.CompareTo(b);equal=a==b;}
+  return operation switch{1=>order>0,2=>order&lt;0,3=>equal,4=>kind==DataKind.Number?(float)left.As&lt;double>()!=(float)right.As&lt;double>():!equal,5=>order>=0,6=>order&lt;=0,_=>throw new InvalidDataException(&quot;Unknown Group comparison operator.&quot;)};
+ }
+}
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/domain-data-obligations--F-13.html">数据/domain-data-obligations--F-13.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

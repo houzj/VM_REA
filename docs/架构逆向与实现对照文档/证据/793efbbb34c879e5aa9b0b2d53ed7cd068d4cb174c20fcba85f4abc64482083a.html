@@ -1,0 +1,67 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 793efbbb34c8 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 793efbbb34c8</p><h1>原文证据 793efbbb34c8</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 793efbbb34c879e5aa9b0b2d53ed7cd068d4cb174c20fcba85f4abc64482083a。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/DecoratorBase.cs:174–238
+SHA256 25c71c878e2ea21678db2fbf1e69feef0d2892f9356cae443f747f79d0a83299
+	protected void DropItemsCommandExecute(ObjectEventArgs ts)
+	{
+		int num = 0;
+		string text = &quot;&quot;;
+		DecoratorBase decoratorBase = null;
+		foreach (object[] item in ts.Param as IList)
+		{
+			VmModuleBaseDecorator vmModuleBaseDecorator = item[0] as VmModuleBaseDecorator;
+			Point position = (Point)item[1];
+			if (item.Length &gt; 2)
+			{
+				decoratorBase = item[2] as DecoratorBase;
+			}
+			if (vmModuleBaseDecorator.DecorateSource is IToolBoxData toolBoxData)
+			{
+				if (!CheckRunning(DecorateSource as IVMRun))
+				{
+					break;
+				}
+				VmConnectionDecorator vmConnectionDecorator = null;
+				if (toolBoxData.Tag is VmConnectionDecorator vmConnectionDecorator2)
+				{
+					vmConnectionDecorator = vmConnectionDecorator2;
+				}
+				if (toolBoxData.DirPath.Contains(&quot;GroupTools&quot;))
+				{
+					string text2 = toolBoxData.DirPath.Substring(toolBoxData.DirPath.LastIndexOf(&#39;\\&#39;));
+					string strPath = toolBoxData.DirPath + text2 + &quot;.&quot; + AppFileExtension.Group;
+					UILogManager.logCreate(&quot;信息&quot;, &quot;拖入自定义工具包&quot;);
+					IMVSGroup iMVSGroup = VmSolution.LoadGroup(DecorateSource as IVmModuleSet, strPath);
+					if (iMVSGroup != null)
+					{
+						VmModuleDecorator vmModuleDecorator = new VmModuleDecorator
+						{
+							DecorateSource = iMVSGroup
+						};
+						vmModuleDecorator.Position = position;
+					}
+				}
+				else
+				{
+					try
+					{
+						if (toolBoxData.Info == &quot;IMVSGroup&quot; &amp;&amp; DecorateSource is IVMGroup vMGroup)
+						{
+							int level = VmGroupDecorator.GetLevel(vMGroup);
+							if (level &gt;= 2)
+							{
+								HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_GroupMuch&quot;), MessageButtons.Normal, MessageIcons.Warning);
+								break;
+							}
+						}
+						if (this is VmSolutionDecorator)
+						{
+							Ioc.Get&lt;IUnRedoService&gt;()?.Register(new RootOperation(), AppLocalizationService.GetLang(&quot;添加流程&quot;) ?? &quot;&quot;);
+						}
+						else
+						{
+							Ioc.Get&lt;IUnRedoService&gt;()?.Register(new RootOperation(), AppLocalizationService.GetLang(&quot;添加模块&quot;) ?? &quot;&quot;);
+						}
+						object obj = toolBoxData.AddNewItem(DecorateSource);
+						LogHelper.Info(&quot;工具箱拖入创建:&quot; + (obj as IVmModule)?.FullName);
+						if (obj is IVmProcedure)
+						{
+							vmModuleBaseDecorator = new VmProcedureDecorator</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/group-data-pipeline--create.html">数据/group-data-pipeline--create.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

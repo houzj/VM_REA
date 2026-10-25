@@ -1,0 +1,632 @@
+{
+  "facts": [
+    {
+      "id": "CD01",
+      "classification": "independent-implementation",
+      "stages": [
+        "transfer",
+        "results"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "数值、整数、布尔、文本与NumberArray工厂",
+      "to": "PortValue的标量载荷与单对象数值序列",
+      "behavior": "Number检查double有限后包装值，Integer(long)与Boolean(bool)包装值，Text拒绝null但保留传入string引用；string本身不可变，不需要为每次传递重新复制字符。Numbers(IEnumerable<double>)则先ToArray、拒绝非有限项，再用只读集合包装副本，Kind为NumberArray但Cardinality仍采用构造器默认Scalar。Components也ToArray，但它是Components整体载荷，不因内部是列表就自动变Cardinality.Array。只读集合是容器接口限制，复制行为来自明确ToArray，不能把readonly一词当所有权证据。",
+      "representation": "Number(double)/Integer(long)/Boolean(bool)是装箱数值；Text保存string对象；NumberArray保存独立double[]副本的只读视图。NumberArray+Scalar与Number+Array必须分开。",
+      "cache": "PortValue本身无全局缓存；同一PortValue可随后同时被输入、变量和运行结果字典持有。",
+      "release": "这些托管载荷没有逐值Dispose协议；替换字典项仅撤一个持有者，不保证字符/数组马上回收。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "    private PortValue(",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 36,
+          "end": 36,
+          "excerpt": "    private PortValue(DataKind kind,object value,ValueCardinality cardinality=ValueCardinality.Scalar){Kind=kind;Value=value;Cardinality=cardinality;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "    public static PortValue Number(double",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 39,
+          "end": 47,
+          "excerpt": "    public static PortValue Number(double v)=>double.IsFinite(v)?new(DataKind.Number,v):throw new ArgumentOutOfRangeException(nameof(v));\n    public static PortValue Numbers(IEnumerable<double> values){var copy=values.ToArray();if(copy.Any(v=>!double.IsFinite(v)))throw new ArgumentException(\"Non-finite numeric array.\",nameof(values));return new(DataKind.NumberArray,Array.AsReadOnly(copy));}\n    public static PortValue Calibration(CalibrationData value)=>new(DataKind.Calibration,value??throw new ArgumentNullException(nameof(value)));\n    public static PortValue Integer(long v)=>new(DataKind.Integer,v);\n    public static PortValue Boolean(bool v)=>new(DataKind.Boolean,v);\n    public static PortValue Text(string v)=>new(DataKind.Text,v??throw new ArgumentNullException(nameof(v)));\n    public static PortValue Components(IReadOnlyList<Component> v)=>new(DataKind.Components,Array.AsReadOnly(v.ToArray()));\n    public static PortValue Point(Point2 point){if(!double.IsFinite(point.X)||!double.IsFinite(point.Y))throw new ArgumentException(\"点坐标无效。\");return new(DataKind.Point,point);}\n    public static PortValue Region(IEnumerable<RoiDocument> regions)=>new(DataKind.Region,new RoiRegionValue(regions));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "    public T As<T>()",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 50,
+          "end": 50,
+          "excerpt": "    public T As<T>()=>Value is T v?v:throw new InvalidOperationException($\"Value {Kind} cannot be read as {typeof(T).Name}.\");",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "不把托管long/double及文本合同视为原SDK int32/float32/UTF8缓冲ABI等价；自定义或原生工具内部是否另复制需逐工具取证。"
+      ]
+    },
+    {
+      "id": "CD02",
+      "classification": "independent-implementation",
+      "stages": [
+        "transfer",
+        "results"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "Cardinality.Array工厂与Element / JoinArray",
+      "to": "复制数组容器、标量取项与重新物化集合",
+      "behavior": "PortTypes.Valid只允许Integer/Number/Text/Circle/Point/Fixture使用Array基数；并无PointSet枚举。IntegerArray/NumberArray/TextArray及几何数组工厂均ToArray后包装只读视图；Number数组校验有限，Text数组拒绝null，Point/Circle/Fixture数组逐项调用相应校验。Element对Scalar且index0返回同一PortValue，对Array则从只读列表取值并创建标量PortValue。JoinArray先把同Kind输入Elements展平，再调用对应数组工厂，因此输出是新容器；Text只复制字符串引用，Point2/Component等值结构复制其数值字段，不是深复制任意引用对象。",
+      "representation": "Point2/CircleFit/Component是readonly record struct；PointArray为Point+Array；Numbers为NumberArray+Scalar，二者ElementCount含义不同。",
+      "cache": "数组工厂隔离传入枚举容器；取项后包装的标量与原数组可并存。JoinArray临时flat数组与最终数组是额外的物化层。",
+      "release": "没有数组池归还或逐元素Dispose；集合离开某条路径不等于所有session/订阅读者已退出。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": " public static bool Valid(",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 7,
+          "end": 7,
+          "excerpt": " public static bool Valid(DataKind kind,ValueCardinality cardinality)=>Enum.IsDefined(kind)&&Enum.IsDefined(cardinality)&&(cardinality==ValueCardinality.Scalar||kind is DataKind.Integer or DataKind.Number or DataKind.Text or DataKind.Circle or DataKind.Point or DataKind.Fixture);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": " public static PortValue CircleArray(",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 15,
+          "end": 24,
+          "excerpt": " public static PortValue CircleArray(IEnumerable<VisionCore.CircleFit> values){var copy=values.ToArray();foreach(var v in copy)_=Circle(v);return new(DataKind.Circle,System.Array.AsReadOnly(copy),ValueCardinality.Array);}\n public static PortValue PointArray(IEnumerable<VisionCore.Point2> values){var copy=values.ToArray();foreach(var v in copy)_=Point(v);return new(DataKind.Point,System.Array.AsReadOnly(copy),ValueCardinality.Array);}\n public static PortValue FixtureArray(IEnumerable<FixtureValue> values){var copy=values.ToArray();foreach(var v in copy)_=Fixture(v);return new(DataKind.Fixture,System.Array.AsReadOnly(copy),ValueCardinality.Array);}\n public int ElementCount=>Cardinality==ValueCardinality.Scalar?1:((System.Collections.ICollection)Value).Count;\n public PortValue Element(int index){if(index<0||index>=ElementCount)throw new InvalidDataException(\"Array element unavailable.\");if(Cardinality==ValueCardinality.Scalar)return this;return Kind switch{DataKind.Integer=>Integer(As<IReadOnlyList<long>>()[index]),DataKind.Number=>Number(As<IReadOnlyList<double>>()[index]),DataKind.Text=>Text(As<IReadOnlyList<string>>()[index]),DataKind.Circle=>Circle(As<IReadOnlyList<VisionCore.CircleFit>>()[index]),DataKind.Point=>Point(As<IReadOnlyList<VisionCore.Point2>>()[index]),DataKind.Fixture=>Fixture(As<IReadOnlyList<FixtureValue>>()[index]),_=>throw new InvalidDataException(\"Unsupported array type.\")};}\n public IEnumerable<PortValue> Elements()=>Enumerable.Range(0,ElementCount).Select(Element);\n public static PortValue JoinArray(DataKind kind,IEnumerable<PortValue> values){var flat=values.SelectMany(v=>v.Kind==kind?v.Elements():throw new InvalidDataException(\"Mixed output kinds.\")).ToArray();return kind switch{DataKind.Integer=>IntegerArray(flat.Select(v=>v.As<long>())),DataKind.Number=>NumberArray(flat.Select(v=>v.As<double>())),DataKind.Text=>TextArray(flat.Select(v=>v.As<string>())),DataKind.Circle=>CircleArray(flat.Select(v=>v.As<VisionCore.CircleFit>())),DataKind.Point=>PointArray(flat.Select(v=>v.As<VisionCore.Point2>())),DataKind.Fixture=>FixtureArray(flat.Select(v=>v.As<FixtureValue>())),_=>throw new InvalidDataException(\"Unsupported accumulated type.\")};}\n public static PortValue IntegerArray(IEnumerable<long> values){ArgumentNullException.ThrowIfNull(values);return new(DataKind.Integer,System.Array.AsReadOnly(values.ToArray()),ValueCardinality.Array);}\n public static PortValue NumberArray(IEnumerable<double> values){ArgumentNullException.ThrowIfNull(values);var copy=values.ToArray();if(copy.Any(v=>!double.IsFinite(v)))throw new ArgumentException(\"Non-finite number array element.\",nameof(values));return new(DataKind.Number,System.Array.AsReadOnly(copy),ValueCardinality.Array);}\n public static PortValue TextArray(IEnumerable<string> values){ArgumentNullException.ThrowIfNull(values);var copy=values.ToArray();if(copy.Any(v=>v is null))throw new ArgumentException(\"Null text array element.\",nameof(values));return new(DataKind.Text,System.Array.AsReadOnly(copy),ValueCardinality.Array);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionData/ImageGeometry.cs",
+          "member": "public readonly record struct Component(",
+          "sha256": "0c169c1fe86eb8048fc6b7329d425088c32d2a690535c05962e5276d9907882d",
+          "start": 26,
+          "end": 28,
+          "excerpt": "public readonly record struct Component(int Area, int MinX, int MinY, int MaxX, int MaxY, double CenterX, double CenterY);\npublic readonly record struct Point2(double X, double Y);\npublic readonly record struct CircleFit(double CenterX, double CenterY, double Radius, double RadialRmsError);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "FixtureValue内部可能持有复合引用，数组ToArray本身不证明它们递归深复制；本条不将PointArray/Components解释为原版pointset二进制布局。"
+      ]
+    },
+    {
+      "id": "CD03",
+      "classification": "independent-implementation",
+      "stages": [
+        "transfer"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "DataKinds.Coerce / PortTypes.AcceptsInput",
+      "to": "不转换时同引用；数值提升时新包装并可能降精度",
+      "behavior": "CanFlow同Kind通常允许原值通过；Coerce(value,DataKind)只有Number→NumberArray会Numbers([double])新分配一个序列，其余可流转类型原样返回PortValue。带PortDescriptor的Coerce先保留支持deferred读的原始类型；否则AcceptInteger且Integer输入时，将long先强转float再包装Number或Numbers。这是显式单精度中间转换，不是无损long→double。GraphExecutor先按基数与种类验证每个输入，再Coerce；常规类型门不接受不同Cardinality，支持deferred的输入另有准入例外。还须注意：AcceptInteger的转换体调用As<long>()，不是逐元素转换；Integer+Array即使通过目标Number+Array的声明类型门，仍会在这里读取long失败，并被Graph记录InputTypeMismatch，不能把声明接受等同运行数组提升已实现。",
+      "representation": "同类型传递是PortValue身份共享；Number→NumberArray与整型提升会创建新PortValue。NumberArray种类与Array基数不是自动互换的两种拼法。",
+      "cache": "每节点nodeInputs为新字典，字典里的共享值和提升后的新值要分开跟踪；不存在对全部输入逐项深克隆的通用步骤。",
+      "release": "Coerce没有清来源结果或修改原PortValue；新值被丢弃不影响其它读者仍持有旧值。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": " public static bool CanFlow(DataKind source,DataKind target)",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 7,
+          "end": 10,
+          "excerpt": " public static bool CanFlow(DataKind source,DataKind target)=>source==target||source==DataKind.Number&&target==DataKind.NumberArray||source==DataKind.Image&&IsImage(target)||target==DataKind.Image&&IsImage(source);\n public static bool CanFlow(DataKind source,PortDescriptor target)=>CanFlow(source,target.Kind)||target.AcceptInteger&&source==DataKind.Integer&&target.Kind is DataKind.Number or DataKind.NumberArray;\n public static PortValue Coerce(PortValue value,DataKind target)=>value.Kind==DataKind.Number&&target==DataKind.NumberArray?PortValue.Numbers([value.As<double>()]):CanFlow(value.Kind,target)?value:throw new InvalidDataException(\"Value type mismatch.\");\n public static PortValue Coerce(PortValue value,PortDescriptor target)=>PortTypes.DeferredReadAccepts(target,value.Kind)?value:target.AcceptInteger&&value.Kind==DataKind.Integer?target.Kind switch{DataKind.Number=>PortValue.Number((float)value.As<long>()),DataKind.NumberArray=>PortValue.Numbers([(float)value.As<long>()]),_=>throw new InvalidDataException(\"Invalid integer promotion target.\")}:Coerce(value,target.Kind);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": " public static bool DeferredReadAccepts(",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 8,
+          "end": 11,
+          "excerpt": " public static bool DeferredReadAccepts(PortDescriptor target,DataKind source)=>\n  target.SupportsDeferredTextRead&&source==DataKind.Text||target.SupportsDeferredIntegerRead&&source==DataKind.Integer||target.SupportsDeferredNumericRead&&source is DataKind.Number or DataKind.NumberArray;\n public static bool AcceptsInput(PortDescriptor target,DataKind kind,ValueCardinality cardinality)=>DeferredReadAccepts(target,kind)||target.Cardinality==cardinality&&DataKinds.CanFlow(kind,target);\n public static bool Matches(PortDescriptor port,PortValue? value)=>value is not null&&port.Kind==value.Kind&&port.Cardinality==value.Cardinality;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": " public static PortValue IntegerArray(",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 22,
+          "end": 22,
+          "excerpt": " public static PortValue IntegerArray(IEnumerable<long> values){ArgumentNullException.ThrowIfNull(values);return new(DataKind.Integer,System.Array.AsReadOnly(values.ToArray()),ValueCardinality.Array);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "   try{foreach(var input in nodeInputs.ToArray())",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 31,
+          "end": 31,
+          "excerpt": "   try{foreach(var input in nodeInputs.ToArray()){var port=d.Inputs.Single(p=>p.Name==input.Key);if(!PortTypes.AcceptsInput(port,input.Value.Kind,input.Value.Cardinality))throw new InvalidDataException(\"Input cardinality mismatch: \"+input.Key);nodeInputs[input.Key]=DataKinds.Coerce(input.Value,port);}}catch(Exception ex)when(ex is InvalidDataException or InvalidOperationException){Record(NodeRunStatus.Failed,code:\"InputTypeMismatch\",message:ex.Message);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "这里描述当前显式代码的转换点，不声明原版数值精度或原生getter行为；全部数值极值和调用路径未做运行差分。"
+      ]
+    },
+    {
+      "id": "CD04",
+      "classification": "independent-implementation",
+      "stages": [
+        "transfer",
+        "results"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "Point / Components复合结果",
+      "to": "投影叶子是新数值容器，复合父载荷仍原样保留",
+      "behavior": "CompoundOutputFields.Expand先浅复制原Outputs，再用TryAdd追加投影字段，已存在同名字段优先保留。Point标量投影X/Y新Number；Point数组的X/Y用Numbers分别物化为NumberArray+Scalar。Components父载荷是Component只读列表，投影BlobNum/TotalArea标量及Area/中心/矩形等Number+Array叶子，叶子数组逐列新建。因此父Point/Components与各投影列同时可被结果持有；不能称所有子字段只是父数组的零复制切片。",
+      "representation": "当前Point、PointArray、Components是具体托管几何合同；原版pointset/chunk涉及其自身字段、元素布局和所有权，不与此处同名映射或等同。",
+      "cache": "Expand创建新字典但复合父PortValue仍共享；各列数组是独立投影快照，可能增加内存持有。",
+      "release": "释放父载荷某处引用不会自动清结果中已投影的数值数组，反向清投影也不释放父结果的其它持有者。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/CompoundOutputFields.cs",
+          "member": "  DataKind.Point=>",
+          "sha256": "90d3e33e2f1c8f43d09c1a00725b1b83081ad739f13f343c59c330a3f10729fe",
+          "start": 14,
+          "end": 16,
+          "excerpt": "  DataKind.Point=>new[]{new CompoundLeaf(\"X\",cardinality==ValueCardinality.Array?DataKind.NumberArray:DataKind.Number,ValueCardinality.Scalar),new CompoundLeaf(\"Y\",cardinality==ValueCardinality.Array?DataKind.NumberArray:DataKind.Number,ValueCardinality.Scalar)},\n  DataKind.Components=>new[]{new CompoundLeaf(\"BlobNum\",DataKind.Integer,ValueCardinality.Scalar),new CompoundLeaf(\"TotalArea\",DataKind.Number,ValueCardinality.Scalar)}.Concat(ComponentNumbers.Select(p=>new CompoundLeaf(p,DataKind.Number,ValueCardinality.Array))).ToArray(),\n  DataKind.Region=>BoxNumbers.Concat(AnnulusNumbers).Select(p=>new CompoundLeaf(p,DataKind.Number,ValueCardinality.Array)).ToArray(),",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/CompoundOutputFields.cs",
+          "member": " public static IReadOnlyDictionary<string,PortValue> Expand(",
+          "sha256": "90d3e33e2f1c8f43d09c1a00725b1b83081ad739f13f343c59c330a3f10729fe",
+          "start": 19,
+          "end": 23,
+          "excerpt": " public static IReadOnlyDictionary<string,PortValue> Expand(IReadOnlyDictionary<string,PortValue> outputs){var result=outputs.ToDictionary(p=>p.Key,p=>p.Value);foreach(var pair in outputs)foreach(var leaf in Project(pair.Value))result.TryAdd(pair.Key+\".\"+leaf.Key,leaf.Value);return result;}\n public static IReadOnlyDictionary<string,PortValue> Project(PortValue value){var result=new Dictionary<string,PortValue>();\n  if(value.Kind==DataKind.Point){if(value.Cardinality==ValueCardinality.Scalar){var point=value.As<Point2>();result[\"X\"]=PortValue.Number(point.X);result[\"Y\"]=PortValue.Number(point.Y);}else{var points=value.As<IReadOnlyList<Point2>>();result[\"X\"]=PortValue.Numbers(points.Select(p=>p.X));result[\"Y\"]=PortValue.Numbers(points.Select(p=>p.Y));}}\n  else if(value.Kind==DataKind.Components){var c=value.As<IReadOnlyList<Component>>();result[\"BlobNum\"]=PortValue.Integer(c.Count);result[\"TotalArea\"]=PortValue.Number(c.Sum(v=>(double)v.Area));Func<Component,double>[] fields=[v=>v.Area,v=>v.CenterX,v=>v.CenterY,v=>v.MinX,v=>v.MinY,v=>(double)v.MaxX-v.MinX+1,v=>(double)v.MaxY-v.MinY+1];for(int i=0;i<fields.Length;i++)result[ComponentNumbers[i]]=PortValue.NumberArray(c.Select(fields[i]));}\n  else if(value.Kind==DataKind.Region){var regions=value.As<RoiRegionValue>().Regions;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "    public static PortValue Components(",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 45,
+          "end": 45,
+          "excerpt": "    public static PortValue Components(IReadOnlyList<Component> v)=>new(DataKind.Components,Array.AsReadOnly(v.ToArray()));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": " public static PortValue PointArray(",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 16,
+          "end": 16,
+          "excerpt": " public static PortValue PointArray(IEnumerable<VisionCore.Point2> values){var copy=values.ToArray();foreach(var v in copy)_=Point(v);return new(DataKind.Point,System.Array.AsReadOnly(copy),ValueCardinality.Array);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "不据恢复XML字段名推定native点集ABI；当前Region/Fixture等其它复合投影及全部插件自定义输出仍应独立核查。"
+      ]
+    },
+    {
+      "id": "CD05",
+      "classification": "independent-implementation",
+      "stages": [
+        "variable",
+        "transfer",
+        "results"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "WorkflowRunContext每轮变量、参数与节点结果",
+      "to": "本轮引用解析、生产者失败移除与会话快照",
+      "behavior": "当前逐轮数据容器名为WorkflowRunContext；未定位到名为WorkflowValueScope的同一路由实体。构造器复制inputs字典但保留每个PortValue，严格核输入Kind/Cardinality；未绑定生产者的局部变量每轮由Initial重新建值。Resolve节点输出只读本轮Success/NoMatch记录；局部变量直接返回variables中的同一PortValue。Update在生产者记录后先Remove对应变量，再尝试从本轮Node读值，失败则不恢复上轮/旧值。Complete为Inputs/Outputs/LocalVariables新建只读字典，为显示创建新单元素列表，但内层PortValue不复制；局部变量从ID键转换成名称键后保存在ExecutionSessionResult。",
+      "representation": "逐轮variables/arguments/records与跨轮ModuleExecutionScope.State不同；会话快照是容器快照，不是整个载荷堆的深快照。",
+      "cache": "同一数值数组可被节点结果、流程输出、显示列表和局部变量同时保留；已有会话可继续持有上一轮值，见CR01–06，不等于新一轮变量自动继承旧值。",
+      "release": "WorkflowRunContext没有逐值Dispose；session覆盖、编辑文档变化和scope state移除不是同一动作，不推断GC时刻。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": " public WorkflowRunContext(",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 10,
+          "end": 17,
+          "excerpt": " public WorkflowRunContext(ProcedureDocument procedure,IReadOnlyDictionary<string,PortValue>? inputs,Dictionary<string,NodeRunRecord> records,int? groupLoopIndex=null)\n {\n  this.procedure=procedure;this.records=records;this.groupLoopIndex=groupLoopIndex;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);\n  foreach(var pair in arguments){var spec=procedure.Configuration.Inputs.SingleOrDefault(i=>i.Name==pair.Key)??throw new InvalidDataException(\"Unknown workflow input: \"+pair.Key);if(pair.Value is null||pair.Value.Kind!=spec.Kind||pair.Value.Cardinality!=spec.Cardinality)throw new InvalidDataException(\"Workflow input type mismatch: \"+pair.Key);}\n\n  foreach(var b in procedure.Configuration.Subscriptions.Where(b=>b.Source.Kind==WorkflowSourceKind.WorkflowInput)){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==b.Source.Id);if(!arguments.ContainsKey(spec.Name)&&spec.NodeId is null)throw new InvalidDataException(\"Missing workflow input: \"+spec.Name);}\n  foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": " PortValue Node(",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 18,
+          "end": 18,
+          "excerpt": " PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException(\"Current-run source unavailable: \"+node+\".\"+port);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": " public PortValue Resolve(",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 22,
+          "end": 34,
+          "excerpt": " public PortValue Resolve(WorkflowValueReference source){if(source.ArrayIndex is not null)throw new InvalidDataException(\"Indexed input requires an opted-in primitive reader.\");return source.Kind switch\n {\n  WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException(\"Group LoopIndex requires an owned invocation context.\"),\n  WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),\n  WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),\n  WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),\n  WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),\n\n  WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),\n  WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException(\"Current-run variable unavailable: \"+source.Id),\n  WorkflowSourceKind.WorkflowInput=>Input(source.Id),\n  _=>throw new InvalidDataException(\"Unknown source kind.\")\n };}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": " public void Update(",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 36,
+          "end": 36,
+          "excerpt": " public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": " public ExecutionSessionResult Complete(",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 37,
+          "end": 44,
+          "excerpt": " public ExecutionSessionResult Complete(ExecutionSessionResult session)\n {\n  var output=new Dictionary<string,PortValue>(StringComparer.Ordinal);var errors=new List<string>();\n  foreach(var spec in procedure.Configuration.Outputs){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound workflow output: \"+spec.Name);var value=Node(spec.NodeId,spec.Port!);if(value.Kind!=spec.Kind&&!(spec.Kind==DataKind.Image&&DataKinds.IsImage(value.Kind)))throw new InvalidDataException(\"type mismatch\");output.Add(spec.Name,value);}catch(InvalidDataException e){errors.Add(spec.Name+\": \"+e.Message);}}\n  var displays=new Dictionary<string,IReadOnlyList<PortValue>>(StringComparer.Ordinal);var displayErrors=new List<string>();foreach(var spec in procedure.Configuration.Displays){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound display: \"+spec.Name);displays.Add(spec.Name,Array.AsReadOnly(new[]{Node(spec.NodeId,spec.Port!)}));}catch(InvalidDataException e){displayErrors.Add(e.Message);}}\n  return session with{WorkflowDisplays=new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays),DisplayErrors=displayErrors.AsReadOnly(),Status=errors.Count>0&&session.Status==SessionStatus.Success?SessionStatus.Failed:session.Status,WorkflowInputs=new ReadOnlyDictionary<string,PortValue>(new Dictionary<string,PortValue>(arguments,StringComparer.Ordinal)),WorkflowOutputs=new ReadOnlyDictionary<string,PortValue>(output),LocalVariables=new ReadOnlyDictionary<string,PortValue>(variables.ToDictionary(v=>procedure.Configuration.Variables.Single(i=>i.Id==v.Key).Name,v=>v.Value,StringComparer.Ordinal)),OutputErrors=errors.AsReadOnly()};\n\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "   void Record(NodeRunStatus s,",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 15,
+          "end": 15,
+          "excerpt": "   void Record(NodeRunStatus s,IReadOnlyDictionary<string,PortValue>? outputs=null,string? code=null,string? message=null,uint? nativeCode=null){records[id]=new(id,s,outputs??Empty(),sw.Elapsed.TotalMilliseconds,code,message){NativeErrorCode=nativeCode};workflow.Update(id);Report(id,s,message);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本事实只证明这个主执行路由；配置自执行/调试可另外使用旧结果作为输入，不能移植成所有入口都只允许本轮生产者。"
+      ]
+    },
+    {
+      "id": "CD06",
+      "classification": "independent-implementation",
+      "stages": [
+        "variable",
+        "transfer"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "WorkflowSubscriptions常量/变量/参数与延迟读取",
+      "to": "字节变量仍为文本，JSON复制与UTF8容量读另走",
+      "behavior": "VariableKind把int映为Integer、float映为Number、string与byte都映为Text；NormalizeValue把byte限制为偶数长度十六进制并大写，Initial的byte落到Text(v.Value)，没有在这里转byte[]。NumberArrayConstant先JSON反序列化double[]、检查最多1000000元素且有限，再由Resolve调用Numbers复制一次。参数订阅要求Kind匹配且Scalar，并SerializeToElement生成JSON；Integer参数还checked转int32并按参数范围验证。延迟文本读另取Text元素，截到首个NUL，计算UTF8字节数+1，容量不足返回所需字节数；它返回string，不提供原生借用字节指针。",
+      "representation": "变量byte十六进制文本、TextArray字符串集合、原版ByteData/native UTF8缓冲是不同表示。当前参数JSON与PortValue载荷也不是同一容器。",
+      "cache": "常量每次解析可产生新值/新数组；延迟输入读取器持有本次inputs与索引解析器，读取时再选元素，不保证全部读在流程启动时一次冻结。",
+      "release": "JSON序列化、UTF8长度计算或NUL截断不释放原文本/数组；无此处统一的native缓冲释放合同。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": " public static DataKind VariableKind(",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 31,
+          "end": 32,
+          "excerpt": " public static DataKind VariableKind(string type)=>type switch{\"int\"=>DataKind.Integer,\"float\"=>DataKind.Number,\"string\" or \"byte\"=>DataKind.Text,_=>throw new InvalidDataException(\"Unsupported variable type.\")};\n public static DataKind ParameterType(ParameterKind kind)=>kind switch{ParameterKind.Integer=>DataKind.Integer,ParameterKind.Number=>DataKind.Number,ParameterKind.Boolean=>DataKind.Boolean,_=>DataKind.Text};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowConfiguration.cs",
+          "member": " public static string NormalizeValue(",
+          "sha256": "ad59db622c095ac22c3550c3b3ca4b6491ac31d68108a83e0caa9c56928e7b1f",
+          "start": 35,
+          "end": 42,
+          "excerpt": " public static string NormalizeValue(string type,string value)=>type switch\n {\n  \"int\" when int.TryParse(value,NumberStyles.Integer,CultureInfo.InvariantCulture,out var i)=>i.ToString(CultureInfo.InvariantCulture),\n  \"float\" when float.TryParse(value,NumberStyles.Float,CultureInfo.InvariantCulture,out var f)&&float.IsFinite(f)=>f.ToString(CultureInfo.InvariantCulture),\n  \"string\"=>value,\n  \"byte\" when value.Length%2==0&&value.All(Uri.IsHexDigit)=>value.ToUpperInvariant(),\n  _=>throw new ArgumentException(\"变量值与类型不符。\")\n };",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": " public static IReadOnlyList<double> ReadNumberArrayConstant(",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 56,
+          "end": 56,
+          "excerpt": " public static IReadOnlyList<double> ReadNumberArrayConstant(string json){try{var values=JsonSerializer.Deserialize<double[]>(json)??throw new InvalidDataException(\"Null numeric array.\");if(values.Length>1000000||values.Any(v=>!double.IsFinite(v)))throw new InvalidDataException(\"Invalid numeric array.\");return Array.AsReadOnly(values);}catch(JsonException e){throw new InvalidDataException(\"Invalid numeric array.\",e);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+          "member": " public static PortValue Initial(",
+          "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01",
+          "start": 73,
+          "end": 80,
+          "excerpt": " public static PortValue Initial(WorkflowLocalVariable v)=>v.Type switch{\"int\"=>PortValue.Integer(int.Parse(v.Value,CultureInfo.InvariantCulture)),\"float\"=>PortValue.Number(float.Parse(v.Value,CultureInfo.InvariantCulture)),_=>PortValue.Text(v.Value)};\n public static JsonElement Parameter(ParameterDescriptor spec,PortValue value)\n {\n  if(ParameterType(spec.Kind)!=value.Kind||value.Cardinality!=ValueCardinality.Scalar)throw new InvalidDataException(\"Parameter subscription type mismatch.\");\n  JsonElement json=spec.Kind==ParameterKind.Integer?JsonSerializer.SerializeToElement(checked((int)value.As<long>())):JsonSerializer.SerializeToElement(value.Value);\n  if(!GraphValidator.ValidParameter(spec,json))throw new InvalidDataException(\"Subscribed parameter outside declared range: \"+spec.Name);return json;\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowRunContext.cs",
+          "member": "  WorkflowSourceKind.NumberArrayConstant=>",
+          "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+          "start": 27,
+          "end": 27,
+          "excerpt": "  WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowNumericInputRead.cs",
+          "member": " public ModuleTextInputReadResult? ReadText(",
+          "sha256": "803e1fdc6bd764b2b45ad69d22b3aaabbaa874d977c63b497238589b60ca2386",
+          "start": 36,
+          "end": 49,
+          "excerpt": " public ModuleTextInputReadResult? ReadText(string name,int requestedIndex,int capacity){\n  if(!indices.TryGetValue(name,out var selector))return null;\n  int index=Index(selector,requestedIndex);\n  if(index<0)return new(0xe0000014,0,\"\",0);\n  if(!inputs.TryGetValue(name,out var input)||input.Kind!=DataKind.Text)return new(0xe0000314,0,\"\",0);\n  var values=input.Elements().ToArray();\n  if(values.Length==0)return new(0xe0000314,0,\"\",0);\n  if(index>=values.Length)return new(0xe0000014,0,\"\",0);\n  string text=values[index].As<string>().Split('\\0')[0];\n  int required=checked(System.Text.Encoding.UTF8.GetByteCount(text)+1);\n  if(capacity<required)return new(0xe0000012,0,\"\",required);\n  return new(0,selector is null?values.Length:1,text,required);\n }\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "这里不声称原版byte变量也如此传输；原SDK字节值与字符串指针寿命另列。读取器resolve回调是否捕获跨轮可变对象须按具体入口另核。"
+      ]
+    },
+    {
+      "id": "CD07",
+      "classification": "independent-implementation",
+      "stages": [
+        "variable",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "局部变量改型/删除/节点删除",
+      "to": "断开文档订阅和来源不等于清历史运行值",
+      "behavior": "局部变量窗口Commit改型时归一化或重置Value，并清该变量的SourceNode/SourcePort；类型变化还移除以此LocalVariable为来源的Subscriptions。DeleteVariable删除变量及其消费者订阅；删除分组类似批量移除。GraphEditorDocument.SetWorkflowConfiguration验证并Snapshot，识别删除/改型ID后交PropagateGroupInterface处理关联。删除节点时WorkflowConfiguration.RemoveNodes移除相应来源引用，并把绑定该节点的变量改为无来源，保留配置Value。所选UI写配置经WriteWorkflowConfiguration在activeRun非空时拒绝；改文档不会原地改写已经捕获的本轮配置或旧session.LocalVariables。",
+      "representation": "变量声明的Type/Value/SourceNode与运行PortValue分别保存；同名或同ID不意味着只有一个可变存储单元。",
+      "cache": "未来运行根据新配置重新初始化；旧session/结果字典仍可持有旧类型值。文档Snapshot复制集合容器，非回收运行载荷。",
+      "release": "删除消费者订阅只撤文档依赖；不以删变量推定历史数组、调试结果或scope插件状态已释放。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowLocalVariablesWindow.xaml.cs",
+          "member": " void Commit(Row row)",
+          "sha256": "b2dc41bad614b015b4406d1ea3b01ffc5b800264c1b9460c7f1edf1196454d39",
+          "start": 47,
+          "end": 54,
+          "excerpt": " void Commit(Row row)\n {\n  var c=read().Configuration;var original=c.Variables.FirstOrDefault(v=>v.Id==row.Id);if(original is null)return;string type=row.Type;string value=original.SourceNode is not null&&type==original.Type?original.Value:row.Value;\n  if(type!=original.Type){if(type==\"string\")value=\"\";else if(type==\"byte\")value=\"00\";else{try{value=WorkflowConfiguration.NormalizeValue(type,value);}catch{value=type==\"float\"?\"0.0\":type==\"byte\"?\"00\":\"0\";}}}\n  var updated=original with{Name=\"%\"+row.Name.Trim('%')+\"%\",Type=type,Value=WorkflowConfiguration.NormalizeValue(type,value),Remark=row.Remark,SourceNode=type==original.Type?original.SourceNode:null,SourcePort=type==original.Type?original.SourcePort:null};\n  save(c with{Variables=c.Variables.Select(v=>v.Id==row.Id?updated:v).ToArray(),Subscriptions=type==original.Type?c.Subscriptions:c.Subscriptions.Where(b=>b.Source.Kind!=WorkflowSourceKind.LocalVariable||b.Source.Id!=row.Id).ToArray()});\n }\n void TypeChanged(object sender,SelectionChangedEventArgs e){if(refreshing||sender is not ComboBox {DataContext:Row row}||read().Configuration.Variables.FirstOrDefault(v=>v.Id==row.Id)?.Type==row.Type)return;Safe(()=>{Commit(row);RefreshRows();});}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowLocalVariablesWindow.xaml.cs",
+          "member": " void DeleteVariable(",
+          "sha256": "b2dc41bad614b015b4406d1ea3b01ffc5b800264c1b9460c7f1edf1196454d39",
+          "start": 67,
+          "end": 67,
+          "excerpt": " void DeleteVariable(object sender,RoutedEventArgs e){if(sender is Button {DataContext:Row row})Safe(()=>{var c=read().Configuration;save(c with{Variables=c.Variables.Where(v=>v.Id!=row.Id).ToArray(),Subscriptions=c.Subscriptions.Where(b=>b.Source.Kind!=WorkflowSourceKind.LocalVariable||b.Source.Id!=row.Id).ToArray()});RefreshRows();});}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "    public void SetWorkflowConfiguration(",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 100,
+          "end": 105,
+          "excerpt": "    public void SetWorkflowConfiguration(string id,WorkflowConfiguration configuration) {\n        var p=Procedure(id);configuration=configuration with{Subscriptions=configuration.Subscriptions.Where(b=>WorkflowSubscriptions.References(b.Source).All(s=>s.Kind!=WorkflowSourceKind.WorkflowInput||configuration.Inputs.Any(i=>i.Id==s.Id))).ToArray()};if(p.GroupOwner is not null)configuration=GroupDisplayLinks.Synchronize(p.Configuration,configuration);configuration.Validate(p,registry);var snapshot=configuration.Snapshot();\n        if(JsonSerializer.Serialize(p.Configuration)==JsonSerializer.Serialize(snapshot))return;\n        var invalidVariables=p.Configuration.Variables.Where(v=>!snapshot.Variables.Any(next=>next.Id==v.Id&&next.Type==v.Type)).Select(v=>v.Id).ToHashSet(StringComparer.Ordinal);\n        Edit(d=>PropagateGroupInterface(d,p with{Configuration=snapshot},invalidVariables));\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/WorkflowConfiguration.cs",
+          "member": " public WorkflowConfiguration RemoveNodes(",
+          "sha256": "ad59db622c095ac22c3550c3b3ca4b6491ac31d68108a83e0caa9c56928e7b1f",
+          "start": 29,
+          "end": 29,
+          "excerpt": " public WorkflowConfiguration RemoveNodes(ISet<string> ids)=>this with{Subscriptions=Subscriptions.Where(b=>!ids.Contains(b.NodeId)&&!WorkflowSubscriptions.References(b.Source).Any(s=>s.Kind==WorkflowSourceKind.NodeOutput&&ids.Contains(s.Id))).ToArray(),Inputs=Inputs.Select(item=>Clear(item,ids)).ToArray(),Outputs=Outputs.Select(item=>Clear(item,ids)).ToArray(),Displays=Displays.Select(item=>Clear(item,ids)).ToArray(),RunParameters=RunParameters.Where(p=>!ids.Contains(p.NodeId)).Select(p=>p with{Relations=p.Relations?.Where(r=>!ids.Contains(r.NodeId)).ToArray()}).ToArray(),Variables=Variables.Select(v=>v.SourceNode is not null&&ids.Contains(v.SourceNode)?v with{SourceNode=null,SourcePort=null}:v).ToArray()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowConfigurationHost.cs",
+          "member": " void WriteWorkflowConfiguration(",
+          "sha256": "6acc3803692f05e9013bd87e4a5ffcedbb011cc501efb3530202e2d1f8b1b52f",
+          "start": 10,
+          "end": 14,
+          "excerpt": " void WriteWorkflowConfiguration(string solution,string id,WorkflowConfiguration value)\n {\n  if(windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||!doc.Document.Procedures.Any(p=>p.Id==id))throw new InvalidOperationException(\"当前流程配置不可编辑。\");\n  doc.SetWorkflowConfiguration(id,value);\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GroupInterfacePropagation.cs",
+          "member": "  Apply(changed);var result=",
+          "sha256": "9046dd1a9a0145fb4bf8a3a5cca8e41abc16febcccbad4b2080dbf3734ded931",
+          "start": 23,
+          "end": 23,
+          "excerpt": "  Apply(changed);var result=document with{Procedures=document.Procedures.Select(p=>procedures[p.Id]).ToArray()};if(invalidVariables is {Count:>0})result=ClearInvalidGroupBreakVariables(result,changed.Id,invalidVariables);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "父Group比较操作数等传播规则不能仅由变量窗口推定完整，本条只证明确调用到传播清理；其它程序化编辑入口门及跨方案消费者需另核。"
+      ]
+    },
+    {
+      "id": "CD08",
+      "classification": "independent-implementation",
+      "stages": [
+        "variable",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "Group跨轮累积",
+      "to": "先保留各轮PortValue，再JoinArray复制成最终集合",
+      "behavior": "GroupOutputAccumulator按输出名保存List<PortValue>，仅对Accumulate且Accumulatable支持的Integer/Number/Text/Circle/Point/Fixture接收累积。Add直接list.Add(value)，不在每轮立即复制整个载荷，累计元素数受独立1000000上限。Finish先浅复制last.WorkflowOutputs，再对每个累积输出JoinArray，形成新数组容器；FinishDisplays也仅复制列表容器，保留各帧PortValue。SolutionExecutor每次Group调用新建accumulator，每次Execute产生新子session，只有成功iteration才Add；最终返回last with新的累积输出/显示。NumberArray与Components不在该累积种类白名单，不应假定能按相同算法累积。",
+      "representation": "累积中间列表、最后一轮session和最终数组可能同时可达；数值/点集合与图像缓存并非相同缓存机制。",
+      "cache": "累积器属于本次Group调用局部对象，不是全方案全局变量表；scope可保存插件状态，但这里没有把累积列表登记进ModuleExecutionScope.State。",
+      "release": "Finish不会清中间列表或Dispose载荷；返回后何时不可达取决于调用栈/session及其它读者，不能从循环结束推出立即回收。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": " readonly Dictionary<string,List<PortValue>> accumulated=",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 8,
+          "end": 9,
+          "excerpt": " readonly Dictionary<string,List<PortValue>> accumulated=new(StringComparer.Ordinal);int count;\n public void Add(ExecutionSessionResult iteration){foreach(var spec in body.Configuration.Displays){if(!iteration.WorkflowDisplays.TryGetValue(spec.Name,out var values))continue;if(!displays.TryGetValue(spec.Name,out var frames))displays[spec.Name]=frames=new();if(!spec.Accumulate||spec.Kind==DataKind.GrayImage){displayCount-=frames.Sum(v=>v.ElementCount);frames.Clear();}if(values.Sum(v=>(long)v.ElementCount)>1000000-displayCount)throw new InvalidOperationException(\"Independent display frame limit is 1000000.\");displayCount+=values.Sum(v=>v.ElementCount);frames.AddRange(values);}foreach(var spec in body.Configuration.Outputs.Where(o=>o.Accumulate&&GroupBreak.Accumulatable(o.Kind))){if(!iteration.WorkflowOutputs.TryGetValue(spec.Name,out var value))continue;int length=value.ElementCount;if(length>1000000-count)throw new InvalidOperationException(\"Independent accumulated output element limit is 1000000.\");count+=length;elementCounts[spec.Name]=elementCounts.GetValueOrDefault(spec.Name)+length;if(!accumulated.TryGetValue(spec.Name,out var list))accumulated[spec.Name]=list=new();list.Add(value);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+          "member": " public IReadOnlyDictionary<string,IReadOnlyList<PortValue>> FinishDisplays()",
+          "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8",
+          "start": 16,
+          "end": 17,
+          "excerpt": " public IReadOnlyDictionary<string,IReadOnlyList<PortValue>> FinishDisplays()=>new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays.ToDictionary(p=>p.Key,p=>(IReadOnlyList<PortValue>)Array.AsReadOnly(p.Value.ToArray()),StringComparer.Ordinal));\n public IReadOnlyDictionary<string,PortValue> Finish(ExecutionSessionResult? last){var outputs=last?.WorkflowOutputs.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);foreach(var spec in body.Configuration.Outputs.Where(o=>o.Accumulate&&GroupBreak.Accumulatable(o.Kind))){var values=accumulated.GetValueOrDefault(spec.Name)??[];outputs[spec.Name]=PortValue.JoinArray(spec.Kind,values);}return new ReadOnlyDictionary<string,PortValue>(outputs);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GroupBreak.cs",
+          "member": " public static bool Accumulatable(",
+          "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a",
+          "start": 19,
+          "end": 19,
+          "excerpt": " public static bool Accumulatable(DataKind kind)=>kind is DataKind.Integer or DataKind.Number or DataKind.Text or DataKind.Circle or DataKind.Point or DataKind.Fixture;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "                var loop=GroupLoop.Read(node);",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 30,
+          "end": 43,
+          "excerpt": "                var loop=GroupLoop.Read(node);ExecutionSessionResult? last=null;int completed=0;bool broke=false;int? breakIndex=null;var diagnostics=new List<string>();var accumulator=new GroupOutputAccumulator(body);\n                for(long index=loop.Start;index<loop.End;index+=loop.Increment){\n                    childToken.ThrowIfCancellationRequested();\n                    if(index<int.MinValue||index>int.MaxValue)throw new InvalidOperationException(\"Independent Group index overflow guard.\");\n                    // Independent resource guard; this is not a recovered VM iteration limit.\n                    if(completed>=10000)throw new InvalidOperationException(\"Independent Group iteration limit is 10000.\");\n                    if(GroupBreak.Evaluate(node,body,last,(int)index,diagnostics,values,(name,element)=>accumulator.ReadSelfElement(name,element,last))){broke=true;breakIndex=(int)index;break;}\n                    last=await Execute(body.Id,values,childToken,depth+1,(int)index);completed++;\n                    if(last.Status==SessionStatus.Success)accumulator.Add(last);\n                    if(last.Status!=SessionStatus.Success)break;\n                    if(loop.IntervalMs>0)await Task.Delay(loop.IntervalMs,childToken);\n                }\n                return (last??new ExecutionSessionResult(SessionStatus.Success,[])) with{CompletedGroupIterations=completed,GroupBroke=broke,GroupBreakIndex=breakIndex,GroupDiagnostics=diagnostics.AsReadOnly(),WorkflowOutputs=accumulator.Finish(last),WorkflowDisplays=accumulator.FinishDisplays()};\n                },childToken);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/PortArrays.cs",
+          "member": " public static PortValue JoinArray(",
+          "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200",
+          "start": 21,
+          "end": 21,
+          "excerpt": " public static PortValue JoinArray(DataKind kind,IEnumerable<PortValue> values){var flat=values.SelectMany(v=>v.Kind==kind?v.Elements():throw new InvalidDataException(\"Mixed output kinds.\")).ToArray();return kind switch{DataKind.Integer=>IntegerArray(flat.Select(v=>v.As<long>())),DataKind.Number=>NumberArray(flat.Select(v=>v.As<double>())),DataKind.Text=>TextArray(flat.Select(v=>v.As<string>())),DataKind.Circle=>CircleArray(flat.Select(v=>v.As<VisionCore.CircleFit>())),DataKind.Point=>PointArray(flat.Select(v=>v.As<VisionCore.Point2>())),DataKind.Fixture=>FixtureArray(flat.Select(v=>v.As<FixtureValue>())),_=>throw new InvalidDataException(\"Unsupported accumulated type.\")};}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "1000000元素/10000轮等为当前独立资源门，不当作原版保证；native Group跨轮清理及数值ABI的等价性未由本静态切片验证。"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Point/Components与原版pointset/native chunk分别取证；当前相近中文名字不是布局或所有权桥。",
+    "只读包装、字典快照、参数JSON、插件scope状态和跨轮session是不同持有层；未做GC/峰值或原版运行等价验证。"
+  ],
+  "provenance": {
+    "schemaVersion": 1,
+    "scope": "Current main-tree nonimage factories, cardinality, scalar/array promotion, compound leaves, per-run variables, subscriptions, edits and group accumulation; static evidence only.",
+    "sourceFiles": [
+      {
+        "path": "src/VisionFramework/Contracts.cs",
+        "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269"
+      },
+      {
+        "path": "src/VisionFramework/PortArrays.cs",
+        "sha256": "148b9683f56d1b5ba0b31cc266299aaadd2ce911a10e34f4c9c752861b88a200"
+      },
+      {
+        "path": "src/VisionData/ImageGeometry.cs",
+        "sha256": "0c169c1fe86eb8048fc6b7329d425088c32d2a690535c05962e5276d9907882d"
+      },
+      {
+        "path": "src/VisionFramework/GraphExecutor.cs",
+        "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c"
+      },
+      {
+        "path": "src/VisionFramework/CompoundOutputFields.cs",
+        "sha256": "90d3e33e2f1c8f43d09c1a00725b1b83081ad739f13f343c59c330a3f10729fe"
+      },
+      {
+        "path": "src/VisionFramework/WorkflowRunContext.cs",
+        "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247"
+      },
+      {
+        "path": "src/VisionFramework/WorkflowSubscriptions.cs",
+        "sha256": "3eef9d13467bc687fcfbaa1029f5337ac46ec2c59d6657864306b179ba428c01"
+      },
+      {
+        "path": "src/VisionFramework/WorkflowConfiguration.cs",
+        "sha256": "ad59db622c095ac22c3550c3b3ca4b6491ac31d68108a83e0caa9c56928e7b1f"
+      },
+      {
+        "path": "src/VisionFramework/WorkflowNumericInputRead.cs",
+        "sha256": "803e1fdc6bd764b2b45ad69d22b3aaabbaa874d977c63b497238589b60ca2386"
+      },
+      {
+        "path": "src/VisionEditor/WorkflowLocalVariablesWindow.xaml.cs",
+        "sha256": "b2dc41bad614b015b4406d1ea3b01ffc5b800264c1b9460c7f1edf1196454d39"
+      },
+      {
+        "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558"
+      },
+      {
+        "path": "src/VisionEditor/WorkflowConfigurationHost.cs",
+        "sha256": "6acc3803692f05e9013bd87e4a5ffcedbb011cc501efb3530202e2d1f8b1b52f"
+      },
+      {
+        "path": "src/VisionEditor.Core/GroupInterfacePropagation.cs",
+        "sha256": "9046dd1a9a0145fb4bf8a3a5cca8e41abc16febcccbad4b2080dbf3734ded931"
+      },
+      {
+        "path": "src/VisionFramework/GroupOutputAccumulator.cs",
+        "sha256": "0e40ff1cc5b1764e97537d55b3ef9f6f8a45e394d83c46210cc8973e82cd45f8"
+      },
+      {
+        "path": "src/VisionFramework/GroupBreak.cs",
+        "sha256": "0d8399bc095f69c804507fa390ef7777ab7c080e56da2407b9676ef1eaee2c6a"
+      },
+      {
+        "path": "src/VisionFramework/SolutionExecutor.cs",
+        "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b"
+      }
+    ],
+    "factCount": 8,
+    "referenceCount": 37,
+    "complete": false,
+    "runtimeExecuted": false,
+    "productModified": false,
+    "otherWorktreeRead": false,
+    "implementationCredit": 0
+  }
+}

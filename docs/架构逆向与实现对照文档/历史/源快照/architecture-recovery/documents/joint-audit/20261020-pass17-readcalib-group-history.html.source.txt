@@ -1,0 +1,63 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十七轮：标定加载动态叶变更后的 Group 订阅与历史</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass17-readcalib-group-history.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第十七轮标定加载动态叶变更后的-group-订阅与历史">第十七轮：标定加载动态叶变更后的 Group 订阅与历史</a></p><p style="margin-left:14px"><a href="#原件路径及证据边界">原件路径及证据边界</a></p><p style="margin-left:14px"><a href="#当前代码逐边核查">当前代码逐边核查</a></p><p style="margin-left:14px"><a href="#当前真实-owned-group-探针">当前真实 owned Group 探针</a></p><p style="margin-left:14px"><a href="#最小修复建议与剩余证据">最小修复建议与剩余证据</a></p></details><h1 id="第十七轮标定加载动态叶变更后的-group-订阅与历史">第十七轮：标定加载动态叶变更后的 Group 订阅与历史</h1><p>范围只含标定加载 ReadCalibFile 的动态输出、owned Group 内坐标系 <code>CalibMatrix</code> 订阅、编辑历史与方案保存重开；不重复第十二轮 Group 出口旧映射，也不修改产品或 <code>tool-plugins</code>。本轮结果是<strong>当前实现的真实图行为</strong>，原版文件刷新后是否迁移既有订阅仍未证。</p>
+<h2 id="原件路径及证据边界">原件路径及证据边界</h2><ul>
+<li>原生 ReadCalibFile <code>LoadFile @0x18000ab50</code> 从 XML 的 <code>CalibOutputParam/P@ParamName,DataType</code> 建输出集合，<code>SetParam @0x18000d120</code> 的路径分支加载文件，<code>Process @0x18000c520</code> 在 <code>RefreshSignal</code> 非零时重读并按集合发布；原件/反编译身份见 <a href="20261020-pass12-readcalib-schema.html">第十二轮</a>。该链只说明运行时发布的端口名会变化，<strong>不</strong>说明 Group 或订阅 UI 自动改线。</li>
+<li><code>analysis/decompiled/VM.Core/VM.Core/DynamicVmIO.cs</code> 的 <code>Name</code> setter 先保存 <code>RelateIO/RelateIndex</code>、清关系、对<strong>同一对象</strong>改名，并在 <code>OnNameChanged</code> 恢复关系及触发 <code>Root.InvokeOnModuleIONameChanged</code>；<code>TypeName</code> setter 清叶关系。<code>IMVSGroup.InvokeOnModuleIONameChanged</code> 去 <code>%</code> 后发事件，<code>SetIoParams → GetGroupIoList → SetGroupIO</code> 是 Group IO 映射路径。<code>VmModule.IOData_Undo/Redo</code> 显式 <code>RemoveDynamicOut → SetModuOutputIOInfo → InitDynamicIO → Done_IOData</code>；<code>Done_IOData</code> 在适用时 <code>SetIoParams</code>、<code>RecoverSubscribe</code>、刷新配置树。这里是原版 <strong>UI 改名/动态 IO 历史回放</strong>，没有证据证明 ReadCalibFile 的文件刷新重用原 <code>DynamicVmIO</code> 对象，也没有找到本次源集合内 Group <code>OnModuleIONameChanged</code> 的实际订阅者，故不得外推为原版自动迁移文件叶。</li>
+<li>原托管源 SHA-256：<code>DynamicVmIO.cs</code> <code>23C0A2B880706338298B826D810FE9CD118908E46A60CC1387B7ECA5032CC9A8</code>，<code>VmModule.cs</code> <code>53E2F0F9032C4631B59CF0EB2A00E06D50469D94706E7E370E9CC7E1059C72CE</code>，<code>IMVSGroup.cs</code> <code>DC772AABA433316B7D0F4DC3B0B3C80C3C63769334D7D013896AFE7B54C367D3</code>。</li>
+</ul>
+<h2 id="当前代码逐边核查">当前代码逐边核查</h2><ul>
+<li><code>ReadCalibFilePlugin.Runtime</code> 每次 <code>RefreshSignal=1</code> 解析文件并返回 <code>UpdatedDescriptor</code>；<code>GraphExecutor</code> 仅在本轮运行会话的 <code>descriptors[id]</code> 写该 descriptor。静态 <code>ModuleRegistry.GetDescriptor(node)</code> 从节点持久化 <code>OutputSchema</code> 读候选，因此运行时新叶不会自动修改节点参数或 <code>WorkflowSubscription.Source.Port</code>。源 SHA：<code>ReadCalibFilePlugin.cs</code> <code>B6DF11D12ACE8CA5F3537764F97AEDDC52D03873E5B0D387F01610FD4A12DC02</code>，<code>GraphExecutor.cs</code> <code>6FED55FE29E547248CAB05A36072E690B76EB9668609F0318B795C24D7628F9C</code>。</li>
+<li><code>WorkflowSubscriptions.Validate/SourceType</code> 以静态 descriptor 校验订阅；<code>GraphValidator</code> 把订阅 producer→consumer 加入执行先后约束。对坐标系这种启用 <code>SupportsDeferredNumericRead</code> 的输入，<code>GraphExecutor</code> 解析旧叶抛 <code>InvalidDataException</code> 时，若 producer <strong>本轮成功</strong>，走 <code>CanDeferNumericRead</code> 并把读取留给 <code>WorkflowNumericInputRead</code>/工具执行。此路径没有像直接 <code>ConnectionDocument</code> 一样按本轮更新后的动态 descriptor 预先阻止缺叶订阅；这解释了下述 warm/cold 分叉。源 SHA：<code>WorkflowSubscriptions.cs</code> <code>3EEF9D13467BC687FCFBAA1029F5337AC46EC2C59D6657864306B179BA428C01</code>，<code>WorkflowRunContext.cs</code> <code>D00F29701F640028040E0F2C3D1AC11246FFB500945246C3424E435741241247</code>。</li>
+<li><code>GraphEditorDocument.SetParameters</code> 改静态 <code>OutputSchema</code>，<code>SetWorkflowConfiguration</code> 校验并写订阅；<code>ExecuteConfigurationEdit</code> 将连续配置写入一个文档历史根，<code>Undo/Redo</code> 回放快照。<code>Save/Load</code> 保存和恢复最终文档。探针用这些公开 API 代表<strong>受控程序化编辑</strong>，未自动操作原版或当前 WPF 订阅选择器。源 SHA：<code>GraphEditorDocument.cs</code> <code>4A44A59C96449A286EAC7162E42A0B42DD012669F49E5AA810E1CE131799B558</code>，<code>GraphEditorDocument.History.cs</code> <code>D4A3F13130E6C9334547ECAF567C5CBF34E122E976166990FA02BB796522411F</code>。</li>
+</ul>
+<h2 id="当前真实-owned-group-探针">当前真实 owned Group 探针</h2><p>ignored 目录 <code>analysis/joint-audit/pass17-readcalib-group-history/</code> 中 <code>probe.csproj</code>/<code>Program.cs</code> 建真实 Group body：ReadCalibFile <code>OldMatrix:FloatList</code> 九项→<code>Coordinate.CalibMatrix</code> <strong>WorkflowSubscription</strong>，ImageSource→Coordinate <code>InputImage</code>，Coordinate <code>CorCalibMatrix</code>→Group <code>Matrix</code> 出口；Read→Coordinate 有显式执行边。图像由本探针提交到 body scope；文件在本探针独占目录。首两轮失败暴露必须给订阅 producer 显式执行先后；第三、四轮错误断言把 deferred numeric 的 warm 行为误写成立即订阅失败，均保留。最终 <code>dotnet run --project analysis/joint-audit/pass17-readcalib-group-history/probe.csproj -c Release</code> exit 0、13 项断言通过。</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>持久化选择</th>
+<th>运行时发布</th>
+<th>Coordinate / Group 当前结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原文件</td>
+<td><code>OldMatrix</code></td>
+<td><code>OldMatrix</code></td>
+<td>两者 Success；Group <code>Matrix=[1,0,0,0,1,0,0,0,1]</code>。</td>
+</tr>
+<tr>
+<td>文件改名，同 warm scope</td>
+<td><code>OldMatrix</code></td>
+<td><code>NewMatrix</code></td>
+<td>两者 Success；坐标系 <code>ModuStatus=0</code>，Group 仍输出同九项。<strong>此时输出不能证明新文件的 NewMatrix 已到消费者。</strong></td>
+</tr>
+<tr>
+<td>同文件改名，cold scope</td>
+<td><code>OldMatrix</code></td>
+<td><code>NewMatrix</code></td>
+<td>Coordinate <code>Failed/NativeUninitializedMatrix</code>，Group <code>Failed/SubprogramFailed</code>，无 <code>Matrix</code>。</td>
+</tr>
+<tr>
+<td>显式更新静态 <code>OutputSchema</code> 和订阅</td>
+<td><code>NewMatrix</code></td>
+<td><code>NewMatrix</code></td>
+<td>两者 Success；坐标系 <code>ModuStatus=1</code>。</td>
+</tr>
+<tr>
+<td>一次 Undo</td>
+<td><code>OldMatrix</code></td>
+<td><code>NewMatrix</code></td>
+<td>schema 和订阅一起回旧；warm 再次 Success、<code>ModuStatus=0</code>，输出同九项；不代表重新绑定成功。</td>
+</tr>
+<tr>
+<td>Redo；保存重开（fresh scope）</td>
+<td><code>NewMatrix</code></td>
+<td><code>NewMatrix</code></td>
+<td>两者 Success，<code>ModuStatus=1</code>，Group 九项出口有效。</td>
+</tr>
+</tbody></table>
+<p>因此最短可关闭的<strong>当前文档历史/持久化边</strong>是：显式 schema+订阅组合编辑 → 单次 Undo/Redo 同步还原 → 保存重开保留新选择并在 fresh scope 成功消费新叶。相反，“文件重命名自动迁移旧订阅”没有发生；warm 旧矩阵可通过 Group，不能只看 <code>NodeRunStatus.Success</code> 判断图像/标定新数据链已接通。</p>
+<h2 id="最小修复建议与剩余证据">最小修复建议与剩余证据</h2><p>若主框架要求动态源名变化时禁止旧订阅作为当前值进入工具，建议在 <code>GraphExecutor</code> 的订阅解析前，针对 <code>WorkflowSourceKind.NodeOutput</code> 且本轮 producer <code>SupportsDynamicOutputs</code> 的来源，用 <strong>本轮</strong> <code>descriptors[producer]</code> 校验端口存在及 kind/cardinality 与目标相容，缺失/改型时给消费者明确的动态订阅失败，阻断 deferred fallback；这与同函数现有直接连接的 <code>DynamicConnectionInvalid</code> 判定位置对称。它是<strong>当前实现的安全一致性建议</strong>，并非经原件证实的原版行为；主框架写入者应先确认产品希望的 warm 保旧政策，尤其 Coordinate 原生缓存可保旧矩阵。不能仅因当前 warm 成功就擅自清缓存或宣称用户 UI 缺陷。</p>
+<p>原版 ReadCalibFile 文件刷新→托管 <code>VmModule</code> IO 更新通知、Group 事件实际处理者与旧订阅迁移结果仍缺精确 caller/受控原版运行。当前 WPF 选择器是否把 <code>OutputSchema</code> 与 <code>WorkflowSubscription</code> 当同一配置历史根也未作交互桌面操作；本轮是同 API 受控构造。<code>ModuStatus=0/1</code> 只记实测值，不从本轮反推原生状态语义。冷失败是当前安全拒绝未知初始矩阵，不声称原版也如此。</p>
+<p>探针身份 SHA-256：<code>Program.cs</code> <code>CE6D5041FBC0E9944D58DD5F1BE9D16295CB990032EDB1B75C2B86D57A2726C9</code>，<code>probe.csproj</code> <code>B7B7F8434BA6080B3ED7199DDEEBE42886BBBB5039E762A1F3139F6CDEAA16CC</code>，最终 <code>final-run.log</code> <code>AD00EBB72C4C6297383DBF91869AAE7E832B71C84FF152A7F2AB2648FABFA71C</code>。失败轨迹 <code>first-run.log</code> <code>3987BE23C11E78A47AB85DCCEB82CA9AD85A66A69CDA464B873838F37857AD0F</code>、<code>second-run.log</code> <code>521E553032DBDD6284443880BAC6608EC6EE81D19F1186B5BC75582DE9A5728B</code>、<code>third-run.log</code> <code>7D43CFC6A7F74CEB13DC3D7A7A167E0109C9D16AADE04DFA6D4BE94BBA54D07E</code>、<code>fourth-run.log</code> <code>E7D4DAED734B5C9B33386BBA826C397255B28CBEEA3D0E77154A5A14FB26D255</code>。生成 <code>dynamic.xml</code> 与 <code>group-history.vmx.json</code> 含实例路径/ID，不承诺跨运行字节哈希稳定。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass17-readcalib-group-history.md · SHA256 88fae594e391e4f8e2f921fe8e9f936a5e19fd452d1fa00b1fd384bf5f69ab9c<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

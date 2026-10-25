@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LoadToolCategory · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>LoadToolCategory · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C02"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>LoadToolCategory → ToolCategoryLoadState.EnsureLoaded</h2><p>分类 ID 持有状态；EnsureLoaded 在枚举前设初始化、记录尝试；异常保留已读项和 Failure 并重抛。首次宿主异常提示并拒绝开窗；后续使用保留项。</p><p><a href="../专题/loading-navigation.html#edge-C02">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/loading-navigation.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/loading-navigation.edges.json · SHA256 1aa075627c117289aeb061c4bf496955ccab2a4fae0d0b6c4af6d7aba8f13261</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="d7d14a8d38c86f566dd5dcba8a0db424dc94673c7ba11931ee6a8a33a8c32381">{
+  &quot;id&quot;: &quot;C02&quot;,
+  &quot;route&quot;: &quot;当前 · 分类加载&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;LoadToolCategory&quot;,
+  &quot;to&quot;: &quot;ToolCategoryLoadState.EnsureLoaded&quot;,
+  &quot;behavior&quot;: &quot;分类 ID 持有状态；EnsureLoaded 在枚举前设初始化、记录尝试；异常保留已读项和 Failure 并重抛。首次宿主异常提示并拒绝开窗；后续使用保留项。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolCatalogLoadSession.cs&quot;,
+      &quot;member&quot;: &quot;ToolCategoryLoadState.EnsureLoaded&quot;,
+      &quot;sha256&quot;: &quot;c132f8b67c51cd1aacae57e6bd9607d892569cc469194509fa841e6a155a4ba3&quot;,
+      &quot;start&quot;: 13,
+      &quot;end&quot;: 20,
+      &quot;excerpt&quot;: &quot;    public void EnsureLoaded(Func&lt;IEnumerable&lt;T>> load)\n    {\n        if(IsInitialized)return;\n        IsInitialized=true;Attempts++;\n        try {foreach(var item in load())items.Add(item);}\n        catch(Exception error){Failure=error;throw;}\n    }\n}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolNavigation.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.LoadToolCategory&quot;,
+      &quot;sha256&quot;: &quot;2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2&quot;,
+      &quot;start&quot;: 66,
+      &quot;end&quot;: 76,
+      &quot;excerpt&quot;: &quot;    CatalogGroup? LoadToolCategory(CatalogGroup group)\n    {\n        if(!toolCategoryLoads.TryGetValue(group.Id,out var state))toolCategoryLoads[group.Id]=state=new();\n        try{state.EnsureLoaded(()=>ReadCategoryTools(group.Id));}\n        catch(Exception error)when(error is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or InvalidOperationException)\n        {\n            StatusText.Text=\&quot;工具分类加载失败：\&quot;+error.Message;\n            return null; // First failure aborts opening; no automatic retry or silent recovery.\n        }\n        return group with{Items=(state.Failure is null?state.Items.OrderBy(t=>t.Priority):state.Items.AsEnumerable()).ToArray()};\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;这不证明与原始扁平 ObservableCollection 的通知/部分失败呈现同构。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

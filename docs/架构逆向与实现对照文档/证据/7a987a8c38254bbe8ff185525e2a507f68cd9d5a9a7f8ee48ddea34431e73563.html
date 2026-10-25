@@ -1,0 +1,66 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 7a987a8c3825 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 7a987a8c3825</p><h1>原文证据 7a987a8c3825</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 7a987a8c38254bbe8ff185525e2a507f68cd9d5a9a7f8ee48ddea34431e73563。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupRunParam.cs:251–314
+SHA256 2dc56723dca76cafc942a30bdabbb238cb069866c2c3e0ad0f7cd40ec851734b
+	private void ConfigCommandExecute(DialogHandler method)
+	{
+		GroupRunParamConfigData groupRunParamConfigData = new GroupRunParamConfigData();
+		groupRunParamConfigData.Owner = Owner;
+		groupRunParamConfigData.Parent = this;
+		groupRunParamConfigData.Collection = new ObservableCollection&lt;RunParamConfigDecorate&gt;();
+		foreach (DynamicNameValueItemOfGroupCategory item3 in GroupCollection)
+		{
+			groupRunParamConfigData.Collection.Add(ParamConfigDataBase.GetRunParamConfigDecorateForGroup(item3));
+		}
+		List&lt;DynamicNameValueItemOfGroup&gt; list = new List&lt;DynamicNameValueItemOfGroup&gt;();
+		foreach (DynamicNameValueItemOfGroup item in Collection)
+		{
+			RunParamConfigDecorate runParamConfigDecorate = groupRunParamConfigData.Collection.LastOrDefault((RunParamConfigDecorate p) =&gt; p.GroupName == item.Group);
+			if (runParamConfigDecorate != null)
+			{
+				int index = groupRunParamConfigData.Collection.IndexOf(runParamConfigDecorate);
+				groupRunParamConfigData.Collection.Insert(index, new RunParamConfigDecorate
+				{
+					DecorateSource = item,
+					Owner = Owner
+				});
+			}
+			else
+			{
+				list.Add(item);
+			}
+		}
+		list.ForEach((DynamicNameValueItemOfGroup q) =&gt;
+		{
+			groupRunParamConfigData.DeleteParam(new RunParamConfigDecorate
+			{
+				DecorateSource = q,
+				Owner = Owner
+			});
+		});
+		Ioc.Get&lt;IUnRedoService&gt;()?.SetForbidRecord(isForbid: true);
+		method.Invoke((object)groupRunParamConfigData);
+		Ioc.Get&lt;IUnRedoService&gt;()?.SetForbidRecord(isForbid: false);
+		collection = null;
+		groupCollection = null;
+		OnPropertyChanged(&quot;Collection&quot;);
+		OnPropertyChanged(&quot;GroupCollection&quot;);
+		GetParamUnit();
+		IEnumerable&lt;DynamicNameValueItemOfGroupCategory&gt; enumerable = groupRunParamConfigData.Collection.Select((RunParamConfigDecorate p) =&gt; p.GroupName).Distinct();
+		foreach (DynamicNameValueItemOfGroupCategory item2 in enumerable)
+		{
+			DynamicNameValueItemOfGroupCategory dynamicNameValueItemOfGroupCategory = GroupCollection.FirstOrDefault((DynamicNameValueItemOfGroupCategory p) =&gt; p.ID == item2.ID);
+			if (dynamicNameValueItemOfGroupCategory != null)
+			{
+				dynamicNameValueItemOfGroupCategory.IsExpanded = item2.IsExpanded;
+			}
+		}
+	}
+
+	public override int GetParamUnit()
+	{
+		foreach (DynamicNameValueItemOfGroup item in Collection)
+		{
+			if (item.IsRelationEnable)
+			{
+				try
+				{
+					item.CloneSource.GetParamUnit();</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/group-data-pipeline--interfaces.html">数据/group-data-pipeline--interfaces.html</a></li><li><a href="../数据/group-data-pipeline--internal-edit.html">数据/group-data-pipeline--internal-edit.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

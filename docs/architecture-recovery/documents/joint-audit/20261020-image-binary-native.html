@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>图像二值化：原版模块／SDK 证据链联合审查（C 线，2026-10-20）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-image-binary-native.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#图像二值化原版模块sdk-证据链联合审查c-线2026-10-20">图像二值化：原版模块／SDK 证据链联合审查（C 线，2026-10-20）</a></p><p style="margin-left:14px"><a href="#身份与复验状态">身份与复验状态</a></p><p style="margin-left:14px"><a href="#逐段链路与证据边界">逐段链路与证据边界</a></p><p style="margin-left:14px"><a href="#后续源码级逆向优先级给框架插件联合线">后续源码级逆向优先级（给框架／插件联合线）</a></p></details><h1 id="图像二值化原版模块sdk-证据链联合审查c-线2026-10-20">图像二值化：原版模块／SDK 证据链联合审查（C 线，2026-10-20）</h1><p>范围：只读检查原版 VisionMaster 4.4.0 安装资源、托管程序集、公开 SDK 头文件及既有审计证据。本文只给框架—节点联合审查提供原版边界和取证优先级；没有修改产品、运行安装目录模块或触碰 <code>tool-plugins</code>。用户截图和产品现状不代替原版源码契约。</p>
+<h2 id="身份与复验状态">身份与复验状态</h2><p>原模块目录为 <code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSBinaryModu/</code>。本轮直接重算：<code>IMVSBinaryModu.dll</code> SHA-256 <code>C03BCB19EF456206E3ABF4D2A8D5279BE37C12EB5662E191F0965029CDABEB48</code>，<code>IMVSBinaryModuCs.dll</code> <code>7AEAA27038210D58604C4675787048050403EE2885A77B76A5AF0575952290D6</code>；<code>IMVSBinaryModu.xml</code> <code>30C47A31236E4EA48F6C30DA4FCBA33B03E17B5C3CD470C0A89C2247470DBB86</code>，<code>IMVSBinaryModuAlgorithm.xml</code> <code>EEBEE2E22C782DC0247DD5F3C62C96F27E542271B681A2D60AACD1400DF07900</code>，<code>IMVSBinaryModuAlgorithmTab.xml</code> <code>08AE81E7C8BC57B4E095AE2D0B98F08D8AFE8F34EBB065B928DD4336EF87FDD7</code>，<code>IMVSBinaryModuCs.xml</code> <code>80DF3CE60B1386F705C77425CDE34D0E15F4FB216FE749F400E7452DE5A50443</code>，<code>IMVSBinaryModuDisplay.xml</code> <code>0D0C41CFCF7897B61041AEF0B3FE8035A468C19C892054852001E7EE085F1C8B</code>，<code>ToolItemInfo.xml</code> <code>1D5200C180CDCF0E1283E366F52CC78AB61826985406A9391F9F0536129A1834</code>。这些与 <code>docs/plugins/IMAGE-BINARY-SOURCE-AUDIT.md</code> 所列身份一致。</p>
+<p>SDK <code>MVDAlgorithmSDK/Includes/Algorithms/ImageBinaryCpp.h</code> 本轮 SHA-256 <code>51AED98FDC735FAB0808974A9E35540D41431E7E119888DCC8BDF93E67EBC851</code>；<code>ReferencedAssemblies/Algorithms/MVDImageBinary.Net.dll</code> <code>A2F413DE33E60095A51AE47D211F32ACD344DFA14DCD32A61CAA2C1E3DB09F92</code>；<code>Runtime/x64/MVDImageBinaryCpp.dll</code> <code>BE4E6B8E2A15748144F52C66E810C1479ACAAF2AE05F3739F87C919284C1EB72</code>。本地 <code>analysis/decompiled/.../ImageBinaryModuParams.cs</code> 与 <code>ImageBinaryModuTool.cs</code> 的哈希分别为 <code>B1FDBC801659E768D7B84A659FA632077BE8C80D6FC6799DB97C6ED8F113B388</code>、<code>26C706F81A37E8FEB9893BFD5580970167E9209C13E8DF4C09E33E8BA8CE5739</code>，与旧审计一致。</p>
+<p><strong>旧审计可复验性修正：</strong> <code>docs/plugins/IMAGE-BINARY-SOURCE-AUDIT.md</code> 引用的 <code>analysis/source-audit-regression/20261018/ghidra-binary/output/</code>、<code>ghidra-imagebinary-sdk/output/</code>、<code>native-binary-modes/evidence.json</code>、<code>compare.log</code> 和 <code>supplemental/RoiTool.Checks.final.stdout.log</code> 在当前主工作树 <code>analysis/</code> 中均不存在。因此“<code>ProcessAlg</code> 的具体调用顺序”“算法 ID <code>0x25a</code>”“单夹具像素匹配/383 像素差异”“221 项检查通过”属于<strong>有历史文字记录但本轮无法复核原始产物</strong>，不能作为新实现的充分依据。原始安装 DLL 和测试源码仍在；缺失的是此前生成的反编译、探针输出及日志，不等于历史执行从未发生。</p>
+<p>REA 本轮直接只读复核托管目标：<code>inspect_managed_artifact</code> 证据 <code>ev_0ab04b936fe48e659487b049512013217b52c69bbb102b6969e9f3bacc46db34</code>，完整元数据覆盖、目标哈希与上面一致；<code>inspect_managed_members</code> 证据 <code>ev_10151faecb39fa6f099678a61e1c5b1d9fbee890fb4c01745b4285023d76793d</code>，成员覆盖标记 <code>partial</code>，未报告解析 issue。原生目标 <code>open_binary</code> 确认 PE x64 和上述 DLL 哈希；<code>binary_session</code> 显示 Ghidra <code>not_configured</code>（<code>GHIDRA_INSTALL_DIR</code> 未设置，Java/Ghidra 执行文件均不可用），IDA 亦未配置。本轮不安装、不改 provider 环境，所以没有获得新的原生函数体或指令证据。</p>
+<h2 id="逐段链路与证据边界">逐段链路与证据边界</h2><table>
+<thead>
+<tr>
+<th>段</th>
+<th>本轮直接确认</th>
+<th>尚缺的调用链证据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>输入及订阅</td>
+<td><code>IMVSBinaryModuAlgorithmTab.xml</code> 第 6–8 行链接 <code>ImageSourceGroup</code>；原安装 <code>Module(sp)/Group.xml</code> 第 5–37 行的 <code>ImageSource</code> 用 <code>GetFrontParamItemsOperation(IMAGE)</code> 填 <code>EnumEntrys</code>，用 <code>GetSelectedCombinationOperation(InputImage)</code> 初始化选择，变化时用 <code>SetCombinationSourceOperation(InputImage)</code> 写关系。模块 XML 第 31–96 行定义必需 <code>InputImage</code>（image、宽、高、像素格式）及可选 <code>InputMask</code>、<code>InputROI</code>、<code>InputROIAnnulus</code>、Fixture、屏蔽多边形字符串。</td>
+<td>这些操作的具体 CIL/宿主执行、连接变更与撤销/保存、运行时像素缓冲所有权，须由框架线连接插件线；XML 本身不证明默认连接、具体显示字符串或错误行为。</td>
+</tr>
+<tr>
+<td>参数与五模式</td>
+<td><code>Algorithm.xml</code> 给出 <code>BinaryType=1</code> 与各运行参数默认值；<code>AlgorithmTab.xml</code> 中 <code>BinaryType</code> 值 1、2、3、8、4 均标 <code>IsImplemented=0x1</code>，触发器分别控制硬阈值、均值、高斯、Sauvola、自动阈值附属字段的可见性。<code>IMVSBinaryModuCs.ImageBinaryParam</code> 的相应属性在托管 CIL 中把值交给通用参数对象；旧公共 SDK 源码缺 Sauvola 字段，不能替代当前安装模块 XML/程序集。</td>
+<td>UI 变更是否即刻 <code>SetParam</code>、参数应用顺序、边界非法值及运行时序列化均未由这些声明证明。五个选项可见也不证明五算法的数值公式。</td>
+</tr>
+<tr>
+<td>ROI/掩膜</td>
+<td>Tab XML 链接 <code>OutputMaskImageGroup</code>、<code>InputMaskImageGroup</code>、<code>RoiSelectGroup</code>、<code>InheritWayGroup2</code>、<code>ExternROITypeGroup</code>、<code>AssistGroup</code>；<code>ROISelecter RoiType</code> 声明 <code>Box SectorRing Polygon Sector</code>、最多 16 个。托管 <code>ImageBinaryRoiManager</code> 有矩形、环形、盲区多边形、MaskImage 的委托 setter。SDK <code>IImageBinaryTool</code> 公开 <code>SetROI</code>、<code>AddMask</code>、<code>ClearMasks</code>、<code>RemoveMaskAt</code>、<code>SetRegionImage</code> 和 <code>GetRegionImageAssistant</code>；头文件说 <code>SetROI(NULL)</code> 为全区、<code>AddMask</code> 仅支持多边形，并要求区域图与 ROI 配置一致。</td>
+<td>原模块在何条件调用各 SDK setter、ROI 集合是逐个覆盖/合并还是另行变换、mask 与区域图先后及失败清理，必须看 <code>ProcessAlg</code> 指令/ABI；不能由接口存在推导。</td>
+</tr>
+<tr>
+<td>执行</td>
+<td><code>IMVSBinaryModuCs.IMVSBinaryModuTool.Run</code> token <code>0x06000007</code>（7 条 CIL）通过 <code>get_serverSDKManager</code> 与模块 ID 调 <code>SyncSelfRun</code>；<code>get_ModuResult</code> token <code>0x06000004</code> 调 <code>QueryModuleOneResult</code>，取得结果后再 <code>SetModuleResult</code>。REA 成员证据如上。SDK 头公开 <code>IImageBinaryTool::Run</code>、<code>GetResult</code>、<code>GetAlgRunTime</code>，并导出 <code>CreateImageBinaryToolInstance</code>/<code>DestroyImageBinaryToolInstance</code>。</td>
+<td>从 <code>SyncSelfRun</code> 到模块 <code>Process</code>/<code>ProcessAlg</code> 的实际平台桥、SDK vtable 槽和通用算法入口未在本轮恢复。旧报告的 <code>0x25a</code> 为待重获原生体后确认的历史结论。</td>
+</tr>
+<tr>
+<td>输出、错误、释放</td>
+<td>模块 XML 第 99–185 行声明必需 <code>ModuRunTime</code>、<code>ModuStatus</code>、<code>OutputImage</code>，可选 <code>OutputMask</code>、ROI/盲区等；<code>OutputMask</code> 子字段 <code>AllowAutoSubscribeByOther=False</code>。SDK 头公开结果图、<code>IImageBinaryResult::Clear</code> 与销毁工具导出。</td>
+<td>成功/失败分支的发布门、旧结果是否清除、错误码映射、<code>Clear</code> 与 destroy 何时调用、异常安全/所有权均未由 XML/头文件确定。原生 <code>ProcessOutput</code>/<code>DeInit</code> 及 EH/汇编需重新取证。</td>
+</tr>
+</tbody></table>
+<h2 id="后续源码级逆向优先级给框架插件联合线">后续源码级逆向优先级（给框架／插件联合线）</h2><ol>
+<li><strong>P0 原模块实际运行闭环。</strong> 对当前哈希 <code>C03B...ABEB48</code> 的 <code>Init</code>、<code>SetParam</code>、<code>Process</code>、<code>ProcessAlg</code>、<code>ProcessOutput</code>、<code>DeInit</code>、异常 funclet 恢复完整伪代码和调用点汇编；逐分支记录输入缺失/像素格式、ROI/Mask/区域图、参数 setter、<code>Run</code>、结果提取、输出发布、错误返回及释放。每个虚调用确认 vtable 槽和寄存器／栈实参，不能把伪代码省参当真实 ABI。生成的文本/证据哈希写本工作树的新受控目录；禁止在原安装目录输出。</li>
+<li><strong>P0 框架到节点追踪。</strong> 从 <code>Group.xml</code> 的三个输入源操作体及原主框架连接事务追到 <code>InputImage</code> <code>RelateIO</code>、订阅候选、运行时输入组合结构；对比当前主框架连接／保存／撤销／Group 执行与插件执行上下文。重点验证来源断开、重接及上游输出变更后候选/像素值/掩膜是否同步，不以控件显示正确代替执行正确。</li>
+<li><strong>P1 SDK 和核心算法。</strong> 取当前哈希 <code>BE4E...284C1EB72</code> 的工厂、Run vtable、<code>SetRunParam</code>、<code>SetROI</code>/Mask/Region、结果与销毁体，再以真实调用 ID/结构追 <code>MVD_Algorithm.dll</code> 的分派及五模式函数；核对 ABI、行步长、边界扩展、相等比较、参数类型和所有权。历史 <code>0x25a</code> 及单夹具均值/高斯/OTSU 推测必须由原指令和多夹具差分重新证实；Sauvola 优先查具体分支而非继续枚举意图公式。</li>
+<li><strong>P1 受控操作探针。</strong> 在自有复制输入、输出路径中建立 mode×ROI×mask×像素格式×重复运行的有限矩阵，记录原 SDK／原模块两层的参数、返回码、图像哈希和释放计数；加入空/非法输入、跨轮旧结果与失败恢复。原模块可能清理工作目录，探针必须先分析副作用并使用自有受控实例；安装原件和其他任务 TempFiles 不得作服务目录。SDK 单独运行与原 VM 桌面验收分列，不能互相冒充。</li>
+<li><strong>P2 审计证据修复。</strong> 如旧 <code>analysis/source-audit-regression</code> 产物在其他合法审计包中找到，核哈希/原 DLL 身份后恢复可读索引；若没有，按 1–4 重新生成，不以旧报告数字作当前完成率。下一位审查者只需重用上面的固定 SHA、REA 托管 Evidence ID 和原安装 XML，即可复现本轮确认范围。</li>
+</ol>
+<p>判断：当前可确定的是<strong>输入/参数/输出的声明边界和托管运行入口</strong>，不能确定原生调用、五种像素算法或失败释放的完整行为。图像二值化与其他节点的显著差异需要在 P0/P1 联合链路上收口；在此之前，任何从截图或单夹具公式直接修产品的改动均应标为独立兼容实现，不能称原版复刻。</p>
+<p class="meta">来源：docs/joint-audit/20261020-image-binary-native.md · SHA256 c33548fb2c3e22e71ec2e6841351ce28e8eb36c48f8f55f98343df0f94924359<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

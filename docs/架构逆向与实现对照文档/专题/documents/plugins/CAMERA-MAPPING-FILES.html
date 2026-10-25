@@ -1,0 +1,64 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>相机映射标定文件、缓存与失败资格 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 相机映射标定文件、缓存与失败资格</p><h1>相机映射标定文件、缓存与失败资格</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>相机映射标定文件、缓存与失败资格</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="CAMERA-MAPPING-FILES.html">下载原始文件</a></nav><main><h1 id="相机映射标定文件缓存与失败资格">相机映射标定文件、缓存与失败资格</h1><p>原厂安装模块CLI静态证据位于当前工作树 <code>analysis/camera-mapping/ghidra/module</code>：GetProcessInput=0x18000a710、ProcessAlg=0x18000bd20、ProcessCalibMatrix=0x18000c200、SetParam=0x18000ce30、WriteCalibFile=0x18000d450、ResetMember=0x18000caf0。它们是独立CLI结果，不冒充REA原生提供器输出。受控模块探针使用正常创建官方算法对象与synthetic ModuleFrame IO，无设备和平台Init。</p>
+<table>
+<thead>
+<tr>
+<th>操作/边界</th>
+<th>原厂证据</th>
+<th>当前实现与验证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CalibPathName</td>
+<td>SetParam只存路径；OpenFileForCalibDialog验证后SetParamUnit及PreExecuteRun</td>
+<td>公共State按源CanTriggerRun执行；Refresh=false时不立即写cached矩阵，实际Graph检查通过</td>
+</tr>
+<tr>
+<td>RefreshFileEnable</td>
+<td>ProcessAlg完成MatrixToParam后置两个有效标记，再WriteCalibFile</td>
+<td>有效2点运行写文件；无效父目录返回0xe0000001，不发布输出；产品同边界</td>
+</tr>
+<tr>
+<td>显式SaveCalibPath</td>
+<td>要求this+0x18有效；规范化路径、先更新同一内部路径，再ProcessCalibMatrix重算并写</td>
+<td>配置保存更新路径读回；重新使用缓存点及当前HomoFreedom/Weight参数，而非直接复制旧矩阵</td>
+</tr>
+<tr>
+<td>文件格式</td>
+<td>WriteCalibFile用_wfopen(wb)，GetResult取得9float，fwrite 0x24字节</td>
+<td>小端36字节，无自创头；原厂透视、重算仿射、自动保存及IO失败后导出样例保留哈希/字节</td>
+</tr>
+<tr>
+<td>模型编辑后保存</td>
+<td>4点透视→只Set HomoFreedom2→SaveCalibPath</td>
+<td>原厂导出变仿射；产品9系数逐项比较固定0.003通过</td>
+</tr>
+<tr>
+<td>点缓存生命周期</td>
+<td>GetProcessInput仅在容量0x70小于当前总点数时重新分配；否则覆盖前缀。ProcessAlg循环当前数量，ProcessCalibMatrix循环容量</td>
+<td>保留旧尾点，未擅自修复原厂行为；4点→2点后导出与官方文件9系数匹配</td>
+</tr>
+<tr>
+<td>自动保存IO失败</td>
+<td>ProcessAlg在WriteCalibFile前已置有效标记，失败不清该标记</td>
+<td>原厂自动写失败0xe0000001后，换有效路径显式Save成功；产品同样可重新保存</td>
+</tr>
+<tr>
+<td>MatrixToParam失败</td>
+<td>置有效标记之前失败；两点零尺度常量矩阵返回0x1000010f</td>
+<td>随后显式Save返回0xe0000018；未生成singular文件</td>
+</tr>
+<tr>
+<td>缺少输入</td>
+<td>Process开头清有效标记，输入缺失后没有可保存结果</td>
+<td>原厂显式Save返回0xe0000018；产品失效保存资格并清显示</td>
+</tr>
+<tr>
+<td>清理与复位</td>
+<td>ResetMember清标记/点缓冲/路径；配置ResetAlgoParams是独立公共宿主动作，不能擅自等同析构ResetMember</td>
+<td>实际配置确认复位参数并恢复两组固定点通过；作用域销毁释放工具状态，不清别的流程</td>
+</tr>
+</tbody></table>
+<p>原厂导出文件：<code>module.iwcal.perspective.iwcal</code>、<code>module.iwcal.recalculated-affine.iwcal</code>、<code>module.iwcal.refresh.iwcal</code>、<code>module.iwcal.after-io-failure.iwcal</code>。原厂SetParam/Process结果均在 <code>analysis/camera-mapping/native/module-results.jsonl</code>。相机专属生产WPF/Graph检查更新为110项；既有118组SDK差分通过；仍不证明完整原生平台订阅或桌面像素一致。</p>
+<p>2026-10-18补证：官方受控模块one-pair-other-group-absent返回0x80100005；no-active-groups返回0xe00000ff；active但所有叶都缺失返回0xe0000309。产品按整组0点与部分数量错误分别处理，不把模块输入失败都报成求解器点数错误。</p>
+<p>显式导出已消费ReadEffectiveParameters；UserData写入构造next前同步既有values，避免解绑已保留50后被旧seed20覆盖，生产控件检查已验证。</p>
+<p class="meta">来源：docs/plugins/CAMERA-MAPPING-FILES.md · SHA256 0748a52bf534ace73c00c04c488e881ae36e5238bd176460964448538d984be3<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

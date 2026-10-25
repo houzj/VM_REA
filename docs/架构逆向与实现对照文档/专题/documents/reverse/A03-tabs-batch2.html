@@ -1,0 +1,142 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A03：流程 Tab、Group 显示与缩放持久化（第二批） · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / A03：流程 Tab、Group 显示与缩放持久化（第二批）</p><h1>A03：流程 Tab、Group 显示与缩放持久化（第二批）</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A03：流程 Tab、Group 显示与缩放持久化（第二批）</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="A03-tabs-batch2.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="A03-tabs-batch2.html#a03流程-tabgroup-显示与缩放持久化第二批">A03：流程 Tab、Group 显示与缩放持久化（第二批）</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#身份和可复验产物">身份和可复验产物</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#新增确认一tab-的所属流程和当前显示-group-是两种身份">新增确认一：Tab 的所属流程和当前显示 Group 是两种身份</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#新增确认二运行按钮始终针对所属流程而非当前显示-group">新增确认二：运行按钮始终针对所属流程，而非当前显示 Group</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#新增确认三缩放不是仅存于-zoomarea-控件">新增确认三：缩放不是仅存于 ZoomArea 控件</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#main-对照和可实施差异">main 对照和可实施差异</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#精确-cil-锚点">精确 CIL 锚点</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#安全审查与未运行原因">安全审查与未运行原因</a></p><p style="margin-left:14px"><a href="A03-tabs-batch2.html#nextaction--关闭门槛">nextAction / 关闭门槛</a></p><p style="margin-left:28px"><a href="A03-tabs-batch2.html#本地会话缓存清理的最小回归步骤交-root尚未执行">本地会话缓存清理的最小回归步骤（交 root，尚未执行）</a></p></details><h1 id="a03流程-tabgroup-显示与缩放持久化第二批">A03：流程 Tab、Group 显示与缩放持久化（第二批）</h1><p>2026-10-19；main 基线 <code>6e5b05c</code>。本批关闭的是下述静态子问题，不关闭 A03 工作包。未重跑 A01 的 17 项断言，未执行原厂 WPF/SDK、设备或桌面操作，未修改产品、共享台账或 tool-plugins。</p>
+<h2 id="身份和可复验产物">身份和可复验产物</h2><ul>
+<li>原件：<code>D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VMControls.WPF.dll</code>，SHA256 <code>99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d</code>，MVID <code>d144317f-3992-4275-9b0f-13fb6163e07d</code>。</li>
+<li>REA <code>inspect_managed_members</code> Evidence <code>ev_dd0a0670e77771079905d007438370d5ca2fd94b3ea25e9acef8513d1a0cea0f</code>：原件身份可得，成员覆盖 <strong>unavailable</strong>，具体限制是 metadata representation 超过 67108864 字节预算（offset 730996）。完整结果保留在 <code>analysis/full-audit/batch2-20261019/A03/rea-members-result.json</code>。没有把空 methods 误报为方法不存在，也没有重复相同调用。</li>
+<li>补充工具：<code>tests/NativeEvidence/A03/ExportTabsCil.cs</code> 使用 .NET Framework <code>ReflectionOnlyLoadFrom</code>，仅读取元数据、方法体与异常区，不执行目标构造器、属性或方法。命令 <code>&amp; tests/NativeEvidence/A03/Run.ps1</code>，exit 0，导出 <strong>22 个方法体</strong>。这是静态取证结果，不是 22 项原厂运行测试。</li>
+<li>输出：<code>analysis/full-audit/batch2-20261019/A03/cil-methods.json</code>（原始 CIL SHA256、token、异常区）、<code>cil-disassembly.txt</code>（带精确 IL offset 的操作数解析）、<code>source-sha256.csv</code>（15 个源码/资源/对照文件身份）、<code>stdout-stderr.log</code>、<code>output-sha256.csv</code>。脚本比较取证前后原件哈希，未变。</li>
+<li>原始反编译根为 <code>analysis/decompiled/VMControls.WPF/</code>；以下文件路径均相对仓库根，行号绑定本批 <code>source-sha256.csv</code>，不能跨版本视为恒定地址。</li>
+</ul>
+<h2 id="新增确认一tab-的所属流程和当前显示-group-是两种身份">新增确认一：Tab 的所属流程和当前显示 Group 是两种身份</h2><p>证据类型：source-confirmed，关键分支已对照原件 CIL；没有 runtime-observed。</p>
+<ol>
+<li><code>VMControls.WPF/VMControls.WPF.DataForUI/VmProcedureDecorator.cs:78–95</code> 的 <code>DisplayModuleSet</code> setter <strong>先</strong>设置 <code>IsSelected=true</code>，再按对象引用不同赋值，依次通知 <code>DisplayModuleSet</code>、<code>IsProcedure</code>、<code>IsDependentGroup</code>。<code>.ctor:376–379</code> 仅令初始显示为 <code>this</code>，不是每次切 Tab 回根。</li>
+<li><code>ProcedureConfigControl.xaml:523–538</code>：TabControl 的 ItemsSource 是 <code>DecoratedProcedures</code>，SelectedItem 是 <code>DecoratorSelectedTabItem</code>；Tab 内容、DiagramArea.Procedure 和节点 Children 使用当前流程装饰器的 <code>DisplayModuleSet</code>，<code>SubSource</code> 则仍是该流程装饰器。</li>
+<li>Group 双击的专用路径在 <code>base/diagramitemtemplate.xaml:1828–1838</code>：GROUP 样式把 MouseDoubleClick 绑定到 DiagramArea.SubSource.OpenGroupCommand，参数为当前 Group 装饰器。这条路径不能与 <code>ProcedureConfigControl.DiagramArea_ItemDoubleClick:644–659</code> 的参数编辑入口混为一谈。</li>
+<li><code>VmProcedureDecorator.OpenGroupCommandExecute:537–565</code>：禁用或明确加载失败的 Group 返回；有密码先验证，成功才替换 DisplayModuleSet；其余对象直接替换。<code>UpCommandExecute:672–684</code> 从<strong>显示对象模型</strong>取 Parent；Parent 等于所属流程 DecorateSource 时显示 <code>this</code>，否则新建 VmGroupDecorator 包装 Parent。不是复用先前的 Group 装饰器历史栈。</li>
+<li><code>ProcedureConfigControl.OnDecoratorSelectedTabItemChanged:871–877</code> 只把新选 Tab 赋给 DecoratorSelectedItem；<code>OnDecoratorSelectedItemChanged:886–946</code> 再区分 IVmProcedure，发布 SelectedPro 或 SelectedModule，LoadingFlag 控制 SelectedItem 发布。它们没有把该流程的 DisplayModuleSet 重置为流程自身。</li>
+<li><code>ContentPresenter_DataContextChanged:1482–1502</code>：选中流程内容调用 SelectedItemToSelectedTabItem；Group 内容设置 DecoratorSelectedSubTabItem 后调用 SelectedItemToSelectedSubTabItem。<code>OnDecoratorSelectedSubTabItemChanged:879–884</code> 本身没有派生动作，不能把空回调当作导航逻辑。</li>
+</ol>
+<p>由此可确认每个仍存活的流程装饰器独立保有 DisplayModuleSet。切换 A→B→A 不应通过 Tab 选择回调主动丢弃 A 的显示 Group。WPF 内容模板是否保留具体视图实例、失效 Group/删除/Undo 后如何重建，仍待原机操作，不能仅凭字段存在推断全部行为。</p>
+<h2 id="新增确认二运行按钮始终针对所属流程而非当前显示-group">新增确认二：运行按钮始终针对所属流程，而非当前显示 Group</h2><p><code>ProcedureConfigControl.xaml:349–352</code> 的运行命令绑定在流程装饰器上。<code>VmProcedureDecorator.RunOnceCommandExe:461–477</code> 先 RunCheck，再取 <strong>DecorateSource as VmProcedure</strong>，调用 <code>Run(null, bIsWait:false)</code>；Continuous 分支 <code>494–515</code> 取 <strong>DecorateSource as IVMRun</strong>，切换 ContinuousRunEnable。两者均不从 DisplayModuleSet 取执行目标。CIL 分别为 token <code>0x06000A32</code> / <code>0x06000A35</code>。</p>
+<p>main 对照：<code>src/VisionEditor/WorkflowExecution.cs:54–62</code> 和 <code>WorkflowTabs.cs:122–125</code> 显式传入顶层 procedure.Id，基本符合这个身份分离。这里没有证据支持把显示 Group 直接作为 Tab 运行按钮的独立执行根。</p>
+<h2 id="新增确认三缩放不是仅存于-zoomarea-控件">新增确认三：缩放不是仅存于 ZoomArea 控件</h2><p><code>VmModuleSetDecorator.cs:17,33–76,162–173</code>：</p>
+<ul>
+<li>私有默认 <code>proceZoomIndex=9</code>；<code>ZoomArea.xaml.cs:23–29</code> 的 20 个档位为 0.1 至 2.0，索引 9 对应 1.0。</li>
+<li>getter 每次读取 <code>(DecorateSource as IVmModule).UserData[&quot;ProceZoomIndex&quot;]</code>。不存在则返回字段默认；存在则 UTF8GetString 后 int.Parse。<strong>getter 无 catch 或范围校验</strong>，不能臆造损坏值自动回 100% 的原厂规则。</li>
+<li>setter 先尝试重读已有值（分别捕获 VmException 和 Exception 并记日志），与新值不同才更新字段，并写 UTF8GetBytesPadZero(index.ToString())。写失败显示消息，然后仍通知 <code>ProceZoomIndex</code> 与 <code>PartentZoomIndex</code>。字段先写、持久写可能失败，不能表述成原子提交。</li>
+<li>显式 <code>IZoomIndex.PartentZoomIndex</code> 直接代理该属性。<code>DiagramArea.xaml:51–65</code> 的 DataContext 是 Procedure（即当前显示装饰器），ZoomArea.DiagramZoomIndex 与 StatusBar.ZoomIndex 均双向绑定这个接口属性。因此流程与 Group 均有<strong>模型自己的缩放键</strong>，不是仅所属顶层流程共用一个值。</li>
+<li>用户数据读写后续源链为 <code>analysis/decompiled/VM.Core/VM.Core/UserData.cs:28–105,136–157</code> → ModuleManager GetUIParamValueByKey/SetUIParamValue；这一段引用源码，未在本批新增 VM.Core 的 CIL 或实际保存重开探针。</li>
+</ul>
+<p>历史边界：UserData setter 对普通非动态模块读旧值、写新值再 RecordSingleData；动态模块按 ModifyConfig/DeleteModule/CopyModule 分支决定整包或单键记录。<code>RecordSingleData:123–134</code> 注册 UserDataUnRedoOperation，恢复 <code>178–203</code> 按 ModuleFullName 查找模块并 SetUserData。<strong>有注册调用不等于每次缩放自动创建根操作</strong>；具体是否进入历史仍取决于 C01 研究的当前 root/part 和过滤条件，本批没有执行 Undo/Redo。</p>
+<p>平移边界：本批审查的 ZoomArea 成员只看到 ScrollViewer/ViewArea 计算，没有发现与 ProceZoomIndex 同级的偏移持久键；搜索范围是该类和上述装饰器，不构成“全程序绝不保存平移”的证明。非活动 Tab 的实际 ScrollViewer 生命周期、重开偏移与保存容器还未验证。</p>
+<h2 id="main-对照和可实施差异">main 对照和可实施差异</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>main 当前代码</th>
+<th>差异与处理建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>非活动 Tab 的显示 Group</td>
+<td><code>WorkflowTabs.cs:54–60</code> 总是 SelectProcedure(rootId)，非活动 Tab 用根流程渲染（97–104）</td>
+<td>与每流程 DisplayModuleSet 保留不同；后续可增加每顶层流程的有效显示容器映射，覆盖 A深入Group→B→A、删除Group、Undo/Redo、重开。需要完整身份失效策略，<strong>本批不改产品</strong>。</td>
+</tr>
+<tr>
+<td>缩放保存</td>
+<td><code>WorkflowCanvas.cs:32,78–85</code> 用 canvasViews 的 Scale/X/Y 做会话缓存；本批没找到模型缩放字段或保存接入</td>
+<td>源码确认应区分每显示容器的缩放持久数据；独立 vmx.json 可提供明确独立字段，不能标成已实现原生 UiParamData 兼容。先核对存储合同再实施。</td>
+</tr>
+<tr>
+<td>方案替换时会话隔离</td>
+<td><code>WorkflowCanvas.cs:63</code> SolutionReplaced 只清 automaticRoutes；canvasProcedure/canvasViews 没清理；<code>GraphEditorDocument.cs:28–36</code> 新方案再次使用 main，加载也可能复用流程 ID</td>
+<td>独立实现的身份隔离缺口：旧/新方案同流程 ID 时不会进入 RenderGraph 的切换分支，可能沿用旧视口。可由 root 选择最小清理：SolutionReplaced 清 canvasViews、canvasProcedure，并令新视图按新方案初始化。此建议基于 main 数据流，并非伪称原厂源码的清理实现。</td>
+</tr>
+<tr>
+<td>历史作用域</td>
+<td>main 全方案 Snapshot 包含 ProcedureId；原导航 setter 不注册 root</td>
+<td>不能据此改成每 Tab 独立 Undo 栈。非活动 Tab Undo 的实际焦点/显示变化需 C01/A03 联合补证。</td>
+</tr>
+</tbody></table>
+<h2 id="精确-cil-锚点">精确 CIL 锚点</h2><p>完整 22 项见 cil-methods.json，以下 SHA256 均仅覆盖原始 IL 字节，<strong>不含</strong>方法头、locals、异常区；异常区另存，不以哈希替代语义审查。</p>
+<table>
+<thead>
+<tr>
+<th>成员</th>
+<th>token</th>
+<th>IL SHA256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>set_DisplayModuleSet</td>
+<td>0x06000A14</td>
+<td>5b11429f3f87a3b84e322a896678943e03c8e1c899a1c4ed9f8de9b0a09de181</td>
+</tr>
+<tr>
+<td>OpenGroupCommandExecute</td>
+<td>0x06000A3C</td>
+<td>58d615ba312f048ed7b0814d48373c0bf295a229788af86de0808c255d3dba1d</td>
+</tr>
+<tr>
+<td>UpCommandExecute</td>
+<td>0x06000A45</td>
+<td>f4dde624c1149840b18775fde124c7c83b89a9051acee91bde5914eeb24737db</td>
+</tr>
+<tr>
+<td>get_ProceZoomIndex</td>
+<td>0x060008E8</td>
+<td>8805f21265390af228b0d16f5313bdf523fcdb8093c2a5f4f3835f2d17fdd8be</td>
+</tr>
+<tr>
+<td>set_ProceZoomIndex</td>
+<td>0x060008E9</td>
+<td>36208bb5f9dd05bccebe71295b2ce44489d53b5a3e6289711466d502aae82ae5</td>
+</tr>
+<tr>
+<td>ContentPresenter_DataContextChanged</td>
+<td>0x060002E4</td>
+<td>39c63f12c9b9ccfaa9b18ef72668b273a6ac6094a8b508ee319ed680f0858186</td>
+</tr>
+<tr>
+<td>VmModuleBaseDecorator..cctor</td>
+<td>0x0600099E</td>
+<td>61f5203bb7c63510d2db3e032ce27b377d6442424ec20cee89d55d5c12334ce7</td>
+</tr>
+</tbody></table>
+<h2 id="安全审查与未运行原因">安全审查与未运行原因</h2><p>完整基类初始化审查发现 <code>VmModuleBaseDecorator.cs:485–517</code> 的静态构造器会调用 LogHelper.Info，并经 CurrentPathHelper 读取 ModulePathGenerate.txt。原件 CIL <code>0x0600099E</code> 已确认这些调用。普通 new 或为运行探针绕过构造器并不能天然消除类型初始化副作用；没有把 FormatterServices/GetUninitializedObject 当作安全保证。因此本批不实例化这些原类、不配置原厂日志，不初始化 SDK。metadata-only exporter 只编译/运行自己的静态读取程序，不属于真实导航探针。</p>
+<h2 id="nextaction--关闭门槛">nextAction / 关闭门槛</h2><ol>
+<li>A03.01 runtime：在任务自有 app base 中先隔离并验证 CurrentPathHelper、日志配置、ModulePathGenerate 与 WPF 资源依赖，再执行原装饰器 Group进入/返回及 A→B→A；观测 DecorateSource/DisplayModuleSet/SelectedItem 身份。不操控他任务实例。</li>
+<li>A03.02 storage：独占 SDK 最小方案分别改变流程与嵌套 Group 缩放，保存新文件并重开；证明 ProceZoomIndex 键归属、UTF8+NUL 载荷、删除/重建行为。由 D 线关联原生读写，不能仅凭 ZIP 字节命名完成。</li>
+<li>A03.03 history：C01 原服务确定 root/part 后，操作非活动 Tab 的编辑、缩放、Undo/Redo，记录显示对象/焦点/历史载荷；不先设计每 Tab 栈。</li>
+<li>集成前由 root 串行审查最小方案替换视口清理；若采用，要验证同ID新建/加载和不同ID加载、概览切换，无需为静态报告运行共享 WPF 构建。本批未实施任何上述产品建议。</li>
+</ol>
+<h3 id="本地会话缓存清理的最小回归步骤交-root尚未执行">本地会话缓存清理的最小回归步骤（交 root，尚未执行）</h3><p>仅清 canvasViews/canvasProcedure 仍不足：<code>WorkflowCanvas.cs:77</code> 在 workflowOverview 时提前调用 RenderWorkflowOverview 返回；<code>WorkflowOverview.cs:27–30</code> 切换又会先写当前视口到 <code>__solution</code>。替换方案时还需初始化当前 scale/panX/panY，避免概览绕过常规切换分支而沿用旧值。这仍是本地方案身份隔离修复，不提供原生缩放持久化。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>应验证的独立实现结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>方案 A 的 main 调至150%并偏移，NewSolution 仍为 main ID</td>
+<td>新画布100%、零偏移，旧方案缓存不再可取。</td>
+</tr>
+<tr>
+<td>A、B 两份独立 vmx.json 都有 main，A 改缩放后 Load B</td>
+<td>B 初始化视口，不能因同ID跳过清理。</td>
+</tr>
+<tr>
+<td>概览170%并偏移时 Load B；再切流程、切回概览</td>
+<td>加载后概览立即初始化，切换不会把旧概览重新写入新方案缓存。</td>
+</tr>
+<tr>
+<td>同方案两流程各设置不同会话缩放与偏移并反复切换</td>
+<td>各自缓存保持；清理只发生在 SolutionReplaced，而非所有 Changed。</td>
+</tr>
+<tr>
+<td>Load 空流程方案，然后添加流程；Load 不同ID方案</td>
+<td>不访问无效流程、不恢复删除ID的旧缓存，概览入口继续可用。</td>
+</tr>
+</tbody></table>
+<p>本包状态建议 <code>evidence-ready</code>（新增静态切片），runtime、operation、differential 与完整保存重开均保持开放。</p>
+<p class="meta">来源：docs/reverse/A03-tabs-batch2.md · SHA256 c40afbb44e8c477fbcc82d2a6792aee330c2e0dbac062d53c2f1ee41cef5cce2<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

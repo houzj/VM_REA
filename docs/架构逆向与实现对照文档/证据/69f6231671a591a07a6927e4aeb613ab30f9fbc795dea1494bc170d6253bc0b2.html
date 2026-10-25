@@ -1,0 +1,55 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 69f6231671a5 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 69f6231671a5</p><h1>原文证据 69f6231671a5</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 69f6231671a591a07a6927e4aeb613ab30f9fbc795dea1494bc170d6253bc0b2。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs:359–411
+SHA256 f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd
+	public string Name
+	{
+		get
+		{
+			return VMModule.Name;
+		}
+		set
+		{
+			if (VMModule.Name != value)
+			{
+				try
+				{
+					if (value.Contains(&#39;?&#39;) || value.Contains(&#39;;&#39;) || value.Contains(&#39;.&#39;) || value.Contains(&quot;[&quot;) || value.Contains(&quot;]&quot;) || value.Contains(&quot;&lt;&quot;) || value.Contains(&quot;&gt;&quot;) || value.Contains(&quot;(&quot;) || value.Contains(&quot;)&quot;) || value.Contains(&quot;`&quot;))
+					{
+						HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_ModuleNameErrorInclude&quot;) + Environment.NewLine + &quot;                             ? ; . [ ] &lt; &gt; ( ) `&quot;, MessageIcons.Error);
+						return;
+					}
+					string displayName = AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) + &quot;:&quot; + VMModule.Name + &quot;, &quot; + value;
+					Ioc.Get&lt;IUnRedoService&gt;()?.Register(new ReNameUnRedoOperation(SetNewName, SetOldName, new UnRedo_NameData(VMModule.FullName, VMModule.Name, value)), displayName);
+					UILogManager.logCreate(&quot;信息&quot;, AppLocalizationService.GetLang(&quot;Lang_ModuRename&quot;) + AppLocalizationService.GetPunctuation(&quot;：&quot;) + VMModule.Name + &quot; &quot; + AppLocalizationService.GetLang(&quot;修改为&quot;) + &quot; &quot; + value, ifLang: false);
+					VMModule.Name = value;
+				}
+				catch (VmException ex)
+				{
+					if (string.IsNullOrEmpty(value))
+					{
+						HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_NameEmpty&quot;), MessageIcons.Error);
+					}
+					else
+					{
+						ShowMessage.ShowVmExceptionMessage(ex);
+					}
+					UILogManager.logCreate(&quot;错误&quot;, ErrorCodeInfo.GetErrorInfo(ex.errorCode), ifLang: false);
+				}
+				OnPropertyChanged(&quot;Name&quot;);
+				VMModule.OnPropertyChanged(&quot;FullName&quot;);
+			}
+			else
+			{
+				Ioc.Get&lt;IUnRedoService&gt;()?.RemoveEmptyOperation();
+			}
+		}
+	}
+
+	public ICommand RenameWindowCommand
+	{
+		get
+		{
+			//IL_0017: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001c: Unknown result type (might be due to invalid IL or missing references)
+			//IL_001e: Expected Obj, but got Unknown
+			//IL_0023: Expected Obj, but got Unknown
+			DelegateCommand val = _RenameWindowCommand;</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../专题/workflow-rename-history-audit.html">改名撤销重做：名称快照、路径身份与失败边界</a><a href="../专题/workflow-title-commit-audit.html">流程标题显式提交、名称写入与保存边界</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

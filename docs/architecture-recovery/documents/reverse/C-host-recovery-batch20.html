@@ -1,0 +1,62 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C07.3 实际主窗故障恢复矩阵（第二十批C线）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/C-host-recovery-batch20.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#c073-实际主窗故障恢复矩阵第二十批c线">C07.3 实际主窗故障恢复矩阵（第二十批C线）</a></p><p style="margin-left:14px"><a href="#冻结门槛与计分边界">冻结门槛与计分边界</a></p><p style="margin-left:14px"><a href="#原证据与当前支持合同">原证据与当前支持合同</a></p><p style="margin-left:14px"><a href="#新增可复验测试">新增可复验测试</a></p><p style="margin-left:14px"><a href="#释放修复建议与原生边界">释放修复建议与原生边界</a></p><p style="margin-left:14px"><a href="#修前实际证据与修复只读审查">修前实际证据与修复只读审查</a></p><p style="margin-left:14px"><a href="#fcr-030终止scope释放失败诊断根线登记">FCR-030：终止scope释放失败诊断（根线登记）</a></p><p style="margin-left:14px"><a href="#最终实际自审核">最终实际自审核</a></p></details><h1 id="c073-实际主窗故障恢复矩阵第二十批c线">C07.3 实际主窗故障恢复矩阵（第二十批C线）</h1><p>固定基线3996ad1；2026-10-20。子线只新增自有测试及报告，共享执行/释放产品文件由根线唯一修改。没有SDK、设备、插件在制目录、原TempFiles服务或长稳重跑。</p>
+<h2 id="冻结门槛与计分边界">冻结门槛与计分边界</h2><p>本批必须经过真实MainWindow.StartRunCore/RunCore/ContinuousRun，不能把C08/Core通过替代宿主恢复：</p>
+<ol>
+<li>throw、显式Failed、错误输出、异步Dispose故障、实际owner取消、现有合作式节点超时六类单次运行，检查真实结果状态/错误码、owner和continuous状态复位；每类随后正常重启成功。</li>
+<li>六类continuous StopOnNg停止及随后重启；非owner取消的五类另测StopOnNg=false故障后下一轮成功，并保留实际历史错误与成功两条。</li>
+<li>真实自有主窗Close分别等待受控执行与异步清理门，随后模块及自有scope服务仅释放一次。</li>
+<li>原scope释放故障须先用自有对象复现，再验证逐项尝试、保留诊断、不自动重试、不破坏pending lease延迟释放。</li>
+</ol>
+<p>台账C07.3目前明确尚缺长稳并发故障矩阵。本批是<strong>有限托管host故障/恢复自审核</strong>，不运行30分钟、原SDK、设备或资源增长负载；即使本批有限矩阵全部通过，也保持C07.3 partial，不改原门槛争取分数。C07.1已知SaveAs失败与C07.2持续并发仍独立保留。</p>
+<h2 id="原证据与当前支持合同">原证据与当前支持合同</h2><p>原依据复用 <code>docs/MF05-CONTINUOUS-RUN-CALLCHAIN.md</code>、<code>docs/MF05-PROCEDURE-RUN-CALLCHAIN.md</code>、<code>docs/DEBUG-SESSION-CONTRACT.md</code>：原托管入口检查busy/ready/loading，原单次调用SelfRun，连续等待回调，停止清连续标志并等待任务/解绑。原SDK能否强停正执行算法、设备内部释放时序及原全局故障恢复仍未知，不能推导当前合作取消与native等价。</p>
+<p>当前GraphExecutor在finally实际await模块IAsyncDisposable；异常映射ModuleException，显式失败保留ErrorCode，错误输出映射InvalidOutput，owner取消与节点timeout分别记录Cancelled/TimedOut。主窗RunCore发布session/摘要，StartRunCore finally归还activeRun；ContinuousRun按StopOnNg及owner取消处理；关闭路径等待当前owner，再释放scope。测试针对这些明确支持域，而非猜测原生错误码语义。</p>
+<h2 id="新增可复验测试">新增可复验测试</h2><p><code>tests/HostRecoveryChecks20</code>注册自有managed受控模块并实际调用MainWindow，含六类single+restart、六类StopOnNg+restart、五类continueOnNg、Close双门及scope服务。状态/错误码读取真实workflowSessions，历史读取真实FrameworkRunHistory，activeRun/runningProcedureId/continuousRun从宿主实例读。每个等待有25秒截止，异常写自有failed.json并退出1；WPF构造前禁用自动相机发现，不调用原厂或设备。自有offscreen窗口仅测托管事件，不称交互桌面验收。</p>
+<p><code>tests/ScopeCleanupFailureChecks20</code>为纯Framework对象，不启动WPF或设备，支持<code>observe-unfixed</code>与修后默认模式：</p>
+<ul>
+<li>原Release的states.Concat(ownedServices)中唯一state先抛Dispose，观察后续service未释放、取消源Dispose被跳过。</li>
+<li>自有CancellationToken.Register回调抛错，观察原scope.Dispose异常传播。</li>
+<li>每阶段在断言前先保存实际resource-observation.json或cancel-observation.json，失败不会只留下“断言失败”而丢原异常。</li>
+<li>修后通过反射读取新CleanupFailures诊断，不编译依赖修前不存在的类型；要求其余资源/取消源均尝试释放，无自动重试，pending lease仍延迟。</li>
+</ul>
+<h2 id="释放修复建议与原生边界">释放修复建议与原生边界</h2><p>当前源显示ModuleExecutionScope.Release逐个Dispose没有catch；stopping.Cancel的回调异常也会在finally后传播，可打断MainWindow.OnClosed的后续清理。这是可控制的本地框架故障路径，不宣称原VM具有同一缺陷。</p>
+<p>建议根线最小local hardening：取消回调、逐个owned资源、最后取消源Dispose均各自尝试并记录Phase/ResourceType/Error；保留失败对象/异常供审计，不自动重复Dispose；finally路径不向主窗关闭抛未处理异常，且不能提前释放仍由pending lease借用的服务。共享ModuleExecutionScope.cs及FCR由根线串行处理。</p>
+<p>子线未构建。修前及修后实际结果、源哈希与根线集成后由真实产物追加，不预填通过。</p>
+<h2 id="修前实际证据与修复只读审查">修前实际证据与修复只读审查</h2><p>根线修前实际退出0，子线已核对 <code>analysis/full-audit/batch20-20261020/C/scope-cleanup-517f28d18e104ab1be5569e1f468070b/summary.json</code>：8项counterexample检查，badAttempts=1/laterAttempts=0/tokenReleased=false；resourceError保留原Release/Dispose完整栈。自有取消回调callbacks=1并传播AggregateException，虽随后cancelService=1/cancelTokenReleased=true，仍可打断主窗外层关闭。它是修前失败机制的成功复验，不算修复通过。</p>
+<p>根线最小修复已只读审查：ModuleScopeCleanupFailure包含Phase、ResourceType、原Exception；CleanupFailures在root锁下返回副本。Cancel异常记录后仍进入原finally；Release对每个owned资源分别catch，再总尝试取消源Dispose；failedResources强引用保留失败对象，不自动重试。closing/cancellationComplete/leases/releaseStarted门保持，borrowed scope的Dispose仍不关闭root，最后lease退出触发一次释放。未见本固定终止路径的新所有权缺口，实际修后和host矩阵仍待产物。</p>
+<p>局限必须保留：这是<strong>终止scope/主窗关闭路径的本地异常隔离</strong>，不是原VM释放策略。RegisterService替换、RemoveNode和RetainProcedureNodes的即时Dispose仍可能抛异常，不在本补丁中声称安全；诊断/失败对象只随scope存活保留，不表示失败资源已释放或有自动恢复。OOM等无法记录诊断的不可恢复故障、设备和并发长稳没有被本测试覆盖。</p>
+<h2 id="fcr-030终止scope释放失败诊断根线登记">FCR-030：终止scope释放失败诊断（根线登记）</h2><ul>
+<li>Producer：VisionFramework.ModuleExecutionScope；consumer：main主窗关闭/方案替换、拥有该scope的会话与诊断工具。插件在制项目不自动同步或采用。</li>
+<li>Payload：新增只读CleanupFailures，条目为ModuleScopeCleanupFailure(Phase,ResourceType,Exception Error)；Phase目前为cancel/resource/token，保留原异常对象。需要序列化时由诊断工具选择Error.ToString等安全文本，不把Exception原样当持久化方案字段。</li>
+<li>Lifecycle：Dispose请求取消→捕获回调故障→等待最后lease→逐owned资源尝试→尝试取消源Dispose→保留失败诊断/对象。重复Dispose不重试原失败项，不提前释放在用服务。</li>
+<li>Compatibility：不变Enter/Dispose/ForProcedure等原签名，新增可选诊断读取；终止Dispose不再把单项释放异常抛给关闭链，消费者如原先依赖catch获取故障应改读CleanupFailures。并非所有scope即时操作都改成不抛。</li>
+<li>Acceptance：保留本次修前8项实际反例；修后须验证后续资源与token总尝试、cancel故障不外抛、诊断存在、失败对象不自动二次释放、pending lease仍推迟释放；实际MainWindow关闭和故障后重启另由HostRecoveryChecks20验证。原生VM差分及长稳并发仍未关闭。</li>
+</ul>
+<h2 id="最终实际自审核">最终实际自审核</h2><p>子线只读核对根线实际退出0产物，passed与checks数组数目均一致：</p>
+<table>
+<thead>
+<tr>
+<th>实际专项</th>
+<th align="right">结果</th>
+<th>summary</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原scope释放缺陷特征化</td>
+<td align="right">8/8反例复验</td>
+<td><code>analysis/full-audit/batch20-20261020/C/scope-cleanup-517f28d18e104ab1be5569e1f468070b/summary.json</code></td>
+</tr>
+<tr>
+<td>scope终止异常隔离修后</td>
+<td align="right">8/8</td>
+<td><code>analysis/full-audit/batch20-20261020/C/scope-cleanup-fbc972f86a5747e498b5dabde7efea55/summary.json</code></td>
+</tr>
+<tr>
+<td>真实MainWindow故障/恢复/关闭</td>
+<td align="right">89/89</td>
+<td><code>analysis/full-audit/batch20-20261020/C/host-recovery-8789d05f0c3b4e1fbf9391085bb0b10e/summary.json</code></td>
+</tr>
+</tbody></table>
+<p>修后scope具体结果：首失败资源尝试1次、后续service释放1次；resourceError=null、tokenReleased=true、resourceDiagnostics=1。取消回调1次、cancelError=null、cancelService=1、cancelTokenReleased=true、cancelDiagnostics=1。原失败确实被隔离而非仅忽略断言，失败诊断仍在，重复Dispose和pending lease检查通过。</p>
+<p>实际host observations含29个结果状态截面：六类single故障及六次随后重启、六类continuous StopOnNg及六次随后重启、五类continueOnNg的第二轮成功；后者Calls/DisposeStarted/DisposeCompleted均为2。错误记录分别为ModuleException、FixtureFailure、InvalidOutput、Cancelled、Timeout，恢复记录为Success；最后三个断言另验证实际Close等待执行/异步清理以及模块和scope服务只释放一次。没有用旧Core检查替代这些宿主路径。</p>
+<p>最终判断：本轮实际交付并自审核通过有限host恢复矩阵及本地终止释放加固；<strong>C07.3保持partial</strong>，不把89项断言或修前/修后重复次数转换为96单元完成率。未运行C07.1足时长稳、未完成C07.2持续并发/增长与长稳故障矩阵，原SDK/设备及交互桌面差分仍未知。根线报告的原CS8603警告仍保留，不描述为零警告构建。</p>
+<p>最终核对及源码/报告/summary哈希分别见同审计目录 <code>final-summary-verification.json</code>、<code>final-review-hashes.json</code>。无子线构建或共享产品修改，tool-plugins未动。</p>
+<p class="meta">来源：docs/reverse/C-host-recovery-batch20.md · SHA256 29467af22294051dbbd04778510ebc5db21ac7a8ad82144230928de9042bfcce<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

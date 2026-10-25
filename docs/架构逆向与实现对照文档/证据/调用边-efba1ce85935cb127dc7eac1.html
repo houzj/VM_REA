@@ -1,0 +1,68 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>doc.Save返回 / Shell.Save后续 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>doc.Save返回 / Shell.Save后续 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-J05"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>doc.Save返回 / Shell.Save后续 → 文件提交、文档状态、Changed、偏好和最近记录分段</h2><p>SolutionStore写JSON字节并Flush/Move后，doc.Save才改document/BaseDirectory/FilePath/Dirty/Revision并触发Changed；Changed抛错可在文件和字段已变化后中断返回。Shell只有doc.Save正常返回才Remember目录（选新路径时）、Update最近及刷新。Remember的目录创建/写入不捕获；后续失败由Safe显示错误，代码未回滚已写文件或文档。该选定写盘路径直接写序列化JSON，没有原.sol密码/加密提供器步骤。</p><p><a href="../专题/execution-storage.html#edge-J05">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/execution-storage.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/execution-storage.edges.json · SHA256 a9ff89e4868a237886b3ceade3029c19466278ee1454727fd4d7198e4fa01ae8</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="930a5920b6ed699280c71116d785879f267d2f4f0e08fafb993102a144b158c1">{
+  &quot;id&quot;: &quot;J05&quot;,
+  &quot;route&quot;: &quot;当前 · 文件菜单与独立载荷&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;doc.Save返回 / Shell.Save后续&quot;,
+  &quot;to&quot;: &quot;文件提交、文档状态、Changed、偏好和最近记录分段&quot;,
+  &quot;behavior&quot;: &quot;SolutionStore写JSON字节并Flush/Move后，doc.Save才改document/BaseDirectory/FilePath/Dirty/Revision并触发Changed；Changed抛错可在文件和字段已变化后中断返回。Shell只有doc.Save正常返回才Remember目录（选新路径时）、Update最近及刷新。Remember的目录创建/写入不捕获；后续失败由Safe显示错误，代码未回滚已写文件或文档。该选定写盘路径直接写序列化JSON，没有原.sol密码/加密提供器步骤。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor.Core/GraphEditorDocument.cs&quot;,
+      &quot;member&quot;: &quot;Save commit before Changed&quot;,
+      &quot;sha256&quot;: &quot;4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558&quot;,
+      &quot;start&quot;: 68,
+      &quot;end&quot;: 74,
+      &quot;excerpt&quot;: &quot;    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.ShellSaveSolution.cs&quot;,
+      &quot;member&quot;: &quot;shell save continuation&quot;,
+      &quot;sha256&quot;: &quot;f550855c25ec424dc1bbc66268ed1099596896179529fd5ad6ca112de96aba2f&quot;,
+      &quot;start&quot;: 65,
+      &quot;end&quot;: 83,
+      &quot;excerpt&quot;: &quot;    bool Save(bool asNew)\n    {\n        var file = doc.FilePath;\n        var selectedPath = asNew || file is null;\n        if (selectedPath)\n        {\n            file = solutionSavePicker.Pick(this, SaveSolutionDirectoryPreference.InitialDirectory());\n            if (string.IsNullOrWhiteSpace(file)) return false;\n        }\n        if (file is null) return false;\n        doc.Save(file);\n        if (selectedPath)\n            SaveSolutionDirectoryPreference.Remember(file);\n        RecentSolutionStore.Update(doc.FilePath!);\n        RefreshRecentSolutionsMenu();\n        return true;\n    }\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.ShellSaveSolution.cs&quot;,
+      &quot;member&quot;: &quot;save-directory persistence&quot;,
+      &quot;sha256&quot;: &quot;f550855c25ec424dc1bbc66268ed1099596896179529fd5ad6ca112de96aba2f&quot;,
+      &quot;start&quot;: 48,
+      &quot;end&quot;: 52,
+      &quot;excerpt&quot;: &quot;    internal static void Remember(string file)\n    {\n        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);\n        File.WriteAllText(FilePath, Path.GetDirectoryName(Path.GetFullPath(file))!);\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/SolutionStore.cs&quot;,
+      &quot;member&quot;: &quot;serialized JSON file write&quot;,
+      &quot;sha256&quot;: &quot;533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365&quot;,
+      &quot;start&quot;: 17,
+      &quot;end&quot;: 25,
+      &quot;excerpt&quot;: &quot;    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\&quot;Solution exceeds size limit.\&quot;);\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\&quot;.\&quot;+Path.GetFileName(full)+\&quot;.\&quot;+Guid.NewGuid().ToString(\&quot;N\&quot;)+\&quot;.tmp\&quot;);\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }\n    public static void ValidateStructure(SolutionDocument solution){&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.xaml.cs&quot;,
+      &quot;member&quot;: &quot;Safe postcommit error display&quot;,
+      &quot;sha256&quot;: &quot;034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a&quot;,
+      &quot;start&quot;: 63,
+      &quot;end&quot;: 63,
+      &quot;excerpt&quot;: &quot; void Safe(Action a){try{a();}catch(Exception e){StatusText.Text=e.Message;}}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;文件系统原子性/断电、Changed全部消费者及插件私有payload保护策略未验证；只确认此主框架JSON写入路径，不推断所有插件字段均无保护。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

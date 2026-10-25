@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IMVSGroup.IsEnableLoop · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>IMVSGroup.IsEnableLoop · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-G05"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>IMVSGroup.IsEnableLoop → 装载延迟通知 / 参数读写</h2><p>装载中启动 Task 等待 IsLoading 结束再通知，先返回 false 缓存；已 Dispose 则返回缓存；正常读取 Params[EnableLoop]，setter 仅值不同时写 Params。不是每次 get 都同步获得最终状态。</p><p><a href="../专题/group-control.html#edge-G05">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/group-control.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/group-control.edges.json · SHA256 c6dc5708e08f496256f3b1f356107d578039de6c3ec9fb98c139daabc3c89bed</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="d9fb56c704a334ff5ad7b00798a92f3398e5c0249d41ea46b68bb2fb00611bb8">{
+  &quot;id&quot;: &quot;G05&quot;,
+  &quot;route&quot;: &quot;原版 · 循环资源与参数&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;IMVSGroup.IsEnableLoop&quot;,
+  &quot;to&quot;: &quot;装载延迟通知 / 参数读写&quot;,
+  &quot;behavior&quot;: &quot;装载中启动 Task 等待 IsLoading 结束再通知，先返回 false 缓存；已 Dispose 则返回缓存；正常读取 Params[EnableLoop]，setter 仅值不同时写 Params。不是每次 get 都同步获得最终状态。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs&quot;,
+      &quot;member&quot;: &quot;IMVSGroup.IsEnableLoop&quot;,
+      &quot;sha256&quot;: &quot;dc772aaba433316b7d0f4dc3b0b3c80c3c63769334d7d013896afe7b54c367d3&quot;,
+      &quot;start&quot;: 29,
+      &quot;end&quot;: 67,
+      &quot;excerpt&quot;: &quot;\tpublic bool IsEnableLoop\n\t{\n\t\tget\n\t\t{\n\t\t\tif (VmSolution.IsLoading)\n\t\t\t{\n\t\t\t\tTask.Run(() =>\n\t\t\t\t{\n\t\t\t\t\twhile (VmSolution.IsLoading)\n\t\t\t\t\t{\n\t\t\t\t\t\tThread.Sleep(100);\n\t\t\t\t\t}\n\t\t\t\t\tOnPropertyChanged(\&quot;IsEnableLoop\&quot;);\n\t\t\t\t});\n\t\t\t\tisEnableLoop = false;\n\t\t\t\treturn isEnableLoop;\n\t\t\t}\n\t\t\tif (IsOnDispose)\n\t\t\t{\n\t\t\t\treturn isEnableLoop;\n\t\t\t}\n\t\t\tisEnableLoop = bool.Parse(Params[\&quot;EnableLoop\&quot;]);\n\t\t\treturn isEnableLoop;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (value != bool.Parse(Params[\&quot;EnableLoop\&quot;]))\n\t\t\t{\n\t\t\t\tParams[\&quot;EnableLoop\&quot;] = value.ToString();\n\t\t\t\tisEnableLoop = value;\n\t\t\t}\n\t\t}\n\t}\n\n\t/// &lt;summary>\n\t/// 内部使用\n\t/// &lt;/summary>\n\tpublic override bool IsDynamicModu => true;\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ToolConfigurationWindowHost.Open · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ToolConfigurationWindowHost.Open · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C02"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ToolConfigurationWindowHost.Open → 同身份复用 / 关旧失败拒绝新窗</h2><p>UI 线程校验；同 identity 直接返回 existing；其它先 Close，若仍 Current 非空则抛取消关闭异常。创建后绑定 Owner、Identity、Closed，再 Show；异常解除事件并清身份。</p><p><a href="../专题/plugin-sessions.html#edge-C02">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/plugin-sessions.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/plugin-sessions.edges.json · SHA256 f38ce4022185baa192d9fa212b19ce206448c78fad86456922cd51a19a3bd562</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="0acc5ba6af1be35b5035c85a6ce479bddf812cef36d1d25e7ba38e600fe813b4">{
+  &quot;id&quot;: &quot;C02&quot;,
+  &quot;route&quot;: &quot;当前 · 普通配置窗口&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;ToolConfigurationWindowHost.Open&quot;,
+  &quot;to&quot;: &quot;同身份复用 / 关旧失败拒绝新窗&quot;,
+  &quot;behavior&quot;: &quot;UI 线程校验；同 identity 直接返回 existing；其它先 Close，若仍 Current 非空则抛取消关闭异常。创建后绑定 Owner、Identity、Closed，再 Show；异常解除事件并清身份。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolConfigurationWindowHost.cs&quot;,
+      &quot;member&quot;: &quot;ToolConfigurationWindowHost.Open&quot;,
+      &quot;sha256&quot;: &quot;b31a677bb000a70168dbc56a648db41e52e609aad8281ff888e4689fcba5ae71&quot;,
+      &quot;start&quot;: 18,
+      &quot;end&quot;: 30,
+      &quot;excerpt&quot;: &quot; public Window Open(ToolConfigurationIdentity identity,Func&lt;Window> create){\n  owner.Dispatcher.VerifyAccess();ArgumentNullException.ThrowIfNull(identity);ArgumentNullException.ThrowIfNull(create);\n  if(Current is {} existing&amp;&amp;Identity==identity)return existing;\n  Close();\n  if(Current is not null)throw new InvalidOperationException(\&quot;当前配置窗口取消了关闭。\&quot;);\n  var window=create()??throw new InvalidOperationException(\&quot;配置宿主未创建窗口。\&quot;);\n  if(ReferenceEquals(window,owner))throw new InvalidOperationException(\&quot;配置窗口不能复用主窗口。\&quot;);\n  window.Owner=owner;window.ShowInTaskbar=false;Current=window;Identity=identity;\n  window.Closed+=OnClosed;\n  try{window.Show();Changed?.Invoke();return window;}\n  catch{window.Closed-=OnClosed;Current=null;Identity=null;throw;}\n }\n void OnClosed(object? sender,EventArgs args){&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

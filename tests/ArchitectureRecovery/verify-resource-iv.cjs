@@ -1,0 +1,11 @@
+const fs=require('fs'),path=require('path'),crypto=require('crypto'),{source,out}=require('./evidence-view.cjs'),{cilReference}=require('./original-cil-reference.cjs');
+module.exports=function(){
+ const read=f=>JSON.parse(fs.readFileSync(path.join(out,f))),sha=b=>crypto.createHash('sha256').update(b).digest('hex'),r=read('resource-iv-rva.json'),rea=read('resource-iv-rea-field.json'),d=read('resource-protection-cil-evidence.json'),a=d.manifest.artifacts.find(a=>a.key==='util'),bytes=fs.readFileSync(a.path),payload=Buffer.from(r.dataHex,'hex');
+ if(sha(bytes)!==a.sha256||r.sha256!==a.sha256||r.mvid!==a.mvid||rea.artifact.sha256!==a.sha256||rea.module.mvid!==a.mvid||r.fieldToken!==rea.field.token||r.signatureSha256!==rea.field.signature.raw_sha256)throw Error('IV original metadata identity mismatch');
+ if(r.byteLength!==16||r.layoutSize!==16||payload.length!==16||sha(payload)!==r.dataSha256||!bytes.subarray(r.fileOffset,r.fileOffset+16).equals(payload))throw Error('IV bounded field data mismatch');
+ const T='Hik.Util.Security.AesCryptHelper',target=d.targets.find(t=>t.type===T),method=k=>target.methods.find(m=>m.token===k),at=(m,o,op)=>{const i=m.instructions.find(i=>i.offset===o);if(i?.opcode!==op)throw Error('IV initializer changed');return i;},ctor=method('0x0600014b');
+ if(at(ctor,16,'ldc.i4.s').operand!==16||at(ctor,18,'newarr').operand.type!=='System.Byte'||at(ctor,24,'ldtoken').operand.token!==r.fieldToken||at(ctor,29,'call').operand.name!=='InitializeArray'||at(ctor,34,'stsfld').operand.token!=='0x0400007e')throw Error('IV initializer field relation mismatch');
+ for(const token of ['0x06000148','0x06000149'])if(at(method(token),30,'ldsfld').operand.token!=='0x0400007e'||at(method(token),35,'callvirt').operand.name!=='set_IV')throw Error('IV consumer mismatch');
+ const ref=source('docs/architecture-recovery/resource-iv-rva.json','Bounded original field RVA bytes','"fieldToken":',18);ref.evidenceType='original-managed-field-rva';ref.binaryIdentity=r.sha256+' / MVID '+r.mvid;
+ return {rva:r,refs:[ref,cilReference('resource-protection-cil-evidence.json',T,'.cctor'),cilReference('resource-protection-cil-evidence.json',T,'Encrypt','0x06000148'),cilReference('resource-protection-cil-evidence.json',T,'Decrypt','0x06000149')]};
+};

@@ -1,0 +1,673 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "PST01",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "ToolPluginRegistry.PrepareSave旧资源目录",
+      "to": "逐节点资产投影与新Resources容器",
+      "behavior": "先以输入document.Resources构造ResourceCatalog，之后另建resources字典：过滤所有已注册IToolAssetPersistence插件的plugin:<Manifest.Id>:前缀资源，不要求这些插件当前一定还有节点。逐procedure/node调用participant.PrepareSave，并传scope.ForProcedure；每个snapshot.Resources按Id覆盖新字典，snapshot.Node成为新节点。旧catalog仍允许后面的参与者读取输入资源。任何参与者异常会中断ToArray与return，但此前参与者对scope或自身state的副作用没有跨参与者回滚代码。",
+      "representation": "旧ResourceCatalog字典、新resources字典、节点投影是不同容器；catalog保存ResourceDocument引用，不复制编码文件字节。新snapshot.Node没有PrepareLoad式Id/ModuleId/版本一致性检查，最终结构校验是另一步。",
+      "cache": "旧输入资源不因过滤即被删除；新字典的Id覆盖只改变拟保存文档。尚未返回的新投影不能算编辑器已提交。",
+      "release": "此入口没有外部文件删除、旧document/history清理或参与者state恢复事务。局部容器失去引用不能表述为已观察到GC释放。",
+      "refs": [
+        {
+          "path": "src/VisionPluginContracts/Contracts.cs",
+          "member": "ToolPluginRegistry.PrepareSave scoped projection",
+          "sha256": "a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f",
+          "start": 64,
+          "end": 70,
+          "excerpt": " public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){\n  var catalog=new ResourceCatalog(baseDirectory,document.Resources);var resources=document.Resources.Where(r=>!plugins.Values.Any(p=>p is IToolAssetPersistence&&r.Id.StartsWith(\"plugin:\"+p.Manifest.Id+\":\",StringComparison.Ordinal))).ToDictionary(r=>r.Id,StringComparer.Ordinal);\n  var procedures=document.Procedures.Select(procedure=>procedure with{Nodes=procedure.Nodes.Select(node=>{\n   if(Find(node.ModuleId) is not IToolAssetPersistence participant)return node;\n   var snapshot=participant.PrepareSave(node,baseDirectory,catalog,scope?.ForProcedure(procedure.Id));foreach(var resource in snapshot.Resources)resources[resource.Id]=resource;return snapshot.Node;\n  }).ToArray()}).ToArray();return document with{Procedures=procedures,Resources=resources.Values.ToArray()};\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GeometryResources.cs",
+          "member": "ResourceCatalog retains resource records",
+          "sha256": "8fb2332a37eb758d5dabe6a99659b62cbdba2cded9dea7bc372e7740a525200f",
+          "start": 25,
+          "end": 25,
+          "excerpt": "    public ResourceCatalog(string baseDirectory,IEnumerable<ResourceDocument> resources){this.baseDirectory=Path.GetFullPath(baseDirectory);this.resources=new(StringComparer.Ordinal);foreach(var r in resources){if(string.IsNullOrWhiteSpace(r.Id)||string.IsNullOrWhiteSpace(r.Path)||!this.resources.TryAdd(r.Id,r))throw new InvalidDataException(\"Invalid resource identity.\");if(r.Sha256 is not null&&(r.Sha256.Length!=64||r.Sha256.Any(c=>!Uri.IsHexDigit(c))))throw new InvalidDataException(\"Invalid resource hash.\");}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "未枚举所有已注册参与者的副作用；PST02/03只给两个实际插件族的具体分支。",
+        "当前独立实现的静态合同，未以真实保存失败运行注入验证，不证明原版等价。"
+      ]
+    },
+    {
+      "id": "PST02",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "ImageSourcePlugin.PrepareSave路径选择",
+      "to": "编码资源副本、Base64文档字段及scope状态",
+      "behavior": "先Clone默认值及节点参数。订阅文件夹模式会通过scope.State取得或创建State；路径来自匹配目录的state.FolderPaths，否则读取存在的目录，否则空表。SolSaveImageData为true时仅paths.Take(120)嵌入：优先现存磁盘文件，文件不存在才经旧节点EmbeddedImageResources/旧catalog回读；单个编码流超过256MiB即抛错。CopyTo内存流后ToArray产生byte[]，SHA256及Base64得到ResourceDocument与路径→Id映射。ImagePaths仍写入全部paths的绝对路径，故120条嵌入上限不等于路径表截断。",
+      "representation": "新嵌入的是编码文件字节及Base64字符串，不是GrayImage像素缓存；资源Id包含插件Id、nodeId和编码SHA。SelectedPaths、CurrentImagePath、SubscribeFolderPath也转绝对路径；EmbeddedImageResources每次重建。关闭SolSaveImageData时新assets/map为空，不自行删除磁盘原图。",
+      "cache": "旧catalog作为缺失磁盘文件的读取后备；save可能新建的scope.State在后续保存失败时仍由scope持有。此方法没有清理既有解码Cache、PendingFrame或显示结果的调用。",
+      "release": "输入流和复制MemoryStream均using；成功时返回的资源持有Base64字符串。临时bytes/流缓冲的GC时点未指定。后续方案32MiB限制可能在插件已投影之后拒绝保存，不逆向撤销此前scope.State创建。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourceAssets.cs",
+          "member": "ImageSource scoped PrepareSave full branch",
+          "sha256": "6f7c81db9e3e07c47121a4520127c2aba84ac1e03d61c0a0f1f8d02829f82e30",
+          "start": 16,
+          "end": 33,
+          "excerpt": " public ToolAssetSnapshot PrepareSave(NodeDocument node,string baseDirectory,ResourceCatalog resources,ModuleExecutionScope? scope){\n  var values=Descriptor.Parameters.ToDictionary(p=>p.Name,p=>p.DefaultValue!.Value.Clone());foreach(var pair in node.Parameters)values[pair.Key]=pair.Value.Clone();var paths=ReadPaths(values[\"ImagePaths\"].GetString()??\"[]\");\n  if(values[\"ImageSourceType\"].GetInt32()==1&&values[\"IsSubscribeFolderMode\"].GetBoolean()){\n   var state=scope?.State(Manifest.Id,node.Id,()=>new State());string configured=values[\"SubscribeFolderPath\"].GetString()??\"\";string? folder=string.IsNullOrWhiteSpace(configured)?null:Path.GetFullPath(configured,baseDirectory);\n   paths=folder is null?[]:state?.Folder?.DirectoryPath==folder?state.FolderPaths:Directory.Exists(folder)?LocalFolderCatalog.Read(folder):[];\n  }\n  var embedded=new Dictionary<string,string>(StringComparer.Ordinal);var assets=new Dictionary<string,ResourceDocument>(StringComparer.Ordinal);\n  if(values[\"SolSaveImageData\"].GetBoolean())foreach(string path in paths.Take(120)){\n   string full=Path.GetFullPath(path,baseDirectory);using var stream=File.Exists(full)?File.OpenRead(full):OpenEncodedImage(node,path,baseDirectory,resources);if(stream.Length>256L*1024*1024)throw new InvalidDataException(\"Embedded image exceeds encoded resource limit.\");using var copy=new MemoryStream();stream.CopyTo(copy);byte[] bytes=copy.ToArray();string hash=Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant(),id=\"plugin:\"+Manifest.Id+\":\"+node.Id+\":\"+hash;\n   assets[id]=new(id,full,hash){EmbeddedBase64=Convert.ToBase64String(bytes)};embedded[full]=id;\n  }\n  values[\"ImagePaths\"]=J(JsonSerializer.Serialize(paths.Select(path=>Path.GetFullPath(path,baseDirectory))));\n  values[\"SelectedPaths\"]=J(JsonSerializer.Serialize(ReadPaths(values[\"SelectedPaths\"].GetString()??\"[]\").Select(path=>Path.GetFullPath(path,baseDirectory))));\n  if(values[\"CurrentImagePath\"].GetString() is {Length:>0} current)values[\"CurrentImagePath\"]=J(Path.GetFullPath(current,baseDirectory));\n  if(values[\"SubscribeFolderPath\"].GetString() is {Length:>0} folderPath)values[\"SubscribeFolderPath\"]=J(Path.GetFullPath(folderPath,baseDirectory));\n  values[\"EmbeddedImageResources\"]=J(JsonSerializer.Serialize(embedded));return new(node with{Parameters=values},assets.Values.ToArray());\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourceAssets.cs",
+          "member": "OpenEncodedImage old embedded resource fallback",
+          "sha256": "6f7c81db9e3e07c47121a4520127c2aba84ac1e03d61c0a0f1f8d02829f82e30",
+          "start": 11,
+          "end": 14,
+          "excerpt": " public Stream OpenEncodedImage(NodeDocument node,string path,string baseDirectory,ResourceCatalog? resources=null){\n  if(node.Parameters.TryGetValue(\"SolSaveImageData\",out var save)&&save.GetBoolean()&&resources is not null&&EmbeddedMap(node).TryGetValue(path,out var id))return resources.OpenVerified(id);\n  return File.OpenRead(Path.GetFullPath(path,baseDirectory));\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GeometryResources.cs",
+          "member": "OpenVerified ownership and hash verification",
+          "sha256": "8fb2332a37eb758d5dabe6a99659b62cbdba2cded9dea7bc372e7740a525200f",
+          "start": 28,
+          "end": 28,
+          "excerpt": "    public Stream OpenVerified(string id){var r=resources.TryGetValue(id,out var value)?value:throw new KeyNotFoundException(\"Unknown resource: \"+id);Stream stream=r.EmbeddedBase64 is {} embedded?new MemoryStream(Convert.FromBase64String(embedded),writable:false):File.OpenRead(Resolve(id));try{if(r.Sha256 is not null){string actual=Convert.ToHexString(SHA256.HashData(stream));if(!string.Equals(actual,r.Sha256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException(\"Resource digest mismatch: \"+id);stream.Position=0;}return stream;}catch{stream.Dispose();throw;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "Post-plugin document size limit",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 17,
+          "end": 24,
+          "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "文件夹监控并发更新与120条外图的可移植性未运行验证；不能声称所有路径均已嵌入。",
+        "不会从本分支推断GrayImage最终释放；编码临时分配与像素/结果持有分属不同链。"
+      ]
+    },
+    {
+      "id": "PST03",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "标定插件PrepareSave",
+      "to": "持久scope/fallback状态先同步，随后输出参数副本",
+      "behavior": "ReadCalibFile.Save先GetState，再在state.Gate内Configure；Configure会先置Initialized/Requested，再按首次缓存、空路径或磁盘读取分支Apply，更新LoadError及按ReplaceData/CommitPath条件更新Data/Path/Cache。随后才克隆节点参数并按SaveCalibDataEnable输出CachedFileData。Rotate.PrepareSave同样Get并Synchronize：首次可从36字节CachedMatrix恢复9个float，否则按AppliedPath差异Session.Load并写AppliedPath，随后把当前Matrix序列化为新Base64 CachedMatrix及Loaded标志。故参数字典的隔离不等于插件state也隔离。",
+      "representation": "scope存在时state放入按插件/节点/流程定位的ModuleExecutionScope；无scope时各插件fallback字典以绝对directory|node为key。Read缓存XML字符串/typed Data；Rotate缓存会话矩阵，再复制成byte[]及Base64参数。",
+      "cache": "保存触发的Initialized/Requested/AppliedPath等同步可留在原state；SolutionStore尚未开始时就可能发生。随后序列化、写文件或Move失败，没有由GraphEditorDocument.Save恢复这些state的代码。",
+      "release": "此处锁保护插件state同步，不是跨文档/文件事务。新参数仅随最终文档提交；state的生命期仍由scope或fallback持有者控制，不因投影失败自动Dispose。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.Calibration/ReadCalibFilePlugin.cs",
+          "member": "ReadCalibFile GetState/Apply/Configure",
+          "sha256": "b6df11d12ace8ca5f3537764f97aeddc52d03873e5b0d387f01610fd4a12dc02",
+          "start": 22,
+          "end": 24,
+          "excerpt": " State GetState(string node,string directory,ModuleExecutionScope? scope){if(scope is not null)return scope.State(Id,node,()=>new State());lock(gate){string key=System.IO.Path.GetFullPath(directory)+\"|\"+node;if(!states.TryGetValue(key,out var state))states[key]=state=new();return state;}}\n static void Apply(State state,ReadCalibFileLoad load,string path,bool disk){state.LoadError=load.ErrorCode;if(load.ReplaceData&&load.Data is {} data)state.Data=data;if(load.CommitPath){if(disk)state.Path=path;state.Cache=load.Data!.Xml;}}\n static void Configure(State state,IReadOnlyDictionary<string,JsonElement> values,string directory){string requested=values[\"FilePath\"].GetString()??\"\";if(state.Initialized&&state.Requested==requested)return;bool first=!state.Initialized;state.Initialized=true;state.Requested=requested;if(first&&values.TryGetValue(\"CachedFileData\",out var cached)&&!string.IsNullOrEmpty(cached.GetString())){state.Path=requested.Length==0?\"\":System.IO.Path.GetFullPath(requested,directory);Apply(state,ReadCalibFileData.Parse(cached.GetString()!),state.Path,false);}else if(requested.Length==0){state.Path=state.Cache=\"\";state.Data=new();state.LoadError=0;}else{string path=System.IO.Path.GetFullPath(requested,directory);Apply(state,ReadCalibFileData.Read(path),path,true);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/ReadCalibFilePlugin.cs",
+          "member": "ReadCalibFile save synchronizes before parameter clone",
+          "sha256": "b6df11d12ace8ca5f3537764f97aeddc52d03873e5b0d387f01610fd4a12dc02",
+          "start": 29,
+          "end": 29,
+          "excerpt": " ToolAssetSnapshot Save(NodeDocument node,string directory,ResourceCatalog resources,ModuleExecutionScope? scope){var state=GetState(node.Id,directory,scope);lock(state.Gate){Configure(state,node.Parameters,directory);var values=node.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone());values[\"CachedFileData\"]=JsonSerializer.SerializeToElement(values[\"SaveCalibDataEnable\"].GetBoolean()?state.Cache:\"\");return new(node with{Parameters=values},[]);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/RotateCalibrationPlugin.cs",
+          "member": "Rotate scoped and fallback state",
+          "sha256": "9a35f92d3d4c4689f7c6eaafc2d688a907c9068e3f79165856e5c2a5ce9387fb",
+          "start": 25,
+          "end": 29,
+          "excerpt": "    State Get(string node, string directory, ModuleExecutionScope? scope)\n    {\n        if (scope is not null) return scope.State(Id, node, () => new State());\n        lock (gate) { string key = Path.GetFullPath(directory) + \"|\" + node; if (!fallback.TryGetValue(key, out var state)) fallback[key] = state = new(); return state; }\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/RotateCalibrationPlugin.cs",
+          "member": "Rotate Synchronize mutations",
+          "sha256": "9a35f92d3d4c4689f7c6eaafc2d688a907c9068e3f79165856e5c2a5ce9387fb",
+          "start": 30,
+          "end": 46,
+          "excerpt": "    static void Synchronize(State state, IReadOnlyDictionary<string, JsonElement> p, string directory)\n    {\n        string path = p[\"FilePath\"].GetString() ?? \"\";\n        if (!state.Initialized)\n        {\n            state.Initialized = true;\n            string cache = p.TryGetValue(\"CachedMatrix\", out var json) ? json.GetString() ?? \"\" : \"\";\n            if (cache.Length > 0)\n            {\n                try { var bytes = Convert.FromBase64String(cache); if (bytes.Length == 36) { state.Session.Restore(Enumerable.Range(0, 9).Select(i => BitConverter.ToSingle(bytes, 4 * i)).ToArray(), p[\"CachedMatrixLoaded\"].GetBoolean(), path.Length == 0 ? \"\" : Path.GetFullPath(path, directory)); state.AppliedPath = path; } }\n                catch (FormatException) { /* Invalid persisted cache falls back to normal file loading. */ }\n            }\n        }\n        if (state.AppliedPath != path) { state.Session.Load(path.Length == 0 ? \"\" : Path.GetFullPath(path, directory)); state.AppliedPath = path; }\n    }\n    public void UpdateConfiguration(ToolEditorContext context, IReadOnlyDictionary<string, JsonElement> values)\n    { var state = Get(context.Node.Id, context.BaseDirectory, context.Scope); lock (state.Gate) Synchronize(state, values, context.BaseDirectory); }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.Calibration/RotateCalibrationPlugin.cs",
+          "member": "Rotate PrepareSave caches matrix",
+          "sha256": "9a35f92d3d4c4689f7c6eaafc2d688a907c9068e3f79165856e5c2a5ce9387fb",
+          "start": 83,
+          "end": 93,
+          "excerpt": "    public ToolAssetSnapshot PrepareSave(NodeDocument node, string directory, ResourceCatalog resources, ModuleExecutionScope? scope)\n    {\n        var state = Get(node.Id, directory, scope); lock (state.Gate)\n        {\n            Synchronize(state, node.Parameters, directory);\n            var parameters = node.Parameters.ToDictionary(p => p.Key, p => p.Value.Clone());\n            parameters[\"CachedMatrix\"] = JsonSerializer.SerializeToElement(Convert.ToBase64String(state.Session.Matrix.SelectMany(BitConverter.GetBytes).ToArray()));\n            parameters[\"CachedMatrixLoaded\"] = JsonSerializer.SerializeToElement(state.Session.Loaded);\n            return new(node with { Parameters = parameters }, []);\n        }\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Save has no participant rollback",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 68,
+          "end": 74,
+          "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本条只确认当前两个插件族；Session内部Load/Restore数值算法和全部异常不在本切片展开。",
+        "未执行保存失败探针；静态无回滚不等于所有失败都会改变state，取决于具体分支和旧状态。"
+      ]
+    },
+    {
+      "id": "PST04",
+      "classification": "independent-implementation",
+      "stages": [
+        "prepare",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "SaveAs的Copy/Rebase与SolutionStore.Save",
+      "to": "路径字段变换、文件提交、编辑器提交分离",
+      "behavior": "Copy给Resources建立新数组但仍使用原资源record引用；参数JsonElement.Clone、ROI顶点数组等另行快照。Rebase再次Copy，只改每个ResourceDocument.Path及ModuleId恰为vision.image-file的字符串Path参数：绝对路径原样保留，相对路径先按旧base解析，再相对新base表示。任意插件私有路径不被通用Rebase扫描；ImageSource自己的绝对化来自PST02。Rebase不复制外部图像或标定文件。SolutionStore.Save完成结构/JSON检查、临时文件写入Flush(true)、Move覆盖且finally正常结束后，doc才写document/BaseDirectory/FilePath/IsDirty/Revision并发Changed。",
+      "representation": "旧document、prepared、rebased、UTF8 json及磁盘临时文件各是不同层；当前实际API名是SolutionStore.Save，没有独立SaveAtomic方法。",
+      "cache": "PrepareSave/Rebase/store在返回前抛错，doc这行提交未执行，旧编辑器字段仍保留；这不撤销PST02/03状态副作用。若Changed订阅者抛错，则编辑器字段与文件已提交，调用仍可异常结束；外层目录偏好/Recent更新只在doc.Save正常返回后发生。",
+      "release": "临时文件由finally尝试Delete，异常仍可传播；不把该单方案文件替换协议扩展为插件state、外部资产、历史payload或偏好文件的全域原子事务。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Copy container and JsonElement identities",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 331,
+          "end": 331,
+          "excerpt": "    static SolutionDocument Copy(SolutionDocument d)=>d with {Resources=d.Resources.ToArray(),Procedures=d.Procedures.Select(p=>p with {Configuration=p.Configuration.Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with {Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=>r with {Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Selective Rebase path transformation",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 332,
+          "end": 335,
+          "excerpt": "    static SolutionDocument Rebase(SolutionDocument d,string oldBase,string newBase) {\n        var copy=Copy(d); string PathValue(string path)=>Path.IsPathFullyQualified(path)?path:Path.GetRelativePath(newBase,Path.GetFullPath(path,oldBase));\n        return copy with { Resources=copy.Resources.Select(r=>r with {Path=PathValue(r.Path)}).ToArray(),Procedures=copy.Procedures.Select(p=>p with {Nodes=p.Nodes.Select(n=> {if(n.ModuleId!=\"vision.image-file\"||!n.Parameters.TryGetValue(\"Path\",out var v)||v.ValueKind!=JsonValueKind.String)return n; var values=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone());values[\"Path\"]=JsonSerializer.SerializeToElement(PathValue(v.GetString()!));return n with {Parameters=values};}).ToArray()}).ToArray() };\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "File then editor fields then Changed",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 68,
+          "end": 74,
+          "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionStore.cs",
+          "member": "Exact persisted file write boundary",
+          "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+          "start": 17,
+          "end": 24,
+          "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/MainWindow.ShellSaveSolution.cs",
+          "member": "Outer Save preferences after doc.Save",
+          "sha256": "f550855c25ec424dc1bbc66268ed1099596896179529fd5ad6ca112de96aba2f",
+          "start": 65,
+          "end": 83,
+          "excerpt": "    bool Save(bool asNew)\n    {\n        var file = doc.FilePath;\n        var selectedPath = asNew || file is null;\n        if (selectedPath)\n        {\n            file = solutionSavePicker.Pick(this, SaveSolutionDirectoryPreference.InitialDirectory());\n            if (string.IsNullOrWhiteSpace(file)) return false;\n        }\n        if (file is null) return false;\n        doc.Save(file);\n        if (selectedPath)\n            SaveSolutionDirectoryPreference.Remember(file);\n        RecentSolutionStore.Update(doc.FilePath!);\n        RefreshRecentSolutionsMenu();\n        return true;\n    }\n}\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原子覆盖的文件系统/崩溃持久性未在本切片实测；源码Flush/Move不能证明多文件事务。",
+        "通用路径规则不保证每个插件资源的跨机器可移植性；只能按其具体参与者分支判断。"
+      ]
+    },
+    {
+      "id": "PST05",
+      "classification": "independent-implementation",
+      "stages": [
+        "history",
+        "persistence"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "GraphEditorDocument.Save保留既有history",
+      "to": "旧BaseDirectory快照与SaveAs之后的RestoreSnapshot",
+      "behavior": "Save没有history.Clear、solutionGeneration递增或SolutionReplaced事件，而Load在提交时明确执行这些操作。Snapshot保留ProcedureId与创建时BaseDirectory，并持有MemoryDocument或payload；Capture把Copy(document)作为快照输入。因此已有历史快照可继续保留旧Resources/嵌入Base64，即使保存投影的新Resources已过滤或替换；并非每次Save必有这样的快照。RestoreSnapshot用snapshot.Document及snapshot.BaseDirectory按当前BaseDirectory重新Rebase，然后替换document/选择流程/标dirty/Revision/Changed，不修改当前FilePath/BaseDirectory，也不写方案文件。",
+      "representation": "编辑器当前document与历史快照是不同持有层。快照保存的是文档数据，不是ModuleExecutionScope/state、GrayImage或运行结果的自动副本。",
+      "cache": "SaveAs改变当前base后，旧快照仍携自己的旧base，恢复时转换到当前base；不能说保存成功就清空旧资源或刷新全部运行期缓存。历史payload的租约与删除失败由专门HP事实另述。",
+      "release": "Save本身不Dispose历史；快照退役由历史引擎/编辑器生命周期处理。本事实不声称字节、文件或资源在Save成功时已经释放。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Snapshot document and base-directory holder",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 15,
+          "end": 20,
+          "excerpt": "    sealed record Snapshot(SolutionDocument? MemoryDocument, string ProcedureId, string BaseDirectory,\n        [property:System.Text.Json.Serialization.JsonIgnore] HistoryPayloadLease? Payload = null) : IDisposable\n    {\n        public SolutionDocument Document => MemoryDocument ?? JsonSerializer.Deserialize<SolutionDocument>(Payload!.ReadBytes())\n            ?? throw new InvalidDataException(\"Invalid owned history document payload.\");\n        public void Dispose() => Payload?.Dispose();",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Save keeps history while Load clears it",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 59,
+          "end": 74,
+          "excerpt": "    public void Load(string path) {\n        string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);\n        var baseDirectory=Path.GetDirectoryName(full)!;\n        var separated=Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()});\n        var prepared=PrepareLoad?.Invoke(separated,baseDirectory)??separated;\n        SolutionStore.ValidateStructure(prepared);\n        document = Copy(prepared); CurrentProcedureId = prepared.Procedures.FirstOrDefault()?.Id??\"\";\n        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; solutionGeneration++;configurationHistory=null;history.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();\n    }\n    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Capture copied document",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 307,
+          "end": 307,
+          "excerpt": "    Snapshot Capture()=>CaptureSnapshot(Copy(document),CurrentProcedureId,BaseDirectory);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "CaptureSnapshot memory or payload holder",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 308,
+          "end": 315,
+          "excerpt": "    Snapshot CaptureSnapshot(SolutionDocument value,string procedure,string directory)\n    {\n        ObjectDisposedException.ThrowIf(disposed,this);\n        var bytes=JsonSerializer.SerializeToUtf8Bytes(value);\n        if(historyPayloadParentDirectory is null && bytes.Length<64*1024)return new(value,procedure,directory);\n        historyPayloadStore??=new(historyPayloadParentDirectory??Path.Combine(Path.GetTempPath(),\"VisionEditor-History\"));\n        return new(null,procedure,directory,historyPayloadStore.CreateFile(bytes));\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Restore uses snapshot old base and current base",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 316,
+          "end": 319,
+          "excerpt": "    void RestoreSnapshot(Snapshot snapshot) {\n        var next=Rebase(snapshot.Document,snapshot.BaseDirectory,BaseDirectory);\n        document=next;CurrentProcedureId=snapshot.ProcedureId;IsDirty=true;Revision++;Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "历史中是否实际存在含旧嵌入资源的快照取决于此前操作，未把条件持有推成所有Save的必然内存驻留。",
+        "这里只确认文档历史与路径边界；payload文件租约/删除失败、GUI回放与原版行为分别保留其独立证据。"
+      ]
+    }
+  ],
+  "writeBoundaryTable": [
+    {
+      "phase": "准备资源集合",
+      "holder": "registry局部catalog/resources",
+      "fields": "旧ResourceDocument引用；新Resources按插件前缀过滤/按Id覆盖",
+      "writeTime": "参与者调用之前与逐节点返回时",
+      "success": "新资源表随prepared返回",
+      "failure": "投影未返回；早先参与者state可能已经变更；旧文档资源仍在",
+      "factIds": [
+        "PST01"
+      ]
+    },
+    {
+      "phase": "图像资产投影",
+      "holder": "ImageSource局部values/assets/embedded；scope.State",
+      "fields": "全路径表；最多120个编码资源Base64；可能新建State",
+      "writeTime": "SolutionStore序列化前",
+      "success": "新参数和资源进入prepared",
+      "failure": "using流退役；scope状态无跨层回滚；像素缓存未由此清理",
+      "factIds": [
+        "PST02"
+      ]
+    },
+    {
+      "phase": "标定缓存同步",
+      "holder": "scope或fallback State",
+      "fields": "Initialized/Requested/Data/Cache/LoadError；Session/AppliedPath",
+      "writeTime": "参数Clone及文件写入前",
+      "success": "参数缓存取同步后的state",
+      "failure": "state可能已变，文档尚未提交",
+      "factIds": [
+        "PST03"
+      ]
+    },
+    {
+      "phase": "路径重基",
+      "holder": "rebased文档副本",
+      "fields": "Resources.Path；vision.image-file.Path",
+      "writeTime": "PrepareSave之后、磁盘写入之前",
+      "success": "文件与后续编辑器使用rebased",
+      "failure": "旧编辑器base/file/document未因本步骤改变；不搬移资产",
+      "factIds": [
+        "PST04"
+      ]
+    },
+    {
+      "phase": "方案文件替换",
+      "holder": "SolutionStore局部json/temp；文件系统",
+      "fields": "UTF8字节；临时文件；目标方案",
+      "writeTime": "验证/32MiB检查→Write/Flush(true)→Move→finally",
+      "success": "正常返回后允许编辑器提交",
+      "failure": "异常向外传播，临时文件尝试删除；不恢复插件状态",
+      "factIds": [
+        "PST04"
+      ]
+    },
+    {
+      "phase": "编辑器与外层记录",
+      "holder": "GraphEditorDocument；MainWindow偏好/recent",
+      "fields": "document/BaseDirectory/FilePath/IsDirty/Revision；Changed；偏好文件",
+      "writeTime": "store返回后提交字段；Changed后doc.Save返回；然后外层更新",
+      "success": "文档路径及最近方案更新",
+      "failure": "Changed或外层更新失败时前面文件/字段已可能提交，无全链回滚",
+      "factIds": [
+        "PST04"
+      ]
+    },
+    {
+      "phase": "历史保留与回放",
+      "holder": "Snapshot MemoryDocument或payload",
+      "fields": "旧document/ProcedureId/BaseDirectory",
+      "writeTime": "保存前既有快照；回放才Rebase到当前base",
+      "success": "Save不主动清history；回放只改当前文档为dirty",
+      "failure": "不声称Save释放旧嵌入数据；payload失败另看HP事实",
+      "factIds": [
+        "PST05"
+      ]
+    }
+  ],
+  "existingContext": [
+    {
+      "sourceDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "sourceKey": "J02",
+      "record": {
+        "id": "J02",
+        "route": "当前 · 保存",
+        "classification": "independent-implementation",
+        "from": "GraphEditorDocument.Save",
+        "to": "SolutionStore.Save",
+        "behavior": "PrepareSave 接收文档副本，随后 Rebase 并落盘；返回后才替换 document、基目录、路径、Dirty、Revision 并发 Changed。",
+        "refs": [
+          {
+            "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+            "member": "GraphEditorDocument.Save",
+            "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+            "start": 68,
+            "end": 75,
+            "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }\n    public void SelectProcedure(string id) { if (!document.Procedures.Any(p => p.Id == id)) throw new KeyNotFoundException(id); if(CurrentProcedureId == id)return; CurrentProcedureId = id; Changed?.Invoke(); }",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "PrepareSave / Rebase 的插件私有资源及历史一致性不由这一方法证明。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      }
+    },
+    {
+      "sourceDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "sourceKey": "J03",
+      "record": {
+        "id": "J03",
+        "route": "当前 · 保存",
+        "classification": "independent-implementation",
+        "from": "SolutionStore.Save",
+        "to": "临时文件 → Flush(true) → File.Move",
+        "behavior": "先校验/序列化、限制 32MiB、检查重复键；同目录独占新临时文件写入和 Flush(true)，Move(overwrite:true)，finally 清临时文件。",
+        "refs": [
+          {
+            "path": "src/VisionFramework/SolutionStore.cs",
+            "member": "SolutionStore.Save",
+            "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+            "start": 17,
+            "end": 25,
+            "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }\n    public static void ValidateStructure(SolutionDocument solution){",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "不证明断电、跨卷、native 保存事务或全部插件资产兼容。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      }
+    },
+    {
+      "sourceDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "sourceKey": "J04",
+      "record": {
+        "id": "J04",
+        "route": "当前 · 文件菜单与独立载荷",
+        "classification": "independent-implementation",
+        "from": "GraphEditorDocument.PrepareSave",
+        "to": "ToolPluginRegistry参与者投影 → Rebase → JSON存储",
+        "behavior": "MainWindow构造将PrepareSave委托连到plugins.PrepareSave并传当前executionScope。ToolPluginRegistry先按已注册持久化参与者前缀排除旧资源，再逐节点调用IToolAssetPersistence.PrepareSave，资源按Id覆盖；没有参与者的节点直接保留。Rebase复制投影，保留绝对路径，仅重算资源相对路径及vision.image-file的Path参数，不递归改写任意插件参数。",
+        "refs": [
+          {
+            "path": "src/VisionEditor/MainWindow.xaml.cs",
+            "member": "PrepareSave hook attachment",
+            "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+            "start": 48,
+            "end": 48,
+            "excerpt": " public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new NImagePlugin(),modules);plugins.Register(new VisionPlugins.CameraMapping.CameraMappingPlugin(),modules);plugins.Register(new VisionPlugins.CalibrationBoard.CalibrationBoardPlugin(),modules);plugins.Register(new VisionPlugins.DistortionCalibration.DistortionCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.MapCalibration.MapCalibrationPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new CoordinateModulePlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);plugins.Register(new VisionPlugins.BranchModule.BranchModulePlugin(),modules);plugins.Register(new VisionPlugins.BranchString.BranchStringPlugin(),modules);plugins.Register(new VisionPlugins.Fixture.FixturePlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=>plugins.PrepareSave(document,baseDirectory,executionScope)};InitializeFrameworkResultHistory();Logo.Source=Asset(\"logo_vm.png\");StatusIcon.Source=Asset(\"bottombar_run.png\");ZoomIcon.Source=Asset(\"zoom_magnifier.png\");Resources[\"WorkflowNgOff\"]=Asset(\"workflow-ng-off.png\");Resources[\"WorkflowNgOn\"]=Asset(\"workflow-ng-on.png\");Resources[\"ToolboxCategoryClosed\"]=Asset(\"toolbox-category-closed.png\");Resources[\"ToolboxCategoryOpen\"]=Asset(\"toolbox-category-open.png\");Resources[\"ToolboxExpandNormal\"]=Asset(\"toolbox-expand-normal.png\");Resources[\"ToolboxExpandHover\"]=Asset(\"toolbox-expand-hover.png\");BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=>RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=>{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshConfigurationRoi();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count>0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=>RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=>{if(DisplayTabs.SelectedIndex==0&&Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "src/VisionPluginContracts/Contracts.cs",
+            "member": "plugin save projection",
+            "sha256": "a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f",
+            "start": 64,
+            "end": 70,
+            "excerpt": " public SolutionDocument PrepareSave(SolutionDocument document,string baseDirectory,ModuleExecutionScope? scope){\n  var catalog=new ResourceCatalog(baseDirectory,document.Resources);var resources=document.Resources.Where(r=>!plugins.Values.Any(p=>p is IToolAssetPersistence&&r.Id.StartsWith(\"plugin:\"+p.Manifest.Id+\":\",StringComparison.Ordinal))).ToDictionary(r=>r.Id,StringComparer.Ordinal);\n  var procedures=document.Procedures.Select(procedure=>procedure with{Nodes=procedure.Nodes.Select(node=>{\n   if(Find(node.ModuleId) is not IToolAssetPersistence participant)return node;\n   var snapshot=participant.PrepareSave(node,baseDirectory,catalog,scope?.ForProcedure(procedure.Id));foreach(var resource in snapshot.Resources)resources[resource.Id]=resource;return snapshot.Node;\n  }).ToArray()}).ToArray();return document with{Procedures=procedures,Resources=resources.Values.ToArray()};\n }",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+            "member": "path rebase rules",
+            "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+            "start": 332,
+            "end": 335,
+            "excerpt": "    static SolutionDocument Rebase(SolutionDocument d,string oldBase,string newBase) {\n        var copy=Copy(d); string PathValue(string path)=>Path.IsPathFullyQualified(path)?path:Path.GetRelativePath(newBase,Path.GetFullPath(path,oldBase));\n        return copy with { Resources=copy.Resources.Select(r=>r with {Path=PathValue(r.Path)}).ToArray(),Procedures=copy.Procedures.Select(p=>p with {Nodes=p.Nodes.Select(n=> {if(n.ModuleId!=\"vision.image-file\"||!n.Parameters.TryGetValue(\"Path\",out var v)||v.ValueKind!=JsonValueKind.String)return n; var values=n.Parameters.ToDictionary(k=>k.Key,k=>k.Value.Clone());values[\"Path\"]=JsonSerializer.SerializeToElement(PathValue(v.GetString()!));return n with {Parameters=values};}).ToArray()}).ToArray() };\n    }",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "各插件私有资产/缓存副作用和失败回滚未由框架投影证明；只读当前main源码，不更改插件框架或其它worktree。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      }
+    },
+    {
+      "sourceDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "sourceKey": "J05",
+      "record": {
+        "id": "J05",
+        "route": "当前 · 文件菜单与独立载荷",
+        "classification": "independent-implementation",
+        "from": "doc.Save返回 / Shell.Save后续",
+        "to": "文件提交、文档状态、Changed、偏好和最近记录分段",
+        "behavior": "SolutionStore写JSON字节并Flush/Move后，doc.Save才改document/BaseDirectory/FilePath/Dirty/Revision并触发Changed；Changed抛错可在文件和字段已变化后中断返回。Shell只有doc.Save正常返回才Remember目录（选新路径时）、Update最近及刷新。Remember的目录创建/写入不捕获；后续失败由Safe显示错误，代码未回滚已写文件或文档。该选定写盘路径直接写序列化JSON，没有原.sol密码/加密提供器步骤。",
+        "refs": [
+          {
+            "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+            "member": "Save commit before Changed",
+            "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+            "start": 68,
+            "end": 74,
+            "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "src/VisionEditor/MainWindow.ShellSaveSolution.cs",
+            "member": "shell save continuation",
+            "sha256": "f550855c25ec424dc1bbc66268ed1099596896179529fd5ad6ca112de96aba2f",
+            "start": 65,
+            "end": 83,
+            "excerpt": "    bool Save(bool asNew)\n    {\n        var file = doc.FilePath;\n        var selectedPath = asNew || file is null;\n        if (selectedPath)\n        {\n            file = solutionSavePicker.Pick(this, SaveSolutionDirectoryPreference.InitialDirectory());\n            if (string.IsNullOrWhiteSpace(file)) return false;\n        }\n        if (file is null) return false;\n        doc.Save(file);\n        if (selectedPath)\n            SaveSolutionDirectoryPreference.Remember(file);\n        RecentSolutionStore.Update(doc.FilePath!);\n        RefreshRecentSolutionsMenu();\n        return true;\n    }\n}\n",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "src/VisionEditor/MainWindow.ShellSaveSolution.cs",
+            "member": "save-directory persistence",
+            "sha256": "f550855c25ec424dc1bbc66268ed1099596896179529fd5ad6ca112de96aba2f",
+            "start": 48,
+            "end": 52,
+            "excerpt": "    internal static void Remember(string file)\n    {\n        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);\n        File.WriteAllText(FilePath, Path.GetDirectoryName(Path.GetFullPath(file))!);\n    }",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "src/VisionFramework/SolutionStore.cs",
+            "member": "serialized JSON file write",
+            "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+            "start": 17,
+            "end": 25,
+            "excerpt": "    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\"Solution exceeds size limit.\");\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\".\"+Path.GetFileName(full)+\".\"+Guid.NewGuid().ToString(\"N\")+\".tmp\");\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }\n    public static void ValidateStructure(SolutionDocument solution){",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "src/VisionEditor/MainWindow.xaml.cs",
+            "member": "Safe postcommit error display",
+            "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+            "start": 63,
+            "end": 63,
+            "excerpt": " void Safe(Action a){try{a();}catch(Exception e){StatusText.Text=e.Message;}}",
+            "evidenceType": "current-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "文件系统原子性/断电、Changed全部消费者及插件私有payload保护策略未验证；只确认此主框架JSON写入路径，不推断所有插件字段均无保护。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      }
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "PSTU01",
+      "target": "whole-save transaction",
+      "question": "单方案文件写入、插件state同步、历史payload、外部资产与外层偏好属于不同提交域；没有跨全部域回滚合同。"
+    },
+    {
+      "id": "PSTU02",
+      "target": "runtime/original corroboration",
+      "question": "本批仅核当前实际源码分支；未运行故障注入/GUI/设备，不代表原版或所有插件资产保存行为。"
+    }
+  ],
+  "provenance": {
+    "sourceFiles": [
+      {
+        "path": "src/VisionPluginContracts/Contracts.cs",
+        "sha256": "a4b146478fa2e880c5048f23462a2894d1ea6806ea8881f89067c556c7aaf78f",
+        "byteLength": 9170
+      },
+      {
+        "path": "src/VisionFramework/GeometryResources.cs",
+        "sha256": "8fb2332a37eb758d5dabe6a99659b62cbdba2cded9dea7bc372e7740a525200f",
+        "byteLength": 5478
+      },
+      {
+        "path": "src/VisionPlugins.ImageSource/ImageSourceAssets.cs",
+        "sha256": "6f7c81db9e3e07c47121a4520127c2aba84ac1e03d61c0a0f1f8d02829f82e30",
+        "byteLength": 3361
+      },
+      {
+        "path": "src/VisionFramework/SolutionStore.cs",
+        "sha256": "533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365",
+        "byteLength": 7978
+      },
+      {
+        "path": "src/VisionPlugins.Calibration/ReadCalibFilePlugin.cs",
+        "sha256": "b6df11d12ace8ca5f3537764f97aeddc52d03873e5b0d387f01610fd4a12dc02",
+        "byteLength": 11651
+      },
+      {
+        "path": "src/VisionPlugins.Calibration/RotateCalibrationPlugin.cs",
+        "sha256": "9a35f92d3d4c4689f7c6eaafc2d688a907c9068e3f79165856e5c2a5ce9387fb",
+        "byteLength": 11968
+      },
+      {
+        "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+        "byteLength": 36443
+      },
+      {
+        "path": "src/VisionEditor/MainWindow.ShellSaveSolution.cs",
+        "sha256": "f550855c25ec424dc1bbc66268ed1099596896179529fd5ad6ca112de96aba2f",
+        "byteLength": 2570
+      }
+    ],
+    "runtimeExecuted": false,
+    "originalRuntimeExecuted": false,
+    "targetCodeExecuted": false,
+    "productModified": false,
+    "otherWorktreeRead": false,
+    "implementationCredit": 0,
+    "coverageDelta": "Specific resource/state/path/history holders and failure boundaries beyond CP06 and J02-J05 overview; HP lease/delete details excluded."
+  }
+}

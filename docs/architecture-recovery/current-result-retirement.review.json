@@ -1,0 +1,662 @@
+{
+  "facts": [
+    {
+      "id": "CR01",
+      "classification": "independent-implementation",
+      "stages": [
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "新一轮开始 / 停止 / 抛取消异常",
+      "to": "隐藏旧结果视图与保存旧会话是两个动作",
+      "behavior": "BeginWorkflowResults增加过程执行计数，仅在count>1、workStatus非0且清旧结果偏好开启时，标记该过程及所调用子过程为cleared并清当前results视图；它不删除workflowSessions。RunCore返回session才StoreWorkflowCallResults覆盖对应会话并移除cleared标记。若Task.Run被取消或执行抛异常而没有返回session，catch只改状态文字，旧session仍在；偏好开启时可处于隐藏状态，未开启时也未由这个catch主动清除。工具栏停止只Cancel activeRun，FinishWorkflowRun清运行标记并Dispose该取消源，不清会话或插件scope状态。",
+      "representation": "results是可见NodeRunRecord索引，workflowSessions是完整ExecutionSessionResult；隐藏索引不等于移除图像持有者。",
+      "cache": "旧session可继续保持Nodes、WorkflowOutputs、WorkflowDisplays、LocalVariables和Calls中的PortValue引用；不能将空白显示当零像素缓存。",
+      "release": "停止请求不等于清旧结果或FIFO；本轮没有新session时不会自动用空session覆盖旧session。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/FrameworkExecutionPolicy.cs",
+          "member": " void BeginWorkflowResults(",
+          "sha256": "22538e88d5d426e9e735bc8f608423e7edd0da82a5de3e619ab8626353104e07",
+          "start": 29,
+          "end": 45,
+          "excerpt": " void BeginWorkflowResults(string procedureId)\n {\n  uint previous=workflowExecuteCounts.GetValueOrDefault(procedureId);\n  uint count=previous==uint.MaxValue?uint.MaxValue:previous+1;\n  workflowExecuteCounts[procedureId]=count;\n  if(!frameworkExecutionPreferences.ShouldClearAtBegin(count,1))return;\n  ClearLiveDynamicDescriptors(procedureId);\n  void Mark(string id)\n  {\n   if(!clearedWorkflowResultViews.Add(id))return;\n   var procedure=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);\n   if(procedure is not null)foreach(var node in procedure.Nodes.Where(n=>n.Call is not null))Mark(node.Call!.ProcedureId);\n  }\n  Mark(procedureId);\n  if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){results.Clear();RefreshRight();RenderGraph();}\n }\n}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/FrameworkExecutionPreferences.cs",
+          "member": "    public bool ShouldClearAtBegin(",
+          "sha256": "b19a443b382cf610e9f2418d35d80c40a1dd0489d5b9d1d98d2df6fe355c1f82",
+          "start": 51,
+          "end": 52,
+          "excerpt": "    public bool ShouldClearAtBegin(uint executeCount, uint workStatus)\n        => executeCount > 1 && workStatus != 0 && IsClearLastExecuteResult;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "   var session=await Task.Run(",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 38,
+          "end": 40,
+          "excerpt": "   var session=await Task.Run(()=>new SolutionExecutor(modules).RunAsync(workspace,procedureId,progress:progress,cancellationToken:token,scope:ownerScope,control:control),token);\n   if(!IsCurrentExecutionOwner(owner))return false;\n   if(control.StopRequested)continuousRun=false;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "  catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 60,
+          "end": 62,
+          "excerpt": "  catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))StatusText.Text=\"运行已停止\";}\n  catch(Exception e){if(IsCurrentExecutionOwner(owner))StatusText.Text=\"运行失败：\"+e.Message;}\n  return false;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": " void StoreWorkflowCallResults(",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 65,
+          "end": 65,
+          "excerpt": " void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){ClearToolDebugResults(procedure);clearedWorkflowResultViews.Remove(procedure);workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": " void FinishWorkflowRun(",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 88,
+          "end": 91,
+          "excerpt": " void FinishWorkflowRun(CancellationTokenSource owner)\n {\n  if(ReferenceEquals(activeRun,owner)){activeRun=null;runningProcedureId=null;continuousRun=false;owner.Dispose();if(!windowClosed)RefreshAll();}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": "stopToolButton=Tool(",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 52,
+          "end": 52,
+          "excerpt": "  Tool(\"toolbar_toolbarSave_normal.png\",\"保存\",()=>Save(false));Tool(\"toolbar_toolbarOpen_normal.png\",\"打开方案\",Open);undoToolButton=Tool(\"toolbar_ic_topbar_undo_normal.png\",\"撤销\",UndoShell);SetToolbarStateIcon(undoToolButton,\"toolbar_ic_topbar_undo_normal.png\",\"toolbar_ic_topbar_undo_disable.png\");redoToolButton=Tool(\"toolbar_ic_topbar_redo_normal.png\",\"重做\",RedoShell);SetToolbarStateIcon(redoToolButton,\"toolbar_ic_topbar_redo_normal.png\",\"toolbar_ic_topbar_redo_disable.png\");lockToolButton=Tool(\"toolbar_ic_topbar_lock_normal.png\",\"锁定工作区\",RequestWorkAreaLock);Sep();Tool(\"toolbar_ic_topbar_camera_normal.png\",\"相机列表\",()=>RefreshCameraProvider(true));Tool(\"toolbar_ic_全局变量_normal.png\",\"全局变量（变量模型尚未接入）\",null);Tool(\"toolbar_ic_通信管理_normal.png\",\"通信管理（通信模块尚未接入）\",null);Tool(\"toolbar_ic_topbar_全局触发_normal.png\",\"全局触发（触发器尚未接入）\",null);Tool(\"toolbar_ic_script_normal.png\",\"脚本（脚本引擎尚未接入）\",null);Sep();Tool(\"toolbar_toolbarStart_normal.png\",\"运行流程\",()=>{_=Run();});continuousToolButton=Tool(\"toolbar_toolbarRunRepeat_normal.png\",\"连续运行\",StartContinuous);stopToolButton=Tool(\"toolbar_toolBarStop_normal.png\",\"停止\",()=>activeRun?.Cancel());Tool(\"toolbar_ic_topbar_综合配置_normal.png\",\"综合配置（系统配置尚未接入）\",null);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "public sealed record ExecutionSessionResult(",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 60,
+          "end": 60,
+          "excerpt": "public sealed record ExecutionSessionResult(SessionStatus Status,IReadOnlyList<NodeRunRecord> Nodes){public IReadOnlyDictionary<string,IReadOnlyList<PortValue>> WorkflowDisplays{get;init;}=new Dictionary<string,IReadOnlyList<PortValue>>();public IReadOnlyList<string> DisplayErrors{get;init;}=[];public bool GroupBroke{get;init;}public int? GroupBreakIndex{get;init;}public IReadOnlyList<string> GroupDiagnostics{get;init;}=[];public int? GroupLoopIndex{get;init;}public int CompletedGroupIterations{get;init;}public IReadOnlyDictionary<string,PortValue> WorkflowInputs{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyDictionary<string,ExecutionSessionResult> Calls{get;init;}=new Dictionary<string,ExecutionSessionResult>();public IReadOnlyDictionary<string,PortValue> WorkflowOutputs{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyDictionary<string,PortValue> LocalVariables{get;init;}=new Dictionary<string,PortValue>();public IReadOnlyList<string> OutputErrors{get;init;}=[];public IReadOnlyDictionary<string,ModuleDescriptor> NodeDescriptors{get;init;}=new Dictionary<string,ModuleDescriptor>();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "此事实仅区分返回session与抛异常两条路径，不把所有取消都判成保留旧会话；返回Cancelled session的覆盖路径见CR02。"
+      ]
+    },
+    {
+      "id": "CR02",
+      "classification": "independent-implementation",
+      "stages": [
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "GraphExecutor本轮取消 / 失败 / 跳过",
+      "to": "本轮混合结果可替换上轮会话；旧插件状态另留",
+      "behavior": "GraphExecutor每轮新建records，不拿上一轮NodeRunRecord补失败节点。节点开始前发现取消会Record(Cancelled)且输出默认Empty；前驱失败或不可用会Record(Skipped)且输出Empty。单节点执行后取消/超时/异常与失败输出过滤按TD04生成本轮记录，已经成功完成的前序节点记录不因此统一清空。最终把全部本轮记录组成session，状态可为Cancelled/Failed/TimedOut。RunCore只检查owner、未以session成功作为发布前提，所以正常返回的取消/失败session也可替换workflowSessions，包含本轮早先成功节点图像与后续空输出。",
+      "representation": "取消后保留的可能是本轮成功前缀，不是自动合并上一轮成功图像；失败记录与成功记录的图像持有不同。",
+      "cache": "覆盖旧会话只移除该字典入口的旧引用，不清插件缓存、配置结果、调试记录或独立视图；新session本身仍可保留本轮成功图像。",
+      "release": "清输出字典、返回取消状态、取消源Dispose均没有逐帧图像Dispose语义。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "  var calls=new Dictionary<string,ExecutionSessionResult>();",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 11,
+          "end": 11,
+          "excerpt": "  var calls=new Dictionary<string,ExecutionSessionResult>();var records=new Dictionary<string,NodeRunRecord>();var descriptors=p.Nodes.ToDictionary(n=>n.Id,registry.GetDescriptor,StringComparer.Ordinal);var suppressed=new HashSet<string>(StringComparer.Ordinal);var selectedSuccessors=new Dictionary<string,HashSet<string>>(StringComparer.Ordinal);var executionEdges=ProcedureGraph.ExecutionEdges(p);var workflow=new WorkflowRunContext(p,inputs,records,groupLoopIndex);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "   void Record(NodeRunStatus s,",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 15,
+          "end": 17,
+          "excerpt": "   void Record(NodeRunStatus s,IReadOnlyDictionary<string,PortValue>? outputs=null,string? code=null,string? message=null,uint? nativeCode=null){records[id]=new(id,s,outputs??Empty(),sw.Elapsed.TotalMilliseconds,code,message){NativeErrorCode=nativeCode};workflow.Update(id);Report(id,s,message);}\n   if(!n.Enabled){Record(NodeRunStatus.Skipped,message:\"Disabled\");continue;}if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}\n   if(executionEdges.Where(e=>e.ToNode==id).Any(e=>suppressed.Contains(e.FromNode)||(selectedSuccessors.TryGetValue(e.FromNode,out var selected)&&!selected.Contains(id))||records[e.FromNode].Status is not(NodeRunStatus.Success or NodeRunStatus.NoMatch))){Record(NodeRunStatus.Skipped,code:\"ExecutionPredecessorUnavailable\");continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "   if(executionEdges.Where(",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 17,
+          "end": 17,
+          "excerpt": "   if(executionEdges.Where(e=>e.ToNode==id).Any(e=>suppressed.Contains(e.FromNode)||(selectedSuccessors.TryGetValue(e.FromNode,out var selected)&&!selected.Contains(id))||records[e.FromNode].Status is not(NodeRunStatus.Success or NodeRunStatus.NoMatch))){Record(NodeRunStatus.Skipped,code:\"ExecutionPredecessorUnavailable\");continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 36,
+          "end": 36,
+          "excerpt": "   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "  var all=validation.ExecutionOrder.Select(",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 48,
+          "end": 49,
+          "excerpt": "  var all=validation.ExecutionOrder.Select(id=>records[id]).ToArray();var status=cancellationToken.IsCancellationRequested||scope?.Stopping.IsCancellationRequested==true||all.Any(n=>n.Status==NodeRunStatus.Cancelled)?SessionStatus.Cancelled:all.Any(n=>n.Status==NodeRunStatus.TimedOut)?SessionStatus.TimedOut:all.Any(n=>n.Status==NodeRunStatus.Failed)?SessionStatus.Failed:SessionStatus.Success;\n  return workflow.Complete(new(status,Array.AsReadOnly(all)){Calls=new ReadOnlyDictionary<string,ExecutionSessionResult>(calls),NodeDescriptors=new ReadOnlyDictionary<string,ModuleDescriptor>(descriptors)});",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "   WorkflowCallbacks.PublishModuleResult(",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 47,
+          "end": 59,
+          "excerpt": "   WorkflowCallbacks.PublishModuleResult(\n    () => {\n      if(!IsCurrentExecutionOwner(owner))return;\n      if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString(\"F2\");StatusText.Text=\"流程完成：\"+session.Status+(session.OutputErrors.Count>0?\" · \"+string.Join(\"；\",session.OutputErrors):\"\");StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?\"bottombar_run.png\":\"bottombar_abnormal.png\");RefreshRight();}\n      if(workflowOverview)RenderWorkflowOverview();\n      if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();\n    },\n    () => {\n      StoreWorkflowCallResults(procedureId,session);RecordWorkflowRun(procedureId,elapsed);\n      if(!windowClosed)RecordFrameworkRunHistory(procedureId,session);\n    });\n   return session.Status==SessionStatus.Success&&session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.Skipped);\n  }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Task.Run调度前取消或外层异常可能不产生session，需与CR01分别判断；未执行竞争、GC或内存峰值探针。"
+      ]
+    },
+    {
+      "id": "CR03",
+      "classification": "independent-implementation",
+      "stages": [
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "GraphEditorDocument.DeleteNodes → Changed",
+      "to": "scope节点状态移除不等于裁剪旧session/配置记录",
+      "behavior": "DeleteNodes修改节点、连线与配置引用，Edit提交文档后发Changed；主窗Changed调用ValidateToolConfigurationOwner、RetainExecutionNodes和刷新。RetainExecutionNodes只将现存(过程,模块,节点)集合交scope.RetainProcedureNodes并裁剪pointAliasPresentation。scope移除对应参数缓存与state，state若IDisposable才Dispose。这个删除链没有按被删节点裁剪workflowSessions.Nodes、configurationResults或toolDebugRecords；这些容器先前保存的记录不能因文档节点消失而推定已释放。",
+      "representation": "编辑文档的节点/JSON历史与运行NodeRunRecord在不同容器；删除图结构不自动改写历史运行session。",
+      "cache": "configurationResults还可保存已删节点的旧记录；新配置请求available从旧session与configurationResults组装引用视图。具体能否再被有效订阅消费仍受当前文档解析和验证限制。",
+      "release": "scope移除仅退役该层state持有；显示不再列出节点不等于所有结果载荷不可达。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "    public void DeleteNodes(",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 172,
+          "end": 175,
+          "excerpt": "    public void DeleteNodes(IEnumerable<string> nodeIds) {\n        var ids=nodeIds.ToHashSet(StringComparer.Ordinal);foreach(var id in ids)_=Node(id);if(ids.Count==0)return;\n        ChangeProcedure(p=>p with {Configuration=p.Configuration.RemoveNodes(ids),Nodes=p.Nodes.Where(n=>!ids.Contains(n.Id)).ToArray(),Connections=p.Connections.Where(c=>!ids.Contains(c.FromNode)&&!ids.Contains(c.ToNode)).ToArray(),ExecutionLinks=p.ExecutionLinks?.Where(e=>!ids.Contains(e.FromNode)&&!ids.Contains(e.ToNode)).ToArray()});\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "        SolutionStore.ValidateStructure(next); RecordEditHistory();",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 306,
+          "end": 306,
+          "excerpt": "        SolutionStore.ValidateStructure(next); RecordEditHistory();document=next;if(selectedProcedure is not null)CurrentProcedureId=selectedProcedure;if(!document.Procedures.Any(p=>p.Id==CurrentProcedureId))CurrentProcedureId=document.Procedures.FirstOrDefault(p=>p.GroupOwner is null)?.Id??\"\";IsDirty=true;Revision++;Changed?.Invoke(); }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": "doc.Changed+=()=>",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 48,
+          "end": 48,
+          "excerpt": " public MainWindow(){InitializeComponent();runningModeIndex=ShellRunningModePreference.Read();shellIsNormalMode=runningModeIndex!=1;InitializeToolDisplays();BuiltinModules.RegisterAll(modules);plugins.Register(new ImageSourcePlugin(),modules);plugins.Register(new ImageAcquisitionPlugin(),modules);plugins.Register(new ImageBufferPlugin(),modules);plugins.Register(new LightPlugin(),modules);plugins.Register(new NPointPlugin(),modules);plugins.Register(new NImagePlugin(),modules);plugins.Register(new VisionPlugins.CameraMapping.CameraMappingPlugin(),modules);plugins.Register(new VisionPlugins.CalibrationBoard.CalibrationBoardPlugin(),modules);plugins.Register(new VisionPlugins.DistortionCalibration.DistortionCalibrationPlugin(),modules);plugins.Register(new VisionPlugins.MapCalibration.MapCalibrationPlugin(),modules);plugins.Register(new TranslationPlugin(),modules);plugins.Register(new ReadCalibFilePlugin(),modules);plugins.Register(new RotateCalibrationPlugin(),modules);plugins.Register(new CoordinateModulePlugin(),modules);plugins.Register(new VisionPlugins.ImageBinary.ImageBinaryPlugin(),modules);plugins.Register(new VisionPlugins.BranchModule.BranchModulePlugin(),modules);plugins.Register(new VisionPlugins.BranchString.BranchStringPlugin(),modules);plugins.Register(new VisionPlugins.Fixture.FixturePlugin(),modules);doc=new GraphEditorDocument(modules){PrepareSave=(document,baseDirectory)=>plugins.PrepareSave(document,baseDirectory,executionScope)};InitializeFrameworkResultHistory();Logo.Source=Asset(\"logo_vm.png\");StatusIcon.Source=Asset(\"bottombar_run.png\");ZoomIcon.Source=Asset(\"zoom_magnifier.png\");Resources[\"WorkflowNgOff\"]=Asset(\"workflow-ng-off.png\");Resources[\"WorkflowNgOn\"]=Asset(\"workflow-ng-on.png\");Resources[\"ToolboxCategoryClosed\"]=Asset(\"toolbox-category-closed.png\");Resources[\"ToolboxCategoryOpen\"]=Asset(\"toolbox-category-open.png\");Resources[\"ToolboxExpandNormal\"]=Asset(\"toolbox-expand-normal.png\");Resources[\"ToolboxExpandHover\"]=Asset(\"toolbox-expand-hover.png\");BuildChrome();InitializeCanvasInput();Closing+=DrainWorkflowBeforeClose;ImageRunMode.Loaded+=(_,_)=>RefreshAll();AttachExecutionScope();doc.SolutionReplaced+=ReplaceExecutionScope;doc.Changed+=()=>{ValidateToolConfigurationOwner();RetainExecutionNodes();RefreshAll();RefreshConfigurationRoi();RefreshShellConfigurationStatus();};LoadDemo();if(doc.CurrentProcedure.Nodes.Count>0)selected=doc.CurrentProcedure.Nodes[0].Id;RefreshAll();RefreshShellConfigurationStatus();CanvasViewport.SizeChanged+=(_,_)=>RenderGraph();Preview.MouseLeftButtonDown+=(_,_)=>{if(DisplayTabs.SelectedIndex==0&&Preview.Source is not null){var v=InputImage(selected);if(v is not null)Preview.Source=ToBitmap(v);}};RefreshAll();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": " void RetainExecutionNodes()",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 45,
+          "end": 45,
+          "excerpt": " void RetainExecutionNodes(){var nodes=doc.Document.Procedures.SelectMany(p=>p.Nodes.Select(n=>(p.Id,n.ModuleId,n.Id))).ToHashSet();executionScope.RetainProcedureNodes(nodes);foreach(var key in pointAliasPresentation.Keys.Where(k=>!nodes.Contains(k)).ToArray())pointAliasPresentation.Remove(key);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": " public void RemoveNode(",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 41,
+          "end": 41,
+          "excerpt": " public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){root.effectiveParameters.Remove((ProcedureId,module,node));if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": " void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current,string? only)",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 44,
+          "end": 44,
+          "excerpt": " void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current,string? only){var root=Root;var keep=current.ToHashSet();lock(root.gate){foreach(var key in root.effectiveParameters.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray())root.effectiveParameters.Remove(key);}(string Procedure,string Module,string Node)[] removed;lock(root.gate)removed=root.states.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray();foreach(var key in removed){if(key.Procedure.Length==0)root.RemoveNode(key.Module,key.Node);else root.ForProcedure(key.Procedure).RemoveNode(key.Module,key.Node);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "  var available=(workflowSessions.TryGetValue(",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 161,
+          "end": 162,
+          "excerpt": "  var available=(workflowSessions.TryGetValue(procedureId,out var priorSession)?priorSession.Nodes:[]).ToDictionary(r=>r.NodeId,StringComparer.Ordinal);\n  if(configurationResults.TryGetValue(procedureId,out var configured))foreach(var cached in configured)available[cached.Key]=cached.Value;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "只证明所选删除/Changed链没有这些裁剪，不宣称任意其它用户动作永远不会清记录；结果字典的最终可达时刻未测。"
+      ]
+    },
+    {
+      "id": "CR04",
+      "classification": "independent-implementation",
+      "stages": [
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "ImageSource状态缓存 / SDK待提交帧 / ImageBuffer FIFO",
+      "to": "scope退役、Reset、像素格式变化分别影响哪些持有者",
+      "behavior": "ImageSource.State除Cache还持PendingFrame及StitchBuffer；其Dispose仅Dispose Folder并置null，不主动Clear Cache、清PendingFrame或StitchBuffer。SDK提交以Interlocked.Exchange替换PendingFrame，执行SDK模式再Exchange为null取走，不克隆。文件模式仅像素格式变化时Clear Cache，路径命中复用同一图像；缓存容量参数只限制新准入，不在此段按减少后的容量主动裁剪。ImageBuffer.State不是IDisposable，FIFO淘汰/Reset及scope移除均只是移除特定持有，旧结果仍可指向已出队图像（复制/发布见TD03）。主窗InvalidateSourceResults清results、调用fallback Reset并移除scope节点，却未在此方法清workflowSessions或configurationResults。",
+      "representation": "源Cache、PendingFrame、拼接数组、FIFO和NodeRunRecord是不同持有者；State.Dispose并不表示它的每个字段被清空。",
+      "cache": "即使state从scope字典移除，正在运行的局部state引用或旧结果仍可能继续持有像素；停止不触发这里的Reset。",
+      "release": "是否由GC回收取决于其它引用；本切片只报告显式字段/容器变化，不宣称旧字节立刻归还系统。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+          "member": " sealed class State:IDisposable",
+          "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7",
+          "start": 15,
+          "end": 32,
+          "excerpt": " sealed class State:IDisposable {\n  public readonly SemaphoreSlim Execution=new(1,1);\n  public readonly Dictionary<string,VisionCore.IImageData> Cache=new(StringComparer.Ordinal);\n  public string[] Paths=[];\n  public string RequestedPath=\"\";\n  public int Index=-1;\n  public int InitialSN=-1;\n  public int Sequence;\n  public VisionCore.IImageData? PendingFrame;\n  public string[] FolderPaths=[];\n  public LocalFolderSubscription? Folder;\n  public void Dispose(){Folder?.Dispose();Folder=null;}\n  public int CameraFailCount;\n  public int PixelFormat;\n  public int StitchWidth;\n  public byte[] StitchBuffer=[];\n }\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+          "member": " public void SubmitImage(",
+          "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7",
+          "start": 47,
+          "end": 47,
+          "excerpt": " public void SubmitImage(ModuleExecutionScope scope,string nodeId,VisionCore.IImageData image){ArgumentNullException.ThrowIfNull(image);var state=scope.State(\"vision.image-source\",nodeId,()=>new State());Interlocked.Exchange(ref state.PendingFrame,image);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+          "member": " public void Reset(ModuleExecutionScope",
+          "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7",
+          "start": 48,
+          "end": 48,
+          "excerpt": " public void Reset(ModuleExecutionScope scope,string nodeId)=>scope.RemoveNode(\"vision.image-source\",nodeId);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+          "member": " public void Reset(string nodeId)",
+          "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7",
+          "start": 53,
+          "end": 55,
+          "excerpt": " public void Reset(string nodeId) {\n  lock(gate)foreach(var key in states.Keys.Where(k=>k.NodeId==nodeId).ToArray())states.Remove(key);\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+          "member": "    if(state.PixelFormat!=",
+          "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7",
+          "start": 135,
+          "end": 147,
+          "excerpt": "    if(state.PixelFormat!=c.Integer(\"PixelFormat\")){state.Cache.Clear();state.PixelFormat=c.Integer(\"PixelFormat\");}\n    if(!state.Cache.TryGetValue(selectedPath,out var cachedImage)) {\n     var node=new NodeDocument(c.NodeId,owner.Manifest.Id,owner.Manifest.Version,owner.Manifest.Name,c.Parameters.ToDictionary(p=>p.Key,p=>p.Value));\n     using var encoded=owner.OpenEncodedImage(node,selectedPath,c.BaseDirectory,c.Resources);cachedImage=LocalImageDecoder.ReadImage(encoded,c.Integer(\"PixelFormat\")==2);\n     // Native local RGB+OutMono8 loads the file through a second MONO decoder.\n     // Its small-color restriction is distinct from converting an acquired RGB frame.\n     if(c.Boolean(\"OutMono8\")&&cachedImage is VisionCore.RgbImage){encoded.Position=0;_=LocalImageDecoder.ReadImage(encoded,false);}\n     token.ThrowIfCancellationRequested();\n     // The native cache admits the first N paths and retains hits; it is not an LRU cache.\n     if(state.Cache.Count<c.Integer(\"PathCache\"))state.Cache.Add(selectedPath,cachedImage);\n    }\n    image=cachedImage;\n    } else if(sourceMode==3){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+          "member": "     image=Interlocked.Exchange(ref state.PendingFrame,null)!;",
+          "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7",
+          "start": 148,
+          "end": 149,
+          "excerpt": "     image=Interlocked.Exchange(ref state.PendingFrame,null)!;\n     if(image is null)return Failed(\"SdkImageNotSubmitted\",\"SDK本次运行前未提交新图像（原厂 0xe000000f）。\");",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": " sealed class State {",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 15,
+          "end": 18,
+          "excerpt": " sealed class State {public readonly object Gate=new();public readonly Queue<IImageData> Images=new();}\n readonly Dictionary<string,State> fallback=new();readonly object gate=new();\n State GetState(ModuleExecutionContext c){if(c.Scope is {} scope)return scope.State(Id,c.NodeId,()=>new State());lock(gate){string key=Path.GetFullPath(c.BaseDirectory)+\"|\"+c.NodeId;if(!fallback.TryGetValue(key,out var state))fallback[key]=state=new();return state;}}\n public void Reset(string nodeId){lock(gate)foreach(string key in fallback.Keys.Where(k=>k.EndsWith(\"|\"+nodeId,StringComparison.Ordinal)).ToArray())fallback.Remove(key);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": " void InvalidateSourceResults(",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 159,
+          "end": 159,
+          "excerpt": "  void InvalidateSourceResults(NodeDocument node){results.Clear();plugins.Find(node.ModuleId)?.Reset(node.Id);executionScope.ForProcedure(doc.CurrentProcedureId).RemoveNode(node.ModuleId,node.Id);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "无scope fallback状态的外部调用/所有Reset时序未穷尽；已知的托管持有关系不能替代native相机帧租用与释放证据。"
+      ]
+    },
+    {
+      "id": "CR05",
+      "classification": "independent-implementation",
+      "stages": [
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "工具调试 / 普通配置自执行 / 关闭编辑器",
+      "to": "停止调度与LastResult、Task结果、宿主缓存分别退役",
+      "behavior": "当前实际类型是ToolDebugSession和ExecutionSessionResult，并未发现名为ToolExecutionSession/RunRecord的同一实体。ToolDebugSession.active保存Start返回的Task，完成finally仅清取消源/更新状态，不把active置null；若为RunOnce，该完成Task可继续持有NodeRunRecord直到active被下次Start替换或session不再可达。StopAsync取消并等待active，不清已保存结果。普通配置调度ToolConfigurationExecution.Dispatch开始把LastResult=null，完成再置结果；StopAsync只取消轮询并等loop，不清LastResult；DisposeAsync再等待inFlight也不清它。宿主RunConfiguredTool按owner/配置存活/节点身份准入后缓存record，不限成功状态；关闭配置可阻止晚发布，但CloseToolConfiguration没有清configurationResults。独立调试窗口的关闭另等待session.DisposeAsync后移除session集合项，不等同清宿主toolDebugRecords。",
+      "representation": "完成Task<T>、配置执行器LastResult、configurationResults、toolDebugRecords和工具窗口LastResult是独立持有者，不能统一命名成一个“会话结果”。",
+      "cache": "正常失败record可覆盖配置缓存旧记录；配置失活导致不发布时旧configurationResults可留存。调试Invalidate还只做宿主特定失效标记，不消灭其它session旧引用。",
+      "release": "停止、Dispose调度器、从窗口集合移除、清LastResult和清宿主记录是不同动作；不能从窗口关闭推断所有输出图像已释放。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ToolDebugSession.cs",
+          "member": " Task? active;",
+          "sha256": "8e9030cc070fb8c9ec6263452f73b936287a87f0bae0456e913a1d531ada0211",
+          "start": 16,
+          "end": 16,
+          "excerpt": " Task? active;CancellationTokenSource? cancellation;bool closing;ToolDebugState state;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ToolDebugSession.cs",
+          "member": "   async Task<T> Execute()",
+          "sha256": "8e9030cc070fb8c9ec6263452f73b936287a87f0bae0456e913a1d531ada0211",
+          "start": 24,
+          "end": 24,
+          "excerpt": "   async Task<T> Execute(){await Task.Yield();try{return await action(owner.Token);}finally{lock(gate){if(ReferenceEquals(cancellation,owner)){cancellation=null;state=closing?ToolDebugState.Disposed:ToolDebugState.Idle;}}owner.Dispose();}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ToolDebugSession.cs",
+          "member": " public async Task StopAsync()",
+          "sha256": "8e9030cc070fb8c9ec6263452f73b936287a87f0bae0456e913a1d531ada0211",
+          "start": 33,
+          "end": 33,
+          "excerpt": " public async Task StopAsync(){Task? wait;lock(gate){wait=active;if(wait is {IsCompleted:false}){state=ToolDebugState.Stopping;cancellation?.Cancel();}}if(wait is not null){try{await wait;}catch(OperationCanceledException){}}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationExecution.cs",
+          "member": " async Task Dispatch(){",
+          "sha256": "bcdbd7f9e2f16b73a1bda06de1ed448039716d74eaa1c55c815e23aebad4c0a0",
+          "start": 61,
+          "end": 66,
+          "excerpt": " async Task Dispatch(){\n  running=true;LastError=null;LastResult=null;Notify();\n  try{LastResult=await execute();}\n  catch(Exception error){LastError=error;polling?.Cancel();}\n  finally{running=false;Notify();}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPluginContracts/ToolConfigurationExecution.cs",
+          "member": " public async Task StopAsync(){",
+          "sha256": "bcdbd7f9e2f16b73a1bda06de1ed448039716d74eaa1c55c815e23aebad4c0a0",
+          "start": 68,
+          "end": 72,
+          "excerpt": " public async Task StopAsync(){\n  var source=polling;if(source is null)return;source.Cancel();if(loop is not null)await loop;\n  if(ReferenceEquals(polling,source)){polling=null;loop=null;}source.Dispose();Notify();\n }\n public async ValueTask DisposeAsync(){closed=true;await StopAsync();if(inFlight is not null)await inFlight;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "  }catch(Exception ex){record=new(nodeId,",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 195,
+          "end": 209,
+          "excerpt": "  }catch(Exception ex){record=new(nodeId,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),clock.Elapsed.TotalMilliseconds,\"SelfRunFailed\",ex.Message);}\n  finally{if(IsCurrentExecutionOwner(runOwner)){activeConfigurationRuns--;if(configurationRunsByProcedure.TryGetValue(procedureId,out int count)){if(count<=1)configurationRunsByProcedure.Remove(procedureId);else configurationRunsByProcedure[procedureId]=count-1;}}}\n  if(CanPublish()&&doc.SolutionId==ownerSolution&&ReferenceEquals(executionScope,ownerScope)&&doc.Document.Procedures.Any(p=>p.Id==procedureId&&p.Nodes.Any(n=>n.Id==nodeId&&n.ModuleId==node.ModuleId&&n.ModuleVersion==node.ModuleVersion))){\n   if(!configurationResults.TryGetValue(procedureId,out var cached))configurationResults[procedureId]=cached=new(StringComparer.Ordinal);\n   cached[nodeId]=record;\n   if(doc.CurrentProcedureId==procedureId){\n    results[nodeId]=record;RefreshRight();RenderGraph();\n    StatusText.Text=\"模块执行：\"+node.Name+\" · \"+record.Status+(record.Message is null?\"\":\" · \"+record.Message);\n    StatusIcon.Source=Asset(record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped?\"bottombar_run.png\":\"bottombar_abnormal.png\");\n   }\n  }\n  return record;\n }\n void RefreshCameraProvider(bool report){\n  if(activeRun is not null)return;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolConfigurationHost.cs",
+          "member": " void CloseToolConfiguration()",
+          "sha256": "2b1f110a2ab7b4cbf55b973109f6a99db56e111d90bfead811854d98d018b5b1",
+          "start": 50,
+          "end": 50,
+          "excerpt": " void CloseToolConfiguration(){toolConfigurationWindows?.Close();if(toolConfigurationWindows?.Current is null)configurationBaseDirectory=null;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolEditorHost.cs",
+          "member": " void BindToolEditorLifetime(",
+          "sha256": "452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3",
+          "start": 70,
+          "end": 74,
+          "excerpt": " void BindToolEditorLifetime(Window window,ToolEditorContext context){window.Owner=this;bool ready=false,pending=false;\n  window.Closing+=async(_,e)=>{if(ready||e.Cancel)return;e.Cancel=true;if(pending)return;pending=true;try{await context.Session!.DisposeAsync();}catch(Exception error){if(!windowClosed)StatusText.Text=\"调试关闭：\"+error.Message;}finally{toolDebugSessions.Remove(context.Session!);ready=true;_ = window.Dispatcher.BeginInvoke(new Action(window.Close));}};\n  window.Closed+=(_,_)=>toolDebugSessions.Remove(context.Session!);\n }\n protected override async void OnClosing(CancelEventArgs e)",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolEditorHost.cs",
+          "member": " void StoreToolDebugResult(",
+          "sha256": "452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3",
+          "start": 25,
+          "end": 27,
+          "excerpt": " void StoreToolDebugResult(string flow,NodeRunRecord record){InvalidateToolDebugResult(flow,record.NodeId);toolDebugRecords[DebugIdentity(flow,record.NodeId)]=record;\n  if(doc.CurrentProcedureId==flow){RestoreWorkflowResults();RefreshRight();StatusText.Text=\"模块调试：\"+record.Status+(record.Message is null?\"\":\" · \"+record.Message);}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Task对象是否实际继续可达取决于窗口/context/session持有；此处只指出字段可达链，不声称关闭后必然泄漏。工具窗口内部额外结果/图像字段仍按各工具另核。"
+      ]
+    },
+    {
+      "id": "CR06",
+      "classification": "independent-implementation",
+      "stages": [
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "切方案 / 关闭主窗",
+      "to": "先阻止旧owner发布，scope等待租约；主窗关闭不等于全持有者清零",
+      "behavior": "切方案ReplaceExecutionScope先使执行owner失效、取消当前请求，显式Clear调试记录、configurationResults、workflowSessions、results等，再Dispose旧scope并创建新scope。scope.Dispose先closing并Cancel，只有取消完成且leases==0才Release；Release清state/services/参数字典，再逐个Dispose可释放资源，失败资源额外存failedResources。主窗关闭与切方案不同：DrainWorkflowBeforeClose先取消活动流程并等activeRun换出；独立调试session由OnClosing等停。OnClosed关闭owner/回调队列、关配置并Dispose scope，但该体没有Clear workflowSessions/results/configurationResults或逐个清控件图像。只可说关闭启动退役，不能说所有外部对象已同步归零。",
+      "representation": "scope的租约控制state/services清理；NodeRunRecord与WPF/工具显示引用不由同一引用计数统一管理。",
+      "cache": "失败资源被保留用于CleanupFailures诊断；旧在飞方法局部引用、关闭窗口/context、外部消费者与结果Task可另外保持载荷可达。FrameworkRunHistory只存摘要（TD08），不能把它当图像历史释放机制。",
+      "release": "新owner阻止旧结果进入新方案，但不是销毁所有旧像素；窗口生命周期、scope清理、查询容器释放和最后图像读者退出需分别说明。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": " void ReplaceExecutionScope()",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 44,
+          "end": 44,
+          "excerpt": " void ReplaceExecutionScope(){executionOwnerEpoch.Invalidate();DetachExecutionScope();activeConfigurationRuns=0;configurationRunsByProcedure.Clear();debugSolution=null;toolDebugRecords.Clear();toolDebugInvalid.Clear();CloseToolConfiguration();activeRun?.Cancel();configurationResults.Clear();pointAliasPresentation.Clear();workflowSessions.Clear();results.Clear();executionScope.Dispose();executionScope=new();AttachExecutionScope();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": " public void Dispose(){",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 45,
+          "end": 48,
+          "excerpt": " public void Dispose(){if(owner is not null)return;lock(gate){if(closing)return;closing=true;}try{stopping.Cancel();}catch(Exception error){RecordCleanupFailure(\"cancel\",stopping,error);}finally{bool release;lock(gate){cancellationComplete=true;release=TryRelease();}if(release)Release();}}\n bool TryRelease(){if(!closing||!cancellationComplete||leases!=0||releaseStarted)return false;releaseStarted=true;return true;}\n void Exit(){bool release;lock(gate){leases--;release=TryRelease();}if(release)Release();}\n void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": " void Release(){",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 48,
+          "end": 48,
+          "excerpt": " void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": " void RecordCleanupFailure(",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 24,
+          "end": 24,
+          "excerpt": " void RecordCleanupFailure(string phase,object resource,Exception error){lock(gate){cleanupFailures.Add(new(phase,resource.GetType().FullName??resource.GetType().Name,error));failedResources.Add(resource);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": " async void DrainWorkflowBeforeClose(",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 88,
+          "end": 108,
+          "excerpt": " async void DrainWorkflowBeforeClose(object? sender,System.ComponentModel.CancelEventArgs e)\n {\n  if(e.Cancel||closeDrainComplete||activeRun is null)return;\n  e.Cancel=true;\n  if(closeDrainPending)return;\n  closeDrainPending=true;\n  WindowContent.IsEnabled=false;\n  StatusText.Text=\"正在停止流程并等待资源释放…\";\n  var closingRun=activeRun;\n  closingRun.Cancel();\n  try\n  {\n   while(ReferenceEquals(activeRun,closingRun))await Task.Delay(10);\n  }\n  finally\n  {\n   closeDrainComplete=true;\n   _=Dispatcher.BeginInvoke(new Action(Close));\n  }\n }\n void MinimizeWindow(object sender,RoutedEventArgs e)=>WindowState=WindowState.Minimized;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolEditorHost.cs",
+          "member": " protected override async void OnClosing(",
+          "sha256": "452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3",
+          "start": 74,
+          "end": 77,
+          "excerpt": " protected override async void OnClosing(CancelEventArgs e)\n {\n  base.OnClosing(e);if(e.Cancel||toolCloseReady||(toolDebugSessions.Count==0&&groupConfigurationWindows.Count==0))return;e.Cancel=true;if(toolClosePending)return;toolClosePending=true;activeRun?.Cancel();\n  try{foreach(var groupWindow in groupConfigurationWindows.ToArray())await groupWindow.StopAndCloseAsync();foreach(var session in toolDebugSessions.ToArray()){try{await session.DisposeAsync();}catch(Exception error){StatusText.Text=\"调试关闭：\"+error.Message;}}}finally{toolDebugSessions.Clear();toolCloseReady=true;_ = Dispatcher.BeginInvoke(new Action(Close));}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": " protected override void OnClosed(",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 92,
+          "end": 99,
+          "excerpt": " protected override void OnClosed(EventArgs e)\n {\n  executionOwnerEpoch.Close();DetachExecutionScope();doc.Dispose();\n  windowClosed=true;\n  workflowCallbacks?.Close();\n  CloseToolConfiguration();\n  executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "没有强制GC、原机内存峰值或最终外部读者测量；不得由静态Dispose路径推断释放的精确时刻、无泄漏或native等价。"
+      ]
+    }
+  ],
+  "unknowns": [
+    "本轮只核当前WPF主宿主所选链，旧WinForms EditorForm不是同一路由。",
+    "清视图、替换记录、状态缓存移除、窗口关闭、等待运行和像素最后读者是不同退役边。"
+  ],
+  "provenance": {
+    "schemaVersion": 1,
+    "scope": "Current main-tree result/session/cache retirement on new run, cancellation, node deletion, editor/window closure and solution replacement; static source only.",
+    "sourceFiles": [
+      {
+        "path": "src/VisionEditor/FrameworkExecutionPolicy.cs",
+        "sha256": "22538e88d5d426e9e735bc8f608423e7edd0da82a5de3e619ab8626353104e07"
+      },
+      {
+        "path": "src/VisionEditor/FrameworkExecutionPreferences.cs",
+        "sha256": "b19a443b382cf610e9f2418d35d80c40a1dd0489d5b9d1d98d2df6fe355c1f82"
+      },
+      {
+        "path": "src/VisionEditor/WorkflowExecution.cs",
+        "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4"
+      },
+      {
+        "path": "src/VisionEditor/MainWindow.xaml.cs",
+        "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a"
+      },
+      {
+        "path": "src/VisionFramework/Contracts.cs",
+        "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269"
+      },
+      {
+        "path": "src/VisionFramework/GraphExecutor.cs",
+        "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c"
+      },
+      {
+        "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558"
+      },
+      {
+        "path": "src/VisionEditor/ToolExecutionScope.cs",
+        "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a"
+      },
+      {
+        "path": "src/VisionFramework/ModuleExecutionScope.cs",
+        "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b"
+      },
+      {
+        "path": "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+        "sha256": "220ae64abf5c855a74336c62e6d21c7557fc9e138b9d71cd965fea1684ff3cb7"
+      },
+      {
+        "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+        "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130"
+      },
+      {
+        "path": "src/VisionFramework/ToolDebugSession.cs",
+        "sha256": "8e9030cc070fb8c9ec6263452f73b936287a87f0bae0456e913a1d531ada0211"
+      },
+      {
+        "path": "src/VisionPluginContracts/ToolConfigurationExecution.cs",
+        "sha256": "bcdbd7f9e2f16b73a1bda06de1ed448039716d74eaa1c55c815e23aebad4c0a0"
+      },
+      {
+        "path": "src/VisionEditor/ToolConfigurationHost.cs",
+        "sha256": "2b1f110a2ab7b4cbf55b973109f6a99db56e111d90bfead811854d98d018b5b1"
+      },
+      {
+        "path": "src/VisionEditor/ToolEditorHost.cs",
+        "sha256": "452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3"
+      }
+    ],
+    "factCount": 6,
+    "referenceCount": 45,
+    "runtimeExecuted": false,
+    "productModified": false,
+    "otherWorktreeRead": false,
+    "complete": false
+  }
+}

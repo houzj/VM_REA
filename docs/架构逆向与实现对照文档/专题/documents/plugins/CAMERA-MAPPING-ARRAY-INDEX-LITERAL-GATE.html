@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ArrayIndex 数字判定与正常UI路径门纠正 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / ArrayIndex 数字判定与正常UI路径门纠正</p><h1>ArrayIndex 数字判定与正常UI路径门纠正</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ArrayIndex 数字判定与正常UI路径门纠正</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="CAMERA-MAPPING-ARRAY-INDEX-LITERAL-GATE.html">下载原始文件</a></nav><main><h1 id="arrayindex-数字判定与正常ui路径门纠正">ArrayIndex 数字判定与正常UI路径门纠正</h1><p>2026-10-19，源码复核；没有原厂运行、没有产品构建。此前方案把MathHelper.IsNumber接受小数直接外推成普通SetCombination UI小数常量可达，结论撤回。</p>
+<h2 id="确切源码链">确切源码链</h2><p>原证根目录 <code>D:/MyWork/REA逆向测试/analysis/decompiled</code>：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>具体成员/行</th>
+<th>SHA256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Apps.XmlParser.CapabilityAudit/Apps.XmlParser/MathHelper.cs</td>
+<td>IsNumber:9–22，四regex联合</td>
+<td>0C0EC68FD4EFF74D862CAA9EF20594D547B206FBB4999057BDA9A6F9757F1C71</td>
+</tr>
+<tr>
+<td>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/SetFilterSourceOperation.cs</td>
+<td>GetBindIndex:183–204</td>
+<td>197EC3EB19974776DB4DC9AB293CABABED6319EF2A5A1C0DA6A8A9BFD5EB0401</td>
+</tr>
+<tr>
+<td>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/SetCombinationSourceOperation.cs</td>
+<td>Operate:60–81，先RelateIO后GetBindIndex/RelateIndex</td>
+<td>7CE50140DF9BC50B1E954A3C604B5FA294F91DB1318A22253FEEBB9811BE9444</td>
+</tr>
+<tr>
+<td>VM.Core/VM.Core/VmIO.cs</td>
+<td>RelateIO:121起；RelateIndex:262起；SetRelateIndex:828–834</td>
+<td>15E1832243422B6BFA2714F300B796D54C365950573639EB1039C5DF58E99CB0</td>
+</tr>
+</tbody></table>
+<p><code>IsNumber</code>先排除非<code>0-9.-</code>、多dot、多minus，再要求<code>(^([-]|[.]|[-.]|[0-9])[0-9]*[.]*[0-9]+$)|(^([-]|[0-9])[0-9]*$)</code>。后者接受单独<code>-</code>；整个联合接受<code>.5</code>/<code>-.5</code>/<code>1.5</code>，拒绝<code>1.</code>/<code>1.2.3</code>/<code>--1</code>/<code>1-2</code>/<code>+1</code>。候选不再用缩略regex代替。</p>
+<p>但<code>GetBindIndex</code>的先后门是：非空→先<code>Contains(&#39;.&#39;)</code>查<code>GetIoByPathFromAround</code>；<strong>仅else</strong>调用IsNumber并创建Name原串的VmConstantIO。任何查找返回null，显示本地化“订阅失败”，Warning图标，然后仍return null，没有throw或回滚。</p>
+<p><code>SetCombination.Operate</code>先切掉<code>[...]</code>并查来源。来源不存在提前返回；来源存在且目标IO存在则先<code>iO.RelateIO=source</code>，随后<code>iO.RelateIndex=GetBindIndex(...)</code>。后一返回null时照常赋值。RelateIndex setter先UnSubscribe旧来源，SetRelateIndex(value)递归给所有Children，再Subscribe原来源。因此<strong>未找到dot路径时来源保持，索引变null/All，两叶都清掉索引</strong>。不得保留旧index、把base绑定全部回滚或报告typed decimal literal成功。</p>
+<p><code>-</code>不含dot且IsNumber为true，创建Name=<code>-</code>的常量。原native atoi域结果0，原串仍必须保存。DTO/primitive直接带小数原串仍可作为独立底层API适配，但不能冒充上述正常UI的常量入口。超int32拒绝仍是托管边界，未声称原C overflow等价。</p>
+<h2 id="本轮候选与验证状态">本轮候选与验证状态</h2><p><code>analysis/camera-mapping/proposals/array-index</code>现21生产文件候选，23 C#候选/测试文件语法检查零错误、git apply预检通过，<strong>未应用共享、未构建或运行</strong>。</p>
+<p>桥Encode遇typed literal的dot数字原串按当前明确未找到IO路径的支持域归All；Bind/BindMany仍应用来源，并携带Available+Diagnostic=“订阅失败”。POINT将两叶结果读回；selector先应用真实结果，再返回false/诊断并通过注入的notification服务显示Warning。新增Warning枚举追加在末尾，保持旧枚举数值。此工作树没有用display caption恢复新IO身份的查找能力；已知同过程int输出仍由typed IndexOnly树选择，真实native任意字符串路径解析不在此扩展。</p>
+<p>测试准备：<code>1.5/.5/-.5</code>逐个验证失败提示一次、两叶All、来源不回滚及实际Runtime读All；<code>-</code>验证UI成功、raw保存和运行取0；独立parser验证上述有限有效/无效集合与overflow；既有动态缺失/恢复、配置Execute按钮与debug链继续保留。未运行前不得计测试通过或整工具完成。人工验收不计完成门，整体数量由根线审计，沿用0/10=0%。</p>
+<p class="meta">来源：docs/plugins/CAMERA-MAPPING-ARRAY-INDEX-LITERAL-GATE.md · SHA256 86298c0010f0204c31632c9baae808bbff2cd6eeb187a7e7e3b06c765f585350<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

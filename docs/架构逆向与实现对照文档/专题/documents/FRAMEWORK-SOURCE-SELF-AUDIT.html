@@ -1,0 +1,72 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>框架已实现部分源码级自检 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 框架已实现部分源码级自检</p><h1>框架已实现部分源码级自检</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>框架已实现部分源码级自检</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="FRAMEWORK-SOURCE-SELF-AUDIT.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="FRAMEWORK-SOURCE-SELF-AUDIT.html#框架已实现部分源码级自检">框架已实现部分源码级自检</a></p><p style="margin-left:14px"><a href="FRAMEWORK-SOURCE-SELF-AUDIT.html#已直接复核的链路">已直接复核的链路</a></p><p style="margin-left:14px"><a href="FRAMEWORK-SOURCE-SELF-AUDIT.html#目标树元数据与待验证差异">目标树元数据与待验证差异</a></p><p style="margin-left:14px"><a href="FRAMEWORK-SOURCE-SELF-AUDIT.html#本轮复验记录">本轮复验记录</a></p><p style="margin-left:14px"><a href="FRAMEWORK-SOURCE-SELF-AUDIT.html#后续自检顺序">后续自检顺序</a></p><p style="margin-left:14px"><a href="FRAMEWORK-SOURCE-SELF-AUDIT.html#2026-10-19-目标资格结论修订">2026-10-19 目标资格结论修订</a></p></details><h1 id="框架已实现部分源码级自检">框架已实现部分源码级自检</h1><p>更新：2026-10-18。本文先审计主框架已经实现且能在本工作树独立复验的部分，不把历史通过数当作完整原生等价。原始实现证据位于 <code>analysis/decompiled</code>；截图和操作记录写入 <code>analysis/full-audit</code>，不进入产品程序集。</p>
+<h2 id="已直接复核的链路">已直接复核的链路</h2><table>
+<thead>
+<tr>
+<th>区域</th>
+<th>VM源码/资源证据</th>
+<th>本框架实际实现</th>
+<th>操作与数据复核</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>流程Tab与空流程</td>
+<td><code>VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml(.cs)</code>、<code>VMControls.WPF/VMControls.WPF.Base/ItemsPage.cs</code></td>
+<td><code>MainWindow</code> 的Tab/菜单命令映射、视口状态、增删改名复制和空态</td>
+<td>本轮全量WPF序列456项完成；Tab、菜单、保存编辑由逐操作用例覆盖，截图与事件验证不等于VM桌面输入差分</td>
+<td>部分行为通过，原生鼠标差分仍开放</td>
+</tr>
+<tr>
+<td>工具箱与拖放</td>
+<td><code>VMControls.WPF/VMControls.WPF/ToolBox.xaml(.cs)</code>、<code>VMControls.Data/VMControls.Data/ToolBoxData.cs</code></td>
+<td>主框架分类、折叠/弹层、失效拖动和GraphCanvas投放</td>
+<td>完整WPF序列中前段操作记录覆盖展开、工具列表、拖影、取消、提交、Group创建及Undo</td>
+<td>事件路径已复核；动画、真实桌面鼠标差分仍开放</td>
+</tr>
+<tr>
+<td>画布节点/连线</td>
+<td><code>VMControls.WPF/VMControls.WPF.Base/ItemsPage.cs</code>、<code>DiagramPage.xaml.cs</code>、<code>DiagramGroupListUI.xaml.cs</code></td>
+<td>节点拖动/框选/复制、吸附、线段中点/插入、Group几何</td>
+<td>本轮全量序列456项完成，画布拖动/连线/选择相关事件用例通过；未做真实VM桌面对照</td>
+<td>源码链已有映射，未据测试数宣称完整原生路由</td>
+</tr>
+<tr>
+<td>Group与循环</td>
+<td><code>VM.Core/VM.Core/IMVSGroup.cs</code>、<code>IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupParam.cs</code>、<code>DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupRunParam.cs</code></td>
+<td>Group所有权、双栏窗口、循环/中断/代理输入输出</td>
+<td>隔离窗口18项通过；全量WPF操作序列456项通过，含运行、循环中断、累积输出、SelfRun准备、保存重开与关闭清理</td>
+<td>该子路径本轮通过；线程/设备回调和VM差分未关闭</td>
+</tr>
+<tr>
+<td>Group运行参数原生编辑器</td>
+<td><code>DynamicNameValueItemOfGroup.cs</code>、<code>DynamicExtern.cs</code>、<code>paramusercontroldatatemplate.xaml</code></td>
+<td>当前由主框架通用编辑区展示descriptor字段；没有按 <code>IGroupRunParam</code> 调用原生 <code>IDecorate</code> 工厂，也未承接 <code>ROISelecter_GroupControl</code></td>
+<td>静态Group表格及ROI数据编辑可操作，但截图与原生 Group 专属控件模板明显不同</td>
+<td>未实现的插件-facing能力；FCR-018，不能归为框架自检通过</td>
+</tr>
+<tr>
+<td>参数显隐/目标树</td>
+<td>安装目录 <code>Module(sp)/x64/Collection/ImageSourceModule/ImageSourceModuleAlgorithmTab.xml</code>；<code>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/NameValueItem.cs</code></td>
+<td><code>WorkflowLocalVariablesWindow.TargetOptions</code> 从静态 <code>ModuleDescriptor</code> 参数建候选</td>
+<td>实际弹窗截图 <code>wpf-workflow-variable-targets.png</code> 显示本地 <code>StitchEnable=False</code> 时仍列出起始高度/拼接高度</td>
+<td>确认缺少原生Tab/订阅元数据；不能仅凭CustomVisible断言目标应隐藏，见FCR-019及下述修订</td>
+</tr>
+</tbody></table>
+<h2 id="目标树元数据与待验证差异">目标树元数据与待验证差异</h2><p>ImageSource 随包 ImageSourceModuleAlgorithmTab.xml 中 <code>StitchStartHeight</code> 和 <code>StitchHeight</code> 标记 <code>CustomVisible=False</code>，<code>StitchEnable=True</code> 触发器再通过 <code>VisibleOperation</code> 显示它们。原始对象模型也把 <code>NameValueItem.CustomVisibleA</code> 与 <code>SubscribeVisibleA</code> 分开：后者另受 <code>CanSubscribe</code> 和所属 <code>Category.SubscribeVisibleA</code> 控制。因此，主框架不能把“隐藏”和“不可订阅”混为一种布尔值，也不能按 <code>Stitch*</code> 参数名硬编码特例。当前 <code>ParameterDescriptor</code> 没有表达参数可见条件/订阅显示状态，主线的类型筛选只能构建静态列表。</p>
+<p>VM源码 <code>DynamicNameValueItemOfGroup.OpenDialogCommandExecute</code> 先调用 <code>IGroupRunParam.SupportDisplayForGroupData()</code>，再回退到 <code>GetSupportDisplayForGroupData()</code>；<code>DynamicExtern.cs</code> 为 ROISelecter 创建 <code>ROISelecterForGroupDecorate</code>，XAML 的 <code>ROISelecter_GroupControl</code> 再映射到 <code>ModuleROIConfigControl</code>。本框架当前未复刻这条原生装饰器/模板链，属于插件-facing契约 FCR-018，和可见性差异FCR-019均仍未闭合。</p>
+<p>已将该跨线契约记为 <a href="CONTRACT-REQUESTS.html#fcr-019-%E5%8F%82%E6%95%B0%E7%9B%AE%E6%A0%87%E7%9A%84%E5%8E%9F%E7%94%9F%E5%8F%AF%E8%A7%81%E5%8F%AF%E8%AE%A2%E9%98%85%E8%83%BD%E5%8A%9B%E8%AF%B7%E6%B1%82%E6%9C%AA%E5%AE%9E%E7%8E%B0">FCR-019</a>。在插件线提供经源码审计的元数据前，这一控件仍未闭合；其余静态可用整数目标已由实际流程变量订阅和运行数据路径覆盖。测试目标改用本地图像模式不影响执行的 <code>SetCameraParamWaitTime</code>，避免把 42ms 订阅值误当作 <code>Interval</code> 而改变测试运行时序。</p>
+<h2 id="本轮复验记录">本轮复验记录</h2><ul>
+<li>WPF工程构建：成功，0错误；仍有两条既有测试空值装箱警告（<code>MiniMapWheelParityChecks.cs</code>）。</li>
+<li>Group动态索引/复合累积独立窗口序列：18项操作均通过，含真实图像工具运行；结果落在 <code>analysis/full-audit/wpf-group-dynamic-index-compound.png</code> 与保存的 <code>.vmx.json</code>。</li>
+<li>主WPF全量序列：旧阻塞已从目标节点查找推进到第二目标执行；按UI真实路径修正了验收脚本：订阅叶节点使用原生树弹层双击、Group输入订阅使用<code>NativeCompoundSourceSelector</code>，而非误找普通按钮/完整选择器窗口。全量序列自然结束，末尾记录456项通过；结果日志为 <code>analysis/full-audit/framework-source-self-audit-run.log</code>。人工检查截图确认本地静态候选状态；FCR-019具体原生集合须按下述调用链修订验证，Group实际截图确认结果数据和叠加圆形；这些WPF截图不是原VM像素对照。</li>
+</ul>
+<h2 id="后续自检顺序">后续自检顺序</h2><ol>
+<li>已完成：全量456项WPF事件序列自然结束，修正两处验收脚本错误，并人工检查目标树与Group运行截图。</li>
+<li>当前主线已实现子集完成本轮源码/事件自检；后续按领域继续对原始方法、资源和状态生命周期逐项核对，未知VM行为继续标明，不据测试数宣称完整复刻。</li>
+<li>插件描述符的动态可见和可订阅元数据由插件项目按FCR-019实现并交接；主框架随后消费元数据并验证两态切换、既有订阅、保存重开和运行数据。</li>
+<li>FCR-018（Group专属运行参数编辑器）与FCR-019（目标参数动态可见及可订阅元数据）按双项目职责保留开放，用户决定交接时点；主线可继续审查其余独立领域，不将这些合同当作所有框架工作的前置阻塞。不能据456项事件通过宣称完整。</li>
+</ol>
+<p>2026-10-19 main剩余在制审查：未支持的pointset/POLYGON映射已排除；新增20项审查场景及456项完整WPF回归通过。历史记录中的候选代码和视觉推定不作为最终合同；采纳/排除决定与精确源码证据见 MAIN-PENDING-REVIEW.md。</p>
+<h2 id="2026-10-19-目标资格结论修订">2026-10-19 目标资格结论修订</h2><p>旧记录不能把CustomVisible=False直接等同为局部变量订阅树隐藏。<code>GlobalVariableItem.ModifyRunParamsExecute → RunParamsSelectWindow/RunParamsSelectData.GetSubRunParamsTree → AlgorithmTabRoot.GetRunParamsTree</code>只从<code>Tab_Run Params.Collection</code>构造目标；<code>AddSubChildToTree</code>检查DisplayNameA，未直接按CustomVisibleA过滤。<code>RunParamsBaseNode.IsSupportSub</code>另读取ISubInfo及SubscribeVisibleA。Group运行参数候选的<code>RunParamPickDataExtern</code>则明确检查CustomVisibleA，这是另一条链。当前安装ImageSourceModuleAlgorithmTab.xml只有Tab_Basic Params，运行时如何生成/替换Tab_Run Params及有效目标集合仍未知。旧文所称隐藏拼接参数错误出现应降为待验证，不作为实现合同。</p>
+<p>安装XML的StitchEnable.CurValue和DefaultValue均为True；本地截图中的False不能称为原生默认值。XML的SHA-256为<code>001A57675192867594D3BBC7EFA94462C19F056583659D759CEB5648E55091E0</code>。最新结论以此修订和MAIN-PENDING-REVIEW.md为准。</p>
+<p class="meta">来源：docs/FRAMEWORK-SOURCE-SELF-AUDIT.md · SHA256 1b0d0ff1c636f89f7861261c3ac7734c699fdde1f7cfeabb48a35734e38626e2<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

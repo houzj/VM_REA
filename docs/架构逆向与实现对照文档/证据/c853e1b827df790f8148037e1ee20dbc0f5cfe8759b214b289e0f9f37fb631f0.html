@@ -1,0 +1,51 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 c853e1b827df · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 c853e1b827df</p><h1>原文证据 c853e1b827df</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 c853e1b827df790f8148037e1ee20dbc0f5cfe8759b214b289e0f9f37fb631f0。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>public sealed class WorkflowRunRequest
+{
+    public WorkflowRunRequest(
+        string workflowId,
+        IVisionImage? inputImage = null,
+        IDictionary&lt;string, object?>? globalVariables = null,
+        IDictionary&lt;string, object>? runtimeParameters = null,
+        IDictionary&lt;string, object>? contextVariables = null,
+        IDictionary&lt;string, IReadOnlyDictionary&lt;string, object?>>? nodeParameterOverrides = null,
+        ICameraCaptureService? cameraCaptureService = null,
+        IReadOnlyDictionary&lt;string, CameraFrame>? cameraFrames = null,
+        IDictionary&lt;string, IReadOnlyDictionary&lt;string, object?>>? nodeBindingOverrides = null,
+        SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationReceiveService? communicationInputs = null,
+        SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationSendService? communicationOutputs = null)
+    {
+        if (string.IsNullOrWhiteSpace(workflowId))
+            throw new ArgumentException(&quot;工作流 ID 不能为空。&quot;, nameof(workflowId));
+
+        WorkflowId = workflowId;
+        CommunicationInputs = communicationInputs;
+        CommunicationOutputs = communicationOutputs;
+        InputImage = inputImage;
+        GlobalVariables = new Dictionary&lt;string, object?>(globalVariables ?? new Dictionary&lt;string, object?>());
+        RuntimeParameters = new Dictionary&lt;string, object>(runtimeParameters ?? new Dictionary&lt;string, object>());
+        ContextVariables = new Dictionary&lt;string, object>(contextVariables ?? new Dictionary&lt;string, object>());
+        NodeParameterOverrides = (nodeParameterOverrides ?? new Dictionary&lt;string, IReadOnlyDictionary&lt;string, object?>>())
+            .ToDictionary(
+                pair => pair.Key,
+                pair => (IReadOnlyDictionary&lt;string, object?>)new Dictionary&lt;string, object?>(pair.Value));
+        CameraCaptureService = cameraCaptureService;
+        NodeBindingOverrides = (nodeBindingOverrides ?? new Dictionary&lt;string, IReadOnlyDictionary&lt;string, object?>>())
+            .ToDictionary(p => p.Key, p => (IReadOnlyDictionary&lt;string, object?>)new Dictionary&lt;string, object?>(p.Value));
+        CameraFrames = new Dictionary&lt;string, CameraFrame>(cameraFrames ?? new Dictionary&lt;string, CameraFrame>());
+    }
+
+    public string WorkflowId { get; }
+    public SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationReceiveService? CommunicationInputs { get; }
+    public SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationSendService? CommunicationOutputs { get; }
+    public IReadOnlyDictionary&lt;string, IReadOnlyDictionary&lt;string, object?>> NodeBindingOverrides { get; }
+    public IVisionImage? InputImage { get; }
+    public IReadOnlyDictionary&lt;string, object?> GlobalVariables { get; }
+    public IReadOnlyDictionary&lt;string, object> RuntimeParameters { get; }
+    public IReadOnlyDictionary&lt;string, object> ContextVariables { get; }
+
+    /// &lt;summary>仅应用到深拷贝后的执行参数，绝不写回方案节点参数。&lt;/summary>
+    public IReadOnlyDictionary&lt;string, IReadOnlyDictionary&lt;string, object?>> NodeParameterOverrides { get; }
+    public ICameraCaptureService? CameraCaptureService { get; }
+    /// &lt;summary>以节点 ID 寻址的本轮相机帧。宿主在执行完成后释放帧。&lt;/summary>
+    public IReadOnlyDictionary&lt;string, CameraFrame> CameraFrames { get; }
+}
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis.html">数据/global-variable-analysis.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

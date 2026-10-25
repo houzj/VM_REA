@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "CSR01",
+      "classification": "independent-implementation",
+      "stages": [
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "ModuleExecutionScope.RegisterService<T>替换旧owned服务",
+      "to": "先撤owned标记，再Dispose；抛错可留下未回滚的旧映射",
+      "behavior": "条件必须同时满足：同T已有previous、新service不是同引用、ownedServices.Remove(previous)返回true且previous实现IDisposable。该条件链先从ownedServices删除旧对象，再调用previous.Dispose；只有其正常返回才写services[typeof(T)]=新service及按owned标记登记新对象。旧Dispose抛异常时方法无catch/finally回滚：services仍映射旧previous，旧owned标记已移除，新service未写入，异常直接向调用者传播，也不调用RecordCleanupFailure。不能把注册失败描述为原状态完全不变。",
+      "representation": "services以Type为key保留对象引用；ownedServices是按ReferenceEquality比较的跨Type集合。新旧服务引用与该集合标记分开。",
+      "cache": "Service<T>()仍可能查回旧previous。后续root Release的服务候选来自ownedServices而非services全值，所以若旧对象没有另在states等候选中，它不再因这个服务映射获得自动Dispose重试。另有state/服务别名时不能据这一条断言永不再被Dispose。",
+      "release": "这是服务替换入口的异常合同，区别于root Release逐资源catch/记失败后继续；服务注册并未采用同样的失败资源保留策略。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "RegisterService<T> mutation order",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 36,
+          "end": 36,
+          "excerpt": " public void RegisterService<T>(T service,bool owned=true)where T:class{if(owner is not null){owner.RegisterService(service,owned);return;}ArgumentNullException.ThrowIfNull(service);lock(gate){ObjectDisposedException.ThrowIf(closing,this);if(services.TryGetValue(typeof(T),out var previous)&&!ReferenceEquals(previous,service)&&ownedServices.Remove(previous)&&previous is IDisposable disposable)disposable.Dispose();services[typeof(T)]=service;if(owned)ownedServices.Add(service);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Service<T> query",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 37,
+          "end": 37,
+          "excerpt": " public T? Service<T>()where T:class{if(owner is not null)return owner.Service<T>();lock(gate)return services.TryGetValue(typeof(T),out var value)?(T)value:null;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Release candidate construction",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 48,
+          "end": 48,
+          "excerpt": " void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "RecordCleanupFailure retention",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 24,
+          "end": 24,
+          "excerpt": " void RecordCleanupFailure(string phase,object resource,Exception error){lock(gate){cleanupFailures.Add(new(phase,resource.GetType().FullName??resource.GetType().Name,error));failedResources.Add(resource);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "本条是源码静态事实；另列ScopeRetirementProbe验证有限合成Disposable替换异常。真实相机/工具服务、GUI与设备未观测，不直接宣称现有资源会触发。",
+        "ownedServices按对象而非逐Type独立计数；所有多接口别名注册/外部所有者的实际组合未穷尽。"
+      ]
+    },
+    {
+      "id": "CSR02",
+      "classification": "independent-implementation",
+      "stages": [
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "RemoveNode与RetainProcedureNodes批量裁剪",
+      "to": "删除记录在Dispose之前完成；首个异常中断剩余裁剪",
+      "behavior": "RemoveNode在root.gate内先删除effectiveParameters键，再从states.Remove取出value；离锁后仅当value实现IDisposable才Dispose，没有catch和RecordCleanupFailure。Dispose抛错时该node状态及参数已从这些字典移除，调用直接失败；重复RemoveNode找不到state就return，不自动重试旧对象。RetainProcedureNodes先批量删除不在keep中的全部参数键，再快照待移state键并foreach RemoveNode；其中一项抛错将中断剩余foreach，后续state仍可留在states，而其参数键可能已在第一阶段删除。",
+      "representation": "节点状态字典移除、参数字典移除、对象Dispose完成分别发生，不能用一个成功/失败标记代替。",
+      "cache": "没有被循环走到的state仍由root.states持有，可在之后的裁剪或root关闭进入其它清理；已移除但Dispose失败对象不由本分支自动放入failedResources。若它另被owned服务/外部持有，则还需单独判断。",
+      "release": "单节点Remove/批量Retain与root Release有不同异常屏障；root Release的逐项继续保证不能外推到这两个入口。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "RemoveNode removes then disposes",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 41,
+          "end": 41,
+          "excerpt": " public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){root.effectiveParameters.Remove((ProcedureId,module,node));if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "RetainProcedureNodes two-phase pruning",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 44,
+          "end": 44,
+          "excerpt": " void RetainProcedureNodes(IEnumerable<(string Procedure,string Module,string Node)> current,string? only){var root=Root;var keep=current.ToHashSet();lock(root.gate){foreach(var key in root.effectiveParameters.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray())root.effectiveParameters.Remove(key);}(string Procedure,string Module,string Node)[] removed;lock(root.gate)removed=root.states.Keys.Where(k=>(only is null||k.Procedure==only)&&!keep.Contains(k)).ToArray();foreach(var key in removed){if(key.Procedure.Length==0)root.RemoveNode(key.Module,key.Node);else root.ForProcedure(key.Procedure).RemoveNode(key.Module,key.Node);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "WPF RetainExecutionNodes caller",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 45,
+          "end": 45,
+          "excerpt": " void RetainExecutionNodes(){var nodes=doc.Document.Procedures.SelectMany(p=>p.Nodes.Select(n=>(p.Id,n.ModuleId,n.Id))).ToHashSet();executionScope.RetainProcedureNodes(nodes);foreach(var key in pointAliasPresentation.Keys.Where(k=>!nodes.Contains(k)).ToArray())pointAliasPresentation.Remove(key);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "WPF doc.Changed等上层对传播异常如何显示/恢复需按调用者另追；本切片不宣称文档编辑或整个solution关闭必然失败。",
+        "另列合成ScopeRetirementProbe已观测有限顺序Remove/Retain异常；并发与真实资源异常未观测，本条仍按源码关系取证。"
+      ]
+    },
+    {
+      "id": "CSR03",
+      "classification": "independent-implementation",
+      "stages": [
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "root closing置位与API准入 / 租约",
+      "to": "立即拒新状态与租约，不等于所有查询/删除都禁用",
+      "behavior": "root Dispose在gate下先设置closing=true再调用stopping.Cancel；State<T>、RegisterService、Enter与参数Parameters入口均以closing抛ObjectDisposedException。与之不同，Service<T>只锁gate查询，无closing检查：若活跃租约阻止Release清字典，它仍可在closing期间返回旧服务；Release清空后则返回null。ForProcedure只验证procedure字符串，可以继续生成borrowed view；RequestRun/RequestRefresh在closing直接返回。RemoveNode与RetainProcedureNodes没有closing或leases门，故root完整Release等待租约不能被概括成任何节点移除/替换都受同一租约保护。",
+      "representation": "closing是操作级准入状态；cancellationComplete与leases控制root Release时机。借用view的存在本身不证明其API可继续使用。",
+      "cache": "在Release前states/services可能仍保留；State即使只是想取已有值也先拒绝，Service查询则未使用同样策略。",
+      "release": "Enter取得的Lease仅参与root TryRelease；Lease自身Interlocked.Exchange确保一次Exit。它不替代调用者在RemoveNode等入口的并发协调。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "State<T> closing gate",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 33,
+          "end": 35,
+          "excerpt": " public T State<T>(string module,string node,Func<T> create)where T:class {\n  var root=Root;lock(root.gate){ObjectDisposedException.ThrowIf(root.closing,this);var key=(ProcedureId,module,node);if(!root.states.TryGetValue(key,out var value))root.states.Add(key,value=create());return (T)value;}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "RegisterService and Service asymmetry",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 36,
+          "end": 37,
+          "excerpt": " public void RegisterService<T>(T service,bool owned=true)where T:class{if(owner is not null){owner.RegisterService(service,owned);return;}ArgumentNullException.ThrowIfNull(service);lock(gate){ObjectDisposedException.ThrowIf(closing,this);if(services.TryGetValue(typeof(T),out var previous)&&!ReferenceEquals(previous,service)&&ownedServices.Remove(previous)&&previous is IDisposable disposable)disposable.Dispose();services[typeof(T)]=service;if(owned)ownedServices.Add(service);}}\n public T? Service<T>()where T:class{if(owner is not null)return owner.Service<T>();lock(gate)return services.TryGetValue(typeof(T),out var value)?(T)value:null;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "ForProcedure borrowed view construction",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 17,
+          "end": 17,
+          "excerpt": " public ModuleExecutionScope ForProcedure(string procedure){ArgumentException.ThrowIfNullOrWhiteSpace(procedure);return ProcedureId==procedure?this:new(Root,procedure);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "RequestRun and RequestRefresh closing return",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 38,
+          "end": 39,
+          "excerpt": " public void RequestRun(string node){var root=Root;if(root.closing)return;root.ProcedureRunRequested?.Invoke(new(root.Id,ProcedureId,node));if(ProcedureId.Length==0)root.RunRequested?.Invoke(node);}\n public void RequestRefresh(string node){var root=Root;if(root.closing)return;root.ProcedureRefreshRequested?.Invoke(new(root.Id,ProcedureId,node));if(ProcedureId.Length==0)root.RefreshRequested?.Invoke(node);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Enter and RemoveNode guards differ",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 40,
+          "end": 41,
+          "excerpt": " public IDisposable Enter(){if(owner is not null)return owner.Enter();lock(gate){ObjectDisposedException.ThrowIf(closing,this);leases++;return new Lease(this);}}\n public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){root.effectiveParameters.Remove((ProcedureId,module,node));if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Dispose/TryRelease/Exit",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 45,
+          "end": 48,
+          "excerpt": " public void Dispose(){if(owner is not null)return;lock(gate){if(closing)return;closing=true;}try{stopping.Cancel();}catch(Exception error){RecordCleanupFailure(\"cancel\",stopping,error);}finally{bool release;lock(gate){cancellationComplete=true;release=TryRelease();}if(release)Release();}}\n bool TryRelease(){if(!closing||!cancellationComplete||leases!=0||releaseStarted)return false;releaseStarted=true;return true;}\n void Exit(){bool release;lock(gate){leases--;release=TryRelease();}if(release)Release();}\n void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.Parameters.cs",
+          "member": "Effective parameter closing gate",
+          "sha256": "ec53ae0a59eff823eaf5f7db488fb9db11f8e33d9763fc9a817704f6d99275e3",
+          "start": 7,
+          "end": 7,
+          "excerpt": " EffectiveParameters Parameters(string module,string node){var root=Root;lock(root.gate){ObjectDisposedException.ThrowIf(root.closing,this);var key=(ProcedureId,module,node);if(!root.effectiveParameters.TryGetValue(key,out var value))root.effectiveParameters[key]=value=new();return value;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "代码未给出所有方法的全域并发安全保证；不将允许调用某查询/Remove的事实解释为对资源在用状态必然安全。",
+        "stopping.Token在CancellationTokenSource已Dispose之后的外部访问合同未在这里运行验证，不作应用级行为推断。"
+      ]
+    },
+    {
+      "id": "CSR04",
+      "classification": "independent-implementation",
+      "stages": [
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "取消或资源Dispose异常后的root Dispose / Lease.Exit",
+      "to": "root清理是一次性尝试；failedResources保留不等于排队重试",
+      "behavior": "Dispose设置closing后，stopping.Cancel抛Exception会RecordCleanupFailure(cancel,stopping,error)，finally仍设置cancellationComplete并TryRelease；不是因取消回调异常就跳过该finally。TryRelease要求closing、cancellationComplete、leases==0且!releaseStarted，在真正Release前置releaseStarted=true。Release对各IDisposable的Exception分别记录后继续下一资源，并单独尝试stopping.Dispose；这点现有CR06已有，本事实新增明确重试边界：root重复Dispose因closing立即return，后续Exit也因releaseStarted不再启动第二遍，failedResources只保留对象，所选类没有重试/清空该表的方法。",
+      "representation": "CleanupFailures getter返回失败记录数组副本；内部failedResources保存真实资源引用。诊断快照与资源持有是两层。",
+      "cache": "失败对象及其Exception可继续使资源图可达；保留到root仍可达不等于资源已释放，也不等于有后台重试任务。",
+      "release": "Release前先清states/有效参数/services/ownedServices，失败不会把原索引恢复。普通单项Dispose抛Exception不会阻断后续项；但分配快照、RecordCleanupFailure自身异常或进程级故障等未被这一逐资源catch覆盖。",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Dispose cancellation catch and finally",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 45,
+          "end": 45,
+          "excerpt": " public void Dispose(){if(owner is not null)return;lock(gate){if(closing)return;closing=true;}try{stopping.Cancel();}catch(Exception error){RecordCleanupFailure(\"cancel\",stopping,error);}finally{bool release;lock(gate){cancellationComplete=true;release=TryRelease();}if(release)Release();}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "TryRelease once-only gate",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 46,
+          "end": 46,
+          "excerpt": " bool TryRelease(){if(!closing||!cancellationComplete||leases!=0||releaseStarted)return false;releaseStarted=true;return true;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Exit can trigger final release",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 47,
+          "end": 47,
+          "excerpt": " void Exit(){bool release;lock(gate){leases--;release=TryRelease();}if(release)Release();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Release catches each resource and token",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 48,
+          "end": 48,
+          "excerpt": " void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Diagnostic snapshot and actual failed object retention",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 23,
+          "end": 24,
+          "excerpt": " public IReadOnlyList<ModuleScopeCleanupFailure> CleanupFailures {get{var root=Root;lock(root.gate)return root.cleanupFailures.ToArray();}}\n void RecordCleanupFailure(string phase,object resource,Exception error){lock(gate){cleanupFailures.Add(new(phase,resource.GetType().FullName??resource.GetType().Name,error));failedResources.Add(resource);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "releaseStarted and closing fields",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 25,
+          "end": 25,
+          "excerpt": " bool closing,cancellationComplete,releaseStarted;int leases;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "Lease exits once",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 49,
+          "end": 49,
+          "excerpt": " sealed class Lease(ModuleExecutionScope scope):IDisposable {ModuleExecutionScope? owner=scope;public void Dispose()=>Interlocked.Exchange(ref owner,null)?.Exit();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "不把源码Exception catch扩大为任何OOM、进程退出或任意RecordCleanupFailure自身失败时也必完整清理。",
+        "本条是源码静态事实；另列合成ScopeRetirementProbe验证有限异常与重复Dispose。GC、真实资源/GUI/设备及native释放未观测，不以幂等调用门推成功释放/原版等价。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "CSRU01",
+      "target": "current exceptional cleanup runtime",
+      "question": "这是当前源码级异常/准入分支分析；另列ScopeRetirementProbe合成异常观察，真实资源/GUI/设备、并发删除与GC/native最后释放仍未观测。"
+    },
+    {
+      "id": "CSRU02",
+      "target": "API-specific retirement guarantees",
+      "question": "RegisterService替换、RemoveNode/Retain、root Dispose/Release分别有不同异常屏障，不能把root逐项continue和租约门套用到所有入口。"
+    }
+  ],
+  "provenance": {
+    "sourceFiles": [
+      {
+        "path": "src/VisionFramework/ModuleExecutionScope.cs",
+        "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+        "byteLength": 6340
+      },
+      {
+        "path": "src/VisionEditor/ToolExecutionScope.cs",
+        "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+        "byteLength": 28197
+      },
+      {
+        "path": "src/VisionFramework/ModuleExecutionScope.Parameters.cs",
+        "sha256": "ec53ae0a59eff823eaf5f7db488fb9db11f8e33d9763fc9a817704f6d99275e3",
+        "byteLength": 2167
+      }
+    ],
+    "coverageDelta": "New exceptional replacement/removal, closing API asymmetry and once-only retry boundaries; general CR06/CG10 cleanup narration is not counted as a new finding.",
+    "actualScopeType": "VisionFramework.ModuleExecutionScope",
+    "hostType": "VisionEditor.MainWindow partial in ToolExecutionScope.cs",
+    "scopeNamesNotResolvedAsProductTypes": [
+      "PluginExecutionScope"
+    ],
+    "runtimeExecuted": false,
+    "originalRuntimeExecuted": false,
+    "targetCodeExecuted": false,
+    "productModified": false,
+    "otherWorktreeRead": false,
+    "implementationCredit": 0
+  }
+}

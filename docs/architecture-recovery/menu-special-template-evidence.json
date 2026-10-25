@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "findings": [
+    {
+      "id": "MT01",
+      "classification": "source-confirmed",
+      "from": "customDataTemplate选择SingleRunTemplate",
+      "to": "单次按钮ItemClickCommand与三条IsEnabled=false触发器",
+      "relation": "static-template-binding-and-trigger-declaration",
+      "condition": "CustomItemTemplateName==SingleRunTemplate；各独立触发器条件分别为true/0/true",
+      "behavior": "SingleRunTemplate的Button.Command绑定当前数据项ItemClickCommand，Style基于ToolBarButtonStyle。三条独立DataTrigger分别读CustomItemData.(IVMRun.IsRunning)==True、CustomItemData.Modules.Count==0、CustomItemData.IsOnExecuteAfterLoad==True；各自Setter都写当前Button.IsEnabled=False。模板本体没有默认TitleToolButtonDataTemplate所声明的Click EventSetter，不能复制默认按钮的焦点Click链。三门是附加禁用声明，不表示其余状态必然启用，基础样式和父级有效门仍可生效。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+          "member": "SingleRunTemplate: Button command and three disabling triggers",
+          "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339",
+          "start": 17,
+          "end": 35,
+          "excerpt": "      <DataTemplate x:Key=\"SingleRunTemplate\">\n        <Button Margin=\"4,0,4,0\" Height=\"36\" Width=\"36\" Command=\"{Binding ItemClickCommand}\" ToolTip=\"{Lang:ResourceBinding Name}\">\n          <FrameworkElement.Style>\n            <Style TargetType=\"{x:Type Button}\" BasedOn=\"{StaticResource ToolBarButtonStyle}\">\n              <Style.Triggers>\n                <DataTrigger Value=\"True\" Binding=\"{Binding Path=CustomItemData.(VMInterface:IVMRun.IsRunning)}\">\n                  <Setter Property=\"IsEnabled\" Value=\"False\" />\n                </DataTrigger>\n                <DataTrigger Value=\"0\" Binding=\"{Binding CustomItemData.Modules.Count}\">\n                  <Setter Property=\"IsEnabled\" Value=\"False\" />\n                </DataTrigger>\n                <DataTrigger Value=\"True\" Binding=\"{Binding CustomItemData.IsOnExecuteAfterLoad}\">\n                  <Setter Property=\"IsEnabled\" Value=\"False\" />\n                </DataTrigger>\n              </Style.Triggers>\n            </Style>\n          </FrameworkElement.Style>\n        </Button>\n      </DataTemplate>",
+          "evidenceType": "original-offline-decoded-BAML-resource",
+          "binaryIdentity": "SHA256 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8 (MVID inherited from existing offline decode manifest; artifact SHA independently rechecked)",
+          "artifact": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+          "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+          "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+          "identityManifest": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json"
+        },
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+          "member": "customDataTemplate finite selector/default template",
+          "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339",
+          "start": 172,
+          "end": 201,
+          "excerpt": "      <DataTemplate x:Key=\"customDataTemplate\">\n        <ContentPresenter Name=\"cp\" Content=\"{Binding}\">\n          <FrameworkElement.Style>\n            <Style TargetType=\"{x:Type ContentPresenter}\">\n              <Setter Property=\"ContentTemplate\" Value=\"{StaticResource TitleToolButtonDataTemplate}\" />\n              <Style.Triggers>\n                <DataTrigger Value=\"SingleRunTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource SingleRunTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"ContinousRunTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource ContinousRunTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"DownPopTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource DownPopTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"RedoTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource RedoTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"LockingTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource LockingTemplate}\" />\n                </DataTrigger>\n              </Style.Triggers>\n            </Style>\n          </FrameworkElement.Style>\n        </ContentPresenter>\n      </DataTemplate>\n    </ResourceDictionary>\n  </FrameworkElement.Resources>\n  <ItemsControl ItemsPanel=\"{StaticResource HorizontalItemsPanelTemplate}\" ItemTemplate=\"{StaticResource customDataTemplate}\" ItemsSource=\"{Binding Source={StaticResource src}}\">\n    <ItemsControl.GroupStyle>",
+          "evidenceType": "original-offline-decoded-BAML-resource",
+          "binaryIdentity": "SHA256 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8 (MVID inherited from existing offline decode manifest; artifact SHA independently rechecked)",
+          "artifact": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+          "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+          "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+          "identityManifest": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json"
+        }
+      ],
+      "unknowns": [
+        "仅证明所选原BAML离线表示的绑定/触发器声明；未创建原版活控件、未验证Binding实际实例、WPF最终优先级或实际可点击状态，不推定完整行为等价。",
+        "GetSolution/CustomItemData缓存及SigRun真实参数准备/停止路径属于另有源码的执行链，不由模板直接证明。"
+      ]
+    },
+    {
+      "id": "MT02",
+      "classification": "source-confirmed",
+      "from": "ContinousRunTemplate.ContentPresenter",
+      "to": "Items[0]/Items[1]子项切换与容器禁用声明",
+      "relation": "static-template-binding-and-trigger-declaration",
+      "condition": "CustomItemTemplateName==ContinousRunTemplate；ContinuousRunEnable/IsRunning/Modules.Count/IsOnExecuteAfterLoad分别驱动声明",
+      "behavior": "ContentPresenter cp默认Content=Items[0]、ContentTemplate=ToolButtonDataTemplate；CustomItemData.(IVMRun.ContinuousRunEnable)==True时，TargetName=cp的Setter将Content改为Items[1]。另一个MultiDataTrigger同时要求ContinuousRunEnable=False与IsRunning=True，其UIElement.IsEnabled=False Setter未指定TargetName；还有Modules.Count==0和IsOnExecuteAfterLoad==True分别写同名IsEnabled=False的DataTemplate触发器。不能把模板切子操作等同于一个按钮始终调用同一方法，也不能把无TargetName的声明冒称已验证某活按钮的最终状态。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+          "member": "ContinousRunTemplate: content selector and three disabling declarations",
+          "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339",
+          "start": 36,
+          "end": 56,
+          "excerpt": "      <DataTemplate x:Key=\"ContinousRunTemplate\">\n        <ContentPresenter Name=\"cp\" ContentTemplate=\"{StaticResource ToolButtonDataTemplate}\" Content=\"{Binding Items[0]}\" />\n        <DataTemplate.Triggers>\n          <DataTrigger Value=\"True\" Binding=\"{Binding Path=CustomItemData.(VMInterface:IVMRun.ContinuousRunEnable)}\">\n            <Setter TargetName=\"cp\" Property=\"ContentPresenter.Content\" Value=\"{Binding Items[1]}\" />\n          </DataTrigger>\n          <MultiDataTrigger>\n            <MultiDataTrigger.Conditions>\n              <Condition Value=\"False\" Binding=\"{Binding Path=CustomItemData.(VMInterface:IVMRun.ContinuousRunEnable)}\" />\n              <Condition Value=\"True\" Binding=\"{Binding Path=CustomItemData.(VMInterface:IVMRun.IsRunning)}\" />\n            </MultiDataTrigger.Conditions>\n            <Setter Property=\"UIElement.IsEnabled\" Value=\"False\" />\n          </MultiDataTrigger>\n          <DataTrigger Value=\"0\" Binding=\"{Binding CustomItemData.Modules.Count}\">\n            <Setter Property=\"UIElement.IsEnabled\" Value=\"False\" />\n          </DataTrigger>\n          <DataTrigger Value=\"True\" Binding=\"{Binding CustomItemData.IsOnExecuteAfterLoad}\">\n            <Setter Property=\"UIElement.IsEnabled\" Value=\"False\" />\n          </DataTrigger>\n        </DataTemplate.Triggers>\n      </DataTemplate>",
+          "evidenceType": "original-offline-decoded-BAML-resource",
+          "binaryIdentity": "SHA256 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8 (MVID inherited from existing offline decode manifest; artifact SHA independently rechecked)",
+          "artifact": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+          "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+          "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+          "identityManifest": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json"
+        }
+      ],
+      "unknowns": [
+        "仅证明所选原BAML离线表示的绑定/触发器声明；未创建原版活控件、未验证Binding实际实例、WPF最终优先级或实际可点击状态，不推定完整行为等价。",
+        "ToolButtonDataTemplate来自合并资源，其内部命令/样式与IsEnabled继承需要按实际引用另证；本片段不把它当TitleToolButtonDataTemplate。"
+      ]
+    },
+    {
+      "id": "MT03",
+      "classification": "source-confirmed",
+      "from": "LockingTemplate.ContentPresenter",
+      "to": "IsWorkAreaLocking驱动Items[0]/Items[1]切换",
+      "relation": "static-template-binding-and-trigger-declaration",
+      "condition": "CustomItemTemplateName==LockingTemplate；CustomItemData.IsWorkAreaLocking==True切第二项",
+      "behavior": "ContentPresenter cp初始Content绑定Items[0]，其Style.Setter令ContentTemplate=ToolButtonDataTemplate。DataTemplate的DataTrigger读取CustomItemData.IsWorkAreaLocking==True，以TargetName=cp把Content替换为Items[1]。本模板没有声明统一反转锁定值的方法；锁定/解锁是不同子项，实际GetMainData、AreaLocking/AreaUnLocking与导入菜单门仍是各自源调用。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+          "member": "LockingTemplate: initial content/template and targeted state switch",
+          "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339",
+          "start": 57,
+          "end": 70,
+          "excerpt": "      <DataTemplate x:Key=\"LockingTemplate\">\n        <ContentPresenter Name=\"cp\" Content=\"{Binding Items[0]}\">\n          <FrameworkElement.Style>\n            <Style TargetType=\"{x:Type ContentPresenter}\">\n              <Setter Property=\"ContentTemplate\" Value=\"{StaticResource ToolButtonDataTemplate}\" />\n            </Style>\n          </FrameworkElement.Style>\n        </ContentPresenter>\n        <DataTemplate.Triggers>\n          <DataTrigger Value=\"True\" Binding=\"{Binding CustomItemData.IsWorkAreaLocking}\">\n            <Setter TargetName=\"cp\" Property=\"ContentPresenter.Content\" Value=\"{Binding Items[1]}\" />\n          </DataTrigger>\n        </DataTemplate.Triggers>\n      </DataTemplate>",
+          "evidenceType": "original-offline-decoded-BAML-resource",
+          "binaryIdentity": "SHA256 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8 (MVID inherited from existing offline decode manifest; artifact SHA independently rechecked)",
+          "artifact": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+          "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+          "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+          "identityManifest": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json"
+        }
+      ],
+      "unknowns": [
+        "仅证明所选原BAML离线表示的绑定/触发器声明；未创建原版活控件、未验证Binding实际实例、WPF最终优先级或实际可点击状态，不推定完整行为等价。",
+        "模板未定义锁状态生产者、提示偏好、取消副作用或哪个菜单被禁用，不能从图标切换推出这些业务行为。"
+      ]
+    },
+    {
+      "id": "MT04",
+      "classification": "source-confirmed",
+      "from": "DownPopTemplate主Undo按钮与Items[0]弹出入口",
+      "to": "CanUndo/LockAreaStatus/RunData三门及独立MouseDown命令",
+      "relation": "static-template-binding-and-trigger-declaration",
+      "condition": "CustomItemTemplateName==DownPopTemplate；主Button三条件同时匹配才有IsEnabled=True Setter",
+      "behavior": "主Button oo的Command=当前ItemClickCommand，基于ToolBarButtonStyle先Setter IsEnabled=False。MultiDataTrigger同时要求CustomItemData.CanUndo=True、CustomItemData.LockAreaStatus=False、RunData.(IVMRun.IsRunning)=False，然后Setter IsEnabled=True。与主Button并列的Grid rightBottom另把DataContext绑定Items[0]；其Popup.IsOpen用ElementName=rightBottom的IsMouseOver单向驱动，内部Grid.MouseDown经ParamsEventCommand执行这个子项的ItemClickCommand。三条件门写在主Button.Style，未在这个并列Popup入口声明同一门，不能擅自给两种入口画完全相同的准入路径。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+          "member": "DownPopTemplate: main-button predicate, child data context, popup and MouseDown command",
+          "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339",
+          "start": 71,
+          "end": 136,
+          "excerpt": "      <DataTemplate x:Key=\"DownPopTemplate\">\n        <Grid>\n          <Button Name=\"oo\" Margin=\"4,0,4,0\" Height=\"36\" Width=\"36\" Command=\"{Binding ItemClickCommand}\" ToolTip=\"{Lang:ResourceBinding Name}\">\n            <FrameworkElement.Style>\n              <Style TargetType=\"{x:Type Button}\" BasedOn=\"{StaticResource ToolBarButtonStyle}\">\n                <Setter Property=\"IsEnabled\" Value=\"False\" />\n                <Style.Triggers>\n                  <MultiDataTrigger>\n                    <MultiDataTrigger.Conditions>\n                      <Condition Value=\"True\" Binding=\"{Binding CustomItemData.CanUndo}\" />\n                      <Condition Value=\"False\" Binding=\"{Binding CustomItemData.LockAreaStatus}\" />\n                      <Condition Value=\"False\" Binding=\"{Binding Path=RunData.(VMInterface:IVMRun.IsRunning)}\" />\n                    </MultiDataTrigger.Conditions>\n                    <MultiDataTrigger.Setters>\n                      <Setter Property=\"IsEnabled\" Value=\"True\" />\n                    </MultiDataTrigger.Setters>\n                  </MultiDataTrigger>\n                </Style.Triggers>\n              </Style>\n            </FrameworkElement.Style>\n          </Button>\n          <Grid Name=\"rightBottom\" VerticalAlignment=\"Bottom\" HorizontalAlignment=\"Right\" DataContext=\"{Binding Items[0]}\">\n            <Image Width=\"16\" Height=\"16\">\n              <FrameworkElement.Resources>\n                <ResourceDictionary>\n                  <Style x:Key=\"{x:Type Image}\" TargetType=\"{x:Type Image}\">\n                    <Setter Property=\"Source\" Value=\"{Binding ImageDisablePath}\" />\n                    <Style.Triggers>\n                      <Trigger Property=\"UIElement.IsMouseOver\" Value=\"True\">\n                        <Setter Property=\"FrameworkElement.Cursor\" Value=\"Hand\" />\n                        <Setter Property=\"Source\" Value=\"{Binding ImageEnablePath}\" />\n                      </Trigger>\n                    </Style.Triggers>\n                  </Style>\n                </ResourceDictionary>\n              </FrameworkElement.Resources>\n            </Image>\n            <Popup Name=\"Popup\" AllowsTransparency=\"True\" Width=\"150\" Height=\"44\" PopupAnimation=\"{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}\" Placement=\"Bottom\" HorizontalOffset=\"-24\" IsOpen=\"{Binding IsMouseOver, ElementName=rightBottom, Mode=OneWay}\">\n              <StackPanel>\n                <Grid Height=\"2\" Background=\"#FF000000\" Opacity=\"0\" />\n                <Grid Background=\"{DynamicResource ToolBarPopupGridBg}\" Width=\"150\" Height=\"42\">\n                  <Border CornerRadius=\"2\" BorderThickness=\"1\" Background=\"{DynamicResource Col_Menubar_Sub_Background}\" BorderBrush=\"{DynamicResource Col_Menubar_Sub_BorderBrush}\">\n                    <Grid Height=\"28\" Background=\"#00FFFFFF\">\n                      <Grid>\n                        <TextBlock Name=\"PART_Header\" FontSize=\"14\" FontWeight=\"Normal\" Foreground=\"{DynamicResource Col_Menubar_Foreground}\" HorizontalAlignment=\"Left\" VerticalAlignment=\"Center\" Margin=\"15,0,0,0\" Text=\"{Lang:ResourceBinding Name}\" />\n                      </Grid>\n                      <Rectangle Name=\"line\" Height=\"1\" Margin=\"5,0,5,0\" Fill=\"{DynamicResource Col_Theme}\" Opacity=\"1\" VerticalAlignment=\"Bottom\" />\n                      <i:Interaction.Triggers>\n                        <i:EventTrigger EventName=\"MouseDown\">\n                          <UIHelper:ParamsEventCommand Command=\"{Binding ItemClickCommand}\" />\n                        </i:EventTrigger>\n                      </i:Interaction.Triggers>\n                    </Grid>\n                  </Border>\n                  <Border CornerRadius=\"2\" BorderThickness=\"1\" IsHitTestVisible=\"False\" BorderBrush=\"{DynamicResource Popup.BorderBrush}\">\n                    <Rectangle Height=\"28\" Margin=\"5,6,5,6\" Fill=\"#FFFFFFFF\" Opacity=\"0.1\" VerticalAlignment=\"Center\" StrokeThickness=\"2\" />\n                    <UIElement.Effect>\n                      <DropShadowEffect BlurRadius=\"3\" Direction=\"280\" Opacity=\"0.09\" ShadowDepth=\"2\" Color=\"Orange\" />\n                    </UIElement.Effect>\n                  </Border>\n                </Grid>\n              </StackPanel>\n            </Popup>\n          </Grid>\n        </Grid>\n      </DataTemplate>",
+          "evidenceType": "original-offline-decoded-BAML-resource",
+          "binaryIdentity": "SHA256 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8 (MVID inherited from existing offline decode manifest; artifact SHA independently rechecked)",
+          "artifact": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+          "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+          "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+          "identityManifest": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json"
+        }
+      ],
+      "unknowns": [
+        "仅证明所选原BAML离线表示的绑定/触发器声明；未创建原版活控件、未验证Binding实际实例、WPF最终优先级或实际可点击状态，不推定完整行为等价。",
+        "父级状态、Popup/行为组件的实际有效启用和事件路由未运行验证；缺少同一局部门不代表原机必能越过撤销条件。"
+      ]
+    },
+    {
+      "id": "MT05",
+      "classification": "source-confirmed",
+      "from": "RedoTemplate按钮",
+      "to": "CanRedo/LockAreaStatus/RunData三门同时启用",
+      "relation": "static-template-binding-and-trigger-declaration",
+      "condition": "CustomItemTemplateName==RedoTemplate；CanRedo=True且LockAreaStatus=False且IsRunning=False",
+      "behavior": "RedoTemplate的Button.Command绑定当前ItemClickCommand；Style基于ToolBarButtonStyle，先Setter IsEnabled=False。唯一MultiDataTrigger的三条Condition依次为CustomItemData.CanRedo=True、CustomItemData.LockAreaStatus=False、RunData.(IVMRun.IsRunning)=False；匹配时Setter IsEnabled=True。此声明读取schedule相关数据，但不证明GetUnRedoStack已成功得到服务或重做动作已执行/恢复成功。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+          "member": "RedoTemplate: command and conjunction predicate",
+          "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339",
+          "start": 137,
+          "end": 157,
+          "excerpt": "      <DataTemplate x:Key=\"RedoTemplate\">\n        <Button Margin=\"4,0,4,0\" Height=\"36\" Width=\"36\" Command=\"{Binding ItemClickCommand}\" ToolTip=\"{Lang:ResourceBinding Name}\">\n          <FrameworkElement.Style>\n            <Style TargetType=\"{x:Type Button}\" BasedOn=\"{StaticResource ToolBarButtonStyle}\">\n              <Setter Property=\"IsEnabled\" Value=\"False\" />\n              <Style.Triggers>\n                <MultiDataTrigger>\n                  <MultiDataTrigger.Conditions>\n                    <Condition Value=\"True\" Binding=\"{Binding CustomItemData.CanRedo}\" />\n                    <Condition Value=\"False\" Binding=\"{Binding CustomItemData.LockAreaStatus}\" />\n                    <Condition Value=\"False\" Binding=\"{Binding Path=RunData.(VMInterface:IVMRun.IsRunning)}\" />\n                  </MultiDataTrigger.Conditions>\n                  <MultiDataTrigger.Setters>\n                    <Setter Property=\"IsEnabled\" Value=\"True\" />\n                  </MultiDataTrigger.Setters>\n                </MultiDataTrigger>\n              </Style.Triggers>\n            </Style>\n          </FrameworkElement.Style>\n        </Button>\n      </DataTemplate>",
+          "evidenceType": "original-offline-decoded-BAML-resource",
+          "binaryIdentity": "SHA256 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8 (MVID inherited from existing offline decode manifest; artifact SHA independently rechecked)",
+          "artifact": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+          "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+          "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+          "identityManifest": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json"
+        }
+      ],
+      "unknowns": [
+        "仅证明所选原BAML离线表示的绑定/触发器声明；未创建原版活控件、未验证Binding实际实例、WPF最终优先级或实际可点击状态，不推定完整行为等价。",
+        "基础样式、父级/动画等WPF有效值优先级未在此片段封闭；不把局部True Setter视为绝对启用保证。"
+      ]
+    },
+    {
+      "id": "MT06",
+      "classification": "source-confirmed",
+      "from": "MenuItemsLinux/NeutralMenuItemsLinux的Open/Save声明",
+      "to": "SaveLoadSolutionTemplate在所选原TitleToolBar选择器中未声明",
+      "relation": "static-template-binding-and-trigger-declaration",
+      "condition": "Linux两资源选择时存在Open/Save自定义模板名；限所选VisionMasterMain原BAML的有限选择器",
+      "behavior": "两个Linux菜单资源的Lang_OpenSol/Lang_SaveSol把customItemTemplateName写为SaveLoadSolutionTemplate，主methodName分别为OpenSolutionRemote/SaveSolutionRemote，且保留Local子项OpenSolutionNative/SaveSolutionNative。所选TitleToolBar customDataTemplate先默认TitleToolButtonDataTemplate，仅对SingleRunTemplate、ContinousRunTemplate、DownPopTemplate、RedoTemplate、LockingTemplate五个值声明切换，未对SaveLoadSolutionTemplate声明分支。这里只证明资源之间这个具体差异；不能据此断言整个产品不存在该模板、原机必使用默认回退或Linux实际每个按钮已可达。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-MenuItemsLinux.xml",
+          "member": "Linux open template declaration",
+          "sha256": "167f90e2479d58bcde66a1a93a8c0e23d4c7bd699821de72a55e155c0b0340d4",
+          "start": 16,
+          "end": 27,
+          "excerpt": "          <name>Lang_OpenSol</name>          \n          <toolGroupItemInfo>\n            <groupName>group0</groupName>\n            <priority>1</priority>\n          </toolGroupItemInfo>\n          <items>\n\t\t\t<TitleMenueItemData>\n              <name>Remote</name>\n              <methodName>OpenSolutionRemote</methodName>\n            </TitleMenueItemData>\n            <TitleMenueItemData>\n              <name>Local</name>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-MenuItemsLinux.xml",
+          "member": "Linux save template declaration",
+          "sha256": "167f90e2479d58bcde66a1a93a8c0e23d4c7bd699821de72a55e155c0b0340d4",
+          "start": 53,
+          "end": 65,
+          "excerpt": "          <name>Lang_SaveSol</name>          \n          <isShowSeparator>True</isShowSeparator>\n          <!--如果有组信息，则会默认显示到工具栏中-->\n          <toolGroupItemInfo>\n            <groupName>group0</groupName>\n            <priority>0</priority>\n          </toolGroupItemInfo>\n          <items>\n\t\t\t<TitleMenueItemData>\n              <name>Remote</name>\n              <methodName>SaveSolutionRemote</methodName>\n            </TitleMenueItemData>\n            <TitleMenueItemData>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-NeutralMenuItemsLinux.xml",
+          "member": "Neutral Linux open template declaration",
+          "sha256": "2384dd12f2a9eff04211cf8ebdf50f2da07c0a8ad7c9af87e9c9ea96669619a7",
+          "start": 16,
+          "end": 27,
+          "excerpt": "          <name>Lang_OpenSol</name>          \n          <toolGroupItemInfo>\n            <groupName>group0</groupName>\n            <priority>1</priority>\n          </toolGroupItemInfo>\n          <items>\n\t\t\t<TitleMenueItemData>\n              <name>Remote</name>\n              <methodName>OpenSolutionRemote</methodName>\n            </TitleMenueItemData>\n            <TitleMenueItemData>\n              <name>Local</name>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-NeutralMenuItemsLinux.xml",
+          "member": "Neutral Linux save template declaration",
+          "sha256": "2384dd12f2a9eff04211cf8ebdf50f2da07c0a8ad7c9af87e9c9ea96669619a7",
+          "start": 53,
+          "end": 65,
+          "excerpt": "          <name>Lang_SaveSol</name>          \n          <isShowSeparator>True</isShowSeparator>\n          <!--如果有组信息，则会默认显示到工具栏中-->\n          <toolGroupItemInfo>\n            <groupName>group0</groupName>\n            <priority>0</priority>\n          </toolGroupItemInfo>\n          <items>\n\t\t\t<TitleMenueItemData>\n              <name>Remote</name>\n              <methodName>SaveSolutionRemote</methodName>\n            </TitleMenueItemData>\n            <TitleMenueItemData>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+          "member": "Selected original finite template switch; no SaveLoadSolutionTemplate branch",
+          "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339",
+          "start": 172,
+          "end": 201,
+          "excerpt": "      <DataTemplate x:Key=\"customDataTemplate\">\n        <ContentPresenter Name=\"cp\" Content=\"{Binding}\">\n          <FrameworkElement.Style>\n            <Style TargetType=\"{x:Type ContentPresenter}\">\n              <Setter Property=\"ContentTemplate\" Value=\"{StaticResource TitleToolButtonDataTemplate}\" />\n              <Style.Triggers>\n                <DataTrigger Value=\"SingleRunTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource SingleRunTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"ContinousRunTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource ContinousRunTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"DownPopTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource DownPopTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"RedoTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource RedoTemplate}\" />\n                </DataTrigger>\n                <DataTrigger Value=\"LockingTemplate\" Binding=\"{Binding CustomItemTemplateName}\">\n                  <Setter Property=\"ContentTemplate\" Value=\"{StaticResource LockingTemplate}\" />\n                </DataTrigger>\n              </Style.Triggers>\n            </Style>\n          </FrameworkElement.Style>\n        </ContentPresenter>\n      </DataTemplate>\n    </ResourceDictionary>\n  </FrameworkElement.Resources>\n  <ItemsControl ItemsPanel=\"{StaticResource HorizontalItemsPanelTemplate}\" ItemTemplate=\"{StaticResource customDataTemplate}\" ItemsSource=\"{Binding Source={StaticResource src}}\">\n    <ItemsControl.GroupStyle>",
+          "evidenceType": "original-offline-decoded-BAML-resource",
+          "binaryIdentity": "SHA256 319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8 (MVID inherited from existing offline decode manifest; artifact SHA independently rechecked)",
+          "artifact": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+          "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+          "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+          "identityManifest": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json"
+        }
+      ],
+      "unknowns": [
+        "仅证明所选原BAML离线表示的绑定/触发器声明；未创建原版活控件、未验证Binding实际实例、WPF最终优先级或实际可点击状态，不推定完整行为等价。",
+        "Linux资源实际宿主/其它资源替代、远程/本地按钮真实布局与命令接收者仍未闭合。"
+      ]
+    }
+  ],
+  "provenance": {
+    "manifest": {
+      "path": "docs/architecture-recovery/menu-universe-next-toolbar-decode.json",
+      "sha256": "e57e0b1b2c03bc765dd9b4226e83b9fa3f3b75689589724f64d6d8cb976e3f76"
+    },
+    "artifact": {
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VisionMasterMain.dll",
+      "sha256": "319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1",
+      "byte_length": 413696,
+      "format": "pe",
+      "mvid": "88823867-dc1b-476f-9133-0d8cf5da19e8",
+      "reaEvidence": "ev_08858165d5ee61dc786ef314d4723606423ada1d803ba976d84bd10df409e425",
+      "shaRechecked": true,
+      "mvidReextractedThisSlice": false
+    },
+    "resource": "VisionMasterMain.g.resources/appmainwindow/titletoolbar.baml",
+    "output": {
+      "path": "docs/architecture-recovery/menu-universe-next-original-resources/titletoolbar.xaml",
+      "sha256": "f4ecfe33da73766665c4a909919707a6e24894d6820f865acecdbb68ca5ad339"
+    },
+    "staticResourceDeclarationsOnly": true,
+    "originalRuntimeExecuted": false,
+    "browserRendered": false,
+    "deviceCalled": false,
+    "productModified": false
+  },
+  "fullBehaviorClosed": false,
+  "entryCompletenessProved": false,
+  "implementationCredit": 0,
+  "implementationProgress": "41/96 = 42.71%; no change"
+}

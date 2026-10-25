@@ -1,0 +1,66 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原生数组索引编辑器专项核对（2026-10-17）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../NATIVE-ARRAY-INDEX-EDITOR-AUDIT.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#原生数组索引编辑器专项核对2026-10-17">原生数组索引编辑器专项核对（2026-10-17）</a></p><p style="margin-left:14px"><a href="#原生证据与状态机">原生证据与状态机</a></p><p style="margin-left:14px"><a href="#与现有-group-交互的差异">与现有 Group 交互的差异</a></p><p style="margin-left:14px"><a href="#可实施接口与缺口">可实施接口与缺口</a></p></details><h1 id="原生数组索引编辑器专项核对2026-10-17">原生数组索引编辑器专项核对（2026-10-17）</h1><p>本报告只核对原生 <code>Apps.XmlParser</code>、<code>Apps.XmlUI</code> 反编译证据与框架当前 Group 中断条件索引界面，不推断未观察的 VM 运行行为，也不把 Group 独立实现称为原生界面复刻。</p>
+<h2 id="原生证据与状态机">原生证据与状态机</h2><table>
+<thead>
+<tr>
+<th>入口或状态</th>
+<th>原生源码</th>
+<th>可确认行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>索引源类型</td>
+<td><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/ButtonSelecter.cs:36-41,288-318</code></td>
+<td><code>IndexOpenSetter</code> 使用 <code>GetFrontFilterTreeOperation</code>，参数固定为 <code>int</code>；普通 <code>DropOpenSetter</code> 使用传入的输出类型。<code>GetFrontFilterTreeOperation.cs:22-55</code> 从当前模块/动态容器取前置输出树，包含空值节点；当前模块自身和内部节点均排除。</td>
+</tr>
+<tr>
+<td>主来源打开</td>
+<td><code>ButtonSelecter.cs:321-344</code> 与 <code>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:307-332</code></td>
+<td>链按钮打开时调用 <code>DropOpenSetter</code> 刷新树；设置 <code>IsSubscribeIndex=false</code>。独立订阅窗已开时选中当前参数并关闭本地来源 Popup。</td>
+</tr>
+<tr>
+<td>主来源选择</td>
+<td><code>ButtonSelecter.cs:347-399</code></td>
+<td>叶 <code>VmIO</code> 双击时保留旧的 <code>[...]</code> 尾部，仅替换模块路径；无括号时写 <code>ModulePathName + &quot;[]&quot;</code>。空 Holder 清空来源，选择后关闭 <code>IsDropDownOpen</code>。</td>
+</tr>
+<tr>
+<td>光标进入索引</td>
+<td><code>ButtonSelecter.cs:517-585</code>；<code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTab/DeleteTextBox.xaml.cs:66-91</code></td>
+<td>文本框焦点/选区改变触发；只在可编辑、文本长度大于 1、光标前最近未闭合 <code>[</code> 且光标后最近未嵌套 <code>]</code> 时刷新固定 <code>int</code> 来源树，记录光标位置并打开 <code>IsTextDropDownOpen</code>。失焦关闭正文 Popup；光标不在括号内也关闭。<code>DeleteTextBox</code> 仅在选区为空或全选时派发状态。</td>
+</tr>
+<tr>
+<td>正文 Popup</td>
+<td><code>paramusercontroldatatemplate.xaml:255-305</code></td>
+<td><code>ButtonSelecter_sub</code> 两列 <code>* / 32</code>。第 0 列文本上的 Popup 内容为 <code>SubTreeView</code>，宽高均 180；<code>IsTextPopupVisible</code> 控制显示；叶双击调用 <code>IndexClickCommand</code>。</td>
+</tr>
+<tr>
+<td>索引选择/清空</td>
+<td><code>ButtonSelecter.cs:455-515</code></td>
+<td><code>IndexClick</code> 先删掉光标所在方括号内的旧内容，再插入选中的 <code>VmIO.ModulePathName</code>；空 Holder 仅清空括号内容。清空操作寻找光标前的 <code>[</code> 和后面的 <code>]</code>，异常被原码吞掉。索引选完把 <code>IsSubscribeIndex</code> 复位为 false。源码未在此处显式关 <code>IsTextDropDownOpen</code>。</td>
+</tr>
+<tr>
+<td>独立订阅窗</td>
+<td><code>ButtonSelecter.cs:578-584,598-629</code>；<code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI/ParamSubscribeWindow.xaml:1-46</code></td>
+<td>独立窗 240×480。窗口绑定 <code>SelectedSubscribeParam</code> 与 <code>IsSubscribeIndex</code>；后者切换普通树/索引树，两棵树分别派发 <code>ClickCommand</code>/<code>IndexClickCommand</code>。正文光标在括号内且独立窗打开时设置 <code>IsTextPopupVisible=false</code> 并 <code>IsSubscribeIndex=true</code>，使索引选取转移到独立窗。</td>
+</tr>
+<tr>
+<td>来源树叶提交</td>
+<td><code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTab/SubTreeView.xaml:85,135-143</code>；<code>SubTreeView.xaml.cs:116-126,211-267</code></td>
+<td>仅无子项的 <code>TreeViewItem</code> 鼠标双击触发选择；<code>VmIO.ModulePathName</code> 去掉 <code>[]</code> 用于回选。展开中间节点不是提交。</td>
+</tr>
+<tr>
+<td>文本提交到运行数据</td>
+<td><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/SetFilterSourceOperation.cs:83-111,183-205</code></td>
+<td>解析完整来源文字后，基础来源给 <code>VmIO.RelateIO</code>，索引经 <code>GetBindIndex</code> 给独立 <code>VmIO.RelateIndex</code>；索引有 <code>.</code> 时按路径取，数字时建 <code>VmConstantIO</code>。索引解析失败警告。该层证实索引不是简单 UI 后缀。</td>
+</tr>
+</tbody></table>
+<p><code>DeleteTextBox</code> 的 <code>Delete</code> 清空整个文本（<code>DeleteTextBox.xaml.cs:50-61</code>），且数字模式拦非数字输入、关闭粘贴命令（<code>96-114</code>）。索引所用 <code>ButtonSelecter_sub</code> 模板并未启用 <code>IsNumberOnly</code>，因此其正文容许 <code>模块.端口</code> 路径。<code>ClearBetweenBracket</code> 的去括号代码存在边界可疑处（<code>IndexOf</code> 返回 -1 时的算术），不宜复制潜在缺陷；应通过实际 VM 差分确认边界结果。</p>
+<h2 id="与现有-group-交互的差异">与现有 Group 交互的差异</h2><p><code>src/VisionEditor/GroupConfigurationControls.cs:32-46</code> 使用独立的来源按钮、数字 TextBox、宽 26 的 <code>…</code> 索引按钮和模态 <code>WorkflowSourcePicker</code>。可选择前置的标量整数，也可键入非负整数，<code>GroupOperand.IndexSource</code> 保存结构化引用；<code>src/VisionFramework/GroupBreak.cs:5-34</code> 将运行时整数解析为数组索引。这是已接通的独立实现，但不是原生的 <code>模块.端口[索引]</code> 单文本框、32 宽订阅侧按钮、180×180 正文 Popup / 240×480 独立窗双模式状态机。</p>
+<p>当前界面 <code>selected?.Array==true</code> 才出现索引行；原生来源一选中数组即可形成 <code>[]</code>，用户将光标放入括号才弹索引树。当前常量要求非负 int，而原生 <code>GetBindIndex</code> 接受 <code>MathHelper.IsNumber</code>，具体负数、小数如何与数组运行逻辑配合还未验证。框架约束应保留，除非原生运行差分证实其他值有效。</p>
+<h2 id="可实施接口与缺口">可实施接口与缺口</h2><ol>
+<li><strong>无需插件契约即可闭合的 Group 操作</strong>：给 Group 数组操作数提供 <code>来源路径[整数索引]</code> 编辑显示；用现有 <code>WorkflowSourceOption</code> 筛前置 <code>DataKind.Integer</code>、标量来源；正文索引树只选择整数叶和“清空索引订阅”；源切换保留既有索引；光标触发正文 180×180 树；独立窗 240×480 在主来源/索引树之间切换。提交时仍写现有 <code>GroupOperand.Source</code>、<code>Index</code> / <code>IndexSource</code>，由既有 <code>GroupBreak</code> 验证和执行。</li>
+<li>建议隔离 UI 状态模型：<code>CurrentText</code>、<code>Caret</code>、<code>HasFocus</code>、<code>IsInlineIndexOpen</code>、<code>IsSourceOpen</code>、<code>IsDetachedOpen</code>、<code>DetachedMode=Source|Index</code>、<code>SelectedReference</code>。单独纯函数检测光标是否在同一对 <code>[]</code> 内及安全替换内容。索引源列表刷新在进入括号和开启 Popup 时发生，防止历史节点残留。</li>
+<li><strong>数据缺口</strong>：原生完整 <code>GetFrontFilterTree</code> 的 Holder 分组、全局变量、层级、翻译名、远端路径与 VM 内部元素生命周期依赖原生模块树；框架只可用现有节点/流程变量引用填充同形树。Group 的前置标量整数筛选符合当前运行约束，但不能称为全插件通用索引树。</li>
+<li>原生数组索引 UI 没有在本次运行的 VM 里做同状态截图和点击差分；源码确认的是模板/命令静态结构，视觉像素、Popup 定位、负数/小数实际运行仍待验证。专用 <code>ButtonSelecterConfig_sub</code> 在 <code>paramusercontroldatatemplate.xaml:2625-2690</code> 也有同类双 Popup，但宽度/偏移有所变化，应按具体宿主模板选择，不能全局共用一个尺寸。</li>
+</ol>
+<p>建议闭合验收：添加两路数组来源和前置整数来源，选第一路后填常量索引，切换第二路确认索引保留；把光标移入/移出括号验证 180×180 索引树开关；选择整数叶、清空索引来源并改回常量；在独立窗打开时验证主树/索引树切换；保存重开执行 Group 两轮并确认订阅源更新后的数组元素及越界报告。该测试只证明托管实现行为，VM 原生运行差分仍单独记录。</p>
+<p class="meta">来源：docs/NATIVE-ARRAY-INDEX-EDITOR-AUDIT.md · SHA256 05bef599519726fc566c701892fc1e9403fe13bc4e52f2de1ed30b73ea345f73<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,67 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>工具发现与加载第二轮：事件、失败状态和 Group 回调</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../LOADER-ROUND2-20261019.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#工具发现与加载第二轮事件失败状态和-group-回调">工具发现与加载第二轮：事件、失败状态和 Group 回调</a></p><p style="margin-left:14px"><a href="#1-三种交互共享同一个加载状态">1. 三种交互共享同一个加载状态</a></p><p style="margin-left:14px"><a href="#2-刷新重新创建身份模式过滤是缓存时行为">2. 刷新重新创建身份，模式过滤是缓存时行为</a></p><p style="margin-left:14px"><a href="#3-group-导入sdk完成事件早于托管实例落地">3. Group 导入：SDK完成事件早于托管实例落地</a></p><p style="margin-left:14px"><a href="#4-存量模块到可见节点的两条集合路径">4. 存量模块到可见节点的两条集合路径</a></p><p style="margin-left:14px"><a href="#5-main-可采用范围与接入合同">5. main 可采用范围与接入合同</a></p><p style="margin-left:14px"><a href="#6-可执行验收清单尚未执行">6. 可执行验收清单（尚未执行）</a></p></details><h1 id="工具发现与加载第二轮事件失败状态和-group-回调">工具发现与加载第二轮：事件、失败状态和 Group 回调</h1><p>2026-10-19。只读静态证据审查；没有运行厂商代码、构建、原机操作或访问 tool-plugins。证据是既有反编译 C# 与 XAML，不把静态分支称为运行观察。上一轮目录/程序集基础链见 PARALLEL-RECONSTRUCTION-20261019.md；本轮仅记录新增闭合点。路径均相对仓库根目录。</p>
+<h2 id="1-三种交互共享同一个加载状态">1. 三种交互共享同一个加载状态</h2><ul>
+<li>折叠工具箱：<code>analysis/decompiled/VMControls.WPF/VMControls.WPF/ToolBox.xaml:118,162–166</code> 的附加属性与 Popup 触发器；<code>IsMouseEnterBehavior.cs:17–22</code> 注册 ToolBox 的事件；<code>ToolBox.xaml.cs:162–169,185–198</code> 鼠标进入先 <code>ViewData.UpdateLoad(group)</code>，再关闭其他分组并开放当前 Popup。因此加载抛异常会跳过后续 Popup 状态赋值。该链没有定时器或显式异步后台加载，不能把 PopupAnimation 解释为加载延时。</li>
+<li>展开工具箱：同目录 <code>ToolBox.xaml:170–183</code> 的 Expander.Expanded 调 <code>ViewData.ExpandCommand</code>，到 <code>ToolBoxData.cs:62–65</code>，同样进入 UpdateLoad。</li>
+<li>画布右键工具菜单：<code>VMControls.WPF.Base/DiagramPage.xaml:178–205</code> 的分组 MenuItem.MouseEnter 也调用 <code>ViewData.ExpandCommand</code>。<code>DiagramPage.xaml.cs:320</code> 初绑 ToolSource，模式切换还会绑定 GlobleToolSource。它不是另一套目录缓存。</li>
+</ul>
+<p>状态依据 <code>analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs:77–120</code>：只对 null、Lang_Tools、IsInit 提前返回。其他对象未做 CollectionViewGroup 类型安全检查。第88行<strong>先</strong>置 IsInit=true，之后才 GetDirectories；第91–95行如果无首项，保持已初始化直接返回。第96行清空分组，再逐个解析；扫描及 XML 解析没有本地 catch。最后才把占位项在 ObservableCollection 中替换成真实工具并通知。</p>
+<p>静态可推导的失败边界：目录枚举抛错留下 IsInit=true；中途 XML 抛错留下已清空或部分填充的 group.items，而扁平 toolSource 仍未完成替换；再次进入同一对象被 IsInit 拦截。这是源码控制流结论，尚未通过原机故障注入观察，不应实现自动重试后声称原生一致。</p>
+<p>全局类别首次已全量装载且 UpdateLoad 永远跳过。UserTools/GroupTools 首次首项不是特殊完成状态：它们 IsInit 默认false，初始一项也作为后续替换锚点，首次鼠标进入仍扫描全部。空的 UserTools/GroupTools 初始没有扁平项，实际能否形成可进入的 WPF 分组还依赖 CollectionView，不能只按目录存在断言UI可见。</p>
+<h2 id="2-刷新重新创建身份模式过滤是缓存时行为">2. 刷新重新创建身份，模式过滤是缓存时行为</h2><p><code>ToolBoxData.Reload:67–75</code> 清 global、ordinary 和 root 三项缓存并通知两个属性；<code>Refresh:122–128</code> 只清 ordinary/root。AddToolItem/DeleteToolItem 在修改 GroupTools 后走后者（130–163）。Reload/Refresh 是重新 LoadData 后的新分组对象，恢复的是新对象 IsInit=false，不是原对象重试。</p>
+<p><code>GetItems:196–228</code> 只在 source=null 时使用 isRemote 过滤 ShellModule；Global 只留 ProcedureModule/GlobalCameraModule/DataQueueModule。当前缓存已经存在时，RemoteOperate.IsRemoteMode 的新值不会自行重新过滤。是否有其他模式切换调用 Reload 本轮未闭合，不能直接宣布原机切换有bug。</p>
+<h2 id="3-group-导入sdk完成事件早于托管实例落地">3. Group 导入：SDK完成事件早于托管实例落地</h2><p>工具箱 <code>VMControls.WPF.DataForUI/DecoratorBase.cs:198–211</code> 按 DirPath.Contains(&quot;GroupTools&quot;) 判断，目录末级名组成 <code>&lt;目录&gt;/&lt;末级名&gt;.gro</code>，进入 VmSolution.LoadGroup。该分支位于普通创建 try/catch 外；不能将普通分支278–293的异常提示/删除最后撤销操作推广到 Group 分支。</p>
+<p><code>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs:2310–2312</code> → <code>internalImportGroup:1711–1859</code>：</p>
+<ol>
+<li>检查 import end flag、父模块有效性；按需选择文件。1741–1797 包括 GetGroVersion、V4.0.0下限与 CompatibleTool 升级分支。这里只记录源码，不运行升级器，不采用其中终止进程行为。</li>
+<li>非copy先注册 RootOperation（1802–1805）。记下 importGroupModuleSet。父为IMVSGroup时调用 <code>(Root.ID, own.ID)</code>，普通流程用 <code>(own.ID,0)</code>；不是统一父ID参数。</li>
+<li><code>VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/CollectionManager.cs:115–124</code> 调 IMVS_ImportGroupModule，非零直接抛 VmException。返回后调用方才置 mbImportGroupEndFlag=false 并等待（1819–1820）；不能脱离native回调时序宣称不存在早回调竞态。</li>
+<li><code>VmSolution.cs:4583–4612</code> 回调先触发公共 OnGroupImportEndCallBack；成功才构造IMVS_MODULE_INFO（新ID/流程ID/新名/IMVSGroup），再 AddModuleByInfo，设Parent和通知Ready，最后才置完成flag。因此“收到完成事件即已能从父集合读取新Group”不成立。事件订阅方抛异常时能否阻断置flag，由委托传播与上游回调封装共同决定，本轮没有运行验证。</li>
+<li><code>VmModuleSet.cs:660–674</code> 先构造实例，随后按 Name+ID 查重；若重复返回已有对象，否则加新对象，最终替换整个 Modules 集合。不是一次普通 Collection.Add。</li>
+<li>等待返回后父赋值、按 IsNeedExport 注册 ModuleUnRedoOperation，记录 ModuleFilePath/Password 并返回（1821–1843）。catch仅VmException；未见finally清理 importGroupModuleSet/完成flag。失败后真实恢复能力仍未知。</li>
+</ol>
+<h2 id="4-存量模块到可见节点的两条集合路径">4. 存量模块到可见节点的两条集合路径</h2><p><code>VmModuleSet.Modules:92–131</code> 首读在锁中标记lazy并 LoadModules，锁外 LoadConnections 和 ImportProcess，最后关lazy；非finally。LoadModules(410–470) 对每模块捕获所有异常、记录并继续，因此某个工具创建失败可以产生部分托管集合，而不是整个方案一律拒绝。取不到native树直接返回，modules_IsLoaded可能仍false；外层_Var为空行为须结合既有字段初值/运行确认，不作新结论。</p>
+<p><code>CreateModuleToolRe:749–757</code> Cs程序集不存在时回退VM.Core.VmModule；有程序集时选首个VmModule派生类型。不能将“缺Cs”“有Cs但类型/构造失败”合成一种占位恢复。原始工具箱使用IVmModule可赋值类型，存量链使用VmModule派生类型，筛选合同也不同。</p>
+<p><code>VmModule.cs:1754–1796</code> 初始化native模块信息、IO和GUID；PreAddModuleTo负责Parent和条件part撤销，AddModuleTo才追加Children。存量 LoadModules 对非预生成实例只PreAdd，然后最终Modules赋值；与新增工具构造期间直接Add不同。</p>
+<p>UI闭合：<code>VmModuleSet.Modules:123–126</code> 替换通知Modules/Children。<code>VMControls.WPF/ProcedureConfigControl.xaml:538</code> 画布绑定 <code>DisplayModuleSet.DecorateSource.(IChildren.Children)</code>；<code>VMControls.WPF.Base/DiagramItem.xaml.cs:532–555</code> 按 IVmProcedure/IVMGroup/其他封装成对应decorator。顶层 <code>ProcedureConfigControl.xaml.cs:975–997</code> 集合替换解绑/清旧、重绑、新建装饰器，并消费CopyStatus；1032–1072单项普通模块BeginInvoke，其余Dispatcher.Invoke。树导航另由 <code>VmModuleBaseDecorator.cs:85–99,517–568</code> 懒建DecorateChildren，只收流程/Group，不是画布普通节点列表。两者不能混为一种装饰器缓存。</p>
+<h2 id="5-main-可采用范围与接入合同">5. main 可采用范围与接入合同</h2><p>本轮没有足够依据直接接入动态程序集宿主或改写产品撤销。已有 metadata scanner 的 eager UserTools/GroupTools、同优先级目录排序、容错和失败后不可重试均应保持标注差异，不因“可复刻”就主动复制厂商失败残留。</p>
+<p>建议未来合同分别表达：metadata discovery（目录和诊断，不执行）；tool creation（工具身份、父流程/Group、构造策略、失败诊断）；existing hydration（native身份、fallback/失败状态、Parent/IO/GUID准备）；group import（父/根ID、copy方式、native任务状态、集合落地状态、撤销part）；UI消费（稳定模型身份、集合替换通知、装饰器投影）。这些是本轮建议，尚未更改跨项目合同，更未要求插件项目采用。</p>
+<p>可以安全落地的是精确文档与独立状态测试夹具；不能把一个 Group 完成事件直接当作“托管Group已可用”的插件通知。若main未来提供异步导入API，应明确区分native回调与模型ready，后者属于独立安全设计，不冒充原厂事件顺序。</p>
+<h2 id="6-可执行验收清单尚未执行">6. 可执行验收清单（尚未执行）</h2><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>记录点与判定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>首开→折叠悬停→再次悬停→展开→右键进入同组</td>
+<td>记录同一ToolBoxData/group对象、IsInit、两集合计数、XML读取次数；后两入口不应独立重复加载已初始化组</td>
+</tr>
+<tr>
+<td>自有安装副本中普通组目录不可读/第二XML损坏→修复→再次进入→显式Reload</td>
+<td>验证IsInit前置、部分数据残留及Reload新身份；不改真实安装目录</td>
+</tr>
+<tr>
+<td>UserTools/GroupTools各0/1/2条目</td>
+<td>首次首项、进入后全量、空组是否可进入；不要依赖目录枚举的确定顺序</td>
+</tr>
+<tr>
+<td>Group正常导入与嵌套Group导入</td>
+<td>抓入口父/根ID、公共End事件、AddModuleByInfo、Children通知、最终返回顺序及位置持久化</td>
+</tr>
+<tr>
+<td>无效gro与构造异常</td>
+<td>记录flag/importGroupModuleSet/撤销栈/是否允许下一次导入；验证前保留方案，使用隔离副本</td>
+</tr>
+<tr>
+<td>存量方案缺Cs、有Cs无匹配类型、构造抛异常</td>
+<td>区分基类fallback与跳过单模块；对照原native树、托管Modules、连接端点、可见节点</td>
+</tr>
+<tr>
+<td>Modules集合替换/新增/Remove</td>
+<td>验证画布节点与树导航投影各自正确，记录CopyStatus消费与首选Tab；不只测列表数量</td>
+</tr>
+</tbody></table>
+<p>运行验证沿用用户现有逆向授权，并遵守原机可见桌面、受控副本及任务进程边界；涉及范围外的设备、其他任务进程或破坏性操作另行处理。本轮没有执行。通过本地状态测试不能证明原机等价。</p>
+<p>证据清单：<code>analysis/full-audit/loader-round2-20261019/source-sha256.csv</code>（15个输入源码完整SHA256）及 <code>baseline.txt</code>。关键新证据：DiagramPage.xaml SHA256 <code>906E1E21324EE23D6E2F15853FA54AFE5C268539FFF49A252020DE0E94C8D4C4</code>；DiagramItem.xaml.cs <code>19D967CB454FA6BA9AAE63A53C2B394B318CE9DD1391D7C5EC8A00A77F683CE3</code>；CollectionManager.cs <code>CECBDBAD7FE06DD91F0D7D276DFB96B7BF436B53BC82BC858674354FB5D880CC</code>。原始证据未复制改写。没有新增REA服务调用或Evidence ID，复用既有反编译产物，未声称本轮重新解包/反编译。</p>
+<p class="meta">来源：docs/LOADER-ROUND2-20261019.md · SHA256 145d7ea93b63dc598f9ba1da2b415345088fbaf331eb3a2dc55e6917dfd5a617<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

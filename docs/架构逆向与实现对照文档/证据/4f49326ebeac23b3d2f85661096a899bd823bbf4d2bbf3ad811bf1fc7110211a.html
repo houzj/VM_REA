@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 4f49326ebeac · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 4f49326ebeac</p><h1>原文证据 4f49326ebeac</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 4f49326ebeac23b3d2f85661096a899bd823bbf4d2bbf3ad811bf1fc7110211a。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>src/VisionEditor/ToolExecutionScope.cs:154–171
+证据类型 current-source
+程序集身份 not revalidated in this slice
+SHA256 bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a
+ async Task&lt;NodeRunRecord> RunConfiguredTool(string procedureId,string nodeId,Dictionary&lt;string,System.Text.Json.JsonElement> values,Func&lt;bool>? configurationAlive=null){
+  var runOwner=CaptureExecutionOwner();
+  bool CanPublish()=>IsCurrentExecutionOwner(runOwner)&amp;&amp;(configurationAlive?.Invoke()??true);
+  if(!CanPublish())throw new InvalidOperationException(&quot;配置会话已失效。&quot;);
+  var procedure=doc.Document.Procedures.Single(p=>p.Id==procedureId);var node=procedure.Nodes.Single(n=>n.Id==nodeId);var descriptor=modules.GetDescriptor(node);var inputs=new Dictionary&lt;string,PortValue>();var parameters=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());
+  // Capture this self-run's upstream records before dispatch; dynamic selectors read this
+  // invocation's snapshot, never a mutable latest-result dictionary from another round.
+  var available=(workflowSessions.TryGetValue(procedureId,out var priorSession)?priorSession.Nodes:[]).ToDictionary(r=>r.NodeId,StringComparer.Ordinal);
+  if(configurationResults.TryGetValue(procedureId,out var configured))foreach(var cached in configured)available[cached.Key]=cached.Value;
+  PortValue Output(string id,string port){
+   NodeRunRecord? record=available.GetValueOrDefault(id);
+   return record is not null&amp;&amp;record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&amp;&amp;CompoundOutputFields.Expand(record.Outputs).TryGetValue(port,out var value)?value:throw new InvalidDataException(&quot;订阅图像或数据尚无运行结果。&quot;);
+  }
+  PortValue Resolve(WorkflowValueReference source)=>source.Kind switch{
+   WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),
+   WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),
+   WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),
+   WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/domain-data-obligations--F-02.html">数据/domain-data-obligations--F-02.html</a></li><li><a href="../数据/domain-data-obligations--F-22.html">数据/domain-data-obligations--F-22.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

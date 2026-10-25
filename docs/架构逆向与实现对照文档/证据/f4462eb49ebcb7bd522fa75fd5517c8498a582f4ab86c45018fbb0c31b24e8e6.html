@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 f4462eb49ebc · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 f4462eb49ebc</p><h1>原文证据 f4462eb49ebc</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 f4462eb49ebcb7bd522fa75fd5517c8498a582f4ab86c45018fbb0c31b24e8e6。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml.cs:438–481
+证据类型 local-decompiled-source
+程序集身份 not revalidated in this slice
+SHA256 35fda4306245515f4dfb6dbf20e7b8479bbae56830b2f76549b63e9d456699d3
+	internal IList&lt;Point> GetPath(DiagramItem sourceItem, DiagramItem targetItem, int sourceIndex, int targetIndex)
+	{
+		List&lt;Point> list = new List&lt;Point>();
+		Point item = sourceItem.AnchorPoint(sourceIndex);
+		Point item2 = targetItem.AnchorPoint(targetIndex);
+		double num = 5.0;
+		Rect rectWithMargin = sourceItem.GetRectWithMargin(num);
+		Rect rectWithMargin2 = targetItem.GetRectWithMargin(num);
+		Point offsetPoint = sourceItem.GetOffsetPoint(sourceIndex, num);
+		Point offsetPoint2 = targetItem.GetOffsetPoint(targetIndex, num);
+		List&lt;Rect> allRects = GetAllRect();
+		List&lt;Rect> list2 = new List&lt;Rect> { rectWithMargin, rectWithMargin2 };
+		APoint[,] pathMap = GetPathMap(list2);
+		List&lt;APoint> list3 = AStar.FindPath(new APoint((int)offsetPoint.X / 5 + 1, (int)offsetPoint.Y / 5 + 1), new APoint((int)offsetPoint2.X / 5 + 1, (int)offsetPoint2.Y / 5 + 1), pathMap);
+		if (list3.Count &lt; 3)
+		{
+			pathMap = GetPathMap(list2, list2);
+			allRects = list2;
+			list3 = AStar.FindPath(new APoint((int)offsetPoint.X / 5 + 1, (int)offsetPoint.Y / 5 + 1), new APoint((int)offsetPoint2.X / 5 + 1, (int)offsetPoint2.Y / 5 + 1), pathMap);
+		}
+		if (list3.Count &lt; 3)
+		{
+			if (offsetPoint.X != offsetPoint2.X &amp;&amp; offsetPoint.Y != offsetPoint2.Y)
+			{
+				list.Add(new Point(offsetPoint.X, offsetPoint2.Y));
+			}
+			list.Insert(0, offsetPoint);
+			list.Add(offsetPoint2);
+		}
+		else
+		{
+			for (int i = 0; i &lt; list3.Count; i++)
+			{
+				list.Add(new Point((list3[i].X - 1) * 5, (list3[i].Y - 1) * 5));
+			}
+		}
+		list = PathFinder.OptimizeLinePoints(list, list2, allRects, DiagramItem.GetOrientation(sourceIndex), DiagramItem.GetOrientation(targetIndex));
+		list.Insert(0, item);
+		list.Add(item2);
+		List&lt;Point> turnPoints = PathFinder.GetTurnPoints(list);
+		PathFinder.RechargeLinePoints(turnPoints, allRects);
+		return turnPoints;
+	}
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/domain-data-obligations--F-08.html">数据/domain-data-obligations--F-08.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

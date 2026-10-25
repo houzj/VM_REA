@@ -1,0 +1,505 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>外部服务与后台入口遗漏审计</title><style>body{max-width:1200px;margin:auto;padding:24px;background:#101a29;color:#e4edf6;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#8bceff}p{color:#b9cadb}.notice{border-left:4px solid #dfac64;padding:14px;background:#1b2b40}details{margin:12px 0;padding:12px;background:#17263a;border:1px solid #36506c;border-radius:8px}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 Consolas,monospace;background:#0c1624;padding:12px}li{margin:6px 0}.meta{font-size:12px;overflow-wrap:anywhere}nav a{display:inline-block;margin:5px 12px 5px 0}</style><a href="index.html">← 架构索引</a> · <a href="entry-inventory.html">入口清单</a><h1>外部服务与后台入口遗漏审计</h1><p class="notice">13项有限源码审计；包含通信回调换方案、全局触发即时写入、网关与脚本边界。每项是证据切片，尚未关闭完整入口链。9个EXE原MethodDef的原文件与CIL摘要已重核，其余跨程序集反编译源仅核文件hash。没有运行原版、SDK、网关或设备。</p><nav><a href="#group-0">通信回调换方案</a><a href="#group-1">全局触发即时写入</a><a href="#group-2">网关与脚本边界</a></nav><section id="group-0"><h2>通信回调换方案</h2><details id="EA01"><summary>EA01 · MainWindowData构造 → InitComTrigger → 静态事件订阅 + IsShowSaveNotice快照</summary><p><strong>source-confirmed · 源码确认</strong></p><p>构造在CheckIsNeutral后调用InitComTrigger；后者将实例回调挂到VmSolution.OnCommunicationRecvCallBackEvent，随后把IsShowSaveNotice配置读入字段。该字段是这里的快照，不是每包通信都重读。Program.InitMainWindow新建MainWindowData后才PreLoad。</p><h3>未知与边界</h3><ul><li>原件9个选定成员身份见独立证据；具体实例数、重新初始化和订阅激活次数未运行验证。</li></ul><h3>下一具体成员</h3><ul><li>MainWindowData.InitComTrigger</li><li>Program.InitMainWindow / ReInitData</li></ul><p><a href="shell-lifecycle.html#edge-L06">shell-lifecycle / L06</a> · <a href="entry-routing-security.html#edge-R26">entry-routing-security / R26</a></p><details><summary>Program.InitMainWindow · 159–168</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs<br>SHA-256 e9f3671cbf1b65559f855974b2f6c9e45dea434cfa3f89e3b29c2f9824b0ced6<br>local-decompiled-source · not revalidated in this slice</p><pre>	public static void InitMainWindow()
+	{
+		MainData = new MainWindowData();
+		MainData.PreLoad();
+		LogHelper.Info(&quot;InitServer&quot;);
+		ServerManager.Instance.InitServer(TitleMenueItemData.GetToolFunctionSources);
+		NameValueItem.logManager = (ILogManager)LogUIBridge.GetInstance();
+	}
+
+	public static void ReInitData()</pre></details><details><summary>MainWindowData constructor · 469–493</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>	public MainWindowData()
+	{
+		LogHelper.Info(&quot;MainWindowData-------begin&quot;);
+		VmSolution.RestoreDefaultDisplay += VmSolution_RestoreDisplay;
+		VmSolution.OnSolutionLoadEndCallBack += VmSolution_LoadEnd;
+		VmSolution.OnSolutionLoadBeginCallBack += VmSolution_LoadBegin;
+		VmSolution.OnGlobalScriptReportCallBack += VmSolution_OnGlobalScriptReportCallBack;
+		VmSolution.OnExecuteAfterLoad += VmSolution_OnExecuteAfterLoad;
+		VmSolution.OnReportModuleData += VmSolution_OnReportModuleData;
+		VmSolution.OnProxyCrashNoticeCallBack += VmSolution_OnProxyCrashNotice;
+		VmSolution.OnServerStatusCallBack += VmSolution_OnServerStatusCallBack;
+		VmSolution.OnProcedureUpgradeBeginCallBack += VmSolution_OnSolutionUpgradeBeginCallBack;
+		VmSolution.OnProcedureUpgradeEndCallBack += VmSolution_OnSolutionUpgradeEndCallBack;
+		VmSolution.OnGroupUpgradeBeginCallBack += VmSolution_OnSolutionUpgradeBeginCallBack;
+		VmSolution.OnGroupUpgradeEndCallBack += VmSolution_OnSolutionUpgradeEndCallBack;
+		VmSolution.OnProcessImportEndCallBack += VmSolution_OnProcessImportEndCallBack;
+		VmSolution.Instance.PropertyChanged += SourcePropertyChanged;
+		LogHelper.Info(&quot;MainWindowData-------事件注册完毕&quot;);
+		appData = AppDataFactory.Instance(true);
+		CheckIsNeutral();
+		InitComTrigger();
+		LogHelper.Info(&quot;MainWindowData-------end&quot;);
+	}
+
+	private void VmSolution_OnExecuteAfterLoad(object sender, ObjectEventArgs args)</pre></details><details><summary>MainWindowData.InitComTrigger · 1241–1246</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>	private void InitComTrigger()
+	{
+		VmSolution.OnCommunicationRecvCallBackEvent += VmSolution_OnCommunicationRecvCallBackEvent;
+		isShowSaveNotice = ConfigurationHelper.GetConfig(&quot;IsShowSaveNotice&quot;);
+	}
+</pre></details></details><details id="EA02"><summary>EA02 · CVmObjectBase回调case 1024 → SolutionManager → TempVmSolution → VmSolution静态事件</summary><p><strong>source-confirmed · 源码确认</strong></p><p>选定反编译源显示：case 1024把pData转IMVS_COMMU_REPORT_DATA_INFO后调用OnCommuRecvDataCallBack；SolutionManager构造订阅GetCommuRecvDataCallBack并转发OnCommunicationRecvCallBack；TempVmSolution静态构造注册VmSolution.MSolutionManager_OnCommuRecvData，后者可空Invoke静态事件。这个入口不同于EXE的HkrMQ/Zmq类型，不能由MQ的直接引用缺口推断它不存在。</p><h3>未知与边界</h3><ul><li>这些跨程序集源文件hash已核；本切片未重新核SDK/Core原件方法体，需另取对应原MethodDef/CIL后增强二进制绑定。native回调注册、case值的消息含义、ABI、线程、长度和指针有效性未知。</li></ul><h3>下一具体成员</h3><ul><li>CVmObjectBase.delegateOutputCallBackFunc / native registration</li><li>SolutionManager..ctor / GetCommuRecvDataCallBack</li><li>TempVmSolution..cctor / Init</li><li>VmSolution.MSolutionManager_OnCommuRecvData</li></ul><p><a href="external-entries.html#edge-T05">external-entries / T05</a> · <a href="external-entries.html#edge-T08">external-entries / T08</a></p><details><summary>CVmObjectBase.delegateOutputCallBackFunc case1024 · 1167–1176</summary><p class="meta">analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/CVmObjectBase.cs<br>SHA-256 59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db<br>local-decompiled-source · not revalidated in this slice</p><pre>			case 1024u:
+			{
+				ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportDataInfo2 = (ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO)Marshal.PtrToStructure(iMVS_OUTPUT_PLATFORM_INFO.pData, typeof(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO));
+				if (OnCommuRecvDataCallBack != null)
+				{
+					OnCommuRecvDataCallBack(reportDataInfo2);
+				}
+				break;
+			}
+			case 1025u:</pre></details><details><summary>SolutionManager constructor communication registration · 204–207</summary><p class="meta">analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs<br>SHA-256 46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a<br>local-decompiled-source · not revalidated in this slice</p><pre>		CVmObjectBase.OnCommuRecvDataCallBack += GetCommuRecvDataCallBack;
+		CVmObjectBase.OnCommuStatusCallBack += GetCommuStatusCallBack;
+		CVmObjectBase.OnCameraCollectCallBack += GetCameraCollectCallBack;
+		CVmObjectBase.OnCameraCollectStartCallBack += GetCameraCollectStartCallBack;</pre></details><details><summary>SolutionManager.GetCommuRecvDataCallBack · 1141–1145</summary><p class="meta">analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs<br>SHA-256 46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a<br>local-decompiled-source · not revalidated in this slice</p><pre>	private void GetCommuRecvDataCallBack(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportDataInfo)
+	{
+		OnCommunicationRecvCallBack?.Invoke(reportDataInfo);
+	}
+</pre></details><details><summary>TempVmSolution static registration · 51–54</summary><p class="meta">analysis/decompiled/VM.Core/VM.Core/TempVmSolution.cs<br>SHA-256 2683dd70dc4aa88fa2d263e9117bdc00b1153deeda52e03417dfa7ee42859721<br>local-decompiled-source · not revalidated in this slice</p><pre>		ServerSDKManager.serverSDKManager.mSolutionManager.OnCommunicationRecvCallBack += VmSolution.MSolutionManager_OnCommuRecvData;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCommunicationStatusCallBack += VmSolution.MSolutionManager_OnCommuStatus;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCameraCollectCallBack += VmSolution.MSolutionManager_OnCameraCollect;
+		ServerSDKManager.serverSDKManager.mSolutionManager.OnCameraCollectStartCallBack += VmSolution.MSolutionManager_OnCameraCollectStart;</pre></details><details><summary>VmSolution.MSolutionManager_OnCommuRecvData · 3759–3763</summary><p class="meta">analysis/decompiled/VM.Core/VM.Core/VmSolution.cs<br>SHA-256 c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e<br>local-decompiled-source · not revalidated in this slice</p><pre>	internal static void MSolutionManager_OnCommuRecvData(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportData)
+	{
+		OnCommunicationRecvCallBackEvent?.Invoke(reportData);
+	}
+</pre></details></details><details id="EA03"><summary>EA03 · MainWindowData通信回调报文门 → 跳过2字节UTF8 → GetSolItem</summary><p><strong>source-confirmed · 源码确认</strong></p><p>nLen&lt;2或pData==Zero早退，否则分配nLen字节、Marshal.Copy全部字节，再从offset2解码剩余UTF8；这里没有可见的前缀内容校验、Trim或末尾零裁剪。GetSolItem以CommString==command且CommEnable取首个匹配项，未匹配返回，不按文件路径直接执行消息。</p><h3>未知与边界</h3><ul><li>前2字节的协议含义、上游长度合法性、最大包长、零/无效UTF8、相同字符串多项的实际排序和远端鉴权未证；不能将无本地校验扩写成整个产品没有校验。</li></ul><h3>下一具体成员</h3><ul><li>IMVS_COMMU_REPORT_DATA_INFO declaration and native producer</li><li>SolItem.CommString / CommEnable setters and XML declarations</li></ul><p></p><details><summary>communication receive packet gate · 1247–1264</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>	private void VmSolution_OnCommunicationRecvCallBackEvent(ImvsSdkDefine.IMVS_COMMU_REPORT_DATA_INFO reportDataInfo)
+	{
+		if (reportDataInfo.nLen &lt; 2 || reportDataInfo.pData == IntPtr.Zero)
+		{
+			return;
+		}
+		byte[] array = new byte[reportDataInfo.nLen];
+		Marshal.Copy(reportDataInfo.pData, array, 0, reportDataInfo.nLen);
+		string text = Encoding.UTF8.GetString(array, 2, array.Length - 2);
+		SolItem solItem = SolutionData.GetSolItem(text);
+		LogHelper.Debug($&quot;VmSolutionCommad={text},solcommItemIsNull={solItem == null}&quot;);
+		if (solItem == null)
+		{
+			return;
+		}
+		bool loadSolutionResult = true;
+		try
+		{</pre></details><details><summary>SolutionItemsData.GetSolItem · 295–298</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs<br>SHA-256 b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c<br>local-decompiled-source · not revalidated in this slice</p><pre>	public SolItem GetSolItem(string command)
+	{
+		return SolItems.FirstOrDefault((SolItem x) =&gt; x.CommString == command &amp;&amp; x.CommEnable);
+	}</pre></details></details><details id="EA04"><summary>EA04 · 匹配SolItem且未正在加载 → ProjectManager.LoadSolution精确参数</summary><p><strong>source-confirmed · 源码确认</strong></p><p>本地isLoading为true早退；否则置true并启动复位轮询Task。只有IVmSolution.IsLoading为false才调用LoadSolution，传SolPath、isGuid=false、SolPassword为null时空串、afterTask=null、remote/start/args均false，以及快照isShowSaveNotice==&quot;1&quot;。空串是明确传入密码，不是null触发交互密码窗；后续密码校验/保存提示/兼容转换链见既有方案打开视图，不能跳过。</p><h3>未知与边界</h3><ul><li>LoadSolution返回true本身不证明已载入；取消/提示/异步worker与本地复位Task的竞态仍未知，尚未做原机消息注入。</li></ul><h3>下一具体成员</h3><ul><li>ProjectManager.LoadSolution overload and generated load worker</li><li>SolItem.SolPassword XML/binding lifecycle</li></ul><p><a href="solution-lifecycle.html#edge-O01">solution-lifecycle / O01</a></p><details><summary>receive load state and exact call arguments · 1262–1286</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>		bool loadSolutionResult = true;
+		try
+		{
+			if (isLoading)
+			{
+				return;
+			}
+			isLoading = true;
+			Task.Run(() =&gt;
+			{
+				while (!((IVmSolution)VmSolution.Instance).IsLoading &amp;&amp; loadSolutionResult)
+				{
+					Thread.Sleep(1);
+				}
+				isLoading = false;
+			});
+			if (!((IVmSolution)VmSolution.Instance).IsLoading &amp;&amp; !ProjectManager.GetInstance().LoadSolution(solItem.SolPath, isGuid: false, (solItem.SolPassword == null) ? &quot;&quot; : solItem.SolPassword, null, isRemoteMode: false, isFromAppStart: false, isFromAppArgs: false, isShowSaveNotice == &quot;1&quot;))
+			{
+				loadSolutionResult = false;
+			}
+		}
+		catch (Exception ex)
+		{
+			VmException ex2 = null;
+			if (ex is VmException || ex.InnerException is VmException)</pre></details></details><details id="EA05"><summary>EA05 · 本地isLoading轮询及catch → 等待看到加载开始或明确失败 → 写false</summary><p><strong>source-confirmed · 源码确认</strong></p><p>Task循环条件是!VmSolution.IsLoading &amp;&amp; loadSolutionResult，每轮Sleep(1)，退出后才清本地isLoading。LoadSolution返回false或VmException分支会写loadSolutionResult=false；普通Exception仅提示/日志，不写该值。没有本Task的本地超时、取消或finally。因而不能将这段描述为加载完成后解锁，也不能从源码直接断言实际必挂。</p><h3>未知与边界</h3><ul><li>跨线程可见性、Task异常、原加载状态是否翻转、取消路径是否返回true及实际等待时长未证；这是一段开始条件轮询而非完整结束通知。</li></ul><h3>下一具体成员</h3><ul><li>MainWindowData.&lt;VmSolution_OnCommunicationRecvCallBackEvent&gt;b__0</li><li>ProjectManager.LoadSolution all early returns</li></ul><p></p><details><summary>receive wait and exception paths · 1262–1304</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>		bool loadSolutionResult = true;
+		try
+		{
+			if (isLoading)
+			{
+				return;
+			}
+			isLoading = true;
+			Task.Run(() =&gt;
+			{
+				while (!((IVmSolution)VmSolution.Instance).IsLoading &amp;&amp; loadSolutionResult)
+				{
+					Thread.Sleep(1);
+				}
+				isLoading = false;
+			});
+			if (!((IVmSolution)VmSolution.Instance).IsLoading &amp;&amp; !ProjectManager.GetInstance().LoadSolution(solItem.SolPath, isGuid: false, (solItem.SolPassword == null) ? &quot;&quot; : solItem.SolPassword, null, isRemoteMode: false, isFromAppStart: false, isFromAppArgs: false, isShowSaveNotice == &quot;1&quot;))
+			{
+				loadSolutionResult = false;
+			}
+		}
+		catch (Exception ex)
+		{
+			VmException ex2 = null;
+			if (ex is VmException || ex.InnerException is VmException)
+			{
+				loadSolutionResult = false;
+				ex2 = ex as VmException;
+				if (ex2 == null)
+				{
+					ex2 = ex.InnerException as VmException;
+				}
+				LogHelper.Error(ex2.errorMessage);
+			}
+			else
+			{
+				HikMessageBox.Show(ex.Message, MessageIcons.Error);
+				LogHelper.Error(ex.Message);
+			}
+		}
+	}
+}
+</pre></details></details><details id="EA06"><summary>EA06 · InitComTrigger += 与所选DoClose -=列表 → 通信回调解除缺口</summary><p><strong>source-confirmed · 源码确认</strong></p><p>InitComTrigger可见添加通信静态事件；本次选定DoClose的完整体只解除恢复显示/装载/脚本/代理/报告/服务/导入等事件，没有解除OnCommunicationRecvCallBackEvent。该局部不对称需在对象替换、退出与其它解除路径继续审查，不能据此直接宣称全局内存泄漏。</p><h3>未知与边界</h3><ul><li>完整程序集/反射解除、MainWindowData全部对象生命周期、重复启动是否存在及GC/真实订阅集合未知。</li></ul><h3>下一具体成员</h3><ul><li>MainWindowData.DoClose callers</li><li>MainWindowData construction/replacement and other callback removals</li></ul><p></p><details><summary>InitComTrigger subscription · 1241–1246</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>	private void InitComTrigger()
+	{
+		VmSolution.OnCommunicationRecvCallBackEvent += VmSolution_OnCommunicationRecvCallBackEvent;
+		isShowSaveNotice = ConfigurationHelper.GetConfig(&quot;IsShowSaveNotice&quot;);
+	}
+</pre></details><details><summary>MainWindowData.DoClose complete body · 701–712</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>	public void DoClose()
+	{
+		VmSolution.RestoreDefaultDisplay -= VmSolution_RestoreDisplay;
+		VmSolution.OnSolutionLoadEndCallBack -= VmSolution_LoadEnd;
+		VmSolution.OnSolutionLoadBeginCallBack -= VmSolution_LoadBegin;
+		VmSolution.OnGlobalScriptReportCallBack -= VmSolution_OnGlobalScriptReportCallBack;
+		VmSolution.OnProxyCrashNoticeCallBack -= VmSolution_OnProxyCrashNotice;
+		VmSolution.OnReportModuleData -= VmSolution_OnReportModuleData;
+		VmSolution.OnServerStatusCallBack -= VmSolution_OnServerStatusCallBack;
+		VmSolution.OnProcessImportEndCallBack -= VmSolution_OnProcessImportEndCallBack;
+	}
+</pre></details></details><details id="EA07"><summary>EA07 · SolutionCommInfo配置 → Base64解码XML → SolItems / Base64保存</summary><p><strong>source-confirmed · 源码确认</strong></p><p>LoadSolInfo非空时Base64解码后loadXml，为每个SolItem挂DeleteEventHander，再处理定时器与自动保存状态。SaveSolInfo将UTF8 XML转Base64写同一配置键，异常提示并吞掉。GetSolItem读取的正是该集合；编码不是加密，未证明所有方案/密码字段已持久化正确。</p><h3>未知与边界</h3><ul><li>BaseNode XML字段映射、重复加载集合清理、timer完整生命周期、配置写入原子性及保存后重开未证。</li></ul><h3>下一具体成员</h3><ul><li>SolutionItemsData constructor / LoadSolParam consumer</li><li>SolItem field XML mapping and DeleteEventHander</li><li>SolutionItemsData.AddTimer / auto-save callbacks</li></ul><p><a href="settings-lifecycle.html#edge-S07">settings-lifecycle / S07</a></p><details><summary>SolutionItemsData.LoadSolInfo · 255–280</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs<br>SHA-256 b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c<br>local-decompiled-source · not revalidated in this slice</p><pre>	public void LoadSolInfo()
+	{
+		try
+		{
+			string config = ConfigurationHelper.GetConfig(&quot;SolutionCommInfo&quot;);
+			if (!string.IsNullOrEmpty(config))
+			{
+				byte[] data = Convert.FromBase64String(config);
+				loadXml(data);
+				foreach (SolItem solItem in SolItems)
+				{
+					solItem.DeleteEventHander += Item_DeleteEventHander;
+				}
+			}
+			if (SaveAllSolTimerEnable &amp;&amp; !saveTime.IsEnabled)
+			{
+				AddTimer(saveTime);
+			}
+			_saveSolTimerEnable = GetAutoSaveSolState();
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_CfgErr&quot;), ex.Message, MessageIcons.Warning);
+		}
+	}
+</pre></details><details><summary>SolutionItemsData.SaveSolInfo · 281–294</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs<br>SHA-256 b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c<br>local-decompiled-source · not revalidated in this slice</p><pre>	public void SaveSolInfo()
+	{
+		try
+		{
+			byte[] bytes = Encoding.UTF8.GetBytes(ToXmlStringWithHead(IsShort: true));
+			string defaultValue = Convert.ToBase64String(bytes);
+			ConfigurationHelper.SaveConfig(&quot;SolutionCommInfo&quot;, defaultValue);
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_CfgSaveErr&quot;), ex.Message, MessageIcons.Warning);
+		}
+	}
+</pre></details><details><summary>SolutionItemsData.GetSolItem · 295–298</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/SolutionItemsData.cs<br>SHA-256 b4dd98e35c3e0df52a07e23f804da35877458f4604d9b4789a108b1e98747c0c<br>local-decompiled-source · not revalidated in this slice</p><pre>	public SolItem GetSolItem(string command)
+	{
+		return SolItems.FirstOrDefault((SolItem x) =&gt; x.CommString == command &amp;&amp; x.CommEnable);
+	}</pre></details></details></section><section id="group-1"><h2>全局触发即时写入</h2><details id="EA08"><summary>EA08 · GlobalTriggerConfig.AddTrigger / ValueChanged → Add/Modify模块参数并维护界面集合</summary><p><strong>source-confirmed · 源码确认</strong></p><p>Add根据obj.ToString()==&quot;0&quot;选择事件/字符串，数量门通过后先建项并挂弱事件，SetTriggerItem(Add)==0才加入集合。ValueChanged排除三类属性及isSetChange，Command变化时先置防重入并ClearConfig；通过CheckPassword后立即SetTriggerItem(Modify)，末尾再清防重入。不是只在最终确认按钮保存的模型。</p><h3>未知与边界</h3><ul><li>弱事件实投、ClearConfig抛错/写入副作用、isSetChange异常恢复和Params最终native消费者尚未覆盖。</li></ul><h3>下一具体成员</h3><ul><li>ComTriggerItem.ClearConfig</li><li>GlobalTriggerConfig.SetTriggerItem / SetTriggerBytes</li><li>VmModule.Params byte/string setters</li></ul><p><a href="configuration-hosts.html#edge-H04">configuration-hosts / H04</a> · <a href="parameter-candidates.html#edge-P12">parameter-candidates / P12</a></p><details><summary>GlobalTriggerConfig.AddTrigger · 151–192</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs<br>SHA-256 8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d<br>local-decompiled-source · not revalidated in this slice</p><pre>	public void AddTrigger(object obj)
+	{
+		bool flag = obj.ToString() == &quot;0&quot;;
+		ComTriggerItem comTriggerItem;
+		if (flag)
+		{
+			if (CommEventTriggerA.Count &gt;= MaxTriEventItemCount)
+			{
+				HikMessageBox.Show(AppLocalizationService.GetLang(&quot;最多添加&quot;) + &quot; :&quot; + MaxTriEventItemCount, MessageButtons.Normal, MessageIcons.Warning);
+				return;
+			}
+			comTriggerItem = new GlobalTriggerEventItem(this);
+			comTriggerItem.Index = CommEventTriggerA.Count + 1;
+			WeakEventManager&lt;GlobalTriggerEventItem, PropertyChangedEventArgs&gt;.AddHandler((GlobalTriggerEventItem)comTriggerItem, &quot;PropertyChanged&quot;, ValueChanged);
+		}
+		else
+		{
+			if (CommStrTriggerA.Count &gt;= MaxTriStrItemCount)
+			{
+				HikMessageBox.Show(AppLocalizationService.GetLang(&quot;最多添加&quot;) + &quot; :&quot; + MaxTriStrItemCount, MessageButtons.Normal, MessageIcons.Warning);
+				return;
+			}
+			comTriggerItem = new GlobalTriggerStrItem(this);
+			comTriggerItem.Index = CommStrTriggerA.Count + 1;
+			WeakEventManager&lt;GlobalTriggerStrItem, PropertyChangedEventArgs&gt;.AddHandler((GlobalTriggerStrItem)comTriggerItem, &quot;PropertyChanged&quot;, ValueChanged);
+		}
+		comTriggerItem.IsEventTrigger = flag;
+		if (SetTriggerItem(comTriggerItem, ActionType.Add) == 0)
+		{
+			if (flag)
+			{
+				CommEventTriggerA.Add(comTriggerItem);
+			}
+			else
+			{
+				CommStrTriggerA.Add(comTriggerItem);
+			}
+		}
+	}
+
+	private void ValueChanged(object sender, PropertyChangedEventArgs e)
+	{</pre></details><details><summary>GlobalTriggerConfig.ValueChanged · 191–208</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs<br>SHA-256 8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d<br>local-decompiled-source · not revalidated in this slice</p><pre>	private void ValueChanged(object sender, PropertyChangedEventArgs e)
+	{
+		if (!e.PropertyName.Equals(&quot;IsEventTrigger&quot;) &amp;&amp; !e.PropertyName.Equals(&quot;IsStrTrigger&quot;) &amp;&amp; !isSetChange &amp;&amp; !e.PropertyName.Equals(&quot;EnumEntrysA&quot;))
+		{
+			if (e.PropertyName.Equals(&quot;Command&quot;))
+			{
+				isSetChange = true;
+				(sender as ComTriggerItem).ClearConfig();
+			}
+			if (sender != null &amp;&amp; sender is ComTriggerItem comTriggerItem &amp;&amp; CheckPassword(comTriggerItem))
+			{
+				SetTriggerItem(comTriggerItem, ActionType.Modify);
+			}
+			isSetChange = false;
+		}
+	}
+
+	private bool CheckPassword(ComTriggerItem tiggerItem)</pre></details></details><details id="EA09"><summary>EA09 · GlobalTriggerConfig.CheckPassword → 空密码放行；已给错误密码清空后仍true</summary><p><strong>source-confirmed · 源码确认</strong></p><p>SolutionPath为空直接true；有效受保护方案但SolutionPasswd为空也true；密码检查nIsCorrect==0时提示、置isSetChange=true并清SolutionPasswd，仍返回true。仅异常路径记录并false。该bool不能命名为密码验证成功，ValueChanged在true后仍可调用Modify；底层是否拒绝空密码另待证。</p><h3>未知与边界</h3><ul><li>CheckSolution有效格式/保护标志原合同、CheckPassword返回语义、数据发送时空密码载荷及native最终验证未证；未执行文件解密或改密码。</li></ul><h3>下一具体成员</h3><ul><li>SolutionManager.CheckSolution / CheckPassword</li><li>GlobalTriggerConfig.SetTriggerBytes ChangeSolution</li><li>GlobalTriggerData / Load_Solution ABI</li></ul><p></p><details><summary>GlobalTriggerConfig.CheckPassword · 208–245</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs<br>SHA-256 8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d<br>local-decompiled-source · not revalidated in this slice</p><pre>	private bool CheckPassword(ComTriggerItem tiggerItem)
+	{
+		try
+		{
+			if (string.IsNullOrEmpty(tiggerItem.SolutionPath))
+			{
+				return true;
+			}
+			uint nHasPwd = 0u;
+			uint nValidFormat = 0u;
+			ServerSDKManager.serverSDKManager.mSolutionManager.CheckSolution(tiggerItem.SolutionPath, ref nHasPwd, ref nValidFormat);
+			if (nValidFormat == 1 &amp;&amp; nHasPwd == 1)
+			{
+				if (string.IsNullOrEmpty(tiggerItem.SolutionPasswd))
+				{
+					return true;
+				}
+				int nIsCorrect = -1;
+				ServerSDKManager.serverSDKManager.mSolutionManager.CheckPassword(tiggerItem.SolutionPath, tiggerItem.SolutionPasswd, ref nIsCorrect);
+				if (nIsCorrect == 0)
+				{
+					HikMessageBox.Show(AppLocalizationService.GetLang(&quot;方案密码错误&quot;), MessageButtons.Normal, MessageIcons.Error);
+					isSetChange = true;
+					tiggerItem.SolutionPasswd = &quot;&quot;;
+					return true;
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			LogHelper.Error(&quot;CheckPassword is error.&quot; + ex.ToString());
+			return false;
+		}
+		return true;
+	}
+
+	public void RemoveItem(object item)
+	{</pre></details><details><summary>ValueChanged caller of CheckPassword · 200–206</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs<br>SHA-256 8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d<br>local-decompiled-source · not revalidated in this slice</p><pre>			if (sender != null &amp;&amp; sender is ComTriggerItem comTriggerItem &amp;&amp; CheckPassword(comTriggerItem))
+			{
+				SetTriggerItem(comTriggerItem, ActionType.Modify);
+			}
+			isSetChange = false;
+		}
+	}</pre></details></details><details id="EA10"><summary>EA10 · SetTriggerItem Modify分支 → 序列化null或字节setter异常仍可返回0</summary><p><strong>source-confirmed · 源码确认</strong></p><p>Add写AddTriggerEvent/AddTriggerString=&quot;true&quot;；Delete写零基索引；Modify序列化非null才写ModifyTriggerEvent-/ModifyTriggerString-字节键。Modify内部setter异常只日志，之后仍return0；序列化null也走return0。外层异常才return-1。所以本地返回0不证明成功写入或触发执行。</p><h3>未知与边界</h3><ul><li>StructToBytes具体布局/限长/原native接收端、返回码到UI反馈和方案保存效果未证。</li></ul><h3>下一具体成员</h3><ul><li>GlobalTriggerConfig.SetTriggerBytes and structures</li><li>VmParams indexers / IUserBytesData</li><li>GlobalTriggerModule native Add/Modify/Delete consumers</li></ul><p></p><details><summary>GlobalTriggerConfig.SetTriggerItem complete body · 609–665</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs<br>SHA-256 8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d<br>local-decompiled-source · not revalidated in this slice</p><pre>	private int SetTriggerItem(ComTriggerItem item, ActionType action)
+	{
+		try
+		{
+			if (DecorateSource == null)
+			{
+				return -1;
+			}
+			bool flag = item is GlobalTriggerEventItem;
+			switch (action)
+			{
+			case ActionType.Add:
+				(DecorateSource as VmModule).Params[flag ? &quot;AddTriggerEvent&quot; : &quot;AddTriggerString&quot;] = &quot;true&quot;;
+				break;
+			case ActionType.Delete:
+				(DecorateSource as VmModule).Params[flag ? &quot;DeleteTriggerEvent&quot; : &quot;DeleteTriggerString&quot;] = (item.Index - 1).ToString();
+				break;
+			case ActionType.Modify:
+			{
+				byte[] array = SetTriggerBytes(item, flag);
+				if (array != null)
+				{
+					string key = (flag ? &quot;ModifyTriggerEvent-&quot; : &quot;ModifyTriggerString-&quot;) + (item.Index - 1);
+					try
+					{
+						((IUserBytesData)(DecorateSource as VmModule).Params)[key] = array;
+					}
+					catch (Exception ex)
+					{
+						LogHelper.Error(&quot;下发数据错误,&quot; + ex.ToString());
+					}
+				}
+				break;
+			}
+			}
+			return 0;
+		}
+		catch (Exception ex2)
+		{
+			if (ex2 is VmException ex3)
+			{
+				LogHelper.Error(&quot;下发数据错误,&quot; + ex3.errorMessage);
+			}
+			else
+			{
+				LogHelper.Error(&quot;下发数据错误,&quot; + ex2.ToString());
+			}
+			return -1;
+		}
+	}
+
+	public override int SetParamUnit()
+	{
+		return base.SetParamUnit();
+	}
+}
+</pre></details></details><details id="EA11"><summary>EA11 · RemoveItem → 先解绑弱事件，再Delete，失败不在此重新订阅</summary><p><strong>source-confirmed · 源码确认</strong></p><p>事件/字符串项先RemoveHandler；SetTriggerItem(Delete)!=0直接返回，不进入集合移除与重新编号。成功才从对应集合移除并从1重新编号。故不能画成Delete失败后UI与订阅完全不变。</p><h3>未知与边界</h3><ul><li>失败是否发生、其它重新订阅/刷新路径、Index通知是否再次写native与最终资源一致性未知。</li></ul><h3>下一具体成员</h3><ul><li>GlobalTriggerConfig.RemoveItem / GetParamUnit reload</li><li>ComTriggerItem.DeleteItem command and Index property</li></ul><p></p><details><summary>GlobalTriggerConfig.RemoveItem · 244–280</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs<br>SHA-256 8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d<br>local-decompiled-source · not revalidated in this slice</p><pre>	public void RemoveItem(object item)
+	{
+		if (item is GlobalTriggerEventItem)
+		{
+			WeakEventManager&lt;GlobalTriggerEventItem, PropertyChangedEventArgs&gt;.RemoveHandler((GlobalTriggerEventItem)item, &quot;PropertyChanged&quot;, ValueChanged);
+		}
+		else if (item is GlobalTriggerStrItem)
+		{
+			WeakEventManager&lt;GlobalTriggerStrItem, PropertyChangedEventArgs&gt;.RemoveHandler((GlobalTriggerStrItem)item, &quot;PropertyChanged&quot;, ValueChanged);
+		}
+		if (SetTriggerItem(item as ComTriggerItem, ActionType.Delete) != 0)
+		{
+			return;
+		}
+		int num = 1;
+		if ((item as ComTriggerItem).IsEventTrigger)
+		{
+			CommEventTriggerA.Remove(item);
+			{
+				foreach (object item2 in CommEventTriggerA)
+				{
+					(item2 as ComTriggerItem).Index = num;
+					num++;
+				}
+				return;
+			}
+		}
+		CommStrTriggerA.Remove(item);
+		foreach (object item3 in CommStrTriggerA)
+		{
+			(item3 as ComTriggerItem).Index = num;
+			num++;
+		}
+	}
+
+	/// &lt;summary&gt;
+	/// 获取所有接收事件列表</pre></details></details></section><section id="group-2"><h2>网关与脚本边界</h2><details id="EA12"><summary>EA12 · GlobalCommunicationMgr → GateWayFramework.TitleMenueItemData.Instance转发</summary><p><strong>source-confirmed · 源码确认</strong></p><p>此类GetData转GetAllParams再ResetParamStateFlag；CloseComm直接返回GateWayFramework.TitleMenueItemData.Instance.CloseComm，ClearAll和Reset也分别转发。源using明确是GateWayFramework，不是主窗口同名TitleMenueItemData。这里只证明转发，注释所称网关反初始化/设备清空不替代被调成员函数体。</p><h3>未知与边界</h3><ul><li>网关程序集精确原件/方法体、SDK反初始化、回调终止和CloseComm返回处理未知；本切片没有启动/停止任何网关或设备。</li></ul><h3>下一具体成员</h3><ul><li>GateWayFramework.TitleMenueItemData.GetAllParams / CloseComm / ClearAll / ResetParamFlag</li><li>GlobalCommunicationMgr.IsGet lifecycle</li></ul><p><a href="solution-lifecycle.html#edge-N03">solution-lifecycle / N03</a></p><details><summary>GlobalCommunicationMgr namespace and dependencies · 1–5</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalCommunicationMgr.cs<br>SHA-256 6d78791a80348c5cbf803587f6f04041bba999e41c2d1590d5704c5e92ee86c3<br>local-decompiled-source · not revalidated in this slice</p><pre>using GateWayFramework;
+
+namespace VMControls.WPF.GlobalUI;
+
+public class GlobalCommunicationMgr</pre></details><details><summary>GlobalCommunicationMgr data/close/clear/reset forwarding · 61–91</summary><p class="meta">analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalCommunicationMgr.cs<br>SHA-256 6d78791a80348c5cbf803587f6f04041bba999e41c2d1590d5704c5e92ee86c3<br>local-decompiled-source · not revalidated in this slice</p><pre>	public void GetData()
+	{
+		TitleMenueItemData.Instance.GetAllParams();
+		ResetParamStateFlag();
+	}
+
+	/// &lt;summary&gt;
+	/// 关闭通信网关，关闭方案，清空设备，网关sdk反初始化
+	/// &lt;/summary&gt;
+	public int CloseComm()
+	{
+		int num = 0;
+		return TitleMenueItemData.Instance.CloseComm();
+	}
+
+	/// &lt;summary&gt;
+	/// 清空界面设备,仅限于清楚界面的数据
+	/// &lt;/summary&gt;
+	public void ClearAll()
+	{
+		TitleMenueItemData.Instance.ClearAll();
+	}
+
+	/// &lt;summary&gt;
+	/// 复位参数修改状态标志
+	/// &lt;/summary&gt;
+	public void ResetParamStateFlag()
+	{
+		TitleMenueItemData.Instance.ResetParamFlag();
+	}
+}</pre></details><details><summary>MainWindowData load begin gateway close · 726–735</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs<br>SHA-256 aa7a20533b81452cd58fbd22e121273b3a109ce21b0841fc0d9e4d081939f1e5<br>local-decompiled-source · not revalidated in this slice</p><pre>	private void VmSolution_LoadBegin(object sender, EventArgs e)
+	{
+		if (GlobalCommunicationMgr.Instance.IsGet)
+		{
+			GlobalCommunicationMgr.Instance.CloseComm();
+			GlobalCommunicationMgr.Instance.IsGet = false;
+		}
+		TitleMenueItemData.ResetResource();
+	}
+</pre></details></details><details id="EA13"><summary>EA13 · 主菜单GlobalScript vs外部ToolControl.GlobalScript → 两个窗口缓存、两个执行目标必须保留</summary><p><strong>source-confirmed · 源码确认</strong></p><p>主菜单GlobalScript创建窗口并把ExcuteEvent挂SigRun，IsClosing时先解除同一命名方法再重建。外部ToolControl现有G12却是三个不同lambda最终VmSolution.Run；不能因两个脚本窗相同或密码门相似就把两入口并为一条执行链。主菜单密码窗ShowDialog结果被丢弃，IsPasswordOK才是继续门。</p><h3>未知与边界</h3><ul><li>主菜单SigRun完整目标已在执行页分片，脚本窗真正发事件/保存ShellRun/关闭生命周期仍需GlobalScriptUI原体；本项不重复宣称外部lambda解除成功。</li></ul><h3>下一具体成员</h3><ul><li>GlobalScriptUI.MainWindow.GetShellParamer / ExcuteEvent producer / Close</li><li>TitleMenueItemData.SigRun and script report callback</li></ul><p><a href="global-toolbar.html#edge-G11">global-toolbar / G11</a> · <a href="global-toolbar.html#edge-G12">global-toolbar / G12</a> · <a href="execution-storage.html#edge-G02">execution-storage / G02</a></p><details><summary>TitleMenueItemData.GlobalScript event and password gate · 1238–1302</summary><p class="meta">analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs<br>SHA-256 b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187<br>local-decompiled-source · not revalidated in this slice</p><pre>	public void GlobalScript()
+	{
+		//IL_000f: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0019: Expected Obj, but got Unknown
+		//IL_0025: Unknown result type (might be due to invalid IL or missing references)
+		//IL_002f: Expected Obj, but got Unknown
+		//IL_004c: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0056: Expected Obj, but got Unknown
+		//IL_0057: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0061: Expected Obj, but got Unknown
+		//IL_006d: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0077: Expected Obj, but got Unknown
+		//IL_00c4: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00c9: Unknown result type (might be due to invalid IL or missing references)
+		//IL_00d4: Expected Obj, but got Unknown
+		try
+		{
+			if (globalScriptWindow == null)
+			{
+				globalScriptWindow = new MainWindow();
+				globalScriptWindow.ExcuteEvent += SigRun;
+			}
+			if (((BaseWindow)(object)globalScriptWindow).IsClosing)
+			{
+				globalScriptWindow.ExcuteEvent -= SigRun;
+				globalScriptWindow = new MainWindow();
+				globalScriptWindow.ExcuteEvent += SigRun;
+			}
+			if (globalScriptWindow.GetShellParamer() != 0)
+			{
+				return;
+			}
+			if (globalScriptWindow.ObjShellRun != null &amp;&amp; globalScriptWindow.ObjShellRun.IsPasswordEnabled)
+			{
+				string password = globalScriptWindow.ObjShellRun.Password;
+				PasswordCheckWindow val = new PasswordCheckWindow
+				{
+					OriginalPassword = password
+				};
+				((BaseWindow)(object)val).ShowDialog();
+				if (val.IsPasswordOK)
+				{
+					((BaseWindow)(object)globalScriptWindow).ShowDialog();
+				}
+			}
+			else
+			{
+				((BaseWindow)(object)globalScriptWindow).ShowDialog();
+			}
+		}
+		catch (Exception ex)
+		{
+			VmException ex2 = null;
+			if (ex is VmException || ex.InnerException is VmException)
+			{
+				ex2 = ex as VmException;
+				if (ex2 == null)
+				{
+					ex2 = ex.InnerException as VmException;
+				}
+				ShowMessage.ShowVmExceptionMessage(ex2);
+				LogHelper.Error(ex2.errorMessage);
+			}
+			else
+			{</pre></details></details></section><p><a href="external-entry-audit.json">机器可读审计</a> · <a href="external-entry-audit-original-members.json">9个原件方法与来源身份</a></p><p>未做浏览器呈现验收。主框架实施进度41/96=42.71%（32包×3单元），本审计不加分；不是架构完整率。</p></html><script data-document-web src="document-web-links.js"></script>

@@ -1,0 +1,53 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 864015f9c4aa · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 864015f9c4aa</p><h1>原文证据 864015f9c4aa</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 864015f9c4aa0ad893cbd34a63181b25ab6a800ea20f349842e2e3acbddfa850。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/NameValueItem.cs:927–975
+证据类型 local-managed-decompilation
+程序集身份 assembly identity not revalidated in this slice
+SHA256 90b4742e79243f46c46fd6b38187ee7f5be49d4c6677f994133215a3796fed46
+	public int SetParamUnitByZmq(NameValueItem parent, string value)
+	{
+		if (userStringData == null)
+		{
+			userStringData = (GetTopBaseNode() as AlgorithmTabRoot).UserStringData;
+		}
+		MyItemState = ItemState.Normal;
+		try
+		{
+			CurrentUIHelper.Instance.Dispatcher.Invoke(() =>
+			{
+				string text = ConvertEscape((parent == null) ? userStringData[ComName] : parent.InnerGetStringParamValue(ComName));
+				string text2 = ConvertEscape(value);
+				if (FullDisplayName.Contains(&quot;密码&quot;) || FullDisplayName.ToLower().Contains(&quot;password&quot;))
+				{
+					text = &quot;*****&quot;;
+					text2 = &quot;*****&quot;;
+				}
+				logManager?.LogCreate(&quot;信息&quot;, FullDisplayName + &quot; &quot; + AppLocalizationService.GetLang(&quot;参数修改&quot;) + text + AppLocalizationService.GetLang(&quot;新值&quot;) + text2, ifLang: false);
+				InvokeOnParamValueChanged(text, text2);
+			});
+			SetParamUnitDirect(parent, value);
+		}
+		catch (VmException ex)
+		{
+			if (ex.errorCode == -1610612734)
+			{
+				HikMessageBox.Show(AppLocalizationService.GetLang(&quot;errCode:&quot;) + &quot; &quot; + ex.errorCode.ToString(&quot;X&quot;) + Environment.NewLine + AppLocalizationService.GetLang(&quot;errInfo:&quot;) + &quot; &quot; + AppLocalizationService.GetLang(&quot;Lang_FdPCreateErrtoParam&quot;), MessageIcons.Error);
+			}
+			else
+			{
+				HikMessageBox.Show(AppLocalizationService.GetLang(&quot;errCode:&quot;) + &quot; &quot; + ex.errorCode.ToString(&quot;X&quot;) + Environment.NewLine + AppLocalizationService.GetLang(&quot;errInfo:&quot;) + &quot; &quot; + AppLocalizationService.GetLang(ErrorCodeInfo.GetErrorInfo(ex.errorCode)), MessageIcons.Error);
+			}
+			MyItemState = ItemState.SetParamErro;
+			OnSetValueCompleted(success: false);
+			return -1;
+		}
+		catch
+		{
+			MyItemState = ItemState.SetParamErro;
+			OnSetValueCompleted(success: false);
+			return -1;
+		}
+		OldValue = value;
+		OnSetValueCompleted(success: true);
+		return 0;
+	}
+
+	public virtual int SetParamUnit()</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/domain-data-obligations--F-15.html">数据/domain-data-obligations--F-15.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

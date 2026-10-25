@@ -1,0 +1,40 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十一轮：N 点实际 MainWindow 点表写入成本</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass11-npoint-mainwindow-cost.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第十一轮n-点实际-mainwindow-点表写入成本">第十一轮：N 点实际 MainWindow 点表写入成本</a></p><p style="margin-left:14px"><a href="#原版与当前路径">原版与当前路径</a></p><p style="margin-left:14px"><a href="#实际窗口探针">实际窗口探针</a></p><p style="margin-left:14px"><a href="#后续合同与界限">后续合同与界限</a></p></details><h1 id="第十一轮n-点实际-mainwindow-点表写入成本">第十一轮：N 点实际 MainWindow 点表写入成本</h1><p>本轮把第六、十轮的受控回调计数推进到<strong>真实 <code>MainWindow</code> 配置窗口按钮路径</strong>。样本只覆盖标定分类的 N 点标定；离屏 WPF 是当前代码探针，不等于用户交互桌面性能验收，更不能解释用户所见的长期“未响应”。</p>
+<h2 id="原版与当前路径">原版与当前路径</h2><ul>
+<li>原版 <code>IMVSNPointCalibModuControl.NPointList.UserControl_Loaded → Init</code> 按 <code>CalibPointTotalNum + RotPointTotalNum</code> 建行，每行五次读值、格式化，再调用 <code>PointList</code> 五个 setter；setter 向 <code>IUserStringData[字段+ID]</code> 逐叶写。原 <code>PointList.cs</code>、<code>NPointList.xaml.cs</code> 和 XAML 的完整 SHA 分别为 <code>A396060C73DBF56B1A7FB7849A4BCD17FE5CBC3D04AD8356F68D4B3B1C9B3813</code>、<code>B972D12AF77B27DC3A19E00629C77F3BED58D3FD7A266DD0AA28050A281B5A46</code>、<code>92945CE0D5ED92F98F12187A0EB92F1673516760B894F0CD52F89FC2C7341D79</code>，原体路径见<a href="20261020-pass6-npoint-ui.html">第六轮源码审计</a>。逐叶写是原源码事实；原版的图文档历史开销和实际耗时不由该成员证明。</li>
+<li>当前 <code>NPointConfigurationControls.Register</code> 的 <code>NPointEditPoints</code> 点击调用 <code>NPointConfigurationPointEditor</code>，构造器为每行五列调用 <code>commit</code>；<code>NPointConfiguration.CreateConfiguration</code> 的回调经 <code>PointValues → Apply → ToolConfigurationHost.Apply → GraphEditorDocument.SetProcedureNodeParameters → Edit</code>，<code>Edit</code> 每次 <code>RecordEditHistory</code>、<code>Revision++</code>、<code>Changed</code>。实际配置窗口的 <code>Changed</code> 进一步触发 <code>RefreshAll</code>。源码见 <code>src/VisionPlugins.Calibration/NPointConfigurationControls.cs</code>、<code>NPointConfigurationPointEditor.cs</code>、<code>NPointConfiguration.cs</code>、<code>src/VisionEditor/ToolConfigurationHost.cs</code>、<code>src/VisionEditor.Core/GraphEditorDocument.cs</code>。这整个文档编辑链是当前适配，不能移称原版必然逐次重画。</li>
+</ul>
+<h2 id="实际窗口探针">实际窗口探针</h2><p><code>tests/CalibrationNPointMainWindowCost.Checks/Program.cs</code> 创建当前 <code>MainWindow</code> 和真实图节点，实际打开工具配置窗并点击 <code>NPointEditPoints</code>，在模态点编辑窗口出现时读 <code>GraphEditorDocument.Revision</code>/<code>Changed</code>，再编辑一个单元格。执行：</p>
+<pre><code class="language-powershell">dotnet run --project tests/CalibrationNPointMainWindowCost.Checks/CalibrationNPointMainWindowCost.Checks.csproj -c Release
+</code></pre>
+<p>最终 exit 0，三组共 12 个断言通过；日志 <code>analysis/joint-audit/pass11-cal-npoint-mainwindow/final-run.log</code> SHA-256 <code>85D8940022B6495D9A5899C067F272A6B1291F471B2DA51D40E8D60FA9D3AAF6</code>，结构化数据为同目录 <code>summary.json</code>。探针源码 SHA-256 <code>EB08EE289ACA482DBC89C74028B61A6DBD0970A5B238657435838E25181B3FD9</code>。原先仅 4/12 行的首跑日志 <code>first-run.log</code> 保留，没有抹去。</p>
+<table>
+<thead>
+<tr>
+<th align="right">行数</th>
+<th align="right">点表打开期间 Revision / Changed 增量</th>
+<th align="right">单格编辑增量</th>
+<th align="right">此次离屏模态调用耗时</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">4</td>
+<td align="right">20 / 20</td>
+<td align="right">1 / 1</td>
+<td align="right">851.7 ms</td>
+</tr>
+<tr>
+<td align="right">12</td>
+<td align="right">60 / 60</td>
+<td align="right">1 / 1</td>
+<td align="right">1948.3 ms</td>
+</tr>
+<tr>
+<td align="right">32</td>
+<td align="right">160 / 160</td>
+<td align="right">1 / 1</td>
+<td align="right">3463.2 ms</td>
+</tr>
+</tbody></table>
+<p><strong>结论：</strong> 当前真实 MainWindow 路径证实打开点表有 <code>5×行数</code> 次完整文档编辑/变更事件，单格一次。此处未测一次编辑在不同图规模或历史负载下的分布，不作“编辑单格必然慢”的性能定论；离屏三次样本仅说明同步工作有秒级成本，不能与原版速度直接比较。界面长期卡死需当次 UI 线程栈/等待链才能归因。</p>
+<h2 id="后续合同与界限">后续合同与界限</h2><p><a href="../CONTRACT-REQUESTS.html">FCR-033</a> 已记录插件专属点表与共享图文档写入边界。本轮实际 MainWindow 的 20/60/160 次 <code>Revision</code> 和 <code>Changed</code> 可作为修复前基线；优化应在插件所有权范围内审原逐叶成功/失败与打开时副作用，并保证编辑历史、导入/删除/清空、方案持久化不退化。此轮没有直接修改插件代码，也没有改动 <code>tool-plugins</code> 在制文件。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass11-npoint-mainwindow-cost.md · SHA256 106678470dc0fa4d507471804b33d1391dc0c49ec50a93600594518c2b14075e<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

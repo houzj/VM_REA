@@ -1,0 +1,7 @@
+'use strict';
+// Inventory existing graphics. A title or count is not a semantic acceptance proof.
+const fs=require('fs'),path=require('path');
+const site=path.resolve(__dirname,'../../../docs/架构逆向与实现对照文档'),m=JSON.parse(fs.readFileSync(path.join(site,'清单/构建清单.json'))),figures=[];
+for(const page of m.pages.filter(p=>p.kind!=='evidence')){const html=fs.readFileSync(path.join(site,page.path),'utf8');for(const [index,match]of [...html.matchAll(/<svg\b[^>]*>[\s\S]*?<\/svg>/g)].entries()){const svg=match[0],before=html.slice(Math.max(0,match.index-600),match.index);figures.push({page:page.path,index,ariaLabel:/aria-label="([^"]*)"/.exec(svg)?.[1]||null,viewBox:/viewBox="([^"]*)"/.exec(svg)?.[1]||null,classes:/class="([^"]*)"/.exec(svg)?.[1]||null,precedingContext:before.replace(/<[^>]*>/g,' ').slice(-350),hasDashedEdge:/stroke-dasharray|class="unknown"/.test(svg),hasLinks:/<a\b/.test(svg),semanticReviewed:false});}}
+const report={scope:'Existing static SVG inventory only; dynamic graphs not counted and semantic acceptance remains open',pages:m.pages.length,figures:figures.length,missingAccessibleTitle:figures.filter(f=>!f.ariaLabel).length,items:figures,browserVerified:false,remaining:['逐图核对关系类型与源模型、来源成员及SHA入口','核对未知/条件边和事实分类','打印图例与长图分页，390/768/桌面视觉检查']};
+fs.writeFileSync(path.join(site,'清单/关系图盘点.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({figures:figures.length,missingAccessibleTitle:report.missingAccessibleTitle,semanticAcceptance:false}));

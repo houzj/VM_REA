@@ -1,0 +1,501 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "pluginKey": "Collection/ImageBufferModule",
+  "facts": [
+    {
+      "id": "IB01",
+      "classification": "independent-implementation",
+      "from": "ImageBufferWindow.Link / 整数提交、订阅",
+      "to": "GraphExecutor nodeInputs → Runtime.Read",
+      "behavior": "窗口把图像、RefreshFlag、BufferCount作为输入端口处理。整数文本提交调用SetInputInteger，订阅按钮先Commit再PickSubscription。运行体从c.Inputs取整数，默认数量15、刷新1，不从c.Parameters取这两个值；checked long→int越界不在插件内捕获，由外层执行器记ModuleException。界面配置和运行读取不能合并成普通算法参数字典。",
+      "representation": "输入字典内PortValue由GraphExecutor连接/订阅解析；此工具Describe的算法参数数组为空。",
+      "cache": "整数默认仅在对应输入键缺席时使用；刷新标志只认等于1。",
+      "release": "本段无图像分配/释放。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferWindow.cs",
+          "member": "void Commit()",
+          "sha256": "ecdd987200d4356ff8adef9ee959af9a3d921406f1e965bedbe02f4acd2a5ef2",
+          "start": 24,
+          "end": 24,
+          "excerpt": "  void Commit(){if(text.IsReadOnly||text.Text==applied)return;string current=text.Text.Trim();if(current.Length==0){context.SetInputInteger?.Invoke(port,null);text.Text=\"\";}else if(int.TryParse(current,System.Globalization.NumberStyles.Integer,System.Globalization.CultureInfo.InvariantCulture,out int value)){context.SetInputInteger?.Invoke(port,value);text.Text=value.ToString(System.Globalization.CultureInfo.InvariantCulture);}else text.Text=applied;applied=text.Text;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferWindow.cs",
+          "member": "var button=new W.Button{Name=\"Subscribe\"",
+          "sha256": "ecdd987200d4356ff8adef9ee959af9a3d921406f1e965bedbe02f4acd2a5ef2",
+          "start": 26,
+          "end": 26,
+          "excerpt": "  var button=new W.Button{Name=\"Subscribe\"+port,Height=29,Width=28,HorizontalAlignment=System.Windows.HorizontalAlignment.Right,Background=Brushes.Transparent,BorderThickness=new Thickness(0),Padding=new Thickness(4),ToolTip=\"订阅参数\"};button.Content=kind==DataKind.Image?new W.TextBlock{Text=\"▾\",Foreground=Brush(\"#CDB9A9\"),HorizontalAlignment=System.Windows.HorizontalAlignment.Right}:new W.Image{Source=new BitmapImage(new Uri(\"pack://application:,,,/VisionPlugins.ImageSource;component/Resources/ic_btn_link_normal.png\")),Width=18,Height=18};button.Click+=(_,_)=>{Commit();context.PickSubscription?.Invoke(this,port,false,kind);text.Text=context.SubscriptionLabel?.Invoke(port,false)??\"\";applied=text.Text;};field.Children.Add(button);W.Grid.SetColumn(field,1);row.Children.Add(field);return row;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "public ModuleDescriptor Descriptor{get;}",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 13,
+          "end": 14,
+          "excerpt": " public ModuleDescriptor Descriptor{get;}=new(Id,\"1.0.0\",\"缓存图像\",[new(\"InputImage\",DataKind.Image,false),new(\"RefreshFlag\",DataKind.Integer,false),new(\"BufferCount\",DataKind.Integer,false)],\n  Enumerable.Range(0,15).SelectMany(i=>new[]{new PortDescriptor($\"OutImage{i}Image\",DataKind.Image,false),new($\"OutImage{i}Width\",DataKind.Integer,false),new($\"OutImage{i}Height\",DataKind.Integer,false),new($\"OutImage{i}PixelFormat\",DataKind.Integer,false)}).Concat(new[]{new PortDescriptor(\"ModuStatus\",DataKind.Integer),new(\"ModuRunTime\",DataKind.Number)}).ToArray(),[]);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "int Read(string name,int value)",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 26,
+          "end": 27,
+          "excerpt": "   int Read(string name,int value)=>c.Inputs.TryGetValue(name,out var p)?checked((int)p.As<long>()):value;\n   int count=Read(\"BufferCount\",15),flag=Read(\"RefreshFlag\",1);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "nodeInputs[c.ToPort]=v;",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 24,
+          "end": 24,
+          "excerpt": "    nodeInputs[c.ToPort]=v;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "当前订阅弹层的完整外观、原版动态输入设置器逐分支尚未在本专项闭合。"
+      ]
+    },
+    {
+      "id": "IB02",
+      "classification": "independent-implementation",
+      "from": "数量/刷新门与节点状态",
+      "to": "State.Images FIFO变更",
+      "behavior": "count<0或>15在GetState之前返回错误；合法数量后取得状态并加锁，再检查取消。只有flag==1才读取InputImage、复制并裁剪。flag为0、-1、2或其它非1值时保留队列，数量变小也不裁剪。flag==1且缺图时不改既有队列。",
+      "representation": "Queue<IImageData>按最旧到最新保存；数量0仍先复制入队，然后出队至空。",
+      "cache": "GetState按scope或fallback选择持久状态；不是每次CreateRuntime建立新队列。",
+      "release": "裁剪仅Dequeue引用，无像素Dispose/清零调用。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "sealed class State",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 15,
+          "end": 15,
+          "excerpt": " sealed class State {public readonly object Gate=new();public readonly Queue<IImageData> Images=new();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "if(count is <0 or >15)",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 29,
+          "end": 37,
+          "excerpt": "   if(count is <0 or >15){code=0xe000031c;error=\"InvalidBufferCount\";}\n   else {var state=owner.GetState(c);lock(state.Gate){\n    token.ThrowIfCancellationRequested();\n    if(flag==1){\n     if(!c.Inputs.TryGetValue(\"InputImage\",out var input)){code=0xe0000510;error=\"InputImageMissing\";}\n     else {var image=input.As<IImageData>();IImageData copy=image switch{GrayImage=>new GrayImage(image.Width,image.Height,image.Pixels),RgbImage=>new RgbImage(image.Width,image.Height,image.Pixels),RawImage=>new RawImage(image.Width,image.Height,image.Format,image.Pixels,image.Stride),_=>throw new ArgumentException(\"Unsupported image format.\")};state.Images.Enqueue(copy);while(state.Images.Count>count)state.Images.Dequeue();}\n    }\n    if(code==0){int i=0;foreach(var image in state.Images){string prefix=$\"OutImage{i++}\";output[prefix+\"Image\"]=PortValue.Image(image);output[prefix+\"Width\"]=PortValue.Integer(image.Width);output[prefix+\"Height\"]=PortValue.Integer(image.Height);output[prefix+\"PixelFormat\"]=PortValue.Integer((int)image.Format);}}\n   }}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原所选分配/关闭callee已由NM01–NM04续证；完整池分支、竞争与异常安全仍未闭合，本段只确认当前实现分支。"
+      ]
+    },
+    {
+      "id": "IB03",
+      "classification": "independent-implementation",
+      "from": "本轮输入图像",
+      "to": "独立拥有的缓存图像",
+      "behavior": "刷新时仅支持GrayImage、RgbImage、RawImage三个具体类型，分别调用构造器复制；其它IImageData实现抛ArgumentException。三种构造器均data.ToArray，因此入队图像和上游图像不是同一对象或同一数组。Gray/Rgb校验精确载荷长度，Raw保留格式、stride及全部非空载荷；此处不调用预览格式转换。",
+      "representation": "缓存复制尺寸、格式和像素；Raw不解码、不按width*height截断。",
+      "cache": "复制后Enqueue，再按count裁剪；count0的临时副本也经历分配。",
+      "release": "托管数组由引用可达性决定回收；非确定时刻释放。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "else {var image=input.As<IImageData>();",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 34,
+          "end": 34,
+          "excerpt": "     else {var image=input.As<IImageData>();IImageData copy=image switch{GrayImage=>new GrayImage(image.Width,image.Height,image.Pixels),RgbImage=>new RgbImage(image.Width,image.Height,image.Pixels),RawImage=>new RawImage(image.Width,image.Height,image.Format,image.Pixels,image.Stride),_=>throw new ArgumentException(\"Unsupported image format.\")};state.Images.Enqueue(copy);while(state.Images.Count>count)state.Images.Dequeue();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionData/ImageGeometry.cs",
+          "member": "public GrayImage(",
+          "sha256": "0c169c1fe86eb8048fc6b7329d425088c32d2a690535c05962e5276d9907882d",
+          "start": 18,
+          "end": 23,
+          "excerpt": "    public GrayImage(int width, int height, ReadOnlySpan<byte> data)\n    {\n        if (width <= 0 || height <= 0) throw new ArgumentOutOfRangeException(nameof(width));\n        if (data.Length != checked(width * height)) throw new ArgumentException(\"Pixel count must equal width * height.\", nameof(data));\n        Width = width; Height = height; pixels = data.ToArray();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionData/ColorImage.cs",
+          "member": "public RgbImage(",
+          "sha256": "8f2d913e0bfa11edc4c6dd04eef83031b09265a34cc92fac04ca5970c40ba4b6",
+          "start": 18,
+          "end": 22,
+          "excerpt": " public RgbImage(int width,int height,ReadOnlySpan<byte> data){\n  if(width<=0||height<=0)throw new ArgumentOutOfRangeException(nameof(width));\n  if(data.Length!=checked(width*height*3))throw new ArgumentException(\"RGB24 data must contain width * height * 3 bytes.\",nameof(data));\n  Width=width;Height=height;pixels=data.ToArray();\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionData/RawImage.cs",
+          "member": "public RawImage(",
+          "sha256": "e380f1abb06c6f49a8584d37ea8acfd22300ef87fbf66f503c20f3aa0f6f6342",
+          "start": 12,
+          "end": 15,
+          "excerpt": " public RawImage(int width,int height,ImagePixelFormat format,ReadOnlySpan<byte> data,int stride=0){\n  if(width<=0||height<=0||stride<0||data.IsEmpty)throw new ArgumentOutOfRangeException(nameof(width));\n  Width=width;Height=height;Format=format;Stride=stride;pixels=data.ToArray();\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "不模拟损坏原生指针、任意外部IImageData或内存不足后的原版行为；不声称原生CopyImage位等价。"
+      ]
+    },
+    {
+      "id": "IB04",
+      "classification": "independent-implementation",
+      "from": "FIFO槽位",
+      "to": "ModuleResult → GraphExecutor记录 → 下游",
+      "behavior": "成功时从队首枚举并发布OutImage0Image等键，PortValue.Image仅包装同一缓存图像对象。暂停刷新重复运行可让不同ModuleResult持有相同图像；主流程成功路径只复制输出字典并包只读视图，不复制像素。下游nodeInputs接收同一个PortValue。因此一次入队的深复制不能解释为每层都深复制。",
+      "representation": "缓存图像对象 → PortValue → 字典/NodeRunRecord；图像像素不随包装再复制。",
+      "cache": "旧结果可在帧被队列淘汰后继续保持图像可达。",
+      "release": "从队列移除不等于销毁被旧结果/显示仍引用的数组。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "if(code==0){int i=0;foreach",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 36,
+          "end": 36,
+          "excerpt": "    if(code==0){int i=0;foreach(var image in state.Images){string prefix=$\"OutImage{i++}\";output[prefix+\"Image\"]=PortValue.Image(image);output[prefix+\"Width\"]=PortValue.Integer(image.Width);output[prefix+\"Height\"]=PortValue.Integer(image.Height);output[prefix+\"PixelFormat\"]=PortValue.Integer((int)image.Format);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "public static PortValue Image(GrayImage",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 37,
+          "end": 37,
+          "excerpt": "    public static PortValue Image(GrayImage v)=>new(DataKind.GrayImage,v??throw new ArgumentNullException(nameof(v)));",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "public static PortValue Image(IImageData",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 38,
+          "end": 38,
+          "excerpt": "    public static PortValue Image(IImageData v)=>v switch{GrayImage gray=>Image(gray),RgbImage rgb=>new(DataKind.RgbImage,rgb),RawImage raw=>new(DataKind.Image,raw),_=>throw new ArgumentException(\"Unsupported owned image format.\",nameof(v))};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "if(result.Continuation==ModuleContinuation.SuppressSuccessors)",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 46,
+          "end": 46,
+          "excerpt": "   if(result.Continuation==ModuleContinuation.SuppressSuccessors)suppressed.Add(id);Record(result.Status==ModuleStatus.NoMatch?NodeRunStatus.NoMatch:NodeRunStatus.Success,new ReadOnlyDictionary<string,PortValue>(result.Outputs.ToDictionary(x=>x.Key,x=>x.Value)),result.ErrorCode,result.Message,result.NativeErrorCode);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "nodeInputs[c.ToPort]=v;",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 24,
+          "end": 24,
+          "excerpt": "    nodeInputs[c.ToPort]=v;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "显示位图、历史容器及所有外部消费者的最终引用释放时点尚未逐一闭合；不能由只读字典保证对象生命周期短。"
+      ]
+    },
+    {
+      "id": "IB05",
+      "classification": "independent-implementation",
+      "from": "失败ModuleResult中的状态/耗时",
+      "to": "主流程失败NodeRunRecord空输出",
+      "behavior": "插件正常错误返回仍填ModuStatus与ModuRunTime，并设置NativeErrorCode，但未设置PreserveFailedOutputs；其默认bool为false。GraphExecutor在此分支先Record失败再continue，未把result.Outputs传给Record，Record默认Empty。因此插件直接调用可读到的失败状态/耗时，在主流程记录与下游端口中被丢弃；保留的是失败码和诊断字段。插件构造输出与主框架最终发布必须分别陈述。",
+      "representation": "失败结果与失败记录是两个不同边界；不能仅查插件返回字典判断主窗可读字段。",
+      "cache": "缺图/非法数量不清已有缓存；失败这一轮不重发缓存图像。",
+      "release": "既有缓存仍可在后续合法暂停刷新中发布；失败不等于清缓存。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "output[\"ModuStatus\"]",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 38,
+          "end": 39,
+          "excerpt": "   output[\"ModuStatus\"]=PortValue.Integer(code==0?1:0);output[\"ModuRunTime\"]=PortValue.Number(clock.Elapsed.TotalMilliseconds);\n   return ValueTask.FromResult(new ModuleResult(code==0?ModuleStatus.Success:ModuleStatus.Failed,output,error){NativeErrorCode=code});",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/Contracts.cs",
+          "member": "public sealed record ModuleResult(",
+          "sha256": "c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269",
+          "start": 55,
+          "end": 55,
+          "excerpt": "public sealed record ModuleResult(ModuleStatus Status,IReadOnlyDictionary<string,PortValue> Outputs,string? ErrorCode=null,string? Message=null){public ModuleContinuation Continuation{get;init;}public IReadOnlyList<string>? SelectedExecutionSuccessors{get;init;}public uint? NativeErrorCode{get;init;}public ModuleDescriptor? UpdatedDescriptor{get;init;}public bool PreserveFailedOutputs{get;init;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "void Record(NodeRunStatus",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 15,
+          "end": 15,
+          "excerpt": "   void Record(NodeRunStatus s,IReadOnlyDictionary<string,PortValue>? outputs=null,string? code=null,string? message=null,uint? nativeCode=null){records[id]=new(id,s,outputs??Empty(),sw.Elapsed.TotalMilliseconds,code,message){NativeErrorCode=nativeCode};workflow.Update(id);Report(id,s,message);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs)",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 36,
+          "end": 36,
+          "excerpt": "   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "旧IMAGE-BUFFER文档中“失败发布状态0”只可直接用于插件返回边界，不能据此断言当前主流程保留该端口；本轮记录差异，不修改产品。",
+        "普通配置自执行已另由IB09核实相同过滤；另一ToolDebugSession路径在此不合并作同一入口。"
+      ]
+    },
+    {
+      "id": "IB06",
+      "classification": "independent-implementation",
+      "from": "插件实例 / scope / 节点",
+      "to": "缓存持有与RemoveNode、关闭释放",
+      "behavior": "scope.State的实际键是(ProcedureId,module,node)，状态属于方案root；无scope时fallback键为规范化BaseDirectory加node，保留于插件实例。Runtime只保留owner且不实现Dispose，不随单轮运行器结束清队列。Reset只从fallback移除指定node，并不移除scope状态。RemoveNode移除状态后只对IDisposable调用Dispose，缓存State不实现该接口。根scope关闭先取消，待租约归零后清状态字典；该State也不会执行逐帧Dispose。",
+      "representation": "State.Queue是独立持有者；scope和fallback两条路径不可混用Reset解释。",
+      "cache": "RetainProcedureNodes通过RemoveNode清除不再存在的状态键。",
+      "release": "移除缓存引用依靠托管GC；旧ModuleResult仍可持图，不能称立即归还全部像素内存。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "State GetState(",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 17,
+          "end": 17,
+          "excerpt": " State GetState(ModuleExecutionContext c){if(c.Scope is {} scope)return scope.State(Id,c.NodeId,()=>new State());lock(gate){string key=Path.GetFullPath(c.BaseDirectory)+\"|\"+c.NodeId;if(!fallback.TryGetValue(key,out var state))fallback[key]=state=new();return state;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "public void Reset(",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 18,
+          "end": 18,
+          "excerpt": " public void Reset(string nodeId){lock(gate)foreach(string key in fallback.Keys.Where(k=>k.EndsWith(\"|\"+nodeId,StringComparison.Ordinal)).ToArray())fallback.Remove(key);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferPlugin.cs",
+          "member": "sealed class Runtime(",
+          "sha256": "04f02a36f7a9589987ac342e7dab9aaf54125fa4a2fc16af96a05ea4589e2130",
+          "start": 22,
+          "end": 22,
+          "excerpt": " sealed class Runtime(ImageBufferPlugin owner):IModule {",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "public T State<T>",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 33,
+          "end": 35,
+          "excerpt": " public T State<T>(string module,string node,Func<T> create)where T:class {\n  var root=Root;lock(root.gate){ObjectDisposedException.ThrowIf(root.closing,this);var key=(ProcedureId,module,node);if(!root.states.TryGetValue(key,out var value))root.states.Add(key,value=create());return (T)value;}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "public void RemoveNode(",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 41,
+          "end": 41,
+          "excerpt": " public void RemoveNode(string module,string node){var root=Root;object? value;lock(root.gate){root.effectiveParameters.Remove((ProcedureId,module,node));if(!root.states.Remove((ProcedureId,module,node),out value))return;}if(value is IDisposable disposable)disposable.Dispose();}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ModuleExecutionScope.cs",
+          "member": "void Release(){",
+          "sha256": "fe6b2880402886f3a3e40e8a1bb93b5e180c17364899f1c520b0c587daed2b1b",
+          "start": 48,
+          "end": 48,
+          "excerpt": " void Release(){object[] values;lock(gate){values=states.Values.Concat(ownedServices).Distinct(ReferenceEqualityComparer.Instance).ToArray();states.Clear();effectiveParameters.Clear();services.Clear();ownedServices.Clear();}foreach(var value in values)if(value is IDisposable disposable)try{disposable.Dispose();}catch(Exception error){RecordCleanupFailure(\"resource\",value,error);}try{stopping.Dispose();}catch(Exception error){RecordCleanupFailure(\"token\",stopping,error);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "未证明所有历史、UI位图、订阅外部持有者同时清空；实际峰值和回收时刻需独立内存观测。"
+      ]
+    },
+    {
+      "id": "IB07",
+      "classification": "independent-implementation",
+      "from": "工具窗口执行/连续/关闭",
+      "to": "停止下一轮与缓存生命周期",
+      "behavior": "专用窗口Run传入克隆的Node.Parameters，但缓存输入实际仍由宿主提供。连续按钮在每轮await Execute之后再判断continuous/closed；Closed只设置closed=true、continuous=false。窗口本身没有调用插件Reset、scope.RemoveNode或对在飞context.Run发出取消。因此关闭编辑器不等于清缓存或证明正在执行的本轮已经中断。",
+      "representation": "窗口参数快照、输入端口和状态队列分属不同持有者。",
+      "cache": "关闭只阻止本窗口循环启动后续轮；队列仍按scope/fallback持有。",
+      "release": "窗口关闭处理未出现像素Dispose或状态移除。",
+      "refs": [
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferWindow.cs",
+          "member": "var rows=new W.StackPanel",
+          "sha256": "ecdd987200d4356ff8adef9ee959af9a3d921406f1e965bedbe02f4acd2a5ef2",
+          "start": 16,
+          "end": 16,
+          "excerpt": "  var rows=new W.StackPanel{Margin=new Thickness(32,18,34,14)};rows.Children.Add(Header(\"图像输入\"));rows.Children.Add(Link(\"输入源\",\"InputImage\",DataKind.Image));rows.Children.Add(new W.Border{Height=1,Background=Brush(\"#D7D7D7\"),Margin=new Thickness(0,5,0,16)});rows.Children.Add(Header(\"缓存设置\"));rows.Children.Add(Link(\"缓存使能\",\"RefreshFlag\",DataKind.Integer));rows.Children.Add(Link(\"缓存数量\",\"BufferCount\",DataKind.Integer));W.Grid.SetRow(rows,1);root.Children.Add(rows);var commands=new W.StackPanel{Orientation=W.Orientation.Horizontal,HorizontalAlignment=System.Windows.HorizontalAlignment.Right,Margin=new Thickness(0,3,16,3)};loop.Click+=async(_,_)=>{if(continuous){continuous=false;loop.Content=\"连续执行\";return;}if(running)return;continuous=true;loop.Content=\"停止\";do{await Execute();if(continuous&&!closed)await Task.Delay(1);}while(continuous&&!closed);loop.Content=\"连续执行\";once.IsEnabled=true;};once.Click+=async(_,_)=>await Execute();commands.Children.Add(loop);commands.Children.Add(once);var confirm=new W.Button{Name=\"ConfirmBuffer\",Content=\"确定\",Width=66,Height=25,Margin=new Thickness(3,0,0,0)};confirm.Click+=(_,_)=>Close();commands.Children.Add(confirm);W.Grid.SetRow(commands,2);root.Children.Add(commands);Closed+=(_,_)=>{closed=true;continuous=false;};Content=new W.Border{BorderBrush=Brush(\"#F34A35\"),BorderThickness=new Thickness(0,context.Mode==ToolEditorMode.Desktop?1:0,0,0),Child=root};",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionPlugins.ImageSource/ImageBufferWindow.cs",
+          "member": "async Task Execute()",
+          "sha256": "ecdd987200d4356ff8adef9ee959af9a3d921406f1e965bedbe02f4acd2a5ef2",
+          "start": 18,
+          "end": 18,
+          "excerpt": " async Task Execute(){if(running||closed)return;running=true;once.IsEnabled=false;try{await context.Run(context.Node.Parameters.ToDictionary(p=>p.Key,p=>p.Value.Clone()));}catch(Exception ex){continuous=false;System.Windows.MessageBox.Show(this,ex.Message,\"执行失败\");}finally{running=false;once.IsEnabled=!continuous;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "普通配置宿主的活性/发布/取消边界另见IB09；此窗口处理器本身不能证明其它宿主的取消或排空行为。"
+      ]
+    },
+    {
+      "id": "IB09",
+      "classification": "independent-implementation",
+      "from": "主窗OpenToolConfiguration → ConnectToolEditorServices",
+      "to": "配置自执行快照、发布缓存与关闭准入",
+      "behavior": "当前普通配置入口为OpenToolConfiguration：建立ConfigurationActive后连接服务再创建ImageBufferWindow；ConnectToolEditorServices把Run接到RunConfiguredTool。它先快照流程会话和configurationResults中的上游记录，只允许成功/NoMatch来源，解析常量/订阅后构建单节点isolated流程交给GraphExecutor，不重新执行上游。故IB05的失败输出过滤也适用于这个配置自执行入口。完成后还要核窗口活性、方案、scope实例和节点身份，才写configurationResults及当前results并刷新右侧。关闭窗口令active=false，阻止过期发布，但传给执行器的取消token是ownerScope.Stopping，不能据此声称关闭配置窗会取消在飞执行或回滚已修改缓存。",
+      "representation": "输入来自本次捕获的上游记录；参数Clone；运行结果记录由身份准入后进入两份结果字典。",
+      "cache": "配置自执行不会清方案节点状态；失败记录可覆盖该节点旧配置记录，但不等于清ImageBuffer FIFO。",
+      "release": "关闭配置窗口撤发布资格；方案scope关闭才触发Stopping。窗口失效不能证明队列修改已撤销。",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolConfigurationHost.cs",
+          "member": "var context=new ToolEditorContext",
+          "sha256": "2b1f110a2ab7b4cbf55b973109f6a99db56e111d90bfead811854d98d018b5b1",
+          "start": 35,
+          "end": 42,
+          "excerpt": "   var context=new ToolEditorContext(node,ownerDirectory,Apply,_=>throw new NotSupportedException(\"配置执行服务尚未连接。\"),procedure.Nodes.ToList().FindIndex(n=>n.Id==id)){ConfigurationActive=()=>active&&IsCurrentExecutionOwner(owner)};\n   context=ConnectToolEditorServices(context,id);\n   context=ConnectConfigurationRoi(context,procedure.Id,id,solution);\n   ResetEditingGesture();\n   // Transitional adapter: window factories will be replaced by the source-derived\n   // configuration-model provider. Central lifecycle already matches ordinary modules.\n   Window window=plugin is IToolConfigurationProvider provider?new ToolConfigurationModelWindow(context,provider.CreateConfiguration(context)):((IWpfToolEditorFactory)plugin).CreateWpfEditor(context);\n   window.Closed+=(_,_)=>active=false;return window;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "Run=values=>",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 81,
+          "end": 81,
+          "excerpt": "  return context with{ReadEffectiveParameters=()=>{if(!Alive()||windowClosed||doc.SolutionId!=solution)return null;var target=Flow().Nodes.Single(n=>n.Id==node);return executionScope.ForProcedure(procedure).ReadEffectiveParameters(target.ModuleId,node,target.Parameters);},ConfigurationFolders=new WpfConfigurationFolderService(),ConfigurationPresentation=presentation,ConfigurationSubscriptions=completeSubscriptions,ConfigurationFiles=new WpfConfigurationFileService(),ConfigurationSaveFiles=new WpfConfigurationSaveFileService(),ConfigurationConfirmations=new WpfConfigurationConfirmationService(),ResetConfigurationParameters=next=>{if(!Alive()||windowClosed||isLocked||activeRun is not null||activeConfigurationRuns>0||doc.SolutionId!=solution)throw new InvalidOperationException(\"当前模块不可编辑。\");var target=Flow().Nodes.Single(n=>n.Id==node);doc.ResetProcedureNodeParameters(procedure,node,next);executionScope.ForProcedure(procedure).RememberConfigurationParameters(target.ModuleId,node,target.Parameters,next,true);},ConfigurationNotifications=new WpfConfigurationNotificationService(),ConfigurationExecutionStatus=ConfigurationStatus,Resources=()=>{if(!Alive()||windowClosed||doc.SolutionId!=solution)throw new InvalidOperationException(\"配置资源所属方案已失效。\");return new ResourceCatalog(doc.BaseDirectory,doc.Document.Resources);},Scope=executionScope.ForProcedure(procedure),Run=values=>{if(!Alive())throw new InvalidOperationException(\"配置会话已关闭。\");return RunConfiguredTool(procedure,node,values,Alive);},Cameras=()=>{RequireAlive();return executionScope.Service<IImageAcquisitionService>()?.Cameras??[];},ConfigureCameras=()=>{RequireAlive();RefreshCameraProvider(true);},SubscriptionLabel=Label,",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "var available=(workflowSessions.TryGetValue",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 161,
+          "end": 166,
+          "excerpt": "  var available=(workflowSessions.TryGetValue(procedureId,out var priorSession)?priorSession.Nodes:[]).ToDictionary(r=>r.NodeId,StringComparer.Ordinal);\n  if(configurationResults.TryGetValue(procedureId,out var configured))foreach(var cached in configured)available[cached.Key]=cached.Value;\n  PortValue Output(string id,string port){\n   NodeRunRecord? record=available.GetValueOrDefault(id);\n   return record is not null&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&CompoundOutputFields.Expand(record.Outputs).TryGetValue(port,out var value)?value:throw new InvalidDataException(\"订阅图像或数据尚无运行结果。\");\n  }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "var run=await Task.Run(()=>new GraphExecutor",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 193,
+          "end": 195,
+          "excerpt": "   var run=await Task.Run(()=>new GraphExecutor(modules).RunAsync(isolated,baseDirectory,cancellationToken:ownerScope.Stopping,inputs:inputs,scope:ownerScope,control:new ModuleRunControl{Mode=ExecutionMode.SelfRun,ParameterSeed=id=>id==nodeId?node.Parameters:null},resources:resources,numericInputRead:(id,name,index)=>id==nodeId?numericReader?.Read(name,index):null,integerInputRead:(id,name,index)=>id==nodeId?numericReader?.ReadInteger(name,index):null,textInputRead:(id,name,index,capacity)=>id==nodeId?numericReader?.ReadText(name,index,capacity):null,executionSuccessorRead:id=>id==nodeId?originalSuccessors:null));\n   record=run.Nodes.Single();\n  }catch(Exception ex){record=new(nodeId,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),clock.Elapsed.TotalMilliseconds,\"SelfRunFailed\",ex.Message);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "if(CanPublish()&&doc.SolutionId",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 197,
+          "end": 204,
+          "excerpt": "  if(CanPublish()&&doc.SolutionId==ownerSolution&&ReferenceEquals(executionScope,ownerScope)&&doc.Document.Procedures.Any(p=>p.Id==procedureId&&p.Nodes.Any(n=>n.Id==nodeId&&n.ModuleId==node.ModuleId&&n.ModuleVersion==node.ModuleVersion))){\n   if(!configurationResults.TryGetValue(procedureId,out var cached))configurationResults[procedureId]=cached=new(StringComparer.Ordinal);\n   cached[nodeId]=record;\n   if(doc.CurrentProcedureId==procedureId){\n    results[nodeId]=record;RefreshRight();RenderGraph();\n    StatusText.Text=\"模块执行：\"+node.Name+\" · \"+record.Status+(record.Message is null?\"\":\" · \"+record.Message);\n    StatusIcon.Source=Asset(record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped?\"bottombar_run.png\":\"bottombar_abnormal.png\");\n   }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "ToolEditorHost的另一条ToolDebugSession/NodeDebugExecutor路径有独立关闭排空逻辑，不能与普通配置入口混作一条调用链；本事实仅绑定OpenToolConfiguration实际构建的context。",
+        "关闭与在飞回调的实际桌面时序未运行验证；原版配置关闭/缓存副作用仍待原函数体与确认运行证据。"
+      ]
+    },
+    {
+      "id": "IB08",
+      "classification": "source-confirmed",
+      "from": "原ImageBufferModuleAlgorithmTab.xml",
+      "to": "整数输入选择/回填声明",
+      "behavior": "CacheEnable和BufferCount均声明ButtonSelecter；DropOpenSetter调用GetFrontFilterTreeOperation(int)，CurValue触发SetFilterSourceOperation到RefreshFlag/BufferCount，Initers通过GetSelectedFilterOperation回填。这证明资源声明了输入源选择与回填链，不证明原生缓存执行、真实活绑定或队列释放。",
+      "representation": "原资源把刷新和数量声明为输入源操作，不应按普通算法参数值解释。",
+      "cache": "资源不定义像素缓存结构或淘汰行为。",
+      "release": "资源未声明原生像素释放合同。",
+      "refs": [
+        {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageBufferModule/ImageBufferModuleAlgorithmTab.xml",
+          "member": "AlgorithmTab resource: ButtonSelecter / setters / initializers",
+          "start": 1,
+          "end": 85,
+          "sha256": "80e59379d3eaa22679c22474d0b810fcbcaa93f9d97217e18654f704f8d0e824",
+          "excerpt": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<AlgorithmTabRoot>\n  <Tabs>\n    <Tab Name=\"Tab_Basic Params\">\n      <Categorys>\n        <GroupLinkItem Name=\"ImageSourceGroup\">\n          <LinkName>ImageSourceGroup</LinkName>\n        </GroupLinkItem>\n        <Category Name=\"Tab_Cache Set\">\n          <Items>\n            <ButtonSelecter Name=\"CacheEnable\">\n              <Description>RunParam_Des_RefreshFlag</Description>\n              <DisplayName>CacheEnable</DisplayName>\n              <AccessMode>O</AccessMode>\n              <DropOpenSetter>\n                <TargetName>EnumEntrys</TargetName>\n                <OperationName>GetFrontFilterTreeOperation</OperationName>\n                <OperationParams>int</OperationParams>\n              </DropOpenSetter>\n              <Triggers>\n                <Trigger>\n                  <Property>CurValue</Property>\n                  <Setters>\n                    <Setter>\n                      <OperationName>SetFilterSourceOperation</OperationName>\n                      <OperationParams>RefreshFlag</OperationParams>\n                    </Setter>\n                  </Setters>\n                </Trigger>\n              </Triggers>\n              <Initers>\n                <Setter>\n                  <TargetName>CurValue</TargetName>\n                  <OperationName>GetSelectedFilterOperation</OperationName>\n                  <OperationParams>RefreshFlag</OperationParams>\n                </Setter>\n              </Initers>\n            </ButtonSelecter>\n            <ButtonSelecter Name=\"BufferCount\">\n              <Description>RunParam_Des_BufferCount</Description>\n              <DisplayName>RunParam_BufferCount</DisplayName>\n              <AccessMode>O</AccessMode>\n              <DropOpenSetter>\n                <TargetName>EnumEntrys</TargetName>\n                <OperationName>GetFrontFilterTreeOperation</OperationName>\n                <OperationParams>int</OperationParams>\n              </DropOpenSetter>\n              <Triggers>\n                <Trigger>\n                  <Property>CurValue</Property>\n                  <Setters>\n                    <Setter>\n                      <OperationName>SetFilterSourceOperation</OperationName>\n                      <OperationParams>BufferCount</OperationParams>\n                    </Setter>\n                  </Setters>\n                </Trigger>\n              </Triggers>\n              <Initers>\n                <Setter>\n                  <TargetName>CurValue</TargetName>\n                  <OperationName>GetSelectedFilterOperation</OperationName>\n                  <OperationParams>BufferCount</OperationParams>\n                </Setter>\n              </Initers>\n            </ButtonSelecter>\n          </Items>\n        </Category>\n      </Categorys>\n    </Tab>\n    <!-- <Tab Name=\"ResultShow\">\n      <Categorys>\n        <Category Name=\"Tab_Image Display\">\n          <Items>\n          </Items>\n        </Category>\n      </Categorys>\n    </Tab> -->\n  </Tabs>\n  <BottomExcuteButtons>\n    <GroupLinkItem Name=\"BottomCommandGroup\">\n      <LinkName>BottomCommandGroup</LinkName>\n    </GroupLinkItem>\n  </BottomExcuteButtons>\n</AlgorithmTabRoot>",
+          "evidenceType": "shipped-resource"
+        }
+      ],
+      "unknowns": [
+        "历史native/*.c与受控运行产物未作为本轮原体证据；本轮已从身份匹配原DLL独立静态恢复五个函数，见NB01–NB04，不以旧报告替代。",
+        "此前REA provider_unavailable响应保留为历史；本轮使用已有离线Ghidra恢复所选五体，并以NM01–NM04续证接口/映射清理；ModuleFrame接收端和最终像素读者仍待核。"
+      ]
+    }
+  ],
+  "originalArtifact": {
+    "path": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Collection/ImageBufferModule/ImageBufferModule.dll",
+    "sha256": "ab8850d7a747df693152ef7e095a5e0ef87eff9410c2424e9b7c84e435717869",
+    "length": 103424,
+    "reaOpenIdentityMatched": true,
+    "identityOnlyNotFunctionBody": true
+  },
+  "originalRuntimeExecuted": false,
+  "currentRuntimeExecuted": false,
+  "browserRendered": false,
+  "nativeSourceRecovered": true,
+  "nativeSelectedFunctions": 5,
+  "nativeOwnershipClosed": false,
+  "nativeSourceEvidenceReport": "buffer-native-ownership.provenance.json",
+  "nativeRetrieval": "image-buffer-native-retrieval.json",
+  "historicalReportsRevalidated": false,
+  "scope": "当前缓存图像工具跨层静态调用/数据生命周期；原资源声明与另列NB01–NB04原生五体切片分列；未证明全部缓存所有权与像素释放。"
+}

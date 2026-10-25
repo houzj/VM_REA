@@ -1,0 +1,549 @@
+{
+  "id": "stop",
+  "title": "停止与取消",
+  "question": "停止发给谁，何时才能说本轮结束？",
+  "current": [
+    {
+      "id": "ESP01",
+      "from": "停止工具栏",
+      "to": "activeRun.Cancel",
+      "member": "BuildChrome stop action",
+      "condition": "active workflow source exists",
+      "behavior": "按钮向当前CancellationTokenSource请求取消；只证协作请求，不是杀线程。 它只指向activeRun，不是停止所有工具/配置会话。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": "Tool(\"toolbar_ic_topbar_综合配置_normal.png\"",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 52,
+          "end": 52,
+          "excerpt": "  Tool(\"toolbar_toolbarSave_normal.png\",\"保存\",()=>Save(false));Tool(\"toolbar_toolbarOpen_normal.png\",\"打开方案\",Open);undoToolButton=Tool(\"toolbar_ic_topbar_undo_normal.png\",\"撤销\",UndoShell);SetToolbarStateIcon(undoToolButton,\"toolbar_ic_topbar_undo_normal.png\",\"toolbar_ic_topbar_undo_disable.png\");redoToolButton=Tool(\"toolbar_ic_topbar_redo_normal.png\",\"重做\",RedoShell);SetToolbarStateIcon(redoToolButton,\"toolbar_ic_topbar_redo_normal.png\",\"toolbar_ic_topbar_redo_disable.png\");lockToolButton=Tool(\"toolbar_ic_topbar_lock_normal.png\",\"锁定工作区\",RequestWorkAreaLock);Sep();Tool(\"toolbar_ic_topbar_camera_normal.png\",\"相机列表\",()=>RefreshCameraProvider(true));Tool(\"toolbar_ic_全局变量_normal.png\",\"全局变量（变量模型尚未接入）\",null);Tool(\"toolbar_ic_通信管理_normal.png\",\"通信管理（通信模块尚未接入）\",null);Tool(\"toolbar_ic_topbar_全局触发_normal.png\",\"全局触发（触发器尚未接入）\",null);Tool(\"toolbar_ic_script_normal.png\",\"脚本（脚本引擎尚未接入）\",null);Sep();Tool(\"toolbar_toolbarStart_normal.png\",\"运行流程\",()=>{_=Run();});continuousToolButton=Tool(\"toolbar_toolbarRunRepeat_normal.png\",\"连续运行\",StartContinuous);stopToolButton=Tool(\"toolbar_toolBarStop_normal.png\",\"停止\",()=>activeRun?.Cancel());Tool(\"toolbar_ic_topbar_综合配置_normal.png\",\"综合配置（系统配置尚未接入）\",null);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ESP02",
+      "from": "GraphExecutor node token",
+      "to": "timeout + caller + scope.Stopping linked token",
+      "member": "GraphExecutor.RunAsync",
+      "condition": "per-node token linked; module must observe/return",
+      "behavior": "模块收到链接token；后续将取消/超时转换成记录，finally释放模块。不能据Cancel已返回说native/模块调用已结束。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "IModule? module=null;ModuleResult? result=null;",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 34,
+          "end": 36,
+          "excerpt": "   IModule? module=null;ModuleResult? result=null;Exception? error=null;using var timeout=new CancellationTokenSource();if(n.TimeoutMs>0)timeout.CancelAfter(n.TimeoutMs);using var linked=CancellationTokenSource.CreateLinkedTokenSource(timeout.Token,cancellationToken,scope?.Stopping??CancellationToken.None);Report(id,NodeRunStatus.Running);\n   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}\n   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ESP03",
+      "from": "ToolDebugSession.StopAsync",
+      "to": "cancel owner token → await active",
+      "member": "ToolDebugSession.StopAsync / DisposeAsync",
+      "condition": "active may be completed; closing separately sets disposed",
+      "behavior": "工具调试停止会await当前任务，Dispose先closing再Stop并最终Disposed；这是工具会话分支，不冒称与主流程Cancel同一对象。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ToolDebugSession.cs",
+          "member": "public async Task StopAsync()",
+          "sha256": "8e9030cc070fb8c9ec6263452f73b936287a87f0bae0456e913a1d531ada0211",
+          "start": 33,
+          "end": 34,
+          "excerpt": " public async Task StopAsync(){Task? wait;lock(gate){wait=active;if(wait is {IsCompleted:false}){state=ToolDebugState.Stopping;cancellation?.Cancel();}}if(wait is not null){try{await wait;}catch(OperationCanceledException){}}}\n public async ValueTask DisposeAsync(){lock(gate){closing=true;if(active is not {IsCompleted:false})state=ToolDebugState.Disposed;}try{await StopAsync();}finally{lock(gate)state=ToolDebugState.Disposed;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ESP04",
+      "from": "workflow completion finally",
+      "to": "FinishWorkflowRun(owner)",
+      "member": "MainWindow.FinishWorkflowRun",
+      "condition": "ReferenceEquals(activeRun,owner)",
+      "behavior": "仅本轮owner仍是activeRun才清引用、清runningProcedure/continuous并Dispose该CTS；窗口仍在才RefreshAll。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "void FinishWorkflowRun(CancellationTokenSource owner)",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 88,
+          "end": 91,
+          "excerpt": " void FinishWorkflowRun(CancellationTokenSource owner)\n {\n  if(ReferenceEquals(activeRun,owner)){activeRun=null;runningProcedureId=null;continuousRun=false;owner.Dispose();if(!windowClosed)RefreshAll();}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    }
+  ],
+  "original": [
+    {
+      "id": "execution-storage:Q01",
+      "route": "原版 · 连续运行与停止",
+      "classification": "source-confirmed",
+      "from": "MutiRun / CheckRun / StopRun",
+      "to": "状态检查或直接停止 → MutiOrStopRun(bool)",
+      "behavior": "MutiRun在CheckRun放行后传true并记日志；CheckRun只拒绝首个WorkState非Ready且IsEnabled的流程。StopRun不走CheckRun，直接传false。MutiRun catch仅对VmException显示全局脚本错误，其它异常无该提示；StopRun没有此catch。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "continuous and stop wrappers",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 1480,
+          "end": 1508,
+          "excerpt": "\tpublic static void MutiRun()\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (CheckRun())\n\t\t\t{\n\t\t\t\tMutiOrStopRun(isContinousRunEnable: true);\n\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"连续运行开始\"), false, true);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tif (ex is VmException ex2)\n\t\t\t{\n\t\t\t\tstring strMsg = AppLocalizationService.GetLang(\"Lang_GlobalScript\") + \":\" + ErrorCodeInfo.GetErrorInfo(ex2.errorCode);\n\t\t\t\tHikMessageBox.Show(strMsg, MessageIcons.Error);\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate static void MutiOrStopRun(bool isContinousRunEnable)\n\t{\n\t\t((IVMRun)VmSolution.Instance).ContinuousRunEnable = isContinousRunEnable;\n\t}\n\n\tpublic static void StopRun()\n\t{\n\t\tMutiOrStopRun(isContinousRunEnable: false);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.TitleMenueItemData::MutiRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 1745,
+          "end": 1764,
+          "excerpt": "          \"token\": \"0x060002e7\",\n          \"symbol\": {\n            \"token\": \"0x060002e7\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"MutiRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Static, HideBySig\",\n            \"signatureBytes\": \"000001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 115,\n          \"ilSha256\": \"4fdb3478e252bf544a9bdc7203f30839efbb844b7fcfa848963217343c3d65a9\",\n          \"ilBytes\": \"000028e502000616fe010a062c02de621728e802000600725500007072293d0070282d00000a1617282e00000a2600de410b00077527000001250c14fe030d092c2d0072053d0070282d00000a728b390070086f7500000a287800000a287900000a130411041916282c01000a260000de002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.TitleMenueItemData::CheckRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 873,
+          "end": 892,
+          "excerpt": "          \"token\": \"0x060002e5\",\n          \"symbol\": {\n            \"token\": \"0x060002e5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"CheckRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, Static, HideBySig\",\n            \"signatureBytes\": \"000002\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 236,\n          \"ilSha256\": \"8f94dd9be985bd723d7d7c534eb3ba808eb1362704081a6251be27375797932e\",\n          \"ilBytes\": \"00288800000a6feb00000a280400002b7ee6010004252d17267ed5010004fe0687030006732d03000a2580e6010004283500002b0a067ee7010004252d17267ed5010004fe0688030006732e03000a2580e7010004283600002b250b14fe030c082c2b00076f2f03000a6f3003000a728b390070076f3103000a287900000a0d091916282c01000a261613042b5b062c34067ee8010004252d17267ed5010004fe0689030006732e03000a2580e8010004283900002b283a00002b06283a00002bfe012b0116130511052c180072e13c0070282d00000a1816282c01000a261613042b051713042b0011042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.TitleMenueItemData::MutiOrStopRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 2210,
+          "end": 2229,
+          "excerpt": "          \"token\": \"0x060002e8\",\n          \"symbol\": {\n            \"token\": \"0x060002e8\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"MutiOrStopRun\",\n            \"parameters\": 1,\n            \"attributes\": \"Private, Static, HideBySig\",\n            \"signatureBytes\": \"00010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"6f4df35d3841c93da713f625246bf50e72097945548cbfc33ac192e5945c014b\",\n          \"ilBytes\": \"00288800000a026f9b03000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VisionMaster.AppMainWindow.TitleMenueItemData::StopRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 2287,
+          "end": 2306,
+          "excerpt": "          \"token\": \"0x060002e9\",\n          \"symbol\": {\n            \"token\": \"0x060002e9\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"StopRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Static, HideBySig\",\n            \"signatureBytes\": \"000001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 9,\n          \"ilSha256\": \"9ce082e7e268d6eebde2451c0553606d98ab7b5c24f8844f8a95f94d6d11f0cf\",\n          \"ilBytes\": \"001628e8020006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        }
+      ],
+      "unknowns": [
+        "外层反射吞异常、全部运行前提和实际完成另查。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "continuous and stop wrappers / VisionMaster.AppMainWindow.TitleMenueItemData::MutiRun / VisionMaster.AppMainWindow.TitleMenueItemData::CheckRun / VisionMaster.AppMainWindow.TitleMenueItemData::MutiOrStopRun / VisionMaster.AppMainWindow.TitleMenueItemData::StopRun",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "Q01",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "Q01",
+        "route": "原版 · 连续运行与停止",
+        "classification": "source-confirmed",
+        "from": "MutiRun / CheckRun / StopRun",
+        "to": "状态检查或直接停止 → MutiOrStopRun(bool)",
+        "behavior": "MutiRun在CheckRun放行后传true并记日志；CheckRun只拒绝首个WorkState非Ready且IsEnabled的流程。StopRun不走CheckRun，直接传false。MutiRun catch仅对VmException显示全局脚本错误，其它异常无该提示；StopRun没有此catch。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+            "member": "continuous and stop wrappers",
+            "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+            "start": 1480,
+            "end": 1508,
+            "excerpt": "\tpublic static void MutiRun()\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (CheckRun())\n\t\t\t{\n\t\t\t\tMutiOrStopRun(isContinousRunEnable: true);\n\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"连续运行开始\"), false, true);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tif (ex is VmException ex2)\n\t\t\t{\n\t\t\t\tstring strMsg = AppLocalizationService.GetLang(\"Lang_GlobalScript\") + \":\" + ErrorCodeInfo.GetErrorInfo(ex2.errorCode);\n\t\t\t\tHikMessageBox.Show(strMsg, MessageIcons.Error);\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate static void MutiOrStopRun(bool isContinousRunEnable)\n\t{\n\t\t((IVMRun)VmSolution.Instance).ContinuousRunEnable = isContinousRunEnable;\n\t}\n\n\tpublic static void StopRun()\n\t{\n\t\tMutiOrStopRun(isContinousRunEnable: false);\n\t}",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VisionMaster.AppMainWindow.TitleMenueItemData::MutiRun",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 1745,
+            "end": 1764,
+            "excerpt": "          \"token\": \"0x060002e7\",\n          \"symbol\": {\n            \"token\": \"0x060002e7\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"MutiRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Static, HideBySig\",\n            \"signatureBytes\": \"000001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 115,\n          \"ilSha256\": \"4fdb3478e252bf544a9bdc7203f30839efbb844b7fcfa848963217343c3d65a9\",\n          \"ilBytes\": \"000028e502000616fe010a062c02de621728e802000600725500007072293d0070282d00000a1617282e00000a2600de410b00077527000001250c14fe030d092c2d0072053d0070282d00000a728b390070086f7500000a287800000a287900000a130411041916282c01000a260000de002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VisionMaster.AppMainWindow.TitleMenueItemData::CheckRun",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 873,
+            "end": 892,
+            "excerpt": "          \"token\": \"0x060002e5\",\n          \"symbol\": {\n            \"token\": \"0x060002e5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"CheckRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, Static, HideBySig\",\n            \"signatureBytes\": \"000002\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 236,\n          \"ilSha256\": \"8f94dd9be985bd723d7d7c534eb3ba808eb1362704081a6251be27375797932e\",\n          \"ilBytes\": \"00288800000a6feb00000a280400002b7ee6010004252d17267ed5010004fe0687030006732d03000a2580e6010004283500002b0a067ee7010004252d17267ed5010004fe0688030006732e03000a2580e7010004283600002b250b14fe030c082c2b00076f2f03000a6f3003000a728b390070076f3103000a287900000a0d091916282c01000a261613042b5b062c34067ee8010004252d17267ed5010004fe0689030006732e03000a2580e8010004283900002b283a00002b06283a00002bfe012b0116130511052c180072e13c0070282d00000a1816282c01000a261613042b051713042b0011042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VisionMaster.AppMainWindow.TitleMenueItemData::MutiOrStopRun",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 2210,
+            "end": 2229,
+            "excerpt": "          \"token\": \"0x060002e8\",\n          \"symbol\": {\n            \"token\": \"0x060002e8\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"MutiOrStopRun\",\n            \"parameters\": 1,\n            \"attributes\": \"Private, Static, HideBySig\",\n            \"signatureBytes\": \"00010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"6f4df35d3841c93da713f625246bf50e72097945548cbfc33ac192e5945c014b\",\n          \"ilBytes\": \"00288800000a026f9b03000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VisionMaster.AppMainWindow.TitleMenueItemData::StopRun",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 2287,
+            "end": 2306,
+            "excerpt": "          \"token\": \"0x060002e9\",\n          \"symbol\": {\n            \"token\": \"0x060002e9\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AppMainWindow.TitleMenueItemData\",\n            \"name\": \"StopRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Static, HideBySig\",\n            \"signatureBytes\": \"000001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 9,\n          \"ilSha256\": \"9ce082e7e268d6eebde2451c0553606d98ab7b5c24f8844f8a95f94d6d11f0cf\",\n          \"ilBytes\": \"001628e8020006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+          }
+        ],
+        "unknowns": [
+          "外层反射吞异常、全部运行前提和实际完成另查。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "execution-storage:Q02",
+      "route": "原版 · 连续运行与停止",
+      "classification": "source-confirmed",
+      "from": "VmSolution.ContinuousRunEnable setter",
+      "to": "全局脚本门 / false时清自执行并逐流程停止",
+      "behavior": "若GloalScriptContinusRunEnable!=value先设置它。false时还设置IsContinuousSelfExecute=false，并遍历Modules.OfType<VmProcedure>赋ContinuousRunEnable=false；true支路没有对应逐流程true赋值。不把全局连续开始简化成逐流程Start。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.Core.VmSolution::set_ContinuousRunEnable",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 3853,
+          "end": 3872,
+          "excerpt": "          \"token\": \"0x0600005b\",\n          \"symbol\": {\n            \"token\": \"0x0600005b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"set_ContinuousRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 128,\n          \"ilSha256\": \"eaa5768b488331ad29b2a6b512764a12726c3cb171e5f1bf576f932f6a63e4a4\",\n          \"ilBytes\": \"731e0700060a06037dec0200040002285c000006067bec020004fe0116fe010b072c0f0002067bec020004285d0000060000067bec02000416fe010c082c0f0002067bec0200046f1a00000a0000067bec02000416fe010d092c240002280f060006280d00002b281000002b06fe061f07000673ea01000a6feb01000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": ".<>c__DisplayClass70_0::<set_ContinuousRunEnable>b__0",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 6428,
+          "end": 6447,
+          "excerpt": "          \"token\": \"0x0600071f\",\n          \"symbol\": {\n            \"token\": \"0x0600071f\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec__DisplayClass70_0\",\n            \"name\": \"\\u003Cset_ContinuousRunEnable\\u003Eb__0\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001011281b0\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"9c830432604a48689f5ca716db6bc3f4821b088ec3cb990b431945de368b6b2b\",\n          \"ilBytes\": \"03027bec0200046f8d020006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "solution continuous branches",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 355,
+          "end": 380,
+          "excerpt": "\tpublic override bool ContinuousRunEnable\n\t{\n\t\tget\n\t\t{\n\t\t\treturn GloalScriptContinusRunEnable || InternalContinousRunEnable || _IsContinuousSelfExecute;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (GloalScriptContinusRunEnable != value)\n\t\t\t{\n\t\t\t\tGloalScriptContinusRunEnable = value;\n\t\t\t}\n\t\t\tif (!value)\n\t\t\t{\n\t\t\t\t((IVmSolution)this).IsContinuousSelfExecute = value;\n\t\t\t}\n\t\t\tif (!value)\n\t\t\t{\n\t\t\t\tModules.OfType<VmProcedure>().ToList().ForEach((VmProcedure p) =>\n\t\t\t\t{\n\t\t\t\t\tp.ContinuousRunEnable = value;\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "自执行接口setter和全局脚本到流程调度未在此CIL范围全部恢复；非原子批次。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "VM.Core.VmSolution::set_ContinuousRunEnable / .<>c__DisplayClass70_0::<set_ContinuousRunEnable>b__0 / solution continuous branches",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "Q02",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "Q02",
+        "route": "原版 · 连续运行与停止",
+        "classification": "source-confirmed",
+        "from": "VmSolution.ContinuousRunEnable setter",
+        "to": "全局脚本门 / false时清自执行并逐流程停止",
+        "behavior": "若GloalScriptContinusRunEnable!=value先设置它。false时还设置IsContinuousSelfExecute=false，并遍历Modules.OfType<VmProcedure>赋ContinuousRunEnable=false；true支路没有对应逐流程true赋值。不把全局连续开始简化成逐流程Start。",
+        "refs": [
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VM.Core.VmSolution::set_ContinuousRunEnable",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 3853,
+            "end": 3872,
+            "excerpt": "          \"token\": \"0x0600005b\",\n          \"symbol\": {\n            \"token\": \"0x0600005b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"set_ContinuousRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 128,\n          \"ilSha256\": \"eaa5768b488331ad29b2a6b512764a12726c3cb171e5f1bf576f932f6a63e4a4\",\n          \"ilBytes\": \"731e0700060a06037dec0200040002285c000006067bec020004fe0116fe010b072c0f0002067bec020004285d0000060000067bec02000416fe010c082c0f0002067bec0200046f1a00000a0000067bec02000416fe010d092c240002280f060006280d00002b281000002b06fe061f07000673ea01000a6feb01000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": ".<>c__DisplayClass70_0::<set_ContinuousRunEnable>b__0",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 6428,
+            "end": 6447,
+            "excerpt": "          \"token\": \"0x0600071f\",\n          \"symbol\": {\n            \"token\": \"0x0600071f\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec__DisplayClass70_0\",\n            \"name\": \"\\u003Cset_ContinuousRunEnable\\u003Eb__0\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001011281b0\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"9c830432604a48689f5ca716db6bc3f4821b088ec3cb990b431945de368b6b2b\",\n          \"ilBytes\": \"03027bec0200046f8d020006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+          },
+          {
+            "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+            "member": "solution continuous branches",
+            "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+            "start": 355,
+            "end": 380,
+            "excerpt": "\tpublic override bool ContinuousRunEnable\n\t{\n\t\tget\n\t\t{\n\t\t\treturn GloalScriptContinusRunEnable || InternalContinousRunEnable || _IsContinuousSelfExecute;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (GloalScriptContinusRunEnable != value)\n\t\t\t{\n\t\t\t\tGloalScriptContinusRunEnable = value;\n\t\t\t}\n\t\t\tif (!value)\n\t\t\t{\n\t\t\t\t((IVmSolution)this).IsContinuousSelfExecute = value;\n\t\t\t}\n\t\t\tif (!value)\n\t\t\t{\n\t\t\t\tModules.OfType<VmProcedure>().ToList().ForEach((VmProcedure p) =>\n\t\t\t\t{\n\t\t\t\t\tp.ContinuousRunEnable = value;\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t}\n",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "自执行接口setter和全局脚本到流程调度未在此CIL范围全部恢复；非原子批次。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "execution-storage:Q03",
+      "route": "原版 · 连续运行与停止",
+      "classification": "source-confirmed",
+      "from": "GloalScriptContinusRunEnable setter",
+      "to": "SDK脚本开始/停止 → 状态字典/字段/流程标志/通知",
+      "behavior": "同值直接返回。true先GlobalScriptStartContinueRun再按流程ID重置/加入dictProcessIDStopStatus；false先GlobalScriptStopRun再清字典。之后才写字段、逐流程IsGlobalRuning=value并通知三个属性。SDK异常发生在字段写入前，不能画成失败也必更新标志。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.Core.VmSolution::set_GloalScriptContinusRunEnable",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 4435,
+          "end": 4454,
+          "excerpt": "          \"token\": \"0x0600005d\",\n          \"symbol\": {\n            \"token\": \"0x0600005d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"set_GloalScriptContinusRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 307,\n          \"ilSha256\": \"6bb35062c24079d5a20dce894a29f00edaf00f7089cd2086ccb441d3736eb938\",\n          \"ilBytes\": \"73200700060a06037ded02000400027b0d000004067bed020004fe0116fe010b07390c01000000067bed0200040c08398d00000000284801000a7bec01000a6fed01000a260002280f060006280d00002b6fee01000a0d2b50096fef01000a130400027b0e00000411046f490200066ff001000a130511052c1800027b0e00000411046f49020006166ff101000a00002b1600027b0e00000411046f49020006166ff201000a000000096fa001000a2da8de0b092c07096f0e01000a00dc002b1e00284801000a7bec01000a6ff301000a26027b0e0000046ff401000a000002067bed0200047d0d00000402280f060006280d00002b281000002b06fe062107000673ea01000a6feb01000a0002722508007028f30400060002723908007028f30400060002726108007028f304000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": ".<>c__DisplayClass73_0::<set_GloalScriptContinusRunEnable>b__0",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 6528,
+          "end": 6547,
+          "excerpt": "          \"token\": \"0x06000721\",\n          \"symbol\": {\n            \"token\": \"0x06000721\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec__DisplayClass73_0\",\n            \"name\": \"\\u003Cset_GloalScriptContinusRunEnable\\u003Eb__0\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001011281b0\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"454ad7021947176258d0ddbd6ffd28d5b49cd98d196e6f3c9b8cf3f44e04d8af\",\n          \"ilBytes\": \"03027bed0200046f73060006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStartContinueRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 6619,
+          "end": 6638,
+          "excerpt": "          \"token\": \"0x0600001a\",\n          \"symbol\": {\n            \"token\": \"0x0600001a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStartContinueRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"c42b0f29d2a2fac878d3688cee965e0fdcc96318c23cebd8689c5b7830d6c3c9\",\n          \"ilBytes\": \"007e9703000428b10300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStopRun",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 6809,
+          "end": 6828,
+          "excerpt": "          \"token\": \"0x0600001b\",\n          \"symbol\": {\n            \"token\": \"0x0600001b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStopRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"e351df32875c08dbb2a93c337c5c9d864dd16ab4abc3fa4f754e3bdd00de04ee\",\n          \"ilBytes\": \"007e9703000428b20300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        }
+      ],
+      "unknowns": [
+        "所选SDK管理方法非零抛VmException；native状态、执行回调和通知异常恢复未知。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "VM.Core.VmSolution::set_GloalScriptContinusRunEnable / .<>c__DisplayClass73_0::<set_GloalScriptContinusRunEnable>b__0 / VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStartContinueRun / VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStopRun",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "Q03",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "Q03",
+        "route": "原版 · 连续运行与停止",
+        "classification": "source-confirmed",
+        "from": "GloalScriptContinusRunEnable setter",
+        "to": "SDK脚本开始/停止 → 状态字典/字段/流程标志/通知",
+        "behavior": "同值直接返回。true先GlobalScriptStartContinueRun再按流程ID重置/加入dictProcessIDStopStatus；false先GlobalScriptStopRun再清字典。之后才写字段、逐流程IsGlobalRuning=value并通知三个属性。SDK异常发生在字段写入前，不能画成失败也必更新标志。",
+        "refs": [
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VM.Core.VmSolution::set_GloalScriptContinusRunEnable",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 4435,
+            "end": 4454,
+            "excerpt": "          \"token\": \"0x0600005d\",\n          \"symbol\": {\n            \"token\": \"0x0600005d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"set_GloalScriptContinusRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 307,\n          \"ilSha256\": \"6bb35062c24079d5a20dce894a29f00edaf00f7089cd2086ccb441d3736eb938\",\n          \"ilBytes\": \"73200700060a06037ded02000400027b0d000004067bed020004fe0116fe010b07390c01000000067bed0200040c08398d00000000284801000a7bec01000a6fed01000a260002280f060006280d00002b6fee01000a0d2b50096fef01000a130400027b0e00000411046f490200066ff001000a130511052c1800027b0e00000411046f49020006166ff101000a00002b1600027b0e00000411046f49020006166ff201000a000000096fa001000a2da8de0b092c07096f0e01000a00dc002b1e00284801000a7bec01000a6ff301000a26027b0e0000046ff401000a000002067bed0200047d0d00000402280f060006280d00002b281000002b06fe062107000673ea01000a6feb01000a0002722508007028f30400060002723908007028f30400060002726108007028f304000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"newobj\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": ".<>c__DisplayClass73_0::<set_GloalScriptContinusRunEnable>b__0",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 6528,
+            "end": 6547,
+            "excerpt": "          \"token\": \"0x06000721\",\n          \"symbol\": {\n            \"token\": \"0x06000721\",\n            \"kind\": \"method-def\",\n            \"type\": \".\\u003C\\u003Ec__DisplayClass73_0\",\n            \"name\": \"\\u003Cset_GloalScriptContinusRunEnable\\u003Eb__0\",\n            \"parameters\": 1,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"2001011281b0\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"454ad7021947176258d0ddbd6ffd28d5b49cd98d196e6f3c9b8cf3f44e04d8af\",\n          \"ilBytes\": \"03027bed0200046f73060006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.1\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStartContinueRun",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 6619,
+            "end": 6638,
+            "excerpt": "          \"token\": \"0x0600001a\",\n          \"symbol\": {\n            \"token\": \"0x0600001a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStartContinueRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"c42b0f29d2a2fac878d3688cee965e0fdcc96318c23cebd8689c5b7830d6c3c9\",\n          \"ilBytes\": \"007e9703000428b10300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+          },
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VM.PlatformSDKCS.GlobalModuleManager::GlobalScriptStopRun",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 6809,
+            "end": 6828,
+            "excerpt": "          \"token\": \"0x0600001b\",\n          \"symbol\": {\n            \"token\": \"0x0600001b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.GlobalModuleManager\",\n            \"name\": \"GlobalScriptStopRun\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200008\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 36,\n          \"ilSha256\": \"e351df32875c08dbb2a93c337c5c9d864dd16ab4abc3fa4f754e3bdd00de04ee\",\n          \"ilBytes\": \"007e9703000428b20300060a0616fe030b072c0a000673a60600060c087a060d2b00092a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+          }
+        ],
+        "unknowns": [
+          "所选SDK管理方法非零抛VmException；native状态、执行回调和通知异常恢复未知。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "execution-storage:Q04",
+      "route": "原版 · 连续运行与停止",
+      "classification": "source-confirmed",
+      "from": "VmProcedure.ContinuousRunEnable setter",
+      "to": "先SDK开始/等待停止，再按变化更新缓存与父通知",
+      "behavior": "true调ContinousRunStart(ID)，false调RefreshUIStopExecute(ID)，之后才判断缓存!=value决定SetProperty和父通知。因此重复false也会进入所选停止路径，不是同值即跳过SDK。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+          "member": "VM.Core.VmProcedure::set_ContinuousRunEnable",
+          "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+          "start": 5849,
+          "end": 5868,
+          "excerpt": "          \"token\": \"0x06000671\",\n          \"symbol\": {\n            \"token\": \"0x06000671\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmProcedure\",\n            \"name\": \"set_ContinuousRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 149,\n          \"ilSha256\": \"f147bf79f87f21cce050df5af6be96cd5454c70c9e62d5b0874c5799186ca374\",\n          \"ilBytes\": \"00727b340070038c4f010001027ba20200048c4f010001284202000a283502000a00030a062c1a00284801000a7b8602000a026f490200066f6c05000a00002b1800284801000a7b8602000a026f490200066f6d05000a0000027ba202000403fe0116fe010b072c2b0002027ca2020004037239080070280c00002b26026fe0040006752d00000272390800706ff304000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "procedure continuous ordering",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 176,
+          "end": 200,
+          "excerpt": "\tpublic override bool ContinuousRunEnable\n\t{\n\t\tget\n\t\t{\n\t\t\treturn continousRunEnable;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tLogHelper.Info($\"进入ContinuousRunEnable初始阶段--校验值外，当前的value为{value},当前的continousRunEnable值为{continousRunEnable}\");\n\t\t\tif (value)\n\t\t\t{\n\t\t\t\tServerSDKManager.serverSDKManager.mProcessManager.ContinousRunStart(ID);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tServerSDKManager.serverSDKManager.mProcessManager.RefreshUIStopExecute(ID);\n\t\t\t}\n\t\t\tif (continousRunEnable != value)\n\t\t\t{\n\t\t\t\tthis.SetProperty(ref continousRunEnable, value, \"ContinuousRunEnable\");\n\t\t\t\t(Parent as ModelBase).OnPropertyChanged(\"ContinuousRunEnable\");\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Parent为空、通知异常或前一步停止失败后的剩余流程状态未证回滚。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "VM.Core.VmProcedure::set_ContinuousRunEnable / procedure continuous ordering",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "Q04",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "Q04",
+        "route": "原版 · 连续运行与停止",
+        "classification": "source-confirmed",
+        "from": "VmProcedure.ContinuousRunEnable setter",
+        "to": "先SDK开始/等待停止，再按变化更新缓存与父通知",
+        "behavior": "true调ContinousRunStart(ID)，false调RefreshUIStopExecute(ID)，之后才判断缓存!=value决定SetProperty和父通知。因此重复false也会进入所选停止路径，不是同值即跳过SDK。",
+        "refs": [
+          {
+            "path": "docs/architecture-recovery/run-exit-cil-evidence.json",
+            "member": "VM.Core.VmProcedure::set_ContinuousRunEnable",
+            "sha256": "daa072c5c62d7e2e804653fb5e5c810e9354177868fe2a55d368251964af4304",
+            "start": 5849,
+            "end": 5868,
+            "excerpt": "          \"token\": \"0x06000671\",\n          \"symbol\": {\n            \"token\": \"0x06000671\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmProcedure\",\n            \"name\": \"set_ContinuousRunEnable\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 149,\n          \"ilSha256\": \"f147bf79f87f21cce050df5af6be96cd5454c70c9e62d5b0874c5799186ca374\",\n          \"ilBytes\": \"00727b340070038c4f010001027ba20200048c4f010001284202000a283502000a00030a062c1a00284801000a7b8602000a026f490200066f6c05000a00002b1800284801000a7b8602000a026f490200066f6d05000a0000027ba202000403fe0116fe010b072c2b0002027ca2020004037239080070280c00002b26026fe0040006752d00000272390800706ff304000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+            "evidenceType": "original-managed-cil",
+            "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+          },
+          {
+            "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+            "member": "procedure continuous ordering",
+            "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+            "start": 176,
+            "end": 200,
+            "excerpt": "\tpublic override bool ContinuousRunEnable\n\t{\n\t\tget\n\t\t{\n\t\t\treturn continousRunEnable;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tLogHelper.Info($\"进入ContinuousRunEnable初始阶段--校验值外，当前的value为{value},当前的continousRunEnable值为{continousRunEnable}\");\n\t\t\tif (value)\n\t\t\t{\n\t\t\t\tServerSDKManager.serverSDKManager.mProcessManager.ContinousRunStart(ID);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tServerSDKManager.serverSDKManager.mProcessManager.RefreshUIStopExecute(ID);\n\t\t\t}\n\t\t\tif (continousRunEnable != value)\n\t\t\t{\n\t\t\t\tthis.SetProperty(ref continousRunEnable, value, \"ContinuousRunEnable\");\n\t\t\t\t(Parent as ModelBase).OnPropertyChanged(\"ContinuousRunEnable\");\n\t\t\t}\n\t\t}\n\t}\n",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "Parent为空、通知异常或前一步停止失败后的剩余流程状态未证回滚。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    }
+  ],
+  "unknowns": [
+    "原SDK停止/同步等待与当前cooperative token分开；设备阻塞或不响应取消的模块没有被证明可强制中断。"
+  ],
+  "joinPolicy": "Edges are individually evidenced relationships. Array order is a reading order; no adjacent pair is automatically the same invocation/object/thread. Explicit gaps remain visible."
+}

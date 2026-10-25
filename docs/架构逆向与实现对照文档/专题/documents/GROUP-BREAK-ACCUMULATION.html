@@ -1,0 +1,85 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Group 中断、累积输出与显示联动 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / Group 中断、累积输出与显示联动</p><h1>Group 中断、累积输出与显示联动</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Group 中断、累积输出与显示联动</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="GROUP-BREAK-ACCUMULATION.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="GROUP-BREAK-ACCUMULATION.html#group-中断累积输出与显示联动">Group 中断、累积输出与显示联动</a></p><p style="margin-left:14px"><a href="GROUP-BREAK-ACCUMULATION.html#原始证据">原始证据</a></p><p style="margin-left:14px"><a href="GROUP-BREAK-ACCUMULATION.html#实际接通的功能">实际接通的功能</a></p><p style="margin-left:14px"><a href="GROUP-BREAK-ACCUMULATION.html#独立实现政策及限制">独立实现政策及限制</a></p><p style="margin-left:14px"><a href="GROUP-BREAK-ACCUMULATION.html#验证与图像来源">验证与图像来源</a></p><p style="margin-left:0px"><a href="GROUP-BREAK-ACCUMULATION.html#mf-04-整数中断精度复验2026-10-18">MF-04 整数中断精度复验（2026-10-18）</a></p></details><blockquote>
+<p>后续更新：输入编辑、基础运行参数代理和Group独立运行见 <a href="GROUP-INPUT-RUNTIME-SELFRUN.html">GROUP-INPUT-RUNTIME-SELFRUN.md</a>。本文“父流程运行”等限制描述的是本阶段交付时状态。</p>
+</blockquote>
+<h1 id="group-中断累积输出与显示联动">Group 中断、累积输出与显示联动</h1><p>2026-10-16，框架 main。当前完成的是下列类型和调用链的独立重建，不是整个原生 Group 已完成。全范围缺口见 <a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html">完整清单</a>。</p>
+<h2 id="原始证据">原始证据</h2><ul>
+<li><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Logic/IMVSGroup/IMVSGroupAlgorithmTab.xml</code> 及相邻 XML：EnableLoop、StartIndex、EndIndex、间隔0..10000、EnableBreak、DataType=int/float/string、六种比较、基准/目标订阅与目标常量。</li>
+<li><code>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl/VmIODecorate.cs</code>：报告 mode0 累积、mode1 普通；图像输出勾选创建/取消关联 DynamicObject；删除输出删除关联显示并清理订阅。</li>
+<li><code>DisplayObjectDecorate</code>、<code>VM.Core/VmIO.MergeIOLoopValue</code>、<code>VmSolution</code>：图像替换、primitive 数组按轮合并、执行批次隔离。源文件保留在本地 analysis/decompiled，未上传原始反编译程序集。</li>
+<li>原生 <code>ModuleFrame.dll</code> SHA256：<code>45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b</code>。本轮通过隔离 REA/Ghidra 会话读取函数和汇编，未修改原厂文件/进程。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>函数/地址</th>
+<th>已确认结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CGroupNode::DoWork <code>0x1800a0930</code></td>
+<td>更新当前索引，先判断中断，再执行内部节点、处理输出、等待间隔、递增；index小于end</td>
+</tr>
+<tr>
+<td>GetLoopRangeFromSubRecord <code>0x1800a53a0</code></td>
+<td>解析起止订阅</td>
+</tr>
+<tr>
+<td>IsBreakLoop <code>0x1800a55b0</code> / 首轮依赖检查 <code>0x1800a6730</code></td>
+<td>内部节点结果在首次执行前跳过比较；前轮完成后读取；比较失败走未触发路径</td>
+</tr>
+<tr>
+<td>整数分支 <code>0x1800a5cee..0x1800a5d1e</code></td>
+<td>原始 CMP/SETG/SETL/SETZ/SETNZ/SETGE/SETLE 为 int32 直接比较；不采用误导性的浮点反编译表达式</td>
+</tr>
+<tr>
+<td>float/string 分支</td>
+<td>float EQ 使用严格小于 FLT_EPSILON，NE 是精确不等；字符串按 UTF-8 字节比较</td>
+</tr>
+<tr>
+<td>ProcessGroupOutputV44 <code>0x1800a7830</code></td>
+<td>mode1 清空后追加，mode0 保留再追加；图像总是替换</td>
+</tr>
+<tr>
+<td>ProcessIntIOEx <code>0x180013450</code> / helper <code>0x18000fc50</code></td>
+<td>追加数值并更新集合数量</td>
+</tr>
+<tr>
+<td>SetGroupIOReportMode <code>0x1800a2b50</code></td>
+<td>写入输出对象同一模式字段；上游入口 <code>0x18013fb70</code> → <code>0x180046330</code></td>
+</tr>
+<tr>
+<td>SaveModuleData <code>0x1800a36d0</code> / LoadModuleData <code>0x1800a3e70</code></td>
+<td>报告模式与Group数据持久化；不代表本项目已兼容原生 .sol</td>
+</tr>
+<tr>
+<td>PrepareGroupRst <code>0x1800a4a90</code> / PrepareGroupOutputSubscribe <code>0x1800a74c0</code> / ReleaseSolMem <code>0x1800a7110</code></td>
+<td>准备订阅/结果与释放原生数组；未据此宣称原生所有资源生命周期等价</td>
+</tr>
+<tr>
+<td>SetParam <code>0x1800a3200</code></td>
+<td>LoopStep 接受非零整数；本实现尚未加入该能力，未模拟负步长可能导致的异常循环</td>
+</tr>
+</tbody></table>
+<p>证据目录 <code>analysis/full-audit/group-native-audit/</code> 保留 C/汇编/JSON；新证据包 <code>break-accum-evidence-bundle.json</code>。18个带 CGroupNode 日志名的入口只是已定位清单，不代表原生引擎全代码已恢复。原生私有 double 分支未冒充 XML 公开的三种比较。</p>
+<h2 id="实际接通的功能">实际接通的功能</h2><ol>
+<li>Group 循环页开启中断，选择 int/float/string、六运算、订阅或目标常量、固定数组索引。类型改变清除不兼容引用。支持父级输入/变量/结果、内部节点结果/变量/输入、私有 LoopIndex，以及 Group 自身公共输出。</li>
+<li>每轮内部执行之前判断；内部节点和自身输出首轮无结果时跳过。之后读取上一轮结果或本次调用的累积缓冲。父级来源在调用时快照，不读取以前一次调用的缓存。</li>
+<li>输出页实际新增/改名/订阅/解除/删除、累积开关。int/float/string 标量和数组按轮及元素顺序展平；开关关闭输出最后一轮。公共端口基数跟随变化，不兼容下游连接会拒绝配置，而不是偷偷取第一个值。</li>
+<li>输出改名/删除传播到父级连接、公共接口、变量和中断引用；复制嵌套 Group 时重映射内部与自身引用；支持撤销和保存重开。</li>
+<li>显示页实际配置图像、Circle、Components；非图像显示可累积，图像始终最后一帧。图像输出的显示勾选建立真实关联显示，删除任一侧同步取消关系。自动复合输出显示尚不支持，明确拒绝。</li>
+<li>窗口真实 Run 按钮进入框架调用链，显示执行次数、中断索引、值数组与叠加图形。零轮、失败和新运行会清理旧预览。运行中关闭等待内部模块释放；主窗口关闭同时清理打开的 Group 配置会话。</li>
+<li>开关采用原始位图模板，输出行宽/控件顺序及加减图标对照原始资源；资产来源及哈希在 <code>group-ui-resources.json</code>。订阅树、数字控件及全部状态主题仍非完整原生控件。</li>
+</ol>
+<h2 id="独立实现政策及限制">独立实现政策及限制</h2><ul>
+<li>本项目执行格式仍为独立 JSON，不是原生ABI/.sol兼容。私有整数比较限定 int32、float32，公共 primitive 数据仍使用现有 long/double 合同；非有限浮点明确拒绝。</li>
+<li>子节点失败即停；失败时已完成轮的值仅作失败诊断，下游不会继续消费。原生所有状态码及部分失败/取消回调尚未完整还原。</li>
+<li>每次调用独立缓冲，最多10000轮及1000000累积元素/显示帧；这是独立资源保护。每轮模块和上下文仍重建，尚非原生对象持续存活语义。</li>
+<li>运行通过后台任务保持WPF可停止；当前 Group 窗口仍运行拥有它的父工作流，不是原生隔离 SelfRun，也没有原生连续配置运行闭环。</li>
+<li>支持固定元素索引，未实现动态索引订阅；复合输出累积、完整输入编辑、运行参数代理编辑、LoopStep、完整回调/设备生命周期仍开放。</li>
+</ul>
+<h2 id="验证与图像来源">验证与图像来源</h2><p>54项中断/累积专项检查；17项范围检查；282项实际WPF控件操作检查。另回归调用34、变量数据31、数组28、调试21、编辑器核心115。检查覆盖整数精度边界、UTF8排序、EQ/NE差异、首轮/前轮/自身输出、嵌套、失败、复制/改名/删除/撤销、重新运行隔离和关闭等待。</p>
+<p>WPF 验证实际创建窗口、点击开关/选择器/按钮、等待调用结果，并检查实际图像和叠加图形；不是仅断言配置字段。<code>wpf-group-break-condition.png</code>、<code>wpf-group-accumulated-output.png</code>、<code>wpf-group-array-break.png</code> 来自 tests 的 RenderTargetBitmap 离屏渲染，已人工读取检查。图像为已有真实BMP样本；两个绿色圆由测试模块生成以核对显示累积，不是 VM 算法结果或 VM 截图。截图代码没有加入产品程序集。</p>
+<p>这些验证建立独立实现的闭环，不建立真实 VM 运行差分通过或全部 Group 功能等价。</p>
+<h1 id="mf-04-整数中断精度复验2026-10-18">MF-04 整数中断精度复验（2026-10-18）</h1><p>原始 <code>analysis/full-audit/group-native-audit/break-assembly.txt</code> 的 <code>0x1800a5cee..0x1800a5d1e</code> 在六个比较分支均以 <code>CMP R14D, R15D</code> 后接 <code>SETcc</code>，确认整数操作数按 int32 直接比较。反编译浮点伪代码不能作为该分支依据。独立实现曾先转为 float32，导致 <code>16777216</code> 与 <code>16777217</code> 被错误视为相等；现已改为 int32 比较，超出 int32 范围仍显式报错。</p>
+<p>专项验收：<code>VisionFramework.GroupBreakChecks</code> 57 项通过；<code>VisionEditor.GroupIntPrecisionChecks</code> 6 项通过。后者打开真实 WPF Group 窗口，在“循环设置”把比较运算从 <code>&lt;</code> 改为 <code>=</code>；首轮前中断随之变为执行 2 轮，累积输出 <code>[0,1]</code>，撤销、重做、保存重开后行为一致。该测试操作的是 WPF 控件事件及真实 <code>SolutionExecutor</code>，尚未在原生 VM 上完成同状态动态差分，也未覆盖所有整数边界值与原生 <code>.sol</code> 文件往返。</p>
+<p class="meta">来源：docs/GROUP-BREAK-ACCUMULATION.md · SHA256 0ac886bca81d5b753119db73f4c2dd007e035483f072db7c112c02fd02cb228d<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

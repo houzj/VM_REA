@@ -1,0 +1,172 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 9f0b26c2feda · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 9f0b26c2feda</p><h1>原文证据 9f0b26c2feda</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 9f0b26c2feda437c14e0cdcf93d9bc935af1be4c7ca2f598b2dfb759e6cc1741。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>        private async Task&lt;ExecutionResult> ExecuteWorkflowInternal(
+            WorkflowTabViewModel workflow,
+            CancellationToken cancellationToken,
+            IDictionary&lt;string, object?>? globalVariablesOverride = null,
+            CameraFrame? cameraFrame = null,
+            string? cameraNodeId = null,
+            Dictionary&lt;string, long>? sequenceNumbers = null)
+        {
+            var snapshot = GetOrCreateExecutionSnapshot(workflow.RootWorkflowId, workflow.Name);
+            if (!_communicationOwner.Value)
+                await InvokeOnUIAsync(() => CommitPendingEditors(workflow.RootWorkflowId));
+            await InvokeOnUIAsync(() =>
+            {
+                BeginRunPresentation(workflow.RootWorkflowId, workflow.Name, snapshot);
+                ExecutionSnapshotUpdated?.Invoke(this, snapshot);
+            });
+            // 在开始时先发送一条开始日志
+            InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, &quot;[EXEC] ====== 开始执行工作流 ======&quot;)));
+
+            try
+            {
+                // 获取输入图像（可能为 null，工作流引擎会处理）
+                var inputImage = cameraFrame is null ? await _inputProvider.GetInputImageAsync() : null;
+                cancellationToken.ThrowIfCancellationRequested();
+                var receiveInputs = _communicationInputs.Value ?? SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.CommunicationService.Receives;
+                if (globalVariablesOverride != null)
+                    receiveInputs = new SunEyeVision.Plugin.SDK.Models.Communication.RuntimeVariableReceiveService(receiveInputs, globalVariablesOverride);
+
+                InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, &quot;[EXEC] 正在创建日志器...&quot;)));
+                // 使用全局日志器（自动转发到UILogWriter）
+                var logger = VisionLogger.Instance.ForSource(workflow.Name);
+
+                InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, &quot;[EXEC] 正在创建执行引擎...&quot;)));
+                // ★ Phase 1: 使用共享的 _workflowEngine（子程序工作流已注册在其中），不再创建新引擎
+                var pluginManager = new PluginManager(logger);
+                var executionEngine = new WorkflowExecutionEngine(_workflowEngine, pluginManager, logger);
+
+                // ★ 从引擎获取根工作流（始终读取 RootWorkflowId 对应的节点）
+                var rootEngineWorkflow = _workflowEngine.GetWorkflow(workflow.RootWorkflowId);
+                if (rootEngineWorkflow == null)
+                {
+                    logger.LogError($&quot;根工作流未找到: {workflow.RootWorkflowId}&quot;);
+                    var missingResult = ExecutionResult.CreateFailure($&quot;根工作流未找到: {workflow.RootWorkflowId}&quot;);
+                    await InvokeOnUIAsync(() =>
+                    {
+                        snapshot.Complete(missingResult, _ => &quot;工作流&quot;);
+                        ExecutionSnapshotUpdated?.Invoke(this, snapshot);
+                    });
+                    return missingResult;
+                }
+
+                var definitionConsistencyError = ValidateDefinitionConsistency(
+                    workflow,
+                    rootEngineWorkflow);
+                if (definitionConsistencyError != null)
+                {
+                    logger.LogError(definitionConsistencyError);
+                    var consistencyResult = ExecutionResult.CreateFailure(definitionConsistencyError);
+                    await InvokeOnUIAsync(() =>
+                    {
+                        snapshot.Complete(consistencyResult, _ => &quot;工作流&quot;);
+                        ExecutionSnapshotUpdated?.Invoke(this, snapshot);
+                    });
+                    return consistencyResult;
+                }
+
+                // ★ 订阅节点状态事件：引擎状态 → 画布节点（解决状态断点）
+                //   引擎在 Running/Completed/Failed/Skipped 时发事件，此处映射到 UI 节点 Status。
+                //   找不到节点记日志跳过（Fail-Forward），不中断流程。
+                executionEngine.NodeStatusChanged += (_, e) =>
+                {
+                    var node = FindNodeRecursive(rootEngineWorkflow, e.NodeId);
+                    var snapshotNodeName = GetSnapshotNodeName(rootEngineWorkflow, e.NodeId);
+                    var statusText = e.Status switch
+                    {
+                        NodeStatus.Running => &quot;运行中&quot;,
+                        NodeStatus.Completed => &quot;成功&quot;,
+                        NodeStatus.Failed => &quot;失败&quot;,
+                        NodeStatus.Skipped => &quot;跳过&quot;,
+                        _ => &quot;等待中&quot;
+                    };
+                    if (node is SunEyeVision.UI.Shared.WorkflowNode uiNode)
+                    {
+                        InvokeOnUI(() =>
+                        {
+                            uiNode.Status = statusText;
+                            snapshot.UpdateNodeStatus(e.NodeId, snapshotNodeName, statusText);
+                            ExecutionSnapshotUpdated?.Invoke(this, snapshot);
+                        });
+                    }
+                    else
+                    {
+                        logger.LogWarning($&quot;节点状态事件找不到画布节点: {e.NodeId}&quot;);
+                        InvokeOnUI(() =>
+                        {
+                            snapshot.UpdateNodeStatus(e.NodeId, snapshotNodeName, statusText);
+                            ExecutionSnapshotUpdated?.Invoke(this, snapshot);
+                        });
+                    }
+                };
+
+                // 引擎在每个节点结束时立即发布结果；快照窗口因而能在流程运行中更新耗时，
+                // 而不必等整个流程结束再回填一张静态表。
+                executionEngine.NodeExecutionFinished += (node, nodeResult) =>
+                {
+                    InvokeOnUI(() =>
+                    {
+                        snapshot.UpdateNodeResult(node.Id, GetSnapshotNodeName(rootEngineWorkflow, node.Id), nodeResult);
+                        ExecutionSnapshotUpdated?.Invoke(this, snapshot);
+                    });
+                };
+
+                // 每轮先复制参数，再覆盖本轮已发布的输入快照，避免 UI 后续切图影响本轮。
+                var runtimeParameters = new Dictionary&lt;string, object>(_runtimeParameters);
+                var inputSnapshot = _runtimeInputSnapshots.GetSnapshot(workflow.RootWorkflowId);
+                if (inputSnapshot != null)
+                {
+                    runtimeParameters[&quot;CurrentImagePath&quot;] = inputSnapshot.ImagePath;
+                    runtimeParameters[&quot;CurrentImageIndex&quot;] = inputSnapshot.ImageIndex;
+                    runtimeParameters[&quot;CurrentImageVersion&quot;] = inputSnapshot.Version;
+                }
+
+                foreach (var param in runtimeParameters)
+                {
+                    logger.LogInfo($&quot;运行时参数: {param.Key} = {param.Value}&quot;);
+                }
+
+                // 从各节点 InputSource 提取本轮路径快照。路径只覆盖深拷贝后的执行参数，
+                // 不再写回方案节点的 Parameters.FilePath，避免切图或执行污染设计数据。
+                var nodeParameterOverrides = CreateImageLoadParameterOverrides(
+                    rootEngineWorkflow,
+                    logger,
+                    new HashSet&lt;string>());
+                if (sequenceNumbers is not null)
+                {
+                    foreach (var pair in nodeParameterOverrides)
+                    {
+                        var configured = (long)pair.Value[&quot;SequenceNumber&quot;]!;
+                        if (!sequenceNumbers.TryGetValue(pair.Key, out var current))
+                            sequenceNumbers[pair.Key] = current = configured;
+                        ((Dictionary&lt;string, object?>)pair.Value)[&quot;SequenceNumber&quot;] = current;
+                    }
+                }
+                var hasCameraSource = nodeParameterOverrides.Values.Any(values =>
+                    values.TryGetValue(&quot;SourceKind&quot;, out var kind)
+                    &amp;&amp; kind is SunEyeVision.Plugin.SDK.Vision.Contracts.ImageSourceKind.Camera);
+                var bindingOverrides = new Dictionary&lt;string, IReadOnlyDictionary&lt;string, object?>>();
+                foreach (var group in (_communicationAssignments.Value ?? Array.Empty&lt;CommunicationParameterAssignment>()).GroupBy(a => a.NodeId))
+                {
+                    var values = group.ToDictionary(a => a.Property, a => (object?)a.Value);
+                    bindingOverrides[group.Key] = values;
+                    if (!nodeParameterOverrides.TryGetValue(group.Key, out var existing)) existing = new Dictionary&lt;string, object?>();
+                    var merged = new Dictionary&lt;string, object?>(existing);
+                    foreach (var value in values) merged[value.Key] = value.Value;
+                    nodeParameterOverrides[group.Key] = merged;
+                }
+
+                // ★ 引擎内部统一完成节点类型转换，主/子工作流共享同一逻辑
+                logger.LogInfo($&quot;开始执行工作流: {rootEngineWorkflow.Name}&quot;);
+                InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, &quot;[EXEC] 开始执行工作流...&quot;)));
+
+                var runRequest = new WorkflowRunRequest(
+                    workflow.RootWorkflowId,
+                    inputImage as IVisionImage,
+                    globalVariablesOverride ?? _globalVariables,
+                    runtimeParameters,
+                    nodeParameterOverrides: nodeParameterOverrides,
+                    nodeBindingOverrides: bindingOverrides,
+                    communicationInputs: receiveInputs,
+                    communicationOutputs: SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.CommunicationService.Sends,
+                    cameraCaptureService: hasCameraSource
+                        ? SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.CameraRuntime.Runtime</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis.html">数据/global-variable-analysis.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

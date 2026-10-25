@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Main DLL 的SetLoginUser · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>Main DLL 的SetLoginUser · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-A07"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>Main DLL 的SetLoginUser → 状态 → 保存 → 回调 → LoginUser通知</h2><p>OnAccessEnableCallBack为空立即false；否则比较旧角色，写curLoginUser、IsAdmin=IsAllAccessUser，调用SaveAccessInfo但忽略其bool，非None发启用回调，再发AllAccess回调，角色变了才通知LoginUser。保存失败和状态已改不能合并成原子事务。</p><p><a href="../专题/role-access.html#edge-A07">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/role-access.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/role-access.edges.json · SHA256 4984da42c75ab531507f0974797fa811932b13982ae101c36799f832b3ef2d5f</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="4ce6e8baeb6dc49f816fec5e93a092414db3d99a7f46f2760f9b483d493fd34e">{
+  &quot;id&quot;: &quot;A07&quot;,
+  &quot;route&quot;: &quot;原版 · 角色状态与权限传播&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;Main DLL 的SetLoginUser&quot;,
+  &quot;to&quot;: &quot;状态 → 保存 → 回调 → LoginUser通知&quot;,
+  &quot;behavior&quot;: &quot;OnAccessEnableCallBack为空立即false；否则比较旧角色，写curLoginUser、IsAdmin=IsAllAccessUser，调用SaveAccessInfo但忽略其bool，非None发启用回调，再发AllAccess回调，角色变了才通知LoginUser。保存失败和状态已改不能合并成原子事务。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain.AccessManager/AccessManagerHelper.cs&quot;,
+      &quot;member&quot;: &quot;Main AccessManagerHelper.SetLoginUser state&quot;,
+      &quot;sha256&quot;: &quot;2abead02362afbd954f9c69e6a69db18477c6a98b5ffb5557635a5329c6661ea&quot;,
+      &quot;start&quot;: 11,
+      &quot;end&quot;: 53,
+      &quot;excerpt&quot;: &quot;\tpublic static bool SetLoginUser(AccessUser loginUser)\n\t{\n\t\tif (CodeManager.GetInstance().OnAccessEnableCallBack == null)\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tswitch (loginUser)\n\t\t{\n\t\tcase AccessUser.Admin:\n\t\t\tUILogManager.logCreate(\&quot;信息\&quot;, \&quot;管理员登录\&quot;);\n\t\t\tbreak;\n\t\tcase AccessUser.Operator:\n\t\t\tUILogManager.logCreate(\&quot;信息\&quot;, \&quot;操作员登录\&quot;);\n\t\t\tbreak;\n\t\tcase AccessUser.Tech:\n\t\t\tUILogManager.logCreate(\&quot;信息\&quot;, \&quot;技术员登录\&quot;);\n\t\t\tbreak;\n\t\t}\n\t\tbool flag = loginUser == CodeManager.GetInstance()._accessCurUserInfo.curLoginUser;\n\t\tCodeManager.GetInstance()._accessCurUserInfo.curLoginUser = loginUser;\n\t\tCodeManager.GetInstance().IsAdmin = CodeManager.GetInstance().IsAllAccessUser();\n\t\tCodeManager.GetInstance().SaveAccessInfo();\n\t\tif (loginUser != AccessUser.None &amp;&amp; CodeManager.GetInstance().OnAccessEnableCallBack != null)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnAccessEnableCallBack(bEnable: true, loginUser);\n\t\t}\n\t\tif (CodeManager.GetInstance().OnAllAccessCallBack != null)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnAllAccessCallBack(CodeManager.GetInstance().IsAdmin);\n\t\t}\n\t\tif (!flag)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnPropertyChanged(\&quot;LoginUser\&quot;);\n\t\t}\n\t\tif (CodeManager.GetInstance().GetLoginUser() != AccessUser.Operator)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tif (Application.Current.MainWindow is MainWindow mainWindow)\n\t\t{\n\t\t\tWindow window = FrontendWindowData.Instance.InitRunWindowFromDesignData();\n\t\t\tif (window != null)\n\t\t\t{&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;运行依赖绑定和回调异常后状态未验证。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

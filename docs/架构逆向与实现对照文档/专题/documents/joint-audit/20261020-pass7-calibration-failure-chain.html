@@ -1,0 +1,72 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第七轮：标定文件失败、短矩阵与 Group 传递 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第七轮：标定文件失败、短矩阵与 Group 传递</p><h1>第七轮：标定文件失败、短矩阵与 Group 传递</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第七轮：标定文件失败、短矩阵与 Group 传递</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="20261020-pass7-calibration-failure-chain.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="20261020-pass7-calibration-failure-chain.html#第七轮标定文件失败短矩阵与-group-传递">第七轮：标定文件失败、短矩阵与 Group 传递</a></p><p style="margin-left:14px"><a href="20261020-pass7-calibration-failure-chain.html#原源码链与适用边界">原源码链与适用边界</a></p><p style="margin-left:14px"><a href="20261020-pass7-calibration-failure-chain.html#当前真实图复验">当前真实图复验</a></p><p style="margin-left:14px"><a href="20261020-pass7-calibration-failure-chain.html#后续具体缺证">后续具体缺证</a></p></details><h1 id="第七轮标定文件失败短矩阵与-group-传递">第七轮：标定文件失败、短矩阵与 Group 传递</h1><p>范围：标定分类的标定加载与坐标系，以及两者之间必需的 owned Group/GraphExecutor 边；图像源仅作坐标系必需的 2×2 GrayImage 夹具。复用第六轮 N点写出正常九项矩阵的证据，本轮专查随后文件重读与矩阵长度变化。没有在原版 VisionEditor 桌面运行本整图。</p>
+<h2 id="原源码链与适用边界">原源码链与适用边界</h2><p>原 <code>ReadCalibFileModu.dll</code> SHA-256 <code>86B8B112ADED58DE27A41A5EDE6EC6B41117D7DB8D0C5934647FA9514E6FA403</code>。<code>Process</code> RVA <code>0xc520</code> 在 <code>RefreshSignal</code> 非零时调用虚表 <code>SetParam(&quot;FilePath&quot;, storedPath, length)</code>，忽略重读错误而继续按当前缓存集合发布输出，<code>ModuStatus</code> 由输出集合是否非空决定；C 体 <code>worktrees/tool-plugins/analysis/full-audit/read-calib-file/native/18000c520.c</code> SHA-256 <code>E3C6315832CE99019996B39A5BDC7B4CB10867E8C35C7C1F132092353750DC2A</code>。<code>SetParam</code> RVA <code>0xd120</code> 对非空路径调用 <code>LoadFile</code>，空路径清缓存；体 SHA-256 <code>35DC0C1699E08DFCE863173B529FBE8BA4E0579BE5D6CE1D3167AEE92D2F57F5</code>。<code>LoadFile</code> RVA <code>0xab50</code> 在打开/解析文件失败时先返回 <code>0xe0000201</code>，旧输出集合尚未清除；成功解析后清集合，缺 <code>CalibOutputParam</code> 返回 <code>0xe0000017</code>，因此这是<strong>清除后的失败</strong>，不是与读失败相同的保留分支；体 SHA-256 <code>EC0CFDED878E3B054A65F8F83550364D74503B59D792069D0566C42D91231626</code>。这些分支也有既存自有 ModuleFrame 受控原厂探针 <code>docs/plugins/read-calib-file-evidence.json</code>，不是原平台 Group 运行。</p>
+<p>原 <code>CoordinateModule.dll</code> SHA-256 <code>8547DF5CEF905FB824A068359DD49B7B5FEFA5100A061D6555A993D882666AF6</code>。<code>GetProcessCalibMatrixInput</code> RVA <code>0x40180</code> 接受 <code>Count=1..9</code>，将该数量传入 <code>0x395b0</code>，只覆盖矩阵前缀；C 体 <code>worktrees/tool-plugins/analysis/coordinate-module/native-source/output/180040180.c</code> SHA-256 <code>A05318B23DD5A51B6D1CE7179E05D3DAD300619BEDCF3C118323ADEA425C7FC5</code>。<code>0x395b0</code> 对 <code>Count=1</code> 写首项，较长数组以原 <code>VM_M_BatchGetFloat</code> 批取；体 SHA-256 <code>7A22FAEF27B95568F04E119A3058C8314FEEE80E44D7A1F2C4C61443ABF7C9A1</code>。原实例矩阵初始尾部未初始化，不能从允许短输入推断首轮完整矩阵/坐标可用；已有九项后接短项的尾部保留则由写入范围支持。当前坐标系的未知尾部显式拒绝是独立安全适配，<strong>不冒称原厂报同一错误码</strong>。</p>
+<h2 id="当前真实图复验">当前真实图复验</h2><p>探针 <code>tests/CalibrationFailureChain.Checks/Program.cs</code> SHA-256 <code>425BA91ADBD1775720F4D059AEBD9DDF93CCFAB47F5E1C9EDBDAD2F0D6F48B18</code>，工程 SHA-256 <code>34BB43761C26C5791F413357F88B89A8C654EF850043CE3A18CD1D488AF552A4</code>。命令：<code>dotnet run --project tests/CalibrationFailureChain.Checks/CalibrationFailureChain.Checks.csproj -c Release</code>，exit 0。原始 stdout <code>analysis/joint-audit/pass7-cal-failure/checks.log</code> SHA-256 <code>5934D860FD609E4EC44C65C31118ACE9F9565014B67125D5EAA0B38397E66222</code>。图为 <code>标定加载(RefreshSignal=1 订阅常数) → Group.Matrix → 坐标系(InputWay=2)</code>，同一 <code>ModuleExecutionScope</code> 依次运行六次，后对长度 1..8 每次新建冷 scope。逐状态如下：</p>
+<table>
+<thead>
+<tr>
+<th>情形</th>
+<th>标定加载</th>
+<th>Group</th>
+<th>坐标系</th>
+<th>可见含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>九项有效文件</td>
+<td>Success、Status=1、9 项</td>
+<td>Success</td>
+<td>Success、9 项</td>
+<td>基线成立。</td>
+</tr>
+<tr>
+<td>同路径文件删除后刷新</td>
+<td>Success、旧 9 项</td>
+<td>Success</td>
+<td>Success、9 项</td>
+<td>读失败保留接受过的缓存。</td>
+</tr>
+<tr>
+<td>同路径坏 XML 后刷新</td>
+<td>Success、旧 9 项</td>
+<td>Success</td>
+<td>Success、9 项</td>
+<td>解析失败也保留。</td>
+</tr>
+<tr>
+<td>合法 XML 但缺输出节</td>
+<td>Success、Status=0、无矩阵</td>
+<td>Failed <code>SubprogramFailed</code>，子流程 <code>Matrix: Current-run source unavailable</code></td>
+<td>Skipped <code>ExecutionPredecessorUnavailable</code></td>
+<td>模块本身正常完成但 Group 必需输出缺失，整 Group 失败。</td>
+</tr>
+<tr>
+<td>修复为九项并刷新</td>
+<td>Success、9 项</td>
+<td>Success</td>
+<td>Success、9 项</td>
+<td>同 scope 恢复成功。</td>
+</tr>
+<tr>
+<td>已有九项后改为八项</td>
+<td>Success、8 项</td>
+<td>Success、8 项</td>
+<td>Success、完整 9 项</td>
+<td>新前缀第 3 项为 5，旧尾第 9 项为 1：同时证实前缀更新与已写尾项保留。</td>
+</tr>
+<tr>
+<td>新 scope 首次读取 1..8 项</td>
+<td>Success、对应长度</td>
+<td>Success</td>
+<td>Failed <code>NativeUninitializedMatrix</code></td>
+<td>当前安全适配不发布不定尾部；八个长度均逐项测过。</td>
+</tr>
+</tbody></table>
+<p><code>GraphExecutor</code> 的动态输出核验和 <code>WorkflowRunContext.Complete</code> 的 Group 输出读取共同决定缺输出节的失败传播。状态与错误码是<strong>当前实现实测</strong>；原版真实 VM Group 在同样动态输出消失时的调度、节点状态和界面呈现未取证，不能直接称等价。当前实现 <code>ReadCalibFilePlugin.Runtime</code> 忽略 <code>LoadError</code> 后按缓存发布，与原模块可观察分支一致；<code>CoordinateSession</code> 的短矩阵尾部跟踪复用已知九项，首轮未知尾不伪造数值。没有本轮有充分原版合同依据且属于 main 独占的产品修复。</p>
+<h2 id="后续具体缺证">后续具体缺证</h2><ol>
+<li>原版 Group 用标定加载动态 <code>CalibMatrix</code> 输出消失时的 <code>SetGroupIO</code>/执行/状态实际调用链或自有受控宿主复验，才能给主框架此失败状态下的等价结论。</li>
+<li>原版坐标系短矩阵首轮的完整结果受未初始化 native 堆尾部限制；不把任意一次堆值当通用规格。若需数值差分，先固定九项已写状态，再比较 1..8 项更新及 SDK 输出。</li>
+<li>当前 <code>GraphExecutor</code> 对 Group 内动态端口消失的旧连线/订阅传播，本探针仅测 Group 输出引用无值的路径；端口改名、改型等另一条动态旧连线分支已有 <code>ReadCalibFile.PluginChecks</code>，不能由本报告一案替代。</li>
+</ol>
+<p>本轮只增专属可复验探针与审计报告；未修改共享产品、原件或 <code>tool-plugins</code> 工作树。自动测试不计原机人工验收。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass7-calibration-failure-chain.md · SHA256 a10feca18c4bf39d448945f880f89ddfd137f6e82cdb611dc4b7d2422f2b8b72<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,69 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十九批 B：C08.2 嵌套错误、取消和历史释放组合交付 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第十九批 B：C08.2 嵌套错误、取消和历史释放组合交付</p><h1>第十九批 B：C08.2 嵌套错误、取消和历史释放组合交付</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十九批 B：C08.2 嵌套错误、取消和历史释放组合交付</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="B-nested-composition-batch19.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="B-nested-composition-batch19.html#第十九批-bc082-嵌套错误取消和历史释放组合交付">第十九批 B：C08.2 嵌套错误、取消和历史释放组合交付</a></p><p style="margin-left:14px"><a href="B-nested-composition-batch19.html#原源码及独立实现的明确边界">原源码及独立实现的明确边界</a></p><p style="margin-left:14px"><a href="B-nested-composition-batch19.html#固定完整矩阵">固定完整矩阵</a></p><p style="margin-left:14px"><a href="B-nested-composition-batch19.html#工具实现与审计约束">工具实现与审计约束</a></p><p style="margin-left:14px"><a href="B-nested-composition-batch19.html#首轮实际结果及有限修正">首轮实际结果及有限修正</a></p><p style="margin-left:14px"><a href="B-nested-composition-batch19.html#最终独立核验与具名单元关闭">最终独立核验与具名单元关闭</a></p></details><h1 id="第十九批-bc082-嵌套错误取消和历史释放组合交付">第十九批 B：C08.2 嵌套错误、取消和历史释放组合交付</h1><p>固定单元为“嵌套错误、取消和历史释放组合”；不是重复关闭C05.2/C03.1，也不靠单层成功用例冒充完整组合。新增独占可复验工具 <code>tests/NestedCompositionChecks19</code>，实际引用main Core，使用GraphEditorDocument、SolutionExecutor、GraphExecutor、ModuleExecutionScope与第18批HistoryPayloadStore。没有SDK/设备/原厂窗口、没有tool-plugins、没有第二插件会话实现。本线不构建，根线串行执行后才填写实际结果。</p>
+<h2 id="原源码及独立实现的明确边界">原源码及独立实现的明确边界</h2><p>原 <code>analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs::Run</code> → ProcessManager.SyncExecuteOnce → IMVS_ExecuteOnce_V30，原VmException分支置IsRunning=false后重抛；详细CIL/回调位置见 <code>docs/MF05-PROCEDURE-RUN-CALLCHAIN.md</code>。VmModule.Run的参数准备、回调等待与End资源链在C02/C05证据内。原Group托管类没有实现完整native调度循环；失败传播、取消/设备停止与原生回滚承诺不能从托管转发方法猜补。</p>
+<p>原UnRedo root/part完成新值、动作异常后不自动恢复栈、释放资源文件的证据来自第16/18批；产品的整方案snapshot/owned payload与SDK导出格式分开。工具验证的是当前独立managed已交付语义，不把协作CancellationToken当原native取消实现，也不声称执行副作用会回滚。</p>
+<p>三层上限是当前main <code>OwnedGroups.Validate</code> 与GraphEditorDocument.CanAddOwnedGroup的明确支持域。本工具不由截图推导上限、不宣称已恢复原native最大深度。C08父包依赖有未闭范围，允许提前完成已有main支持域的有限组合工具，不借本子项关闭父包或原机综合C08.3。</p>
+<h2 id="固定完整矩阵">固定完整矩阵</h2><table>
+<thead>
+<tr>
+<th>组合</th>
+<th>实际对象/操作</th>
+<th>同时核验</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>深度1/2/3</td>
+<td>实际文档API创建OwnedGroup，最深含prefix→target→suffix执行链</td>
+<td>每深度成功、throw跨全部Group失败、后继skip、下一次恢复；模块/state/history最终释放</td>
+</tr>
+<tr>
+<td>最深正常</td>
+<td>root→G1→G2→G3→三个真实managed模块</td>
+<td>Calls嵌套、真实运行结果、异步Dispose全部完成</td>
+</tr>
+<tr>
+<td>最深throw</td>
+<td>target抛异常</td>
+<td>root/三Group失败、suffix未执行、prefix效果保留、不假设回滚</td>
+</tr>
+<tr>
+<td>最深失败返回</td>
+<td>target返回ModuleStatus.Failed</td>
+<td>同层失败传播与skip、释放、下一次成功</td>
+</tr>
+<tr>
+<td>最深清理异常</td>
+<td>target.DisposeAsync抛异常</td>
+<td>已创建实例仍经过dispose、失败传播、下一次不保留旧失败</td>
+</tr>
+<tr>
+<td>最深中途取消</td>
+<td>target已进入等待后发Cancel，任务忽略token直至自有release</td>
+<td>未提前伪称完成、root Cancelled、prefix保留、suffix未执行、dispose完成、随后恢复</td>
+</tr>
+<tr>
+<td>运行/编辑/历史/持久化</td>
+<td>完整运行后改嵌套名→Undo/Redo→Save→同IDLoad→再跑</td>
+<td>原身份/新旧值、文件载荷实际释放、无旧history与失败污染</td>
+</tr>
+<tr>
+<td>删除/恢复</td>
+<td>停止后删除outer，RetainProcedureNodes，再Undo→再跑</td>
+<td>全部三层后代移除、state各一次释放、历史恢复图后新state可执行</td>
+</tr>
+<tr>
+<td>关闭/替换组合</td>
+<td>nested pending中scope.Dispose+doc.NewSolution，再新编辑并doc.Dispose，最后release旧任务</td>
+<td>scope lease尚在时state未释放、文档旧history清空、新history独立释放、旧任务Cancelled且末lease释放一次</td>
+</tr>
+</tbody></table>
+<p>删除限定停止后，符合main运行时禁编辑支持域；不强造“运行中任意删模块”的新产品规格。最后一项是实际Core对象关闭/替换，不冒充MainWindow、厂商插件窗口或原native线程关闭；现有主窗口关闭矩阵仍由C05已交工具保留，不重复计分。</p>
+<h2 id="工具实现与审计约束">工具实现与审计约束</h2><p>每次新建独占GUID输出目录，强制文档file-backed history；不枚举或终止他进程。模块是任务自有真实IModule/IAsyncDisposable，失败/返回码/取消释放均经过产品GraphExecutor，未复制执行器。受控等待15秒限时；前缀/后继标识分开记录，已在源码自审修正不能把target返回当suffix执行。全局catch保留failed.json并exit1，避免断言异常变成WER挂进程；没有自动重跑或删除失败。</p>
+<p>新旧值、状态、文件数和state释放都核在同一条组合上，不仅引用各单项曾经通过。输出summary含checks、3故障逐层观察、Created/Disposed与StatesCreated/StatesDisposed计数。运行结果未知前不写pass；native ABI/原资源导出格式留validation部分未知，不当人工验证阻塞main工具实施。</p>
+<p>本线初始审查未发现需要先改产品的必要缺口，若实跑发现问题须保留failed.json/根线日志并由root唯一修改共享产品后复验。初稿源码哈希：<code>analysis/full-audit/batch19-20261019/B/initial-hashes.json</code>。</p>
+<h2 id="首轮实际结果及有限修正">首轮实际结果及有限修正</h2><p>已读取根线首轮实际摘要 <code>analysis/full-audit/batch19-20261019/B/nested-composition-809469d356bf42129bfffaef8fb7e78c/summary.json</code>：46项通过，包含全部3故障、深度1/2/3、中途cancel、文档历史/持久化/删除恢复/并发scope关闭释放组合；根线报告exit0。未出现产品修复需求，原始结果保留。</p>
+<p>首轮新fixture有两处CS8604来自payload目录的冗余null检查流分析。根线确认无该项目构建期间，本线仅改为 <code>HistoryPayloadDirectory ?? throw</code> 并去除冗余isnotnull条件，仍强制确有真实file-backed目录；逻辑和矩阵不变，立即冻结并通知根线最终构建/复跑。首轮46不与后次累加，最终计数仍是同一46项，不预报尚未取得的新产物。</p>
+<h2 id="最终独立核验与具名单元关闭">最终独立核验与具名单元关闭</h2><p>已只读核对最终代码与 <code>analysis/full-audit/batch19-20261019/B/nested-composition-7d7912ad417c4cc2aa5c239cb503e3bf/summary.json</code>：46个具名且互不重复检查全部通过；三类故障观察分别保留ModuleException/OwnedFailure/ModuleException，叶后继均ExecutionPredecessorUnavailable；实际模块Created=Disposed=31，source state Created=Disposed=6。最终目录保留实际方案文件与summary，没有遗留history payload目录；这和运行内逐步文件/释放断言一致，不能只用目录干净替代断言。根线报告最终exit0、无新warning；首轮两warning与旧摘要保留，不累加两次运行数。</p>
+<p>代码核验确认不是镜像执行器：实际生产SolutionExecutor递归、GraphExecutor执行/Dispose、文档API编辑/历史、ModuleExecutionScope state/lease、HistoryPayloadStore文件均被真实调用。两层简单用例不足的问题已扩至main支持深度1/2/3，最深运行三类错误/取消/恢复/历史/替换与关闭资源组合。已执行前缀效果明确保留，没有制造回滚成功断言；pending阶段真实TCS等待，不以睡眠假装并发。</p>
+<p><strong>C08.2 作为总计划具名的当前main组合验证工具，implementation可记done。</strong> 本工具完成当前已交付Core能力的嵌套错误、取消和文件历史释放组合交付及自审核，未发现该有限支持域的重大实施缺口；不需要为涨分虚构产品修复，也不重复计C05.2/C03.1/C04既有实现。</p>
+<p>validation仍应partial：这是Core对象关闭/替换，非MainWindow交互关闭矩阵，更非原厂native事件、ABI/设备线程或完整UI同状态差分。C08.3原机综合未关闭，C08父包依赖也不因本工具自动完成。人工验收后置与上述边界分开，未知native不被当作main工具实施阻塞。最终源码/两轮真实摘要哈希索引 <code>analysis/full-audit/batch19-20261019/B/final-closure-hashes.json</code>。</p>
+<p class="meta">来源：docs/reverse/B-nested-composition-batch19.md · SHA256 7bb36439830cc73ff84eff8b09ed8bd2f92e9c5ea42a4dceb3639c934b24883f<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

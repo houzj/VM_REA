@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RemoveSolution / RemoveRecentSolution · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>RemoveSolution / RemoveRecentSolution · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-R04"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>RemoveSolution / RemoveRecentSolution → 失败路径选择 → Yes后移除 → 保存/刷新</h2><p>RemoveSolution可从RecentSolution补path，清该字段后检查列表，启动线程再Dispatcher询问；Yes才RemoveRecentSolution。后者按路径字符串相等删全部匹配，Save和Refresh分开，不把磁盘文件删除与最近列表删除混同。</p><p><a href="../专题/shell-resources.html#edge-R04">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/shell-resources.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/shell-resources.edges.json · SHA256 f438817e98a37909a216ff8c9c4a26d1d5e4efa2eea1a0cd972dc32059a621f9</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="451303ff5b90b06a50ed6150bfc2df77b7f3624754f05cdbec94934d8610995f">{
+  &quot;id&quot;: &quot;R04&quot;,
+  &quot;route&quot;: &quot;原版 · 最近方案&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;RemoveSolution / RemoveRecentSolution&quot;,
+  &quot;to&quot;: &quot;失败路径选择 → Yes后移除 → 保存/刷新&quot;,
+  &quot;behavior&quot;: &quot;RemoveSolution可从RecentSolution补path，清该字段后检查列表，启动线程再Dispatcher询问；Yes才RemoveRecentSolution。后者按路径字符串相等删全部匹配，Save和Refresh分开，不把磁盘文件删除与最近列表删除混同。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs&quot;,
+      &quot;member&quot;: &quot;ProjectManager.RemoveSolution&quot;,
+      &quot;sha256&quot;: &quot;1ae41a0841dd65f5dfa7461078c370822e61826877c42e299939af1fd47f9370&quot;,
+      &quot;start&quot;: 957,
+      &quot;end&quot;: 990,
+      &quot;excerpt&quot;: &quot;\tpublic static bool RemoveSolution(string path, string erroinfo = null)\n\t{\n\t\tif (string.IsNullOrEmpty(path) &amp;&amp; RecentSolution != null)\n\t\t{\n\t\t\tpath = RecentSolution.SolutionPath;\n\t\t}\n\t\tRecentSolution = null;\n\t\tif (!ExistRecentlySolution(path))\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tstring[] msg = ((!string.IsNullOrEmpty(erroinfo)) ? new string[2]\n\t\t{\n\t\t\terroinfo,\n\t\t\tAppLocalizationService.GetLang(\&quot;Lang_SolRM\&quot;)\n\t\t} : new string[1] { AppLocalizationService.GetLang(\&quot;Lang_SolOpenErrtoRM\&quot;) });\n\t\tThread thread = new Thread(() =>\n\t\t{\n\t\t\tApplication.Current.Dispatcher.Invoke(() =>\n\t\t\t{\n\t\t\t\tif (HikMessageBox.Show(AppLocalizationService.GetLang(\&quot;Lang_SolOpenErr\&quot;), msg, MessageButtons.YesOrNo, MessageIcons.Error) == DialogResult.Yes)\n\t\t\t\t{\n\t\t\t\t\tRemoveRecentSolution(path);\n\t\t\t\t}\n\t\t\t});\n\t\t});\n\t\tthread.SetApartmentState(ApartmentState.STA);\n\t\tthread.IsBackground = true;\n\t\tthread.Start();\n\t\treturn true;\n\t}\n\n\tpublic bool GetRunnable()\n\t{&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs&quot;,
+      &quot;member&quot;: &quot;ProjectManager.RemoveRecentSolution&quot;,
+      &quot;sha256&quot;: &quot;1ae41a0841dd65f5dfa7461078c370822e61826877c42e299939af1fd47f9370&quot;,
+      &quot;start&quot;: 939,
+      &quot;end&quot;: 955,
+      &quot;excerpt&quot;: &quot;\tinternal static void RemoveRecentSolution(string path)\n\t{\n\t\tif (_recentlySolutions == null)\n\t\t{\n\t\t\tstring uri = Path.Combine(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, ConfigurationHelper.GetConfig(\&quot;ApplicationName\&quot;) + \&quot;.cfg\&quot;);\n\t\t\tXDocument xDocument = XDocument.Load(uri);\n\t\t\tif (xDocument.Root == null)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tXElement xElement = xDocument.Root.Elements().SingleOrDefault((XElement p) => p.Name == \&quot;ArrayOfSolutionItemInfo\&quot;);\n\t\t\t_recentlySolutions = ((xElement == null) ? new List&lt;SolutionItemInfo>() : xElement.DeSerialization&lt;List&lt;SolutionItemInfo>>());\n\t\t}\n\t\t_recentlySolutions.RemoveAll((SolutionItemInfo p) => p.SolutionPath == path);\n\t\tSaveRecentlySolutions();\n\t\tProgram.MainData.RefreshRecentSolution();\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;线程退出、失败上下文RecentSolution寿命及其它删除/异常消费者未全覆盖。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,54 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>框架公共数据契约 v0.2（main；v0.2数据接口） · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 框架公共数据契约 v0.2（main；v0.2数据接口）</p><h1>框架公共数据契约 v0.2（main；v0.2数据接口）</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>框架公共数据契约 v0.2（main；v0.2数据接口）</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="FRAMEWORK-CONTRACTS.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="FRAMEWORK-CONTRACTS.html#框架公共数据契约-v02mainv02数据接口">框架公共数据契约 v0.2（main；v0.2数据接口）</a></p><p style="margin-left:14px"><a href="FRAMEWORK-CONTRACTS.html#已核对的原始代码">已核对的原始代码</a></p><p style="margin-left:14px"><a href="FRAMEWORK-CONTRACTS.html#v02实际接口">v0.2实际接口</a></p><p style="margin-left:14px"><a href="FRAMEWORK-CONTRACTS.html#兼容与集成">兼容与集成</a></p><p style="margin-left:14px"><a href="FRAMEWORK-CONTRACTS.html#f-02后续实施">F-02后续实施</a></p><p style="margin-left:14px"><a href="FRAMEWORK-CONTRACTS.html#验证">验证</a></p></details><h1 id="框架公共数据契约-v02mainv02数据接口">框架公共数据契约 v0.2（main；v0.2数据接口）</h1><p>日期：2026-10-16。范围：F-01 的整数/数值/文本数组基础，F-02 的调试命令入口审计。不是原生 Group 循环或 SDK ABI 的完成声明。</p>
+<h2 id="已核对的原始代码">已核对的原始代码</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>确认内容</th>
+<th>仍不能确认</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>analysis/decompiled/VM.Core/VM.Core/DynamicOutput.cs：GetOutputInt/Float/String</td>
+<td>按 nParamType 1/2/3查询；用 nValueNum 复制 int[]/float[]/StringData[]；无结果可能返回默认结构</td>
+<td>数组是否来自循环、累积/展平/中断次序、执行引擎如何生产结果</td>
+</tr>
+<tr>
+<td>analysis/decompiled/IMVSGroup.WorkflowAudit/IMVSGroupCs/GroupResult.cs</td>
+<td>Group公开整数/浮点/字符串数组读取接口，并转发 DynamicOutput</td>
+<td>完整原生调度实现</td>
+</tr>
+<tr>
+<td>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl/VmIODecorate.cs：IsAccumulatedOutput/ParamValueChanged</td>
+<td>nMode=0累积、1普通；复合IO遍历叶子，最多1024项；SetGroupIOReportMode写入SDK</td>
+<td>每轮边界、错误/中断时的结果保留及清空策略</td>
+</tr>
+<tr>
+<td>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl/DynamicParamsTabControl.xaml.cs：ContinuousExecuteBottom/StopExecuteBottom/ExecuteOnceBottom</td>
+<td>分别绑定 ContinuousSelfExcuteModule、StopSelfExcuteModule、SelfExcuteModule；Dispose清空ImageDecorate</td>
+<td>命令名称不等于已恢复其完整调度语义；不能断言是否隐式计算上游或如何等待停止</td>
+</tr>
+</tbody></table>
+<h2 id="v02实际接口">v0.2实际接口</h2><p>在原有基础类型上增加 ValueCardinality.Scalar / Array：</p>
+<ul>
+<li>PortDescriptor.Cardinality、WorkflowInterfaceItem.Cardinality、WorkflowCallPort.Cardinality，默认均为Scalar，原有构造函数调用保持有效。</li>
+<li>PortValue.Cardinality随值传播；IntegerArray(IEnumerable&lt;long&gt;)、NumberArray(IEnumerable&lt;double&gt;)、TextArray(IEnumerable&lt;string&gt;)复制并冻结输入集合。</li>
+<li>使用 value.As&lt;IReadOnlyList&lt;long&gt;&gt;() / double / string读取；数组不能As&lt;long&gt;()，也不会自动取第一项。</li>
+<li>空数组是有效、已产生的输出；缺失输出是没有键；null数据/字符串元素、非有限数值被拒绝。</li>
+<li>基础类型相同但基数不同，连线/订阅/工作流参数仍判为不匹配；参数及局部变量保持标量。原有Components列表是复合值，不能误当作本次基础类型数组。</li>
+<li>注册阶段拒绝当前未支持的图像/几何数组、未知基数。属于宿主支持范围限制，不是断言VM不支持这些数据。</li>
+<li>Group接口快照、签名检查、配置保存重开和上下游执行都保留Cardinality；主窗口输出格式显示数组元素。</li>
+</ul>
+<p>示例（插件线可采用，需先取得framework提交）：</p>
+<a class="site-evidence-link" data-evidence-key="584d4a7fffa6761b461772b8c0774ce0d6dd4bb93dd1683cd70ddca652e5817c" href="../../../证据/584d4a7fffa6761b461772b8c0774ce0d6dd4bb93dd1683cd70ddca652e5817c.html#content">查看完整原文／记录 ↗ <small>584d4a7fffa6</small></a>
+<p>这是一份独立托管运行契约。VM的int/float原生数组是32位，当前独立Integer/Number沿用long/double；本次没有实现二进制结构、指针、编码/精度或SDK的互操作等价，也没有把本项目Cardinality枚举解释为原生字段。空数组做托管规范化，不保留原生空指针布局。</p>
+<h2 id="兼容与集成">兼容与集成</h2><ul>
+<li>旧 .vmx.json 没有Cardinality时按Scalar读取。新数组声明需要v0.2读者；不能假设旧严格JSON读取器能读取新字段。</li>
+<li>原有 IVisionToolPlugin / IWpfToolEditorFactory 及ToolEditorContext构造参数保持；后续v0.3在Context新增可空Session，不要求插件线重写在途插件。</li>
+<li>现有类型选择器还未完整提供数组形态选择/原生参数页交互；不能把运行层支持当成完整UI完成。</li>
+<li>Accumulate配置标志仍没有执行逻辑；本次数组传播不等于循环累积输出。</li>
+<li>不自动拉取/合并插件分支，也不修改插件worktree。框架线记录契约与提交，插件交付时再集成。</li>
+</ul>
+<h2 id="f-02后续实施">F-02后续实施</h2><p>WPF普通模块宿主已接入独立调试会话；原有构造函数和Run委托保留，新增可空Session。单次/连续/停止及关闭等待的证据、缓存输入策略和未恢复原生边界见 <a href="DEBUG-SESSION-CONTRACT.html">DEBUG-SESSION-CONTRACT.md</a>。Group调试入口、设备释放及全部插件UI仍未完成。</p>
+<h2 id="验证">验证</h2><p>tests/VisionFramework.ArrayChecks：真实独立执行器运行数组产生→求和，订阅链、所属Group输入输出→下游求和结果12，保存重开重跑、空数组与错误形态；这些是测试模块，不是已经逆向出的VM算法插件。
+本地详细结果：analysis/full-audit/array-contract-runtime/results.json；源码哈希：analysis/full-audit/array-contract-source-files.json。测试总数和兼容回归记录见对应日志及交付记录。</p>
+<p class="meta">来源：docs/FRAMEWORK-CONTRACTS.md · SHA256 30ddf219af2fdc5db024c104cd677d49bea67d7a1ceb6c3fb9d61c3651ad5a74<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

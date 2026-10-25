@@ -1,0 +1,98 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D1 18/24 decoder、payload与产品差异有限切片（2026-10-19）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-D1-DECODER-OUTPUT-SOURCE.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#d1-1824-decoderpayload与产品差异有限切片2026-10-19">D1 18/24 decoder、payload与产品差异有限切片（2026-10-19）</a></p><p style="margin-left:14px"><a href="#证据身份与有限取体">证据身份与有限取体</a></p><p style="margin-left:14px"><a href="#当前入口与状态已纠正旧码分类">当前入口与状态（已纠正旧码分类）</a></p><p style="margin-left:28px"><a href="#8b11a0定位系数与零点门">8b11a0：定位系数与零点门</a></p><p style="margin-left:28px"><a href="#8b0670纠正量和一次性输出">8b0670：纠正量和一次性输出</a></p><p style="margin-left:14px"><a href="#输出字段链原体不从几何猜标识">输出字段链（原体，不从几何猜标识）</a></p><p style="margin-left:14px"><a href="#共享产品只读对应与最小差异请求">共享产品只读对应与最小差异请求</a></p><p style="margin-left:14px"><a href="#本次验证与生产接入最小剩余">本次验证与生产接入最小剩余</a></p></details><h1 id="d1-1824-decoderpayload与产品差异有限切片2026-10-19">D1 18/24 decoder、payload与产品差异有限切片（2026-10-19）</h1><p>本切片已完成当前18/24入口的纠错状态、输出次序和payload→orientation/origin连接，不再继续扩base/shape或所有CPU。只读共享产品，未改算法、构建或执行原厂。已有原厂40个字节纠错案例重新核身份与数据一致性，不能冒充本次原厂运行或图像识别验证。总体仍按完整工具数统计0/10；逆向、实施、自动验证和自审全部完成才计工具，人工验收单列且不阻挡计分。</p>
+<h2 id="证据身份与有限取体">证据身份与有限取体</h2><p>原件SDK core SHA256 <code>85d17ecc87d52e9a62d8bb86c8d5208ac999bcd31ec6d0806453f8165733f549</code>。复用8b0260、8b11a0、8b0670、86ff00及当前两个caller的C/asm/cookie尾；定向补8个被这些体实际调用的叶体：931cd0、931dd0、932120、932570、932440、932080、931c60、85aee0。身份匹配私有Ghidra12.1.4只读工程，无REA Evidence ID，REA provider不可用沿用已有记录。新C/asm在 <code>analysis/map-calibration/d1-decoder-output/source</code>；20体hash及5个共享产品文件读取快照、PE常量和既有40案例一致性见 <code>source-index.json</code>。</p>
+<h2 id="当前入口与状态已纠正旧码分类">当前入口与状态（已纠正旧码分类）</h2><p>86ff00在workspace+ce00生成192个整数bit，在870843调用 <code>8b0260(bits,18,24,workspace+d100,scratch)</code>。8b0260：</p>
+<ol>
+<li>输入/输出/workspace任一null跳8b0638，cookie后返回 <strong>0x10000014</strong>。<code>checkCount&lt;2 || symbolCount&lt;=checkCount</code>跳8b02bd，返回 <strong>0x10000019</strong>。旧SOURCE-CHAIN将两类对调，本次依实际asm跳转纠正。当前18/24正常指针不触发两门。</li>
+<li>每8个bit依128、64、32、16、8、4、2、1打包一个int符号，24个符号保持采样顺序。初始化GF表932480，移位乘法按0x11d约简；符号数组按升幂系数供9322a0求值。</li>
+<li>对i=0..17，932370生成2的i次幂，9322a0求24符号多项式值，得到18个syndrome。全部为0直接复制24个int到out，返回0。</li>
+<li>首个非零syndrome进入8b11a0；若非0透传状态。它成功才调8b0670；成功返回0，失败透传。最终输出写入与外层payload成功标志之间没有额外“纠错次数”字段。</li>
+</ol>
+<h3 id="8b11a0定位系数与零点门">8b11a0：定位系数与零点门</h3><p>该体将18个syndrome复制到前缀0之后的工作数组，初始两个系数向量首项1，按18轮discrepancy做更新。discrepancy为当前syndrome异或先前syndrome与当前系数的GF乘积；非0时调用逐系数缩放931cd0、逆查表85aee0、端对齐xor931dd0，并按实际向量长度门替换/更新系数。931dd0的具体地址规则为 <code>out[maxLen-lenA+i]=A[i]</code>，再异或 <code>B</code> 到 <code>out[maxLen-lenB+i]</code>；不能无视这个端对齐把它替换成任意系数约定的多项式加法。</p>
+<p>末尾8b15b7..8b15ea只扫描i=0..23，求值 <code>locator(2^i)</code>，值0才按递增i写位置数组。<strong>找到的位置数必须等于当前记录的degree</strong>；不等返回 <code>0xfffffc18</code>（signed -1000），相等写出count并返回0。体中未见单独的 <code>degree&lt;=9</code> gate，也未见从24以外继续搜索。不能用熟悉的纠错能力名称代替这个实际接受条件。</p>
+<h3 id="8b0670纠正量和一次性输出">8b0670：纠正量和一次性输出</h3><p>输入为syndrome、前一步位置数组、位置count、原24符号及最终out。它构造每个位置的 <code>[2^position,1]</code> 系数并逐次932120卷积，再翻转有限syndrome系数、卷积并截取工作系数；最终对各位置计算逆值、其他位置差积、求值和除法，纠正量写入96字节全0的errorMask对应位置。</p>
+<p>补体已确认932570是 <strong>系数数组反序复制</strong>，不是除法；要求两descriptor degree相等、两指针非0，失败0x10000019。第一处返回失败只绕过其后的工作系数填充继续；第二处失败从8b10a8透传。当前18/24 caller内部两处均由非空栈缓冲与相同degree构造，结构条件本身不失败；不把人为坏descriptor当实际图像分支。</p>
+<p>931c60才是查表除法：分母0直接返回0x10000019，8b0670从8b116a透传；否则把纠正量写errorMask。<strong>分子0时先写0、但没有return，仍继续Log/Exp查询并覆盖输出</strong>，asm931c70→931c77确认。932480不写Log[0]；该槽值与该分支在真实纠错输入中的可达性仍是独立精确边界，不能按通常GF规则静默补成分子0直接返回0。</p>
+<p>成功最后按24个int计算 <code>out[i]=original[i] XOR errorMask[i]</code>（SIMD/标量复制路径均有），返回0；纠正量失败发生在最终xor写回前。体中未见输出后重新计算18个syndrome的拒绝门，也没有独立的 <code>count&gt;9</code> 拒绝。此为源码可见分支，尚未据此构造&gt;9损坏输入或宣称其原厂返回必然成功。</p>
+<h2 id="输出字段链原体不从几何猜标识">输出字段链（原体，不从几何猜标识）</h2><p>令Z[0..23]为8b0260成功后的24个int；86ff00的out位于workspace+d100。定义P[j]=lowByte(Z[23-j])，j=0..11。</p>
+<table>
+<thead>
+<tr>
+<th>字段/动作</th>
+<th>原体赋值与消费</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>payload12</td>
+<td>86ff00只在8b0260返回0后，从d15c、d158…d130依次取低byte，写record+11c…127，即P[0..11]；不是原符号0..11。</td>
+</tr>
+<tr>
+<td>成功</td>
+<td>同一分支写record+f0+item*4=1，并使record+118计数+1；失败置对应status0，不执行上述payload写入。当前813ca0先清整个输出，且首成功即停，不以旧payload残留当成功。</td>
+</tr>
+<tr>
+<td>方向</td>
+<td>813ca0四个正序循环、四个逆序循环，状态1时将试次写param10，范围1..8。方向来自成功quad尝试序号，不是payload中的位；86ff00投影方向向量也不是该整数枚举。</td>
+</tr>
+<tr>
+<td>radius/anchor</td>
+<td>同一首成功分支写radius与候选格网位置；两个上层caller仅在status==1时按方向组1/5、2/6、3/7、4/8对相应anchor分量作0或−2radius校正，再传813020。这个anchor来自稠密格网搜索，不是最近点拟合。</td>
+</tr>
+<tr>
+<td>80e690 origin/pitch</td>
+<td>813020的originX=P0、originY=P1；pitch=<code>float(P2)*100f+float(P3)+float(P4)*.01f+float(P5)*.0001f</code>。</td>
+</tr>
+<tr>
+<td>80bcd0 origin/pitch</td>
+<td>originX=<code>(P0&amp;15)*64+(P1&gt;&gt;2)</code>；originY=<code>(P1&amp;3)*256+P2</code>；pitch=<code>float(P3)*100f+float(P4)+float(P5)*.01f</code>。</td>
+</tr>
+<tr>
+<td>最终ID/顺序</td>
+<td>原始整数grid、校正anchor、两origin、orientation一起进813020；其变换/输出顺序与尺寸复用已审计直接320例，但这不证明真实图像方向2..8已覆盖。</td>
+</tr>
+</tbody></table>
+<p>100/.01/.0001三常量来自同hash PE字节，见索引。两caller只解释P0..5，复制12 byte不等于12 byte均为当前工具的物理字段。</p>
+<h2 id="共享产品只读对应与最小差异请求">共享产品只读对应与最小差异请求</h2><p>本段读取时点的hash已记录；根线可能继续修改共享文件，审查以实际差异为准。R01/R02由根线拥有，本报告不另写共享实现。</p>
+<table>
+<thead>
+<tr>
+<th>源码条件</th>
+<th>当前文件/方法</th>
+<th>具体差异与有限实施/验证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>bit→24符号、12 byte反序、六字段解释</td>
+<td>NImageCodeReedSolomon.TryDecodeBits；NImageBoardIdentity.FromDecodedBytes</td>
+<td>顺序和两个pitch/origin公式已有对应；复用既有40原厂纠错fixture及Identity/Anchor检查，不因补源码重写正常字段。</td>
+</tr>
+<tr>
+<td>8b11a0根数等degree、8b0670查表纠正后直接成功</td>
+<td>NImageCodeReedSolomon.TryCorrect</td>
+<td>产品采用独立BM+线性方程幅值求解，显式degree1..9、纠正后重验18syndrome；Div分子0直接0。对已证0..9正例结果相同，不能据此称失败/超纠错能力接受域相同。<strong>R03</strong>：若要覆盖原厂完整拒绝/误接受域，应在现有24符号层提供source-compatible内部入口/状态与原体门槛，专用0/1/9错误正例、根数不匹配与必要的失败词差分；不要仅删保护门或按标准RS库猜。现无失败词原厂trace，此项尚未实施/验证；保留“仅已证正例兼容”的当前边界不能冒充全域。</td>
+</tr>
+<tr>
+<td>当前native首成功试次1..8、原始格网anchor</td>
+<td>NImageCodeDecoder.TryDecode；NImageBoardRecognition.Recognize</td>
+<td>decoder的0..7循环索引可对应native试次−1；Recognize仍拒绝Orientation!=0，WorldIndex固定1，并从Opening[0]拟合Nearest anchor。<strong>R04</strong>：接收R02真实candidate上下文中的native方向/anchor，按813020转换；只去掉方向拒绝不够。先用真实成功caller证明方向，再开放相应产品路径。</td>
+</tr>
+<tr>
+<td>warp/位采样的单精度与预处理</td>
+<td>NImageCodeDecoder.TryOrientation</td>
+<td>当前double Homography/双线性、独立adaptive过滤仍明确独立。用已恢复86ff00/85c8a0/8b1710当前caller体逐阶段替换或确认，不再重复取与这条路径无关的函数。验证应比较warp/processed192 bits→24符号→payload，不能只比最终点。</td>
+</tr>
+<tr>
+<td>first success / grid筛选</td>
+<td>NImageDetectedBoard.Recognize；NImageSourceLatticeAdapter</td>
+<td>R01/R02根线处理；本次快照有首identity注释，但仍扫描全部opening作mask。用根线审查后的最终实现与既有反序fixture验差异，本线不再建第二套状态。</td>
+</tr>
+</tbody></table>
+<h2 id="本次验证与生产接入最小剩余">本次验证与生产接入最小剩余</h2><p><code>docs/plugins/n-image-code-evidence.json</code>是同core SHA的既有原厂字节层回放，4 payload×0..9损坏=40例。索引助手重新检查40返回0、24输入/输出长度、实际差异数与errors字段一致；独立按原GF约简/升幂求值核40个输出均满足18syndrome全0，共960符号、480个反序导出byte。没有运行DLL或当前C#；<code>tests/NImageCode.Checks</code>已有逐24输出和12byte断言，应由根线串行验证，不能算本次已通过的新产品测试。其独立旋转性质测试仍不是813ca0真实八向识别。</p>
+<p>整工具生产接入剩余按以下有限序列，而非逐函数无限扩：</p>
+<ol>
+<li>根线合并R01/R02的grid/首成功上下文；对R03决定并实施明确的source-compatible24符号路径，保持独立安全边界可审；R04消费真实方向/anchor，修复Map当前生产识别入口。</li>
+<li>D1只剩当前warp/192格位次序、整卡字段→产品映射的收口与其精确分叉验证；已恢复8个纠错叶体不再列缺体。D1 S1/S2尚未整卡退出，不能凭这条decoder链自动加分。</li>
+<li>D3用源码实际支持分支补真实caller方向、失败/稀疏验证；D2复用原卡已闭合规则与现有fixture验共享实施；D4按整工具退出清单补文件注册桥/绑定/显示释放等实际工具必需链，不扩全部SDK。</li>
+<li>原资源/配置/两ROI/运行结果/持久化/生命周期的产品对应、有限自动验证及自审都完成后，交根线整工具审计计数；人工验收独立记录，不作为完成率阻挡项。</li>
+</ol>
+<p>未提交推送、未操作其他worktree/进程/设备。当前切片没有足够依据自行宣称映射标定整工具完成。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D1-DECODER-OUTPUT-SOURCE.md · SHA256 59e320b60746dba6c0aa519bbee061759620f5afb94aa02e37008a9c26d137f6<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,7 @@
+'use strict';
+const fs=require('fs'),path=require('path'),crypto=require('crypto'),assert=require('assert/strict');const site=path.resolve(__dirname,'../../../docs/架构逆向与实现对照文档'),read=p=>fs.readFileSync(path.join(site,p)),sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+const m=JSON.parse(read('清单/停止状态图模型.json')),source=read(m.source),fact=JSON.parse(source).original.find(f=>f.id===m.factId),html=read('执行/全局脚本连续状态.html').toString();
+assert.equal(sha(source),m.sourceSha256);assert.deepEqual(m.fact,fact);assert(fact.refs.every(r=>r.member&&r.path&&/^[a-f0-9]{64}$/i.test(r.sha256)));
+const ids=new Set(m.nodes.map(n=>n[0]));for(const n of m.nodes)assert(html.includes('data-state-node="'+n[0]+'"'));for(const e of m.edges){assert(ids.has(e.from)&&ids.has(e.to));assert.equal(e.factId,fact.id);assert.equal(e.classification,fact.classification);assert(html.includes('data-state-edge="'+e.from+'-'+e.to+'"'));}
+assert(!m.edges.some(e=>e.from==='return'));assert(!m.edges.some(e=>e.from==='start'&&e.to==='clear'));assert(!m.edges.some(e=>e.from==='stop'&&e.to==='reset'));
+const report={passed:true,scope:'Frozen source identity, full fact retention, diagram/model correspondence and branch separation; not browser or native validation',nodes:m.nodes.length,edges:m.edges.length,sourceFact:fact.id,browserVerified:false};fs.writeFileSync(path.join(site,'清单/停止状态图检查.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

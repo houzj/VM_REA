@@ -1,0 +1,3062 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-10-20",
+  "baseline": "3996ad1732929823755957de5537b1460ab3b8e0",
+  "scope": "main框架；不访问tool-plugins，来信和未合流内容均不计入",
+  "denominatorVersion": "plan-units-v1",
+  "denominatorPolicy": "总计划32包，每包固定3个具名验收单元；源码/实现/验证均96项，三层独立等权计数，不给partial折半；不是工时估算或原厂所有函数覆盖率。新增范围须版本化记录分母变更。",
+  "stageCriteria": {
+    "source": "对该具名单元已取得可定位原源码/CIL/资源/二进制证据及明确调用/数据流边界；独立格式和审计工具按其本地源码规范。非整包源码全覆盖。",
+    "implementation": "main已交付该具名单元的实现或该计划明确要求的可执行逆向/验收工具；仅文档、接口请求、统计台账不算实现。独立重构与VM等价分开。",
+    "validation": "已有该单元的操作或交付检查通过记录，且无已知反例否定该单元；原方法合成输入不得替代真实窗口/SDK。历史记录未在本次审计重新运行。原机差分另列。"
+  },
+  "statusPolicy": {
+    "done": "本具名单元达成，计1",
+    "partial": "有子集成果，但本具名单元未全达成，计0",
+    "blocked": "有明确缺少条件，计0",
+    "not_started": "未取得本单元交付证据，计0；不推断全程序不存在",
+    "unverified": "未取得操作结果或证据不足，计0",
+    "failed": "存在明确失败/反例，计0"
+  },
+  "nativeParityNote": "96项验证达成率只反映声明范围的操作/交付证据；所有完整包原厂等价仍未验收，不作为本次三层进度的替代。",
+  "validationFreshness": "第二十批最终170项main自审核（Group57、Host89、scope8、配置close16）；修前8项unsafe机制单列不计修复。A标准WPF11项是原绑定歧义取证，不是产品实施。既有CS8603保留；原SDK/设备/长稳差分未知。",
+  "packages": [
+    {
+      "taskId": "A01",
+      "title": "工具加载与Group导入时序",
+      "domains": [
+        "F-06",
+        "F-10"
+      ],
+      "planDependencies": [],
+      "originalPackageStatus": "running",
+      "sourceAndOperationReports": [
+        "docs/LOADER-ROUND2-20261019.md",
+        "docs/TOOL-DISCOVERY-METADATA.md",
+        "docs/reverse/A01-loader-batch1.md",
+        "docs/reverse/A01-palette-lifecycle-implementation-batch15.md",
+        "docs/reverse/B-A01-loader-closure-review-batch15.md",
+        "docs/reverse/BATCH15-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/ToolDirectoryCatalog.cs",
+        "src/VisionEditor/ToolNavigation.cs",
+        "src/VisionEditor/ToolCatalogLoadSession.cs",
+        "tests/ToolCatalogLifecycleChecks15/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "A01.1",
+          "criterion": "目录XML、分类优先级与惰性元数据读取",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "只计元数据读取，不计工具DLL动态注册。",
+          "blockerIds": []
+        },
+        {
+          "id": "A01.2",
+          "criterion": "原加载器首次/悬停/刷新及失败分支",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十五批main实际metadata palette首次/hover/Expanded/画布菜单共用状态、初始化前置、失败sticky保留前缀、成功排序及显式Refresh新身份均完整实施，17项实际MainWindow控件自审核通过。载体为已映射ModuleId的独立JSON palette，错误提示为本地适配；原目录特殊anchor/global缓存及原厂WPF运行差分未验证。原Group导入回调A01.3、DLL到registry动态映射A07未借此关闭。",
+          "blockerIds": []
+        },
+        {
+          "id": "A01.3",
+          "criterion": "原Group导入回调到模型落地",
+          "source": "done",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "CIL链可定位；原gro导入及实际回调未接入main。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "A02",
+      "title": "主窗口状态与DPI",
+      "domains": [
+        "F-03",
+        "F-04"
+      ],
+      "planDependencies": [
+        "A01"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF01-WORKAREA-LOCK-PROMPT.md",
+        "docs/MF01-TITLE-MENU-ACCEPTANCE.md",
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/WindowWorkArea.cs",
+        "src/VisionEditor/MainWindow.ShellLock.cs",
+        "src/VisionEditor/MainWindow.ShellWindowState.cs"
+      ],
+      "units": [
+        {
+          "id": "A02.1",
+          "criterion": "标题拖动、最大化与恢复的命令状态",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "计当前WPF命令/控件事件，不计跨DPI原机差分。",
+          "blockerIds": []
+        },
+        {
+          "id": "A02.2",
+          "criterion": "工作区锁定、确认及解锁",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "原始提示资源/配置位置仍有独立适配；已列明差异。",
+          "blockerIds": []
+        },
+        {
+          "id": "A02.3",
+          "criterion": "真实桌面100/150/200%DPI与窗口边界矩阵",
+          "source": "partial",
+          "implementation": "done",
+          "validation": "blocked",
+          "limitation": "仅当前子集布局，完整输入桌面矩阵缺证据。",
+          "blockerIds": [
+            "ACCEPTANCE-PREREQUISITES"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "A03",
+      "title": "流程Tab与Group导航",
+      "domains": [
+        "F-05",
+        "F-11"
+      ],
+      "planDependencies": [],
+      "originalPackageStatus": "blocked",
+      "sourceAndOperationReports": [
+        "docs/WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md",
+        "docs/reverse/A03-tabs-batch2.md",
+        "docs/reverse/A03-canvas-replacement-fix.md",
+        "docs/reverse/A03-binding-batch4.md",
+        "docs/reverse/A03-process-isolation-batch6.md",
+        "docs/reverse/A03-owned-logger-batch7.md",
+        "docs/reverse/A03-config-error-batch8.md",
+        "docs/reverse/A-canvas-implementation-batch10.md",
+        "docs/reverse/A-container-zoom-implementation-batch12.md",
+        "docs/reverse/A03-closure-source-review-batch12.md",
+        "docs/reverse/C-review-container-zoom-batch12.md",
+        "docs/reverse/BATCH12-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/WorkflowTabs.cs",
+        "src/VisionEditor/GroupCanvasNavigation.cs",
+        "src/VisionEditor/WorkflowCanvas.cs",
+        "src/VisionEditor.Core/GraphEditorDocument.Viewport.cs",
+        "src/VisionFramework/Contracts.cs",
+        "src/VisionFramework/SolutionStore.cs",
+        "tests/ContainerZoomChecks/Program.cs",
+        "tests/ViewportDocumentChecks12/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "A03.1",
+          "criterion": "流程增删复制切换和Tab归属",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "当前独立文档行为已实现并操作验证。",
+          "blockerIds": []
+        },
+        {
+          "id": "A03.2",
+          "criterion": "嵌套Group进入/返回和显示模型归属",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "当前Group导航已验；不计所有原厂视觉状态。",
+          "blockerIds": []
+        },
+        {
+          "id": "A03.3",
+          "criterion": "每显示容器缩放持久化及非活动Tab历史",
+          "source": "done",
+          "implementation": "done",
+          "validation": "blocked",
+          "limitation": "第十二批按原UserData/ticks链实施每容器CanvasZoomIndex、存读、真实画布/Fit消费、复制删除及非活动Tab snapshot恢复；Core29项与实际WPF29项自审核通过。main JSON/整文档snapshot/主动重读为明确独立适配，不是原SDK字节格式。原厂ProceZoomIndex与PartentZoomIndex通知反馈、native存储及原机差分保留未知，仅验证层blocked，不阻实施计分。此前原日志配置隔离失败保留。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "A04",
+      "title": "节点手势、路由和视口",
+      "domains": [
+        "F-07",
+        "F-08",
+        "F-09"
+      ],
+      "planDependencies": [
+        "A03"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF02-CONNECTION-ROUTE-LIFECYCLE.md",
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/WorkflowGestures.cs",
+        "src/VisionEditor/WorkflowWireEditing.cs",
+        "src/VisionEditor/WorkflowOverview.cs"
+      ],
+      "units": [
+        {
+          "id": "A04.1",
+          "criterion": "节点拖放、多选、实时源复制和插入手势",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "对应已列控件事件矩阵，真实键鼠全状态另属A08。",
+          "blockerIds": []
+        },
+        {
+          "id": "A04.2",
+          "criterion": "连线中点、插线、固定网格寻路及缓存",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "原算法及实际WPF已验；不声称所有几何组合无差异。",
+          "blockerIds": []
+        },
+        {
+          "id": "A04.3",
+          "criterion": "视口缩放、小地图和修饰键事件路径",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "已有事件/数值验收；跨DPI极端坐标完整矩阵另列。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "A05",
+      "title": "菜单、工具栏及全局入口清点",
+      "domains": [
+        "F-04"
+      ],
+      "planDependencies": [
+        "A02"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF01-GLOBAL-ENTRY-AUDIT.md",
+        "docs/MF01-TITLE-MENU-ACCEPTANCE.md",
+        "docs/MF01-SOLUTION-PATH-ACCEPTANCE.md",
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md",
+        "docs/reverse/A-shell-implementation-batch11.md",
+        "docs/reverse/BATCH17-20261019.md",
+        "docs/reverse/A05-full-menu-map-batch17.md",
+        "docs/reverse/A05-entry-reconciliation-batch17.md",
+        "docs/reverse/A-entry-closure-batch20.md",
+        "docs/reverse/A-candidate-gates-batch21.md",
+        "docs/reverse/BATCH20-20261020.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/MainWindow.xaml.cs",
+        "src/VisionEditor/MainWindow.ShellHelp.cs",
+        "src/VisionEditor/MainWindow.ShellRunMode.cs",
+        "tests/MenuEntryInventory17/Reconcile.py",
+        "tests/EntryClosureChecks20/ReadBaml.py",
+        "tests/EntryClosureChecks20/ResolveStandardBindings.ps1"
+      ],
+      "units": [
+        {
+          "id": "A05.1",
+          "criterion": "完整菜单/工具栏/快捷键入口清点",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "unverified",
+          "limitation": "第二十批原BAML11条DiagramItem绑定及Connection Delete取证，7条Gesture/Key冲突以原记录顺序和标准WPF回放解决；全局路由/全程序集入口穷尽尚缺，保留partial，服务实施A05.3另列。",
+          "blockerIds": []
+        },
+        {
+          "id": "A05.2",
+          "criterion": "常规文件、帮助、路径与运行策略命令数据链",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "当前已交付命令及控件事件；原生后端/完整键鼠不纳入本单元达成。 第十一批：最近偏好写失败后实际方案保存成功，内存与菜单继续更新，16项通过；既有A05.2不重复计分。",
+          "blockerIds": []
+        },
+        {
+          "id": "A05.3",
+          "criterion": "全局变量、通信、触发、脚本等专用服务",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "原入口部分已定位，main不具备完整模块/会话/后端。",
+          "blockerIds": [
+            "MISSING-CAPABILITY"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "A06",
+      "title": "运行界面编辑与显示布局",
+      "domains": [
+        "F-04",
+        "F-20"
+      ],
+      "planDependencies": [
+        "A05",
+        "B06"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF01-FRONTEND-UI-SOURCE-AUDIT.md",
+        "docs/reverse/A06-close-dependency-batch13.md"
+      ],
+      "implementationArtifacts": [],
+      "units": [
+        {
+          "id": "A06.1",
+          "criterion": "运行界面编辑入口、窗口状态与关闭流程",
+          "source": "done",
+          "implementation": "not_started",
+          "validation": "not_started",
+          "limitation": "托管入口和关闭分支已取证，未实现运行界面编辑器。",
+          "blockerIds": []
+        },
+        {
+          "id": "A06.2",
+          "criterion": "Frontend完整布局、资源、BAML绑定还原",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "not_started",
+          "limitation": "已有资源保全；完整安全解码及布局合同未闭合。",
+          "blockerIds": []
+        },
+        {
+          "id": "A06.3",
+          "criterion": "运行界面结果绑定、持久化与重开",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "部分托管/SDK边界已知，实际设计文件及消费未验。",
+          "blockerIds": [
+            "MISSING-CAPABILITY"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "A07",
+      "title": "通用发现接入与缺插件体验",
+      "domains": [
+        "F-06",
+        "F-22"
+      ],
+      "planDependencies": [
+        "A01",
+        "B07"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/TOOL-DISCOVERY-METADATA.md",
+        "docs/ROI-REAL-TOOL.md",
+        "docs/reverse/A07-managed-loader-partial-batch16.md",
+        "docs/reverse/A-runtime-editor-batch18.md",
+        "docs/reverse/BATCH18-20261019.md",
+        "docs/reverse/A-loader-failure-matrix-batch19.md",
+        "docs/reverse/BATCH19-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/ToolDirectoryCatalog.cs",
+        "src/VisionEditor/MainWindow.xaml.cs",
+        "src/VisionEditor/ManagedToolPluginLoader.cs",
+        "tests/ManagedToolPluginChecks16/Program.cs",
+        "src/VisionEditor/ManagedToolCatalogLoadSession.cs",
+        "src/VisionEditor/ToolNavigation.cs",
+        "tests/ManagedToolCatalogHostChecks18/Program.cs",
+        "src/VisionPluginContracts/Contracts.cs",
+        "tests/ManagedToolFailureMatrixChecks19/Program.cs",
+        "tests/ManagedToolFailureFixture19/Plugins.cs",
+        "tests/RegistryMetadataReentryChecks19/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "A07.1",
+          "criterion": "发现目录到真实ModuleRegistry的动态映射",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十八批现tool-catalog可选当前合同Implementation引用→首次分类装载→真实双registry→palette/节点创建执行/保存重开完整接入，15项MainWindow自审及独立复审通过。显式刷新只清失败，成功实例不重注册；独立JSON/IVisionToolPlugin适配不是原Cs/Librarys.Config/IVmModule ABI兼容，原native未知分列。",
+          "blockerIds": []
+        },
+        {
+          "id": "A07.2",
+          "criterion": "缺插件、版本冲突及刷新失败处理",
+          "source": "partial",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十九批当前合同main加载11类错误/身份冲突、sticky与成功前缀/刷新矩阵、未知插件与缺版本方案Load/选择/运行拒绝/SaveReload保opaque完整消费；47项host+5项metadata guard自审与独立复审通过。窄修Register原子发布顺序和一次capture/expected/metadata前重入准入，2参ABI保留。原Cs/native/跨线程/OOM/任意DLL副作用未知，不宣称兼容或沙盒。",
+          "blockerIds": []
+        },
+        {
+          "id": "A07.3",
+          "criterion": "既有真实插件注册到根流程/Group消费",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "仅main历史集成的图像源/二值等工具，不含tool-plugins在制。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "A08",
+      "title": "壳与交互全状态验收",
+      "domains": [
+        "F-03",
+        "F-04",
+        "F-05",
+        "F-06",
+        "F-07",
+        "F-08",
+        "F-09",
+        "F-11"
+      ],
+      "planDependencies": [
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "A06",
+        "A07"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/FRAMEWORK-REVERSE-CHECKLIST.md",
+        "docs/MAIN-PENDING-REVIEW.md",
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md",
+        "docs/reverse/A08-input-failure-batch9.md"
+      ],
+      "implementationArtifacts": [
+        "tests/VisionEditor.WpfChecks/Program.cs",
+        "tests/VisionEditor.ShellChecks/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "A08.1",
+          "criterion": "已实现壳/画布/导航的控件事件回归交付",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "本单元是验收套件交付，非全原厂功能闭合。",
+          "blockerIds": []
+        },
+        {
+          "id": "A08.2",
+          "criterion": "真实键鼠、弹层、DPI及原机同状态矩阵",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "failed",
+          "limitation": "Shell默认键鼠/弹层失败保留，control-events-only不得覆盖。 第九批：历史失败使用RaiseEvent、未记录输入桌面；不能认定产品缺陷或离屏原因，失败保留，人工桌面验证后置。",
+          "blockerIds": [
+            "FAIL-SHELL-INPUT"
+          ]
+        },
+        {
+          "id": "A08.3",
+          "criterion": "发布版全部壳状态的综合差分",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "unverified",
+          "limitation": "有当前子集发布/退出记录，无完整原机综合矩阵。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "B01",
+      "title": "实际运行Tab与变量目标",
+      "domains": [
+        "F-17",
+        "F-15"
+      ],
+      "planDependencies": [],
+      "originalPackageStatus": "evidence-ready",
+      "sourceAndOperationReports": [
+        "docs/VARIABLE-TAB-ROUND2-20261019.md",
+        "docs/reverse/B01-first-fill-batch3.md",
+        "docs/reverse/B01-lazy-root-batch4.md",
+        "docs/reverse/B01-binding-batch5.md",
+        "docs/reverse/B-selection-complete-gate-batch16.md",
+        "docs/reverse/B-complete-unit-gates-batch21.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/WorkflowVariableTargetsWindow.xaml.cs",
+        "src/VisionEditor/WorkflowSourcePicker.cs"
+      ],
+      "units": [
+        {
+          "id": "B01.1",
+          "criterion": "真实运行Tab根、XmlLoaded和惰性装配",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "16项原lazy分支仅Parent=null，真实proxy/SDK根未验。",
+          "blockerIds": []
+        },
+        {
+          "id": "B01.2",
+          "criterion": "候选类型、占用、首次/缓存及确认取消",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "原选择器合成输入通过；原窗口与main元数据消费仍不全。",
+          "blockerIds": []
+        },
+        {
+          "id": "B01.3",
+          "criterion": "全局变量目标绑定写入及保存重开",
+          "source": "done",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "原绑定链已取证；真实SDK转绑/失败/原方案重开未验。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "B02",
+      "title": "Group身份、所有权和复制",
+      "domains": [
+        "F-10",
+        "F-11"
+      ],
+      "planDependencies": [
+        "B01",
+        "A01"
+      ],
+      "originalPackageStatus": "evidence-ready",
+      "sourceAndOperationReports": [
+        "docs/GROUP-RELATION-IDENTITY.md",
+        "docs/reverse/B02-identity-preflight-batch6.md",
+        "docs/WORKFLOW-TAB-TOOLBOX-GROUP-CLOSURE.md",
+        "docs/MAIN-PENDING-REVIEW.md",
+        "docs/reverse/B-group-implementation-batch11.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionFramework/OwnedGroups.cs",
+        "src/VisionEditor.Core/GraphEditorDocument.Groups.cs",
+        "src/VisionEditor.Core/GraphEditorDocument.cs"
+      ],
+      "units": [
+        {
+          "id": "B02.1",
+          "criterion": "main Group内部图创建、Parent及所属关系",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "独立OwnedGroups合同已验，不把它当原生GUID分配。",
+          "blockerIds": []
+        },
+        {
+          "id": "B02.2",
+          "criterion": "main实时源复制、内部图和代理引用重映射",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "已有真实图像Group复制/撤销/重开；跨原生容器另列。 第十一批：只删除索引输出时仅解除IndexSource，保留数组Source和既有Index，23项通过；既有B02.2不重复计分。",
+          "blockerIds": []
+        },
+        {
+          "id": "B02.3",
+          "criterion": "原gro导入ID/GUID及原生复制持久化",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "托管预审已完，native GUID分配与真实六场景未验。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "B03",
+      "title": "Group循环、中断与每轮生命周期",
+      "domains": [
+        "F-12",
+        "F-13"
+      ],
+      "planDependencies": [
+        "B02",
+        "C02"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/GROUP-LOOP-BOUNDARIES.md",
+        "docs/GROUP-ADVANCED-RUNTIME.md",
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md",
+        "docs/reverse/B-round-lifecycle-batch20.md",
+        "docs/reverse/BATCH20-20261020.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionFramework/GroupLoop.cs",
+        "src/VisionFramework/GroupBreak.cs",
+        "tests/GroupRoundLifecycleChecks20/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "B03.1",
+          "criterion": "LoopStep、范围与零值拒绝的当前重建",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "有native算术证据；long/上限为明确独立安全策略。",
+          "blockerIds": []
+        },
+        {
+          "id": "B03.2",
+          "criterion": "中断比较、动态索引及执行前准备",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "当前支持的类型/索引合同已验，非全原生参数编辑器。",
+          "blockerIds": []
+        },
+        {
+          "id": "B03.3",
+          "criterion": "每轮真实实例、回调与异常取消生命周期",
+          "source": "partial",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第二十批实际main深度1/2/3每轮独立factory、scope状态/回调、异步释放先后、单轮/零轮/负步取消、第三轮故障和恢复完整57项自审核。原native FUN_1800a7190对象语义及SDK回调/设备释放仍未知，源码partial/原厂验证后置，不声称VM等价。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "B04",
+      "title": "原生类型、复合叶及累积",
+      "domains": [
+        "F-01",
+        "F-14"
+      ],
+      "planDependencies": [
+        "B03"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/FRAMEWORK-CONTRACTS.md",
+        "docs/COMPOUND-LEAF-MAPPING.md",
+        "docs/GROUP-INDEX-COMPOUND.md",
+        "docs/MAIN-PENDING-REVIEW.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionFramework/Contracts.cs",
+        "src/VisionFramework/GroupOutputAccumulator.cs"
+      ],
+      "units": [
+        {
+          "id": "B04.1",
+          "criterion": "基础标量/数组、基数与类型拒绝",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "int/float/string等当前合同与拒绝矩阵有证据。",
+          "blockerIds": []
+        },
+        {
+          "id": "B04.2",
+          "criterion": "有证复合叶投影与Point/Circle/Fixture传输",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "只计已映射字段/独立托管形状；不计全ABI。",
+          "blockerIds": []
+        },
+        {
+          "id": "B04.3",
+          "criterion": "全部原生类型、pointset/POLYGON/Region ABI",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "blocked",
+          "limitation": "未知类型禁用或独立标识；原生产者/ABI未闭合。",
+          "blockerIds": [
+            "PLUGIN-CONTRACT"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "B05",
+      "title": "流程IO、局部/全局变量与gvar",
+      "domains": [
+        "F-17",
+        "F-04"
+      ],
+      "planDependencies": [
+        "B01",
+        "B04"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/GROUP-LOCAL-VARIABLE-BINDING.md",
+        "docs/GROUP-LOCAL-VARIABLE-TYPE.md",
+        "docs/MAIN-PENDING-REVIEW.md",
+        "docs/reverse/B05-gvar-preflight-batch7.md",
+        "docs/reverse/B05-native-dispatch-batch8.md",
+        "docs/reverse/B05-binary-binding-batch9.md",
+        "docs/reverse/B-global-module-review-batch13.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionFramework/WorkflowConfiguration.cs",
+        "src/VisionFramework/WorkflowSubscriptions.cs",
+        "src/VisionEditor/WorkflowLocalVariablesWindow.xaml.cs"
+      ],
+      "units": [
+        {
+          "id": "B05.1",
+          "criterion": "流程IO和局部变量的作用域、订阅与改型",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "当前已实现类型/操作，完整gvar/全局服务另列。",
+          "blockerIds": []
+        },
+        {
+          "id": "B05.2",
+          "criterion": "原全局变量模块的创建、服务与执行消费",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "有原全局绑定链，但完整模块/会话未交付main。",
+          "blockerIds": [
+            "MISSING-CAPABILITY"
+          ]
+        },
+        {
+          "id": "B05.3",
+          "criterion": "原gvar导入导出和往返",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "存在托管入口线索，无原格式往返和产品实现证据。 第七批：路径UTF8+NUL经GlobalValueImport/Export进入IMVS_SetBinaryData；原生格式消费者、覆盖/密码/事务仍未知，未运行SDK。 第八批：原生SetBinaryData入口经66f090到对象+23a8函数指针/0bd2消息；实际绑定、gvar格式仍未知。 第九批：SDK+23a8静态绑定PlatformManager!PF_M_SetBinaryData，0bd2到SPSetBinaryData，再取VM_PROXY_RecvServerCommand；实际代理模块/格式仍缺。",
+          "blockerIds": [
+            "MISSING-CAPABILITY"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "B06",
+      "title": "Group配置、ROI和结果消费边界",
+      "domains": [
+        "F-15",
+        "F-20"
+      ],
+      "planDependencies": [
+        "B01",
+        "B04",
+        "C01"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/GROUP-NATIVE-EDITORS.md",
+        "docs/GROUP-ADVANCED-RUNTIME.md",
+        "docs/MAIN-PENDING-REVIEW.md",
+        "docs/reverse/B-group-candidates-batch10.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/GroupRunConfigurationWindow.cs",
+        "src/VisionEditor/GroupRunCategories.cs",
+        "src/VisionEditor/GroupDisplayControls.cs"
+      ],
+      "units": [
+        {
+          "id": "B06.1",
+          "criterion": "Group候选资格、类别和代理多目标同步",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "类别/同步已做；FCR-021资格元数据未全消费。 第十批：Group搜索限定参数名且区分大小写、重复叶事件幂等，12项通过；资格元数据缺口仍未交付。",
+          "blockerIds": []
+        },
+        {
+          "id": "B06.2",
+          "criterion": "原ROI/专用参数模板及写回消费",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "独立ROI子集可运行，FCR-018完整模板/实际原插件仍缺。",
+          "blockerIds": []
+        },
+        {
+          "id": "B06.3",
+          "criterion": "当前Group显示关联、样式及结果数据消费",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "计有证的已实现关联/结果，不计原生全部显示工具。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "B07",
+      "title": "插件交接合同与真实消费",
+      "domains": [
+        "F-01",
+        "F-02",
+        "F-20",
+        "F-22"
+      ],
+      "planDependencies": [
+        "B04",
+        "B05",
+        "B06"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/PLUGIN-FRAMEWORK-BOUNDARY.md",
+        "docs/CONTRACT-REQUESTS.md",
+        "docs/ROI-REAL-TOOL.md"
+      ],
+      "implementationArtifacts": [
+        "docs/CONTRACT-REQUESTS.md",
+        "src/VisionPluginContracts/Contracts.cs"
+      ],
+      "units": [
+        {
+          "id": "B07.1",
+          "criterion": "既有插件合同、能力及边界登记",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "已有合同与FCR登记，但FCR未交付实现；登记不等于接口能力和操作已验收。",
+          "blockerIds": []
+        },
+        {
+          "id": "B07.2",
+          "criterion": "新插件公共框架的提交级交接与接口整合",
+          "source": "partial",
+          "implementation": "blocked",
+          "validation": "blocked",
+          "limitation": "用户尚未选择交接，禁止采用另一工作树在制文件。",
+          "blockerIds": [
+            "PLUGIN-CONTRACT"
+          ]
+        },
+        {
+          "id": "B07.3",
+          "criterion": "main既有真实插件合同的根流程/Group消费",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "只计已合入main的历史工具合同，不计新标定来信。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "B08",
+      "title": "模型与Group组合验收",
+      "domains": [
+        "F-01",
+        "F-10",
+        "F-12",
+        "F-13",
+        "F-14",
+        "F-15",
+        "F-17",
+        "F-20",
+        "F-22"
+      ],
+      "planDependencies": [
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/GROUP-FULL-RECONSTRUCTION-CHECKLIST.md",
+        "docs/GROUP-NATIVE-EDITORS.md",
+        "docs/MAIN-PENDING-REVIEW.md"
+      ],
+      "implementationArtifacts": [
+        "tests/VisionEditor.WpfChecks/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "B08.1",
+          "criterion": "已支持Group嵌套/局部变量/图像组合用例",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "当前重构组合已有真实输出、WPF操作和重开记录。",
+          "blockerIds": []
+        },
+        {
+          "id": "B08.2",
+          "criterion": "全类型/完整ROI/代理的组合验收",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "测试子集不覆盖完整原生类型与编辑器。",
+          "blockerIds": []
+        },
+        {
+          "id": "B08.3",
+          "criterion": "原机混合故障/历史/持久化同状态差分",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "真实VM同状态组合未完成。",
+          "blockerIds": [
+            "ACCEPTANCE-PREREQUISITES"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "C01",
+      "title": "撤销root/part实际捕获",
+      "domains": [
+        "F-04",
+        "F-15",
+        "F-21"
+      ],
+      "planDependencies": [],
+      "originalPackageStatus": "evidence-ready",
+      "sourceAndOperationReports": [
+        "docs/UNDO-ROUND2-20261019.md",
+        "docs/reverse/C01-undo-batch1.md",
+        "docs/reverse/C01-registration-batch5.md",
+        "docs/reverse/C-history-suppression-batch10.md",
+        "docs/reverse/C-root-part-engine-batch16.md",
+        "docs/reverse/B-history-engine-independent-review-batch16.md",
+        "docs/reverse/BATCH16-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "src/VisionEditor.Core/GraphEditorDocument.History.cs",
+        "src/VisionEditor/SubprogramCallHost.cs",
+        "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+        "tests/DocumentHistoryEngineChecks16/Program.cs",
+        "tests/DocumentHistoryHostChecks16/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "C01.1",
+          "criterion": "root/part、旧新值与普通动作撤销",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十六批真实DocumentHistoryEngine实现root/part旧新载荷、首次Undo完成new、predicate/forbid/replay/lazy准入、普通/CopyModule排序、容量与异常迁栈；GraphEditorDocument普通/配置编辑真实消费，不再使用旧Snapshot双栈。46引擎+12真实文档适配检查及配置/保存/Group/视口回归通过。main载荷为自身文档；CanvasZoomIndex在回放间仅合并视图字段为独立适配，LastHistoryError为本地诊断。C01.3原SDK载荷及C04文件/密码恢复仍另项未实施，不声称native完全等价。",
+          "blockerIds": []
+        },
+        {
+          "id": "C01.2",
+          "criterion": "Group配置期禁止记录及异常复位合同",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "main文档配置历史seam与真实Group modal/modeless写回已接入，布尔嵌套/异常finally独立适配，29项通过；不是原SDK载荷回放。 原厂/人工差分后置，不参与实施计分。",
+          "blockerIds": [
+            "FRAMEWORK-UNDO"
+          ],
+          "selfReview": {
+            "passed": true,
+            "checks": 29,
+            "runtimeEvidence": "analysis/full-audit/batch10-20261019/C/check.json",
+            "integration": "src/VisionEditor/SubprogramCallHost.cs",
+            "report": "docs/reverse/C-history-suppression-batch10.md"
+          }
+        },
+        {
+          "id": "C01.3",
+          "criterion": "真实Group参数采集与SDK Undo/Redo",
+          "source": "done",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "静态注册链闭合，实际原Group/专属TempFiles未观测。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "C02",
+      "title": "单次/连续/停止调度与参数准备",
+      "domains": [
+        "F-05",
+        "F-16"
+      ],
+      "planDependencies": [],
+      "originalPackageStatus": "running",
+      "sourceAndOperationReports": [
+        "docs/MF05-CONTINUOUS-RUN-CALLCHAIN.md",
+        "docs/MF05-PROCEDURE-RUN-CALLCHAIN.md",
+        "docs/reverse/C02-config-write-batch3.md",
+        "docs/reverse/C02-callbacks-batch4.md",
+        "docs/reverse/C02-clear-leaf-batch6.md",
+        "docs/MAIN-PENDING-REVIEW.md",
+        "docs/reverse/C02-value-consumer-batch7.md",
+        "docs/reverse/C02-begin-isolation-batch8.md",
+        "docs/reverse/C-execution-policy-batch11.md",
+        "docs/reverse/C-result-overlay-batch21.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/WorkflowExecution.cs",
+        "src/VisionFramework/GraphExecutor.cs",
+        "tests/ResultOverlayChecks21/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "C02.1",
+          "criterion": "当前单次/连续/停止及失败状态执行",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "独立执行器实际验证，非native调度器复刻。",
+          "blockerIds": []
+        },
+        {
+          "id": "C02.2",
+          "criterion": "原参数准备、等待与超时边界消费",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "原叶等待可运行，但当前取消/超时策略与SDK不同。",
+          "blockerIds": []
+        },
+        {
+          "id": "C02.3",
+          "criterion": "清结果配置、回调队列及消费者状态",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "FrameworkCallbackQueue已接入main真实ModuleResult消费者；同步提交、Dispatcher刷新、owner/关闭隔离通过构建与回归。原生WorkStatus多消费者、SDK callback线程、设备路径与人工桌面差分仍未知。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "C03",
+      "title": "结果历史与方案替换生命周期",
+      "domains": [
+        "F-16",
+        "F-21"
+      ],
+      "planDependencies": [
+        "C02",
+        "D02"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF05-RESULT-LIFECYCLE.md",
+        "docs/reverse/C02-config-write-batch3.md",
+        "docs/reverse/C02-callbacks-batch4.md",
+        "docs/reverse/C03-history-lifecycle-batch9.md",
+        "docs/reverse/C-execution-policy-batch11.md",
+        "docs/reverse/C-result-history-implementation-batch15.md",
+        "docs/reverse/BATCH17-20261019.md",
+        "docs/reverse/B-result-view-closure-batch18.md",
+        "docs/reverse/BATCH18-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/MainWindow.xaml.cs",
+        "src/VisionEditor/ToolExecutionScope.cs",
+        "src/VisionEditor/FrameworkExecutionPreferences.cs",
+        "src/VisionEditor/FrameworkExecutionPolicy.cs",
+        "src/VisionEditor.Core/FrameworkRunHistory.cs",
+        "src/VisionEditor/MainWindow.FrameworkResultHistory.cs",
+        "src/VisionEditor/ToolDisplays.cs",
+        "tests/ResultViewLifecycleChecks18/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "C03.1",
+          "criterion": "原结果视图切源、缓存与旧事件解绑",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十八批main实际pull展示先清旧frame，provider异常本地诊断，request代数+owner/procedure隔离同步重入旧返回；Replace/Close物理Detach旧scope事件。修前18项反例保全，修后20项实际host自审及独立复审通过；原native输出过滤/回调/全显示工厂差分未知，非原弱事件网复制。",
+          "blockerIds": []
+        },
+        {
+          "id": "C03.2",
+          "criterion": "清结果有效配置到实际SDK消费",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "blocked",
+          "limitation": "原配置重载已明确；main未恢复同一条件控制。 第十一批：main启动配置到Begin显示消费已实施子集，保留session、隐藏旧view并在新结果解除；实际SDK/多消费者仍缺，实施partial。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        },
+        {
+          "id": "C03.3",
+          "criterion": "历史、底部耗时与全局结果缓存生命周期",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "当前独立摘要粒度不同，原全局UI策略证据不足。 第九批：原历史/计时绑定及切源链新增；静态待通知cache跨实例保留，完整宿主与native缓存未闭合。 第十五批真实RunCore采用最新500条独立流程摘要、稳定序号，实际selected节点耗时和算法不可用显示；本地方案替换清自身摘要。原500来自module日志，应用于流程摘要为明确独立适配，native全局缓存未知，整项仍partial。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "C04",
+      "title": "撤销恢复与临时文件所有权",
+      "domains": [
+        "F-04",
+        "F-21"
+      ],
+      "planDependencies": [
+        "C01",
+        "D01"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/UNDO-ROUND2-20261019.md",
+        "docs/reverse/C01-registration-batch5.md",
+        "docs/reverse/C01-undo-batch1.md",
+        "docs/reverse/C-history-payload-batch18.md",
+        "docs/reverse/BATCH18-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "src/VisionEditor.Core/HistoryPayloadStore.cs",
+        "src/VisionEditor.Core/DocumentHistoryEngine.cs",
+        "tests/HistoryPayloadChecks18/Program.cs",
+        "tests/HistoryPayloadEngineChecks18/Program.cs",
+        "tests/HistoryPayloadHostChecks18/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "C04.1",
+          "criterion": "各根类型数据回放与栈迁移",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "main快照回放有验证，未适配原根类型全部载荷。",
+          "blockerIds": []
+        },
+        {
+          "id": "C04.2",
+          "criterion": "原TempFiles载荷所有权、淘汰和释放",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十八批真实history root/part接opaque载荷lease，默认大文档文件化、迁栈不删、容量/清redo/NewLoad/Dispose释放；共享末lease/借用不删/锁删失败保root显式复收/partial write/marker失配保全。store18+engine17+实际文档19自审及独立复审通过；64KiB/独立JSON/安全自有GUID为本地适配，原SDK载荷格式与业务恢复仍C04.1/D01/C04.3开放。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        },
+        {
+          "id": "C04.3",
+          "criterion": "密码取消、恢复栈和异常边界",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "不能把RecoverCallBack泛化成事务回滚，缺真实案例。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "C05",
+      "title": "配置/调试会话与框架释放",
+      "domains": [
+        "F-02",
+        "F-21"
+      ],
+      "planDependencies": [
+        "C02",
+        "B07"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/DEBUG-SESSION-CONTRACT.md",
+        "docs/MAIN-PENDING-REVIEW.md",
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md",
+        "docs/reverse/BATCH17-20261019.md",
+        "docs/reverse/B-owner-fix-followup-review-batch17.md",
+        "docs/reverse/C-execution-owner-implementation-batch17.md",
+        "docs/reverse/B-result-owner-review-batch17.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/ToolEditorHost.cs",
+        "src/VisionFramework/ToolDebugSession.cs",
+        "src/VisionEditor.Core/ExecutionOwnerEpoch.cs",
+        "src/VisionEditor/MainWindow.FrameworkExecutionOwnership.cs",
+        "tests/ConfigurationCloseOwnerChecks17/Program.cs",
+        "tests/ExecutionOwnerLifecycleChecks17/Program.cs",
+        "tests/WorkflowOwnerHostChecks17/Program.cs",
+        "tests/ConfigurationHistoryGenerationChecks17/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "C05.1",
+          "criterion": "普通节点调试单次/连续/停止/关闭等待",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "历史集成会话子集已验证，不含所有真实设备。",
+          "blockerIds": []
+        },
+        {
+          "id": "C05.2",
+          "criterion": "换方案/配置并发关闭与回调解除",
+          "source": "done",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十七批原换源/DeInit链及main真实owner代际、配置关闭/换方案与同ID重载隔离、计数/finally、modal/服务回调、自有lease延迟单次释放均实施并自审核；93项具名断言及修前/修后实际host对照通过。main配置关闭采取立即失效+lease释放，非等待所有配置任务。真实插件私有窗/native矩阵未验证，另C05.3保留。",
+          "blockerIds": []
+        },
+        {
+          "id": "C05.3",
+          "criterion": "原SDK/设备取消、回调和资源释放",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "依赖真实可归属实例和已交付会话。",
+          "blockerIds": [
+            "DEVICE-RELEASE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "C06",
+      "title": "外部服务调度与故障隔离",
+      "domains": [
+        "F-04",
+        "F-16",
+        "F-21",
+        "F-23"
+      ],
+      "planDependencies": [
+        "A05",
+        "C02",
+        "C03"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF01-GLOBAL-ENTRY-AUDIT.md",
+        "docs/CONTRACT-REQUESTS.md"
+      ],
+      "implementationArtifacts": [],
+      "units": [
+        {
+          "id": "C06.1",
+          "criterion": "外部触发、脚本、通信服务入口与消费",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "已识别入口部分；完整服务列表/后端未实现。",
+          "blockerIds": [
+            "MISSING-CAPABILITY"
+          ]
+        },
+        {
+          "id": "C06.2",
+          "criterion": "外部服务调度顺序、故障隔离与恢复",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "没有完整真实服务执行合同/操作矩阵。",
+          "blockerIds": [
+            "MISSING-CAPABILITY"
+          ]
+        },
+        {
+          "id": "C06.3",
+          "criterion": "真实设备连接、停止与关闭释放",
+          "source": "not_started",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "未获设备/会话证据，不默认操作连接设备。",
+          "blockerIds": [
+            "DEVICE-RELEASE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "C07",
+      "title": "长稳、并发与异常恢复",
+      "domains": [
+        "F-16",
+        "F-21",
+        "F-23"
+      ],
+      "planDependencies": [
+        "C03",
+        "C04",
+        "C05",
+        "C06"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF05-PROCESS-LIFETIME-AUDIT.md",
+        "docs/GROUP-LOOP-BOUNDARIES.md",
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md",
+        "docs/reverse/C-stability-baseline-batch13.md",
+        "docs/reverse/B-stability-failure-review-batch14.md",
+        "docs/reverse/C-stability-save-failure-batch14.md",
+        "docs/reverse/BATCH14-20261019.md",
+        "docs/reverse/C-host-recovery-batch20.md",
+        "docs/reverse/BATCH20-20261020.md"
+      ],
+      "implementationArtifacts": [
+        "tests/Check-ProcessExit.ps1",
+        "tests/FrameworkStabilityProbe13/Program.cs",
+        "tests/HostRecoveryChecks20/Program.cs",
+        "tests/ScopeCleanupFailureChecks20/Program.cs",
+        "src/VisionFramework/ModuleExecutionScope.cs"
+      ],
+      "units": [
+        {
+          "id": "C07.1",
+          "criterion": "长稳负载/时长及内存线程句柄基线",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "failed",
+          "limitation": "已交付main/Core固定1800秒负载与自身资源采样工具。原PID54372在413.078秒、21216轮、1327次成功保存后于第二SaveAs的File.Move抛UnauthorizedAccessException；未足时且passed=false，不能计完成。原始7项哈希匹配，异常瞬间根因/HResult未记录；事后属性/ACL不能反推原因。第十四批仅增强未来失败取证和自有子进程退出码launcher，不自动重跑。原厂/全宿主/SDK长稳未覆盖。",
+          "blockerIds": [
+            "FAIL-STABILITY-SAVEAS"
+          ]
+        },
+        {
+          "id": "C07.2",
+          "criterion": "持续并发运行与资源增长验收",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "not_started",
+          "limitation": "已知队列/线程源码不等于长稳运行证据。",
+          "blockerIds": []
+        },
+        {
+          "id": "C07.3",
+          "criterion": "运行异常、失败后重启和关闭恢复",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "第二十批实际MainWindow有限故障/连续运行/重启/关闭矩阵89项与scope释放异常隔离8项通过，配置关闭回归16项通过；尚未完成长稳并发故障矩阵，保留partial，不以短测替代C07.1失败。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "C08",
+      "title": "执行与历史组合验收",
+      "domains": [
+        "F-02",
+        "F-04",
+        "F-16",
+        "F-21"
+      ],
+      "planDependencies": [
+        "C02",
+        "C03",
+        "C04",
+        "C05",
+        "C06",
+        "C07",
+        "B08"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/MF05-PROCEDURE-RUN-CALLCHAIN.md",
+        "docs/MAIN-PENDING-REVIEW.md",
+        "docs/GROUP-LOOP-BOUNDARIES.md",
+        "docs/reverse/B-nested-composition-batch19.md",
+        "docs/reverse/BATCH19-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "tests/VisionEditor.WpfChecks/Program.cs",
+        "tests/NestedCompositionChecks19/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "C08.1",
+          "criterion": "当前运行-编辑-撤销-保存重开组合",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "只计已有独立WPF/执行组合记录。",
+          "blockerIds": []
+        },
+        {
+          "id": "C08.2",
+          "criterion": "嵌套错误、取消和历史释放组合",
+          "source": "partial",
+          "implementation": "done",
+          "validation": "partial",
+          "limitation": "第十九批计划组合工具真实走生产Core/executor/owned scope/filehistory，深度1/2/3、throw/FailedResult/asyncDispose fault/cancel及恢复、编辑UndoRedo/SaveLoad/删除恢复/并发关闭与历史资源释放46项自审及独立复审通过。模块31/31和state6/6释放。Core组合不是MainWindow或原机差分；原SDK/厂商窗口C08.3开放。",
+          "blockerIds": []
+        },
+        {
+          "id": "C08.3",
+          "criterion": "原机执行/历史/资源的综合同状态验收",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "真实SDK/VM组合未验证。",
+          "blockerIds": [
+            "ORIGINAL-INSTANCE"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "D01",
+      "title": "sol单操作保存与native写入点",
+      "domains": [
+        "F-19"
+      ],
+      "planDependencies": [],
+      "originalPackageStatus": "blocked",
+      "sourceAndOperationReports": [
+        "docs/SOL-ROUND2-20261019.md",
+        "docs/reverse/D01-save-callback-batch5.md",
+        "docs/reverse/D01-native-save-batch7.md",
+        "docs/reverse/D01-native-save-review-batch7.md",
+        "docs/reverse/D01-save-callees-batch8.md",
+        "docs/reverse/D01-save-binding-batch9.md"
+      ],
+      "implementationArtifacts": [
+        "tests/Inspect-NativeSolutionSample.ps1"
+      ],
+      "units": [
+        {
+          "id": "D01.1",
+          "criterion": "保存加载托管入口、回调及完成标志",
+          "source": "done",
+          "implementation": "not_started",
+          "validation": "unverified",
+          "limitation": "原CIL链已取，未运行原SDK保存回调。",
+          "blockerIds": []
+        },
+        {
+          "id": "D01.2",
+          "criterion": "8个原样本外层记录边界的只读解析",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "只读辅助解析，非产品原生导入器；不解释未知首字段。",
+          "blockerIds": []
+        },
+        {
+          "id": "D01.3",
+          "criterion": "native writer/reader与单操作字段归因",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "缺已配置native provider及受控保存差分。 第七批：两个保存导出原PE指令已取得并独立复核，SDK1段78行、ModuleFrame4段158行；跨模块callee、writer/reader字段及事务仍未闭合。 第八批：保存callee与下一层消费者原指令已取；SDK+2398绑定未知，ModuleFrame事件/回调封装不能视作落盘完成。 第九批：SDK+2398静态绑定PlatformManager!PF_M_MsgDeal，再交602df0；未连到ModuleFrame writer。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "D02",
+      "title": "独立存储与资源事务补齐",
+      "domains": [
+        "F-18"
+      ],
+      "planDependencies": [],
+      "originalPackageStatus": "running",
+      "sourceAndOperationReports": [
+        "docs/SOLUTION-PERSISTENCE-BOUNDARY.md",
+        "docs/reverse/D02-storage-batch2.md",
+        "docs/reverse/D02-asset-history-batch3.md",
+        "docs/reverse/D02-storage-boundary-batch4.md",
+        "docs/reverse/D02-interruption-batch6.md",
+        "docs/reverse/D-save-roundtrip-batch10.md",
+        "docs/reverse/A-save-failure-transaction-batch14.md",
+        "docs/reverse/C-asset-history-batch19.md",
+        "docs/reverse/BATCH19-20261019.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionFramework/SolutionStore.cs",
+        "src/VisionEditor.Core/GraphEditorDocument.cs",
+        "tests/AssetHistoryScopeChecks19/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "D02.1",
+          "criterion": "独立JSON结构/版本/大小/深度与拒绝",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "原生格式不在本项；32MiB边界及编辑器状态已验。 第十批：独立保存按Load同一规则拒绝不透明JSON重复属性，9项通过并有23项存储/历史回归；FCR024私有资产仍开放。",
+          "blockerIds": []
+        },
+        {
+          "id": "D02.2",
+          "criterion": "资产嵌入、跨目录和多层历史身份",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "failed",
+          "limitation": "FCR-024跨目录SaveAs后Undo路径失败仍未修复；第十九批新增公共stateful provider及实际main NPoint旧文档11/scope99/重Prepare99与真实Undo11→Save99，11项unsafe特征化复验。接口不保证纯历史序列化/重定位或scope回放，禁止反复PrepareSave/清scope/硬编码私有字段假关闭；validation failed保留，implementation partial不加分。",
+          "blockerIds": [
+            "FAIL-ASSET-HISTORY"
+          ]
+        },
+        {
+          "id": "D02.3",
+          "criterion": "独立写入失败事务与受控进程中断",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "锁/失败及自有中断已验；不是断电/所有阶段保证。 第十四批持锁拒绝/PrepareSave异常等22项通过，限定为提交前事务及清理；Changed通知在提交后抛错不回滚。413秒长稳拒绝瞬时原因未知，未以既有测试冒充现场前后事务复验。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "D03",
+      "title": "原生容器与对象数据映射",
+      "domains": [
+        "F-19",
+        "F-10",
+        "F-17"
+      ],
+      "planDependencies": [
+        "D01",
+        "B02",
+        "B05"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/SOL-ROUND2-20261019.md",
+        "docs/reverse/D-container-evidence-batch11.md",
+        "docs/reverse/B-identity-semantic-map-batch15.md",
+        "docs/reverse/D-ui-zoom-mapping-batch15.md"
+      ],
+      "implementationArtifacts": [
+        "src/SolutionInspector/ModuleFrame.cs",
+        "src/SolutionInspector/SemanticMap.cs",
+        "src/SolutionInspector/UiParameters.cs"
+      ],
+      "units": [
+        {
+          "id": "D03.1",
+          "criterion": "原XML/UI关系、身份和字段映射",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "unverified",
+          "limitation": "原样本/托管线索存在，尚无完整语义映射。 第十五批检查器实际输出XML声明身份/显式所属/前后连线互证、UI候选关联与诊断；ProceZoomIndex按原键/UTF8终NUL与整数规则映射，保留raw和损坏状态。实际CircleFind只读输出成功，原八段Relation/native身份机制未知不假关。",
+          "blockerIds": []
+        },
+        {
+          "id": "D03.2",
+          "criterion": "mdata参数/模型/资源内部语义",
+          "source": "not_started",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "内部writer/reader及类型号未知。 第十一批：原容器检查器增加名称/键固定槽Base64保全，19项通过且样本hash不变；不是原格式写回或完整语义映射。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        },
+        {
+          "id": "D03.3",
+          "criterion": "原未知字段保持和对象图往返",
+          "source": "not_started",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "未实现原容器转换，不以猜测字段代替。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "D04",
+      "title": "版本、密码和迁移",
+      "domains": [
+        "F-19"
+      ],
+      "planDependencies": [
+        "D03"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/COMPATIBLETOOL-VERSION-MIGRATION.md",
+        "docs/reverse/D-frontend-migration-implementation-batch13.md"
+      ],
+      "implementationArtifacts": [
+        "src/FrontendDesignMigration/DesignConverter.cs",
+        "src/FrontendDesignMigration/Program.cs",
+        "tests/FrontendDesignMigrationChecks13/Program.cs"
+      ],
+      "units": [
+        {
+          "id": "D04.1",
+          "criterion": "CompatibleTool托管版本转换调度",
+          "source": "done",
+          "implementation": "partial",
+          "validation": "unverified",
+          "limitation": "转换顺序/异常源码已审，原工具未执行。 第十三批交付可执行纯托管V4.0 Root运行界面XML→V4.4.0转换，18项自审核及实际CLI成功/拒覆盖通过。模板路径与base64编码显式传入，不猜原默认；native solution/process/group转换仍未实施，整单元不计完成。",
+          "blockerIds": []
+        },
+        {
+          "id": "D04.2",
+          "criterion": "版本依赖、缺失插件及转换失败恢复",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "没有完整旧版依赖/配置/格式矩阵。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        },
+        {
+          "id": "D04.3",
+          "criterion": "旧版原样本迁移、执行与再保存",
+          "source": "not_started",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "缺旧版样本和native迁移往返。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "D05",
+      "title": "原生兼容最小实现与往返",
+      "domains": [
+        "F-18",
+        "F-19"
+      ],
+      "planDependencies": [
+        "D03",
+        "D04",
+        "B07"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/SOLUTION-PERSISTENCE-BOUNDARY.md",
+        "docs/SOL-ROUND2-20261019.md"
+      ],
+      "implementationArtifacts": [],
+      "units": [
+        {
+          "id": "D05.1",
+          "criterion": "产品原生容器读取导入",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "只读检查器不等于可执行导入，产品仍拒绝。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        },
+        {
+          "id": "D05.2",
+          "criterion": "产品原生容器写入导出",
+          "source": "not_started",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "无原生writer语义与可用实现。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        },
+        {
+          "id": "D05.3",
+          "criterion": "原厂打开/执行/再保存最小往返",
+          "source": "not_started",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "原机互通未完成。",
+          "blockerIds": [
+            "NATIVE-FORMAT"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "D06",
+      "title": "SDK/API/ABI与部署依赖",
+      "domains": [
+        "F-23"
+      ],
+      "planDependencies": [
+        "A07",
+        "B07",
+        "D04"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/FRAMEWORK-CONTRACTS.md",
+        "docs/SOLUTION-PERSISTENCE-BOUNDARY.md",
+        "docs/framework-acceptance.json"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/VisionEditor.csproj",
+        "Start-Flow-Editor.cmd"
+      ],
+      "units": [
+        {
+          "id": "D06.1",
+          "criterion": "原SDK导出、结构体与ABI消费合同",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "已有部分托管/CIL/PE坐标，非全部ABI。",
+          "blockerIds": []
+        },
+        {
+          "id": "D06.2",
+          "criterion": "当前win-x64子集打包启动和退出",
+          "source": "partial",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "当前发布启动/退出有记录，非完整native部署。",
+          "blockerIds": []
+        },
+        {
+          "id": "D06.3",
+          "criterion": "干净机器全部依赖/设备SDK验收",
+          "source": "not_started",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "无干净机器全库/设备矩阵。",
+          "blockerIds": [
+            "ACCEPTANCE-PREREQUISITES"
+          ]
+        }
+      ]
+    },
+    {
+      "taskId": "D07",
+      "title": "真实工具集成及干净环境验收",
+      "domains": [
+        "F-22",
+        "F-23"
+      ],
+      "planDependencies": [
+        "D05",
+        "D06",
+        "A08",
+        "B08",
+        "C08"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/PLUGIN-FRAMEWORK-BOUNDARY.md",
+        "docs/ROI-REAL-TOOL.md",
+        "docs/MAIN-PENDING-REVIEW.md"
+      ],
+      "implementationArtifacts": [
+        "src/VisionEditor/MainWindow.xaml.cs"
+      ],
+      "units": [
+        {
+          "id": "D07.1",
+          "criterion": "用户选定新插件提交的逐文件交接",
+          "source": "partial",
+          "implementation": "blocked",
+          "validation": "blocked",
+          "limitation": "未选新插件合流，不把来信或脏文件当交付。",
+          "blockerIds": [
+            "PLUGIN-CONTRACT"
+          ]
+        },
+        {
+          "id": "D07.2",
+          "criterion": "main历史真实工具的宿主端到端",
+          "source": "done",
+          "implementation": "done",
+          "validation": "done",
+          "limitation": "已有图像源/二值/Group执行及保存，不含新工具线。",
+          "blockerIds": []
+        },
+        {
+          "id": "D07.3",
+          "criterion": "最终干净发布、安装与退出完整矩阵",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "当前子集启动记录不足以关闭全部交付。",
+          "blockerIds": []
+        }
+      ]
+    },
+    {
+      "taskId": "D08",
+      "title": "全域缺口复查与交付",
+      "domains": [
+        "F-01",
+        "F-02",
+        "F-03",
+        "F-04",
+        "F-05",
+        "F-06",
+        "F-07",
+        "F-08",
+        "F-09",
+        "F-10",
+        "F-11",
+        "F-12",
+        "F-13",
+        "F-14",
+        "F-15",
+        "F-16",
+        "F-17",
+        "F-18",
+        "F-19",
+        "F-20",
+        "F-21",
+        "F-22",
+        "F-23"
+      ],
+      "planDependencies": [
+        "D07"
+      ],
+      "originalPackageStatus": "planned",
+      "sourceAndOperationReports": [
+        "docs/FRAMEWORK-REVERSE-CHECKLIST.md",
+        "docs/FRAMEWORK-PROGRESS-RECONCILIATION.md",
+        "docs/framework-progress-audit.json"
+      ],
+      "implementationArtifacts": [
+        "tests/ProgressAudit/Reconcile.py"
+      ],
+      "units": [
+        {
+          "id": "D08.1",
+          "criterion": "F-01至F-23原始入口/分支与32包全域对账",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "本次只完成总计划与现有成果对账；完整原始入口清点、全部最终证据及原机验收仍缺。本次统计工具不新增逆向完成项。",
+          "blockerIds": []
+        },
+        {
+          "id": "D08.2",
+          "criterion": "证据、失败、FCR及验收源的最终一致性",
+          "source": "partial",
+          "implementation": "partial",
+          "validation": "partial",
+          "limitation": "本次只完成总计划与现有成果对账；完整原始入口清点、全部最终证据及原机验收仍缺。本次统计工具不新增逆向完成项。",
+          "blockerIds": []
+        },
+        {
+          "id": "D08.3",
+          "criterion": "全部必需项收口及最终兼容声明",
+          "source": "partial",
+          "implementation": "not_started",
+          "validation": "blocked",
+          "limitation": "其余包未关闭，不能完成最终交付验收。",
+          "blockerIds": [
+            "ACCEPTANCE-PREREQUISITES"
+          ]
+        }
+      ]
+    }
+  ],
+  "statisticsDoNotCreateReverseCredit": true,
+  "summary": {
+    "denominatorVersion": "plan-units-v1",
+    "units": 96,
+    "packages": 32,
+    "domains": 23,
+    "baseline": "3996ad1732929823755957de5537b1460ab3b8e0",
+    "layers": {
+      "source": {
+        "done": 52,
+        "total": 96,
+        "percent": 54.2,
+        "remaining": 44,
+        "statuses": {
+          "done": 52,
+          "partial": 37,
+          "not_started": 7
+        }
+      },
+      "implementation": {
+      "done": 42,
+        "total": 96,
+      "percent": 43.75,
+      "remaining": 54,
+        "statuses": {
+        "done": 42,
+        "not_started": 29,
+        "partial": 23,
+          "blocked": 2
+        }
+      },
+      "validation": {
+        "done": 29,
+        "total": 96,
+        "percent": 30.2,
+        "remaining": 67,
+        "statuses": {
+          "done": 29,
+          "partial": 25,
+          "blocked": 31,
+          "unverified": 5,
+          "not_started": 3,
+          "failed": 3
+        }
+      }
+    },
+    "allThreeDone": 28,
+    "allThreeRemaining": 68,
+    "allThreePercent": 29.2,
+    "closedPackages": 0,
+    "newProductTestsRun": 0,
+      "overallCompletionPercent": 43.75,
+      "overallDone": 42,
+      "overallRemaining": 54,
+    "overallPolicy": "implementation-self-review-v1",
+    "summaryReconciliation": "2026-10-22逐项重算：96个implementation状态中done=42、partial=23、not_started=29、blocked=2。此前汇总字段误记41/96；本次仅校正汇总数，不变更单元状态或新增实施。",
+    "meaning": "用户指定：只按实施完成并自审核的单元统计总进度；人工验收不参与，源码/验证及三层交集仅保留为证据维度"
+  },
+  "legacyDomainSnapshot": {
+    "sourceFile": "docs/framework-acceptance.json",
+    "recordedDate": "2026-10-17",
+    "recordedBaseline": "b75f90c",
+    "nativeAcceptance": false,
+    "rows": [
+      {
+        "id": "F-01",
+        "name": "公共数据契约",
+        "implemented": "标量、数值/字符串数组，以及圆/点/Fixture强类型数组；元素枚举、验证、只读快照、跨Group输入输出和嵌套展开；Components部分Blob字段和像素矩形/环形Region可选叶投影，原始聚合根保留",
+        "status": "部分完成",
+        "nativeGap": "完整原生类型、float精度与ABI；Region混合/Polygon/排除/坐标变换、Components缺失原生指标、复合根混合报告模式及完整模板未完成",
+        "entry": "src/VisionFramework/Contracts.cs",
+        "acceptance": "类型错配拒绝；数组通过Group到下游；保存重读",
+        "result": "41项数组检查；93项调用检查含实际BMP阈值连通域叶面积两轮累积、改名/删除传播和保存重开；412项实际WPF事件均通过",
+        "sourceEvidence": "VM.Core.DynamicOutput.GetOutputInt/Float/String；docs/FRAMEWORK-CONTRACTS.md；compound-leaf-sources.json（Blob/RegionCopy XML及原生只读叶窗口）",
+        "operationNumbers": [
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407
+        ]
+      },
+      {
+        "id": "F-02",
+        "name": "插件宿主及调试会话",
+        "implemented": "WPF工厂、隔离单次/连续/停止、缓存输入、预览、关闭等待",
+        "status": "部分完成",
+        "nativeGap": "原生首次上游准备、设备取消回调及全部插件联调未完成；旧Form路径仍存在",
+        "entry": "src/VisionEditor/ToolEditorHost.cs",
+        "acceptance": "单节点不执行坏兄弟节点；停止后可重启；关闭等待释放",
+        "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+        "sourceEvidence": "DynamicParamsTabControl→BottomCommand→VmModule.Run→ModuleManager.SelfRun；docs/DEBUG-SESSION-CONTRACT.md",
+        "operationNumbers": [
+          231,
+          232,
+          233,
+          234,
+          235,
+          236,
+          237
+        ]
+      },
+      {
+        "id": "F-03",
+        "name": "WPF主窗口",
+        "implemented": "自定义边框、工作区最大化修正、分隔与状态栏",
+        "status": "部分完成",
+        "nativeGap": "多屏/DPI矩阵和全状态原生截图差分未完成",
+        "entry": "src/VisionEditor/MainWindow.xaml",
+        "acceptance": "两次最大化还原；检查顶部底部；截图检查状态栏",
+        "result": "修复状态栏文字间距并截图目检通过；最大化两轮事件检查通过；桌面输入及多屏DPI未验收",
+        "sourceEvidence": "VMControls.WPF主窗/窗口模板；WindowWorkArea；主窗全状态差分未完成",
+        "operationNumbers": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "id": "F-04",
+        "name": "菜单与工具栏",
+        "implemented": "保存、打开、撤销重做、锁定、运行/连续/停止已接命令",
+        "status": "部分完成",
+        "nativeGap": "相机管理、全局变量、通信、全局触发、脚本、综合配置未实现；运行模式等入口须继续审计；运行模式仅静态文字，菜单为简化独立实现，尚未逐命令全量恢复",
+        "entry": "src/VisionEditor/MainWindow.xaml.cs",
+        "acceptance": "逐按钮核对命令及禁用原因；禁止将可见图标记为实现",
+        "result": "本轮源码核查；完整操作验收未关闭",
+        "sourceEvidence": "主窗命令与资源；现有BuildChrome含独立简化菜单，尚未全命令对齐",
+        "operationNumbers": [
+          58,
+          59,
+          60,
+          167,
+          170
+        ]
+      },
+      {
+        "id": "F-05",
+        "name": "工作流Tab",
+        "implemented": "增删改名复制切换、列表定位、间隔和NG停止、空方案；Group Tab按当前模块集打开配置、移除顶层菜单，运行/停止所属根流程并保留内部视图",
+        "status": "部分完成",
+        "nativeGap": "原生流程/算法代码导出、流程等待超时尚未完成；非活动Tab的全部历史显示状态及VM差分仍未验收",
+        "entry": "src/VisionEditor/WorkflowTabs.cs",
+        "acceptance": "添加复制删除与撤销；改名重名；运行中禁改；溢出列表",
+        "result": "本轮新增实际Group Tab配置、单次/连续/停止及旧菜单失效检查；截图与运行值另列",
+        "sourceEvidence": "ProcedureConfigControl.TopTabItemStyle/OperateMenu；VmProcedureDecorator命令",
+        "operationNumbers": [
+          26,
+          27,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176,
+          177,
+          178,
+          179,
+          180,
+          181,
+          327,
+          328,
+          329,
+          330,
+          337,
+          338,
+          342,
+          343,
+          346
+        ]
+      },
+      {
+        "id": "F-06",
+        "name": "工具导航",
+        "implemented": "15分类、折叠展开、悬停弹层、注册工具可用状态、拖放预览及提交；去除自定120ms延时，分类交接、锁定和失效拖放清理，Group插入原子创建内部图",
+        "status": "部分完成",
+        "nativeGap": "多数工具插件未实现；右侧布局、全部动画/原生警告窗、注册热刷新、自定义工具包库尚未完成",
+        "entry": "src/VisionEditor/ToolNavigation.cs",
+        "acceptance": "点击不创建；拖入才创建；取消无残留；未实现工具禁用",
+        "result": "按ToolBox触发器对照并操作；三层限制在插入时执行，不擅自禁用Group工具",
+        "sourceEvidence": "原ToolBox与导出的tool-catalog；工具注册状态由独立宿主判定",
+        "operationNumbers": [
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          47,
+          48,
+          49,
+          50,
+          130,
+          131,
+          132,
+          145,
+          146,
+          344,
+          345,
+          351,
+          352,
+          356,
+          357,
+          358
+        ]
+      },
+      {
+        "id": "F-07",
+        "name": "节点交互",
+        "implemented": "端点悬停、框选多选、临时拖影、提交、吸附对齐、复制粘贴、撤销及输入边界；复制时重新解析当前源参数，同父级合法上游/订阅保留；源失效跳过；Group40px边界与混合对齐",
+        "status": "部分完成",
+        "nativeGap": "全部原生组合类型/输入边界与真实鼠标差分未关闭；跨方案及同名替换等源身份边界未验收",
+        "entry": "src/VisionEditor/WorkflowGestures.cs",
+        "acceptance": "单/多节点拖动；Esc取消；失焦；跨流程复制与引用重映射",
+        "result": "真实上游BMP消费者复制输出像素一致；40px拖影、对齐、底部完整边界有事件和目检记录",
+        "sourceEvidence": "DiagramItem/DiagramArea输入事件；WorkflowInputBoundaries恢复范围",
+        "operationNumbers": [
+          69,
+          70,
+          71,
+          72,
+          73,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107,
+          108,
+          109,
+          110,
+          111,
+          112,
+          113,
+          114,
+          115,
+          135,
+          136,
+          137,
+          138,
+          139,
+          140,
+          141,
+          142,
+          143,
+          144,
+          145,
+          146,
+          147,
+          148,
+          149,
+          150,
+          151,
+          152,
+          153,
+          154,
+          155,
+          156,
+          157,
+          158,
+          159,
+          353,
+          354,
+          355
+        ]
+      },
+      {
+        "id": "F-08",
+        "name": "连线和避障",
+        "implemented": "正交路径、箭头、命中选中删除、连接拖动、中点拖动、节点插入及保存",
+        "status": "部分完成",
+        "nativeGap": "原生全路由策略未完整恢复；重叠/逆向/极端布局仍须差分",
+        "entry": "src/VisionEditor/WorkflowWireEditing.cs",
+        "acceptance": "四方向与重叠布局；路径不消失；插入撤销；保存手工路径",
+        "result": "中点拖动与插入事件操作及截图目检；实际鼠标拖动阻塞；原生避障差分未关闭",
+        "sourceEvidence": "恢复路由代码及Diagram连接事件；完整原生路由策略未确认",
+        "operationNumbers": [
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          116,
+          117,
+          118,
+          119,
+          120,
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134
+        ]
+      },
+      {
+        "id": "F-09",
+        "name": "视口和小地图",
+        "implemented": "缩放滚动、鹰眼点击拖动、收起展开、流程独立视口；源码对照Shift横滚和Ctrl组合事件路由",
+        "status": "部分完成",
+        "nativeGap": "极端坐标、DPI、空图及全原生公式行为差分未完成",
+        "entry": "src/VisionEditor/WorkflowOverview.cs",
+        "acceptance": "滚动缩放同步；切换流程恢复；导航后节点可选",
+        "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+        "sourceEvidence": "DiagramPage/ZoomArea及鹰眼视口；全部状态原生差分未完成",
+        "operationNumbers": [
+          66,
+          67,
+          68,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          388,
+          389,
+          390,
+          391,
+          392,
+          393,
+          394
+        ]
+      },
+      {
+        "id": "F-10",
+        "name": "Group所有权",
+        "implemented": "内部模块集、双击进入、嵌套、复制删除及保存；Group内部图、代理目标独立复制，复制/改名后名称同步；工具箱新增一次创建节点和内部图",
+        "status": "部分完成",
+        "nativeGap": "原生.gro/全部复杂引用、全名同名替换、跨方案剪贴板及实例生命周期仍未全验收；历史顶层调用保留独立兼容",
+        "entry": "src/VisionFramework/OwnedGroups.cs",
+        "acceptance": "三层进入；复制修改不串；删除撤销；保存重开",
+        "result": "多层实际图像Group复制、一次撤销重做、保存重开运行；非法超深插入/粘贴无修改",
+        "sourceEvidence": "VmGroupDecorator/VmProcedureDecorator.OpenGroupCommandExecute",
+        "operationNumbers": [
+          238,
+          239,
+          240,
+          243,
+          295,
+          296,
+          329,
+          331,
+          332,
+          334,
+          335,
+          336,
+          347,
+          348,
+          349,
+          350,
+          359,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407
+        ]
+      },
+      {
+        "id": "F-11",
+        "name": "Group返回",
+        "implemented": "Tab Up逐层返回、根层隐藏、面包屑返回、再进入；运行根流程时保留内部Group画布，当前配置编辑也不改变导航",
+        "status": "部分完成",
+        "nativeGap": "VM焦点/视口/全部运行状态视觉差分仍未完成",
+        "entry": "src/VisionEditor/GroupCanvasNavigation.cs",
+        "acceptance": "两层返回到根，再进入；不新增顶层Tab",
+        "result": "实际返回与再进入，内部Tab单次/连续/停止均保留当前作用域",
+        "sourceEvidence": "ProcedureConfigControl.btnUp/UpEnable；VmProcedureDecorator.UpCommandExecute",
+        "operationNumbers": [
+          241,
+          242,
+          243,
+          244,
+          245,
+          246,
+          247,
+          331,
+          332,
+          334,
+          348,
+          349,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407
+        ]
+      },
+      {
+        "id": "F-12",
+        "name": "Group循环",
+        "implemented": "起止订阅、[start,end)、私有LoopIndex、嵌套隔离、间隔和取消；按原生字段LoopStep推进，零步长写入拒绝，未臆造XML中不存在的步长控件",
+        "status": "部分完成",
+        "nativeGap": "每轮持续实例/局部状态、原生状态回调、负步长无中断及溢出原生差分未完成；long推进/溢出和10000轮上限为独立策略",
+        "entry": "src/VisionFramework/GroupLoop.cs",
+        "acceptance": "终值3执行3次；末索引2；空区间、嵌套、停止",
+        "result": "真实图像按20/70/120/170运行并逐项对照独立单轮；实际窗口step2与终值5运行0/2/4；停止、禁用重启及保存复制运行复验通过",
+        "sourceEvidence": "ModuleFrame.CGroupNode::DoWork 0x1800a0930；范围解析0x1800a53a0；group-set-param-native.c:59–66；原IMVSGroupAlgorithmTab.xml无LoopStep控件；GROUP-LOOP-BOUNDARIES.md",
+        "operationNumbers": [
+          249,
+          250,
+          251,
+          252,
+          253,
+          254,
+          361,
+          362,
+          364,
+          365,
+          366,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407
+        ]
+      },
+      {
+        "id": "F-13",
+        "name": "Group中断",
+        "implemented": "int/float/string六比较，常量索引及父级前置标量整数动态索引；依赖调度、当前运行数据准备、越界诊断、复制重映射和失效引用清理",
+        "status": "部分完成",
+        "nativeGap": "通用插件端口方括号索引编辑、原生缓存时序及全部状态码差分未完成；当前界面为独立索引字段，并非原生内嵌树模板",
+        "entry": "docs/GROUP-BREAK-ACCUMULATION.md",
+        "acceptance": "LoopIndex达到2中断，实际只执行0/1两轮；缺值不读旧结果",
+        "result": "实际图像源SN[0,1]按变量索引1在LoopIndex2前中断；数值编辑解除订阅、撤销恢复、保存重开通过；缺值/越界不读旧数据",
+        "sourceEvidence": "ButtonSelecter.IndexClickCommandExecute、GetBindIndex、GetFrontFilterTreeOperation及VmIO.RelateIndex；GROUP-INDEX-COMPOUND.md",
+        "operationNumbers": [
+          255,
+          257,
+          265,
+          266,
+          267,
+          268,
+          269,
+          270,
+          271,
+          361,
+          364,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374,
+          375,
+          376,
+          386,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407
+        ]
+      },
+      {
+        "id": "F-14",
+        "name": "Group累积和显示",
+        "implemented": "数值/字符串累积；圆/点/Fixture记录数组跨轮追加、嵌套展开和签名传播；图像保持最终标量；复合结果换行与逐元素显示",
+        "status": "部分完成",
+        "nativeGap": "全原生组合字段树、混合叶模式、Region/Components与pointset映射、其他原生复合类型及ABI未完成",
+        "entry": "docs/GROUP-BREAK-ACCUMULATION.md",
+        "acceptance": "两轮输出[0,1]；重跑仍两项；关闭累积取末轮",
+        "result": "真实BMP找圆经内3外2轮得到6圆，半径逐项一致；点/Fixture由测试字段投影跨两层调用；关闭内层累积后实际改为2圆；窗口切换累积返回最终标量",
+        "sourceEvidence": "VmIODecorate.ParamValueChanged遍历GetAllLeafIO下发mode；ProcessGroupOutputV44对image/pointset无条件清除；GROUP-INDEX-COMPOUND.md",
+        "operationNumbers": [
+          256,
+          257,
+          258,
+          259,
+          260,
+          261,
+          262,
+          264,
+          272,
+          273,
+          361,
+          364,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374,
+          375,
+          376,
+          386,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407
+        ]
+      },
+      {
+        "id": "F-15",
+        "name": "Group配置器",
+        "implemented": "输入批量增删改名绑定、双栏配置、类别排序、多目标关联同步、专用编辑器入口；内部Tab打开真实Group五页窗口，父级编辑事务与工具专用编辑器共享正确作用域",
+        "status": "部分完成",
+        "nativeGap": "完整原生来源树、全部复杂/训练控件及像素差分未完成；原生警告窗未完整恢复",
+        "entry": "src/VisionEditor/GroupRunConfigurationWindow.cs",
+        "acceptance": "实际参数3+5=8；订阅后6；解除后8；32上限；清空取消/确认",
+        "result": "实际窗口索引来源选择、数字解除/撤销恢复、复合开关和保存运行已接通；原生ButtonSelecter完整模板仍有差异",
+        "sourceEvidence": "DynamicRunParamConfigWin.xaml/Panal.xaml；GroupInputParam/GroupRunParam/RunParamConfigDecorate",
+        "operationNumbers": [
+          274,
+          275,
+          276,
+          277,
+          278,
+          279,
+          280,
+          281,
+          282,
+          283,
+          284,
+          285,
+          286,
+          287,
+          288,
+          289,
+          290,
+          291,
+          292,
+          297,
+          298,
+          299,
+          300,
+          301,
+          302,
+          303,
+          304,
+          305,
+          306,
+          307,
+          308,
+          309,
+          310,
+          311,
+          312,
+          313,
+          314,
+          315,
+          321,
+          322,
+          323,
+          324,
+          325,
+          326,
+          333,
+          361,
+          364,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374,
+          375,
+          376,
+          386,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407
+        ]
+      },
+      {
+        "id": "F-16",
+        "name": "执行调度",
+        "implemented": "图执行、Group隔离SelfRun、连续停止、参数准备、失败清理与并发守卫",
+        "status": "部分完成",
+        "nativeGap": "原生引擎完整调度、单步、流程超时、设备回调/状态码不等价",
+        "entry": "src/VisionEditor/WorkflowExecution.cs",
+        "acceptance": "缺失缓存失败并清结果；显式准备后恢复；连续停止关闭",
+        "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+        "sourceEvidence": "原生RunNodeSelf/JustRunModuleSelf及托管调用链；独立执行器不等于原生调度恢复",
+        "operationNumbers": [
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          188,
+          189,
+          293,
+          294,
+          316,
+          317
+        ]
+      },
+      {
+        "id": "F-17",
+        "name": "局部变量和流程IO",
+        "implemented": "初始化、订阅、父子传参、代理编辑、稳定ID及事务撤销",
+        "status": "部分完成",
+        "nativeGap": ".gvar导入导出、全部类型与原生生命周期未完成；非全局变量服务",
+        "entry": "src/VisionEditor/WorkflowLocalVariablesWindow.xaml",
+        "acceptance": "变量修改改变下游结果；改名/删除引用；类型错配与缺失值",
+        "result": "本轮宿主事件操作已覆盖；原生差分待验收",
+        "sourceEvidence": "DynamicObjectConfigControl、DynamicInput/Output、局部变量来源树",
+        "operationNumbers": [
+          184,
+          185,
+          192,
+          193,
+          194,
+          195,
+          196,
+          197,
+          198,
+          199,
+          200,
+          201,
+          202,
+          203,
+          204,
+          205,
+          206
+        ]
+      },
+      {
+        "id": "F-18",
+        "name": "独立方案存储",
+        "implemented": ".vmx.json图/Group/订阅/ROI/显示样式保存重开及引用重映射；Group内部图、实时复制后引用和名称支持保存重开",
+        "status": "部分完成",
+        "nativeGap": "异常写入/资源目录迁移及全版本矩阵仍未关闭；原生.sol仍不兼容",
+        "entry": "src/VisionFramework/SolutionStore.cs",
+        "acceptance": "保存重开运行值相同；复制内部引用不指回原图",
+        "result": "88项调用/Group专项含动态索引、类型拒绝、复制删除、越界、保存重开与真实复合输出；既有23项持久化记录保留",
+        "sourceEvidence": "独立SolutionStore/GeometryResources协议；不是原生.sol写入器",
+        "operationNumbers": [
+          53,
+          55,
+          72,
+          132,
+          173,
+          206,
+          291,
+          292,
+          326,
+          340,
+          341,
+          352,
+          359,
+          374,
+          375,
+          376,
+          386,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387
+        ]
+      },
+      {
+        "id": "F-19",
+        "name": "原生.sol兼容",
+        "implemented": "部分只读结构恢复/检查",
+        "status": "未完成（仅有局部能力）",
+        "nativeGap": "完整导入导出、未知字段保留、原生往返未完成",
+        "entry": "src/SolutionInspector",
+        "acceptance": "仅检查已支持样例；不能用JSON往返替代.sol验收",
+        "result": "未执行原生往返：当前不具备完整.sol导出能力，明确未通过",
+        "sourceEvidence": "SolutionInspector部分只读恢复；原生序列化完整映射未恢复",
+        "operationNumbers": []
+      },
+      {
+        "id": "F-20",
+        "name": "图像结果与ROI服务",
+        "implemented": "端口预览、ROI编辑模板、显示样式、继承区域、Fixture传输及实工具运行",
+        "status": "部分完成",
+        "nativeGap": "分屏/布局未实现；Fixture原生变换与舍入、变换坐标编辑、部分模板未完成",
+        "entry": "src/VisionUi",
+        "acceptance": "继承20x10处理200像素；Fixture平移50；切回手工160000；样式不改算法像素",
+        "result": "既有ROI宿主24项记录保留，本轮未重跑；新增Group专用图像源作用域联调，Fixture原生差分仍开放",
+        "sourceEvidence": "ImageViewConfig/ROISelecter/VM.PcUI调色器/CPreproMaskTool；ROI-DISPLAY-FIXTURE.md",
+        "operationNumbers": [
+          63,
+          64,
+          65,
+          186,
+          259,
+          268,
+          273,
+          301,
+          302,
+          303,
+          304,
+          305,
+          306,
+          307,
+          308,
+          309
+        ]
+      },
+      {
+        "id": "F-21",
+        "name": "生命周期",
+        "implemented": "会话关闭等待、取消、定时任务及拖放引用释放，受控退出检查；工具弹层不再创建延迟关闭定时器；拖放取消解除事件与payload",
+        "status": "部分完成",
+        "nativeGap": "长稳、真实设备及全部异常路径仍未验收",
+        "entry": "tests/Check-ProcessExit.ps1",
+        "acceptance": "关闭活动调试窗口/主窗，检查自启动PID退出；不处理其他任务进程",
+        "result": "最新受控Core/插件/WPF/主窗关闭记录见证据；已失败和超时的中间轮次没有标成通过",
+        "sourceEvidence": "DynamicParamsTabControl关闭路径；实际设备清理与所有回调仍未知",
+        "operationNumbers": [
+          170,
+          189,
+          190,
+          234,
+          236,
+          237,
+          293,
+          294,
+          361,
+          364,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          408,
+          409,
+          410,
+          411,
+          412
+        ]
+      },
+      {
+        "id": "F-22",
+        "name": "首批真实工具集成",
+        "implemented": "图像源及硬阈值二值化贯通导航/配置/订阅/Group/预览/保存/释放；内部画布通过Group Tab进入专用图像源编辑器并消费实际修改",
+        "status": "部分完成",
+        "nativeGap": "全相机、其余二值化模式及工具库未完成；本轮没有改插件实现",
+        "entry": "docs/ROI-REAL-TOOL.md",
+        "acceptance": "真实BMP宽1296、序号17；Group代理ROI改变实际输出像素",
+        "result": "本批真实图像源和径向找圆在Group内联调；6个实际圆跨两层累积。点/Fixture的投影模块用于类型传递验证，不冒充原生算法插件",
+        "sourceEvidence": "图像源专用WPF编辑器和ImageBinary元数据；硬阈值为独立实现",
+        "operationNumbers": [
+          201,
+          202,
+          205,
+          318,
+          319,
+          320,
+          333,
+          335,
+          339,
+          374,
+          375,
+          376,
+          386,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387
+        ]
+      },
+      {
+        "id": "F-23",
+        "name": "全库部署和SDK",
+        "implemented": "当前子集独立win-x64发布，不依赖原VM SDK运行",
+        "status": "未完成（仅有局部能力）",
+        "nativeGap": "全工具库、设备SDK/API/ABI、干净机器及性能长稳未完成",
+        "entry": "Start-Flow-Editor.cmd",
+        "acceptance": "脱离原SDK启动仅证明当前子集；全库验收待插件交付",
+        "result": "只验当前子集发布启动/关闭；全库和干净机器验收未执行",
+        "sourceEvidence": "独立win-x64发布；没有全原生API/ABI或全库覆盖证据",
+        "operationNumbers": []
+      }
+    ],
+    "policy": "历史23域事实只作原报告索引，不把旧部分通过覆盖后续失败或标为本次重跑。"
+  },
+  "knownCorrections": [
+    {
+      "issue": "旧0/32忽略已有子集",
+      "correction": "整包关闭仅最终门槛，三层/96及三层交集为新固定进度。"
+    },
+    {
+      "issue": "F-18资源另存历史曾只验PrepareSave为空",
+      "correction": "后续实际插件PrepareSave+Undo失败，D02.2验证failed，FCR-024开放。"
+    },
+    {
+      "issue": "Shell控件事件通过被误当默认输入通过风险",
+      "correction": "A08.2维持failed，默认键鼠/菜单弹层失败不被76控件事件通过覆盖。"
+    },
+    {
+      "issue": "局部变量候选仅凭CustomVisible推断",
+      "correction": "按B01原Tab_Run Params/ISubInfo/SubscribeVisible链及FCR-019修订，B01实现和验证维持partial。"
+    },
+    {
+      "issue": "SaveConfig同名重载混淆",
+      "correction": "C02批3区分AppBase exe.config字符串重载与CWD cfg文档重载和缓存，不把读写链统称已实现。"
+    }
+  ],
+  "blockers": [
+    {
+      "id": "FAIL-ASSET-HISTORY",
+      "kind": "已复现产品失败",
+      "units": [
+        "D02.2"
+      ],
+      "reason": "跨目录Undo资产路径失败，以及实际main校准历史旧11/当前scope99导致Undo后Save写回99。",
+      "unblockCondition": "FCR-024版本绑定资产身份/纯历史序列化与重定位，加历史与运行scope一致回放；用户选择合同交付后复验路径/源删除/多层历史与非文件状态。",
+      "evidence": [
+        "docs/reverse/D02-asset-history-batch3.md",
+        "docs/reverse/C-asset-history-batch19.md"
+      ]
+    },
+    {
+      "id": "FAIL-SHELL-INPUT",
+      "kind": "合成输入夹具失败；产品缺陷未证实",
+      "units": [
+        "A08.2"
+      ],
+      "reason": "Keyboard.Focus加RaiseEvent的合成输入下焦点仍为TabItem，File/Recent弹层未打开；尚无真实设备命中与前台焦点证据，不能判定产品菜单缺陷",
+      "unblockCondition": "自有当前构建在WinSta0\\Default可见前台窗口记录真实输入命中、焦点、IsSubmenuOpen、Popup尺寸和命令消费；据结果修产品或夹具；多屏/DPI及原机差分单独开放",
+      "evidence": [
+        "docs/FRAMEWORK-WORKTREE-RETIREMENT.md",
+        "docs/reverse/A08-shell-input-batch30.md"
+      ]
+    },
+    {
+      "id": "ORIGINAL-INSTANCE",
+      "kind": "受控原实例/运行隔离",
+      "units": [
+        "A01.3",
+        "A03.3",
+        "B01.3",
+        "B02.3",
+        "B03.3",
+        "C01.3",
+        "C03.2",
+        "C04.2",
+        "C04.3",
+        "C08.3"
+      ],
+      "reason": "局部映射已证明，但原日志/GAC/watch/output、真实Group/SDK及TempFiles隔离与观测未齐",
+      "unblockCondition": "完成原日志受控装载/输出约束，专属SDK实例和被动观测后执行固定矩阵",
+      "evidence": [
+        "docs/reverse/A03-process-isolation-batch6.md",
+        "docs/reverse/B01-binding-batch5.md",
+        "docs/reverse/C01-registration-batch5.md"
+      ]
+    },
+    {
+      "id": "NATIVE-FORMAT",
+      "kind": "原生引擎/格式/样本缺证据",
+      "units": [
+        "D01.3",
+        "D03.2",
+        "D03.3",
+        "D04.2",
+        "D04.3",
+        "D05.1",
+        "D05.2",
+        "D05.3"
+      ],
+      "reason": "writer/reader与mdata语义、旧版/密码样本及原厂往返缺失；main最近原生provider诊断未配置，本次审计未复测引擎状态",
+      "unblockCondition": "提供已配置授权native分析环境和自有单操作原方案/旧版样本，逐字段追读写后往返",
+      "evidence": [
+        "docs/SOL-ROUND2-20261019.md",
+        "docs/COMPATIBLETOOL-VERSION-MIGRATION.md"
+      ],
+      "providerAvailabilityFreshness": "Historical main diagnosis retained, not re-probed in this evidence-only reconciliation."
+    },
+    {
+      "id": "PLUGIN-CONTRACT",
+      "kind": "跨项目合同/提交交接",
+      "units": [
+        "B04.3",
+        "B07.2",
+        "D07.1"
+      ],
+      "reason": "完整类型/配置/会话能力未交付或尚未选择新插件合流",
+      "unblockCondition": "按FCR责任边界取得已提交合同，用户选择交接后main逐文件消费与验收",
+      "evidence": [
+        "docs/PLUGIN-FRAMEWORK-BOUNDARY.md",
+        "docs/CONTRACT-REQUESTS.md"
+      ]
+    },
+    {
+      "id": "MISSING-CAPABILITY",
+      "kind": "尚未交付的产品能力",
+      "units": [
+        "A05.3",
+        "A06.3",
+        "B05.2",
+        "B05.3",
+        "C06.1",
+        "C06.2"
+      ],
+      "reason": "运行界面/全局服务/gvar后端和持久化能力缺口",
+      "unblockCondition": "原源码和数据流补齐后在所属项目实现，不以占位窗口/改名JSON代替",
+      "evidence": [
+        "docs/MF01-GLOBAL-ENTRY-AUDIT.md",
+        "docs/MF01-FRONTEND-UI-SOURCE-AUDIT.md"
+      ]
+    },
+    {
+      "id": "DEVICE-RELEASE",
+      "kind": "真实设备/会话资源条件",
+      "units": [
+        "C05.3",
+        "C06.3"
+      ],
+      "reason": "实际设备/SDK会话与取消释放回调缺证据",
+      "unblockCondition": "提供可归属本任务的受控设备/会话和固定操作/退出矩阵，不默认操作连接设备",
+      "evidence": [
+        "docs/DEBUG-SESSION-CONTRACT.md"
+      ]
+    },
+    {
+      "id": "ACCEPTANCE-PREREQUISITES",
+      "kind": "完整差分/部署前置未满足",
+      "units": [
+        "A02.3",
+        "B08.3",
+        "D06.3",
+        "D08.3"
+      ],
+      "reason": "真实桌面DPI/原机组合、干净机器全依赖和全部必需项尚未验收",
+      "unblockCondition": "完成相应运行/插件/native前置后按既定矩阵验收，保留失败",
+      "evidence": [
+        "docs/FRAMEWORK-REVERSE-CHECKLIST.md",
+        "docs/FRAMEWORK-REVERSE-MASTER-PLAN.md"
+      ]
+    },
+    {
+      "id": "FRAMEWORK-UNDO",
+      "kind": "实施已完成；原厂差分后置",
+      "units": [
+        "C01.2"
+      ],
+      "reason": "第十批main配置历史seam已实施并自审核，保留原SDK root/part全载荷与人工差分未知，不阻挡实施计分。",
+      "unblockCondition": "所有实施完成后另行安排原厂Group差分；完整载荷回放仍属C01.3，不能将本地快照适配称VM等价。",
+      "evidence": [
+        "docs/reverse/C01-registration-batch5.md",
+        "docs/CONTRACT-REQUESTS.md",
+        "docs/reverse/C-history-suppression-batch10.md"
+      ],
+      "affectsImplementation": false
+    },
+    {
+      "id": "FAIL-STABILITY-SAVEAS",
+      "kind": "实际运行失败，未足时",
+      "units": [
+        "C07.1"
+      ],
+      "reason": "原自有30分钟负载在413秒SaveAs替换拒绝，缺失败瞬间HResult及占用信息，根因未定。",
+      "unblockCondition": "保留失败；先用有阶段/HResult/精确目标前后hash/事务/外部退出码的受控诊断明确拒绝条件；不盲改产品重试。新受控足时负载及采样/退出证据齐备后再审定，不能把短测或人工验收混进实施分母。",
+      "evidence": [
+        "docs/reverse/BATCH14-20261019.md",
+        "docs/reverse/B-stability-failure-review-batch14.md",
+        "docs/reverse/C-stability-save-failure-batch14.md"
+      ],
+      "affectsImplementation": true
+    }
+  ],
+  "latestEvidenceBatch": {
+    "id": "batch31-20261020",
+    "baseline": "803124bb69b970209dac946419a68760149ee211",
+    "report": "docs/reverse/BATCH31-20261020.md",
+    "note": "A05.1新增五树823文件171候选定位器及两处旧清单遗漏，B07.1/C02.2/D06.1未获闭合证据；本轮实施新增0，累计41/96。"
+  },
+  "overallProgressPolicy": {
+    "version": "implementation-self-review-v1",
+    "numerator": "implementation=done，已有交付与自审核证据",
+    "denominator": 96,
+    "manualAcceptanceExcluded": true,
+    "manualAcceptanceTiming": "全部实施完成后另行验收",
+    "partialCredit": 0,
+    "previousPolicy": "历史三层交集仅保留审计，不再作为总进度",
+    "transition": "29/96=30.2%；口径变化不计新增实施。"
+  },
+  "originalReconciliationBaseline": "70b3b4297a798cc0f0f7c149aeaf49be1031be72"
+}

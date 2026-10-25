@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-02 画布拖拽与滚轮边界闭合</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../MF02-CANVAS-PAN-ZOOM-EDGE.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#mf-02-画布拖拽与滚轮边界闭合">MF-02 画布拖拽与滚轮边界闭合</a></p><p style="margin-left:14px"><a href="#原始依据">原始依据</a></p><p style="margin-left:14px"><a href="#本次独立实现与验收">本次独立实现与验收</a></p><p style="margin-left:14px"><a href="#尚未验证的原生差异">尚未验证的原生差异</a></p></details><h1 id="mf-02-画布拖拽与滚轮边界闭合">MF-02 画布拖拽与滚轮边界闭合</h1><h2 id="原始依据">原始依据</h2><ul>
+<li><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs</code>：<code>_ZoomTicks</code> 为 0.1 至 2.0 的二十档；<code>OnPreviewMouseWheel</code> 先执行 Shift 横滚，再执行 Ctrl 缩放；<code>OnChangeZoom</code> 只在滚轮增量大于或小于零时修改档位。</li>
+<li>同文件 <code>OnMouseLeftButtonDown</code>、<code>ScrollViewer_MouseMove</code>、<code>OnMouseLeftButtonUp</code>：Ctrl 按下记录鼠标坐标，每次移动先计算与上一次坐标之差，然后更新记录；抬起释放捕获。原生 <code>ViewArea</code> 还有边界与边距处理，不能仅凭本次测试宣称全部视口公式等价。</li>
+</ul>
+<h2 id="本次独立实现与验收">本次独立实现与验收</h2><ul>
+<li><code>WorkflowCanvas.cs</code> 的画布平移改用逐次鼠标位移。到达左边界后反向拖动 20 像素立即让水平视口偏移 20 像素；旧的按下点累计公式会一直停在边界。</li>
+<li>Ctrl 滚轮零增量不再误退一档；正负增量各移动一个 0.1 档。Shift 横滚、锚点缩放和普通滚轮仍由原有路径处理。</li>
+<li>专项 WPF 验证在真实主窗口/ScrollViewer 中调用画布平移及缩放操作：检查边界反向、档位、模型修订未变及方案保存重开。这一项是实际 WPF 控件状态检查，但没有用系统鼠标注入 Ctrl 拖动。<code>analysis/full-audit/canvas-pan-edge-reversal.png</code> 是专项测试的 WPF 渲染截图，截图代码仅在测试项目。</li>
+</ul>
+<h2 id="尚未验证的原生差异">尚未验证的原生差异</h2><ul>
+<li>原生 <code>ViewArea</code> 在画布边缘调整 <code>GridContent.Margin</code> 的整套公式、实际系统鼠标连贯拖动、不同 DPI 和多个窗口尺寸仍未做 VM 同状态差分。本次只关闭边缘反向拖拽时序和零增量档位差异。</li>
+<li>视口为当前会话的每流程状态，保存的方案数据不会包含鼠标位置；保存重开验收只验证画布操作没有污染工作流模型。</li>
+</ul>
+<p class="meta">来源：docs/MF02-CANVAS-PAN-ZOOM-EDGE.md · SHA256 7e8be572bbeadf9f5ac9480d3c6910b228f3dd9ba257c873fc9e318156fa3b84<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

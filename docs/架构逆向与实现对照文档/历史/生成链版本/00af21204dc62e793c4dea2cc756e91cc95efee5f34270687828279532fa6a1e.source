@@ -1,0 +1,1 @@
+const fs=require('fs'),path=require('path');const site=path.resolve(__dirname,'../../../docs/架构逆向与实现对照文档'),data=JSON.parse(fs.readFileSync(path.join(site,'清单/条目/b0709d8efb0744d0516e.json')));console.log(JSON.stringify({chains:data.chains.map(c=>({id:c.id,title:c.title,keys:Object.keys(c)})),tracks:data.lifecycle.tracks.map(c=>({id:c.id,title:c.title,factIds:c.factIds}))}));

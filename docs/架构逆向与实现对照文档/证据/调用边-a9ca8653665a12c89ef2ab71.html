@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Program.Main参数解析 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>Program.Main参数解析 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-T03"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>Program.Main参数解析 → Trim拼接 → Split分号 → LoadType/五字段</h2><p>逐args.Trim后无分隔追加，再Split分号并记录拆分参数；只检查Count>=4、TryParse类型，随后读取索引1/2/3/4。原CIL确认这个门不是>=5，不修写成通常的参数校验；密码作为第3字段进入方案转换。</p><p><a href="../专题/compatibility-tool.html#edge-T03">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/compatibility-tool.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/compatibility-tool.edges.json · SHA256 6498d618a4b576d430f952a5aa8d65e3e378d653e8429b2b5cd14a4609e3c7ba</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="ab14632092d0769ae0454f87e1af611b7038cd477c28fad0c16bb7f421217e48">{
+  &quot;id&quot;: &quot;T03&quot;,
+  &quot;route&quot;: &quot;原版 · 主程序交接与入口&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;Program.Main参数解析&quot;,
+  &quot;to&quot;: &quot;Trim拼接 → Split分号 → LoadType/五字段&quot;,
+  &quot;behavior&quot;: &quot;逐args.Trim后无分隔追加，再Split分号并记录拆分参数；只检查Count>=4、TryParse类型，随后读取索引1/2/3/4。原CIL确认这个门不是>=5，不修写成通常的参数校验；密码作为第3字段进入方案转换。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/CompatibleTool.Audit/CompatibleTool/Program.cs&quot;,
+      &quot;member&quot;: &quot;CompatibleTool.Program.Main parsing/dispatch&quot;,
+      &quot;sha256&quot;: &quot;796184f7cbe03c2c9c267873b0992e1cc4b1574ff6f46814bf6285288aca2bb7&quot;,
+      &quot;start&quot;: 12,
+      &quot;end&quot;: 53,
+      &quot;excerpt&quot;: &quot;\tpublic static int Main(string[] args)\n\t{\n\t\tLog.Info(\&quot;开始升级...\&quot;);\n\t\tbool flag = false;\n\t\ttry\n\t\t{\n\t\t\tLog.Info(\&quot;多语言初始化开始\&quot;);\n\t\t\tstring lang = AppLocalizationService.GetLang(\&quot;Lang_Name\&quot;);\n\t\t\tLog.Info(\&quot;多语言初始化结束\&quot;);\n\t\t\tStringBuilder stringBuilder = new StringBuilder();\n\t\t\tfor (int i = 0; i &lt; args.Count(); i++)\n\t\t\t{\n\t\t\t\tstringBuilder.Append(args[i].Trim());\n\t\t\t}\n\t\t\tstring[] array = stringBuilder.ToString().Split(';');\n\t\t\tLog.Info(string.Format(\&quot;参数：{0}\&quot;, string.Join(\&quot;;\&quot;, array)));\n\t\t\tif (array != null &amp;&amp; array.Count() >= 4 &amp;&amp; Enum.TryParse&lt;LoadType>(array[0].ToString(), out var result))\n\t\t\t{\n\t\t\t\tstring oriPath = array[1];\n\t\t\t\tstring oriPwd = array[2];\n\t\t\t\tstring newPath = array[3];\n\t\t\t\tstring targetVersion = array[4];\n\t\t\t\tswitch (result)\n\t\t\t\t{\n\t\t\t\tcase LoadType.VMSolution:\n\t\t\t\t\tflag = convertHelper.ConvertSolution(oriPath, oriPwd, newPath, targetVersion);\n\t\t\t\t\tbreak;\n\t\t\t\tcase LoadType.VMProcedure:\n\t\t\t\t\tflag = convertHelper.ConvertProcedure(oriPath, newPath, targetVersion);\n\t\t\t\t\tbreak;\n\t\t\t\tcase LoadType.VMGroup:\n\t\t\t\t\tflag = convertHelper.ConvertGroup(oriPath, newPath, targetVersion);\n\t\t\t\t\tbreak;\n\t\t\t\tcase LoadType.VMDesign:\n\t\t\t\t\tflag = convertHelper.ConvertDesign(oriPath, newPath, targetVersion);\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tConsole.Write(ex.Message);&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/CompatibleTool.Audit/CompatibleTool/LoadType.cs&quot;,
+      &quot;member&quot;: &quot;LoadType declaration&quot;,
+      &quot;sha256&quot;: &quot;5cb68715891856c90522f5efc712201195c1eaff2eab60ea34e7eab0f7630c11&quot;,
+      &quot;start&quot;: 3,
+      &quot;end&quot;: 9,
+      &quot;excerpt&quot;: &quot;public enum LoadType\n{\n\tVMSolution,\n\tVMProcedure,\n\tVMGroup,\n\tVMDesign\n}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/compatibility-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;CompatibleTool.Program::Main&quot;,
+      &quot;sha256&quot;: &quot;ca850a40fc4d6b2a270d8ffa63db37897fa02f7df6e5e2bbfd0ed165dcfacaa5&quot;,
+      &quot;start&quot;: 67,
+      &quot;end&quot;: 86,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x0600009a\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x0600009a\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;CompatibleTool.Program\&quot;,\n            \&quot;name\&quot;: \&quot;Main\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Public, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;0001081d0e\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 442,\n          \&quot;ilSha256\&quot;: \&quot;a2db2d17607f459cfa62d1a10fe4a93ad5116d8320fc8dd872397c77ff906d28\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00728f120070289500000600160a00729f12007028950000060072b1120070289d01000a0b72c5120070289500000600739e01000a0c1613042b1800080211049a6f9f01000a6fa001000a2600110417581304110402281d00002bfe04130511052dd8086f3c00000a178d9100000125161f3b9d6f9c00000a0d72d7120070725b1200700928a101000a283300000a289500000600092c0e09281d00002b1afe0416fe012b011613061106399d0000000009169a6f3c00000a1207281f00002b1308110839830000000009179a130909189a130a09199a130b091a9a130c1107130d110d450400000002000000170000002a0000003d0000002b4e7e4a0000041109110a110b110c6fed0000060a2b3b7e4a0000041109110b110c6fef0000060a2b287e4a0000041109110b110c6fee0000060a2b157e4a0000041109110b110c6ff00000060a2b022b00000000de22130e00110e6f5500000a285600000a00110e6f5400000a289700000600160a00de00de0e007e4a0000046ff10000060000dc72e5120070062d0772f71200702b0572fd120070283300000a2895000006007203130070289500000600062d03152b0116130f2b00110f2a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;af413cf17cf5683582b604d4cd3079234cb2af3f7f56e14594e3ab73b77d90e4 / MVID 22070afa-2e59-4765-93c6-cdf80c45681f&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;参数日志包含完整拆分字段；本轮未执行或收集真实路径/密码。分号转义与畸形参数行为只保留静态分支。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

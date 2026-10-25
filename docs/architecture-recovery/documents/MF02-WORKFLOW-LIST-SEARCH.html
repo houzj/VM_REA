@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-02 工作流列表节点定位</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../MF02-WORKFLOW-LIST-SEARCH.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#mf-02-工作流列表节点定位">MF-02 工作流列表节点定位</a></p><p style="margin-left:14px"><a href="#原始依据">原始依据</a></p><p style="margin-left:14px"><a href="#本次独立实现与操作验证">本次独立实现与操作验证</a></p><p style="margin-left:14px"><a href="#尚未验证的原生差异">尚未验证的原生差异</a></p></details><h1 id="mf-02-工作流列表节点定位">MF-02 工作流列表节点定位</h1><h2 id="原始依据">原始依据</h2><ul>
+<li><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmProcedureDecorator.cs</code>：<code>SearchModulePopupCommand</code>、<code>SearchModuleCommandExecute</code> 根据路径切换当前模块集，并用模块 <code>Position</code> 与 <code>Source</code> 创建 <code>SearchModel</code>。</li>
+<li><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ItemsPage.cs</code>：<code>OnSelectedModuleChanged</code> 从 <code>SearchModel.Source</code> 选中目标模块。</li>
+<li><code>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ZoomArea.xaml.cs</code>：<code>OnSearchModuleInfoChanged</code> 将目标位置减去视口半宽/半高，分别增加 50/15，再乘当前 <code>Scale</code> 设置滚动偏移；负值先归零。</li>
+</ul>
+<h2 id="本次独立实现与操作验证">本次独立实现与操作验证</h2><ul>
+<li><code>WorkflowTabs.cs</code> 的工作流列表叶节点点击先切换流程和选中节点，再按原始 <code>ZoomArea</code> 公式定位。先前的实现把 <code>X * scale</code> 与未缩放的半个视口相减，在非 100% 缩放下出现偏移。</li>
+<li>专项 WPF 主窗口中，点击真实 <code>TreeViewItem</code> 叶节点，从另一工作流切换到目标工作流，并恢复该流程的 160% 视口；选中节点且弹层关闭。水平/垂直偏移均与源码公式一致，截图在工作树 <code>analysis/full-audit/canvas-workflow-list-search.png</code>，截图工具只属于测试项目。</li>
+<li>定位没有增加文档修订；紧接着撤销恢复的是之前的节点添加，重做后保存并重开仍保留节点及位置。</li>
+</ul>
+<h2 id="尚未验证的原生差异">尚未验证的原生差异</h2><ul>
+<li>此工作流列表是当前独立实现；原生 <code>SearchModulePopupCommand</code> 的弹层结构、Group 嵌套路径解析、真实 VM 同状态视觉与鼠标交互尚未逐项比对。这里确认的是节点源/选择/定位链和公式在当前 WPF 界面中的行为，不宣称整个搜索弹层等价。</li>
+</ul>
+<p class="meta">来源：docs/MF02-WORKFLOW-LIST-SEARCH.md · SHA256 192e006b04d4b2cf968750eb4605ed59127f6c0680cd4e76a552a14f32896560<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

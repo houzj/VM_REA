@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DiagramPage.GetPath · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>DiagramPage.GetPath · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-W08"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>DiagramPage.GetPath → 全障碍 A* → 端点重试 → 后处理</h2><p>先按全部矩形构图，以 5 像素偏移端点寻路；少于 3 点改为只用端点矩形重试；仍短则构建回退拐点。最后 OptimizeLinePoints、加实际锚点、GetTurnPoints 与 RechargeLinePoints。</p><p><a href="../专题/canvas-viewport.html#edge-W08">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/canvas-viewport.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/canvas-viewport.edges.json · SHA256 4fed170ca686179656302412fc5543a52af51554793d8d6c7bc3c26b3cd24409</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="dab9d84ec2489b396b3e195a8d71c432b6910ea9458c28ae2fb1304a4c21d7bb">{
+  &quot;id&quot;: &quot;W08&quot;,
+  &quot;route&quot;: &quot;原版 · 路由&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;DiagramPage.GetPath&quot;,
+  &quot;to&quot;: &quot;全障碍 A* → 端点重试 → 后处理&quot;,
+  &quot;behavior&quot;: &quot;先按全部矩形构图，以 5 像素偏移端点寻路；少于 3 点改为只用端点矩形重试；仍短则构建回退拐点。最后 OptimizeLinePoints、加实际锚点、GetTurnPoints 与 RechargeLinePoints。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml.cs&quot;,
+      &quot;member&quot;: &quot;DiagramPage.GetPath&quot;,
+      &quot;sha256&quot;: &quot;35fda4306245515f4dfb6dbf20e7b8479bbae56830b2f76549b63e9d456699d3&quot;,
+      &quot;start&quot;: 438,
+      &quot;end&quot;: 481,
+      &quot;excerpt&quot;: &quot;\tinternal IList&lt;Point> GetPath(DiagramItem sourceItem, DiagramItem targetItem, int sourceIndex, int targetIndex)\n\t{\n\t\tList&lt;Point> list = new List&lt;Point>();\n\t\tPoint item = sourceItem.AnchorPoint(sourceIndex);\n\t\tPoint item2 = targetItem.AnchorPoint(targetIndex);\n\t\tdouble num = 5.0;\n\t\tRect rectWithMargin = sourceItem.GetRectWithMargin(num);\n\t\tRect rectWithMargin2 = targetItem.GetRectWithMargin(num);\n\t\tPoint offsetPoint = sourceItem.GetOffsetPoint(sourceIndex, num);\n\t\tPoint offsetPoint2 = targetItem.GetOffsetPoint(targetIndex, num);\n\t\tList&lt;Rect> allRects = GetAllRect();\n\t\tList&lt;Rect> list2 = new List&lt;Rect> { rectWithMargin, rectWithMargin2 };\n\t\tAPoint[,] pathMap = GetPathMap(list2);\n\t\tList&lt;APoint> list3 = AStar.FindPath(new APoint((int)offsetPoint.X / 5 + 1, (int)offsetPoint.Y / 5 + 1), new APoint((int)offsetPoint2.X / 5 + 1, (int)offsetPoint2.Y / 5 + 1), pathMap);\n\t\tif (list3.Count &lt; 3)\n\t\t{\n\t\t\tpathMap = GetPathMap(list2, list2);\n\t\t\tallRects = list2;\n\t\t\tlist3 = AStar.FindPath(new APoint((int)offsetPoint.X / 5 + 1, (int)offsetPoint.Y / 5 + 1), new APoint((int)offsetPoint2.X / 5 + 1, (int)offsetPoint2.Y / 5 + 1), pathMap);\n\t\t}\n\t\tif (list3.Count &lt; 3)\n\t\t{\n\t\t\tif (offsetPoint.X != offsetPoint2.X &amp;&amp; offsetPoint.Y != offsetPoint2.Y)\n\t\t\t{\n\t\t\t\tlist.Add(new Point(offsetPoint.X, offsetPoint2.Y));\n\t\t\t}\n\t\t\tlist.Insert(0, offsetPoint);\n\t\t\tlist.Add(offsetPoint2);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tfor (int i = 0; i &lt; list3.Count; i++)\n\t\t\t{\n\t\t\t\tlist.Add(new Point((list3[i].X - 1) * 5, (list3[i].Y - 1) * 5));\n\t\t\t}\n\t\t}\n\t\tlist = PathFinder.OptimizeLinePoints(list, list2, allRects, DiagramItem.GetOrientation(sourceIndex), DiagramItem.GetOrientation(targetIndex));\n\t\tlist.Insert(0, item);\n\t\tlist.Add(item2);\n\t\tList&lt;Point> turnPoints = PathFinder.GetTurnPoints(list);\n\t\tPathFinder.RechargeLinePoints(turnPoints, allRects);\n\t\treturn turnPoints;\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

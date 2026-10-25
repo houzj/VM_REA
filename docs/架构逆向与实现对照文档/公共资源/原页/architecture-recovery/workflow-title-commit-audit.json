@@ -1,0 +1,830 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "title": "流程标题显式提交、名称写入与保存边界",
+  "entryCompletenessProved": false,
+  "fullBehaviorClosed": false,
+  "closedEntryChains": 0,
+  "runtimeExecuted": false,
+  "browserRendered": false,
+  "counts": {
+    "findings": 11,
+    "sourceConfirmed": 9,
+    "independent": 1,
+    "unknown": 1,
+    "originalBodies": 33,
+    "validatedBranchTargets": 82,
+    "references": 60
+  },
+  "artifacts": [
+    {
+      "key": "pcui",
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\Apps.PcUI.dll",
+      "sha256": "bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74",
+      "mvid": "380598ff-2817-448e-bad2-2350035a99a0",
+      "reaEvidence": "ev_95dbe8344ff771d47ce5359fa809e7381b3769e7598c50f0e1b3d69b42b3ce27"
+    },
+    {
+      "key": "wpf",
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VMControls.WPF.dll",
+      "sha256": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d",
+      "mvid": "d144317f-3992-4275-9b0f-13fb6163e07d",
+      "reaEvidence": "ev_3eb1fd75ae8c1c32c6ae332a1cf0b6d1ea816b3794cf22eee230719d5af4dcd6"
+    },
+    {
+      "key": "core",
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VM.Core.dll",
+      "sha256": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+      "mvid": "290025bc-e040-4cd5-94dd-cd49b9af9c99",
+      "reaEvidence": "ev_758f593356d11c17370747b341d4b1992a0fe8ab3fd3176f70d4a6831c3d8517"
+    },
+    {
+      "key": "sdk-x64",
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\PublicFile\\x64\\VM.PlatformSDKCS.dll",
+      "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+      "mvid": "e7b3a3b0-7083-486a-8ca2-97cecec02ea2",
+      "reaEvidence": "ev_f7be1556d1c1f0da99dd1b08f8123e6bc1998e5194f19d85c28edfc0b6aca764"
+    }
+  ],
+  "authority": "Selected original managed CIL independently decoded and tied to retained REA artifact SHA/MVID; local resource declarations separate; no vendor execution or per-method REA raw-body corroboration claim.",
+  "groupBaseChain": [
+    {
+      "type": "VM.Core.VmModule",
+      "baseType": "VM.Core.VmFrameTreeBase"
+    },
+    {
+      "type": "VM.Core.VmProcedure",
+      "baseType": "VM.Core.VmModuleSet"
+    },
+    {
+      "type": "VM.Core.VmModuleSet",
+      "baseType": "VM.Core.VmModule"
+    },
+    {
+      "type": "VM.Core.IMVSGroup",
+      "baseType": "VM.Core.VmModuleSet"
+    }
+  ],
+  "findings": [
+    {
+      "id": "WTN01",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "节点/流程标题与重命名声明",
+      "to": "Name Explicit绑定及RenameCommand / RenameWindowCommand",
+      "behavior": "所选NORMAL节点标题HeadReNameTextBox.Text绑定Name（TwoWay、UpdateSourceTrigger=Explicit），IsReName另TwoWay；流程标题和Group标题也声明相同提交形式。所选右键重命名项调用RenameWindowCommand，另有RenameCommand项；前者声明默认禁用，仅IsForbidden=false且IsLoadFailed=false启用。这是具体资源入口，不把所有菜单、F2或双击都当作同一路重命名。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml",
+          "member": "NORMAL title explicit binding",
+          "sha256": "95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9",
+          "start": 1143,
+          "end": 1143,
+          "excerpt": "          <appUi:HeadReNameTextBox Name=\"itemName\" Grid.Column=\"1\" Background=\"#00FFFFFF\" FontWeight=\"Bold\" FontSize=\"12\" VerticalAlignment=\"Center\" BorderThickness=\"0\" MaxLength=\"{x:Static local:DiagramItem.MaxNameLenth}\" Foreground=\"{Color:ColorResourceBinding Col_EditProcess_Foreground}\" Text=\"{Binding Name, Mode=TwoWay, UpdateSourceTrigger=Explicit}\" IsReName=\"{Binding IsReName, Mode=TwoWay}\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml",
+          "member": "Rename window menu declaration",
+          "sha256": "95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9",
+          "start": 1074,
+          "end": 1089,
+          "excerpt": "    <MenuItem Header=\"{DynamicResource Lang_Rename}\" Command=\"{Binding RenameWindowCommand}\">\n      <FrameworkElement.Style>\n        <Style TargetType=\"{x:Type MenuItem}\">\n          <Setter Property=\"IsEnabled\" Value=\"False\" />\n          <Style.Triggers>\n            <MultiDataTrigger>\n              <MultiDataTrigger.Conditions>\n                <Condition Value=\"False\" Binding=\"{Binding IsForbidden}\" />\n                <Condition Value=\"False\" Binding=\"{Binding IsLoadFailed}\" />\n              </MultiDataTrigger.Conditions>\n              <Setter Property=\"IsEnabled\" Value=\"True\" />\n            </MultiDataTrigger>\n          </Style.Triggers>\n        </Style>\n      </FrameworkElement.Style>\n    </MenuItem>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml",
+          "member": "Procedure header explicit binding",
+          "sha256": "a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106",
+          "start": 529,
+          "end": 529,
+          "excerpt": "                      <appUi:HeadReNameTextBox Name=\"headText\" Foreground=\"{DynamicResource Col_ProcessBar_Foreground}\" BorderThickness=\"0\" Background=\"#00FFFFFF\" MaxLength=\"64\" FontSize=\"14\" Margin=\"8,0,0,0\" VerticalAlignment=\"Center\" MaxWidth=\"240\" Text=\"{Binding Name, Mode=TwoWay, UpdateSourceTrigger=Explicit}\" IsReName=\"{Binding IsReName, Mode=TwoWay}\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "diagramitemtemplate/ProcedureConfigControl原BAML byte-equal父证据已在既有账本，真实模板选择、其它菜单和快捷键全集未在本片运行核验。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN02",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "VmModuleBaseDecorator.Rename命令",
+      "to": "IsReName=true与有限弹窗分支",
+      "behavior": "RenameCommandExe仅IsReName=true；RenameWindowCommandExe先置true，再new ModifyName(this).ShowDialog。IsReName值变化先写字段，变true时注册RootOperation再通知；不因失败的后续窗口构造/注册而声称回滚。ModifyName带参构造仅decorator is VmModuleDecorator才赋DataContext；不能泛称所有流程/Group装饰器都可用同一弹窗。SearchClick只清DataContext再Close，并未显式UpdateSource。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_RenameCommand",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 3937,
+          "end": 3956,
+          "excerpt": "          \"token\": \"0x060009ce\",\n          \"symbol\": {\n            \"token\": \"0x060009ce\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"get_RenameCommand\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20001280c5\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 37,\n          \"ilSha256\": \"00af1f564ba43a195781a97bfcf8f24d839fc522c8875106cec8a506da965b7b\",\n          \"ilBytes\": \"027b2b050004252d1b260202fe06cf090006735300000a735400000a250a7d2b050004062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_RenameWindowCommand",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 3649,
+          "end": 3668,
+          "excerpt": "          \"token\": \"0x060009cc\",\n          \"symbol\": {\n            \"token\": \"0x060009cc\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"get_RenameWindowCommand\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20001280c5\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 37,\n          \"ilSha256\": \"9a1149e58abc5ea22e093b9a6286ff0a71cfe909b69799a82e263b65f70d6c14\",\n          \"ilBytes\": \"027b2a050004252d1b260202fe06cd090006735300000a735400000a250a7d2a050004062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::RenameCommandExe",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 4097,
+          "end": 4116,
+          "excerpt": "          \"token\": \"0x060009cf\",\n          \"symbol\": {\n            \"token\": \"0x060009cf\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"RenameCommandExe\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 10,\n          \"ilSha256\": \"fd890004dd23f1a508ebae807c95bf969a27d0d2656b6d589c72d4ac56b5b30b\",\n          \"ilBytes\": \"00021728d1090006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::RenameWindowCommandExe",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 3809,
+          "end": 3828,
+          "excerpt": "          \"token\": \"0x060009cd\",\n          \"symbol\": {\n            \"token\": \"0x060009cd\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"RenameWindowCommandExe\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 24,\n          \"ilSha256\": \"3535b62d346f43c307ba346c81a48bca4906c131bcc8612d39e0cd580d911fa8\",\n          \"ilBytes\": \"00021728d1090006000273900a00060a066fce00000a262a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_IsReName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 4168,
+          "end": 4187,
+          "excerpt": "          \"token\": \"0x060009d1\",\n          \"symbol\": {\n            \"token\": \"0x060009d1\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"set_IsReName\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 93,\n          \"ilSha256\": \"ec8f6a6d20be5d11a99240667a492fcc7a45430523979cbba8d3d7e26ffe87b3\",\n          \"ilBytes\": \"00027b2c05000403fe0116fe010a062c4b0002037d2c050004027b2c0500040b072c2c00280500002b252d03262b1f731809000672828d0070283800000a252d06267229000070146faa00000a00000272636000706f7c02000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.Base.ModifyName::.ctor",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 5111,
+          "end": 5130,
+          "excerpt": "          \"token\": \"0x06000a90\",\n          \"symbol\": {\n            \"token\": \"0x06000a90\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.Base.ModifyName\",\n            \"name\": \".ctor\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"200101128274\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 41,\n          \"ilSha256\": \"477d37f573dcc14bf905f820af9f2de69b99d68d1edf70053a17b7ca6a227004\",\n          \"ilBytes\": \"02287201000a00000228920a0006000375a0000002250a14fe030b072c0a000206285500000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.Base.ModifyName::SearchClick",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 5319,
+          "end": 5338,
+          "excerpt": "          \"token\": \"0x06000a91\",\n          \"symbol\": {\n            \"token\": \"0x06000a91\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.Base.ModifyName\",\n            \"name\": \"SearchClick\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2002011c128115\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 17,\n          \"ilSha256\": \"6358512c6b45fb4a288fd720b42a858565c4bb5ede23d7940539b59ac5b6dd34\",\n          \"ilBytes\": \"000214285500000a00026f8601000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "Rename entry methods",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 1146,
+          "end": 1157,
+          "excerpt": "\tprivate void RenameWindowCommandExe()\n\t{\n\t\tIsReName = true;\n\t\tModifyName modifyName = new ModifyName(this);\n\t\tmodifyName.ShowDialog();\n\t}\n\n\tprivate void RenameCommandExe()\n\t{\n\t\tIsReName = true;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "Rename state and undo root",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 443,
+          "end": 464,
+          "excerpt": "\tpublic bool IsReName\n\t{\n\t\tget\n\t\t{\n\t\t\treturn _IsReName;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (_IsReName != value)\n\t\t\t{\n\t\t\t\t_IsReName = value;\n\t\t\t\tif (_IsReName)\n\t\t\t\t{\n\t\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new RootOperation(), AppLocalizationService.GetLang(\"Lang_ModuRename\") ?? \"\");\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"IsReName\");\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic ICommand SkipToModuleCommand\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ModifyName.xaml.cs",
+          "member": "Dialog data context restriction",
+          "sha256": "9e2fd69869e055ab23815d47c5bce9c52be9ea8ce5bc127fe2f754a41481ff82",
+          "start": 21,
+          "end": 36,
+          "excerpt": "\tpublic ModifyName(VmModuleBaseDecorator decorator)\n\t{\n\t\tInitializeComponent();\n\t\tif (decorator is VmModuleDecorator dataContext)\n\t\t{\n\t\t\tDataContext = dataContext;\n\t\t}\n\t}\n\n\tprivate void SearchClick(object sender, RoutedEventArgs e)\n\t{\n\t\tDataContext = null;\n\t\tClose();\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ModifyName.xaml",
+          "member": "Dialog text and confirm declarations",
+          "sha256": "b916164efba6152d83629be84da6f2734f99a7db901f71107ec54ee7277b11d2",
+          "start": 21,
+          "end": 23,
+          "excerpt": "          <TextBox Name=\"ModuleID\" BorderThickness=\"0\" Width=\"100\" VerticalContentAlignment=\"Center\" Background=\"{DynamicResource ListViewComboBoxBackground}\" Text=\"{Binding Name}\" />\n        </Border>\n        <Button Margin=\"40,0,0,0\" Style=\"{StaticResource BlueButtonStyle}\" Width=\"56\" Content=\"{DynamicResource Confirm}\" Click=\"SearchClick\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "ModifyName默认TextBox绑定的真实提交/失焦顺序、关闭按钮/取消和各装饰器实际入口组合未验；不以普通WPF惯例补齐。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN03",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "HeadReNameTextBox.IsReName变化",
+      "to": "进入Focus/SelectAll，退出旧true时UpdateSource",
+      "behavior": "依赖属性默认false，变更回调取OldValue；NewValue为true先Focus和SelectAll，OldValue为true才取TextProperty.BindingExpression并UpdateSource。构造订阅KeyDown/LostFocus并ContextMenu=null；Return和失焦只置IsReName=false。因此显式提交由true→false触发；该体没有Escape取消/恢复原文、bindingExpression空检查或catch，不能宣称所有结束方式都安全提交。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "Apps.PcUI.HeadReNameTextBox::.cctor",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 166,
+          "end": 185,
+          "excerpt": "          \"token\": \"0x0600000a\",\n          \"symbol\": {\n            \"token\": \"0x0600000a\",\n            \"kind\": \"method-def\",\n            \"type\": \"Apps.PcUI.HeadReNameTextBox\",\n            \"name\": \".cctor\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, Static, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"000001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 96,\n          \"ilSha256\": \"756fa49ae969820e6ffd5fd9ac04747f70c4cbb5b57677a951f455fe397aff67\",\n          \"ilBytes\": \"724b000070d072000001283b00000ad003000002283b00000a168c7200000114fe060d000006733c00000a733d00000a283e00000a8003000004007e3f00000ad003000002283b00000ad003000002283b00000a734000000a6f4100000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldstr\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74 / MVID 380598ff-2817-448e-bad2-2350035a99a0"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "Apps.PcUI.HeadReNameTextBox::.ctor",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 804,
+          "end": 823,
+          "excerpt": "          \"token\": \"0x0600000e\",\n          \"symbol\": {\n            \"token\": \"0x0600000e\",\n            \"kind\": \"method-def\",\n            \"type\": \"Apps.PcUI.HeadReNameTextBox\",\n            \"name\": \".ctor\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 55,\n          \"ilSha256\": \"7c8db973a0d7bf26bf173a4f81271dc82c1e4ae8aa210a8e219aa23ddfb0f2fa\",\n          \"ilBytes\": \"02284b00000a00000202fe0610000006732a00000a282b00000a000202fe060f000006734c00000a284d00000a000214284e00000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74 / MVID 380598ff-2817-448e-bad2-2350035a99a0"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "Apps.PcUI.HeadReNameTextBox::OnIsReNameChanged",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 456,
+          "end": 475,
+          "excerpt": "          \"token\": \"0x0600000d\",\n          \"symbol\": {\n            \"token\": \"0x0600000d\",\n            \"kind\": \"method-def\",\n            \"type\": \"Apps.PcUI.HeadReNameTextBox\",\n            \"name\": \"OnIsReNameChanged\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, Static, HideBySig\",\n            \"signatureBytes\": \"000201128095118099\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 86,\n          \"ilSha256\": \"e953aeac811987f8603f2881afa7a7eae36ebb65a0d1f6421abf6accf8e5dd6d\",\n          \"ilBytes\": \"000275030000020a0f01284400000aa5720000010b0f01284500000aa5720000010c080d092c1000066f4600000a26066f4700000a000007130411042c1700067e4800000a6f4900000a130511056f4a00000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74 / MVID 380598ff-2817-448e-bad2-2350035a99a0"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "Apps.PcUI.HeadReNameTextBox::HeadReNameTextBox_KeyDown",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 1101,
+          "end": 1120,
+          "excerpt": "          \"token\": \"0x06000010\",\n          \"symbol\": {\n            \"token\": \"0x06000010\",\n            \"kind\": \"method-def\",\n            \"type\": \"Apps.PcUI.HeadReNameTextBox\",\n            \"name\": \"HeadReNameTextBox_KeyDown\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2002011c1269\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 25,\n          \"ilSha256\": \"f4129d26191a76a3eea7942306c37cd28a33659d53e012699d853eafc4d9de95\",\n          \"ilBytes\": \"00046f2200000a1cfe010a062c0a000216280c00000600002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74 / MVID 380598ff-2817-448e-bad2-2350035a99a0"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "Apps.PcUI.HeadReNameTextBox::HeadReNameTextBox_LostFocus",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 1030,
+          "end": 1049,
+          "excerpt": "          \"token\": \"0x0600000f\",\n          \"symbol\": {\n            \"token\": \"0x0600000f\",\n            \"kind\": \"method-def\",\n            \"type\": \"Apps.PcUI.HeadReNameTextBox\",\n            \"name\": \"HeadReNameTextBox_LostFocus\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2002011c1280a1\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 10,\n          \"ilSha256\": \"a9bdcf6a0f441a22865442a38f6fb69c6d7691590bc639593c332a1cb1b309b3\",\n          \"ilBytes\": \"000216280c000006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74 / MVID 380598ff-2817-448e-bad2-2350035a99a0"
+        },
+        {
+          "path": "analysis/decompiled/Apps.PcUI.ImageSourceAudit/Apps.PcUI/HeadReNameTextBox.cs",
+          "member": "Rename property callback and source commit",
+          "sha256": "64d7234a19006d86a81059d26ce952ccdfa5e2dd67f51324f985ce433014a516",
+          "start": 30,
+          "end": 46,
+          "excerpt": "\tprivate static void OnIsReNameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)\n\t{\n\t\tHeadReNameTextBox headReNameTextBox = d as HeadReNameTextBox;\n\t\tbool flag = (bool)e.OldValue;\n\t\tif ((bool)e.NewValue)\n\t\t{\n\t\t\theadReNameTextBox.Focus();\n\t\t\theadReNameTextBox.SelectAll();\n\t\t}\n\t\tif (flag)\n\t\t{\n\t\t\tBindingExpression bindingExpression = headReNameTextBox.GetBindingExpression(TextBox.TextProperty);\n\t\t\tbindingExpression.UpdateSource();\n\t\t}\n\t}\n\n\tpublic HeadReNameTextBox()",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/Apps.PcUI.ImageSourceAudit/Apps.PcUI/HeadReNameTextBox.cs",
+          "member": "Key and focus exit handlers",
+          "sha256": "64d7234a19006d86a81059d26ce952ccdfa5e2dd67f51324f985ce433014a516",
+          "start": 53,
+          "end": 65,
+          "excerpt": "\tprivate void HeadReNameTextBox_LostFocus(object sender, RoutedEventArgs e)\n\t{\n\t\tIsReName = false;\n\t}\n\n\tprivate void HeadReNameTextBox_KeyDown(object sender, KeyEventArgs e)\n\t{\n\t\tif (e.Key == Key.Return)\n\t\t{\n\t\t\tIsReName = false;\n\t\t}\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "WPF BindingExpression内部校验/异常传播、焦点路由/输入法/鼠标取消与其它处理器未验；没有本体Escape不证明全程序无取消。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN04",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "HeadReNameTextBox本地样式",
+      "to": "静态显示TextBlock与可编辑PART_ContentHost切换",
+      "behavior": "本地generic资源将IsHitTestVisible绑定自身IsReName；模板默认TextBlock显示Text、PART_ContentHost Hidden，IsReName=true折叠前者并显示后者。禁用态另降border透明度。这个样式解释标题显示/编辑两个视觉部分，不意味着值已写入模块或磁盘。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/Apps.PcUI.ImageSourceAudit/themes/generic.xaml",
+          "member": "Rename hit-test declaration",
+          "sha256": "8808b3e446871adfeaf7ff780440eb58ad1430907e40ba868f6ce6d22e2bd194",
+          "start": 20,
+          "end": 20,
+          "excerpt": "    <Setter Property=\"UIElement.IsHitTestVisible\" Value=\"{Binding IsReName, Mode=OneWay, RelativeSource={RelativeSource Mode=Self}}\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/Apps.PcUI.ImageSourceAudit/themes/generic.xaml",
+          "member": "Rename presentation and editing template",
+          "sha256": "8808b3e446871adfeaf7ff780440eb58ad1430907e40ba868f6ce6d22e2bd194",
+          "start": 23,
+          "end": 41,
+          "excerpt": "        <ControlTemplate TargetType=\"{x:Type local:HeadReNameTextBox}\">\n          <Border Name=\"border\" BorderBrush=\"{TemplateBinding Control.BorderBrush}\" BorderThickness=\"{TemplateBinding Control.BorderThickness}\" Background=\"{TemplateBinding Control.Background}\" SnapsToDevicePixels=\"True\">\n            <Grid>\n              <TextBlock Name=\"tb\" IsHitTestVisible=\"False\" TextTrimming=\"CharacterEllipsis\" Text=\"{TemplateBinding TextBox.Text}\" Foreground=\"{TemplateBinding Control.Foreground}\" FontSize=\"{TemplateBinding Control.FontSize}\" FontWeight=\"{TemplateBinding Control.FontWeight}\" FontFamily=\"{TemplateBinding Control.FontFamily}\" />\n              <ScrollViewer Name=\"PART_ContentHost\" Visibility=\"Hidden\" Focusable=\"False\" HorizontalScrollBarVisibility=\"Hidden\" VerticalScrollBarVisibility=\"Hidden\" />\n            </Grid>\n          </Border>\n          <ControlTemplate.Triggers>\n            <Trigger Property=\"local:HeadReNameTextBox.IsReName\" Value=\"True\">\n              <Setter TargetName=\"tb\" Property=\"Visibility\" Value=\"Collapsed\" />\n              <Setter TargetName=\"PART_ContentHost\" Property=\"Visibility\" Value=\"Visible\" />\n            </Trigger>\n            <Trigger Property=\"IsEnabled\" Value=\"False\">\n              <Setter TargetName=\"border\" Property=\"UIElement.Opacity\" Value=\"0.56\" />\n            </Trigger>\n            <Trigger Property=\"UIElement.IsMouseOver\" Value=\"True\">\n              <Setter TargetName=\"border\" Value=\"{DynamicResource TextBox.MouseOver.Border}\" Property=\"Border.BorderBrush\" />\n            </Trigger>\n            <Trigger Property=\"UIElement.IsKeyboardFocused\" Value=\"True\">",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "Apps.PcUI.HeadReNameTextBox::.cctor",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 166,
+          "end": 185,
+          "excerpt": "          \"token\": \"0x0600000a\",\n          \"symbol\": {\n            \"token\": \"0x0600000a\",\n            \"kind\": \"method-def\",\n            \"type\": \"Apps.PcUI.HeadReNameTextBox\",\n            \"name\": \".cctor\",\n            \"parameters\": 0,\n            \"attributes\": \"Private, Static, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"000001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 96,\n          \"ilSha256\": \"756fa49ae969820e6ffd5fd9ac04747f70c4cbb5b57677a951f455fe397aff67\",\n          \"ilBytes\": \"724b000070d072000001283b00000ad003000002283b00000a168c7200000114fe060d000006733c00000a733d00000a283e00000a8003000004007e3f00000ad003000002283b00000ad003000002283b00000a734000000a6f4100000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldstr\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "bc47626c5064cf4a28e0cfa8344c07c4d186c5a9efd321988de9482dfb10fd74 / MVID 380598ff-2817-448e-bad2-2350035a99a0"
+        }
+      ],
+      "unknowns": [
+        "Apps.PcUI generic原BAML/实际主题命中尚未在此核验；这是本地提取声明，与已核CIL分列。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN05",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "VmModuleBaseDecorator.Name setter",
+      "to": "字符拒绝 / undo与日志 → IVmModule.Name → 通知",
+      "behavior": "名称相同仅RemoveEmptyOperation；不同则try内拒绝? ; . [ ] < > ( ) `并弹错return。否则先注册ReNameUnRedoOperation与写日志，再VMModule.Name=value。只捕获VmException：空名提示Lang_NameEmpty，否则ShowVmExceptionMessage，并记错误；随后仍OnPropertyChanged(Name)及VMModule.OnPropertyChanged(FullName)。普通异常如value为null引起Contains失败不在此catch，不能称一切输入都被校验；前置undo/log不表示SDK改名成功。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_VMModule",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 1409,
+          "end": 1428,
+          "excerpt": "          \"token\": \"0x060009a1\",\n          \"symbol\": {\n            \"token\": \"0x060009a1\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"get_VMModule\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20001280fd\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 17,\n          \"ilSha256\": \"a5b7c3f57517da384c6d82c8867d60ed9b1b2d0c4c8b1d47f09b83585430b6ff\",\n          \"ilBytes\": \"00022805090006753f0000010a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::get_Name",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 1498,
+          "end": 1517,
+          "excerpt": "          \"token\": \"0x060009ca\",\n          \"symbol\": {\n            \"token\": \"0x060009ca\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"get_Name\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 17,\n          \"ilSha256\": \"2f8919990f23d5f44f6cfe5b528771c7a1305155e9736ead097692eb51f73f19\",\n          \"ilBytes\": \"000228a10900066fa900000a0a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::set_Name",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 1590,
+          "end": 1609,
+          "excerpt": "          \"token\": \"0x060009cb\",\n          \"symbol\": {\n            \"token\": \"0x060009cb\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"set_Name\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 564,\n          \"ilSha256\": \"0657b0e1af7327ab71f5d5c758cb7293c7e89bca39a1e944f78c054139527207\",\n          \"ilBytes\": \"000228a10900066fa900000a03285100000a0a0639070200000000031f3f285900002b2d6f031f3b285900002b2d65031f2e285900002b2d5b0372148d00706f9904000a2d4e0372217000706f9904000a2d410372188d00706f9904000a2d340372250000706f9904000a2d270372bd2d00706f9904000a2d1a0372c12d00706f9904000a2d0d03721c8d00706f9904000a2b01170c082c270072303f0070283800000a28b004000a72208d0070283a00000a1916282e01000a26dd730100001b8dd1010001251672828d0070283800000aa2251772b0070070a225180228a10900066fa900000aa22519729a870070a2251a03a228db00000a0b280500002b252d03262b4102fe06d5090006735708000a02fe06d4090006735708000a0228a10900066f7307000a0228a10900066fa900000a0373f509000673f009000607146faa00000a0072981600701d8dd1010001251672828d0070283800000aa2251772d5360070287207000aa225180228a10900066fa900000aa2251972e5000070a2251a72a28d0070283800000aa2251b72e5000070a2251c03a228db00000a1617286c07000a260228a1090006036f5808000a0000de480d0003283900000a130411042c1600726f700070283800000a1916282e01000a26002b090009283304000a000072d4150070096fd300000a28d400000a1617286c07000a2600de0002722d3c00706f7c02000a000228a109000672aa8d00706f5008000a00002b1300280500002b252d03262b066fb000000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "Name validation and write ordering",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 359,
+          "end": 411,
+          "excerpt": "\tpublic string Name\n\t{\n\t\tget\n\t\t{\n\t\t\treturn VMModule.Name;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (VMModule.Name != value)\n\t\t\t{\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tif (value.Contains('?') || value.Contains(';') || value.Contains('.') || value.Contains(\"[\") || value.Contains(\"]\") || value.Contains(\"<\") || value.Contains(\">\") || value.Contains(\"(\") || value.Contains(\")\") || value.Contains(\"`\"))\n\t\t\t\t\t{\n\t\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_ModuleNameErrorInclude\") + Environment.NewLine + \"                             ? ; . [ ] < > ( ) `\", MessageIcons.Error);\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t\tstring displayName = AppLocalizationService.GetLang(\"Lang_ModuRename\") + \":\" + VMModule.Name + \", \" + value;\n\t\t\t\t\tIoc.Get<IUnRedoService>()?.Register(new ReNameUnRedoOperation(SetNewName, SetOldName, new UnRedo_NameData(VMModule.FullName, VMModule.Name, value)), displayName);\n\t\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"Lang_ModuRename\") + AppLocalizationService.GetPunctuation(\"：\") + VMModule.Name + \" \" + AppLocalizationService.GetLang(\"修改为\") + \" \" + value, ifLang: false);\n\t\t\t\t\tVMModule.Name = value;\n\t\t\t\t}\n\t\t\t\tcatch (VmException ex)\n\t\t\t\t{\n\t\t\t\t\tif (string.IsNullOrEmpty(value))\n\t\t\t\t\t{\n\t\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_NameEmpty\"), MessageIcons.Error);\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t{\n\t\t\t\t\t\tShowMessage.ShowVmExceptionMessage(ex);\n\t\t\t\t\t}\n\t\t\t\t\tUILogManager.logCreate(\"错误\", ErrorCodeInfo.GetErrorInfo(ex.errorCode), ifLang: false);\n\t\t\t\t}\n\t\t\t\tOnPropertyChanged(\"Name\");\n\t\t\t\tVMModule.OnPropertyChanged(\"FullName\");\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tIoc.Get<IUnRedoService>()?.RemoveEmptyOperation();\n\t\t\t}\n\t\t}\n\t}\n\n\tpublic ICommand RenameWindowCommand\n\t{\n\t\tget\n\t\t{\n\t\t\t//IL_0017: Unknown result type (might be due to invalid IL or missing references)\n\t\t\t//IL_001c: Unknown result type (might be due to invalid IL or missing references)\n\t\t\t//IL_001e: Expected Obj, but got Unknown\n\t\t\t//IL_0023: Expected Obj, but got Unknown\n\t\t\tDelegateCommand val = _RenameWindowCommand;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "VmException显示或日志自身异常、UI绑定错误显示/旧文本恢复、重复名/空白名native规则未知；不能推断失败事务回滚。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN06",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "VmModule.Name / IMVSGroup基类链",
+      "to": "SDK显示名写入 → 本地name → 前驱键迁移/父状态",
+      "behavior": "VmModule原setter同名早退，先ModuleManager.SetModuDisplayName(ID,value)，成功返回才记旧FullName/name并写本地name；遍历PreModules将UserData中SourceIndex+旧名/TargetIndex+旧名读取后清旧键、写新键，通知父ready名称、Name及IVmSolution.OnModuleActionChanged(ReName,oldFullName,newFullName)。原类型元数据IMVSGroup→VmModuleSet→VmModule；未发现两中间类原源Name重写，本片以该基类路径为有限Group改名来源，不臆造Group专用保存。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmModule::get_Name",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 6163,
+          "end": 6182,
+          "excerpt": "          \"token\": \"0x0600024c\",\n          \"symbol\": {\n            \"token\": \"0x0600024c\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModule\",\n            \"name\": \"get_Name\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 7,\n          \"ilSha256\": \"aa6811fee160c9d11332c1a61f0c560871ac053436f86e473dab4ebd1978f6c6\",\n          \"ilBytes\": \"027bac0100042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmModule::set_Name",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 6211,
+          "end": 6230,
+          "excerpt": "          \"token\": \"0x0600024d\",\n          \"symbol\": {\n            \"token\": \"0x0600024d\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModule\",\n            \"name\": \"set_Name\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 324,\n          \"ilSha256\": \"fe564f2b6f01d16e147c592095a6dcf0a23ac9dbc5a18073121e1916962bbdf1\",\n          \"ilBytes\": \"00027bac0100040328bc00000a0a06392f01000000284801000a7b4901000a026f49020006036f7603000a00026fe70400060b027bac0100040c02037dac0100040002287d0200066f6202000a0d38ac000000096f6302000a13040011046f56020006724a21007008284501000a6fae050006130511046f56020006726221007008284501000a6fae050006130611046f56020006724a21007008284501000a146faf0500060011046f56020006726221007008284501000a146faf0500060011046f56020006724a210070027bac010004284501000a11056faf0500060011046f560200067262210070027bac010004284501000a11066faf0500060000096fa001000a3a49ffffffde0b092c07096f0e01000a00dc020828cd020006000272d302007028f30400060028a900000672dd02007007026fe70400066f4400000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmModule::NotifyNameChangedToParent",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 7337,
+          "end": 7356,
+          "excerpt": "          \"token\": \"0x060002cd\",\n          \"symbol\": {\n            \"token\": \"0x060002cd\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModule\",\n            \"name\": \"NotifyNameChangedToParent\",\n            \"parameters\": 1,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 27,\n          \"ilSha256\": \"e9be4d5db86bd64e257a0d95c7db11140390fedede9f9bd54de44c05cddf6123\",\n          \"ilBytes\": \"00026fe00400067568000002252d03262b080203280a060006002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmModuleSet::ReFlashReadyInfoOfName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 8240,
+          "end": 8259,
+          "excerpt": "          \"token\": \"0x0600060a\",\n          \"symbol\": {\n            \"token\": \"0x0600060a\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmModuleSet\",\n            \"name\": \"ReFlashReadyInfoOfName\",\n            \"parameters\": 2,\n            \"attributes\": \"Assembly, HideBySig\",\n            \"signatureBytes\": \"20020112440e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 141,\n          \"ilSha256\": \"dcf2d1f0d353f23af654ae350e0d0f2b6c5e59ddb0fdf1d810fb4d18dcd7e1fd\",\n          \"ilBytes\": \"0002280706000600036f520200060b120128c301000a2d03172b071201283503000a16fe010a062c6300150c022806060006046f0305000a250c16fe0416fe010d092c470002280606000608036fe20400066f0405000a00026f56020006726a2e007072982a0070022806060006280505000a280605000a6faf050006000272902e007028f30400060000002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "Native first and predecessor user-data key migration",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 191,
+          "end": 221,
+          "excerpt": "\tpublic override string Name\n\t{\n\t\tget\n\t\t{\n\t\t\treturn name;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (!(name != value))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetModuDisplayName(ID, value);\n\t\t\tstring fullName = FullName;\n\t\t\tstring text = name;\n\t\t\tname = value;\n\t\t\tforeach (VmModule preModule in PreModules)\n\t\t\t{\n\t\t\t\tbyte[] value2 = preModule.UserData[\"SourceIndex\" + text];\n\t\t\t\tbyte[] value3 = preModule.UserData[\"TargetIndex\" + text];\n\t\t\t\tpreModule.UserData[\"SourceIndex\" + text] = null;\n\t\t\t\tpreModule.UserData[\"TargetIndex\" + text] = null;\n\t\t\t\tpreModule.UserData[\"SourceIndex\" + name] = value2;\n\t\t\t\tpreModule.UserData[\"TargetIndex\" + name] = value3;\n\t\t\t}\n\t\t\tNotifyNameChangedToParent(text);\n\t\t\tOnPropertyChanged(\"Name\");\n\t\t\t((IVmSolution)VmSolution.Instance).OnModuleActionChanged(\"ReName\", fullName, FullName);\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs",
+          "member": "Parent unready-name cache update",
+          "sha256": "f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346",
+          "start": 229,
+          "end": 242,
+          "excerpt": "\tinternal void ReFlashReadyInfoOfName(VmModule node, string oldName)\n\t{\n\t\tinitUnReadyModuleNames();\n\t\tif ((!node.IsReady) ?? false)\n\t\t{\n\t\t\tint num = -1;\n\t\t\tif ((num = UnReadyModuleNames.IndexOf(oldName)) >= 0)\n\t\t\t{\n\t\t\t\tUnReadyModuleNames[num] = node.Name;\n\t\t\t\tUserData[\"UnReadyModuleNames\"] = VM.PlatformSDKCS.StringUtil.UTF8GetBytesPadZero(string.Join(\";\", UnReadyModuleNames));\n\t\t\t\tOnPropertyChanged(\"UnReadyModuleName\");\n\t\t\t}\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs",
+          "member": "Original Group base class declaration",
+          "sha256": "dc772aaba433316b7d0f4dc3b0b3c80c3c63769334d7d013896afe7b54c367d3",
+          "start": 20,
+          "end": 20,
+          "excerpt": "public class IMVSGroup : VmModuleSet, IVMGroup, IVmModuleSet, IVmFrameBase, IParent, IChildren, IDisposable, IVmModule",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs",
+          "member": "Original module-set base class declaration",
+          "sha256": "f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346",
+          "start": 21,
+          "end": 21,
+          "excerpt": "public abstract class VmModuleSet : VmModule, IVmModuleSet, IVmFrameBase, IParent, IChildren, IDisposable",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "UserData getter/setter内部存储、部分键迁移失败/事件订阅者失败、Group运行类型替代、文件字节和native持久化尚未闭合。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN07",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "VmProcedure.Name setter",
+      "to": "独立SetProcessName与流程名称动作事件",
+      "behavior": "流程原类继承VmModuleSet但覆盖Name：不同名先ProcessManager.SetProcessName(ID,value)，返回后记录旧name再写新name、OnPropertyChanged(Name)、IVmSolution.OnModuleActionChanged(ReName,oldName,newName)。该体没有模块setter的PreModules UserData键迁移，不能用一个setter概括模块/流程/Group。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmProcedure::get_Name",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 7700,
+          "end": 7719,
+          "excerpt": "          \"token\": \"0x06000668\",\n          \"symbol\": {\n            \"token\": \"0x06000668\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmProcedure\",\n            \"name\": \"get_Name\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20000e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 7,\n          \"ilSha256\": \"aa6811fee160c9d11332c1a61f0c560871ac053436f86e473dab4ebd1978f6c6\",\n          \"ilBytes\": \"027bac0100042a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmProcedure::set_Name",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 7748,
+          "end": 7767,
+          "excerpt": "          \"token\": \"0x06000669\",\n          \"symbol\": {\n            \"token\": \"0x06000669\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmProcedure\",\n            \"name\": \"set_Name\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, Virtual, HideBySig, SpecialName\",\n            \"signatureBytes\": \"2001010e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 92,\n          \"ilSha256\": \"dcf1288594fad82ae6e78aaf14240d203dd13776ab5078695e42e4a860a7419d\",\n          \"ilBytes\": \"00027bac0100040328bc00000a0a062c4a00284801000a7b8602000a026f49020006036f6b05000a00027bac0100040b02037dac0100040272d302007028f30400060028a900000672dd02007007027bac0100046f4400000a00002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmProcedure.cs",
+          "member": "Procedure-specific name update",
+          "sha256": "fdde074d17c50c37f8d0bfe097cf20f904cdb4b59d4ac39612fc023c3f0b69da",
+          "start": 103,
+          "end": 121,
+          "excerpt": "\tpublic override string Name\n\t{\n\t\tget\n\t\t{\n\t\t\treturn name;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (name != value)\n\t\t\t{\n\t\t\t\tServerSDKManager.serverSDKManager.mProcessManager.SetProcessName(ID, value);\n\t\t\t\tstring moduleName = name;\n\t\t\t\tname = value;\n\t\t\t\tOnPropertyChanged(\"Name\");\n\t\t\t\t((IVmSolution)VmSolution.Instance).OnModuleActionChanged(\"ReName\", moduleName, name);\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "其它流程索引/观察者与全部名称引用修复、native名规则和已打开参数窗状态未知。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN08",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "ModuleManager / ProcessManager改名包装",
+      "to": "ServerSDKAPI → NativeMethods名称边界",
+      "behavior": "SetModuDisplayName与SetProcessName分别传共享mhandle、ID和新名称，非0返回码抛VmException；ServerSDKAPI只转NativeMethods.IMVS_SetModuDisplayName/IMVS_SetProcName。原P/Invoke声明目标iMVS-6000PlatformSDK.dll，名称为UTF8自定义封送；Process入口声明StdCall，不能把C#包装签名当native全ABI/验证或文件存储实现。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.PlatformSDKCS.ModuleManager::SetModuDisplayName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 12815,
+          "end": 12834,
+          "excerpt": "          \"token\": \"0x06000065\",\n          \"symbol\": {\n            \"token\": \"0x06000065\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ModuleManager\",\n            \"name\": \"SetModuDisplayName\",\n            \"parameters\": 2,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200201090e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 33,\n          \"ilSha256\": \"7b2970087e0c743e1ecd16c92944ea1086e657c797e67a9b6d7f4ef03026ad72\",\n          \"ilBytes\": \"007e97030004030428c00200060a0616fe030b072c0a000673a60600060c087a2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.PlatformSDKCS.ProcessManager::SetProcessName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 13198,
+          "end": 13217,
+          "excerpt": "          \"token\": \"0x06000279\",\n          \"symbol\": {\n            \"token\": \"0x06000279\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ProcessManager\",\n            \"name\": \"SetProcessName\",\n            \"parameters\": 2,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200201090e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 39,\n          \"ilSha256\": \"46271d433dedb7e9c872554cf9a7ffc25840c03761d2735644459fa2195ed355\",\n          \"ilBytes\": \"0020ff0000e00a7e97030004030428c10200060a0616fe030b072c0a000673a60600060c087a2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI::IMVS_SetModuDisplayName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 13402,
+          "end": 13421,
+          "excerpt": "          \"token\": \"0x060002c0\",\n          \"symbol\": {\n            \"token\": \"0x060002c0\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ServerSDKAPI\",\n            \"name\": \"IMVS_SetModuDisplayName\",\n            \"parameters\": 3,\n            \"attributes\": \"Public, Static, HideBySig\",\n            \"signatureBytes\": \"00030818090e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"784a7a12b0245b1adda118bee520ec6e267875d7b4250fe8d030ba0d60285b4f\",\n          \"ilBytes\": \"0002030428a50300060a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI::IMVS_SetProcName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 13494,
+          "end": 13513,
+          "excerpt": "          \"token\": \"0x060002c1\",\n          \"symbol\": {\n            \"token\": \"0x060002c1\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ServerSDKAPI\",\n            \"name\": \"IMVS_SetProcName\",\n            \"parameters\": 3,\n            \"attributes\": \"Public, Static, HideBySig\",\n            \"signatureBytes\": \"00030818090e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 14,\n          \"ilSha256\": \"caa8d27f7e9b7625a035e5f2df492e4541b534f27b312ea7d9023bf8ed176f69\",\n          \"ilBytes\": \"0002030428be0300060a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+          "member": "Module rename status check",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 344,
+          "end": 353,
+          "excerpt": "\tpublic void SetModuDisplayName(uint nModuleID, string strDisplayName)\n\t{\n\t\tint num = ServerSDKAPI.IMVS_SetModuDisplayName(CVmObjectBase.mhandle, nModuleID, strDisplayName);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ProcessManager.cs",
+          "member": "Procedure rename status check",
+          "sha256": "06fee7c7b5387fea086abe5073be5dd2606ad121d9bc64b0ab9335bace100414",
+          "start": 266,
+          "end": 276,
+          "excerpt": "\tpublic void SetProcessName(uint nProcessID, string strProcName)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_SetProcName(CVmObjectBase.mhandle, nProcessID, strProcName);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+          "member": "Module rename native declaration",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 110,
+          "end": 110,
+          "excerpt": "\tpublic static extern int IMVS_SetModuDisplayName(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strDisplayName);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+          "member": "Procedure rename native declaration",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 184,
+          "end": 185,
+          "excerpt": "\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\", CallingConvention = CallingConvention.StdCall)]\n\tpublic static extern int IMVS_SetProcName(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "native错误规则、字符串封送完整实现、成功后的内存/磁盘所有权及外部SDK实际加载版本未知；本次不运行原件。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTN09",
+      "classification": "source-confirmed",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "VmSolution.InternalExport / ExportAs",
+      "to": "显式保存消费者 → SyncSaveSolution → IMVS_SaveSolution",
+      "behavior": "所选保存入口调用TempVmSolution.Init，受_isSaving门和路径/密码分支控制，随后SyncSaveSolution(path,password,IntPtr.Zero,0)。SyncSaveSolution先复位错误码/等待flag，调用IMVS_SaveSolution，立即返回码非0抛错；成功时清ParamSeted、SyncWaitor.Wait，再SDKMode下检查异步错误码。标题Name setter中没有此保存调用；不能说退出编辑立即写.sol，也不能说native导出必然包含某一重命名字节。本片只连接同一SDK状态的保存消费者边界。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmSolution::InternalExport",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 9948,
+          "end": 9967,
+          "excerpt": "          \"token\": \"0x060000cd\",\n          \"symbol\": {\n            \"token\": \"0x060000cd\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"InternalExport\",\n            \"parameters\": 5,\n            \"attributes\": \"Private, Static, HideBySig\",\n            \"signatureBytes\": \"0005020e0e02020e\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 376,\n          \"ilSha256\": \"ee863ab98f6e350bf31af8a4a8f5295d0f9f767cec066eb55e471ac6be7d034a\",\n          \"ilBytes\": \"000028e80600060028a90000067b0c0000040b072c07160cdd5901000028a9000006177d0c00000472550a007028a90000067b0c0000048c4f01000128b501000a282402000a0072350200700a28a9000006047d090000040314fe010d092c240028a90000066f5500000614fe03130411042c0d0028a90000066f550000060a00002b0400030a000214fe01130511052c5400052d0f28a90000066f7203000614fe032b0116130611062c100028a90000066f720300061000002b2900284801000a7b2502000a728d0a007072b10a0070282602000a28b501000a0e046f2702000a100000000228a200000a130711072c100028a9000006167d0c000004160cde74284801000a7b1802000a02067ea800000a166f2802000a0028a9000006066f560000060028a9000006026f5f00000600170cde4013080028a9000006167d0c00000472bf0a007028a90000067b0c0000048c4f01000128b501000a282402000a0028a90000067ede01000a6f5f0000060011087a082a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.Core.VmSolution::ExportAs",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 11302,
+          "end": 11321,
+          "excerpt": "          \"token\": \"0x060000d7\",\n          \"symbol\": {\n            \"token\": \"0x060000d7\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.Core.VmSolution\",\n            \"name\": \"ExportAs\",\n            \"parameters\": 3,\n            \"attributes\": \"Private, Static, HideBySig\",\n            \"signatureBytes\": \"0003010e0e02\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 399,\n          \"ilSha256\": \"2e1ef5d4689cb501b2b393dd907b3686bf478f88afbe82693cabcd470818b712\",\n          \"ilBytes\": \"000028e80600060028a90000067b0c0000040b072c05dd7301000028a9000006177d0c00000472d30e007028a90000067b0c0000048c4f01000128b501000a282402000a0028a9000006047d09000004030a0614fe010c082c0672350200700a284801000a7b1802000a02067ea800000a166f2802000a0000dd100100000d0028a9000006167d0c00000472ff0e007028a90000067b0c0000048c4f01000128b501000a282402000a0072f102007028b301000a7203030070096fb401000a8c3601000128b501000a720f030070283601000a13041104721503007028b301000a096fb401000a28b601000a283601000a130404130511052c1600722d0f007028b301000a11041916285b02000a2600724f0f00701104284501000a284601000a0000de6913060028a9000006167d0c000004726f0f007028a90000067b0c0000048c4f01000128b501000a282402000a0004130711072c1b00722d0f007028b301000a11066fb701000a1916285b02000a2600724f0f007011066fb701000a284501000a284601000a0000de002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d / MVID 290025bc-e040-4cd5-94dd-cd49b9af9c99"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.PlatformSDKCS.SolutionManager::SyncSaveSolution",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 13979,
+          "end": 13998,
+          "excerpt": "          \"token\": \"0x060005d0\",\n          \"symbol\": {\n            \"token\": \"0x060005d0\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.SolutionManager\",\n            \"name\": \"SyncSaveSolution\",\n            \"parameters\": 4,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"2004010e0e1809\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 128,\n          \"ilSha256\": \"211ecd75d5530c609657975b132ae1f6978c49db9d659c12f9b9089f32dc11e8\",\n          \"ilBytes\": \"0020ff0000e00a02167d3303000402167d350300047e970300040304050e0428c30200060a0616fe030b072c0a000673a60600060c087a28840500067b0d030004166f5a00000600027c35030004281d00000a0028370700060d092c2200027b3303000416fe03130411042c1100027b3303000473a6060006130511057a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI::IMVS_SaveSolution",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 13586,
+          "end": 13605,
+          "excerpt": "          \"token\": \"0x060002c3\",\n          \"symbol\": {\n            \"token\": \"0x060002c3\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.PlatformSDKCS.ServerSDKAPI\",\n            \"name\": \"IMVS_SaveSolution\",\n            \"parameters\": 5,\n            \"attributes\": \"Public, Static, HideBySig\",\n            \"signatureBytes\": \"000508180e0e1809\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 17,\n          \"ilSha256\": \"72b4f1f38d5ac85a7246217f269cf5aa2e508294357c5850c7a2de397a9ec5db\",\n          \"ilBytes\": \"00020304050e0428a70300060a2b00062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2"
+        },
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "Finite explicit solution export",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 1551,
+          "end": 1593,
+          "excerpt": "\tprivate static bool InternalExport(string path = null, string password = null, bool bDisplayProgress = true, bool isExportAs = false, string initDir = null)\n\t{\n\t\ttry\n\t\t{\n\t\t\tTempVmSolution.Init();\n\t\t\tif (Instance._isSaving)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tInstance._isSaving = true;\n\t\t\tLogHelper.Debug($\"InternalExport_isSaving_{Instance._isSaving}\");\n\t\t\tstring text = \"\";\n\t\t\tInstance.isDisplayProgress = bDisplayProgress;\n\t\t\tif (password == null)\n\t\t\t{\n\t\t\t\tif (Instance.SolutionPassword != null)\n\t\t\t\t{\n\t\t\t\t\ttext = Instance.SolutionPassword;\n\t\t\t\t}\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\ttext = password;\n\t\t\t}\n\t\t\tif (path == null)\n\t\t\t{\n\t\t\t\tpath = ((isExportAs || Instance.ModuleFilePath == null) ? ServerSDKManager.serverSDKManager.mCollectionManager.OpenExportDialog(\"Lang_SolutionFile\", $\"|*.{AppFileExtension.Solution}\", initDir) : Instance.ModuleFilePath);\n\t\t\t}\n\t\t\tif (string.IsNullOrEmpty(path))\n\t\t\t{\n\t\t\t\tInstance._isSaving = false;\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tServerSDKManager.serverSDKManager.mSolutionManager.SyncSaveSolution(path, text, IntPtr.Zero, 0u);\n\t\t\tInstance.SolutionPassword = text;\n\t\t\tInstance.SolutionPath = path;\n\t\t\treturn true;\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tInstance._isSaving = false;\n\t\t\tLogHelper.Debug($\"InternalExport0_isSaving_{Instance._isSaving}\");\n\t\t\tInstance.SolutionPath = string.Empty;",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs",
+          "member": "Native save, wait and result checks",
+          "sha256": "46b1d8249e3a30fe3bf7a0ed8e92207835f1a8e272833d5462041bc1756f220a",
+          "start": 305,
+          "end": 326,
+          "excerpt": "\tpublic void SyncSaveSolution(string strPath, string strPassword, IntPtr pData, uint nDataLen)\n\t{\n\t\tint num = -536870657;\n\t\tnSolutionSaveErrorCode = 0;\n\t\tmWaitSaveSolutionFlag = false;\n\t\tnum = ServerSDKAPI.IMVS_SaveSolution(CVmObjectBase.mhandle, strPath, strPassword, pData, nDataLen);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t\tServerSDKManager.serverSDKManager.mModuleManager.ParamSeted = false;\n\t\tSyncWaitor.Wait(ref mWaitSaveSolutionFlag);\n\t\tif (CVmObjectBase.GetIsSDKMode() && nSolutionSaveErrorCode != 0)\n\t\t{\n\t\t\tVmException ex2 = new VmException(nSolutionSaveErrorCode);\n\t\t\tthrow ex2;\n\t\t}\n\t}\n\n\tpublic ImvsSdkDefine.IMVS_PROCESS_INFO_LIST? GetAllProcessList()\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+          "member": "Native solution serialization declaration",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 116,
+          "end": 116,
+          "excerpt": "\tpublic static extern int IMVS_SaveSolution(IntPtr handle, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strPath, string strPassWord, IntPtr pData, uint nDataLen);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "TempVmSolution同步全部名称/用户数据、native方案格式/事务、保存回调/Wait终止条件和改名后加载往返未知；现有保存专题仍独立。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTC01",
+      "classification": "independent-implementation",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "当前GraphEditorDocument名称编辑",
+      "to": "独立不可变文档改名与SolutionStore.Save",
+      "behavior": "当前SetNodeName先RequireName再ChangeNode替换Name；RenameProcedure另拒同一组字符、同名返回，并将GroupOwner对应节点同步改名。Save经PrepareSave、Rebase和SolutionStore.Save后才更新document/FilePath/Dirty/Revision。它是当前JSON方案状态，未复刻原HeadReNameTextBox/SDK名称状态机或.sol ABI，UI真实调用另查。",
+      "refs": [
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Current node rename API",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 263,
+          "end": 263,
+          "excerpt": "    public void SetNodeName(string id,string name) { RequireName(name); ChangeNode(id,n=>n with {Name=name}); }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Current procedure rename API",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 110,
+          "end": 116,
+          "excerpt": "    public void RenameProcedure(string id,string name) {\n        RequireName(name);\n        // VmModuleBaseDecorator.Name rejects these characters before invoking the SDK.\n        if(name.IndexOfAny(\"?;.[]<>()`\".ToCharArray())>=0)throw new ArgumentException(\"名称不能包含 ? ; . [ ] < > ( ) `。\",nameof(name));\n        var procedure=Procedure(id); if(procedure.Name==name)return;\n        Edit(d=>d with {Procedures=d.Procedures.Select(p=>p.Id==id?p with {Name=name}:procedure.GroupOwner is {} owner&&p.Id==owner.ProcedureId?p with{Nodes=p.Nodes.Select(n=>n.Id==owner.NodeId?n with{Name=name}:n).ToArray()}:p).ToArray()});\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor.Core/GraphEditorDocument.cs",
+          "member": "Current document save boundary",
+          "sha256": "4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558",
+          "start": 68,
+          "end": 74,
+          "excerpt": "    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "当前主WPF全部改名入口、键鼠/取消差分和原方案互通未在此验收。"
+      ],
+      "operationComplete": false
+    },
+    {
+      "id": "WTU01",
+      "classification": "unknown",
+      "relation": "research: finite workflow title edit, commit and storage boundary",
+      "from": "标题提交与名称/保存消费者",
+      "to": "活绑定、取消失败与存储往返仍未知",
+      "behavior": "已恢复显式UpdateSource、装饰器校验、模块/流程不同setter和SDK保存消费者；仍不是一个已观察的编辑→写盘→重载闭环。SetOldName/SetNewName已取原体但只证明undo调用IVmModule.Name，未证明完整历史事务/名称路径在失败后总可解析。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetOldName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 4554,
+          "end": 4573,
+          "excerpt": "          \"token\": \"0x060009d4\",\n          \"symbol\": {\n            \"token\": \"0x060009d4\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"SetOldName\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20020112827c128629\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 73,\n          \"ilSha256\": \"fd53f742e8b4432e9da0cbda98192e8e63799f99f2e40da52f8251c1c5b2aed9\",\n          \"ilBytes\": \"00037b380500040a0616061f2e6f3400000a6ff800000a0b077221000070037b3a050004283a00000a0c28b401000a086f9900000a0d09753f000001037b390500046f5808000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "docs/architecture-recovery/workflow-title-commit-audit.cil.json",
+          "member": "VMControls.WPF.DataForUI.VmModuleBaseDecorator::SetNewName",
+          "sha256": "ecdf9e85345dfc4d256a224ad31708102522f229c4c35a1137e7997c16d56aa1",
+          "start": 4839,
+          "end": 4858,
+          "excerpt": "          \"token\": \"0x060009d5\",\n          \"symbol\": {\n            \"token\": \"0x060009d5\",\n            \"kind\": \"method-def\",\n            \"type\": \"VMControls.WPF.DataForUI.VmModuleBaseDecorator\",\n            \"name\": \"SetNewName\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"20020112827c128629\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 37,\n          \"ilSha256\": \"dbe95b5357d48a36d3d9342fcfe48b45b9b6b9a75ead0646150bf76c089735d2\",\n          \"ilBytes\": \"0028b401000a037b380500046f9900000a0a06753f000001037b3a0500046f5808000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF.DataForUI/VmModuleBaseDecorator.cs",
+          "member": "Undo name resolution and writes",
+          "sha256": "f124b9a5e3ce5b8e2e856d3e325b00a4b143f7074513ccc74d542ec35c2695dd",
+          "start": 1176,
+          "end": 1191,
+          "excerpt": "\tprivate void SetOldName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)\n\t{\n\t\tstring moduleFullName = nameData.ModuleFullName;\n\t\tstring text = moduleFullName.Substring(0, moduleFullName.LastIndexOf('.'));\n\t\tstring sub = text + \".\" + nameData.NewName;\n\t\tobject obj = VmSolution.Instance[sub];\n\t\t(obj as IVmModule).Name = nameData.OldName;\n\t}\n\n\tprivate void SetNewName(UnRedo_NameData nameData, IUnRedoParams unRedoParams)\n\t{\n\t\tobject obj = VmSolution.Instance[nameData.ModuleFullName];\n\t\t(obj as IVmModule).Name = nameData.NewName;\n\t}\n\n\tprivate void SkipToModuleCommandExecute()",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "下一原边：HeadReNameTextBox模板实际选择与绑定错误路由；VMModule.Name失败后视觉恢复；全部取消/窗口关闭；UserData native写入；TempVmSolution和IMVS_SaveSolution名称序列化/重载；当前逐操作差分。"
+      ],
+      "operationComplete": false
+    }
+  ],
+  "implementationProgress": {
+    "completed": 41,
+    "total": 96,
+    "percent": 42.71,
+    "architectureDelta": 0
+  }
+}

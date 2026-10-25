@@ -1,0 +1,1015 @@
+{
+  "schemaVersion": 2,
+  "modelVersion": "0.2",
+  "scope": {
+    "domains": [
+      "F-03",
+      "F-04",
+      "F-15",
+      "F-18",
+      "F-21",
+      "F-23"
+    ],
+    "completeFramework": false,
+    "implementationProgress": "41/96 = 42.71%; no change",
+    "manualAcceptanceExcluded": true
+  },
+  "baseline": "da853b5c386f04aba7634b09b2d1716a04f67103",
+  "generatedUtc": "2026-10-21T05:39:28.704Z",
+  "provenance": "REA original managed member/identity inventory plus focused PEReader CIL recovery for 3 selected original artifacts; local decompiled text and extracted resource inspection. Original SHA/MVID and raw CIL checks are separate from unknown runtime/BAML activation. No vendor code executed.",
+  "introduction": "从标题栏切换角色与外部user函数入口，区分登录窗口、两份helper、CodeManager原件CIL、权限页及导入导出。密码/授权/锁定各自保留；没有执行登录或写入配置。",
+  "edges": [
+    {
+      "id": "A01",
+      "route": "原版 · 角色入口与登录",
+      "classification": "source-confirmed",
+      "from": "TitleBar 用户菜单",
+      "to": "AccessManager.ChangeLoginUserCommand",
+      "behavior": "标题栏绑定AccessButtonHeader/Visibility，切换角色子项绑定ChangeLoginUserCommand；这不是普通XML菜单中的MethodName入口。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain.AppMainWindow/TitleBar.xaml",
+          "member": "TitleBar access menu",
+          "sha256": "f047a087f97b3217145d37d85c3b4f68c0d1dac21c7ed803d2879b3708c5e67d",
+          "start": 319,
+          "end": 321,
+          "excerpt": "            <controls:IconMenuItem Name=\"accessButton\" Style=\"{StaticResource LoginUserIconMenuItem}\" NormalIcon=\"/VisionMasterMain;component/Resources/windowAUZ.png\" ClickIcon=\"/VisionMasterMain;component/Resources/windowAUZ.png\" HoverIcon=\"/VisionMasterMain;component/Resources/windowAUZ.png\" Margin=\"0,2,0,0\" Padding=\"-4,0,0,0\" VerticalContentAlignment=\"Center\" Width=\"100\" Height=\"30\" Foreground=\"#FFBEBEBE\" WindowChrome.IsHitTestVisibleInChrome=\"True\" Header=\"{Binding AccessManager.AccessButtonHeader, UpdateSourceTrigger=PropertyChanged}\" Visibility=\"{Binding AccessManager.AccessButtonVisibility, UpdateSourceTrigger=PropertyChanged}\">\n              <controls:IconMenuItem Header=\"{DynamicResource 切换角色}\" Style=\"{StaticResource LoginUserIconMenuItem}\" Command=\"{Binding AccessManager.ChangeLoginUserCommand}\" />\n            </controls:IconMenuItem>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/AccessManager.cs",
+          "member": "AccessManager.ChangeLoginUserCommand",
+          "sha256": "ce07b863372147e481521c962f95ef0bcd643d351af575271fa185fab8b436de",
+          "start": 59,
+          "end": 59,
+          "excerpt": "\tpublic ICommand ChangeLoginUserCommand => _ChangeLoginUserCommand ?? (_ChangeLoginUserCommand = new DelegateCommand(ChangeLoginUserCommandExecute));",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A02",
+      "route": "原版 · 角色入口与登录",
+      "classification": "source-confirmed",
+      "from": "ChangeLoginUserCommandExecute",
+      "to": "LoginWindow.SetUserStatus(false) / ShowDialog",
+      "behavior": "命令新建登录窗口、记角色切换日志、调用SetUserStatus(false)后显示；调用者没有读取ShowDialog返回值，也没有在这里直接切角色。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/AccessManager.cs",
+          "member": "AccessManager.ChangeLoginUserCommandExecute",
+          "sha256": "ce07b863372147e481521c962f95ef0bcd643d351af575271fa185fab8b436de",
+          "start": 102,
+          "end": 110,
+          "excerpt": "\tprivate void ChangeLoginUserCommandExecute()\n\t{\n\t\t//IL_0001: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0007: Expected Obj, but got Unknown\n\t\tLoginWindow val = new LoginWindow();\n\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"Lang_Role_Switch\"), true, true);\n\t\tval.SetUserStatus(false);\n\t\t((Window)(object)val).ShowDialog();\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A03",
+      "route": "原版 · 角色入口与登录",
+      "classification": "source-confirmed",
+      "from": "LoginWindow.SetUserStatus",
+      "to": "三个enable查询 / 当前角色 / 登录模式门",
+      "behavior": "先取三个角色的enable设置RadioButton.IsEnabled，再按当前角色选中；isLoginMode=true时禁用其余两角色，false保留查询结果。读取的密码out变量在这个方法里不执行校验。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs",
+          "member": "LoginWindow.SetUserStatus",
+          "sha256": "819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2",
+          "start": 72,
+          "end": 117,
+          "excerpt": "\tpublic bool SetUserStatus(bool isLoginMode = false)\n\t{\n\t\tbool bEnable = false;\n\t\tstring adminCode = \"\";\n\t\tCodeManager.GetInstance().GetAdminCode(out bEnable, out adminCode);\n\t\tradioAmin.IsEnabled = bEnable;\n\t\tCodeManager.GetInstance().GetTechCode(out bEnable, out adminCode);\n\t\tradioTech.IsEnabled = bEnable;\n\t\tCodeManager.GetInstance().GetOperatorCode(out bEnable, out adminCode);\n\t\tradioOperator.IsEnabled = bEnable;\n\t\tswitch (CodeManager.GetInstance().GetLoginUser())\n\t\t{\n\t\tcase AccessUser.Admin:\n\t\t\tradioAmin.IsChecked = true;\n\t\t\tif (isLoginMode)\n\t\t\t{\n\t\t\t\tradioOperator.IsEnabled = false;\n\t\t\t\tradioTech.IsEnabled = false;\n\t\t\t}\n\t\t\tbreak;\n\t\tcase AccessUser.Tech:\n\t\t\tradioTech.IsChecked = true;\n\t\t\tif (isLoginMode)\n\t\t\t{\n\t\t\t\tradioOperator.IsEnabled = false;\n\t\t\t\tradioAmin.IsEnabled = false;\n\t\t\t}\n\t\t\tbreak;\n\t\tcase AccessUser.Operator:\n\t\t\tradioOperator.IsChecked = true;\n\t\t\tif (isLoginMode)\n\t\t\t{\n\t\t\t\tradioAmin.IsEnabled = false;\n\t\t\t\tradioTech.IsEnabled = false;\n\t\t\t}\n\t\t\tbreak;\n\t\t}\n\t\treturn true;\n\t}\n\n\tprivate void ButtonCose_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tDialogResult = false;\n\t}\n\n\tprivate AccessUser GetUser()",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A04",
+      "route": "原版 · 角色入口与登录",
+      "classification": "source-confirmed",
+      "from": "LoginWindow输入/显示模式",
+      "to": "控件同步 / 输入事件 / 剪贴板命令",
+      "behavior": "IfShowPassword在明文框与PasswordBox间复制并切Visibility；输入事件允许字母数字并拦空格，两个控件声明Paste/Cut/Copy的CanExecute处理器。切角色清两框及提示。这里只证明UI事件，不把它当所有程序化输入的校验。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs",
+          "member": "LoginWindow.IfShowPassword",
+          "sha256": "819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2",
+          "start": 20,
+          "end": 46,
+          "excerpt": "\tpublic bool IfShowPassword\n\t{\n\t\tget\n\t\t{\n\t\t\treturn ifShowPassword;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (ifShowPassword != value)\n\t\t\t{\n\t\t\t\tif (value)\n\t\t\t\t{\n\t\t\t\t\ttextBoxUserCode.Text = userCode.Password;\n\t\t\t\t\ttextBoxUserCode.Visibility = Visibility.Visible;\n\t\t\t\t\tuserCode.Visibility = Visibility.Collapsed;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tuserCode.Password = textBoxUserCode.Text;\n\t\t\t\t\ttextBoxUserCode.Visibility = Visibility.Collapsed;\n\t\t\t\t\tuserCode.Visibility = Visibility.Visible;\n\t\t\t\t}\n\t\t\t\tifShowPassword = value;\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs",
+          "member": "LoginWindow input/reset handlers",
+          "sha256": "819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2",
+          "start": 180,
+          "end": 208,
+          "excerpt": "\tprivate void tb_PreviewTextInput(object sender, TextCompositionEventArgs e)\n\t{\n\t\tRegex regex = new Regex(\"^[0-9a-zA-Z]*$\");\n\t\te.Handled = !regex.IsMatch(e.Text);\n\t}\n\n\tprivate void text_PreviewKeyDown(object sender, KeyEventArgs e)\n\t{\n\t\tif (e.Key == Key.Space)\n\t\t{\n\t\t\te.Handled = true;\n\t\t}\n\t}\n\n\tprivate void RadioUser_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tuserCode.Password = \"\";\n\t\ttextBoxUserCode.Text = \"\";\n\t\tcodeErrorTips.Visibility = Visibility.Collapsed;\n\t\tcodeEmptyTips.Visibility = Visibility.Collapsed;\n\t}\n\n\tprivate void CommandBinding_CanExecute(object sender, CanExecuteRoutedEventArgs e)\n\t{\n\t\te.CanExecute = false;\n\t\te.Handled = true;\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml",
+          "member": "LoginWindow password input/command bindings",
+          "sha256": "1b65b96c523dbca874a7b2151a2b6d193ea92858de0030e31d00ded51e73f060",
+          "start": 108,
+          "end": 116,
+          "excerpt": "                <PasswordBox Name=\"userCode\" Margin=\"0\" Style=\"{StaticResource textCodeBoxStyle}\" Tag=\"{DynamicResource 请输入密码}\" Width=\"294\" Height=\"40\" BorderThickness=\"0\" input:InputMethod.IsInputMethodEnabled=\"False\" PreviewTextInput=\"tb_PreviewTextInput\" PreviewKeyDown=\"text_PreviewKeyDown\">\n                  <UIElement.CommandBindings>\n                    <input:CommandBinding Command=\"ApplicationCommands.Paste\" CanExecute=\"CommandBinding_CanExecute\" />\n                    <input:CommandBinding Command=\"ApplicationCommands.Cut\" CanExecute=\"CommandBinding_CanExecute\" />\n                    <input:CommandBinding Command=\"ApplicationCommands.Copy\" CanExecute=\"CommandBinding_CanExecute\" />\n                  </UIElement.CommandBindings>\n                </PasswordBox>\n                <TextBox Name=\"textBoxUserCode\" Margin=\"0\" VerticalAlignment=\"Top\" Width=\"294\" Height=\"40\" BorderThickness=\"0\" Visibility=\"Collapsed\" Style=\"{StaticResource textBoxStyle}\" Tag=\"{DynamicResource 请输入密码}\" input:InputMethod.IsInputMethodEnabled=\"False\" Text=\"{Binding ElementName=userCode, Path=Password, Mode=TwoWay}\" PreviewTextInput=\"tb_PreviewTextInput\" PreviewKeyDown=\"text_PreviewKeyDown\">\n                  <UIElement.CommandBindings>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml",
+          "member": "LoginWindow visible input/command bindings",
+          "sha256": "1b65b96c523dbca874a7b2151a2b6d193ea92858de0030e31d00ded51e73f060",
+          "start": 115,
+          "end": 123,
+          "excerpt": "                <TextBox Name=\"textBoxUserCode\" Margin=\"0\" VerticalAlignment=\"Top\" Width=\"294\" Height=\"40\" BorderThickness=\"0\" Visibility=\"Collapsed\" Style=\"{StaticResource textBoxStyle}\" Tag=\"{DynamicResource 请输入密码}\" input:InputMethod.IsInputMethodEnabled=\"False\" Text=\"{Binding ElementName=userCode, Path=Password, Mode=TwoWay}\" PreviewTextInput=\"tb_PreviewTextInput\" PreviewKeyDown=\"text_PreviewKeyDown\">\n                  <UIElement.CommandBindings>\n                    <input:CommandBinding Command=\"ApplicationCommands.Paste\" CanExecute=\"CommandBinding_CanExecute\" />\n                    <input:CommandBinding Command=\"ApplicationCommands.Cut\" CanExecute=\"CommandBinding_CanExecute\" />\n                    <input:CommandBinding Command=\"ApplicationCommands.Copy\" CanExecute=\"CommandBinding_CanExecute\" />\n                  </UIElement.CommandBindings>\n                </TextBox>\n              </Grid>\n              <ToggleButton Style=\"{StaticResource eyeToggleButton}\" Width=\"40\" Margin=\"250,0,0,0\" IsChecked=\"{Binding ElementName=loginWindow, Path=IfShowPassword, Mode=TwoWay}\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Password不是普通依赖属性；明文绑定和代码同步的实际运行行为未验证。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A05",
+      "route": "原版 · 角色入口与登录",
+      "classification": "source-confirmed",
+      "from": "ButtonLogin_Click",
+      "to": "空值/选定角色密码比对 → helper",
+      "behavior": "先清错误提示；PasswordBox空值则提示并返回。按GetUser取三个角色缓存密码后作字符串比较；该体未用bEnable再拒绝登录。匹配后调用helper，未关闭时置DialogResult=true。关闭按钮单独false；_closing由OnClosing未取消时置true。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs",
+          "member": "LoginWindow.ButtonLogin_Click",
+          "sha256": "819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2",
+          "start": 135,
+          "end": 173,
+          "excerpt": "\tprivate void ButtonLogin_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tcodeErrorTips.Visibility = Visibility.Collapsed;\n\t\tcodeEmptyTips.Visibility = Visibility.Collapsed;\n\t\tif (string.IsNullOrEmpty(userCode.Password))\n\t\t{\n\t\t\tcodeEmptyTips.Visibility = Visibility.Visible;\n\t\t\treturn;\n\t\t}\n\t\tAccessUser user = GetUser();\n\t\tstring adminCode = \"\";\n\t\tbool bEnable = false;\n\t\tswitch (user)\n\t\t{\n\t\tcase AccessUser.Admin:\n\t\t\tCodeManager.GetInstance().GetAdminCode(out bEnable, out adminCode);\n\t\t\tbreak;\n\t\tcase AccessUser.Tech:\n\t\t\tCodeManager.GetInstance().GetTechCode(out bEnable, out adminCode);\n\t\t\tbreak;\n\t\tcase AccessUser.Operator:\n\t\t\tCodeManager.GetInstance().GetOperatorCode(out bEnable, out adminCode);\n\t\t\tbreak;\n\t\t}\n\t\tif (userCode.Password != adminCode)\n\t\t{\n\t\t\tcodeErrorTips.Visibility = Visibility.Visible;\n\t\t\treturn;\n\t\t}\n\t\tAccessManagerHelper.SetLoginUser(user);\n\t\tif (!_closing)\n\t\t{\n\t\t\tDialogResult = true;\n\t\t}\n\t}\n\n\tprotected override void OnClosing(CancelEventArgs e)\n\t{\n\t\tbase.OnClosing(e);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs",
+          "member": "LoginWindow.GetUser",
+          "sha256": "819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2",
+          "start": 117,
+          "end": 134,
+          "excerpt": "\tprivate AccessUser GetUser()\n\t{\n\t\tAccessUser accessUser = AccessUser.None;\n\t\tif (radioAmin.IsChecked.Value)\n\t\t{\n\t\t\treturn AccessUser.Admin;\n\t\t}\n\t\tif (radioTech.IsChecked.Value)\n\t\t{\n\t\t\treturn AccessUser.Tech;\n\t\t}\n\t\tif (radioOperator.IsChecked.Value)\n\t\t{\n\t\t\treturn AccessUser.Operator;\n\t\t}\n\t\treturn AccessUser.None;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs",
+          "member": "LoginWindow.OnClosing",
+          "sha256": "819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2",
+          "start": 171,
+          "end": 178,
+          "excerpt": "\tprotected override void OnClosing(CancelEventArgs e)\n\t{\n\t\tbase.OnClosing(e);\n\t\tif (!e.Cancel)\n\t\t{\n\t\t\t_closing = true;\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs",
+          "member": "LoginWindow close button",
+          "sha256": "819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2",
+          "start": 112,
+          "end": 115,
+          "excerpt": "\tprivate void ButtonCose_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tDialogResult = false;\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "缓存查询内部与密码存储另列；不把UI控件禁用当作这个处理器重新检查enable。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A06",
+      "route": "原版 · 角色状态与权限传播",
+      "classification": "source-confirmed",
+      "from": "LoginWindow 原件调用token",
+      "to": "VisionMasterMain.AccessManager.AccessManagerHelper.SetLoginUser",
+      "behavior": "原ButtonLogin_Click在IL_00cb直接call 0x060001fd，随后pop忽略bool返回；目标为VisionMasterMain.dll的一参数helper，不是EXE三参数版本。故DialogResult=true不单独证明helper成功。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/role-cil-evidence.json",
+          "member": "VisionMasterMain.LoginWindow::ButtonLogin_Click",
+          "sha256": "0515da25bd035afebf6ce7921805dad4ad3c870cb82b1be1975f2771b5690adc",
+          "start": 1315,
+          "end": 1334,
+          "excerpt": "          \"token\": \"0x060000ca\",\n          \"symbol\": {\n            \"token\": \"0x060000ca\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMasterMain.LoginWindow\",\n            \"name\": \"ButtonLogin_Click\",\n            \"parameters\": 2,\n            \"attributes\": \"Private, HideBySig\",\n            \"signatureBytes\": \"2002011c1280a5\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 238,\n          \"ilSha256\": \"b8e6c2209f8044f686be4b3707729f3da3bbf4c6ae8170d045018b2ae65b7fcb\",\n          \"ilBytes\": \"00027b8a000004186f2800000a00027b8b000004186f2800000a00027b880000046f2600000a286900000a0d092c1300027b8b000004166f2800000a0038ab0000000228c90000060a72210000700b160c0613041104175945030000000200000014000000260000002b3600281b01000a120212016f3400000a262b2600281b01000a120212016f2d00000a262b1400281b01000a120212016f3100000a262b022b00027b880000046f2600000a07283500000a130511052c1000027b8a000004166f2800000a002b230628fd01000626027b8200000416fe01130611062c0d0217732e00000a283d00000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "319618b9f82dfc30546c900c1c19a665e0fce1d87d2a7ffa7bb4345915b180c1 / MVID 88823867-dc1b-476f-9133-0d8cf5da19e8"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A07",
+      "route": "原版 · 角色状态与权限传播",
+      "classification": "source-confirmed",
+      "from": "Main DLL 的SetLoginUser",
+      "to": "状态 → 保存 → 回调 → LoginUser通知",
+      "behavior": "OnAccessEnableCallBack为空立即false；否则比较旧角色，写curLoginUser、IsAdmin=IsAllAccessUser，调用SaveAccessInfo但忽略其bool，非None发启用回调，再发AllAccess回调，角色变了才通知LoginUser。保存失败和状态已改不能合并成原子事务。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain.AccessManager/AccessManagerHelper.cs",
+          "member": "Main AccessManagerHelper.SetLoginUser state",
+          "sha256": "2abead02362afbd954f9c69e6a69db18477c6a98b5ffb5557635a5329c6661ea",
+          "start": 11,
+          "end": 53,
+          "excerpt": "\tpublic static bool SetLoginUser(AccessUser loginUser)\n\t{\n\t\tif (CodeManager.GetInstance().OnAccessEnableCallBack == null)\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tswitch (loginUser)\n\t\t{\n\t\tcase AccessUser.Admin:\n\t\t\tUILogManager.logCreate(\"信息\", \"管理员登录\");\n\t\t\tbreak;\n\t\tcase AccessUser.Operator:\n\t\t\tUILogManager.logCreate(\"信息\", \"操作员登录\");\n\t\t\tbreak;\n\t\tcase AccessUser.Tech:\n\t\t\tUILogManager.logCreate(\"信息\", \"技术员登录\");\n\t\t\tbreak;\n\t\t}\n\t\tbool flag = loginUser == CodeManager.GetInstance()._accessCurUserInfo.curLoginUser;\n\t\tCodeManager.GetInstance()._accessCurUserInfo.curLoginUser = loginUser;\n\t\tCodeManager.GetInstance().IsAdmin = CodeManager.GetInstance().IsAllAccessUser();\n\t\tCodeManager.GetInstance().SaveAccessInfo();\n\t\tif (loginUser != AccessUser.None && CodeManager.GetInstance().OnAccessEnableCallBack != null)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnAccessEnableCallBack(bEnable: true, loginUser);\n\t\t}\n\t\tif (CodeManager.GetInstance().OnAllAccessCallBack != null)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnAllAccessCallBack(CodeManager.GetInstance().IsAdmin);\n\t\t}\n\t\tif (!flag)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnPropertyChanged(\"LoginUser\");\n\t\t}\n\t\tif (CodeManager.GetInstance().GetLoginUser() != AccessUser.Operator)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tif (Application.Current.MainWindow is MainWindow mainWindow)\n\t\t{\n\t\t\tWindow window = FrontendWindowData.Instance.InitRunWindowFromDesignData();\n\t\t\tif (window != null)\n\t\t\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "运行依赖绑定和回调异常后状态未验证。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A08",
+      "route": "原版 · 角色状态与权限传播",
+      "classification": "source-confirmed",
+      "from": "Main DLL operator分支",
+      "to": "设计前台窗口 → ReplaceMainWindow → 旧主窗关闭",
+      "behavior": "当前用户Operator且Application.Current.MainWindow为MainWindow时创建运行界面，非空才ShowInTaskbar/Show、ReplaceMainWindow，再清旧DataContext和Close。这是同步路径；不能挪用EXE版本的BeginInvoke。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain.AccessManager/AccessManagerHelper.cs",
+          "member": "Main AccessManagerHelper operator window replacement",
+          "sha256": "2abead02362afbd954f9c69e6a69db18477c6a98b5ffb5557635a5329c6661ea",
+          "start": 45,
+          "end": 67,
+          "excerpt": "\t\tif (CodeManager.GetInstance().GetLoginUser() != AccessUser.Operator)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tif (Application.Current.MainWindow is MainWindow mainWindow)\n\t\t{\n\t\t\tWindow window = FrontendWindowData.Instance.InitRunWindowFromDesignData();\n\t\t\tif (window != null)\n\t\t\t{\n\t\t\t\twindow.ShowInTaskbar = true;\n\t\t\t\twindow.Show();\n\t\t\t\tIoc.Get<IApplicationOperation>()?.ReplaceMainWindow(window);\n\t\t\t\tif (mainWindow != null)\n\t\t\t\t{\n\t\t\t\t\tmainWindow.DataContext = null;\n\t\t\t\t\tmainWindow.Close();\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn true;\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "原前台设计数据、ReplaceMainWindow、旧窗Close取消与异常清理仍须逐链确认。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A09",
+      "route": "原版 · 启动权限与另一helper",
+      "classification": "source-confirmed",
+      "from": "EXE LoadAccessInfo",
+      "to": "Base64/BytesToStruct → 磁盘ID谓词 → 缓存",
+      "behavior": "读取accessInfoNodeName配置并Base64解码，BytesToStruct为AccessUserInfo；adminEnable时对IDInfo与当前diskID执行不等、双向Contains及非空组合门，失败false；catch记录false。随后调用EXE SetLoginUser(false,false)但不检查结果，再返回true。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/AccessManagerHelper.cs",
+          "member": "EXE AccessManagerHelper.LoadAccessInfo",
+          "sha256": "0f32346a4fddc5aa60514b3ac7ba909c6fb0cfd44fb96793081cc63377f1a4fd",
+          "start": 17,
+          "end": 62,
+          "excerpt": "\tpublic static bool LoadAccessInfo()\n\t{\n\t\t//IL_0054: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0059: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0060: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0068: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0076: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00b6: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00b7: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0085: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00e8: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0092: Unknown result type (might be due to invalid IL or missing references)\n\t\ttry\n\t\t{\n\t\t\tbyte[] array = Convert.FromBase64String(ConfigurationHelper.GetConfig(CodeManager.GetInstance().accessInfoNodeName));\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tobject obj = CodeManager.GetInstance().BytesToStruct(array, typeof(AccessUserInfo));\n\t\t\tif (obj == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tAccessUserInfo val = (AccessUserInfo)obj;\n\t\t\tstring diskID = CodeManager.GetDiskID();\n\t\t\tif (val.adminEnable && val.IDInfo != diskID && !val.IDInfo.Contains(diskID) && !diskID.Contains(val.IDInfo) && val.IDInfo != \"\")\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tCodeManager.GetInstance()._accessCurUserInfo = val;\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Info(\"读取权限信息失败:\" + ex.Message);\n\t\t\treturn false;\n\t\t}\n\t\tSetLoginUser(CodeManager.GetInstance()._accessCurUserInfo.curLoginUser, isSaveAccessInfo: false, isShowFront: false);\n\t\treturn true;\n\t}\n\n\tpublic static bool SetLoginUser(AccessUser loginUser, bool isSaveAccessInfo = true, bool isShowFront = true)\n\t{\n\t\t//IL_0034: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_003f: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0051: Unknown result type (might be due to invalid IL or missing references)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "BytesToStruct原CIL已在password-lifecycle P11恢复；结构运行布局、磁盘ID来源和配置权限仍未知，不称加密或机器绑定全域等价。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A10",
+      "route": "原版 · 启动权限与另一helper",
+      "classification": "source-confirmed",
+      "from": "EXE SetLoginUser(loginUser,isSaveAccessInfo,isShowFront)",
+      "to": "补注册 / 可选保存 / 可选异步前台切换",
+      "behavior": "回调为空时先GetInstance尝试注册；按参数决定SaveAccessInfo。启用回调以数值>0为门，其余状态/AllAccess/LoginUser通知分列；用户数值3且isShowFront才Dispatcher.BeginInvoke前台替换。启动传false,false与登录UI的一参数版本不同。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/AccessManagerHelper.cs",
+          "member": "EXE AccessManagerHelper.SetLoginUser",
+          "sha256": "0f32346a4fddc5aa60514b3ac7ba909c6fb0cfd44fb96793081cc63377f1a4fd",
+          "start": 58,
+          "end": 142,
+          "excerpt": "\tpublic static bool SetLoginUser(AccessUser loginUser, bool isSaveAccessInfo = true, bool isShowFront = true)\n\t{\n\t\t//IL_0034: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_003f: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0051: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0052: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0080: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0082: Invalid comparison between Unknown and I4\n\t\t//IL_00b3: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00b4: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00b6: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00b9: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_00cb: Expected I4, but got Unknown\n\t\t//IL_00aa: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0157: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_015d: Invalid comparison between Unknown and I4\n\t\tif (CodeManager.GetInstance().OnAccessEnableCallBack == null)\n\t\t{\n\t\t\tAccessManager instance = AccessManager.GetInstance();\n\t\t\tif (CodeManager.GetInstance().OnAccessEnableCallBack == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t}\n\t\tbool flag = loginUser == CodeManager.GetInstance()._accessCurUserInfo.curLoginUser;\n\t\tCodeManager.GetInstance()._accessCurUserInfo.curLoginUser = loginUser;\n\t\tCodeManager.GetInstance().IsAdmin = CodeManager.GetInstance().IsAllAccessUser();\n\t\tif (isSaveAccessInfo)\n\t\t{\n\t\t\tCodeManager.GetInstance().SaveAccessInfo();\n\t\t}\n\t\tif ((int)loginUser > 0 && CodeManager.GetInstance().OnAccessEnableCallBack != null)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnAccessEnableCallBack.Invoke(true, loginUser);\n\t\t}\n\t\tswitch (loginUser - 1)\n\t\t{\n\t\tcase 0:\n\t\t\tUILogManager.logCreate(\"信息\", \"管理员登录\", true, true);\n\t\t\tbreak;\n\t\tcase 2:\n\t\t\tUILogManager.logCreate(\"信息\", \"操作员登录\", true, true);\n\t\t\tbreak;\n\t\tcase 1:\n\t\t\tUILogManager.logCreate(\"信息\", \"技术员登录\", true, true);\n\t\t\tbreak;\n\t\t}\n\t\tif (CodeManager.GetInstance().OnAllAccessCallBack != null)\n\t\t{\n\t\t\tCodeManager.GetInstance().OnAllAccessCallBack.Invoke(CodeManager.GetInstance().IsAdmin);\n\t\t}\n\t\tif (!flag)\n\t\t{\n\t\t\t((NotifyPropertyChangedBase)(object)CodeManager.GetInstance()).OnPropertyChanged(\"LoginUser\");\n\t\t}\n\t\tif ((int)CodeManager.GetInstance().GetLoginUser() != 3)\n\t\t{\n\t\t\treturn true;\n\t\t}\n\t\tif (isShowFront)\n\t\t{\n\t\t\tApplication.Current?.Dispatcher?.BeginInvoke((Action)(() =>\n\t\t\t{\n\t\t\t\tWindow mainWindow = Application.Current.MainWindow;\n\t\t\t\tMainWindow val;\n\t\t\t\tif ((val = (MainWindow)(object)((mainWindow is MainWindow) ? mainWindow : null)) != null)\n\t\t\t\t{\n\t\t\t\t\tWindow window = FrontendWindowData.Instance.InitRunWindowFromDesignData();\n\t\t\t\t\tif (window != null)\n\t\t\t\t\t{\n\t\t\t\t\t\twindow.ShowInTaskbar = true;\n\t\t\t\t\t\twindow.Show();\n\t\t\t\t\t\tIoc.Get<IApplicationOperation>()?.ReplaceMainWindow(window);\n\t\t\t\t\t\tif (val != null)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t((FrameworkElement)(object)val).DataContext = null;\n\t\t\t\t\t\t\t((BaseWindow)(object)val).Close();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}));\n\t\t}\n\t\treturn true;\n\t}\n}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "源体带IL警告，所选原CIL可复核；异步窗口切换生命周期未运行验证。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A11",
+      "route": "原版 · 角色状态与权限传播",
+      "classification": "source-confirmed",
+      "from": "IsAdmin绑定 / callback",
+      "to": "主窗参数编辑门 / 用户标题可见性",
+      "behavior": "主窗IsParamsEditState绑定CodeManager.IsAdmin；流程Tab上下文也有IsAdmin=false清空菜单触发。SetAccessMenuItemVisible按bEnable设置可见性，数值1/2/3映射各角色语言标题，否则未命名；disable分支只折叠，不清旧标题。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/MainWindow.xaml",
+          "member": "MainWindow IsAdmin binding",
+          "sha256": "6176a9c0c68a8d44e5fd2885ca6683c4a02a1cd22ff97bb0b5d52104a84c7915",
+          "start": 27,
+          "end": 27,
+          "excerpt": "      <VMWpf:VmMainViewConfigControl Name=\"MainView\" IsParamsEditState=\"{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}\" SelectedModule=\"{Binding SelectedModule, Mode=TwoWay}\" IsLockWorkArea=\"{Binding IsWorkAreaLocking, Mode=OneWay}\" IsOpenParams=\"{Binding IsOpenParams, Mode=TwoWay}\" ZoomIndex=\"{Binding ConfigZoomIndex, Mode=TwoWay}\">",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml",
+          "member": "ProcedureConfigControl IsAdmin context trigger",
+          "sha256": "a91f89dd2214f3b4cc3ad432d14caf8732d11bc376b29c64ad1b8a75a982f106",
+          "start": 456,
+          "end": 458,
+          "excerpt": "          <DataTrigger Value=\"false\" Binding=\"{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}\">\n            <Setter Property=\"FrameworkElement.ContextMenu\" Value=\"{x:Null}\" />\n          </DataTrigger>",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/AccessManager.cs",
+          "member": "AccessManager.SetAccessMenuItemVisible",
+          "sha256": "ce07b863372147e481521c962f95ef0bcd643d351af575271fa185fab8b436de",
+          "start": 112,
+          "end": 143,
+          "excerpt": "\tpublic bool SetAccessMenuItemVisible(bool bEnable, AccessUser curLoginUser)\n\t{\n\t\t//IL_0015: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0016: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0017: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_002d: Expected I4, but got Unknown\n\t\tif (bEnable)\n\t\t{\n\t\t\tAccessButtonVisibility = Visibility.Visible;\n\t\t\tstring infoKey = \"未命名\";\n\t\t\tswitch ((int)curLoginUser)\n\t\t\t{\n\t\t\tcase 1:\n\t\t\t\tinfoKey = \"Lang_Role_Admin\";\n\t\t\t\tbreak;\n\t\t\tcase 2:\n\t\t\t\tinfoKey = \"Lang_Role_Tech\";\n\t\t\t\tbreak;\n\t\t\tcase 3:\n\t\t\t\tinfoKey = \"Lang_Role_Operator\";\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tAccessButtonHeader = AppLocalizationService.GetLang(infoKey);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tAccessButtonVisibility = Visibility.Collapsed;\n\t\t}\n\t\treturn true;\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "全部权限消费者、模块级操作矩阵、原BAML激活和运行回调仍开放。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A12",
+      "route": "原版 · 原件CodeManager与生命周期",
+      "classification": "source-confirmed",
+      "from": "CodeManager.IsAllAccessUser",
+      "to": "数值0/1 → IsAdmin计算",
+      "behavior": "选定原CIL对curLoginUser等于1或0返回true，其余false；不能只凭IsAdmin字段名把它解释成仅管理员。set_IsAdmin变化才写字段并通知。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/role-cil-evidence.json",
+          "member": "VM.User.CodeManager::IsAllAccessUser",
+          "sha256": "0515da25bd035afebf6ce7921805dad4ad3c870cb82b1be1975f2771b5690adc",
+          "start": 5838,
+          "end": 5857,
+          "excerpt": "          \"token\": \"0x06000006\",\n          \"symbol\": {\n            \"token\": \"0x06000006\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.User.CodeManager\",\n            \"name\": \"IsAllAccessUser\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200002\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 31,\n          \"ilSha256\": \"73de511e0bdd23e875ff24605e998884be9df469ba6cec6c86fbb8b2495936ac\",\n          \"ilBytes\": \"027c100000047b06000004172e0d027c100000047b060000042d02172a162a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "8acc2ee59c1241a29c591952996952724e23f3f62cb54ca543ee419eeb52226e / MVID 6c7bcc46-35b6-40cb-829b-b39efb1b03ee"
+        },
+        {
+          "path": "docs/architecture-recovery/role-cil-evidence.json",
+          "member": "VM.User.CodeManager::set_IsAdmin",
+          "sha256": "0515da25bd035afebf6ce7921805dad4ad3c870cb82b1be1975f2771b5690adc",
+          "start": 5974,
+          "end": 5993,
+          "excerpt": "          \"token\": \"0x06000009\",\n          \"symbol\": {\n            \"token\": \"0x06000009\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.User.CodeManager\",\n            \"name\": \"set_IsAdmin\",\n            \"parameters\": 1,\n            \"attributes\": \"Public, HideBySig, SpecialName\",\n            \"signatureBytes\": \"20010102\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 28,\n          \"ilSha256\": \"3d02ea5a6720467ba10f59ac58a98a88a5c303298a360ae2f19963dfde50c3d3\",\n          \"ilBytes\": \"027b15000004032e1202037d150000040272490000706f1900000a2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "8acc2ee59c1241a29c591952996952724e23f3f62cb54ca543ee419eeb52226e / MVID 6c7bcc46-35b6-40cb-829b-b39efb1b03ee"
+        }
+      ],
+      "unknowns": [
+        "本边保留数值谓词；运行角色来源与所有枚举版本单独核查。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A13",
+      "route": "原版 · 原件CodeManager与生命周期",
+      "classification": "source-confirmed",
+      "from": "CodeManager.SaveAccessInfo",
+      "to": "结构字节 → Base64 → 配置 / 通知 / bool",
+      "behavior": "原CIL读取_accessCurUserInfo，经StructTOBytes、Convert.ToBase64String、SaveConfig，发IsAccessEnable和IsAdmin通知；异常提示后返回false。两个helper均未读取此返回值，不能以角色切换返回true证明磁盘保存成功。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/role-cil-evidence.json",
+          "member": "VM.User.CodeManager::SaveAccessInfo",
+          "sha256": "0515da25bd035afebf6ce7921805dad4ad3c870cb82b1be1975f2771b5690adc",
+          "start": 6095,
+          "end": 6114,
+          "excerpt": "          \"token\": \"0x0600000b\",\n          \"symbol\": {\n            \"token\": \"0x0600000b\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.User.CodeManager\",\n            \"name\": \"SaveAccessInfo\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200002\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 87,\n          \"ilSha256\": \"25802e734c493d90c8833bdd1cb7d8e0ce78c28300bb11c09c01877c7287cc98\",\n          \"ilBytes\": \"02027b100000048c03000002281a000006281b00000a0a027b1100000406281c00000a0272bd0000706f1900000a0272490000706f1900000ade180b72db000070076f1600000a1816281d00000a26160cde02172a082a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "8acc2ee59c1241a29c591952996952724e23f3f62cb54ca543ee419eeb52226e / MVID 6c7bcc46-35b6-40cb-829b-b39efb1b03ee"
+        }
+      ],
+      "unknowns": [
+        "StructTOBytes复制路径已在password-lifecycle P10恢复；封送布局、配置落盘/失败恢复仍未知，Base64不等于加密。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A14",
+      "route": "原版 · 原件CodeManager与生命周期",
+      "classification": "source-confirmed",
+      "from": "AccessManager构造 / Finalize",
+      "to": "null回调谓词 → Combine / Remove",
+      "behavior": "两体原CIL均以OnAccessEnableCallBack==null为谓词才进入Combine/Remove；保留原不对称生命周期，不修写为通常的非空解除。只说明所选体，不据此断言所有宿主一定泄漏。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/AccessManager.cs",
+          "member": "AccessManager callback registration/finalizer",
+          "sha256": "ce07b863372147e481521c962f95ef0bcd643d351af575271fa185fab8b436de",
+          "start": 61,
+          "end": 88,
+          "excerpt": "\tpublic AccessManager()\n\t{\n\t\t//IL_0045: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_004f: Expected Obj, but got Unknown\n\t\t//IL_004f: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0059: Expected Obj, but got Unknown\n\t\tif (CodeManager.GetInstance().OnAccessEnableCallBack == null)\n\t\t{\n\t\t\tCodeManager val = CodeManager.GetInstance();\n\t\t\tval.OnAccessEnableCallBack = (AccessEnableCallBack)Delegate.Combine((Delegate)(object)val.OnAccessEnableCallBack, (Delegate)new AccessEnableCallBack(SetAccessMenuItemVisible));\n\t\t}\n\t}\n\n\t~AccessManager()\n\t{\n\t\t//IL_0026: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0030: Expected Obj, but got Unknown\n\t\t//IL_0030: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_003a: Expected Obj, but got Unknown\n\t\tif (CodeManager.GetInstance().OnAccessEnableCallBack == null)\n\t\t{\n\t\t\tCodeManager val = CodeManager.GetInstance();\n\t\t\tval.OnAccessEnableCallBack = (AccessEnableCallBack)Delegate.Remove((Delegate)(object)val.OnAccessEnableCallBack, (Delegate)new AccessEnableCallBack(SetAccessMenuItemVisible));\n\t\t}\n\t}\n\n\tpublic static AccessManager GetInstance()\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/role-cil-evidence.json",
+          "member": "VisionMaster.AccessManager::.ctor",
+          "sha256": "0515da25bd035afebf6ce7921805dad4ad3c870cb82b1be1975f2771b5690adc",
+          "start": 6936,
+          "end": 6955,
+          "excerpt": "          \"token\": \"0x06000001\",\n          \"symbol\": {\n            \"token\": \"0x06000001\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AccessManager\",\n            \"name\": \".ctor\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig, SpecialName, RTSpecialName\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 91,\n          \"ilSha256\": \"d1e0216a220a7694ef69cea31b96d7a336d8582e0c6a1e9f0f454baf8f323290\",\n          \"ilBytes\": \"02187d03000004027e2000000a7d0400000402147d0500000402282100000a0000282200000a7b2300000a14fe010a062c2800282200000a257b2300000a02fe060b000006732400000a282500000a74d50000017d2300000a002a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        },
+        {
+          "path": "docs/architecture-recovery/role-cil-evidence.json",
+          "member": "VisionMaster.AccessManager::Finalize",
+          "sha256": "0515da25bd035afebf6ce7921805dad4ad3c870cb82b1be1975f2771b5690adc",
+          "start": 7274,
+          "end": 7293,
+          "excerpt": "          \"token\": \"0x06000002\",\n          \"symbol\": {\n            \"token\": \"0x06000002\",\n            \"kind\": \"method-def\",\n            \"type\": \"VisionMaster.AccessManager\",\n            \"name\": \"Finalize\",\n            \"parameters\": 0,\n            \"attributes\": \"Family, Virtual, HideBySig\",\n            \"signatureBytes\": \"200001\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 70,\n          \"ilSha256\": \"a82f1f68125ae43b839cf66c4aed5a46a09b81ed794b83da5e3fe76c9e63e98c\",\n          \"ilBytes\": \"0000282200000a7b2300000a14fe010a062c2800282200000a257b2300000a02fe060b000006732400000a282600000a74d50000017d2300000a00de0802281100000a00dc2a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"nop\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5"
+        }
+      ],
+      "unknowns": [
+        "其它解除、替换及进程退出路径尚未齐备。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A15",
+      "route": "原版 · 原件CodeManager与生命周期",
+      "classification": "source-confirmed",
+      "from": "CodeManager.IsUseSoftEncrypt",
+      "to": "配置布尔读取 → 日志/throw",
+      "behavior": "原CIL读取SoftEncryptNodeName字段对应配置并Convert.ToBoolean；异常记录后throw。它是软加密模式读取，不能当作native授权真实性检查。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/role-cil-evidence.json",
+          "member": "VM.User.CodeManager::IsUseSoftEncrypt",
+          "sha256": "0515da25bd035afebf6ce7921805dad4ad3c870cb82b1be1975f2771b5690adc",
+          "start": 5652,
+          "end": 5671,
+          "excerpt": "          \"token\": \"0x06000005\",\n          \"symbol\": {\n            \"token\": \"0x06000005\",\n            \"kind\": \"method-def\",\n            \"type\": \"VM.User.CodeManager\",\n            \"name\": \"IsUseSoftEncrypt\",\n            \"parameters\": 0,\n            \"attributes\": \"Public, HideBySig\",\n            \"signatureBytes\": \"200002\"\n          },\n          \"status\": \"decoded\",\n          \"issue\": null,\n          \"ilSize\": 45,\n          \"ilSha256\": \"e0d9825f81f7d28b6929b267f9cef0c4f934b5d3974a7da48855334ef57389b4\",\n          \"ilBytes\": \"027b12000004281400000a281500000a0ade180b7233000070076f1600000a281700000a281800000a077a062a\",\n          \"instructions\": [\n            {\n              \"offset\": 0,\n              \"label\": \"IL_0000\",\n              \"opcode\": \"ldarg.0\",",
+          "evidenceType": "original-managed-cil",
+          "binaryIdentity": "8acc2ee59c1241a29c591952996952724e23f3f62cb54ca543ee419eeb52226e / MVID 6c7bcc46-35b6-40cb-829b-b39efb1b03ee"
+        }
+      ],
+      "unknowns": [
+        "字段初始键、配置提供器完整语义及native授权实现仍开放。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A16",
+      "route": "原版 · 外部入口与权限设置",
+      "classification": "source-confirmed",
+      "from": "tool函数源 usermanagercommand/userlogincommand",
+      "to": "Topmost LoginWindow / false或true模式",
+      "behavior": "函数源分别导出DelegateCommand(_userManagedAction)和Func<bool?>(_userLoginAction.Invoke)；初始化委托各新建Topmost登录窗，SetUserStatus分别false/true，只有后者返回ShowDialog结果。传输实际分派仍见外部入口未知门。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "TitleMenueItemData exported user functions",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 1621,
+          "end": 1630,
+          "excerpt": "\t\t\tFilterName = \"usermanagercommand\",\n\t\t\tType = \"readonly\",\n\t\t\tValue = new DelegateCommand(_userManagedAction)\n\t\t});\n\t\tlist2.Add(new FunctionInfo\n\t\t{\n\t\t\tFilterName = \"userlogincommand\",\n\t\t\tType = \"readonly\",\n\t\t\tValue = new Func<bool?>(_userLoginAction.Invoke)\n\t\t});",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "TitleMenueItemData user action initialization",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 1815,
+          "end": 1837,
+          "excerpt": "\t\t\t_userManagedAction = () =>\n\t\t\t{\n\t\t\t\t//IL_0001: Unknown result type (might be due to invalid IL or missing references)\n\t\t\t\t//IL_0007: Expected Obj, but got Unknown\n\t\t\t\tLoginWindow val = new LoginWindow();\n\t\t\t\tval.SetUserStatus(false);\n\t\t\t\t((Window)(object)val).Topmost = true;\n\t\t\t\t((Window)(object)val).ShowDialog();\n\t\t\t};\n\t\t\t_userLoginAction = () =>\n\t\t\t{\n\t\t\t\t//IL_0001: Unknown result type (might be due to invalid IL or missing references)\n\t\t\t\t//IL_0007: Expected Obj, but got Unknown\n\t\t\t\tLoginWindow val = new LoginWindow();\n\t\t\t\tval.SetUserStatus(true);\n\t\t\t\t((Window)(object)val).Topmost = true;\n\t\t\t\treturn ((Window)(object)val).ShowDialog();\n\t\t\t};\n\t\t}\n\t}\n\n\tprivate static void SolSet()\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "反向入口注册不证明MQ/设计前台实际可达；初始化先后与调用线程仍待核。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A17",
+      "route": "原版 · 外部入口与权限设置",
+      "classification": "source-confirmed",
+      "from": "AccessPage启停权限",
+      "to": "管理员验证 / 二次确认 / ResetAccess或SetAdminEnable",
+      "behavior": "已启用时先恢复勾选，CheckPassAdminAccess后Yes才清UI并ResetAccess；未启用需ADMIN，再AccessCodeSet非false及Yes才启用管理员并切角色。CheckPassAdminAccess只有ShowDialog==false拒绝；不把nullable非true改成拒绝。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml",
+          "member": "AccessPage enable toggle",
+          "sha256": "aa65cb083ac3986b8dd56a92e6c24e36c876ac352e1512f956d36001243ef546",
+          "start": 37,
+          "end": 37,
+          "excerpt": "          <ToggleButton Name=\"autoAccessEnable\" Margin=\"20,0,0,0\" Template=\"{StaticResource switchbutton}\" Width=\"80\" Click=\"autoAccessEnable_Click\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.autoAccessEnable_Click",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 192,
+          "end": 234,
+          "excerpt": "\tprivate void autoAccessEnable_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tif (IsChecked)\n\t\t{\n\t\t\tautoAccessEnable.IsChecked = true;\n\t\t\tif (CheckPassAdminAccess())\n\t\t\t{\n\t\t\t\tDialogResult dialogResult = HikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_CancelAuthr\"), AppLocalizationService.GetLang(\"Lang_AuthrCelAward\"), MessageButtons.YesOrNo, MessageIcons.Warning, isTranslate: true);\n\t\t\t\tif (dialogResult == DialogResult.Yes)\n\t\t\t\t{\n\t\t\t\t\tautoAccessEnable.IsChecked = false;\n\t\t\t\t\tIsChecked = false;\n\t\t\t\t\tClearXamlData();\n\t\t\t\t\taccessparam.Visibility = Visibility.Collapsed;\n\t\t\t\t\tCodeManager.GetInstance().ResetAccess();\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t\tautoAccessEnable.IsChecked = false;\n\t\tif (!ADMIN)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tAccessCodeSet accessCodeSet = new AccessCodeSet();\n\t\tif (false != accessCodeSet.ShowDialog())\n\t\t{\n\t\t\tDialogResult dialogResult2 = HikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_StartAuthr\"), AppLocalizationService.GetLang(\"Lang_ScrAward\"), MessageButtons.YesOrNo, MessageIcons.Warning, isTranslate: true);\n\t\t\tif (dialogResult2 == DialogResult.Yes)\n\t\t\t{\n\t\t\t\tautoAccessEnable.IsChecked = true;\n\t\t\t\tIsChecked = true;\n\t\t\t\tClearXamlData();\n\t\t\t\taccessparam.Visibility = Visibility.Visible;\n\t\t\t\tadminparam.Visibility = Visibility.Visible;\n\t\t\t\ttechparam.Visibility = Visibility.Visible;\n\t\t\t\toperatparam.Visibility = Visibility.Visible;\n\t\t\t\ttitleparam.Visibility = Visibility.Visible;\n\t\t\t\tCodeManager.GetInstance().SetAdminEnable(bEnable: true, accessCodeSet.AccessAdministatorCode);\n\t\t\t\tAccessManagerHelper.SetLoginUser(AccessUser.Admin);\n\t\t\t}\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.CheckPassAdminAccess",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 364,
+          "end": 381,
+          "excerpt": "\tprivate bool CheckPassAdminAccess()\n\t{\n\t\tbool bEnable = false;\n\t\tstring adminCode = \"\";\n\t\tCodeManager.GetInstance().GetAdminCode(out bEnable, out adminCode);\n\t\tif (bEnable)\n\t\t{\n\t\t\tAccesssCodeCheck accesssCodeCheck = new AccesssCodeCheck();\n\t\t\taccesssCodeCheck.AccessAdministatorCode = adminCode;\n\t\t\tif (false == accesssCodeCheck.ShowDialog())\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\treturn true;\n\t\t}\n\t\treturn true;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "ADMIN初始化、SetAdminEnable/ResetAccess副作用和原窗口返回状态还须细化。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A18",
+      "route": "原版 · 外部入口与权限设置",
+      "classification": "source-confirmed",
+      "from": "AccessApply / 修改密码 / 模块权限设置",
+      "to": "CheckPassword → SaveInfo / 独立对话框",
+      "behavior": "AccessApply清提示，CheckPassword通过才SaveInfo；只对勾选的技术员/操作员密码调CheckCodeFormat，保存前null勾选改false，再SetTechEnable/SetOperatorEnable。修改管理员密码开ReSetPassCode；技术员配置开AccessModuleManager，两入口不能省略。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.AccessApply",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 257,
+          "end": 266,
+          "excerpt": "\tpublic bool AccessApply()\n\t{\n\t\tResetTipsVisible();\n\t\tif (!CheckPassword())\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t\tSaveInfo();\n\t\treturn true;\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.CheckPassword / SaveInfo",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 282,
+          "end": 316,
+          "excerpt": "\tprivate bool CheckPassword()\n\t{\n\t\tbool? isChecked = techEnable.IsChecked;\n\t\tbool flag = true;\n\t\tif (isChecked == true == flag && isChecked.HasValue && !CodeManager.CheckCodeFormat(techSetCode.Password))\n\t\t{\n\t\t\tteckCodeTips.Visibility = Visibility.Visible;\n\t\t\treturn false;\n\t\t}\n\t\tisChecked = operatorEnable.IsChecked;\n\t\tflag = true;\n\t\tif (isChecked == true == flag && isChecked.HasValue && !CodeManager.CheckCodeFormat(operatorSetCode.Password))\n\t\t{\n\t\t\toperatorCodeTips.Visibility = Visibility.Visible;\n\t\t\treturn false;\n\t\t}\n\t\treturn true;\n\t}\n\n\tprivate void SaveInfo()\n\t{\n\t\tif (!techEnable.IsChecked.HasValue)\n\t\t{\n\t\t\ttechEnable.IsChecked = false;\n\t\t}\n\t\tmyCodeManager.SetTechEnable(techEnable.IsChecked.Value, techSetCode.Password);\n\t\tif (!operatorEnable.IsChecked.HasValue)\n\t\t{\n\t\t\toperatorEnable.IsChecked = false;\n\t\t}\n\t\tmyCodeManager.SetOperatorEnable(operatorEnable.IsChecked.Value, operatorSetCode.Password);\n\t}\n\n\tprivate void ClearXamlData()\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage password/module dialogs",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 236,
+          "end": 250,
+          "excerpt": "\tprivate void ReSetPassword_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tReSetPassCode reSetPassCode = new ReSetPassCode\n\t\t{\n\t\t\tmyCodeManager = CodeManager.GetInstance()\n\t\t};\n\t\treSetPassCode.ShowDialog();\n\t}\n\n\tprivate void Permission_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tAccessModuleManager accessModuleManager = new AccessModuleManager();\n\t\taccessModuleManager.ShowDialog();\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "模块权限链见module-permissions；CheckCodeFormat、改密和ResetAccess原CIL已在password-lifecycle细化，原生存储与运行生命周期仍未闭合。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A19",
+      "route": "原版 · 权限导入导出",
+      "classification": "source-confirmed",
+      "from": "ImportPermission_Click / ImportHandleAccessInfo",
+      "to": "管理员门 → txt → Base64/结构 → 配置 → 角色",
+      "behavior": "导入先CheckPassAdminAccess，再禁用按钮；选择器取消直接返回但finally恢复按钮。读取文本后解码结构，AccessCheckDisk==1且adminEnable时把IDInfo改当前磁盘ID，再写缓存、重新编码配置并SetLoginUser；成功重建页面，异常/失败提示。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml",
+          "member": "AccessPage import/export buttons",
+          "sha256": "aa65cb083ac3986b8dd56a92e6c24e36c876ac352e1512f956d36001243ef546",
+          "start": 21,
+          "end": 22,
+          "excerpt": "          <Button Name=\"btnImportPermission\" Content=\"{DynamicResource 导入}\" Margin=\"46,0,0,0\" Style=\"{DynamicResource BottomButtonStyle}\" Click=\"ImportPermission_Click\" />\n          <Button Name=\"btnExportPermission\" Content=\"{DynamicResource 导出}\" Margin=\"30,0,0,0\" Style=\"{DynamicResource BottomButtonStyle}\" Click=\"ExportPermission_Click\" />",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.ImportPermission_Click",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 382,
+          "end": 438,
+          "excerpt": "\tprivate void ImportPermission_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tif (!CheckPassAdminAccess())\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tOpenFileDialog openFileDialog = new OpenFileDialog\n\t\t{\n\t\t\tFilter = \"Config Files (*.txt)|*.txt\"\n\t\t};\n\t\ttry\n\t\t{\n\t\t\tbtnImportPermission.IsEnabled = false;\n\t\t\tstring empty = string.Empty;\n\t\t\tstring access = string.Empty;\n\t\t\topenFileDialog.ValidateNames = true;\n\t\t\topenFileDialog.CheckFileExists = true;\n\t\t\topenFileDialog.CheckPathExists = true;\n\t\t\tif (openFileDialog.ShowDialog() != true)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tempty = openFileDialog.FileName;\n\t\t\tusing (StreamReader streamReader = new StreamReader(empty))\n\t\t\t{\n\t\t\t\taccess = streamReader.ReadToEnd().ToString();\n\t\t\t}\n\t\t\tif (ImportHandleAccessInfo(access))\n\t\t\t{\n\t\t\t\tInitInfo();\n\t\t\t\tif (AccessUser.Admin == myCodeManager.GetLoginUser())\n\t\t\t\t{\n\t\t\t\t\taccessparam.Visibility = Visibility.Visible;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\taccessparam.Visibility = Visibility.Collapsed;\n\t\t\t\t}\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_LoadSuccess\"), MessageButtons.Normal);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tLogHelper.Error(\"处理用户权限导入信息失败\");\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_LoadFail\"), MessageButtons.Normal);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Error(\"用户权限信息导入失败意外错误\" + ex.Message);\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_LoadFail\"), MessageButtons.Normal);\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tbtnImportPermission.IsEnabled = true;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.ImportHandleAccessInfo",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 486,
+          "end": 523,
+          "excerpt": "\tprivate bool ImportHandleAccessInfo(string access)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (string.IsNullOrEmpty(access))\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tstring config = ConfigurationHelper.GetConfig(\"AccessCheckDisk\");\n\t\t\tbyte[] array = Convert.FromBase64String(access);\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tobject obj = CodeManager.GetInstance().BytesToStruct(array, typeof(AccessUserInfo));\n\t\t\tif (obj == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tAccessUserInfo accessUserInfo = (AccessUserInfo)obj;\n\t\t\tif (config == \"1\" && accessUserInfo.adminEnable)\n\t\t\t{\n\t\t\t\taccessUserInfo.IDInfo = CodeManager.GetDiskID();\n\t\t\t}\n\t\t\tCodeManager.GetInstance()._accessCurUserInfo = accessUserInfo;\n\t\t\tbyte[] inArray = CodeManager.GetInstance().StructTOBytes(accessUserInfo);\n\t\t\tstring defaultValue = Convert.ToBase64String(inArray);\n\t\t\tConfigurationHelper.SaveConfig(CodeManager.GetInstance().accessInfoNodeName, defaultValue);\n\t\t\tAccessManagerHelper.SetLoginUser(CodeManager.GetInstance()._accessCurUserInfo.curLoginUser);\n\t\t\treturn true;\n\t\t}\n\t\tcatch\n\t\t{\n\t\t\taccess = \"\";\n\t\t\treturn false;\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "未把配置导入当作受保护.sol解密；编码/布局、机器ID与错误后部分状态仍待核。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "A20",
+      "route": "原版 · 权限导入导出",
+      "classification": "source-confirmed",
+      "from": "ExportPermission_Click / ExportHandleAccessInfo",
+      "to": "配置 → 清IDInfo → Base64 → txt",
+      "behavior": "可见导出处理器没有导入同样的CheckPassAdminAccess调用；禁用按钮后选文件，空配置/处理失败返回，finally恢复。结构IDInfo清空后重编码，以Encoding.Default写txt，错误提示。这里不推断页面所有可见性/外部权限门。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.ExportPermission_Click",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 439,
+          "end": 484,
+          "excerpt": "\tprivate void ExportPermission_Click(object sender, RoutedEventArgs e)\n\t{\n\t\ttry\n\t\t{\n\t\t\tbtnExportPermission.IsEnabled = false;\n\t\t\tusing FileSaveDialog fileSaveDialog = new FileSaveDialog\n\t\t\t{\n\t\t\t\tFileTypeFilters = new FileTypeFilterCollection\n\t\t\t\t{\n\t\t\t\t\tnew FileTypeFilter(\"Config File\", \".txt\")\n\t\t\t\t},\n\t\t\t\tRestoreDirectory = true,\n\t\t\t\tDefaultFileExtension = \".txt\"\n\t\t\t};\n\t\t\tif (fileSaveDialog.Show(BaseWindow.LastWindow) != FileDialogResult.Ok)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tstring access = ConfigurationHelper.GetConfig(CodeManager.GetInstance().accessInfoNodeName);\n\t\t\tif (string.IsNullOrEmpty(access))\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_AccessNotExist\"), MessageButtons.Normal);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (!ExportHandleAccessInfo(ref access))\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_AccessHandleFailed\"), MessageButtons.Normal);\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tusing (FileStream fileStream = new FileStream(fileSaveDialog.ShellFile.Path, FileMode.Create, FileAccess.Write))\n\t\t\t{\n\t\t\t\tbyte[] bytes = Encoding.Default.GetBytes(access);\n\t\t\t\tfileStream.Write(bytes, 0, bytes.Length);\n\t\t\t}\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_ExportSuccess\"), MessageButtons.Normal);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Error(\"用户权限信息导出失败意外错误\" + ex.Message);\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"Lang_ExportFailed\"), MessageButtons.Normal);\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tbtnExportPermission.IsEnabled = true;\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMasterMain/VisionMasterMain/AccessPage.xaml.cs",
+          "member": "AccessPage.ExportHandleAccessInfo",
+          "sha256": "8b0832c7d2087112f55561e5089e16eedfae751af19b7f3f049ac132de9af2e9",
+          "start": 524,
+          "end": 552,
+          "excerpt": "\tprivate bool ExportHandleAccessInfo(ref string access)\n\t{\n\t\ttry\n\t\t{\n\t\t\tbyte[] array = Convert.FromBase64String(access);\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tobject obj = CodeManager.GetInstance().BytesToStruct(array, typeof(AccessUserInfo));\n\t\t\tif (obj == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tAccessUserInfo accessUserInfo = (AccessUserInfo)obj;\n\t\t\taccessUserInfo.IDInfo = \"\";\n\t\t\tbyte[] inArray = CodeManager.GetInstance().StructTOBytes(accessUserInfo);\n\t\t\tstring text = Convert.ToBase64String(inArray);\n\t\t\taccess = text;\n\t\t\treturn true;\n\t\t}\n\t\tcatch\n\t\t{\n\t\t\taccess = \"\";\n\t\t\treturn false;\n\t\t}\n\t}\n}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "导出文件/系统编码实际操作与原件结构体转换未验证。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "U01",
+      "route": "未闭合 · 权限全集与当前实现",
+      "classification": "unknown",
+      "from": "角色登录、工作区锁与当前独立壳",
+      "to": "全部权限消费者 / 当前接入合同",
+      "behavior": "原版用户密码、方案密码、工作区锁与软件授权分属不同状态链；本页未确认当前独立壳存在同构角色与权限服务，不把isLocked代替IsAdmin。",
+      "refs": [],
+      "unknowns": [
+        "逐项恢复当前角色/权限接入、原外部入口、模块级权限树、密码重置和失败回滚；文本未检出不能证明功能不存在。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    },
+    {
+      "id": "U02",
+      "route": "未闭合 · 原件到运行",
+      "classification": "unknown",
+      "from": "所选CIL、资源与源体",
+      "to": "BAML连接、回调顺序、前台替换与持久化",
+      "behavior": "原件方法token和本地资源/源体只是可复核静态证据；登录绑定、回调线程、磁盘写入、机器ID及前台窗口替换尚未形成原机操作证据。",
+      "refs": [],
+      "unknowns": [
+        "不得以Login DialogResult、helper返回true或静态检查成功宣称权限全链关闭。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      }
+    }
+  ],
+  "hierarchy": {
+    "title": "主界面",
+    "kind": "ui-root",
+    "organization": "independent-reading-organization",
+    "meaning": "按主界面子系统组织证据；成员调用由叶节点对应的证据边表达。",
+    "children": [
+      {
+        "title": "角色入口与登录窗口",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "标题栏、模式、输入与校验",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "TitleBar 用户菜单 → AccessManager.ChangeLoginUserCommand",
+                "kind": "edge",
+                "edgeId": "A01",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "ChangeLoginUserCommandExecute → LoginWindow.SetUserStatus(false) / ShowDialog",
+                "kind": "edge",
+                "edgeId": "A02",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "LoginWindow.SetUserStatus → 三个enable查询 / 当前角色 / 登录模式门",
+                "kind": "edge",
+                "edgeId": "A03",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "LoginWindow输入/显示模式 → 控件同步 / 输入事件 / 剪贴板命令",
+                "kind": "edge",
+                "edgeId": "A04",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "ButtonLogin_Click → 空值/选定角色密码比对 → helper",
+                "kind": "edge",
+                "edgeId": "A05",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "原件调用与主DLL状态/窗口替换",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "LoginWindow 原件调用token → VisionMasterMain.AccessManager.AccessManagerHelper.SetLoginUser",
+                "kind": "edge",
+                "edgeId": "A06",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "Main DLL 的SetLoginUser → 状态 → 保存 → 回调 → LoginUser通知",
+                "kind": "edge",
+                "edgeId": "A07",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "Main DLL operator分支 → 设计前台窗口 → ReplaceMainWindow → 旧主窗关闭",
+                "kind": "edge",
+                "edgeId": "A08",
+                "classification": "source-confirmed"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "权限状态和启动",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "启动装载、EXE版本helper及界面绑定",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "EXE LoadAccessInfo → Base64/BytesToStruct → 磁盘ID谓词 → 缓存",
+                "kind": "edge",
+                "edgeId": "A09",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "EXE SetLoginUser(loginUser,isSaveAccessInfo,isShowFront) → 补注册 / 可选保存 / 可选异步前台切换",
+                "kind": "edge",
+                "edgeId": "A10",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "IsAdmin绑定 / callback → 主窗参数编辑门 / 用户标题可见性",
+                "kind": "edge",
+                "edgeId": "A11",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "CodeManager原CIL与回调寿命",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "CodeManager.IsAllAccessUser → 数值0/1 → IsAdmin计算",
+                "kind": "edge",
+                "edgeId": "A12",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "CodeManager.SaveAccessInfo → 结构字节 → Base64 → 配置 / 通知 / bool",
+                "kind": "edge",
+                "edgeId": "A13",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "AccessManager构造 / Finalize → null回调谓词 → Combine / Remove",
+                "kind": "edge",
+                "edgeId": "A14",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "CodeManager.IsUseSoftEncrypt → 配置布尔读取 → 日志/throw",
+                "kind": "edge",
+                "edgeId": "A15",
+                "classification": "source-confirmed"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "其它入口",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "外部函数、权限启停与密码/模块配置",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "tool函数源 usermanagercommand/userlogincommand → Topmost LoginWindow / false或true模式",
+                "kind": "edge",
+                "edgeId": "A16",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "AccessPage启停权限 → 管理员验证 / 二次确认 / ResetAccess或SetAdminEnable",
+                "kind": "edge",
+                "edgeId": "A17",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "AccessApply / 修改密码 / 模块权限设置 → CheckPassword → SaveInfo / 独立对话框",
+                "kind": "edge",
+                "edgeId": "A18",
+                "classification": "source-confirmed"
+              }
+            ]
+          },
+          {
+            "title": "权限配置的导入与导出",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "ImportPermission_Click / ImportHandleAccessInfo → 管理员门 → txt → Base64/结构 → 配置 → 角色",
+                "kind": "edge",
+                "edgeId": "A19",
+                "classification": "source-confirmed"
+              },
+              {
+                "title": "ExportPermission_Click / ExportHandleAccessInfo → 配置 → 清IDInfo → Base64 → txt",
+                "kind": "edge",
+                "edgeId": "A20",
+                "classification": "source-confirmed"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "未闭合证据",
+        "kind": "subsystem",
+        "children": [
+          {
+            "title": "当前权限合同、消费者与运行验证",
+            "kind": "evidence-lane",
+            "children": [
+              {
+                "title": "角色登录、工作区锁与当前独立壳 → 全部权限消费者 / 当前接入合同",
+                "kind": "edge",
+                "edgeId": "U01",
+                "classification": "unknown"
+              },
+              {
+                "title": "所选CIL、资源与源体 → BAML连接、回调顺序、前台替换与持久化",
+                "kind": "edge",
+                "edgeId": "U02",
+                "classification": "unknown"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

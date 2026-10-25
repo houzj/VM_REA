@@ -1,0 +1,1088 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "OG01",
+      "classification": "source-confirmed",
+      "stages": [
+        "prepare"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原DoWork进入循环前",
+      "to": "一次准备输入与输出描述列表",
+      "behavior": "DoWork先调用a4a00，再调用a74c0(this,this+0x180,&本次输出列表)，二者位于逐轮循环之前。a4a00构造原字符串input并交a4a90(this,this+0x170,input)；后者按类型分派输入准备helper。a74c0逐个读取配置描述，向12e200传递上下文、类型与名称，只有其返回0才复制名称/模式到临时描述并把描述加入本次列表，失败分支记录日志后继续其它条目。输入配置、临时输出描述和每轮结果不是同一对象。",
+      "representation": "this+0x170输入描述容器、this+0x180输出配置容器、DoWork局部链表分别持有；12e200真实第5参数是目标描述指针，a74c0汇编在栈+0x20设置，不能照四参伪码漏掉它。",
+      "cache": "所选正常路径显示输入/输出描述在循环前准备一次；不能由此声称每轮所有输入值深快照或冻结。",
+      "release": "a74c0每轮配置准备末尾清临时描述，DoWork退出另退役本次列表；具体共享载荷见OG07边界。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.c",
+          "member": "1800a0930",
+          "sha256": "9b3e07a727a4a87b79aab42f52a57733976f4b4dad193539af056b778b581c1b",
+          "start": 322,
+          "end": 325,
+          "excerpt": "    iVar17 = FUN_1800a4a00(param_1);\n    if ((iVar17 != 0) && (cVar14 = FUN_18001dbc0(4), cVar14 != '\\0')) {\n      ppuVar20 = (undefined **)FUN_18008f750(auStack_128,iVar17);\n      if ((undefined *)0xf < ppuVar20[3]) {",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.c",
+          "member": "1800a0930",
+          "sha256": "9b3e07a727a4a87b79aab42f52a57733976f4b4dad193539af056b778b581c1b",
+          "start": 343,
+          "end": 345,
+          "excerpt": "    FUN_1800a74c0(param_1,param_1 + 0x180,&plStack_2d0);\n    cVar14 = FUN_18001dbc0(1);\n    if (cVar14 != '\\0') {",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a4a00.c",
+          "member": "1800a4a00",
+          "sha256": "02397ef041893d3dbbb07a9d7dc7290d8831d4d6665a7a8d49b377a25906f010",
+          "start": 2,
+          "end": 29,
+          "excerpt": "void FUN_1800a4a00(longlong param_1)\n\n{\n  undefined1 auStack_78 [48];\n  undefined4 uStack_48;\n  undefined8 uStack_40;\n  undefined1 uStack_38;\n  undefined7 uStack_37;\n  undefined8 uStack_28;\n  ulonglong uStack_20;\n  ulonglong uStack_18;\n  \n  uStack_40 = 0xfffffffffffffffe;\n  uStack_18 = DAT_1802a5230 ^ (ulonglong)auStack_78;\n  uStack_48 = 0;\n  uStack_20 = 0xf;\n  uStack_28 = 0;\n  uStack_38 = 0;\n  FUN_180006300(&uStack_38,&DAT_180227a34,5);\n  FUN_1800a4a90(param_1,param_1 + 0x170,&uStack_38);\n  if (0xf < uStack_20) {\n    __3_YAXPEAX_Z(CONCAT71(uStack_37,uStack_38));\n  }\n  FUN_1801e8810(uStack_18 ^ (ulonglong)auStack_78);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a4a90.c",
+          "member": "1800a4a90",
+          "sha256": "5a26618716273629b487d3d23cc00dcf2b2679a0a85d2dcb662953f5ef02eb93",
+          "start": 4,
+          "end": 118,
+          "excerpt": "void FUN_1800a4a90(longlong param_1,longlong *param_2,undefined8 param_3)\n\n{\n  undefined4 uVar1;\n  undefined8 *puVar2;\n  undefined8 *puVar3;\n  ulonglong uVar4;\n  char cVar5;\n  int iVar6;\n  undefined8 *puVar7;\n  longlong *plVar8;\n  undefined8 uVar9;\n  undefined8 uVar10;\n  longlong *plVar11;\n  undefined1 auStack_1e8 [32];\n  undefined4 uStack_1c8;\n  undefined4 uStack_1c0;\n  undefined8 uStack_1b8;\n  undefined8 uStack_1b0;\n  undefined1 *puStack_1a8;\n  longlong *plStack_1a0;\n  undefined8 *puStack_198;\n  undefined8 uStack_188;\n  undefined8 *puStack_180;\n  undefined8 uStack_178;\n  undefined8 uStack_170;\n  longlong alStack_168 [2];\n  undefined8 uStack_158;\n  ulonglong uStack_150;\n  undefined8 auStack_148 [3];\n  ulonglong uStack_130;\n  undefined8 auStack_128 [3];\n  ulonglong uStack_110;\n  undefined8 auStack_108 [3];\n  ulonglong uStack_f0;\n  undefined8 auStack_e8 [3];\n  ulonglong uStack_d0;\n  undefined8 auStack_c8 [3];\n  ulonglong uStack_b0;\n  undefined8 auStack_a8 [3];\n  ulonglong uStack_90;\n  undefined8 auStack_88 [3];\n  ulonglong uStack_70;\n  undefined8 auStack_68 [3];\n  ulonglong uStack_50;\n  ulonglong uStack_48;\n  \n  uStack_170 = 0xfffffffffffffffe;\n  uStack_48 = DAT_1802a5230 ^ (ulonglong)auStack_1e8;\n  puStack_180 = (undefined8 *)0x0;\n  uStack_178 = 0;\n  uStack_188 = param_3;\n  puStack_180 = (undefined8 *)FUN_1800703f0();\n  puVar2 = (undefined8 *)*param_2;\n  puVar3 = (undefined8 *)*puVar2;\n  do {\n    if (puVar3 == puVar2) {\n      FUN_180092540(&puStack_180,&uStack_188,*puStack_180,puStack_180);\n      __3_YAXPEAX_Z(puStack_180);\n      FUN_1801e8810(uStack_48 ^ (ulonglong)auStack_1e8);\n      return;\n    }\n    uVar1 = *(undefined4 *)(puVar3 + 2);\n    uStack_150 = 0xf;\n    uStack_158 = 0;\n    alStack_168[0]._0_1_ = 0;\n    FUN_180006470(alStack_168,puVar3 + 3,0,0xffffffffffffffff);\n    switch(uVar1) {\n    case 1:\n      iVar6 = FUN_180010450(param_1 + 0x128,alStack_168);\n      cVar5 = FUN_18001dbc0(0);\n      if (cVar5 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_a8,iVar6);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = alStack_168;\n        if (0xf < uStack_150) {\n          plVar11 = (longlong *)CONCAT71(alStack_168[0]._1_7_,(undefined1)alStack_168[0]);\n        }\n        uVar9 = FUN_180006450(param_3);\n        uVar10 = FUN_18001db50();\n        uStack_1b8 = *(undefined8 *)(param_1 + 0xf8);\n        uStack_1c0 = *(undefined4 *)(param_1 + 0x2c);\n        uStack_1c8 = 0x36a;\n        uStack_1b0 = uVar9;\n        puStack_1a8 = (undefined1 *)plVar11;\n        plStack_1a0 = plVar8;\n        FUN_180015b40(uVar10,0);\n        uVar9 = auStack_a8[0];\n        uVar4 = uStack_90;\njoined_r0x0001800a4d78:\n        param_3 = uStack_188;\n        if (0xf < uVar4) {\n          __3_YAXPEAX_Z(uVar9);\n          param_3 = uStack_188;\n        }\n      }\n      break;\n    case 2:\n      iVar6 = FUN_180010ab0(param_1 + 0x128,alStack_168);\n      cVar5 = FUN_18001dbc0(0);\n      if (cVar5 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_108,iVar6);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = alStack_168;\n        if (0xf < uStack_150) {\n          plVar11 = (longlong *)CONCAT71(alStack_168[0]._1_7_,(undefined1)alStack_168[0]);\n        }\n        uVar9 = FUN_180006450(param_3);\n        uVar10 = FUN_18001db50();\n        uStack_1b8 = *(undefined8 *)(param_1 + 0xf8);\n        uStack_1c0 = *(undefined4 *)(param_1 + 0x2c);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a74c0.c",
+          "member": "1800a74c0",
+          "sha256": "0331eb65752f5223421a799d94e1ac36993a7444d9754f2d2b2c11b1d8b19eda",
+          "start": 4,
+          "end": 138,
+          "excerpt": "void FUN_1800a74c0(longlong param_1,longlong *param_2,longlong *param_3)\n\n{\n  longlong lVar1;\n  char cVar2;\n  int iVar3;\n  longlong lVar4;\n  longlong *plVar5;\n  longlong *plVar6;\n  undefined4 uVar7;\n  undefined4 extraout_XMM0_Da;\n  undefined1 auStack_2b8 [32];\n  undefined4 *puStack_298;\n  undefined4 uStack_290;\n  longlong lStack_288;\n  longlong *plStack_278;\n  undefined8 uStack_270;\n  undefined4 uStack_268;\n  undefined1 uStack_264;\n  undefined2 uStack_263;\n  undefined1 uStack_261;\n  undefined8 uStack_260;\n  undefined4 uStack_258;\n  undefined4 uStack_254;\n  undefined1 auStack_250 [16];\n  undefined8 uStack_240;\n  undefined8 uStack_238;\n  undefined8 uStack_230;\n  undefined8 uStack_228;\n  undefined8 uStack_220;\n  undefined8 uStack_218;\n  undefined8 uStack_210;\n  undefined8 uStack_208;\n  undefined8 uStack_200;\n  undefined8 uStack_1f8;\n  undefined8 uStack_1f0;\n  undefined8 uStack_1e8;\n  undefined8 uStack_1e0;\n  undefined8 uStack_1d8;\n  undefined8 uStack_1d0;\n  undefined8 uStack_1c8;\n  undefined1 auStack_1c0 [376];\n  ulonglong uStack_48;\n  \n  uStack_270 = 0xfffffffffffffffe;\n  uStack_48 = DAT_1802a5230 ^ (ulonglong)auStack_2b8;\n  param_2 = (longlong *)*param_2;\n  plVar5 = (longlong *)*param_2;\n  if (plVar5 != param_2) {\n    plStack_278 = (longlong *)auStack_250;\n    do {\n      uStack_238 = 0xf;\n      uStack_240 = 0;\n      auStack_250[0] = 0;\n      uStack_230 = 0;\n      uStack_228 = 0;\n      uStack_220 = 0;\n      uStack_218 = 0;\n      uStack_210 = 0;\n      uStack_208 = 0;\n      uStack_200 = 0;\n      uStack_1f8 = 0;\n      uStack_1f0 = 0;\n      uStack_1e8 = 0;\n      uStack_1e0 = 0;\n      uStack_1d8 = 0;\n      uStack_1d0 = 0;\n      uStack_1c8 = 0;\n      FUN_180006300(auStack_250,&DAT_18021cf35,0);\n      uVar7 = FUN_1800a0310(auStack_1c0);\n      uStack_268 = *(undefined4 *)(param_1 + 0x130);\n      uStack_264 = 0;\n      uStack_263 = 0;\n      uStack_261 = 0;\n      uStack_260 = *(undefined8 *)(param_1 + 0xf8);\n      lVar1 = plVar5[2];\n      plVar6 = plVar5 + 3;\n      if ((DAT_1802b2b28 & 1) == 0) {\n        DAT_1802b2b28 = DAT_1802b2b28 | 1;\n        uVar7 = FUN_1801e8930(&DAT_1802029f0);\n      }\n      puStack_298 = &uStack_258;\n      iVar3 = FUN_18012e200(uVar7,&uStack_268,(int)lVar1,plVar6);\n      if (iVar3 == 0) {\n        uStack_258 = (undefined4)plVar5[2];\n        uStack_254 = *(undefined4 *)((longlong)plVar5 + 0x14);\n        uVar7 = extraout_XMM0_Da;\n        if ((longlong *)auStack_250 != plVar6) {\n          uVar7 = FUN_180006470(auStack_250,plVar6,0,0xffffffffffffffff);\n        }\n        lVar1 = *param_3;\n        lVar4 = FUN_1800a9270(uVar7,lVar1,*(undefined8 *)(lVar1 + 8),&uStack_258);\n        if (param_3[1] == 0x7a44c6afc2dd9b) {\n          __Xlength_error_std__YAXPEBD_Z(&DAT_18021d318);\n          break;\n        }\n        param_3[1] = param_3[1] + 1;\n        *(longlong *)(lVar1 + 8) = lVar4;\n        **(longlong **)(lVar4 + 8) = lVar4;\n      }\n      else {\n        cVar2 = FUN_18001dbc0(4);\n        if (cVar2 != '\\0') {\n          if (0xf < (ulonglong)plVar5[6]) {\n            plVar6 = (longlong *)*plVar6;\n          }\n          if ((DAT_1802b1218 & 1) == 0) {\n            DAT_1802b1218 = DAT_1802b1218 | 1;\n            _DAT_1802b1230 = 1;\n            DAT_1802b1238 = 0;\n            DAT_1802b1240 = 0;\n            uRam00000001802b1248 = 0;\n            DAT_1802b1250 = 0;\n            uRam00000001802b1258 = 0;\n            DAT_1802b1260 = 0;\n            uRam00000001802b1268 = 0;\n            _DAT_1802b1270 = 0;\n            FUN_1801e8930(&DAT_180202850);\n          }\n          puStack_298 = (undefined4 *)CONCAT44(puStack_298._4_4_,0x5dd);\n          uStack_290 = (int)lVar1;\n          lStack_288 = (longlong)plVar6;\n          FUN_180015b40(&DAT_1802b1230,4,&DAT_180228288,&DAT_180228238);\n        }\n      }\n      FUN_1800a77a0(auStack_1c0);\n      FUN_1800a03a0(auStack_250);\n      plVar5 = (longlong *)*plVar5;\n    } while (plVar5 != param_2);\n  }\n  FUN_1801e8810(uStack_48 ^ (ulonglong)auStack_2b8);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a74c0.asm.txt",
+          "member": "1800a74c0",
+          "sha256": "5bcdc4cef12ebfae6fd32f6de41da2e538e2291f4ae63676f560de06219d635e",
+          "start": 67,
+          "end": 79,
+          "excerpt": "1800a75d7\tLEA RAX,[RSP + 0x60]\n1800a75dc\tMOV qword ptr [RSP + 0x20],RAX\n1800a75e1\tMOV R9,RSI\n1800a75e4\tMOV R8D,R14D\n1800a75e7\tLEA RDX,[RSP + 0x50]\n1800a75ec\tCALL 0x18012e200\n1800a75f1\tTEST EAX,EAX\n1800a75f3\tJZ 0x1800a769c\n1800a75f9\tMOV ECX,0x4\n1800a75fe\tCALL 0x18001dbc0\n1800a7603\tTEST AL,AL\n1800a7605\tJZ 0x1800a7706\n1800a760b\tCMP qword ptr [RSI + 0x18],0x10",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/18012e200.c",
+          "member": "18012e200",
+          "sha256": "5ec2b5e0ad4e444dc84b8e23ba0d1b61a357f6436b466acf6a240b428e57d947",
+          "start": 2,
+          "end": 121,
+          "excerpt": "void FUN_18012e200(undefined8 param_1,int *param_2,int param_3,longlong *param_4,int *param_5)\n\n{\n  longlong *plVar1;\n  int *piVar2;\n  ulonglong uVar3;\n  char cVar4;\n  int iVar5;\n  int iVar6;\n  undefined8 uVar7;\n  undefined8 *puVar8;\n  int *piVar9;\n  longlong lVar10;\n  longlong *plVar11;\n  undefined4 uVar12;\n  undefined1 auStack_1c8 [32];\n  longlong *plStack_1a8;\n  undefined8 uStack_1a0;\n  longlong *plStack_198;\n  int iStack_190;\n  longlong lStack_188;\n  int iStack_178;\n  int iStack_174;\n  int *piStack_170;\n  longlong *plStack_168;\n  int iStack_160;\n  longlong lStack_158;\n  longlong *plStack_150;\n  undefined8 uStack_148;\n  longlong *plStack_140;\n  undefined8 uStack_138;\n  longlong *plStack_130;\n  longlong lStack_128;\n  longlong *plStack_120;\n  longlong lStack_118;\n  longlong *plStack_110;\n  undefined8 uStack_108;\n  undefined8 uStack_100;\n  undefined1 auStack_f8 [8];\n  longlong *plStack_f0;\n  longlong *plStack_e0;\n  undefined1 auStack_d8 [8];\n  longlong *plStack_d0;\n  undefined1 auStack_c8 [8];\n  longlong *plStack_c0;\n  undefined1 auStack_b8 [8];\n  longlong *plStack_b0;\n  undefined *puStack_a8;\n  undefined1 auStack_a0 [8];\n  longlong *plStack_98;\n  undefined *puStack_90;\n  undefined8 uStack_88;\n  undefined8 auStack_80 [2];\n  undefined8 uStack_70;\n  ulonglong uStack_68;\n  undefined1 uStack_60;\n  undefined7 uStack_5f;\n  undefined8 uStack_50;\n  ulonglong uStack_48;\n  ulonglong uStack_40;\n  \n  uStack_88 = 0xfffffffffffffffe;\n  uStack_40 = DAT_1802a5230 ^ (ulonglong)auStack_1c8;\n  iVar6 = *param_2;\n  uVar7 = *(undefined8 *)(param_2 + 2);\n  iStack_178 = param_3;\n  uStack_100 = uVar7;\n  if (iVar6 == -1) {\n    cVar4 = FUN_18001dbc0(4);\n    if (cVar4 != '\\0') {\n      if (0xf < (ulonglong)param_4[3]) {\n        param_4 = (longlong *)*param_4;\n      }\n      uVar7 = FUN_18001db50();\n      plStack_1a8 = (longlong *)CONCAT44(plStack_1a8._4_4_,0x1040);\n      uStack_1a0 = param_4;\n      FUN_180015b40(uVar7,4,&DAT_180231810,&DAT_1802335d0);\n    }\n    goto LAB_18012ede7;\n  }\n  if ((DAT_1802b2cd8 & 1) == 0) {\n    DAT_1802b2cd8 = DAT_1802b2cd8 | 1;\n    FUN_1800facf0();\n    FUN_1801e8930(FUN_180202b30);\n  }\n  FUN_1800fb040(&DAT_1802b2ce0,&piStack_170,iVar6,param_4);\n  piVar9 = piStack_170;\n  if (piStack_170 == (int *)0x0) {\n    cVar4 = FUN_18001dbc0(1);\n    if (cVar4 != '\\0') {\n      if (0xf < (ulonglong)param_4[3]) {\n        param_4 = (longlong *)*param_4;\n      }\n      uVar7 = FUN_18001db50();\n      uStack_1a0 = (longlong *)CONCAT44(uStack_1a0._4_4_,iVar6);\n      plStack_1a8 = (longlong *)CONCAT44(plStack_1a8._4_4_,0x1047);\n      plStack_198 = param_4;\n      FUN_180015b40(uVar7,1,&DAT_180233530,&DAT_1802335d0);\n    }\n  }\n  else {\n    uVar7 = FUN_18008e6c0(uVar7);\n    uVar12 = FUN_1800cae00(uVar7,auStack_f8,iVar6);\n    plVar11 = (longlong *)(param_5 + 2);\n    plStack_1a8 = plVar11;\n    iVar5 = FUN_18012dcb0(uVar12,param_3,param_4,auStack_f8);\n    if (iVar5 == 0) {\n      *param_5 = iStack_178;\n      if (plVar11 != param_4) {\n        FUN_180006470(plVar11,param_4,0,0xffffffffffffffff);\n      }\n      param_5[0x26] = *piVar9;\n      uStack_68 = 0xf;\n      lVar10 = 0;\n      uStack_70 = 0;\n      auStack_80[0]._0_1_ = 0;\n      iVar5 = *piVar9;\n      if (iVar5 < 1) {\nLAB_18012ed1a:\n        cVar4 = FUN_18001dbc0(4);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/selected-strings.json",
+          "member": "Original PE selected data strings",
+          "sha256": "154864ef93eefc34acd9e77eaa2f4b031872f6d36cc540df232aea549ce9ddd4",
+          "start": 2,
+          "end": 37,
+          "excerpt": "  \"sha256\": \"45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b\",\n  \"strings\": [\n    {\n      \"rva\": \"0x227688\",\n      \"text\": \"StartIndex\"\n    },\n    {\n      \"rva\": \"0x227748\",\n      \"text\": \"EndIndex\"\n    },\n    {\n      \"rva\": \"0x227738\",\n      \"text\": \"LoopIndex\"\n    },\n    {\n      \"rva\": \"0x227678\",\n      \"text\": \"ModuStatus\"\n    },\n    {\n      \"rva\": \"0x227668\",\n      \"text\": \"ModuRunTime\"\n    },\n    {\n      \"rva\": \"0x227a34\",\n      \"text\": \"input\"\n    },\n    {\n      \"rva\": \"0x227d90\",\n      \"text\": \"CGroupNode::IsBreakLoop\"\n    },\n    {\n      \"rva\": \"0x228260\",\n      \"text\": \"CGroupNode::ProcessGroupOutputV44\"\n    }\n  ]\n}",
+          "evidenceType": "offline original PE bytes, revalidated",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b"
+        }
+      ],
+      "unknowns": [
+        "输入typed准备helper10450/10ab0/117a0等未在本切片逐体恢复，输入数据复制/共享不以方法名推定。",
+        "12e200交12dcb0建立typed目标的具体动态绑定尚未补体；第5参数已核，但不把其载荷与其它专题的活实例直接合并。"
+      ]
+    },
+    {
+      "id": "OG02",
+      "classification": "source-confirmed",
+      "stages": [
+        "round"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "DoWork每轮开始",
+      "to": "StartIndex/EndIndex/LoopIndex的第0项写入与严格上界",
+      "behavior": "正常DoWork以开始字段+0x21c初始化本轮索引，先作有符号index<end(+0x220)门；每轮写this+0x224，再用RCX=this、EDX=start、R8D=end、R9D=index调用a7190。该体从原PE字符串确认StartIndex/EndIndex/LoopIndex，按当前Group模块键取int共享对象，对三个名字分别调用f3ee0(target,0,value)。f3ee0准备对象后，已有第0项时覆盖该4字节，否则增加一项。轮尾32位ADD后再次有符号JL到循环体，不能把这个静态分支扩成数学整数或溢出安全循环。",
+      "representation": "三个输出是Group键下的独立具名int值；内部索引字段与对外LoopIndex数据不是同一个变量存储位置。",
+      "cache": "值对象可重复查得并覆写第0项；本体不每轮清除整个模块结果仓。",
+      "release": "a7190释放局部shared持有和临时字符串；覆盖第0项不证明旧结果消费者已释放。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 607,
+          "end": 634,
+          "excerpt": "1800a13b4\tCMP R15D,dword ptr [RSI + 0x220]\n1800a13bb\tJGE 0x1800a1d74\n1800a13c1\tINC dword ptr [RSP + 0x7c]\n1800a13c5\tMOV dword ptr [RBP + -0x80],R13D\n1800a13c9\tMOV dword ptr [RSI + 0x224],R15D\n1800a13d0\tMOVAPS XMM8,XMM9\n1800a13d4\tLEA RCX,[RBP + 0x48]\n1800a13d8\tCALL qword ptr [0x180204070]\n1800a13de\tTEST EAX,EAX\n1800a13e0\tJZ 0x1800a140d\n1800a13e2\tLEA RCX,[RBP + 0x10]\n1800a13e6\tCALL qword ptr [0x180204068]\n1800a13ec\tTEST EAX,EAX\n1800a13ee\tJZ 0x1800a140d\n1800a13f0\tXORPS XMM8,XMM8\n1800a13f4\tCVTSI2SD XMM8,qword ptr [RBP + 0x10]\n1800a13fa\tXORPS XMM0,XMM0\n1800a13fd\tCVTSI2SD XMM0,qword ptr [RBP + 0x48]\n1800a1403\tDIVSD XMM8,XMM0\n1800a1408\tMULSD XMM8,XMM10\n1800a140d\tMOV R9D,R15D\n1800a1410\tMOV R8D,dword ptr [RSI + 0x220]\n1800a1417\tMOV EDX,dword ptr [RSI + 0x21c]\n1800a141d\tMOV RCX,RSI\n1800a1420\tCALL 0x1800a7190\n1800a1425\tMOV RCX,RSI\n1800a1428\tCALL 0x1800a55b0\n1800a142d\tTEST AL,AL",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 627,
+          "end": 637,
+          "excerpt": "1800a140d\tMOV R9D,R15D\n1800a1410\tMOV R8D,dword ptr [RSI + 0x220]\n1800a1417\tMOV EDX,dword ptr [RSI + 0x21c]\n1800a141d\tMOV RCX,RSI\n1800a1420\tCALL 0x1800a7190\n1800a1425\tMOV RCX,RSI\n1800a1428\tCALL 0x1800a55b0\n1800a142d\tTEST AL,AL\n1800a142f\tMOV EAX,dword ptr [0x1802b1218]\n1800a1435\tJNZ 0x1800a1c01\n1800a143b\tTEST AL,0x1",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 1090,
+          "end": 1096,
+          "excerpt": "1800a1be4\tADD R15D,dword ptr [RBP + -0x7c]\n1800a1be8\tMOV dword ptr [RSP + 0x78],R15D\n1800a1bed\tCMP R15D,dword ptr [RSI + 0x220]\n1800a1bf4\tJL 0x1800a13c1\n1800a1bfa\tXOR AL,AL\n1800a1bfc\tJMP 0x1800a1d74\n1800a1c01\tTEST AL,0x1",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a7190.c",
+          "member": "1800a7190",
+          "sha256": "f1b789279be163bf67fd641db4ab5a1d16146426afabf27729e26b7b8a75c00d",
+          "start": 2,
+          "end": 191,
+          "excerpt": "void FUN_1800a7190(longlong param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)\n\n{\n  longlong *plVar1;\n  int *piVar2;\n  longlong *plVar3;\n  undefined4 uVar4;\n  undefined8 uVar5;\n  undefined1 auStack_118 [32];\n  longlong lStack_f8;\n  longlong *plStack_f0;\n  longlong lStack_e8;\n  longlong *plStack_e0;\n  longlong lStack_d8;\n  longlong *plStack_d0;\n  longlong lStack_c8;\n  longlong *plStack_c0;\n  longlong lStack_b8;\n  longlong *plStack_b0;\n  longlong lStack_a8;\n  longlong *plStack_a0;\n  undefined8 uStack_98;\n  undefined1 uStack_90;\n  undefined7 uStack_8f;\n  undefined8 uStack_80;\n  ulonglong uStack_78;\n  undefined1 uStack_70;\n  undefined7 uStack_6f;\n  undefined8 uStack_60;\n  ulonglong uStack_58;\n  undefined1 uStack_50;\n  undefined7 uStack_4f;\n  undefined8 uStack_40;\n  ulonglong uStack_38;\n  ulonglong uStack_30;\n  \n  uStack_98 = 0xfffffffffffffffe;\n  uStack_30 = DAT_1802a5230 ^ (ulonglong)auStack_118;\n  uStack_78 = 0xf;\n  uStack_80 = 0;\n  uStack_90 = 0;\n  FUN_180006300(&uStack_90,&DAT_180227688,10);\n  uVar4 = *(undefined4 *)(param_1 + 0x2c);\n  uVar5 = FUN_18008e6c0(*(undefined8 *)(param_1 + 0xf8));\n  FUN_1800cae00(uVar5,&lStack_f8,uVar4);\n  if (lStack_f8 != 0) {\n    FUN_1800f74b0(lStack_f8,&lStack_c8,&uStack_90);\n    if (lStack_c8 != 0) {\n      FUN_1800f3ee0(lStack_c8,0,param_2);\n    }\n    if (plStack_c0 != (longlong *)0x0) {\n      LOCK();\n      plVar1 = plStack_c0 + 1;\n      *(int *)plVar1 = (int)*plVar1 + -1;\n      UNLOCK();\n      if ((int)*plVar1 == 0) {\n        (**(code **)*plStack_c0)(plStack_c0);\n        LOCK();\n        piVar2 = (int *)((longlong)plStack_c0 + 0xc);\n        *piVar2 = *piVar2 + -1;\n        UNLOCK();\n        if (*piVar2 == 0) {\n          (**(code **)(*plStack_c0 + 8))(plStack_c0);\n        }\n      }\n    }\n  }\n  plVar1 = plStack_f0;\n  if (plStack_f0 != (longlong *)0x0) {\n    LOCK();\n    plVar3 = plStack_f0 + 1;\n    *(int *)plVar3 = (int)*plVar3 + -1;\n    UNLOCK();\n    if ((int)*plVar3 == 0) {\n      (**(code **)*plStack_f0)(plStack_f0);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar1 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plStack_f0 + 8))();\n      }\n    }\n  }\n  if (0xf < uStack_78) {\n    __3_YAXPEAX_Z(CONCAT71(uStack_8f,uStack_90));\n  }\n  uStack_58 = 0xf;\n  uStack_60 = 0;\n  uStack_70 = 0;\n  FUN_180006300(&uStack_70,&DAT_180227748,8);\n  uVar4 = *(undefined4 *)(param_1 + 0x2c);\n  uVar5 = FUN_18008e6c0(*(undefined8 *)(param_1 + 0xf8));\n  FUN_1800cae00(uVar5,&lStack_d8,uVar4);\n  if (lStack_d8 != 0) {\n    FUN_1800f74b0(lStack_d8,&lStack_a8,&uStack_70);\n    if (lStack_a8 != 0) {\n      FUN_1800f3ee0(lStack_a8,0,param_3);\n    }\n    if (plStack_a0 != (longlong *)0x0) {\n      LOCK();\n      plVar1 = plStack_a0 + 1;\n      *(int *)plVar1 = (int)*plVar1 + -1;\n      UNLOCK();\n      if ((int)*plVar1 == 0) {\n        (**(code **)*plStack_a0)(plStack_a0);\n        LOCK();\n        piVar2 = (int *)((longlong)plStack_a0 + 0xc);\n        *piVar2 = *piVar2 + -1;\n        UNLOCK();\n        if (*piVar2 == 0) {\n          (**(code **)(*plStack_a0 + 8))(plStack_a0);\n        }\n      }\n    }\n  }\n  plVar1 = plStack_d0;\n  if (plStack_d0 != (longlong *)0x0) {\n    LOCK();\n    plVar3 = plStack_d0 + 1;\n    *(int *)plVar3 = (int)*plVar3 + -1;\n    UNLOCK();\n    if ((int)*plVar3 == 0) {\n      (**(code **)*plStack_d0)(plStack_d0);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar1 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plStack_d0 + 8))();\n      }\n    }\n  }\n  if (0xf < uStack_58) {\n    __3_YAXPEAX_Z(CONCAT71(uStack_6f,uStack_70));\n  }\n  uStack_38 = 0xf;\n  uStack_40 = 0;\n  uStack_50 = 0;\n  FUN_180006300(&uStack_50,&DAT_180227738,9);\n  uVar4 = *(undefined4 *)(param_1 + 0x2c);\n  uVar5 = FUN_18008e6c0(*(undefined8 *)(param_1 + 0xf8));\n  FUN_1800cae00(uVar5,&lStack_e8,uVar4);\n  if (lStack_e8 != 0) {\n    FUN_1800f74b0(lStack_e8,&lStack_b8,&uStack_50);\n    if (lStack_b8 != 0) {\n      FUN_1800f3ee0(lStack_b8,0,param_4);\n    }\n    if (plStack_b0 != (longlong *)0x0) {\n      LOCK();\n      plVar1 = plStack_b0 + 1;\n      *(int *)plVar1 = (int)*plVar1 + -1;\n      UNLOCK();\n      if ((int)*plVar1 == 0) {\n        (**(code **)*plStack_b0)(plStack_b0);\n        LOCK();\n        piVar2 = (int *)((longlong)plStack_b0 + 0xc);\n        *piVar2 = *piVar2 + -1;\n        UNLOCK();\n        if (*piVar2 == 0) {\n          (**(code **)(*plStack_b0 + 8))(plStack_b0);\n        }\n      }\n    }\n  }\n  plVar1 = plStack_e0;\n  if (plStack_e0 != (longlong *)0x0) {\n    LOCK();\n    plVar3 = plStack_e0 + 1;\n    *(int *)plVar3 = (int)*plVar3 + -1;\n    UNLOCK();\n    if ((int)*plVar3 == 0) {\n      (**(code **)*plStack_e0)(plStack_e0);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar1 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plStack_e0 + 8))();\n      }\n    }\n  }\n  if (0xf < uStack_38) {\n    __3_YAXPEAX_Z(CONCAT71(uStack_4f,uStack_50));\n  }\n  FUN_1801e8810(uStack_30 ^ (ulonglong)auStack_118);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800f3ee0.c",
+          "member": "1800f3ee0",
+          "sha256": "75f7bac57dfd83070727e811865c4f3f44bdbaede6366ea288ab91cb9c4bfd73",
+          "start": 2,
+          "end": 32,
+          "excerpt": "undefined8 FUN_1800f3ee0(longlong *param_1,int param_2,undefined4 param_3)\n\n{\n  longlong lVar1;\n  int iVar2;\n  undefined8 uVar3;\n  \n  if (param_2 < 0) {\n    uVar3 = 0xe0000014;\n  }\n  else {\n    FUN_18000fb90();\n    iVar2 = (**(code **)(*param_1 + 0x18))(param_1);\n    if (param_2 < iVar2) {\n      *(undefined4 *)(*(longlong *)(param_1[2] + 0x70) + 8 + (longlong)param_2 * 4) = param_3;\n    }\n    else {\n      lVar1 = param_1[2];\n      if (*(int *)(lVar1 + 0x68) == *(int *)(lVar1 + 0x6c)) {\n        FUN_18000ee00(lVar1 + 0x68,*(int *)(lVar1 + 0x6c) + 1);\n      }\n      *(undefined4 *)(*(longlong *)(lVar1 + 0x70) + 8 + (longlong)*(int *)(lVar1 + 0x68) * 4) =\n           param_3;\n      *(int *)(lVar1 + 0x68) = *(int *)(lVar1 + 0x68) + 1;\n    }\n    uVar3 = 0;\n  }\n  return uVar3;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/selected-strings.json",
+          "member": "Original PE selected data strings",
+          "sha256": "154864ef93eefc34acd9e77eaa2f4b031872f6d36cc540df232aea549ce9ddd4",
+          "start": 2,
+          "end": 37,
+          "excerpt": "  \"sha256\": \"45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b\",\n  \"strings\": [\n    {\n      \"rva\": \"0x227688\",\n      \"text\": \"StartIndex\"\n    },\n    {\n      \"rva\": \"0x227748\",\n      \"text\": \"EndIndex\"\n    },\n    {\n      \"rva\": \"0x227738\",\n      \"text\": \"LoopIndex\"\n    },\n    {\n      \"rva\": \"0x227678\",\n      \"text\": \"ModuStatus\"\n    },\n    {\n      \"rva\": \"0x227668\",\n      \"text\": \"ModuRunTime\"\n    },\n    {\n      \"rva\": \"0x227a34\",\n      \"text\": \"input\"\n    },\n    {\n      \"rva\": \"0x227d90\",\n      \"text\": \"CGroupNode::IsBreakLoop\"\n    },\n    {\n      \"rva\": \"0x228260\",\n      \"text\": \"CGroupNode::ProcessGroupOutputV44\"\n    }\n  ]\n}",
+          "evidenceType": "offline original PE bytes, revalidated",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b"
+        }
+      ],
+      "unknowns": [
+        "负步长、start>=end、int32溢出以及所有错误分支未运行差分；不从C有符号算式推出语言层未定义行为结果。"
+      ]
+    },
+    {
+      "id": "OG03",
+      "classification": "source-confirmed",
+      "stages": [
+        "round"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "本轮索引发布后、执行前",
+      "to": "IsBreakLoop布尔门与首轮特殊准入",
+      "behavior": "DoWork在a7190之后调用a55b0，汇编立即TEST AL并在非零时跳过本轮执行/输出段。a55b0原字符串为CGroupNode::IsBreakLoop；体先检查EnableBreak相关字节this+0x250，再检查this+0x22c==0和a6730返回的首轮保护门，随后才按this+0x248类型与+0x24c比较符处理。DoWork只在通过break门后增加this+0x22c，所以检测与已执行轮计数不可混用。",
+      "representation": "本轮索引、已通过break门的计数、比较源/目标与布尔结果分开；原byte返回不能因新伪码写void而忽略。",
+      "cache": "首轮门可能阻止读取本轮尚未生产的比较数据；本切片仅保留实际门，不泛称所有订阅可用。",
+      "release": "break使本轮执行/输出不发生，不等于清空此前累积输出；比较临时文本在对应分支退役。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 632,
+          "end": 637,
+          "excerpt": "1800a1425\tMOV RCX,RSI\n1800a1428\tCALL 0x1800a55b0\n1800a142d\tTEST AL,AL\n1800a142f\tMOV EAX,dword ptr [0x1802b1218]\n1800a1435\tJNZ 0x1800a1c01\n1800a143b\tTEST AL,0x1",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 727,
+          "end": 730,
+          "excerpt": "1800a15d9\tINC dword ptr [RSI + 0x22c]\n1800a15df\tMOV R14D,dword ptr [RSI + 0xec]\n1800a15e6\tMOV dword ptr [RBP + -0x48],0x2\n1800a15ed\tMOV RAX,qword ptr [RBP + -0x58]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a55b0.c",
+          "member": "1800a55b0",
+          "sha256": "b108d7d54f747ea647eaf8e0752b70948ad3cd2e946f7dde42cab057ddfafe19",
+          "start": 57,
+          "end": 101,
+          "excerpt": "  if (*(char *)(param_1 + 0x250) == '\\0') goto LAB_1800a5db9;\n  if ((*(int *)(param_1 + 0x22c) == 0) && (cVar4 = FUN_1800a6730(), cVar4 != '\\0')) {\n    cVar4 = FUN_18001dbc0(1);\n    if (cVar4 != '\\0') {\n      uVar7 = FUN_18001db50();\n      uStack_150 = *(undefined4 *)(param_1 + 0x22c);\n      uStack_158 = 0x3cb;\n      FUN_180015b40(uVar7,1,&DAT_180227e40,&DAT_180227d90);\n    }\n    goto LAB_1800a5db9;\n  }\n  bVar11 = false;\n  iVar5 = *(int *)(param_1 + 0x248);\n  if (iVar5 == 1) {\n    uStack_128 = (undefined1 *)((ulonglong)uStack_128._4_4_ << 0x20);\n    uStack_120 = (undefined1 *)((ulonglong)uStack_120._4_4_ << 0x20);\n    iVar5 = FUN_1800a5e50(param_1,&uStack_128,&uStack_120);\n    if (iVar5 == 0) {\n      bVar11 = false;\n      iVar5 = (int)(float)uStack_128;\n      iVar3 = (int)(float)uStack_120;\n      switch(*(undefined4 *)(param_1 + 0x24c)) {\n      case 1:\n        bVar11 = (int)(float)uStack_120 < (int)(float)uStack_128;\n        break;\n      case 2:\n        bVar11 = (int)(float)uStack_128 < (int)(float)uStack_120;\n        break;\n      case 3:\n        bVar11 = (float)uStack_128 == (float)uStack_120;\n        break;\n      case 4:\n        bVar11 = (float)uStack_128 != (float)uStack_120;\n        break;\n      case 5:\n        bVar11 = (int)(float)uStack_120 <= (int)(float)uStack_128;\n        break;\n      case 6:\n        bVar11 = (int)(float)uStack_128 <= (int)(float)uStack_120;\n      }\n      cVar4 = FUN_18001dbc0(1);\n      if (cVar4 != '\\0') {\n        puStack_148 = (undefined8 *)\n                      FUN_1800a7000(extraout_XMM0_Qa_02,auStack_70,*(undefined4 *)(param_1 + 0x24c))\n        ;",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a55b0.asm.txt",
+          "member": "1800a55b0",
+          "sha256": "2821ba88ce743a75740ba857ab31e207a1a94e2f2d00cfd4970bd32260374e28",
+          "start": 508,
+          "end": 517,
+          "excerpt": "1800a5daa\tXOR R15D,R15D\n1800a5dad\tTEST DIL,DIL\n1800a5db0\tJNZ 0x1800a5db5\n1800a5db2\tMOV R12D,R15D\n1800a5db5\tMOVZX EAX,R12B\n1800a5db9\tMOV RCX,qword ptr [RBP + 0x28]\n1800a5dbd\tXOR RCX,RSP\n1800a5dc0\tCALL 0x1801e8810\n1800a5dc5\tLEA R11,[RSP + 0x150]\n1800a5dcd\tMOV RBX,qword ptr [R11 + 0x38]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a6730.c",
+          "member": "1800a6730",
+          "sha256": "b769fd97968730eae69ed83c7469d3d40c0c4e99cbf1c71f240104b88f8072e6",
+          "start": 52,
+          "end": 161,
+          "excerpt": "void FUN_1800a6730(longlong param_1)\n\n{\n  int *piVar1;\n  undefined8 *puVar2;\n  longlong *plVar3;\n  undefined8 *puVar4;\n  longlong *plVar5;\n  char cVar6;\n  int iVar7;\n  undefined8 *puVar8;\n  undefined8 *puVar9;\n  undefined8 uVar10;\n  undefined8 *puVar11;\n  undefined *puVar12;\n  undefined8 *puVar13;\n  longlong lVar14;\n  int iVar15;\n  int iVar16;\n  int iVar17;\n  int iVar18;\n  undefined1 auStack_168 [32];\n  undefined8 **ppuStack_148;\n  int iStack_140;\n  int iStack_138;\n  int iStack_130;\n  int iStack_128;\n  undefined1 uStack_118;\n  undefined8 *puStack_110;\n  undefined8 uStack_108;\n  undefined8 *puStack_100;\n  undefined8 uStack_f8;\n  undefined8 *puStack_f0;\n  undefined8 uStack_e8;\n  undefined8 *puStack_e0;\n  undefined8 uStack_d8;\n  int iStack_d0;\n  int iStack_cc;\n  int iStack_c8;\n  undefined4 uStack_c4;\n  int *piStack_c0;\n  longlong *plStack_b8;\n  int *piStack_b0;\n  longlong *plStack_a8;\n  undefined8 uStack_80;\n  undefined1 uStack_78;\n  undefined7 uStack_77;\n  undefined8 uStack_68;\n  ulonglong uStack_60;\n  undefined1 uStack_58;\n  undefined7 uStack_57;\n  undefined8 uStack_48;\n  ulonglong uStack_40;\n  ulonglong uStack_38;\n  \n  uStack_80 = 0xfffffffffffffffe;\n  uStack_38 = DAT_1802a5230 ^ (ulonglong)auStack_168;\n  uStack_40 = 0xf;\n  uStack_48 = 0;\n  uStack_58 = 0;\n  FUN_180006300(&uStack_58,&DAT_18021cf35,0);\n  uStack_60 = 0xf;\n  uStack_68 = 0;\n  uStack_78 = 0;\n  FUN_180006300(&uStack_78,&DAT_18021cf35,0);\n  iVar17 = *(int *)(param_1 + 0x248);\n  if (iVar17 == 1) {\n    FUN_180006300(&uStack_58,&DAT_180227f40,9);\n    puVar12 = &DAT_180227f50;\nLAB_1800a6853:\n    uVar10 = 9;\nLAB_1800a6859:\n    FUN_180006300(&uStack_78,puVar12,uVar10);\n  }\n  else {\n    if (iVar17 == 2) {\n      FUN_180006300(&uStack_58,&DAT_180227fb0,0xb);\n      uVar10 = 0xb;\n      puVar12 = &DAT_180228010;\n      goto LAB_1800a6859;\n    }\n    if (iVar17 == 3) {\n      FUN_180006300(&uStack_58,&DAT_1802280a0,9);\n      puVar12 = &DAT_1802280c0;\n      goto LAB_1800a6853;\n    }\n    if (iVar17 == 7) {\n      FUN_180006300(&uStack_58,&DAT_180228070,0xc);\n      uVar10 = 0xc;\n      puVar12 = &DAT_1802280b0;\n      goto LAB_1800a6859;\n    }\n  }\n  iVar17 = -1;\n  iStack_d0 = -1;\n  iVar16 = -1;\n  iStack_cc = -1;\n  iVar18 = -1;\n  iStack_c8 = -1;\n  if ((DAT_1802b2cd8 & 1) == 0) {\n    DAT_1802b2cd8 = DAT_1802b2cd8 | 1;\n    FUN_1800facf0();\n    FUN_1801e8930(FUN_180202b30);\n  }\n  FUN_1800fb040(&DAT_1802b2ce0,&piStack_c0,*(undefined4 *)(param_1 + 0x2c),&uStack_58);\n  if (((piStack_c0 != (int *)0x0) && (*piStack_c0 == 3)) &&\n     (iVar17 = piStack_c0[0x23], piStack_c0[1] == 3)) {\n    iVar16 = piStack_c0[2];\n    iStack_cc = iVar16;\n  }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/selected-strings.json",
+          "member": "Original PE selected data strings",
+          "sha256": "154864ef93eefc34acd9e77eaa2f4b031872f6d36cc540df232aea549ce9ddd4",
+          "start": 2,
+          "end": 37,
+          "excerpt": "  \"sha256\": \"45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b\",\n  \"strings\": [\n    {\n      \"rva\": \"0x227688\",\n      \"text\": \"StartIndex\"\n    },\n    {\n      \"rva\": \"0x227748\",\n      \"text\": \"EndIndex\"\n    },\n    {\n      \"rva\": \"0x227738\",\n      \"text\": \"LoopIndex\"\n    },\n    {\n      \"rva\": \"0x227678\",\n      \"text\": \"ModuStatus\"\n    },\n    {\n      \"rva\": \"0x227668\",\n      \"text\": \"ModuRunTime\"\n    },\n    {\n      \"rva\": \"0x227a34\",\n      \"text\": \"input\"\n    },\n    {\n      \"rva\": \"0x227d90\",\n      \"text\": \"CGroupNode::IsBreakLoop\"\n    },\n    {\n      \"rva\": \"0x228260\",\n      \"text\": \"CGroupNode::ProcessGroupOutputV44\"\n    }\n  ]\n}",
+          "evidenceType": "offline original PE bytes, revalidated",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b"
+        }
+      ],
+      "unknowns": [
+        "a6730完整类型/作用域分支、比较source getter以及float容差/NaN/字符串全部比较合同不在本轮闭合；不以资源枚举代替各操作汇编。",
+        "新伪码把a55b0显示void且部分返回值丢失；本事实用调用侧AL与所选返回汇编限定，不重写原行为。"
+      ]
+    },
+    {
+      "id": "OG04",
+      "classification": "source-confirmed",
+      "stages": [
+        "execute",
+        "retain"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "本轮执行对象与ProcessGroupOutputV44",
+      "to": "执行后分型处理并按描述模式调用目标虚槽",
+      "behavior": "通过break门后DoWork调用局部执行对象的虚表+8；随后不把相邻指令解释为未知线程池合同，而是保存实际关系：RCX=this、RDX=&本次输出列表、R8=&本轮状态字传入a7830，返回EAX被保存并检查。a7830逐描述按type分派：int/float/string仅mode字段==1时先调用相应目标虚表+8，再调用13450/139f0/13fa0；image及其它所见类型有无条件先调用+8的独立分支。不能把这些类型都画成相同的累积策略。",
+      "representation": "输出描述持typed目标、来源状态和模式；执行对象虚调用、输出目标虚调用、typed复制helper是三种不同边。",
+      "cache": "mode!=1的三种标量描述不经此处+8前置调用；本轮输出可能保留前轮结果，细节由各typed helper决定。",
+      "release": "本体仅证明虚槽调用条件；12dcb0动态绑定未闭合，不能直接把Group这里+8同一实例等同于VP专题已定位的逻辑清空对象。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 753,
+          "end": 761,
+          "excerpt": "1800a1638\tMOV R8D,R14D\n1800a163b\tLEA RDX,[RBP + -0x30]\n1800a163f\tLEA RCX,[RBP + -0x58]\n1800a1643\tCALL 0x1800ffaa0\n1800a1648\tMOV RCX,qword ptr [RBP + -0x58]\n1800a164c\tMOV RAX,qword ptr [RCX]\n1800a164f\tCALL qword ptr [RAX + 0x8]\n1800a1652\tMOV dword ptr [RBP + -0x48],0x1\n1800a1659\tMOV EAX,dword ptr [0x1802b1218]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 870,
+          "end": 876,
+          "excerpt": "1800a1844\tLEA R8,[RBP + -0x80]\n1800a1848\tLEA RDX,[RBP + -0x68]\n1800a184c\tMOV RCX,RSI\n1800a184f\tCALL 0x1800a7830\n1800a1854\tMOV R14D,EAX\n1800a1857\tTEST EAX,EAX\n1800a1859\tJZ 0x1800a19f9",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a7830.c",
+          "member": "1800a7830",
+          "sha256": "3bd9f5fa3bc1a046ead4da2991ae1ffcd3cbc5c362a6aab3784f5e38fea84a8a",
+          "start": 4,
+          "end": 238,
+          "excerpt": "void FUN_1800a7830(longlong param_1,longlong *param_2,uint *param_3)\n\n{\n  uint uVar1;\n  undefined8 *puVar2;\n  undefined8 *puVar3;\n  longlong lVar4;\n  ulonglong uVar5;\n  char cVar6;\n  int iVar7;\n  longlong *plVar8;\n  undefined8 *puVar9;\n  undefined8 uVar10;\n  longlong *plVar11;\n  longlong *plVar12;\n  bool bVar13;\n  undefined1 auStack_1b8 [32];\n  undefined4 uStack_198;\n  undefined4 uStack_190;\n  undefined8 uStack_188;\n  longlong *plStack_180;\n  longlong *plStack_178;\n  undefined8 *puStack_170;\n  int iStack_168;\n  longlong lStack_160;\n  undefined4 uStack_158;\n  uint *puStack_150;\n  undefined8 uStack_148;\n  undefined8 auStack_140 [3];\n  ulonglong uStack_128;\n  undefined8 auStack_120 [3];\n  ulonglong uStack_108;\n  undefined8 auStack_100 [3];\n  ulonglong uStack_e8;\n  undefined8 auStack_e0 [3];\n  ulonglong uStack_c8;\n  undefined8 auStack_c0 [3];\n  ulonglong uStack_a8;\n  undefined8 auStack_a0 [3];\n  ulonglong uStack_88;\n  undefined8 auStack_80 [3];\n  ulonglong uStack_68;\n  undefined8 auStack_60 [3];\n  ulonglong uStack_48;\n  ulonglong uStack_40;\n  \n  uStack_148 = 0xfffffffffffffffe;\n  uStack_40 = DAT_1802a5230 ^ (ulonglong)auStack_1b8;\n  iStack_168 = 0;\n  puVar2 = (undefined8 *)*param_2;\n  puVar3 = (undefined8 *)*puVar2;\n  puStack_150 = param_3;\n  lStack_160 = param_1;\n  do {\n    if (puVar3 == puVar2) {\n      FUN_1801e8810(uStack_40 ^ (ulonglong)auStack_1b8);\n      return;\n    }\n    uStack_158 = *(undefined4 *)(puVar3 + 2);\n    plVar12 = puVar3 + 3;\n    bVar13 = *(int *)((longlong)puVar3 + 0x14) == 1;\n    switch(uStack_158) {\n    case 1:\n      if (bVar13) {\n        (**(code **)(*(longlong *)puVar3[7] + 8))();\n      }\n      iVar7 = FUN_180013450(param_1 + 0x128,puVar3 + 2);\n      cVar6 = FUN_18001dbc0(0);\n      if (cVar6 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_100,iVar7);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = plVar12;\n        if (0xf < (ulonglong)puVar3[6]) {\n          plVar11 = (longlong *)*plVar12;\n        }\n        uVar10 = FUN_18001db50();\n        param_1 = lStack_160;\n        uStack_188 = *(undefined8 *)(lStack_160 + 0xf8);\n        uStack_190 = *(undefined4 *)(lStack_160 + 0x2c);\n        uStack_198 = 0x5f9;\n        plStack_180 = plVar11;\n        plStack_178 = plVar8;\n        FUN_180015b40(uVar10,0,&DAT_1802282f8,&DAT_180228260);\n        uVar10 = auStack_100[0];\n        uVar5 = uStack_e8;\njoined_r0x0001800a7ade:\n        if (0xf < uVar5) {\n          __3_YAXPEAX_Z(uVar10);\n        }\n      }\n      break;\n    case 2:\n      if (bVar13) {\n        (**(code **)(*(longlong *)puVar3[9] + 8))();\n      }\n      iVar7 = FUN_1800139f0(param_1 + 0x128,puVar3 + 2);\n      cVar6 = FUN_18001dbc0(0);\n      if (cVar6 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_140,iVar7);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = plVar12;\n        if (0xf < (ulonglong)puVar3[6]) {\n          plVar11 = (longlong *)*plVar12;\n        }\n        uVar10 = FUN_18001db50();\n        param_1 = lStack_160;\n        uStack_188 = *(undefined8 *)(lStack_160 + 0xf8);\n        uStack_190 = *(undefined4 *)(lStack_160 + 0x2c);\n        uStack_198 = 0x5fe;\n        plStack_180 = plVar11;\n        plStack_178 = plVar8;\n        FUN_180015b40(uVar10,0,&DAT_1802282b8,&DAT_180228260);\n        uVar10 = auStack_140[0];\n        uVar5 = uStack_128;\n        goto joined_r0x0001800a7ade;\n      }\n      break;\n    case 3:\n      if (bVar13) {\n        (**(code **)(*(longlong *)puVar3[0xb] + 8))();\n      }\n      iVar7 = FUN_180013fa0(param_1 + 0x128,puVar3 + 2);\n      cVar6 = FUN_18001dbc0(0);\n      if (cVar6 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_c0,iVar7);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = plVar12;\n        if (0xf < (ulonglong)puVar3[6]) {\n          plVar11 = (longlong *)*plVar12;\n        }\n        uVar10 = FUN_18001db50();\n        param_1 = lStack_160;\n        uStack_188 = *(undefined8 *)(lStack_160 + 0xf8);\n        uStack_190 = *(undefined4 *)(lStack_160 + 0x2c);\n        uStack_198 = 0x608;\n        plStack_180 = plVar11;\n        plStack_178 = plVar8;\n        FUN_180015b40(uVar10,0,&DAT_180228378,&DAT_180228260);\n        uVar10 = auStack_c0[0];\n        uVar5 = uStack_a8;\n        goto joined_r0x0001800a7ade;\n      }\n      break;\n    case 4:\n      (**(code **)(*(longlong *)puVar3[0xd] + 8))();\n      iVar7 = FUN_1800145f0(param_1 + 0x128,puVar3 + 2);\n      cVar6 = FUN_18001dbc0(0);\n      if (cVar6 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_120,iVar7);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = plVar12;\n        if (0xf < (ulonglong)puVar3[6]) {\n          plVar11 = (longlong *)*plVar12;\n        }\n        uVar10 = FUN_18001db50();\n        param_1 = lStack_160;\n        uStack_188 = *(undefined8 *)(lStack_160 + 0xf8);\n        uStack_190 = *(undefined4 *)(lStack_160 + 0x2c);\n        uStack_198 = 0x60d;\n        plStack_180 = plVar11;\n        plStack_178 = plVar8;\n        FUN_180015b40(uVar10,0,&DAT_180228338,&DAT_180228260);\n        uVar10 = auStack_120[0];\n        uVar5 = uStack_108;\n        goto joined_r0x0001800a7ade;\n      }\n      break;\n    case 5:\n      (**(code **)(*(longlong *)puVar3[0xf] + 8))();\n      iVar7 = FUN_180014ae0(param_1 + 0x128,puVar3 + 2);\n      cVar6 = FUN_18001dbc0(0);\n      if (cVar6 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_e0,iVar7);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = plVar12;\n        if (0xf < (ulonglong)puVar3[6]) {\n          plVar11 = (longlong *)*plVar12;\n        }\n        uVar10 = FUN_18001db50();\n        param_1 = lStack_160;\n        uStack_188 = *(undefined8 *)(lStack_160 + 0xf8);\n        uStack_190 = *(undefined4 *)(lStack_160 + 0x2c);\n        uStack_198 = 0x612;\n        plStack_180 = plVar11;\n        plStack_178 = plVar8;\n        FUN_180015b40(uVar10,0,&DAT_1802283f8,&DAT_180228260);\n        uVar10 = auStack_e0[0];\n        uVar5 = uStack_c8;\n        goto joined_r0x0001800a7ade;\n      }\n      break;\n    case 6:\n      if (bVar13) {\n        (**(code **)(*(longlong *)puVar3[0x11] + 8))();\n      }\n      iVar7 = FUN_180014fd0(param_1 + 0x128,puVar3 + 2);\n      cVar6 = FUN_18001dbc0(0);\n      if (cVar6 != '\\0') {\n        plVar8 = (longlong *)FUN_18008f750(auStack_a0,iVar7);\n        if (0xf < (ulonglong)plVar8[3]) {\n          plVar8 = (longlong *)*plVar8;\n        }\n        plVar11 = plVar12;\n        if (0xf < (ulonglong)puVar3[6]) {\n          plVar11 = (longlong *)*plVar12;\n        }\n        uVar10 = FUN_18001db50();\n        param_1 = lStack_160;\n        uStack_188 = *(undefined8 *)(lStack_160 + 0xf8);\n        uStack_190 = *(undefined4 *)(lStack_160 + 0x2c);\n        uStack_198 = 0x617;\n        plStack_180 = plVar11;\n        plStack_178 = plVar8;\n        FUN_180015b40(uVar10,0,&DAT_1802283b8,&DAT_180228260);\n        uVar10 = auStack_a0[0];\n        uVar5 = uStack_88;\n        goto joined_r0x0001800a7ade;\n      }\n      break;\n    case 7:\n      if (bVar13) {\n        (**(code **)(*(longlong *)puVar3[9] + 8))();\n      }\n      iVar7 = FUN_180015440(param_1 + 0x128,puVar3 + 2);\n      cVar6 = FUN_18001dbc0(0);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a7830.asm.txt",
+          "member": "1800a7830",
+          "sha256": "cf07047391979296bf148735f0fce4a65cd79f90cb01b193f7bb683f59ccc8bf",
+          "start": 467,
+          "end": 471,
+          "excerpt": "1800a7ff1\tMOV EAX,R13D\n1800a7ff4\tMOV RCX,qword ptr [RBP + 0x78]\n1800a7ff8\tXOR RCX,RSP\n1800a7ffb\tCALL 0x1801e8810\n1800a8000\tMOV RBX,qword ptr [RSP + 0x1c8]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        }
+      ],
+      "unknowns": [
+        "虚执行对象的具体调度与全部子节点状态传播未在本切片恢复。",
+        "图像/复合类型累积、载荷租约与虚槽接收者需分别恢复，不从int路径外推。"
+      ]
+    },
+    {
+      "id": "OG05",
+      "classification": "source-confirmed",
+      "stages": [
+        "retain"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "三类标量输出helper的正常来源分支",
+      "to": "按索引读取一个值，追加进目标；文本另有复制",
+      "behavior": "13450/139f0/13fa0先检查目标typed指针。来源分类字段+0x98为1或2时使用描述中的字面值；为3时验证来源typed对象，再处理选择模式。普通索引分支先调用132e0取得索引，检查来源payload/count，从int/float各4字节元素或string指针数组取一个值，分别交fc50/fd30/100f0追加目标。string先经006470形成临时文本，再复制交100f0；不是把来源指针数组直接作为目标结果。模式+0x170==1另交fcb0/fe00/101a0处理，不能与单元素分支混称已证完整数组拷贝。",
+      "representation": "int来源payload+0x68/count和+0x70/base，float为+0x40/+0x48；string为+0x30/count和+0x38/指针表。目标对象指针位于描述+0x28/+0x38/+0x48；汇编明确float值走XMM1、目标走RCX，string目标走RCX、临时文本地址走RDX，不能按整数寄存器签名吞掉浮点参数。",
+      "cache": "目标追加与mode==1前置虚槽共同决定保留/替换，源值按所见分支读取，不能泛称全数组深快照。",
+      "release": "临时string的堆块在对应路径delete；来源shared对象、目标结果与调用临时文本的释放责任分开。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/180013450.c",
+          "member": "180013450",
+          "sha256": "5a5bf6d1d40eb82a2dc026c0b3b73bfaa3dde86a15a4b142c5a958cb435f3eae",
+          "start": 4,
+          "end": 230,
+          "excerpt": "void FUN_180013450(longlong param_1,longlong param_2)\n\n{\n  longlong lVar1;\n  char cVar2;\n  int iVar3;\n  undefined8 uVar4;\n  longlong *plVar5;\n  longlong *plVar6;\n  longlong *plVar7;\n  int iVar8;\n  undefined4 uVar9;\n  undefined1 auStack_f8 [32];\n  undefined4 uStack_d8;\n  longlong *plStack_d0;\n  undefined8 uStack_c8;\n  longlong *plStack_c0;\n  longlong *plStack_b8;\n  undefined8 *puStack_b0;\n  undefined4 uStack_a8;\n  undefined8 uStack_a0;\n  undefined8 auStack_98 [3];\n  ulonglong uStack_80;\n  undefined8 auStack_78 [3];\n  ulonglong uStack_60;\n  undefined8 auStack_58 [3];\n  ulonglong uStack_40;\n  ulonglong uStack_38;\n  \n  uStack_a0 = 0xfffffffffffffffe;\n  uStack_38 = DAT_1802a5230 ^ (ulonglong)auStack_f8;\n  uVar9 = 0;\n  uStack_a8 = 0;\n  if (*(longlong *)(param_2 + 0x28) == 0) {\n    cVar2 = FUN_18001dbc0(4);\n    if (cVar2 != '\\0') {\n      uVar4 = FUN_18001db50();\n      uStack_d8 = 0x19c;\n      FUN_180015b40(uVar4,4,&DAT_18021c6c8,&DAT_18021c6a0);\n    }\n    goto LAB_1800139b6;\n  }\n  iVar3 = *(int *)(param_2 + 0x98);\n  if (0 < iVar3) {\n    if (iVar3 < 3) {\n      iVar3 = FUN_18000fc50(*(longlong *)(param_2 + 0x28),*(undefined4 *)(param_2 + 0x9c));\n      if ((iVar3 != 0) && (cVar2 = FUN_18001dbc0(4), cVar2 != '\\0')) {\n        plVar7 = (longlong *)FUN_180006450(param_2 + 8);\n        uVar4 = FUN_18001db50();\n        uStack_d8 = 0x1aa;\n        plStack_d0 = plVar7;\n        FUN_180015b40(uVar4,4,&DAT_18021c6f8,&DAT_18021c6a0);\n      }\n      goto LAB_1800139b6;\n    }\n    if (iVar3 == 3) {\n      plVar7 = (longlong *)(param_2 + 0xd0);\n      if (*(undefined8 **)(param_2 + 0xf0) == (undefined8 *)0x0) {\n        cVar2 = FUN_18001dbc0(4);\n        if (cVar2 != '\\0') {\n          plVar7 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)FUN_180006450(param_2 + 8);\n          uVar4 = FUN_18001db50();\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x1b5;\n          plStack_d0 = plVar7;\n          plStack_c0 = plVar5;\n          FUN_180015b40(uVar4,4,&DAT_18021c720,&DAT_18021c6a0);\n        }\n        goto LAB_1800139b6;\n      }\n      if (*(int *)(param_2 + 0x170) == 1) {\n        cVar2 = (**(code **)**(undefined8 **)(param_2 + 0xf0))();\n        if (cVar2 == '\\0') {\n          if (*(longlong *)(*(longlong *)(param_2 + 0xf0) + 0x10) != 0) {\n            FUN_18000fcb0(*(undefined8 *)(param_2 + 0x28));\n          }\n        }\n        else {\n          cVar2 = FUN_18001dbc0(1);\n          if (cVar2 != '\\0') {\n            if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n              plVar7 = (longlong *)*plVar7;\n            }\n            plVar5 = (longlong *)(param_1 + 0x10);\n            if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n              plVar5 = (longlong *)*plVar5;\n            }\n            plVar6 = (longlong *)FUN_180006450(param_2 + 8);\n            uVar4 = FUN_18001db50();\n            uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n            uStack_d8 = 0x1bf;\n            plStack_d0 = plVar5;\n            plStack_c0 = plVar6;\n            plStack_b8 = plVar7;\n            FUN_180015b40(uVar4,1,&DAT_18021c760,&DAT_18021c6a0);\n          }\n        }\n        goto LAB_1800139b6;\n      }\n      iVar3 = FUN_1800132e0();\n      if (iVar3 < 0) {\n        iVar8 = -0x1fffffec;\nLAB_18001368e:\n        cVar2 = FUN_18001dbc0(4);\n        if (cVar2 != '\\0') {\n          puStack_b0 = (undefined8 *)FUN_18008f750(auStack_98,iVar8);\n          if (0xf < (ulonglong)puStack_b0[3]) {\n            puStack_b0 = (undefined8 *)*puStack_b0;\n          }\n          if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar5 = (longlong *)*plVar5;\n          }\n          uVar4 = FUN_18001db50();\n          plStack_b8 = (longlong *)CONCAT44(plStack_b8._4_4_,iVar3);\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x1d9;\n          plStack_d0 = plVar5;\n          plStack_c0 = plVar7;\n          FUN_180015b40(uVar4,4,&DAT_18021c790,&DAT_18021c6a0);\n          if (0xf < uStack_80) {\n            __3_YAXPEAX_Z(auStack_98[0]);\n          }\n        }\n        goto LAB_1800139b6;\n      }\n      lVar1 = *(longlong *)(*(longlong *)(param_2 + 0xf0) + 0x10);\n      if (lVar1 == 0) {\n        iVar8 = -0x1ffffcec;\nLAB_180013731:\n        cVar2 = FUN_18001dbc0(1);\n        if (cVar2 != '\\0') {\n          puStack_b0 = (undefined8 *)FUN_18008f750(auStack_78,iVar8);\n          if (0xf < (ulonglong)puStack_b0[3]) {\n            puStack_b0 = (undefined8 *)*puStack_b0;\n          }\n          if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar5 = (longlong *)*plVar5;\n          }\n          uVar4 = FUN_18001db50();\n          plStack_b8 = (longlong *)CONCAT44(plStack_b8._4_4_,iVar3);\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x1d5;\n          plStack_d0 = plVar5;\n          plStack_c0 = plVar7;\n          FUN_180015b40(uVar4,1,&DAT_18021c790,&DAT_18021c6a0);\n          if (0xf < uStack_60) {\n            __3_YAXPEAX_Z(auStack_78[0]);\n          }\n        }\n      }\n      else {\n        if (iVar3 < *(int *)(lVar1 + 0x68)) {\n          uVar9 = *(undefined4 *)(*(longlong *)(lVar1 + 0x70) + 8 + (longlong)iVar3 * 4);\n        }\n        else {\n          iVar8 = -0x1fffffec;\n          if (*(int *)(lVar1 + 0x68) == 0) {\n            iVar8 = -0x1ffffcec;\n          }\n          if (iVar8 != 0) {\n            if ((iVar8 != -0x1ffffcec) && (iVar8 != -0x1ffffce5)) goto LAB_18001368e;\n            goto LAB_180013731;\n          }\n        }\n        iVar3 = FUN_18000fc50(*(undefined8 *)(param_2 + 0x28),uVar9);\n        if ((iVar3 != 0) && (cVar2 = FUN_18001dbc0(4), cVar2 != '\\0')) {\n          plStack_b8 = (longlong *)FUN_18008f750(auStack_58,iVar3);\n          if (0xf < (ulonglong)plStack_b8[3]) {\n            plStack_b8 = (longlong *)*plStack_b8;\n          }\n          plVar7 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)FUN_180006450(param_2 + 8);\n          uVar4 = FUN_18001db50();\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x1e1;\n          plStack_d0 = plVar7;\n          plStack_c0 = plVar5;\n          FUN_180015b40(uVar4,4,&DAT_18021c7d0,&DAT_18021c6a0);\n          if (0xf < uStack_40) {\n            __3_YAXPEAX_Z(auStack_58[0]);\n          }\n        }\n      }\n      goto LAB_1800139b6;\n    }\n  }\n  cVar2 = FUN_18001dbc0(4);\n  if (cVar2 != '\\0') {\n    if ((DAT_1802b1218 & 1) == 0) {\n      DAT_1802b1218 = DAT_1802b1218 | 1;\n      _DAT_1802b1230 = 1;\n      DAT_1802b1238 = 0;\n      DAT_1802b1240 = 0;\n      uRam00000001802b1248 = 0;\n      DAT_1802b1250 = 0;\n      uRam00000001802b1258 = 0;\n      DAT_1802b1260 = 0;\n      uRam00000001802b1268 = 0;\n      _DAT_1802b1270 = 0;\n      FUN_1801e8930(&DAT_180202850);\n    }\n    uStack_c8 = FUN_180006450(param_2 + 8);\n    plStack_d0 = (longlong *)CONCAT44(plStack_d0._4_4_,*(undefined4 *)(param_2 + 0x98));\n    uStack_d8 = 0x1e8;\n    FUN_180015b40(&DAT_1802b1230,4,&DAT_18021c810,&DAT_18021c6a0);\n  }\nLAB_1800139b6:\n  FUN_1801e8810(uStack_38 ^ (ulonglong)auStack_f8);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/180013450.asm.txt",
+          "member": "180013450",
+          "sha256": "b97d8c0838e3a5983044d10fd03c45e8d2363a0e26a282b7fbc3471dfdbb955e",
+          "start": 1,
+          "end": 321,
+          "excerpt": "180013450\tMOV RAX,RSP\n180013453\tPUSH RSI\n180013454\tPUSH RDI\n180013455\tPUSH R12\n180013457\tPUSH R14\n180013459\tPUSH R15\n18001345b\tSUB RSP,0xd0\n180013462\tMOV qword ptr [RSP + 0x58],-0x2\n18001346b\tMOV qword ptr [RAX + 0x18],RBX\n18001346f\tMOV qword ptr [RAX + 0x20],RBP\n180013473\tMOV RAX,qword ptr [0x1802a5230]\n18001347a\tXOR RAX,RSP\n18001347d\tMOV qword ptr [RSP + 0xc0],RAX\n180013485\tMOV RBX,RDX\n180013488\tMOV RBP,RCX\n18001348b\tXOR EDI,EDI\n18001348d\tMOV dword ptr [RSP + 0x50],EDI\n180013491\tMOV RCX,qword ptr [RDX + 0x28]\n180013495\tTEST RCX,RCX\n180013498\tJNZ 0x1800134d6\n18001349a\tLEA ECX,[RDI + 0x4]\n18001349d\tCALL 0x18001dbc0\n1800134a2\tTEST AL,AL\n1800134a4\tJZ 0x1800134cc\n1800134a6\tCALL 0x18001db50\n1800134ab\tMOV RCX,RAX\n1800134ae\tMOV dword ptr [RSP + 0x20],0x19c\n1800134b6\tLEA R9,[0x18021c6a0]\n1800134bd\tLEA R8,[0x18021c6c8]\n1800134c4\tLEA EDX,[RDI + 0x4]\n1800134c7\tCALL 0x180015b40\n1800134cc\tMOV EAX,0xe0000314\n1800134d1\tJMP 0x1800139b6\n1800134d6\tMOV EAX,dword ptr [RDX + 0x98]\n1800134dc\tTEST EAX,EAX\n1800134de\tJLE 0x18001390a\n1800134e4\tCMP EAX,0x2\n1800134e7\tJLE 0x1800138a5\n1800134ed\tCMP EAX,0x3\n1800134f0\tJNZ 0x18001390a\n1800134f6\tLEA RSI,[RDX + 0xd0]\n1800134fd\tMOV RCX,qword ptr [RDX + 0xf0]\n180013504\tTEST RCX,RCX\n180013507\tJNZ 0x180013572\n180013509\tLEA ECX,[RAX + 0x1]\n18001350c\tCALL 0x18001dbc0\n180013511\tTEST AL,AL\n180013513\tJZ 0x180013568\n180013515\tLEA RDI,[RBP + 0x10]\n180013519\tCMP qword ptr [RDI + 0x18],0x10\n18001351e\tJC 0x180013523\n180013520\tMOV RDI,qword ptr [RDI]\n180013523\tLEA RCX,[RBX + 0x8]\n180013527\tCALL 0x180006450\n18001352c\tMOV RBX,RAX\n18001352f\tCALL 0x18001db50\n180013534\tMOV RCX,RAX\n180013537\tMOV qword ptr [RSP + 0x38],RBX\n18001353c\tMOV EAX,dword ptr [RBP + 0x8]\n18001353f\tMOV dword ptr [RSP + 0x30],EAX\n180013543\tMOV qword ptr [RSP + 0x28],RDI\n180013548\tMOV dword ptr [RSP + 0x20],0x1b5\n180013550\tLEA R9,[0x18021c6a0]\n180013557\tLEA R8,[0x18021c720]\n18001355e\tMOV EDX,0x4\n180013563\tCALL 0x180015b40\n180013568\tMOV EDI,0xe0000314\n18001356d\tJMP 0x1800139b4\n180013572\tCMP dword ptr [RDX + 0x170],0x1\n180013579\tJNZ 0x180013624\n18001357f\tMOV RAX,qword ptr [RCX]\n180013582\tCALL qword ptr [RAX]\n180013584\tTEST AL,AL\n180013586\tJZ 0x180013602\n180013588\tMOV ECX,0x1\n18001358d\tCALL 0x18001dbc0\n180013592\tTEST AL,AL\n180013594\tJZ 0x180013568\n180013596\tCMP qword ptr [RSI + 0x18],0x10\n18001359b\tJC 0x1800135a0\n18001359d\tMOV RSI,qword ptr [RSI]\n1800135a0\tLEA RDI,[RBP + 0x10]\n1800135a4\tCMP qword ptr [RDI + 0x18],0x10\n1800135a9\tJC 0x1800135ae\n1800135ab\tMOV RDI,qword ptr [RDI]\n1800135ae\tLEA RCX,[RBX + 0x8]\n1800135b2\tCALL 0x180006450\n1800135b7\tMOV RBX,RAX\n1800135ba\tCALL 0x18001db50\n1800135bf\tMOV RCX,RAX\n1800135c2\tMOV qword ptr [RSP + 0x40],RSI\n1800135c7\tMOV qword ptr [RSP + 0x38],RBX\n1800135cc\tMOV EAX,dword ptr [RBP + 0x8]\n1800135cf\tMOV dword ptr [RSP + 0x30],EAX\n1800135d3\tMOV qword ptr [RSP + 0x28],RDI\n1800135d8\tMOV dword ptr [RSP + 0x20],0x1bf\n1800135e0\tLEA R9,[0x18021c6a0]\n1800135e7\tLEA R8,[0x18021c760]\n1800135ee\tMOV EDX,0x1\n1800135f3\tCALL 0x180015b40\n1800135f8\tMOV EDI,0xe0000314\n1800135fd\tJMP 0x1800139b4\n180013602\tMOV RAX,qword ptr [RBX + 0xf0]\n180013609\tMOV RDX,qword ptr [RAX + 0x10]\n18001360d\tTEST RDX,RDX\n180013610\tJZ 0x1800139b4\n180013616\tMOV RCX,qword ptr [RBX + 0x28]\n18001361a\tCALL 0x18000fcb0\n18001361f\tJMP 0x1800139b4\n180013624\tCALL 0x1800132e0\n180013629\tMOVSXD R15,EAX\n18001362c\tMOV R8D,EDI\n18001362f\tMOV RAX,qword ptr [RBX + 0xf0]\n180013636\tTEST R15D,R15D\n180013639\tJNS 0x180013642\n18001363b\tMOV EDI,0xe0000014\n180013640\tJMP 0x18001368e\n180013642\tMOV RAX,qword ptr [RAX + 0x10]\n180013646\tTEST RAX,RAX\n180013649\tJNZ 0x180013655\n18001364b\tMOV EDI,0xe0000314\n180013650\tJMP 0x180013731\n180013655\tMOV EDX,dword ptr [RAX + 0x68]\n180013658\tCMP R15D,EDX\n18001365b\tJL 0x1800137dd\n180013661\tMOV ECX,0xe0000014\n180013666\tMOV EAX,0xe0000314\n18001366b\tTEST EDX,EDX\n18001366d\tCMOVZ ECX,EAX\n180013670\tMOV EDI,ECX\n180013672\tTEST ECX,ECX\n180013674\tJZ 0x1800137e6\n18001367a\tCMP ECX,EAX\n18001367c\tJZ 0x180013731\n180013682\tCMP ECX,0xe000031b\n180013688\tJZ 0x180013731\n18001368e\tMOV ECX,0x4\n180013693\tCALL 0x18001dbc0\n180013698\tTEST AL,AL\n18001369a\tJZ 0x1800139b4\n1800136a0\tMOV EDX,EDI\n1800136a2\tLEA RCX,[RSP + 0x60]\n1800136a7\tCALL 0x18008f750\n1800136ac\tMOV R14,RAX\n1800136af\tCMP qword ptr [RAX + 0x18],0x10\n1800136b4\tJC 0x1800136b9\n1800136b6\tMOV R14,qword ptr [RAX]\n1800136b9\tCMP qword ptr [RSI + 0x18],0x10\n1800136be\tJC 0x1800136c3\n1800136c0\tMOV RSI,qword ptr [RSI]\n1800136c3\tLEA RBX,[RBP + 0x10]\n1800136c7\tCMP qword ptr [RBX + 0x18],0x10\n1800136cc\tJC 0x1800136d1\n1800136ce\tMOV RBX,qword ptr [RBX]\n1800136d1\tCALL 0x18001db50\n1800136d6\tMOV RCX,RAX\n1800136d9\tMOV qword ptr [RSP + 0x48],R14\n1800136de\tMOV dword ptr [RSP + 0x40],R15D\n1800136e3\tMOV qword ptr [RSP + 0x38],RSI\n1800136e8\tMOV EAX,dword ptr [RBP + 0x8]\n1800136eb\tMOV dword ptr [RSP + 0x30],EAX\n1800136ef\tMOV qword ptr [RSP + 0x28],RBX\n1800136f4\tMOV dword ptr [RSP + 0x20],0x1d9\n1800136fc\tLEA R9,[0x18021c6a0]\n180013703\tLEA R8,[0x18021c790]\n18001370a\tMOV EDX,0x4\n18001370f\tCALL 0x180015b40\n180013714\tNOP\n180013715\tCMP qword ptr [RSP + 0x78],0x10\n18001371b\tJC 0x1800139b4\n180013721\tMOV RCX,qword ptr [RSP + 0x60]\n180013726\tCALL qword ptr [0x180204580]\n18001372c\tJMP 0x1800139b4\n180013731\tMOV ECX,0x1\n180013736\tCALL 0x18001dbc0\n18001373b\tTEST AL,AL\n18001373d\tJZ 0x1800139b4\n180013743\tMOV EDX,EDI\n180013745\tLEA RCX,[RSP + 0x80]\n18001374d\tCALL 0x18008f750\n180013752\tMOV R14,RAX\n180013755\tCMP qword ptr [RAX + 0x18],0x10\n18001375a\tJC 0x18001375f\n18001375c\tMOV R14,qword ptr [RAX]\n18001375f\tCMP qword ptr [RSI + 0x18],0x10\n180013764\tJC 0x180013769\n180013766\tMOV RSI,qword ptr [RSI]\n180013769\tLEA RBX,[RBP + 0x10]\n18001376d\tCMP qword ptr [RBX + 0x18],0x10\n180013772\tJC 0x180013777\n180013774\tMOV RBX,qword ptr [RBX]\n180013777\tCALL 0x18001db50\n18001377c\tMOV RCX,RAX\n18001377f\tMOV qword ptr [RSP + 0x48],R14\n180013784\tMOV dword ptr [RSP + 0x40],R15D\n180013789\tMOV qword ptr [RSP + 0x38],RSI\n18001378e\tMOV EAX,dword ptr [RBP + 0x8]\n180013791\tMOV dword ptr [RSP + 0x30],EAX\n180013795\tMOV qword ptr [RSP + 0x28],RBX\n18001379a\tMOV dword ptr [RSP + 0x20],0x1d5\n1800137a2\tLEA R9,[0x18021c6a0]\n1800137a9\tLEA R8,[0x18021c790]\n1800137b0\tMOV EDX,0x1\n1800137b5\tCALL 0x180015b40\n1800137ba\tNOP\n1800137bb\tCMP qword ptr [RSP + 0x98],0x10\n1800137c4\tJC 0x1800139b4\n1800137ca\tMOV RCX,qword ptr [RSP + 0x80]\n1800137d2\tCALL qword ptr [0x180204580]\n1800137d8\tJMP 0x1800139b4\n1800137dd\tMOV RAX,qword ptr [RAX + 0x70]\n1800137e1\tMOV R8D,dword ptr [RAX + R15*0x4 + 0x8]\n1800137e6\tMOV EDX,R8D\n1800137e9\tMOV RCX,qword ptr [RBX + 0x28]\n1800137ed\tCALL 0x18000fc50\n1800137f2\tMOV EDI,EAX\n1800137f4\tTEST EAX,EAX\n1800137f6\tJZ 0x1800139b4\n1800137fc\tMOV ECX,0x4\n180013801\tCALL 0x18001dbc0\n180013806\tTEST AL,AL\n180013808\tJZ 0x1800139b4\n18001380e\tMOV EDX,EDI\n180013810\tLEA RCX,[RSP + 0xa0]\n180013818\tCALL 0x18008f750\n18001381d\tMOV R14,RAX\n180013820\tCMP qword ptr [RAX + 0x18],0x10\n180013825\tJC 0x18001382a\n180013827\tMOV R14,qword ptr [RAX]\n18001382a\tLEA RSI,[RBP + 0x10]\n18001382e\tCMP qword ptr [RSI + 0x18],0x10\n180013833\tJC 0x180013838\n180013835\tMOV RSI,qword ptr [RSI]\n180013838\tLEA RCX,[RBX + 0x8]\n18001383c\tCALL 0x180006450\n180013841\tMOV RBX,RAX\n180013844\tCALL 0x18001db50\n180013849\tMOV RCX,RAX\n18001384c\tMOV qword ptr [RSP + 0x40],R14\n180013851\tMOV qword ptr [RSP + 0x38],RBX\n180013856\tMOV EAX,dword ptr [RBP + 0x8]\n180013859\tMOV dword ptr [RSP + 0x30],EAX\n18001385d\tMOV qword ptr [RSP + 0x28],RSI\n180013862\tMOV dword ptr [RSP + 0x20],0x1e1\n18001386a\tLEA R9,[0x18021c6a0]\n180013871\tLEA R8,[0x18021c7d0]\n180013878\tMOV EDX,0x4\n18001387d\tCALL 0x180015b40\n180013882\tNOP\n180013883\tCMP qword ptr [RSP + 0xb8],0x10\n18001388c\tJC 0x1800139b4\n180013892\tMOV RCX,qword ptr [RSP + 0xa0]\n18001389a\tCALL qword ptr [0x180204580]\n1800138a0\tJMP 0x1800139b4\n1800138a5\tMOV EDX,dword ptr [RDX + 0x9c]\n1800138ab\tCALL 0x18000fc50\n1800138b0\tMOV EDI,EAX\n1800138b2\tTEST EAX,EAX\n1800138b4\tJZ 0x1800139b4\n1800138ba\tMOV ECX,0x4\n1800138bf\tCALL 0x18001dbc0\n1800138c4\tTEST AL,AL\n1800138c6\tJZ 0x1800139b4\n1800138cc\tLEA RCX,[RBX + 0x8]\n1800138d0\tCALL 0x180006450\n1800138d5\tMOV RBX,RAX\n1800138d8\tCALL 0x18001db50\n1800138dd\tMOV RCX,RAX\n1800138e0\tMOV qword ptr [RSP + 0x28],RBX\n1800138e5\tMOV dword ptr [RSP + 0x20],0x1aa\n1800138ed\tLEA R9,[0x18021c6a0]\n1800138f4\tLEA R8,[0x18021c6f8]\n1800138fb\tMOV EDX,0x4\n180013900\tCALL 0x180015b40\n180013905\tJMP 0x1800139b4\n18001390a\tMOV ECX,0x4\n18001390f\tCALL 0x18001dbc0\n180013914\tTEST AL,AL\n180013916\tJZ 0x1800139af\n18001391c\tMOV EAX,dword ptr [0x1802b1218]\n180013922\tTEST AL,0x1\n180013924\tJNZ 0x180013970\n180013926\tOR EAX,0x1\n180013929\tMOV dword ptr [0x1802b1218],EAX\n18001392f\tMOV word ptr [0x1802b1230],0x1\n180013938\tMOV qword ptr [0x1802b1238],RDI\n18001393f\tXORPS XMM0,XMM0\n180013942\tMOVDQA xmmword ptr [0x1802b1240],XMM0\n18001394a\tXORPS XMM1,XMM1\n18001394d\tMOVDQA xmmword ptr [0x1802b1250],XMM1\n180013955\tMOVDQA xmmword ptr [0x1802b1260],XMM0\n18001395d\tMOV qword ptr [0x1802b1270],RDI\n180013964\tLEA RCX,[0x180202850]\n18001396b\tCALL 0x1801e8930\n180013970\tLEA RCX,[RBX + 0x8]\n180013974\tCALL 0x180006450\n180013979\tMOV qword ptr [RSP + 0x30],RAX\n18001397e\tMOV EAX,dword ptr [RBX + 0x98]\n180013984\tMOV dword ptr [RSP + 0x28],EAX\n180013988\tMOV dword ptr [RSP + 0x20],0x1e8\n180013990\tLEA R9,[0x18021c6a0]\n180013997\tLEA R8,[0x18021c810]\n18001399e\tMOV EDX,0x4\n1800139a3\tLEA RCX,[0x1802b1230]\n1800139aa\tCALL 0x180015b40\n1800139af\tMOV EDI,0xe000031c\n1800139b4\tMOV EAX,EDI\n1800139b6\tMOV RCX,qword ptr [RSP + 0xc0]\n1800139be\tXOR RCX,RSP\n1800139c1\tCALL 0x1801e8810\n1800139c6\tLEA R11,[RSP + 0xd0]\n1800139ce\tMOV RBX,qword ptr [R11 + 0x40]\n1800139d2\tMOV RBP,qword ptr [R11 + 0x48]\n1800139d6\tMOV RSP,R11\n1800139d9\tPOP R15\n1800139db\tPOP R14\n1800139dd\tPOP R12\n1800139df\tPOP RDI\n1800139e0\tPOP RSI\n1800139e1\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800139f0.c",
+          "member": "1800139f0",
+          "sha256": "bb8c437bcffd58cd14cc2e5583ee2640fcdbbd53482b425b6f5934423f6220cc",
+          "start": 4,
+          "end": 232,
+          "excerpt": "void FUN_1800139f0(longlong param_1,longlong param_2)\n\n{\n  longlong lVar1;\n  char cVar2;\n  int iVar3;\n  undefined8 uVar4;\n  longlong *plVar5;\n  longlong *plVar6;\n  longlong *plVar7;\n  int iVar8;\n  undefined4 uVar9;\n  undefined1 auStack_f8 [32];\n  undefined4 uStack_d8;\n  longlong *plStack_d0;\n  undefined8 uStack_c8;\n  longlong *plStack_c0;\n  longlong *plStack_b8;\n  undefined8 *puStack_b0;\n  undefined4 uStack_a8;\n  undefined8 uStack_a0;\n  undefined8 auStack_98 [3];\n  ulonglong uStack_80;\n  undefined8 auStack_78 [3];\n  ulonglong uStack_60;\n  undefined8 auStack_58 [3];\n  ulonglong uStack_40;\n  ulonglong uStack_38;\n  \n  uStack_a0 = 0xfffffffffffffffe;\n  uStack_38 = DAT_1802a5230 ^ (ulonglong)auStack_f8;\n  uStack_a8 = 0;\n  if (*(longlong *)(param_2 + 0x38) == 0) {\n    cVar2 = FUN_18001dbc0(4);\n    if (cVar2 != '\\0') {\n      uVar4 = FUN_18001db50();\n      uStack_d8 = 0x1f8;\n      FUN_180015b40(uVar4,4,&DAT_18021c880,&DAT_18021c858);\n    }\n    goto LAB_180013f69;\n  }\n  iVar3 = *(int *)(param_2 + 0x98);\n  if (0 < iVar3) {\n    if (iVar3 < 3) {\n      iVar3 = FUN_18000fd30(*(longlong *)(param_2 + 0x38),*(undefined4 *)(param_2 + 0xa0));\n      if ((iVar3 != 0) && (cVar2 = FUN_18001dbc0(4), cVar2 != '\\0')) {\n        plVar7 = (longlong *)FUN_180006450(param_2 + 8);\n        uVar4 = FUN_18001db50();\n        uStack_d8 = 0x208;\n        plStack_d0 = plVar7;\n        FUN_180015b40(uVar4,4,&DAT_18021c6f8,&DAT_18021c858);\n      }\n      goto LAB_180013f69;\n    }\n    if (iVar3 == 3) {\n      if (*(undefined8 **)(param_2 + 0x100) == (undefined8 *)0x0) {\n        cVar2 = FUN_18001dbc0(4);\n        if (cVar2 != '\\0') {\n          plVar7 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)FUN_180006450(param_2 + 8);\n          uVar4 = FUN_18001db50();\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x212;\n          plStack_d0 = plVar7;\n          plStack_c0 = plVar5;\n          FUN_180015b40(uVar4,4,&DAT_18021c8b0,&DAT_18021c858);\n        }\n        goto LAB_180013f69;\n      }\n      if (*(int *)(param_2 + 0x170) == 1) {\n        cVar2 = (**(code **)**(undefined8 **)(param_2 + 0x100))();\n        if (cVar2 == '\\0') {\n          if (*(longlong *)(*(longlong *)(param_2 + 0x100) + 0x10) != 0) {\n            FUN_18000fe00(*(undefined8 *)(param_2 + 0x38));\n          }\n        }\n        else {\n          cVar2 = FUN_18001dbc0(1);\n          if (cVar2 != '\\0') {\n            plVar7 = (longlong *)(param_2 + 0xd0);\n            if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n              plVar7 = (longlong *)*plVar7;\n            }\n            plVar5 = (longlong *)(param_1 + 0x10);\n            if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n              plVar5 = (longlong *)*plVar5;\n            }\n            plVar6 = (longlong *)FUN_180006450(param_2 + 8);\n            uVar4 = FUN_18001db50();\n            uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n            uStack_d8 = 0x21c;\n            plStack_d0 = plVar5;\n            plStack_c0 = plVar6;\n            plStack_b8 = plVar7;\n            FUN_180015b40(uVar4,1,&DAT_18021c760,&DAT_18021c858);\n          }\n        }\n        goto LAB_180013f69;\n      }\n      iVar3 = FUN_1800132e0();\n      uVar9 = 0;\n      if (iVar3 < 0) {\n        iVar8 = -0x1fffffec;\nLAB_180013c32:\n        cVar2 = FUN_18001dbc0(4);\n        if (cVar2 != '\\0') {\n          puStack_b0 = (undefined8 *)FUN_18008f750(auStack_98,iVar8);\n          if (0xf < (ulonglong)puStack_b0[3]) {\n            puStack_b0 = (undefined8 *)*puStack_b0;\n          }\n          plVar7 = (longlong *)(param_2 + 0xd0);\n          if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar5 = (longlong *)*plVar5;\n          }\n          uVar4 = FUN_18001db50();\n          plStack_b8 = (longlong *)CONCAT44(plStack_b8._4_4_,iVar3);\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x236;\n          plStack_d0 = plVar5;\n          plStack_c0 = plVar7;\n          FUN_180015b40(uVar4,4,&DAT_18021c790,&DAT_18021c858);\n          if (0xf < uStack_80) {\n            __3_YAXPEAX_Z(auStack_98[0]);\n          }\n        }\n        goto LAB_180013f69;\n      }\n      lVar1 = *(longlong *)(*(longlong *)(param_2 + 0x100) + 0x10);\n      if (lVar1 == 0) {\n        iVar8 = -0x1ffffcec;\nLAB_180013cdc:\n        cVar2 = FUN_18001dbc0(1);\n        if (cVar2 != '\\0') {\n          puStack_b0 = (undefined8 *)FUN_18008f750(auStack_78,iVar8);\n          if (0xf < (ulonglong)puStack_b0[3]) {\n            puStack_b0 = (undefined8 *)*puStack_b0;\n          }\n          plVar7 = (longlong *)(param_2 + 0xd0);\n          if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar5 = (longlong *)*plVar5;\n          }\n          uVar4 = FUN_18001db50();\n          plStack_b8 = (longlong *)CONCAT44(plStack_b8._4_4_,iVar3);\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x232;\n          plStack_d0 = plVar5;\n          plStack_c0 = plVar7;\n          FUN_180015b40(uVar4,1,&DAT_18021c790,&DAT_18021c858);\n          if (0xf < uStack_60) {\n            __3_YAXPEAX_Z(auStack_78[0]);\n          }\n        }\n      }\n      else {\n        if (iVar3 < *(int *)(lVar1 + 0x40)) {\n          uVar9 = *(undefined4 *)(*(longlong *)(lVar1 + 0x48) + 8 + (longlong)iVar3 * 4);\n        }\n        else {\n          iVar8 = -0x1fffffec;\n          if (*(int *)(lVar1 + 0x40) == 0) {\n            iVar8 = -0x1ffffcec;\n          }\n          if (iVar8 != 0) {\n            if ((iVar8 != -0x1ffffcec) && (iVar8 != -0x1ffffce5)) goto LAB_180013c32;\n            goto LAB_180013cdc;\n          }\n        }\n        iVar3 = FUN_18000fd30(*(undefined8 *)(param_2 + 0x38),uVar9);\n        if ((iVar3 != 0) && (cVar2 = FUN_18001dbc0(4), cVar2 != '\\0')) {\n          plStack_b8 = (longlong *)FUN_18008f750(auStack_58,iVar3);\n          if (0xf < (ulonglong)plStack_b8[3]) {\n            plStack_b8 = (longlong *)*plStack_b8;\n          }\n          plVar7 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar7 = (longlong *)*plVar7;\n          }\n          plVar5 = (longlong *)FUN_180006450(param_2 + 8);\n          uVar4 = FUN_18001db50();\n          uStack_c8 = CONCAT44(uStack_c8._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_d8 = 0x23e;\n          plStack_d0 = plVar7;\n          plStack_c0 = plVar5;\n          FUN_180015b40(uVar4,4,&DAT_18021c7d0,&DAT_18021c858);\n          if (0xf < uStack_40) {\n            __3_YAXPEAX_Z(auStack_58[0]);\n          }\n        }\n      }\n      goto LAB_180013f69;\n    }\n  }\n  cVar2 = FUN_18001dbc0(4);\n  if (cVar2 != '\\0') {\n    if ((DAT_1802b1218 & 1) == 0) {\n      DAT_1802b1218 = DAT_1802b1218 | 1;\n      _DAT_1802b1230 = 1;\n      DAT_1802b1238 = 0;\n      DAT_1802b1240 = 0;\n      uRam00000001802b1248 = 0;\n      DAT_1802b1250 = 0;\n      uRam00000001802b1258 = 0;\n      DAT_1802b1260 = 0;\n      uRam00000001802b1268 = 0;\n      _DAT_1802b1270 = 0;\n      FUN_1801e8930(&DAT_180202850);\n    }\n    uStack_c8 = FUN_180006450(param_2 + 8);\n    plStack_d0 = (longlong *)CONCAT44(plStack_d0._4_4_,*(undefined4 *)(param_2 + 0x98));\n    uStack_d8 = 0x245;\n    FUN_180015b40(&DAT_1802b1230,4,&DAT_18021c810,&DAT_18021c858);\n  }\nLAB_180013f69:\n  FUN_1801e8810(uStack_38 ^ (ulonglong)auStack_f8);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/180013fa0.c",
+          "member": "180013fa0",
+          "sha256": "e5706c06dbc03a1a30d9eefd1670515930be5c1b26142605cdfb9fe0fa163ea2",
+          "start": 4,
+          "end": 274,
+          "excerpt": "void FUN_180013fa0(longlong param_1,longlong param_2)\n\n{\n  longlong lVar1;\n  undefined1 *puVar2;\n  char cVar3;\n  int iVar4;\n  undefined8 uVar5;\n  longlong *plVar6;\n  longlong *plVar7;\n  longlong *plVar8;\n  int iVar9;\n  undefined1 auStack_168 [32];\n  undefined4 uStack_148;\n  longlong *plStack_140;\n  undefined8 uStack_138;\n  longlong *plStack_130;\n  longlong *plStack_128;\n  undefined8 *puStack_120;\n  undefined4 uStack_118;\n  undefined1 auStack_110 [16];\n  undefined8 uStack_100;\n  undefined8 uStack_f8;\n  undefined1 auStack_f0 [16];\n  undefined8 uStack_e0;\n  undefined8 uStack_d8;\n  undefined8 uStack_d0;\n  undefined1 uStack_c8;\n  undefined7 uStack_c7;\n  undefined8 uStack_b8;\n  ulonglong uStack_b0;\n  undefined1 uStack_a8;\n  undefined7 uStack_a7;\n  undefined8 uStack_98;\n  ulonglong uStack_90;\n  undefined1 uStack_88;\n  undefined7 uStack_87;\n  undefined8 uStack_78;\n  ulonglong uStack_70;\n  undefined1 uStack_68;\n  undefined7 uStack_67;\n  undefined8 uStack_58;\n  ulonglong uStack_50;\n  ulonglong uStack_48;\n  \n  uStack_d0 = 0xfffffffffffffffe;\n  uStack_48 = DAT_1802a5230 ^ (ulonglong)auStack_168;\n  uStack_118 = 0;\n  if (*(longlong *)(param_2 + 0x48) == 0) {\n    cVar3 = FUN_18001dbc0(4);\n    if (cVar3 != '\\0') {\n      uVar5 = FUN_18001db50();\n      uStack_148 = 0x256;\n      FUN_180015b40(uVar5,4,&DAT_18021c920,&DAT_18021c8f8);\n    }\n    goto LAB_1800145bd;\n  }\n  iVar4 = *(int *)(param_2 + 0x98);\n  if (0 < iVar4) {\n    if (iVar4 < 3) {\n      uStack_d8 = 0xf;\n      uStack_e0 = 0;\n      auStack_f0[0] = 0;\n      FUN_180006470(auStack_f0,param_2 + 0xb0,0,0xffffffffffffffff);\n      iVar4 = FUN_1800100f0(*(undefined8 *)(param_2 + 0x48),auStack_f0);\n      if ((iVar4 != 0) && (cVar3 = FUN_18001dbc0(4), cVar3 != '\\0')) {\n        plVar8 = (longlong *)FUN_180006450(param_2 + 8);\n        uVar5 = FUN_18001db50();\n        uStack_148 = 0x266;\n        plStack_140 = plVar8;\n        FUN_180015b40(uVar5,4,&DAT_18021c6f8,&DAT_18021c8f8);\n      }\n      goto LAB_1800145bd;\n    }\n    if (iVar4 == 3) {\n      if (*(undefined8 **)(param_2 + 0x110) == (undefined8 *)0x0) {\n        cVar3 = FUN_18001dbc0(4);\n        if (cVar3 != '\\0') {\n          plVar8 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar8 = (longlong *)*plVar8;\n          }\n          plVar6 = (longlong *)FUN_180006450(param_2 + 8);\n          uVar5 = FUN_18001db50();\n          uStack_138 = CONCAT44(uStack_138._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_148 = 0x270;\n          plStack_140 = plVar8;\n          plStack_130 = plVar6;\n          FUN_180015b40(uVar5,4,&DAT_18021c8b0,&DAT_18021c8f8);\n        }\n        goto LAB_1800145bd;\n      }\n      if (*(int *)(param_2 + 0x170) == 1) {\n        cVar3 = (**(code **)**(undefined8 **)(param_2 + 0x110))();\n        if (cVar3 == '\\0') {\n          if (*(longlong *)(*(longlong *)(param_2 + 0x110) + 0x10) != 0) {\n            FUN_1800101a0(*(undefined8 *)(param_2 + 0x48));\n          }\n        }\n        else {\n          cVar3 = FUN_18001dbc0(1);\n          if (cVar3 != '\\0') {\n            plVar8 = (longlong *)(param_2 + 0xd0);\n            if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n              plVar8 = (longlong *)*plVar8;\n            }\n            plVar6 = (longlong *)(param_1 + 0x10);\n            if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n              plVar6 = (longlong *)*plVar6;\n            }\n            plVar7 = (longlong *)FUN_180006450(param_2 + 8);\n            uVar5 = FUN_18001db50();\n            uStack_138 = CONCAT44(uStack_138._4_4_,*(undefined4 *)(param_1 + 8));\n            uStack_148 = 0x27a;\n            plStack_140 = plVar6;\n            plStack_130 = plVar7;\n            plStack_128 = plVar8;\n            FUN_180015b40(uVar5,1,&DAT_18021c760,&DAT_18021c8f8);\n          }\n        }\n        goto LAB_1800145bd;\n      }\n      iVar4 = FUN_1800132e0();\n      uStack_b0 = 0xf;\n      uStack_b8 = 0;\n      uStack_c8 = 0;\n      if (iVar4 < 0) {\n        iVar9 = -0x1fffffec;\nLAB_1800141ef:\n        cVar3 = FUN_18001dbc0(4);\n        if (cVar3 != '\\0') {\n          puStack_120 = (undefined8 *)FUN_18008f750(&uStack_a8,iVar9);\n          if (0xf < (ulonglong)puStack_120[3]) {\n            puStack_120 = (undefined8 *)*puStack_120;\n          }\n          plVar8 = (longlong *)(param_2 + 0xd0);\n          if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n            plVar8 = (longlong *)*plVar8;\n          }\n          plVar6 = (longlong *)(param_1 + 0x10);\n          if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n            plVar6 = (longlong *)*plVar6;\n          }\n          uVar5 = FUN_18001db50();\n          plStack_128 = (longlong *)CONCAT44(plStack_128._4_4_,iVar4);\n          uStack_138 = CONCAT44(uStack_138._4_4_,*(undefined4 *)(param_1 + 8));\n          uStack_148 = 0x294;\n          plStack_140 = plVar6;\n          plStack_130 = plVar8;\n          FUN_180015b40(uVar5,4,&DAT_18021c790,&DAT_18021c8f8);\n          if (0xf < uStack_90) {\n            __3_YAXPEAX_Z(CONCAT71(uStack_a7,uStack_a8));\n          }\n          uStack_90 = 0xf;\n          uStack_98 = 0;\n          uStack_a8 = 0;\n        }\n      }\n      else {\n        lVar1 = *(longlong *)(*(longlong *)(param_2 + 0x110) + 0x10);\n        if (lVar1 == 0) {\n          iVar9 = -0x1ffffcec;\nLAB_1800142a7:\n          cVar3 = FUN_18001dbc0(1);\n          if (cVar3 != '\\0') {\n            puStack_120 = (undefined8 *)FUN_18008f750(&uStack_88,iVar9);\n            if (0xf < (ulonglong)puStack_120[3]) {\n              puStack_120 = (undefined8 *)*puStack_120;\n            }\n            plVar8 = (longlong *)(param_2 + 0xd0);\n            if (0xf < *(ulonglong *)(param_2 + 0xe8)) {\n              plVar8 = (longlong *)*plVar8;\n            }\n            plVar6 = (longlong *)(param_1 + 0x10);\n            if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n              plVar6 = (longlong *)*plVar6;\n            }\n            uVar5 = FUN_18001db50();\n            plStack_128 = (longlong *)CONCAT44(plStack_128._4_4_,iVar4);\n            uStack_138 = CONCAT44(uStack_138._4_4_,*(undefined4 *)(param_1 + 8));\n            uStack_148 = 0x290;\n            plStack_140 = plVar6;\n            plStack_130 = plVar8;\n            FUN_180015b40(uVar5,1,&DAT_18021c790,&DAT_18021c8f8);\n            if (0xf < uStack_70) {\n              __3_YAXPEAX_Z(CONCAT71(uStack_87,uStack_88));\n            }\n            uStack_70 = 0xf;\n            uStack_78 = 0;\n            uStack_88 = 0;\n          }\n        }\n        else {\n          if (iVar4 < *(int *)(lVar1 + 0x30)) {\n            puVar2 = *(undefined1 **)(*(longlong *)(lVar1 + 0x38) + 8 + (longlong)iVar4 * 8);\n            if (&uStack_c8 != puVar2) {\n              FUN_180006470(&uStack_c8,puVar2,0,0xffffffffffffffff);\n            }\n          }\n          else {\n            iVar9 = -0x1fffffec;\n            if (*(int *)(lVar1 + 0x30) == 0) {\n              iVar9 = -0x1ffffcec;\n            }\n            if (iVar9 != 0) {\n              if ((iVar9 != -0x1ffffcec) && (iVar9 != -0x1ffffce5)) goto LAB_1800141ef;\n              goto LAB_1800142a7;\n            }\n          }\n          uStack_f8 = 0xf;\n          uStack_100 = 0;\n          auStack_110[0] = 0;\n          FUN_180006470(auStack_110,&uStack_c8,0,0xffffffffffffffff);\n          iVar4 = FUN_1800100f0(*(undefined8 *)(param_2 + 0x48),auStack_110);\n          if ((iVar4 != 0) && (cVar3 = FUN_18001dbc0(4), cVar3 != '\\0')) {\n            plStack_128 = (longlong *)FUN_18008f750(&uStack_68,iVar4);\n            if (0xf < (ulonglong)plStack_128[3]) {\n              plStack_128 = (longlong *)*plStack_128;\n            }\n            plVar8 = (longlong *)(param_1 + 0x10);\n            if (0xf < *(ulonglong *)(param_1 + 0x28)) {\n              plVar8 = (longlong *)*plVar8;\n            }\n            plVar6 = (longlong *)FUN_180006450(param_2 + 8);\n            uVar5 = FUN_18001db50();\n            uStack_138 = CONCAT44(uStack_138._4_4_,*(undefined4 *)(param_1 + 8));\n            uStack_148 = 0x29c;\n            plStack_140 = plVar8;\n            plStack_130 = plVar6;\n            FUN_180015b40(uVar5,4,&DAT_18021c7d0,&DAT_18021c8f8);\n            if (0xf < uStack_50) {\n              __3_YAXPEAX_Z(CONCAT71(uStack_67,uStack_68));\n            }\n            uStack_50 = 0xf;\n            uStack_58 = 0;\n            uStack_68 = 0;\n          }\n        }\n      }\n      if (0xf < uStack_b0) {\n        __3_YAXPEAX_Z(CONCAT71(uStack_c7,uStack_c8));\n      }\n      goto LAB_1800145bd;\n    }\n  }\n  cVar3 = FUN_18001dbc0(4);\n  if (cVar3 != '\\0') {\n    if ((DAT_1802b1218 & 1) == 0) {\n      DAT_1802b1218 = DAT_1802b1218 | 1;\n      _DAT_1802b1230 = 1;\n      DAT_1802b1238 = 0;\n      DAT_1802b1240 = 0;\n      uRam00000001802b1248 = 0;\n      DAT_1802b1250 = 0;\n      uRam00000001802b1258 = 0;\n      DAT_1802b1260 = 0;\n      uRam00000001802b1268 = 0;\n      _DAT_1802b1270 = 0;\n      FUN_1801e8930(&DAT_180202850);\n    }\n    uStack_138 = FUN_180006450(param_2 + 8);\n    plStack_140 = (longlong *)CONCAT44(plStack_140._4_4_,*(undefined4 *)(param_2 + 0x98));\n    uStack_148 = 0x2a3;\n    FUN_180015b40(&DAT_1802b1230,4,&DAT_18021c810,&DAT_18021c8f8);\n  }\nLAB_1800145bd:\n  FUN_1801e8810(uStack_48 ^ (ulonglong)auStack_168);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800139f0.asm.txt",
+          "member": "1800139f0",
+          "sha256": "ee50c2cccdd7e4ce1e0c495458579ad4f453d0fc967b39079a434af58a19f5be",
+          "start": 213,
+          "end": 220,
+          "excerpt": "180013d8f\tMOV RAX,qword ptr [RAX + 0x48]\n180013d93\tMOVSS XMM1,dword ptr [RAX + R15*0x4 + 0x8]\n180013d9a\tMOV RCX,qword ptr [RBX + 0x38]\n180013d9e\tCALL 0x18000fd30\n180013da3\tMOV EDI,EAX\n180013da5\tTEST EAX,EAX\n180013da7\tJZ 0x180013f67\n180013dad\tMOV ECX,0x4",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/180013fa0.asm.txt",
+          "member": "180013fa0",
+          "sha256": "ba7ccc4c70de830c01e312741a3206d19b3efbfe8338ccb92b3d259dba3f49f8",
+          "start": 225,
+          "end": 246,
+          "excerpt": "180014374\tMOV RAX,qword ptr [RAX + 0x38]\n180014378\tMOV RDX,qword ptr [RAX + R12*0x8 + 0x8]\n18001437d\tLEA RAX,[RBP + -0x60]\n180014381\tCMP RAX,RDX\n180014384\tJZ 0x180014396\n180014386\tOR R9,-0x1\n18001438a\tXOR R8D,R8D\n18001438d\tLEA RCX,[RBP + -0x60]\n180014391\tCALL 0x180006470\n180014396\tMOV qword ptr [RSP + 0x70],0xf\n18001439f\tMOV qword ptr [RSP + 0x68],RSI\n1800143a4\tMOV byte ptr [RSP + 0x58],0x0\n1800143a9\tOR R9,-0x1\n1800143ad\tXOR R8D,R8D\n1800143b0\tLEA RDX,[RBP + -0x60]\n1800143b4\tLEA RCX,[RSP + 0x58]\n1800143b9\tCALL 0x180006470\n1800143be\tLEA RDX,[RSP + 0x58]\n1800143c3\tMOV RCX,qword ptr [RBX + 0x48]\n1800143c7\tCALL 0x1800100f0\n1800143cc\tMOV EDI,EAX\n1800143ce\tTEST EAX,EAX",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        }
+      ],
+      "unknowns": [
+        "132e0完整索引表达式求值、全数组helper与目标append的底层分配/最后读者未在Group专题闭合。",
+        "空来源、越界、不同失败后的先前累积值与原厂运行结果未做差分。"
+      ]
+    },
+    {
+      "id": "OG06",
+      "classification": "source-confirmed",
+      "stages": [
+        "execute",
+        "retain"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "输出处理失败与DoWork收尾",
+      "to": "分开保存处理错误码、状态码和ModuStatus布尔值",
+      "behavior": "a7830继续遍历描述；在尚未捕获错误时，来源状态分类为3且来源记录存在、其工作状态不在0x75掩码允许集合时，复制该来源错误码与工作状态到本次错误/状态输出。汇编最终MOV EAX,R13D返回累计错误。DoWork收尾以其最终错误寄存器是否0写ModuStatus(index0)，把错误码写this+0x7c、另一个状态码写this+0x84，清this+0x1b8执行中标记，并另发布ModuRunTime。成功布尔、错误码与状态枚举不是一个字段。",
+      "representation": "本次局部错误、本次局部状态、this工作字段及模块输出值分开；返回0不构成所有来源/消费者都成功的证明。",
+      "cache": "失败体未见统一回滚前面已追加输出，不能以最终ModuStatus=false画成累积数据全部撤销。",
+      "release": "收尾状态写入不等于结果仓销毁；本次描述节点退役见OG07。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a7830.c",
+          "member": "1800a7830",
+          "sha256": "3bd9f5fa3bc1a046ead4da2991ae1ffcd3cbc5c362a6aab3784f5e38fea84a8a",
+          "start": 318,
+          "end": 341,
+          "excerpt": "        if (((*(int *)(puVar3 + 0x15) == 3) && (lVar4 = puVar3[0x2e], lVar4 != 0)) &&\n           ((uVar1 = *(uint *)(lVar4 + 0x84), 6 < uVar1 || ((0x75U >> (uVar1 & 0x1f) & 1) == 0)))) {\n          iVar7 = *(int *)(lVar4 + 0x7c);\n          *puStack_150 = uVar1;\n          iStack_168 = iVar7;\n          cVar6 = FUN_18001dbc0(2);\n          if (cVar6 != '\\0') {\n            if (0xf < (ulonglong)puVar3[6]) {\n              plVar12 = (longlong *)*plVar12;\n            }\n            uVar10 = FUN_18001db50();\n            puStack_170 = (undefined8 *)CONCAT44(puStack_170._4_4_,iVar7);\n            plStack_178 = (longlong *)CONCAT44(plStack_178._4_4_,uVar1);\n            uStack_188 = CONCAT44(uStack_188._4_4_,uStack_158);\n            uStack_190 = *(undefined4 *)(param_1 + 0x2c);\n            uStack_198 = 0x631;\n            plStack_180 = plVar12;\n            FUN_180015b40(uVar10,2,&DAT_180228500,&DAT_180228260);\n          }\n        }\n      }\n    }\n    puVar3 = (undefined8 *)*puVar3;\n  } while( true );",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a7830.asm.txt",
+          "member": "1800a7830",
+          "sha256": "cf07047391979296bf148735f0fce4a65cd79f90cb01b193f7bb683f59ccc8bf",
+          "start": 467,
+          "end": 471,
+          "excerpt": "1800a7ff1\tMOV EAX,R13D\n1800a7ff4\tMOV RCX,qword ptr [RBP + 0x78]\n1800a7ff8\tXOR RCX,RSP\n1800a7ffb\tCALL 0x1801e8810\n1800a8000\tMOV RBX,qword ptr [RSP + 0x1c8]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+          "member": "1800a0930",
+          "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+          "start": 1264,
+          "end": 1285,
+          "excerpt": "1800a1e95\tTEST R14D,R14D\n1800a1e98\tSETZ R13B\n1800a1e9c\tMOV R9D,R13D\n1800a1e9f\tXOR R8D,R8D\n1800a1ea2\tLEA RDX,[0x180227678]\n1800a1ea9\tLEA RCX,[RBP + 0xd0]\n1800a1eb0\tCALL 0x180130e40\n1800a1eb5\tXOR EDX,EDX\n1800a1eb7\tMOV RCX,RSI\n1800a1eba\tCALL 0x18001e4e0\n1800a1ebf\tMOV dword ptr [RSI + 0x7c],R14D\n1800a1ec3\tMOV dword ptr [RSI + 0x84],R15D\n1800a1eca\tMOV byte ptr [RSI + 0x1b8],0x0\n1800a1ed1\tLEA RCX,[RBP + -0x8]\n1800a1ed5\tCALL qword ptr [0x180204070]\n1800a1edb\tTEST EAX,EAX\n1800a1edd\tJZ 0x1800a1f0a\n1800a1edf\tLEA RCX,[RBP + -0x18]\n1800a1ee3\tCALL qword ptr [0x180204068]\n1800a1ee9\tTEST EAX,EAX\n1800a1eeb\tJZ 0x1800a1f0a\n1800a1eed\tXORPS XMM9,XMM9",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.c",
+          "member": "1800a0930",
+          "sha256": "9b3e07a727a4a87b79aab42f52a57733976f4b4dad193539af056b778b581c1b",
+          "start": 1093,
+          "end": 1109,
+          "excerpt": "  VM_M_SetInt(&uStack_198,&DAT_180227678,0,iVar17 == 0);\n  FUN_18001e4e0(param_1,0);\n  *(int *)(param_1 + 0x7c) = iVar17;\n  *(undefined4 *)(param_1 + 0x84) = uVar23;\n  *(undefined1 *)(param_1 + 0x1b8) = 0;\n  iVar15 = QueryPerformanceFrequency(&lStack_270);\n  dVar9 = 0.0;\n  if ((iVar15 != 0) && (iVar15 = QueryPerformanceCounter(&lStack_280), dVar9 = 0.0, iVar15 != 0)) {\n    dVar9 = ((double)lStack_280 / (double)lStack_270) * dVar13;\n  }\n  fVar24 = (float)(dVar9 - dVar10);\n  VM_M_SetFloat(&uStack_198,&DAT_180227668,0,fVar24);\n  if (bVar11) {\n    if ((DAT_1802b2f70 & 1) == 0) {\n      DAT_1802b2f70 = DAT_1802b2f70 | 1;\n      FUN_180093820();\n      FUN_1801e8930(FUN_180202e40);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/selected-strings.json",
+          "member": "Original PE selected data strings",
+          "sha256": "154864ef93eefc34acd9e77eaa2f4b031872f6d36cc540df232aea549ce9ddd4",
+          "start": 2,
+          "end": 37,
+          "excerpt": "  \"sha256\": \"45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b\",\n  \"strings\": [\n    {\n      \"rva\": \"0x227688\",\n      \"text\": \"StartIndex\"\n    },\n    {\n      \"rva\": \"0x227748\",\n      \"text\": \"EndIndex\"\n    },\n    {\n      \"rva\": \"0x227738\",\n      \"text\": \"LoopIndex\"\n    },\n    {\n      \"rva\": \"0x227678\",\n      \"text\": \"ModuStatus\"\n    },\n    {\n      \"rva\": \"0x227668\",\n      \"text\": \"ModuRunTime\"\n    },\n    {\n      \"rva\": \"0x227a34\",\n      \"text\": \"input\"\n    },\n    {\n      \"rva\": \"0x227d90\",\n      \"text\": \"CGroupNode::IsBreakLoop\"\n    },\n    {\n      \"rva\": \"0x228260\",\n      \"text\": \"CGroupNode::ProcessGroupOutputV44\"\n    }\n  ]\n}",
+          "evidenceType": "offline original PE bytes, revalidated",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b"
+        }
+      ],
+      "unknowns": [
+        "所有上游失败映射、mask中每个状态的名称、异常与取消的全路径未枚举；不由数值猜业务枚举语义。"
+      ]
+    },
+    {
+      "id": "OG07",
+      "classification": "source-confirmed",
+      "stages": [
+        "retire"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "DoWork正常退出的本次描述链表",
+      "to": "退役临时节点与shared持有，结果最后读者仍未知",
+      "behavior": "DoWork收尾把本次输出链表头复位，逐节点调用a77a0(节点+0xa8)与a03a0(节点+0x18)，operator delete节点，最后delete链表头。a77a0与a03a0对各shared控制块真实LOCK递减强计数，仅强归零调用虚槽0，再递减弱计数，弱归零调用虚槽+8；a77a0还清文本。节点及符合capacity条件的临时文本有直接delete证据，不能把局部shared撤销写成所有结果payload立即释放。",
+      "representation": "本次输出订阅描述、shared控制块、typed目标/源载荷、仍可被模块仓或消费者持有的结果分别退役。",
+      "cache": "本次列表清除只撤销列表持有；前轮累积结果与其它仓库缓存可能仍存。",
+      "release": "节点/链表头直接delete已证；具体shared动态析构接收者和结果最后读者未在本专题定位，不冒全局无泄漏。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.c",
+          "member": "1800a0930",
+          "sha256": "9b3e07a727a4a87b79aab42f52a57733976f4b4dad193539af056b778b581c1b",
+          "start": 1148,
+          "end": 1169,
+          "excerpt": "  plVar22 = (longlong *)*plStack_2d0;\n  *plStack_2d0 = (longlong)plStack_2d0;\n  plStack_2d0[1] = (longlong)plStack_2d0;\n  iStack_2ec = uVar23;\n  if (plVar22 != plStack_2d0) {\n    do {\n      plVar4 = (longlong *)*plVar22;\n      FUN_1800a77a0(plVar22 + 0x15);\n      FUN_1800a03a0(plVar22 + 3);\n      __3_YAXPEAX_Z(plVar22);\n      plVar22 = plVar4;\n    } while (plVar4 != plStack_2d0);\n  }\n  __3_YAXPEAX_Z(plStack_2d0);\nLAB_1800a20e9:\n  iVar15 = _Mtx_unlock(lStack_260);\n  if (iVar15 != 0) {\n    __Throw_C_error_std__YAXH_Z(iVar15);\n  }\n  FUN_1801e8810(uStack_a8 ^ (ulonglong)auStack_368);\n  return;\n}",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a77a0.c",
+          "member": "1800a77a0",
+          "sha256": "a0c9d7befb443f31714800f56932ecb19ce564cbf42daa9552d879cead526fa1",
+          "start": 2,
+          "end": 37,
+          "excerpt": "void FUN_1800a77a0(longlong param_1)\n\n{\n  longlong *plVar1;\n  int *piVar2;\n  longlong *plVar3;\n  \n  FUN_1800a03a0(param_1 + 0xe0);\n  plVar3 = *(longlong **)(param_1 + 0xd0);\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  FUN_1800a03a0(param_1 + 0x38);\n  if (0xf < *(ulonglong *)(param_1 + 0x30)) {\n    __3_YAXPEAX_Z(*(undefined8 *)(param_1 + 0x18));\n  }\n  *(undefined8 *)(param_1 + 0x30) = 0xf;\n  *(undefined8 *)(param_1 + 0x28) = 0;\n  *(undefined1 *)(param_1 + 0x18) = 0;\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a03a0.c",
+          "member": "1800a03a0",
+          "sha256": "51b618ce3be710399e0cc39179377fc94761b7c1da668873c6477bbcfe93d562",
+          "start": 2,
+          "end": 137,
+          "excerpt": "void FUN_1800a03a0(undefined8 *param_1)\n\n{\n  longlong *plVar1;\n  int *piVar2;\n  longlong *plVar3;\n  \n  plVar3 = (longlong *)param_1[0x11];\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  plVar3 = (longlong *)param_1[0xf];\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  plVar3 = (longlong *)param_1[0xd];\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  plVar3 = (longlong *)param_1[0xb];\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  plVar3 = (longlong *)param_1[9];\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  plVar3 = (longlong *)param_1[7];\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  plVar3 = (longlong *)param_1[5];\n  if (plVar3 != (longlong *)0x0) {\n    LOCK();\n    plVar1 = plVar3 + 1;\n    *(int *)plVar1 = (int)*plVar1 + -1;\n    UNLOCK();\n    if ((int)*plVar1 == 0) {\n      (**(code **)*plVar3)(plVar3);\n      LOCK();\n      piVar2 = (int *)((longlong)plVar3 + 0xc);\n      *piVar2 = *piVar2 + -1;\n      UNLOCK();\n      if (*piVar2 == 0) {\n        (**(code **)(*plVar3 + 8))(plVar3);\n      }\n    }\n  }\n  if (0xf < (ulonglong)param_1[3]) {\n    __3_YAXPEAX_Z(*param_1);\n  }\n  param_1[3] = 0xf;\n  param_1[2] = 0;\n  *(undefined1 *)param_1 = 0;\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/group-original-data.resources/1800a77a0.asm.txt",
+          "member": "1800a77a0",
+          "sha256": "e6704cd2ce53b7dc6e842b471f2d2197dad02604c93c216cf97d243d98b69368",
+          "start": 1,
+          "end": 35,
+          "excerpt": "1800a77a0\tPUSH RBX\n1800a77a2\tSUB RSP,0x20\n1800a77a6\tMOV RBX,RCX\n1800a77a9\tADD RCX,0xe0\n1800a77b0\tMOV qword ptr [RSP + 0x38],RDI\n1800a77b5\tCALL 0x1800a03a0\n1800a77ba\tMOV RDI,qword ptr [RBX + 0xd0]\n1800a77c1\tTEST RDI,RDI\n1800a77c4\tJZ 0x1800a77ed\n1800a77c6\tDEC.LOCK dword ptr [RDI + 0x8]\n1800a77ca\tMOV qword ptr [RSP + 0x30],RSI\n1800a77cf\tJNZ 0x1800a77e8\n1800a77d1\tMOV RAX,qword ptr [RDI]\n1800a77d4\tMOV RCX,RDI\n1800a77d7\tCALL qword ptr [RAX]\n1800a77d9\tDEC.LOCK dword ptr [RDI + 0xc]\n1800a77dd\tJNZ 0x1800a77e8\n1800a77df\tMOV RAX,qword ptr [RDI]\n1800a77e2\tMOV RCX,RDI\n1800a77e5\tCALL qword ptr [RAX + 0x8]\n1800a77e8\tMOV RSI,qword ptr [RSP + 0x30]\n1800a77ed\tLEA RCX,[RBX + 0x38]\n1800a77f1\tCALL 0x1800a03a0\n1800a77f6\tCMP qword ptr [RBX + 0x30],0x10\n1800a77fb\tMOV RDI,qword ptr [RSP + 0x38]\n1800a7800\tJC 0x1800a780c\n1800a7802\tMOV RCX,qword ptr [RBX + 0x18]\n1800a7806\tCALL qword ptr [0x180204580]\n1800a780c\tMOV qword ptr [RBX + 0x30],0xf\n1800a7814\tMOV qword ptr [RBX + 0x28],0x0\n1800a781c\tMOV byte ptr [RBX + 0x18],0x0\n1800a7820\tADD RSP,0x20\n1800a7824\tPOP RBX\n1800a7825\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+          "provider": "copied owned offline Ghidra project; not REA retained Evidence"
+        }
+      ],
+      "unknowns": [
+        "typed结果载荷最终free、异常栈展开与并发最后读者未知；正常收尾不是所有异常必清理证明。"
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "prepare",
+      "title": "准备输入与输出描述",
+      "summary": "循环前准备一次输入与本次输出描述；值复制合同按具体helper保留边界。",
+      "factIds": [
+        "OG01"
+      ]
+    },
+    {
+      "id": "round",
+      "title": "发布本轮索引并检查中断",
+      "summary": "Start/End/LoopIndex写第0项，break门先于执行。",
+      "factIds": [
+        "OG02",
+        "OG03"
+      ]
+    },
+    {
+      "id": "execute",
+      "title": "执行并记录错误/状态",
+      "summary": "只连已核虚调用和输出处理实参，不能补成完整子调度器。",
+      "factIds": [
+        "OG04",
+        "OG06"
+      ]
+    },
+    {
+      "id": "retain",
+      "title": "按描述模式保留或更新结果",
+      "summary": "类型分派、前置虚槽与按索引追加分开；图像及全部数组保留未知。",
+      "factIds": [
+        "OG04",
+        "OG05",
+        "OG06"
+      ]
+    },
+    {
+      "id": "retire",
+      "title": "撤销本次描述持有",
+      "summary": "节点delete与shared条件退役已见，结果最后读者未闭合。",
+      "factIds": [
+        "OG07"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "OGU01",
+      "target": "typed input/output target binding and dynamic execution receiver",
+      "question": "12dcb0、输入typed helper和虚执行对象具体调度未在本切片补全；不把每轮输入视为深快照。"
+    },
+    {
+      "id": "OGU02",
+      "target": "all output families and final payload retirement",
+      "question": "普通int/float/string索引复制分支已见；图像/复合、全数组、溢出、异常、取消和最后读者仍未知。"
+    }
+  ],
+  "provenance": {
+    "original": {
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+      "sha256": "45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+      "byteLength": 2931200
+    },
+    "methods": [
+      {
+        "address": "1800a0930",
+        "name": "FUN_1800a0930",
+        "bodyBytes": 6180,
+        "decompiled": true
+      },
+      {
+        "address": "1800a55b0",
+        "name": "FUN_1800a55b0",
+        "bodyBytes": 2112,
+        "decompiled": true
+      },
+      {
+        "address": "1800a7830",
+        "name": "FUN_1800a7830",
+        "bodyBytes": 2027,
+        "decompiled": true
+      },
+      {
+        "address": "1800a7190",
+        "name": "FUN_1800a7190",
+        "bodyBytes": 769,
+        "decompiled": true
+      },
+      {
+        "address": "1800a4a00",
+        "name": "FUN_1800a4a00",
+        "bodyBytes": 141,
+        "decompiled": true
+      },
+      {
+        "address": "1800a74c0",
+        "name": "FUN_1800a74c0",
+        "bodyBytes": 673,
+        "decompiled": true
+      },
+      {
+        "address": "1800a53a0",
+        "name": "FUN_1800a53a0",
+        "bodyBytes": 513,
+        "decompiled": true
+      },
+      {
+        "address": "180013450",
+        "name": "FUN_180013450",
+        "bodyBytes": 1426,
+        "decompiled": true
+      },
+      {
+        "address": "1800139f0",
+        "name": "FUN_1800139f0",
+        "bodyBytes": 1445,
+        "decompiled": true
+      },
+      {
+        "address": "180013fa0",
+        "name": "FUN_180013fa0",
+        "bodyBytes": 1604,
+        "decompiled": true
+      },
+      {
+        "address": "1800a77a0",
+        "name": "FUN_1800a77a0",
+        "bodyBytes": 134,
+        "decompiled": true
+      },
+      {
+        "address": "1800a03a0",
+        "name": "FUN_1800a03a0",
+        "bodyBytes": 338,
+        "decompiled": true
+      },
+      {
+        "address": "1800f3ee0",
+        "name": "FUN_1800f3ee0",
+        "bodyBytes": 143,
+        "decompiled": true
+      },
+      {
+        "address": "1800a6730",
+        "name": "FUN_1800a6730",
+        "bodyBytes": 2241,
+        "decompiled": true
+      },
+      {
+        "address": "1800a4a90",
+        "name": "FUN_1800a4a90",
+        "bodyBytes": 2240,
+        "decompiled": true
+      },
+      {
+        "address": "18012e200",
+        "name": "FUN_18012e200",
+        "bodyBytes": 3089,
+        "decompiled": true
+      }
+    ],
+    "selectedProcedures": 16,
+    "completions": [
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-loop-output.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T13:35:53.5737968Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-input-typed-copy.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T13:36:19.4258436Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-lifecycle-input.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T13:38:44.4570054Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-output-descriptor-binding.json",
+        "exitCode": 0,
+        "finishedUtc": "2026-10-21T13:39:32.5901047Z",
+        "vendorExecuted": false,
+        "liveProcessHandle": null
+      }
+    ],
+    "files": [
+      {
+        "path": "tests/ArchitectureRecovery/Recover-GroupOriginalData.ps1",
+        "sha256": "18f7af950f9037314261dbcdcb7ff9f9c272a1f733383093790ff53c7b5ec8c5",
+        "byteLength": 2637
+      },
+      {
+        "path": "tests/NativeEvidence/VmNativeCapability.java",
+        "sha256": "3f8146857fed4c06c4fbb94a3cbc35a0aacd971a6d8c2a6fc73f1fcd5a177f83",
+        "byteLength": 2377
+      },
+      {
+        "path": "tests/ArchitectureRecovery/native-pe-inspection.cjs",
+        "sha256": "f933371d4a0b9c66de0dc977c1e8f8f95749689c6d247027fa5f52b2262af5f9",
+        "byteLength": 2058
+      },
+      {
+        "path": ".tools/native-analysis/jdk-21.0.12.1+1/bin/java.exe",
+        "sha256": "82051fdab26319d77d20cc0065045d05ec00b3e3d05f44935d7c06b96b621d55",
+        "byteLength": 50304
+      },
+      {
+        "path": ".tools/native-analysis/ghidra_12.1.4_PUBLIC/Ghidra/Framework/Utility/lib/Utility.jar",
+        "sha256": "bb42a14285530c7d41373e1d130677bd2b90b34f32aedba5042f23663d652c7e",
+        "byteLength": 155933
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/180013450.asm.txt",
+        "sha256": "b97d8c0838e3a5983044d10fd03c45e8d2363a0e26a282b7fbc3471dfdbb955e",
+        "byteLength": 9624
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/180013450.c",
+        "sha256": "5a5bf6d1d40eb82a2dc026c0b3b73bfaa3dde86a15a4b142c5a958cb435f3eae",
+        "byteLength": 7905
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800139f0.asm.txt",
+        "sha256": "ee50c2cccdd7e4ce1e0c495458579ad4f453d0fc967b39079a434af58a19f5be",
+        "byteLength": 9677
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800139f0.c",
+        "sha256": "bb8c437bcffd58cd14cc2e5583ee2640fcdbbd53482b425b6f5934423f6220cc",
+        "byteLength": 8019
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/180013fa0.asm.txt",
+        "sha256": "ba7ccc4c70de830c01e312741a3206d19b3efbfe8338ccb92b3d259dba3f49f8",
+        "byteLength": 10974
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/180013fa0.c",
+        "sha256": "e5706c06dbc03a1a30d9eefd1670515930be5c1b26142605cdfb9fe0fa163ea2",
+        "byteLength": 9461
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a03a0.asm.txt",
+        "sha256": "8c69257e9cca5c3b98ec4b6d8840842a144e155fcc5f3310ce6a9fa2e80be4e7",
+        "byteLength": 3358
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a03a0.c",
+        "sha256": "51b618ce3be710399e0cc39179377fc94761b7c1da668873c6477bbcfe93d562",
+        "byteLength": 3352
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.asm.txt",
+        "sha256": "c45abb8f997fbb9174c3029b8642c444abdd7921ba06ca2ef22e87f54342070b",
+        "byteLength": 44972
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a0930.c",
+        "sha256": "9b3e07a727a4a87b79aab42f52a57733976f4b4dad193539af056b778b581c1b",
+        "byteLength": 40095
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a4a00.asm.txt",
+        "sha256": "b81af5e09958372f92dee78e7ae1f1b70d0debd29a7d292bde0828cc64f0a6f4",
+        "byteLength": 976
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a4a00.c",
+        "sha256": "02397ef041893d3dbbb07a9d7dc7290d8831d4d6665a7a8d49b377a25906f010",
+        "byteLength": 668
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a4a90.asm.txt",
+        "sha256": "7eb2a73362795dd1711c45ca4b7a6c8ec9461ae0a86c7775b98c8173a4857b1a",
+        "byteLength": 15531
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a4a90.c",
+        "sha256": "5a26618716273629b487d3d23cc00dcf2b2679a0a85d2dcb662953f5ef02eb93",
+        "byteLength": 12204
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a53a0.asm.txt",
+        "sha256": "e79be94db9cbe7ee2b5435e7b38b7d55d0052df732e1a4af95178bab01fa0ccb",
+        "byteLength": 3530
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a53a0.c",
+        "sha256": "b65c99d6492a8375fa30de575419dcfd40fb20d0519012b9d1385af0a80cbbf0",
+        "byteLength": 2401
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a55b0.asm.txt",
+        "sha256": "2821ba88ce743a75740ba857ab31e207a1a94e2f2d00cfd4970bd32260374e28",
+        "byteLength": 15688
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a55b0.c",
+        "sha256": "b108d7d54f747ea647eaf8e0752b70948ad3cd2e946f7dde42cab057ddfafe19",
+        "byteLength": 13174
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a6730.asm.txt",
+        "sha256": "91618f9ab60d29bbe3238d89923940c65b4268a41f61b6ec2eca97f851d77a5b",
+        "byteLength": 18777
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a6730.c",
+        "sha256": "b769fd97968730eae69ed83c7469d3d40c0c4e99cbf1c71f240104b88f8072e6",
+        "byteLength": 13162
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a7190.asm.txt",
+        "sha256": "46149100cdc35e16e77c432bb6da292646fc86fd4c8052eac9afcc2dec757d2c",
+        "byteLength": 6501
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a7190.c",
+        "sha256": "f1b789279be163bf67fd641db4ab5a1d16146426afabf27729e26b7b8a75c00d",
+        "byteLength": 5215
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a74c0.asm.txt",
+        "sha256": "5bcdc4cef12ebfae6fd32f6de41da2e538e2291f4ae63676f560de06219d635e",
+        "byteLength": 4866
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a74c0.c",
+        "sha256": "0331eb65752f5223421a799d94e1ac36993a7444d9754f2d2b2c11b1d8b19eda",
+        "byteLength": 4176
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a77a0.asm.txt",
+        "sha256": "e6704cd2ce53b7dc6e842b471f2d2197dad02604c93c216cf97d243d98b69368",
+        "byteLength": 1063
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a77a0.c",
+        "sha256": "a0c9d7befb443f31714800f56932ecb19ce564cbf42daa9552d879cead526fa1",
+        "byteLength": 865
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a7830.asm.txt",
+        "sha256": "cf07047391979296bf148735f0fce4a65cd79f90cb01b193f7bb683f59ccc8bf",
+        "byteLength": 14865
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800a7830.c",
+        "sha256": "3bd9f5fa3bc1a046ead4da2991ae1ffcd3cbc5c362a6aab3784f5e38fea84a8a",
+        "byteLength": 11493
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800f3ee0.asm.txt",
+        "sha256": "00e794e91bab30a3d2f0411f2d421c09ab812a12c10baceeaaf9c5d31d41e1df",
+        "byteLength": 1288
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/1800f3ee0.c",
+        "sha256": "75f7bac57dfd83070727e811865c4f3f44bdbaede6366ea288ab91cb9c4bfd73",
+        "byteLength": 814
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/18012e200.asm.txt",
+        "sha256": "f228225f928ad65b44fc3b1a90f6c97538459ac79aa3d24800dec5f5ec59a154",
+        "byteLength": 23215
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/18012e200.c",
+        "sha256": "5ec2b5e0ad4e444dc84b8e23ba0d1b61a357f6436b466acf6a240b428e57d947",
+        "byteLength": 23805
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-input-typed-copy.json",
+        "sha256": "0b8882edd6a36b97aca27616ffcc57542d60d1b47944adcbc95d20e1db3f2ace",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-lifecycle-input.json",
+        "sha256": "c45a1800bb76248b76d42c0b7d40798bb2f4435a2d164914d71985350b32f179",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-loop-output.json",
+        "sha256": "fa6c20962c8d849bee9e0a683f602751443ad850460caf96c4b26e77d1545c39",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/completion-output-descriptor-binding.json",
+        "sha256": "71e6b15ff561862d626e6a1ebf6424d609b4779998c03c8766962ac8f5dbabc9",
+        "byteLength": 146
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/functions-1792589753278.tsv",
+        "sha256": "3bf346c5016ed4be4ee6b5a291776ab5dfde652da080bec2fc102c06ba5104f1",
+        "byteLength": 972
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/functions-1792589779198.tsv",
+        "sha256": "4e75851c5aa85cd267380467c0e1bb31fc6d050f9b1f2c4a05334a841d11b52e",
+        "byteLength": 874
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/functions-1792589924199.tsv",
+        "sha256": "98569dd9a24abc8c63173b18a97c5626a0232cb54e597109acee4dd2d146d958",
+        "byteLength": 644
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/functions-1792589972320.tsv",
+        "sha256": "a9d78354a679d4916972a9b458db36163e3affa74a2300a4961029be9165b88e",
+        "byteLength": 375
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/invocation-input-typed-copy.json",
+        "sha256": "06d3dd6a0f3b66f34e5b4f284619a7423e0160819cfb3c9ebce6d087c22013c1",
+        "byteLength": 2811
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/invocation-lifecycle-input.json",
+        "sha256": "8e05db409f1be08911d1b388d832e1a7dddf735e43967c7eb23d7a01e1cc677f",
+        "byteLength": 2775
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/invocation-loop-output.json",
+        "sha256": "3c24d443af18e84748f6158db1399430fdc661a93246587425e401f81ce3eb1a",
+        "byteLength": 2739
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/invocation-output-descriptor-binding.json",
+        "sha256": "6ceed3aadbb1e52374fab8d9aefda671bb47083e5bcb21281d7701b8e50fdc53",
+        "byteLength": 2631
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/pe-layout.json",
+        "sha256": "db3ce557aa56a0ac9d65d9f96ca65b4382bf11aca417dcd21c1345ca7a564176",
+        "byteLength": 82351
+      },
+      {
+        "path": "docs/architecture-recovery/group-original-data.resources/selected-strings.json",
+        "sha256": "154864ef93eefc34acd9e77eaa2f4b031872f6d36cc540df232aea549ce9ddd4",
+        "byteLength": 650
+      }
+    ],
+    "sourceProvider": "copied owned offline Ghidra project -process -noanalysis; REA provider unavailable previously confirmed; not REA retained Evidence",
+    "priorContext": [
+      "docs/architecture-recovery/group-control.edges.json",
+      "analysis/full-audit/group-native-audit/group-run.c",
+      "analysis/full-audit/group-native-audit/break.c",
+      "analysis/full-audit/group-native-audit/prepare-output-native.txt"
+    ],
+    "loggingWarning": "Ghidra logging XML warning was observed; only actual nonempty C/assembly outputs plus decompiled=true TSV rows and terminal-zero completions are admitted.",
+    "decompilerReturnBoundary": "Several fresh pseudocode declarations show void despite observed caller TEST AL/EAX; selected assembly call/return registers are cited and no missing return is inferred from C signatures.",
+    "liveProcessHandle": null,
+    "wholeBinaryAnalysisComplete": false,
+    "originalRuntimeExecuted": false,
+    "targetCodeExecuted": false,
+    "deviceCalled": false,
+    "productModified": false,
+    "fullOriginalChainClosed": false,
+    "browserRendered": false,
+    "implementationCredit": 0
+  }
+}

@@ -1,0 +1,1489 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>逐插件逆向任务表</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/CHECKLIST.md">下载原始文件</a></nav><main><h1 id="逐插件逆向任务表">逐插件逆向任务表</h1><blockquote>
+<p>当前最高优先级已调整为<a href="../PLUGIN-FRAMEWORK-CHECKLIST.html">插件与节点公共框架逆向清单</a> PF-001～014。配置模型、公共契约、模板、订阅/执行/ROI/宿主桥接也是本项目的正式开发任务，并与主框架同步；不是仅提交接口请求等待外线实现。下面162项插件声明清单保留，插件 UI 交付必须通过新公共框架迁移和人工验收。旧的“代码范围已实现”仅描述历史算法/代码节点，不代表本轮配置架构闭合。</p>
+</blockquote>
+<blockquote>
+<p>最新双项目边界见 <a href="../PLUGIN-DEVELOPMENT-BOUNDARY.html">职责与任务配套表</a>：本线独占工具及其必需节点框架；主项目负责工具无关的主界面/流程/画布/Group/生命周期与最终集成，由用户自行管控。每个启用的插件任务必须补“原厂证据 + 公共框架 PF 能力 + 主框架接口/单一交叉文件提交所有者 + 实际产品验收”四栏；当前在制工具对应关系已在配套表登记。下方162项是声明清单，未启动项不因表格存在而算任务已配齐或已实现。</p>
+</blockquote>
+<p>当前四条独立工具开发线（2026-10-18）：标定板标定、相机映射、畸变标定、映射标定（主控同时统一公共框架）。标定板和相机映射优先闭合，坐标系最后；不是单个工具的四个子任务。N点/N图像的本轮公共显示、点绑定与生产接线已获用户手动验收并提交推送 5128b37fb5fe576a49acabd8fe4259219750533c；已有数值及原生边界继续保留，不因阶段验收宣称完整等价。</p>
+<p>机器可读完整声明、二进制身份、依赖声明和证据索引见 <a href="../../../plugins/inventory.json">inventory.json</a>。P0 图像源先完成；2026-10-17按用户要求将标定类10个工具提升至P1，优先于尚未开始的输出图像；P2 暂未开始，不表示已确定最终实施顺序。涉及流程和全局资源的插件先与框架线明确归属。</p>
+<p>当前后续开发优先标定类。用户指定 <strong>N点标定（IMVSNPointCalibModu）、N图像标定（IMVSNImageCalibModu）为最高优先级</strong>，按此顺序逐个推进；<strong>坐标系（CoordinateModule）放在标定类最后</strong>。其余标定工具顺序随实际依赖确认，不把表格顺序当作已确认源码依赖。先核查源码、资源和原厂受控运行，再实现与验证；仍逐个工具闭合，不做设备测试，必要共享调整由插件线在本worktree完成。</p>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>类别</th>
+<th>插件</th>
+<th>名称</th>
+<th>参数/输入/输出</th>
+<th>UI类型</th>
+<th>逆向状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>P0</td>
+<td>Collection</td>
+<td>ImageSourceModule</td>
+<td>图像源</td>
+<td>23/5/11</td>
+<td>Boolean, BooleanTips, ButtonSelecter, ButtonSelecter_ImageList, Enumeration, EnumerationCameraForImage, Integer, OpenFolderDialog</td>
+<td>实机取帧/参数/计数/恢复、JPEG边界、RGB、SDK、过滤、目录监听与内嵌已有原厂对照；767插件/242 WPF/460其他回归通过；待用户协助原厂桌面弹层/远程环境，明确覆盖限制，不标记完整等价</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Collection</td>
+<td>ImageAcquisitionModule</td>
+<td>多图采集</td>
+<td>7/0/6</td>
+<td>Enumeration, EnumerationCameraForAcq, ImageConfig, Integer, OpenFileForAcquisition</td>
+<td>代码范围已实现：源码/资源、双模式SDK UI与用户相机桌面图、循环/恢复/内嵌重载、逐图配置、748字节光源边界及8路宿主预览；设备测试依用户要求排除；全场景原生等价不作断言</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Collection</td>
+<td>ImageBufferModule</td>
+<td>缓存图像</td>
+<td>0/3/17</td>
+<td>ButtonSelecter</td>
+<td>代码范围已实现：原生FIFO/边界/混存/格式/恢复、55组逐像素序列及无输入对照、原厂完整SDK参数区、整数常量与15路宿主预览；不做设备测试，不宣称原厂全部共享弹层/线程时序等价</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Collection</td>
+<td>LightModule</td>
+<td>光源</td>
+<td>32/7/26</td>
+<td>Boolean, ButtonSelecter, Enumeration, EnumerationLightForLight, Integer, RadioSelecter</td>
+<td>代码范围已实现：源码/资源、246组受控原厂运行、24张SDK界面、8通道748字节命令与暂存/失败语义；设备测试排除，全局管理服务及原生等价边界见LIGHT.md</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Collection</td>
+<td>SaveImage</td>
+<td>输出图像</td>
+<td>44/8/8</td>
+<td>AddList_SaveImage, Boolean, Boolean_SaveImage, ButtonSelecter, ColorConfigEx, Enumeration, Float, Integer, IPString, OpenFolderDialogEx, PasswordString, String, StringImgName_Selecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>CalculatorModule</td>
+<td>变量计算</td>
+<td>0/0/4</td>
+<td>ButtonSelecter_CalculatorPro, Command</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>CoordinateTransform</td>
+<td>坐标转换</td>
+<td>1/4/3</td>
+<td>Boolean, ButtonSelecter, RadioSelecter, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>IMVSCalibTransformModu</td>
+<td>标定转换</td>
+<td>2/5/12</td>
+<td>ButtonSelecter, Enumeration, ImageViewConfig, OpenFileForCalibDialog, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>IMVSLineAlignModu</td>
+<td>线对位</td>
+<td>3/32/5</td>
+<td>AddButton_LinePair, Enumeration, LinePair, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>IMVSMultiPointAlignModu</td>
+<td>点集对位</td>
+<td>2/16/5</td>
+<td>AddButton_PointPair, PointPair, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>IMVSRotateCalculateModu</td>
+<td>旋转计算</td>
+<td>1/5/7</td>
+<td>ButtonSelecter, ImageViewConfig, RadioSelecter, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>IMVSScaleTransformModu</td>
+<td>单位转换</td>
+<td>1/4/11</td>
+<td>ButtonSelecter, OpenFileForCalibDialog</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>IMVSSinglePointAlignModu</td>
+<td>单点对位</td>
+<td>0/4/5</td>
+<td>PointPair, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>SinglePointGrabModu</td>
+<td>单点抓取</td>
+<td>4/9/10</td>
+<td>Boolean, ButtonSelecter, Command, Enumeration, OpenFileForCalibDialog, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>SinglePointMapAlignModu</td>
+<td>单点映射对位</td>
+<td>2/10/8</td>
+<td>ButtonSelecter, OpenFileForCalibDialog, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Calculation</td>
+<td>SinglePointRectifyModu</td>
+<td>单点纠偏</td>
+<td>4/9/10</td>
+<td>Boolean, ButtonSelecter, Command, Enumeration, OpenFileForCalibDialog, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>IMVSNPointCalibModu</td>
+<td>N点标定</td>
+<td>6/6/28</td>
+<td>Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Expand, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog, String</td>
+<td>代码范围已实现：原厂源码/资源、103条导出方法/23状态场景/33次文件调用与27XML、10组UI规则和点表取证；独立求解/状态/UI/共享接口，22程序32088检查；数值等优/病态与单组Huber差异、桌面/WinForms截图边界见N-POINT-CALIBRATION.md，不宣称全部原生等价</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>IMVSNImageCalibModu</td>
+<td>N图像标定</td>
+<td>3/5/33</td>
+<td>Boolean, ButtonSelecter, Command, Enumeration, EnumerationG, Float, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog</td>
+<td>生产接线与验收准备：原厂三页XML、HIK编码板真实像素识别、9图168公共角点、RGB/Mono及17帧生产63项、文件/标量229项；共用配置/点别名/显示已接入实际宿主；完整float逆已消除三旋转文件微差（9/9文件、81/81板矩阵float位一致，229项原厂输出/文件行为），本轮人工验收通过并提交5128b37，数值/原生边界仍保留</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>IMVSCalibBoardCalibModu</td>
+<td>标定板标定</td>
+<td>16/1/16</td>
+<td>Boolean, Enumeration, EnumerationG, Expand, Float, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, ROISelecter, SaveFileDialog</td>
+<td>并行实现与取证：原厂SDK/模块状态、文件、公共对象显示2162检查；原厂80点共享求解失败已修复；外置ROI会话、圆点低对比及亚像素差异仍开放</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>IMVSCameraMapModu</td>
+<td>相机映射</td>
+<td>7/16/10</td>
+<td>AddButton_PointPair, Boolean, Enumeration, Integer, OpenFileForCalibDialog, PointPair, RadioSelecter, SaveFileDialog</td>
+<td>本轮闭合：109项专属检查、118组SDK差分、23项真实宿主检查及CMD桌面人工验收通过；提交8284284已推送origin/tool-plugins并通知主框架。原生索引/完整原厂桌面逐像素边界见CAMERA-MAPPING.md</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>IMVSImageCalibModu</td>
+<td>畸变标定</td>
+<td>15/2/10</td>
+<td>Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, Float, FloatConfig, ImageViewConfig, Integer, IntegerBettween, OpenFileForCalibDialog, RadioSelecter, ROISelecter, SaveFileDialog</td>
+<td>独立专线在制：原厂默认初始化链、19float文件及24 SDK场景；给定原矩阵的12组约230万像素逐位一致；真实拟合/误差/多对象显示仍开放，见DISTORTION-CALIBRATION.md</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>IMVSMapCalibModu</td>
+<td>映射标定</td>
+<td>6/9/17</td>
+<td>Boolean, ButtonSelecter, Enumeration, EnumerationG, Expand, ImageViewConfig, Integer, OpenFileDialog, OpenFileForCalibDialog, RadioSelecter, RadioSelecterEx2, ROISelecter, SaveFileDialog, String</td>
+<td>独立专线在制：双图/双ROI原厂声明、模块缓存/状态与8例SDK文件矩阵方向已取证；独立实现和公共双ROI分组待完成，见MAP-CALIBRATION.md</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>ReadCalibFileModu</td>
+<td>标定加载</td>
+<td>2/10/12</td>
+<td>Boolean, ButtonSelecter, OpenFileDialog4ReadFile, ReadFileConfigData</td>
+<td>源码/资源、原厂受控运行、文件与缓存生命周期、动态结果端口、额外IO、配置窗口及独立运行实现已完成；复核回归825插件检查、48配置检查通过。真实原厂桌面验收/主框架集成待安排；真实远程FTP后端未验证。详见 READ-CALIB-FILE.md</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>RotateCalibModu</td>
+<td>旋转标定</td>
+<td>1/5/7</td>
+<td>Boolean, ButtonSelecter, OpenFileForCalibDialog, RadioSelecter</td>
+<td>源码/资源及算法、状态、文件生命周期审计已完成；独立实现复核 1,250 项通过，用户曾验收模板化UI。本轮补充证据见 ROTATE-CALIBRATION-SOURCE-AUDIT.md；真实SDK Init、原厂桌面对照、主流程/Group验收及原生持久化ABI仍未验证</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>TranslationCalibModu</td>
+<td>平移旋转标定</td>
+<td>8/6/28</td>
+<td>Boolean, ButtonSelecter, Command, EditButton_Calib, Enumeration, Integer, OpenFileForCalibDialog, RadioSelecter, SaveFileDialog</td>
+<td>代码范围已实现：48原厂场景/26文件尝试24XML/12原厂UI规则和点表，专属7447检查、实际WPF267检查；独立组合补偿/示教/文件副作用，数值/桌面边界见TRANSLATION-CALIBRATION.md</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Calibration</td>
+<td>CoordinateModule</td>
+<td>坐标系</td>
+<td>2/4/6</td>
+<td>ButtonSelecter, RadioSelecterEx2, RadioSelecterEx3, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ColorProcessing</td>
+<td>IMVSColorExtractModu</td>
+<td>颜色抽取</td>
+<td>4/4/7</td>
+<td>Boolean, ColorExtractList, FloatBettween, GroupLinkItem, ImageViewConfig, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ColorProcessing</td>
+<td>IMVSColorImageGenerationModu</td>
+<td>彩图生成</td>
+<td>1/3/3</td>
+<td>Enumeration, EnumerationG</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ColorProcessing</td>
+<td>IMVSColorMeasureModu</td>
+<td>颜色测量</td>
+<td>37/4/20</td>
+<td>Boolean, Enumeration, FloatBettween, GroupLinkItem, ImageViewConfig, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ColorProcessing</td>
+<td>IMVSColorRecognitionModu</td>
+<td>颜色识别</td>
+<td>8/4/17</td>
+<td>Boolean, ColorRecognitionData, Enumeration, GroupLinkItem, ImageViewConfig, Integer, ROISelecter, String</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ColorProcessing</td>
+<td>IMVSColorSegmentModu</td>
+<td>颜色分割</td>
+<td>6/4/9</td>
+<td>Boolean, ColorSegmentList, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ColorProcessing</td>
+<td>IMVSColorTransformModu</td>
+<td>颜色转换</td>
+<td>9/1/3</td>
+<td>Enumeration, Expand, Float, Integer</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Communication</td>
+<td>CameraIOModule</td>
+<td>相机IO通信</td>
+<td>5/5/3</td>
+<td>Boolean, ButtonSelecter, Enumeration, Enumeration_CameraSelector, Integer</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Communication</td>
+<td>DataAnalysisModule</td>
+<td>协议解析</td>
+<td>2/1/2</td>
+<td>BooleanInt, ButtonSelecterAnaly, ComboxEditDataAnalysis, OpenFileForDataShellDialogAnaly, ProtocolOutputParam, ProtocolOutputParam_Byte, ProtocolOutputParam_Shell, RadioSelecterAnaly</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Communication</td>
+<td>DataAssembleModule</td>
+<td>协议组装</td>
+<td>3/0/4</td>
+<td>ComboxEditDataAssembly, HeadBar, OpenFileForDataShellDialog, ProtocolInputParam, RadioSelecterEx2</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Communication</td>
+<td>ReadDatasModule</td>
+<td>接收数据</td>
+<td>7/1/3</td>
+<td>CommunicationItemReceive, EnumerationCommunication, EnumerationDataCenter, GlobalVarItemOut, HeadBar, Integer, ModbusItemReceive, PLCItemReceive, QueueItemOut, RadioSelecterEx3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Communication</td>
+<td>SendDatasModule</td>
+<td>发送数据</td>
+<td>98/48/3</td>
+<td>AddButton_GlobalVar, AddButton_QueueItem, BasicItemsSend, Boolean, BooleanTip, ButtonSelecter, ComboxEditSendData, Enumeration, EnumerationCommunication, EnumerationDataCenter, EnumerationLightForSendData, EnumerationSendEvent, GateWaySendEventItem, GlobalVarItemIn, HeadBar, IOSendData16, IOSendData20, IOSendData4, IOSendData7, IOSendData8, ModbusItemsSend, QueueItemIn, RadioSelecterEx3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSCircleEdgeInspModu</td>
+<td>圆弧边缘缺陷检测</td>
+<td>21/5/28</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSCircleEdgePairInspModu</td>
+<td>圆弧对缺陷检测</td>
+<td>24/6/34</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, Integer_CaliperHeight, Integer_IdeaWidth, IntegerBettween, RadioSelecter, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSEdgeFlawInspModu</td>
+<td>边缘模型缺陷检测</td>
+<td>23/2/14</td>
+<td>Boolean, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, Panel_EdgepatMatch, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSEdgeInspGroupModu</td>
+<td>边缘组合缺陷检测</td>
+<td>0/2/20</td>
+<td>AddList_EdgeInspGroup, Boolean, ButtonSelecter, Combination, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter, RadioSelecter3, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSEdgePairFlawInspModu</td>
+<td>边缘对模型缺陷检测</td>
+<td>47/2/28</td>
+<td>Boolean, CircleSelector, Command, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, Panel_EdgePairpatMatch, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSEdgePairInspGroupModu</td>
+<td>边缘对组合缺陷检测</td>
+<td>1/2/27</td>
+<td>AddList_EdgeInspGroup, Boolean, ButtonSelecter, Combination, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, RadioSelecter, RadioSelecter3, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSEdgePairPosTrendAnalyModu</td>
+<td>边缘对位置趋势分析</td>
+<td>13/3/26</td>
+<td>Boolean, Enumeration, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSEdgePosTrendAnalyModu</td>
+<td>边缘位置趋势分析</td>
+<td>10/3/21</td>
+<td>Boolean, Enumeration, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSInspectModu</td>
+<td>异常检测</td>
+<td>23/3/10</td>
+<td>Enumeration, Expand, Float, FloatBettween, ImageViewConfig, InspectData, Integer, IntegerBettween, RadioSelecterEx2, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSLineEdgeInspModu</td>
+<td>直线边缘缺陷检测</td>
+<td>26/5/27</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter3, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSLineEdgePairInspModu</td>
+<td>直线对缺陷检测</td>
+<td>28/6/32</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, RadioSelecter3, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSMarkInspModu</td>
+<td>IMVSMarkInspModu</td>
+<td>50/3/11</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, FloatSum, GroupLinkItem, HeadBar, ImageViewConfig, Integer, IntegerBettween, MarkInspData, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSMarkInspModuVA</td>
+<td>字符缺陷检测</td>
+<td>41/9/15</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, Float, FloatBettween, GroupLinkItem, HeadBar, ImageViewConfig, Integer, IntegerBettween, MarkInspDataVA, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>DefectDetection</td>
+<td>IMVSSurfaceDefectFilterModu</td>
+<td>表面缺陷滤波</td>
+<td>12/5/6</td>
+<td>Enumeration, Float, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>CommDeviceModule</td>
+<td>CommDeviceModule</td>
+<td>13/0/0</td>
+<td>Boolean, ComboxEdit, EnumeraionComDevice, String, TextNormal</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>CommManagerModule</td>
+<td>CommManagerModule</td>
+<td>23/0/0</td>
+<td>Boolean, ComboxEdit, EnumeraionComDevice, Integer, String, TextNormal</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>DataQueueModule</td>
+<td>DataQueueModule</td>
+<td>3/0/0</td>
+<td>Command, DataQueueData, TriggerProcedureData</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>DynamicParamCameraModule</td>
+<td>DynamicParamCameraModule</td>
+<td>3/4/5</td>
+<td>BooleanBxTips, CameraPreview, ClockSource, CommandWithTip, DynamicCameraParamList, EnumerationLxN, MvsFeatureTree</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>GlobalCameraModule</td>
+<td>GlobalCameraModule</td>
+<td>62/4/5</td>
+<td>Boolean, BooleanBx, BooleanBxTips, BooleanLx, CameraPreview, ClockSource, Command, CommandWithTip, DynamicCameraParamList, Enumeration, EnumerationBx, EnumerationGain, EnumerationIP, EnumerationLxN, FloatBx, Integer, IntegerBx, IPString, MvsFeatureTree, OpenFileForCameraDialog, RadioSelecter, String, StringBx</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>GlobalTriggerModule</td>
+<td>GlobalTriggerModule</td>
+<td>0/0/0</td>
+<td></td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>GlobalVariableModule</td>
+<td>GlobalVariableModule</td>
+<td>0/0/0</td>
+<td></td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>ImageCollectDalsaModu</td>
+<td>ImageCollectDalsaModu</td>
+<td>3/0/2</td>
+<td>EnumerationLx, Integer, OpenFileForCameraDialog</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>ImageCollectHikModu</td>
+<td>ImageCollectHikModu</td>
+<td>6/0/5</td>
+<td>EnumerationBx, EnumerationHikLx, EnumerationLx, IntegerBx, OpenFileDialog</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>ImageCollectIKModu</td>
+<td>ImageCollectIKModu</td>
+<td>2/0/2</td>
+<td>EnumerationLx, OpenFileForCameraDialog</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>ImageCollectModu</td>
+<td>ImageCollectModu</td>
+<td>9/2/5</td>
+<td>EnumerationBx, EnumerationGain, EnumerationLx, FloatBx, OpenFileForCameraDialog, String, StringBx</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>LightControl</td>
+<td>LightControl</td>
+<td>0/0/0</td>
+<td></td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>LocalVariableModule</td>
+<td>LocalVariableModule</td>
+<td>0/0/0</td>
+<td></td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>ProcedureComm</td>
+<td>ProcedureComm</td>
+<td>0/0/0</td>
+<td></td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>ProcedureModule</td>
+<td>ProcedureModule</td>
+<td>0/0/1</td>
+<td>GroupCommunicationParam, GroupDisplayParam, GroupInputParam, GroupOutputParam, GroupRunParam</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>SCGlobalCameraModule</td>
+<td>SCGlobalCameraModule</td>
+<td>5/0/5</td>
+<td>EnumerationBx, EnumerationLx, IntegerBx</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Global</td>
+<td>SolutionModule</td>
+<td>SolutionModule</td>
+<td>0/0/0</td>
+<td>GlobalRunParam</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageGeneration</td>
+<td>GeometryCreate</td>
+<td>几何创建</td>
+<td>0/6/16</td>
+<td>Boolean, ButtonSelecter, ImageViewConfig, RadioSelecter, RadioSelecter3, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageGeneration</td>
+<td>IMVSCircleFitModu</td>
+<td>圆拟合</td>
+<td>20/2/11</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, ImageViewConfig, Integer, IntegerBettween, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageGeneration</td>
+<td>IMVSEllipseFitModu</td>
+<td>椭圆拟合</td>
+<td>13/1/9</td>
+<td>Boolean, ButtonSelecter, Expand, FloatBettween, ImageViewConfig, Integer, IntegerBettween, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageGeneration</td>
+<td>IMVSLineFitModu</td>
+<td>直线拟合</td>
+<td>17/2/11</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, Float, FloatBettween, ImageViewConfig, Integer, IntegerBettween, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSAffineTransformModu</td>
+<td>仿射变换</td>
+<td>12/3/5</td>
+<td>Boolean, Enumeration, Float, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSBinaryModu</td>
+<td>图像二值化</td>
+<td>15/6/11</td>
+<td>Enumeration, Float, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSFrameMeanModu</td>
+<td>帧平均</td>
+<td>1/1/5</td>
+<td>CommandSelecter_Frame, ImageViewConfig</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSGeometricTransformModu</td>
+<td>几何变换</td>
+<td>2/1/3</td>
+<td>Enumeration</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageCombineProcessModu</td>
+<td>图像组合</td>
+<td>0/6/10</td>
+<td>Enumeration, Expand, Float, GroupLinkItem, ImageCombineProcessData, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageCorrectCalibModu</td>
+<td>畸变校正</td>
+<td>1/2/3</td>
+<td>ButtonSelecter, Enumeration, OpenFileForCalibDialog</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageCorrectManualModu</td>
+<td>图像矫正</td>
+<td>2/1/3</td>
+<td>Integer</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageEnhanceModu</td>
+<td>图像增强</td>
+<td>7/6/9</td>
+<td>Enumeration, Float, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageFilterModu</td>
+<td>图像滤波</td>
+<td>6/6/9</td>
+<td>Enumeration, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageFixtureModu</td>
+<td>图像修正</td>
+<td>0/2/4</td>
+<td>ButtonSelecter, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageMathModu</td>
+<td>图像运算</td>
+<td>8/5/5</td>
+<td>Enumeration, EnumerationG, Expand, Float, GroupLinkItem, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageMorphModu</td>
+<td>形态学处理</td>
+<td>5/6/9</td>
+<td>Enumeration, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageNormlizeModu</td>
+<td>图像归一化</td>
+<td>7/6/9</td>
+<td>Enumeration, Float, FloatBettween, FloatSum, GroupLinkItem, ImageViewConfig, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageResizeModu</td>
+<td>图像缩放</td>
+<td>4/3/5</td>
+<td>Boolean, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImageSharpnessModu</td>
+<td>清晰度评估</td>
+<td>2/6/10</td>
+<td>Enumeration, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSImgStitchCalibModu</td>
+<td>图像拼接</td>
+<td>13/2/6</td>
+<td>AddList_ImageStitch, Boolean, ButtonSelecter, Combination, Enumeration, EnumerationG, GroupLinkItem, ImageSourceList, ImgStitchInteger, Integer, NumberMultiply, Pannel_ImgStitch, RadioSelecterEx2, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSInverseAffineTransformModu</td>
+<td>逆仿射变换</td>
+<td>2/6/5</td>
+<td>ButtonSelecter, EnumerationG, ImageViewConfig, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSMultiImageFusionModu</td>
+<td>多图融合</td>
+<td>8/2/8</td>
+<td>Boolean, Enumeration, EnumerationG, Expand, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSPolarUnwarpModu</td>
+<td>圆环展开</td>
+<td>3/3/6</td>
+<td>Enumeration, GroupLinkItem, ImageViewConfig, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSRegionCopyModu</td>
+<td>拷贝填充</td>
+<td>3/4/7</td>
+<td>Enumeration, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>ImageProcessing</td>
+<td>IMVSShadeCorrectModu</td>
+<td>阴影校正</td>
+<td>5/6/9</td>
+<td>Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSAngleBisectorFindModu</td>
+<td>角平分线查找</td>
+<td>0/3/14</td>
+<td>ButtonSelecter, ImageViewConfig, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSBlobFindLabelsModu</td>
+<td>Blob标签分析</td>
+<td>78/7/26</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter, ThresholdAreaList</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSBlobFindModu</td>
+<td>Blob分析</td>
+<td>105/6/33</td>
+<td>Boolean, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSCaliperCornerModu</td>
+<td>边缘交点</td>
+<td>21/6/20</td>
+<td>Boolean, ButtonSelecter, Enumeration, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSCaliperEdgeModu</td>
+<td>边缘查找</td>
+<td>17/3/13</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSCaliperModu</td>
+<td>卡尺工具</td>
+<td>98/4/27</td>
+<td>Boolean, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSCircleFindModu</td>
+<td>圆查找</td>
+<td>28/5/16</td>
+<td>Boolean, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, Integer_CircleFind, IntegerBettween, IntegerBettween_CircleFind, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSContourMatchModu</td>
+<td>轮廓匹配</td>
+<td>56/5/22</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, PyramidFeaturepatMatchConfigPanalData, RadioSelecterEx2, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSEllipseFindModu</td>
+<td>椭圆查找</td>
+<td>9/4/11</td>
+<td>Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSFastFeatureMatchModu</td>
+<td>快速匹配</td>
+<td>41/5/17</td>
+<td>Boolean, Enumeration, Expand, FastFeaturepatMatchConfigPanalData, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSFixtureModu</td>
+<td>位置修正</td>
+<td>8/4/3</td>
+<td>ButtonSelecter, Command_FixtureModule, ImageViewConfig, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSGluePathConductModu</td>
+<td>路径提取</td>
+<td>2/2/27</td>
+<td>Boolean, Enumeration, GroupLinkItem, ImageViewConfig, Integer, PathDrawingGuide</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSGrayMatchModu</td>
+<td>IMVSGrayMatchModu</td>
+<td>31/3/13</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GrayMatchConfigPanalData, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSGrayMatchModuVA</td>
+<td>灰度匹配</td>
+<td>33/3/13</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GrayMatchVAConfigPanalData, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSHPFeatureMatchModu</td>
+<td>高精度匹配</td>
+<td>52/5/19</td>
+<td>Boolean, Enumeration, Expand, FeaturepatMatchConfigPanalData, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, RadioSelecterEx2, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSLineFindGroupModu</td>
+<td>直线查找组合</td>
+<td>14/1/13</td>
+<td>AddList_EdgeInspGroup, Boolean, Combination, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, Integer_CircleFind, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSLineFindModu</td>
+<td>直线查找</td>
+<td>24/4/15</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, Integer_CircleFind, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSMarkFindModu</td>
+<td>图形定位</td>
+<td>47/5/19</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, MarkFindConfigPanalData, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSMatrixCircleFindModu</td>
+<td>阵列圆查找</td>
+<td>27/5/20</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, IntegerBettween_CircleFind, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSMedianLineFindModu</td>
+<td>中线查找</td>
+<td>0/3/8</td>
+<td>ButtonSelecter, ImageViewConfig, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSMultiLineFindModu</td>
+<td>多直线查找</td>
+<td>19/4/16</td>
+<td>Boolean, Enumeration, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSPairLineModu</td>
+<td>平行线查找</td>
+<td>22/5/22</td>
+<td>Boolean, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSParallelCalculateModu</td>
+<td>平行线计算</td>
+<td>2/3/8</td>
+<td>ButtonSelecter, Enumeration, Float, ImageViewConfig, RadioSelecter, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSPeakFindModu</td>
+<td>顶点检测</td>
+<td>13/5/17</td>
+<td>Boolean, Enumeration, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSQuadrangleFindModu</td>
+<td>四边形查找</td>
+<td>59/8/62</td>
+<td>Boolean, ButtonSelecter, Enumeration, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter, ROISelecter_Fix</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSRectFindModu</td>
+<td>矩形检测</td>
+<td>30/5/12</td>
+<td>Boolean, Enumeration, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSTargetTrackModu</td>
+<td>目标跟踪</td>
+<td>13/3/14</td>
+<td>Boolean, ButtonSelecter, Float, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Location</td>
+<td>IMVSVerticalLineFindModu</td>
+<td>垂线查找</td>
+<td>1/3/8</td>
+<td>ButtonSelecter, ImageViewConfig, RadioSelecter, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>AndModule</td>
+<td>逻辑</td>
+<td>2/0/4</td>
+<td>ButtonSelecter_LogicItem, EnumerationLogicType</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>BranchModule_STD</td>
+<td>分支模块</td>
+<td>2/1/4</td>
+<td>ButtonSelecter, HeadBar, ListParam, RadioSelecter_Branch</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>BranchStringCpmL</td>
+<td>分支字符</td>
+<td>1/1/4</td>
+<td>ButtonSelecter, HeadBar, ListParamStr</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>DataClassificationModule</td>
+<td>数据分类</td>
+<td>0/0/2</td>
+<td>DataClassificationConfig, DataClassificationParam</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>DataFilterModule</td>
+<td>数据筛选</td>
+<td>0/0/3</td>
+<td>DataFilterConfig, DataFilterParam</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>DataRecordModule</td>
+<td>数据记录</td>
+<td>0/1/2</td>
+<td>ButtonSelecter, ButtonSelecter_IOVar_Record, HeadBar</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>DataSetModule</td>
+<td>数据集合</td>
+<td>0/1/2</td>
+<td>ButtonSelecter, ButtonSelecter_IOVar, HeadBar</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>DataSortModule</td>
+<td>数据排序</td>
+<td>0/0/2</td>
+<td>DataSortConfig, DataSortParam</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>FormatModule</td>
+<td>格式化</td>
+<td>0/0/3</td>
+<td>Format</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>GraphicsSetModule</td>
+<td>图形收集</td>
+<td>0/0/2</td>
+<td>GroupDisplayParamForGraphicsSet</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>IfBranchModule</td>
+<td>条件分支</td>
+<td>0/0/3</td>
+<td>ButtonSelecter_IfBranch, HeadBar</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>IfModule</td>
+<td>条件检测</td>
+<td>1/0/6</td>
+<td>ButtonSelecter_RangeConF, Enumeration_IfModule, HeadBar</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>IMVSGroup</td>
+<td>Group</td>
+<td>1/8/3</td>
+<td>Boolean, ButtonSelecter, ButtonSelecter_LoopControl, Enumeration, GroupDisplayParam, GroupInputParam, GroupOutputParam, GroupRunParam, Integer</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>PointSetMODU_STD</td>
+<td>点集</td>
+<td>17/16/3</td>
+<td>AddButton_PointSet, Boolean, ImageViewConfig, PointSet</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>PyShellModule</td>
+<td>Python脚本</td>
+<td>0/0/2</td>
+<td>ButtonSelecter_PyShell</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>SaveTextModule</td>
+<td>文本保存</td>
+<td>114/103/4</td>
+<td>AddButton_SaveText, Boolean, ButtonSelecter, Enumeration, HeadBar, Integer, OpenFolderDialog, RadioSelecterEx2, SaveTextItem, String, StringName</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>ShellModule</td>
+<td>脚本</td>
+<td>0/0/3</td>
+<td>ButtonSelecter_Shell</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>StringCompareModule</td>
+<td>字符比较</td>
+<td>1/1/4</td>
+<td>ButtonSelecter, ButtonSelecter_StringComp, HeadBar</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>TimeStatisticModule</td>
+<td>耗时统计</td>
+<td>0/0/2</td>
+<td>TimeConfig</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Logic</td>
+<td>TriggerModule</td>
+<td>触发模块</td>
+<td>1/0/2</td>
+<td>EnumerationTrigger</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSC2CMeasureModu</td>
+<td>圆圆测量</td>
+<td>46/5/15</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter, ROISelecter_Com</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSEdgeWidthFindModu</td>
+<td>间距检测</td>
+<td>28/3/27</td>
+<td>Boolean, Enumeration, Expand, Float, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSHistToolModu</td>
+<td>直方图工具</td>
+<td>24/5/16</td>
+<td>Boolean, FloatBettween, GroupLinkItem, ImageViewConfig, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSIntensityMeasureModu</td>
+<td>亮度测量</td>
+<td>15/5/12</td>
+<td>Boolean, FloatBettween, GroupLinkItem, ImageViewConfig, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSL2CMeasureModu</td>
+<td>线圆测量</td>
+<td>50/5/15</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter, RadioSelecter3, ROISelecter_Com</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSL2LMeasureModu</td>
+<td>线线测量</td>
+<td>37/5/18</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, RadioSelecter, RadioSelecter3, ROISelecter_Com</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSP2CMeasureModu</td>
+<td>点圆测量</td>
+<td>14/4/10</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, ImageViewConfig, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSP2LMeasureModu</td>
+<td>点线测量</td>
+<td>20/4/11</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, ImageViewConfig, RadioSelecter, RadioSelecter3</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSP2PMeasureModu</td>
+<td>点点测量</td>
+<td>14/4/8</td>
+<td>Boolean, ButtonSelecter, Enumeration, Expand, FloatBettween, ImageViewConfig, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSPixelCountModu</td>
+<td>像素统计</td>
+<td>9/5/9</td>
+<td>Boolean, FloatBettween, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Measurement</td>
+<td>IMVSPixelCountModuVA</td>
+<td>像素统计</td>
+<td>6/5/8</td>
+<td>Boolean, FloatBettween, GroupLinkItem, ImageViewConfig, IntegerBettween, PixelModuRangeConfigList, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Recognition</td>
+<td>IMVS2dBcrModu</td>
+<td>二维码识别</td>
+<td>23/3/12</td>
+<td>Boolean, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter, String</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Recognition</td>
+<td>IMVSBcrModu</td>
+<td>条码识别</td>
+<td>23/3/12</td>
+<td>Boolean, Expand, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, ROISelecter, String</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Recognition</td>
+<td>IMVSMachineLearningClassifierModu</td>
+<td>ML分类</td>
+<td>25/3/7</td>
+<td>Boolean, GroupLinkItem, ImageViewConfig, IntegerBettween, MLClassifyData, OpenFileForCNNDialog, ROISelecter, String</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Recognition</td>
+<td>IMVSOcrModu</td>
+<td>字符识别</td>
+<td>38/3/16</td>
+<td>Boolean, Enumeration, Expand, GroupLinkItem, ImageViewConfig, Integer, IntegerBettween, OpenDialogF, ROISelecter, String</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SplitCombination</td>
+<td>IMVS2dArrayCorrectModu</td>
+<td>二维阵列</td>
+<td>2/1/6</td>
+<td>ButtonSelecter, ImageViewConfig, Integer</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SplitCombination</td>
+<td>IMVSBoxFilterModule</td>
+<td>Box过滤</td>
+<td>1/3/5</td>
+<td>ButtonSelecter, Float, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SplitCombination</td>
+<td>IMVSBoxMergeModu</td>
+<td>Box融合</td>
+<td>7/3/5</td>
+<td>ButtonSelecter, Enumeration, Float, Integer, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SplitCombination</td>
+<td>IMVSBoxOverlapCalculationModu</td>
+<td>Box重叠率计算</td>
+<td>0/2/3</td>
+<td>ButtonSelecter, RadioSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SplitCombination</td>
+<td>IMVSDivideImageModu</td>
+<td>划片拆分</td>
+<td>4/3/6</td>
+<td>GroupLinkItem, Integer, ROISelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>SplitCombination</td>
+<td>IMVSMultiLabelFilterModu</td>
+<td>多标签筛选</td>
+<td>0/3/3</td>
+<td>ButtonSelecter</td>
+<td>声明已清点；语义与运行待逆向</td>
+</tr>
+</tbody></table>
+<h2 id="每项验收顺序">每项验收顺序</h2><ol>
+<li>确认二进制身份、注册信息、版本、资源和依赖，追踪托管到原生的调用入口。</li>
+<li>记录参数默认值、范围、显隐、输入输出类型、数组、订阅和持久化语义。</li>
+<li>跟踪真实执行路径、状态机、错误、取消及资源释放；未知项保持未知。</li>
+<li>实现插件算法、配置模型与专属内容控件；所需公共框架在本 worktree 实施，并将契约/迁移/状态写入 ../CONTRACT-REQUESTS.md，同步主框架，避免重复修改共享文件。</li>
+<li>用原始程序与重建程序的同输入结果、模式界面和生命周期验证，记录差异。</li>
+<li>完成跨节点回归并启动程序供人工验收；验收后更新 HANDOFF.md、中文提交并推送本分支。测试通过不能单独证明原生等价。</li>
+</ol>
+<p class="meta">来源：docs/plugins/CHECKLIST.md · SHA256 e6016e1fab830ecb56cf92555db860d494a0e26d83f63c973c07bed8e43030ed<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RegisterEncryToFile · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>RegisterEncryToFile · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-P08"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>RegisterEncryToFile → 一次读原字节 → 关闭 → File.Delete → 丢弃写回bool</h2><p>打开文件按Length分配并单次Read，返回字节数未读取；读catch用throw ex，using先关闭。然后先删除原文件，再调用InnerWriteLibFile，返回bool未被消费。因此内部返回false可能没有异常传给外层；此处没有先写新文件再替换的事务步骤。</p><p><a href="../专题/communication-protection.html#edge-P08">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-protection.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-protection.edges.json · SHA256 78cdc1eaa90290bfce0f1009a8bdde609e5f46002e27f42770a3f3f12b6bb046</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="f24f3897ed8483e79fa126d36c5821ffd2e48a7f9d77de62a90d92ac0cd7a1c4">{
+  &quot;id&quot;: &quot;P08&quot;,
+  &quot;route&quot;: &quot;原版 · 文件重写与恢复&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;RegisterEncryToFile&quot;,
+  &quot;to&quot;: &quot;一次读原字节 → 关闭 → File.Delete → 丢弃写回bool&quot;,
+  &quot;behavior&quot;: &quot;打开文件按Length分配并单次Read，返回字节数未读取；读catch用throw ex，using先关闭。然后先删除原文件，再调用InnerWriteLibFile，返回bool未被消费。因此内部返回false可能没有异常传给外层；此处没有先写新文件再替换的事务步骤。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/CommunicationEncryService.cs&quot;,
+      &quot;member&quot;: &quot;CommunicationEncryService.RegisterEncryToFile&quot;,
+      &quot;sha256&quot;: &quot;a1a98bf19b95958cf2b49b96d0f3dfd95e0c5336a6fa89afa85e3b6e675c4aba&quot;,
+      &quot;start&quot;: 152,
+      &quot;end&quot;: 175,
+      &quot;excerpt&quot;: &quot;\tprivate static void RegisterEncryToFile(string path, bool isEncry)\n\t{\n\t\tbyte[] array;\n\t\tusing (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tarray = new byte[fileStream.Length];\n\t\t\t\tfileStream.Read(array, 0, (int)fileStream.Length);\n\t\t\t}\n\t\t\tcatch (Exception ex)\n\t\t\t{\n\t\t\t\tthrow ex;\n\t\t\t}\n\t\t}\n\t\tFile.Delete(path);\n\t\tInnerWriteLibFile(path, array, isEncry);\n\t}\n\n\t/// &lt;summary>\n\t/// 获取解密信息\n\t/// &lt;/summary>\n\t/// &lt;param name=\&quot;source\&quot;>&lt;/param>\n\t/// &lt;returns>&lt;/returns>&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-protection-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VMControls.WPF.GlobalUI.CommunicationEncryService::RegisterEncryToFile&quot;,
+      &quot;sha256&quot;: &quot;092ee644f1e760b48ff5ef5727fcc7237a7d09a862137215d9403da5ad54e72a&quot;,
+      &quot;start&quot;: 14156,
+      &quot;end&quot;: 14175,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x0600057d\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x0600057d\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VMControls.WPF.GlobalUI.CommunicationEncryService\&quot;,\n            \&quot;name\&quot;: \&quot;RegisterEncryToFile\&quot;,\n            \&quot;parameters\&quot;: 2,\n            \&quot;attributes\&quot;: \&quot;Private, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;0002010e02\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 79,\n          \&quot;ilSha256\&quot;: \&quot;9c6a56f6ce7418fad606f2094e2da805903a117615e6b70ee705f85747c2fb2a\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00021917732005000a0b0000076f1905000ad48df70100010a070616076f1905000a696f1a05000a2600de040c00087a00de0b072c07076fa000000a00dc02280e05000a000206032880050006262a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;短读、删除失败、null变换返回及后续压缩表现仍需操作证据；不由源路径推定实际已发生丢失。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

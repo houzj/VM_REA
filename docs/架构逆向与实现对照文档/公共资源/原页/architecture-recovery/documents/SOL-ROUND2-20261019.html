@@ -1,0 +1,130 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SOL 第二轮：MoudleFrame 样本边界（2026-10-19）</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../SOL-ROUND2-20261019.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#sol-第二轮moudleframe-样本边界2026-10-19">SOL 第二轮：MoudleFrame 样本边界（2026-10-19）</a></p><p style="margin-left:14px"><a href="#新确认的样本结构">新确认的样本结构</a></p><p style="margin-left:14px"><a href="#解析操作与证据">解析操作与证据</a></p><p style="margin-left:14px"><a href="#调用链边界复核">调用链边界复核</a></p><p style="margin-left:14px"><a href="#尚未闭合与下一步可控方案">尚未闭合与下一步可控方案</a></p></details><h1 id="sol-第二轮moudleframe-样本边界2026-10-19">SOL 第二轮：MoudleFrame 样本边界（2026-10-19）</h1><p>范围：只读检查此前选定 VisionMaster4.4.0 安装目录的8个随包 C# <code>.sol</code>；不修改 tool-plugins，不执行 XAML/原生 SDK，不构建，不打开或关闭现有程序。证据类型为随包文件静态字节与已有反编译源码；没有新增原机保存/重开验收。</p>
+<h2 id="新确认的样本结构">新确认的样本结构</h2><p>8个 <code>MoudleFrame</code> 条目均可由以下独立候选解析完整消费。该结论限定这8个样本，尚不是所有版本、加密方案或厂商序列化合同。</p>
+<ul>
+<li>头0..3均为 <code>00000005</code>，其语义未知，不能命名为版本。</li>
+<li>头4..7作为 BE uint32，等于逐条解析得到的记录数。</li>
+<li>每条记录前256字节为名称槽；样本名称为 UTF16LE，首NUL结束。其后4字节为 BE uint32 载荷长度，然后为该长度载荷。</li>
+<li>从偏移8开始按 <code>next = start + 260 + payloadLength</code> 迭代，8样本全部精确到 EOF，没有剩余字节、越界或计数不符。</li>
+<li>此规则闭合外层记录边界，没有闭合 <code>.mdata</code> 载荷内部字段。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>样本</th>
+<th align="right">帧字节</th>
+<th align="right">记录数/头第二值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DeepLearningDemoChinexe.sol</td>
+<td align="right">8993242</td>
+<td align="right">12</td>
+</tr>
+<tr>
+<td>DeepLearningDemoEnglish.sol</td>
+<td align="right">8992876</td>
+<td align="right">12</td>
+</tr>
+<tr>
+<td>LocateDemoChinese.sol</td>
+<td align="right">6775664</td>
+<td align="right">28</td>
+</tr>
+<tr>
+<td>LocateDemoEnglish.sol</td>
+<td align="right">6774324</td>
+<td align="right">28</td>
+</tr>
+<tr>
+<td>OCRDemoChinese.sol</td>
+<td align="right">4561354</td>
+<td align="right">13</td>
+</tr>
+<tr>
+<td>OCRDemoEnglish.sol</td>
+<td align="right">4557693</td>
+<td align="right">14</td>
+</tr>
+<tr>
+<td>CircleFind.sol</td>
+<td align="right">90696</td>
+<td align="right">7</td>
+</tr>
+<tr>
+<td>GetResultSample.sol</td>
+<td align="right">142455</td>
+<td align="right">8</td>
+</tr>
+</tbody></table>
+<p>CircleFind的外层边界如下，偏移均相对解压后的 MoudleFrame：</p>
+<table>
+<thead>
+<tr>
+<th>记录名</th>
+<th align="right">记录偏移</th>
+<th align="right">载荷偏移</th>
+<th align="right">载荷长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0-ImageSourceModule.mdata</td>
+<td align="right">8</td>
+<td align="right">268</td>
+<td align="right">32395</td>
+</tr>
+<tr>
+<td>1-IMVSCircleFindModu.mdata</td>
+<td align="right">32663</td>
+<td align="right">32923</td>
+<td align="right">56439</td>
+</tr>
+<tr>
+<td>GlobalVarBinding</td>
+<td align="right">89362</td>
+<td align="right">89622</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td>ModuleParamBinding</td>
+<td align="right">89630</td>
+<td align="right">89890</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>RunningPolicy</td>
+<td align="right">89892</td>
+<td align="right">90152</td>
+<td align="right">16</td>
+</tr>
+<tr>
+<td>procedure-10000-data</td>
+<td align="right">90168</td>
+<td align="right">90428</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>procedure-10999-data</td>
+<td align="right">90432</td>
+<td align="right">90692</td>
+<td align="right">4</td>
+</tr>
+</tbody></table>
+<p>全8样本的 GlobalVarBinding 均为 <code>0800000000000000</code>，ModuleParamBinding 为 <code>0800</code>，RunningPolicy 为 <code>10000000DDCCBBAA0100000000000000</code>，procedure-10999-data 为 <code>1A002200</code>，各类对应载荷哈希一致。不能将其直接解释为“无绑定”“默认策略”或特殊流程身份；需要原生读写点或受控改变验证。procedure-10000-data 在8样本中各不相同，长度4..14257，并非固定头大小。OCR英文比中文多 <code>26000-ProcedureComm.mdata</code> 记录，说明不能假设所有 mdata 都与普通流程节点一一对应。</p>
+<h2 id="解析操作与证据">解析操作与证据</h2><p>本轮专属本地目录 <code>analysis/full-audit/sol-round2-20261019/</code>：</p>
+<ul>
+<li><code>scan.ps1</code> 与 <code>frame-inventory.json</code>：逐样本原件前后 SHA256、帧 SHA256、名字字节偏移、XML订阅原文。8个原件前后哈希一致。</li>
+<li><code>parse-frame-candidate.ps1</code> 与 <code>frame-records-candidate.json</code>：记录级 Offset、Name、PayloadOffset、PayloadLength、Sha256、PrefixHex，以及整帧 Consumed/Length/Error；8样本计数一致且完整消费。</li>
+<li><code>evidence-sha256.csv</code>：本轮生成证据与相关原始源码哈希。</li>
+</ul>
+<p>候选算法：先要求帧至少8字节，读取头第二BE整数；逐条先验证剩余&gt;=260，再取256字节名槽与BE长度，验证长度不超过剩余后哈希载荷并推进。最终检查计数及EOF；超限、截断、未知头、异常名称须保持Unsupported或明确差异，不静默修复。根任务可据此增补测试辅助脚本；本子任务没有修改共享脚本。</p>
+<h2 id="调用链边界复核">调用链边界复核</h2><p><code>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs::InternalExport</code>（1551–1597）先初始化TempVmSolution，检查并设置 <code>_isSaving</code>，确定密码和路径，再调用 <code>mSolutionManager.SyncSaveSolution(path,text,IntPtr.Zero,0u)</code>，成功后更新密码/路径，异常清保存标记并清空路径后抛出。这里没有托管 MoudleFrame 序列化。</p>
+<p><code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs::SyncSaveSolution</code>（305–323）清保存错误与等待标记，调用 <code>ServerSDKAPI.IMVS_SaveSolution</code>，立即非零抛错，清 ModuleManager.ParamSeted，等待完成；仅 SDKMode 再因异步错误抛出。<code>SyncLoadSolution</code>（272–290）同样走原生入口，重置加载标记并等待；SDKMode决定检查标志与最终异步错误处理。托管源码不能解释 MoudleFrame 内部类型号、打包顺序或部分失败恢复。</p>
+<p>本轮在 <code>analysis/decompiled/**/*.cs</code> 中查找字面 <code>mdata</code>、<code>MoudleFrame</code> 无命中；仅说明现有托管反编译树中未见该拼写，不证明原生没有结构定义。各种 SetModuleParamBinding 方法同名并不足以证明其内存结构与帧同名记录的字节格式相同。</p>
+<h2 id="尚未闭合与下一步可控方案">尚未闭合与下一步可控方案</h2><ol>
+<li>原始头首值05含义、名称槽字符集/最大长度/无NUL行为、其他版本/密码/solx结构未知。</li>
+<li><code>.mdata</code> 载荷内部长度、类型、参数/模型/资源分段未知；procedure记录中可见字符串不等于已识别 protobuf 合同。</li>
+<li>XML Relation八段、UI GUID和XML GUID关系、流程特殊ID10999语义仍不作扩展推断；静态中英文样本差分不能代替单操作差分。</li>
+<li>本地重构没有使用该候选结构导入、执行或写回原始方案，也未声称native往返等价。</li>
+</ol>
+<p>下一阶段需根任务安排独占原机窗口和新建临时输出路径：同一最小方案分别执行新增节点、连线、变量绑定及流程更名，各次保存独立文件，先对照外层记录哈希再追踪变化载荷；每次保留操作前后方案哈希与可见窗口身份。不复用现有任务进程，不自动初始化平台/设备，不覆盖随包原件。若需原生断点，先从 IMVS_SaveSolution 的打包调用方找 MoudleFrame写入和记录名/长度写入点，再定义受控执行范围。</p>
+<p class="meta">来源：docs/SOL-ROUND2-20261019.md · SHA256 a3a9f7bccce3f1d92ca6c3168076ce311d64d8fe38329886e78512d2380e523e<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

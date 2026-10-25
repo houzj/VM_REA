@@ -1,0 +1,47 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 dd326030c7b3 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 dd326030c7b3</p><h1>原文证据 dd326030c7b3</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 dd326030c7b356f73c5c3b8b4afba0dc40a14f32b6cb596dc458b08d1885aa10。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/original-managed/frontend-design/FrontendUI.Design.Helper.DocumentManager.decompiled.cs:62–104
+证据类型 original-managed-offline-ilspy-decompilation
+程序集身份 60c0c7b1f404ad8bab4504b9b928148f84c7694a335331c4e4340b7c8017cdf5 / MVID 0de25f5a-f9cd-4617-9954-2ea69f747be1
+SHA256 7a6572b7c11ce7f2dca795132f8a8e773da9e71ce02602c9859035ab11d56c7b
+	public MemoryStream SolutionDesignerBuffer
+	{
+		get
+		{
+			if (!isSolutionDesignerBuffer_Loaded)
+			{
+				isSolutionDesignerBuffer_Loaded = true;
+				try
+				{
+					byte[] array = VmSolution.Instance.UserData[&quot;DESIGNERBUFFER&quot;];
+					if (array != null)
+					{
+						MemoryStream input = new MemoryStream(array, 0, array.Length - 1, writable: true, publiclyVisible: true);
+						XmlDocument xmlDocument = new XmlDocument();
+						MemoryStream solutionxml = new MemoryStream();
+						using (XmlReader reader = XmlReader.Create(input))
+						{
+							input = null;
+							xmlDocument.Load(reader);
+							string s = xmlDocument.OuterXml.ToString();
+							byte[] bytes = Encoding.UTF8.GetBytes(s);
+							solutionxml = new MemoryStream(bytes, 0, bytes.Length, writable: true, publiclyVisible: true);
+						}
+						_solutionxml = solutionxml;
+						_smd5 = _solutionxml.GetMd5();
+						_dmd5 = _smd5;
+					}
+					else
+					{
+						Init();
+					}
+				}
+				catch (Exception message)
+				{
+					LogHelper.frontedLog.Info(message);
+				}
+			}
+			if (_solutionxml != null)
+			{
+				_solutionxml.Seek(0L, SeekOrigin.Begin);
+			}
+			return _solutionxml;
+		}</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/domain-data-obligations--F-04.html">数据/domain-data-obligations--F-04.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

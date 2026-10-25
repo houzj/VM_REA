@@ -1,0 +1,71 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>J12 第五轮：工具配置窗口 Show 与主框架接缝分段取证</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass5-ui-show.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#j12-第五轮工具配置窗口-show-与主框架接缝分段取证">J12 第五轮：工具配置窗口 Show 与主框架接缝分段取证</a></p><p style="margin-left:14px"><a href="#结论及适用范围">结论及适用范围</a></p><p style="margin-left:14px"><a href="#静态调用与事件边界">静态调用与事件边界</a></p><p style="margin-left:14px"><a href="#独占探针与实测">独占探针与实测</a></p><p style="margin-left:14px"><a href="#审计哈希排除项与下一证据">审计哈希、排除项与下一证据</a></p></details><h1 id="j12-第五轮工具配置窗口-show-与主框架接缝分段取证">J12 第五轮：工具配置窗口 Show 与主框架接缝分段取证</h1><h2 id="结论及适用范围">结论及适用范围</h2><p>本轮在独占离屏 WPF 进程中运行真实 <code>ImageSource → ImageBinary</code> 并确认二值化节点成功，等待空闲后测主框架 <code>OpenToolConfiguration → ToolConfigurationWindowHost.Open → ImageBinaryWindow</code>。当前宿主调用 <code>OpenNode</code> 同步占用 UI 线程 <strong>8060 ms</strong>（64² 受控帧，本次样本）；<code>ImageBinaryWindow.Loaded</code> 在调用开始后约 <strong>7971 ms</strong> 才出现，<code>ToolConfigurationWindowHost.Changed</code>（已执行主线订阅的 <code>RefreshAll</code>）距 Loaded 约 <strong>89 ms</strong>。因此本次大段停顿发生在 Changed/后续 RefreshAll <strong>之前</strong>，而非普通流程运行或结果提交。此为当前实现的临时 UI 停顿证据；用户所述无操作后的长期卡死仍没有同一调用栈或复现条件，<strong>不能认定为同一根因</strong>。</p>
+<p>简化工厂上下文下，窗口构造 144 ms、<code>Window.Show()</code> 1956 ms；同一自有 MainWindow 中直接显示 <code>GroupRoiEditor</code>，64² 帧 Show 2944 ms、无输入图 Show 1351 ms、空 <code>Window</code> Show 118 ms。另一次 2048² ROI 对照中 <code>SetImage</code> 4.8 ms、Show 1265 ms。跨独立进程存在明显冷启动/环境波动，不能用这些差值归因某个控件、图像复制、资源或 WPF 内部步骤；能下的最窄结论是<strong>主框架同步打开窗口的接缝覆盖一个可观的 Show/首轮布局时段</strong>，ROI 窗口树即使无输入图也有 &gt;1 秒样本。插件内布局/ROI 优化归插件实现所有者，本轮只作跨框架接缝定位，不改任何产品代码。</p>
+<h2 id="静态调用与事件边界">静态调用与事件边界</h2><ul>
+<li><code>src/VisionEditor/MainWindow.xaml.cs</code>：<code>OpenNode → OpenToolConfiguration</code>。</li>
+<li><code>src/VisionEditor/ToolConfigurationHost.cs</code>：主框架在 <code>OpenToolConfiguration</code> 构造 <code>ToolEditorContext</code>，接 <code>ConnectToolEditorServices</code>、<code>ConnectConfigurationRoi</code>，交给 <code>ConfigurationWindows().Open</code>；窗口工厂依据插件接口创建专用编辑器。主线的 <code>Changed</code> 处理器更新 <code>parameterEditorOpen</code> 并 <code>RefreshAll</code>。</li>
+<li><code>src/VisionPluginContracts/ToolConfigurationWindowHost.cs</code>：<code>Open</code> 同步 <code>create()</code> → <code>Owner</code>/<code>Current</code> 赋值 → <code>window.Show()</code> → <code>Changed</code>。<code>Close</code> 同步 <code>Current.Close()</code>，Closed 再触发 Changed。这个接缝没有调度让步，故 Show 或构造长时工作会阻塞同一 UI 线程。</li>
+<li><code>src/VisionPlugins.ImageBinary/ImageBinaryPlugin.cs</code> 与 <code>ImageBinaryWindow.xaml.cs</code>：工厂创建 <code>ImageBinaryWindow</code>；构造执行资源合并、<code>GroupRoiEditor</code> 创建及 <code>SetImage</code>、参数页构造。<code>src/VisionUi/GroupRoiEditor.cs</code> 的 <code>SetImage</code> 在内存复制像素并创建 <code>BitmapSource</code>，但本轮对照并未证明它是 Show 停顿的主因。</li>
+<li>WPF <code>Loaded</code>、<code>LayoutUpdated</code>、<code>SourceInitialized</code>、<code>ContentRendered</code> 只记录了事件到达的单调时间。各事件可能在 <code>Window.Show</code> 同步返回前触发，也可能经 Dispatcher 排队；本轮不把事件先后顺序解释为 WPF 原生内部函数耗时或 GPU 等待。</li>
+</ul>
+<h2 id="独占探针与实测">独占探针与实测</h2><p>测试 <code>tests/WorkflowShowPhase.Checks/</code>，副作用预检见忽略目录 <code>analysis/joint-audit/ui-show/preflight.md</code>。每个 mode 是独立进程，自己的不可见主窗和子窗；禁自动相机发现，无设备/安装原件/用户窗口访问。20 ms Dispatcher 心跳及 &gt;1 秒 watchdog 只记录本进程活动段，30 秒总时限只退出本测试 PID。所有运行正常退出码 0、<code>mainClosed=true</code>；长 Show 时心跳确实未执行，不能因最终退出 0 认为交互流畅。</p>
+<table>
+<thead>
+<tr>
+<th>mode/帧</th>
+<th align="right">直接构造/资源</th>
+<th align="right">同步 Show 或宿主 OpenNode</th>
+<th>Loaded 或首个布局标记</th>
+<th align="right">关闭子窗</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>host 64</code></td>
+<td align="right">完整主框架上下文，未单独计</td>
+<td align="right"><code>OpenNode</code> 8060.29 ms</td>
+<td><code>binary-Loaded</code> 在 OpenNode 起后 7970.95 ms；Changed 在 Loaded 后 89.33 ms</td>
+<td align="right">124.40 ms</td>
+</tr>
+<tr>
+<td><code>factory 64</code></td>
+<td align="right">资源缓存读取 5.04 ms；二值化窗口 ctor 144.45 ms</td>
+<td align="right"><code>Window.Show</code> 1956.38 ms</td>
+<td>首个 LayoutUpdated 起后 1365.75 ms；Loaded 起后 1912.23 ms；ContentRendered 在 Show 返回后</td>
+<td align="right">101.55 ms</td>
+</tr>
+<tr>
+<td><code>roi 64</code></td>
+<td align="right">ROI ctor 36.51 ms；<code>SetImage</code> 0.96 ms</td>
+<td align="right"><code>Window.Show</code> 2944.46 ms</td>
+<td>首个 LayoutUpdated 起后 2926.37 ms</td>
+<td align="right">130.86 ms</td>
+</tr>
+<tr>
+<td><code>roi-noimage 64</code></td>
+<td align="right">ROI ctor 47.80 ms；未 SetImage</td>
+<td align="right"><code>Window.Show</code> 1350.70 ms</td>
+<td>首个 LayoutUpdated 起后 1337.37 ms</td>
+<td align="right">151.25 ms</td>
+</tr>
+<tr>
+<td><code>empty 64</code></td>
+<td align="right">空 Grid</td>
+<td align="right"><code>Window.Show</code> 118.18 ms</td>
+<td>首个 LayoutUpdated 起后 95.57 ms</td>
+<td align="right">133.72 ms</td>
+</tr>
+<tr>
+<td><code>roi 2048</code></td>
+<td align="right">ROI ctor 45.34 ms；<code>SetImage</code> 4.78 ms</td>
+<td align="right"><code>Window.Show</code> 1264.67 ms</td>
+<td>首个 LayoutUpdated 起后 1251.47 ms</td>
+<td align="right">166.03 ms</td>
+</tr>
+</tbody></table>
+<p>复验命令（仓库根目录）：<code>dotnet run --project tests/WorkflowShowPhase.Checks/WorkflowShowPhase.Checks.csproj -c Release -- host 64</code>；将末尾改为 <code>factory 64</code>、<code>roi 64</code>、<code>roi-noimage 64</code>、<code>empty 64</code> 或 <code>roi 2048</code>。报告中的事件和分段时间取各自 <code>analysis/joint-audit/ui-show/&lt;mode&gt;-&lt;size&gt;/phases.json</code>；这些模式的简单 ROI/空窗口只是<strong>隔离对照</strong>，不是原厂配置窗口或完整主框架宿主。</p>
+<h2 id="审计哈希排除项与下一证据">审计哈希、排除项与下一证据</h2><ul>
+<li>探针源码 <code>tests/WorkflowShowPhase.Checks/Program.cs</code> SHA256 <code>345A76843401DE4DC28FAA8133EEB4891E6D2433C706B4489F5B0023EFBEBFAD</code>；csproj SHA256 <code>FE121D76E786E9D902068A040DFF73D8091E0E65AB1A53F81A54A5935C1B8DA4</code>。</li>
+<li><code>host-64/phases.json</code> SHA256 <code>9EBE59810815A5FC74330416C935CA8C687B4B6B8F36ED80866B45A3833E1DA5</code>；<code>factory-64/phases.json</code> <code>2719D07DB07C5CF43AED23E6F337BD6FD2A35F75F0DDCE1A364572CFA01D038A</code>；<code>roi-64/phases.json</code> <code>7FA21ECA194741526D5697153CFDA03FFC55A4D3884C5A19179A4B8A5CC355CF</code>；<code>roi-noimage-64/phases.json</code> <code>F88F55FCEF5E11870F31E6C6F27F5AA5149C39F35686F32A84E6EE785027B08E</code>；<code>empty-64/phases.json</code> <code>F2BDDA73AF67EB5AC393BD08043D2B3D00BDE6138D39733B25347846729CB2F3</code>；<code>roi-2048/phases.json</code> <code>A0F6A47FEACFF32ABC2901E226EACF14C12BF8D998BC36C7849CA4737A87C3E8</code>。</li>
+<li>首次编译测试因缺 <code>using VisionEditor.Core</code> 失败，随后只修测试引用，所有上述 mode 成功。产品 <code>MainWindow.xaml.cs</code> 的既有 CS8603 警告仍在，不由此归因 UI 停顿。</li>
+<li>现有自有 minidump 未解析出符号化 UI 栈；本轮无 ETW 调用树，也无原厂同操作计时。<strong>未证</strong>是 WPF 布局循环、ROI 渲染、资源加载、消息泵、图像复制或插件运行时锁。若继续，应在自有宿主按 <code>create()</code> / <code>Show</code> 内部 WPF 加载事件与调用栈采样拆分，并对照原厂源中配置窗真正打开路径；用户长期卡死需其发生时的可归属 UI 线程栈/等待链，不由这组临时停顿代替。</li>
+</ul>
+<p class="meta">来源：docs/joint-audit/20261020-pass5-ui-show.md · SHA256 06f671807f063399924a55c4f7eeb81876e2b42416b88817e567f363bd5271fb<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

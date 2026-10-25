@@ -1,0 +1,108 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>节点工具与框架双线边界及任务分配 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 节点工具与框架双线边界及任务分配</p><h1>节点工具与框架双线边界及任务分配</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>节点工具与框架双线边界及任务分配</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="PLUGIN-FRAMEWORK-BOUNDARY.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="PLUGIN-FRAMEWORK-BOUNDARY.html#节点工具与框架双线边界及任务分配">节点工具与框架双线边界及任务分配</a></p><p style="margin-left:14px"><a href="PLUGIN-FRAMEWORK-BOUNDARY.html#用户管控下的任务分配与验收">用户管控下的任务分配与验收</a></p><p style="margin-left:14px"><a href="PLUGIN-FRAMEWORK-BOUNDARY.html#共享文件锁与冲突状态">共享文件锁与冲突状态</a></p><p style="margin-left:14px"><a href="PLUGIN-FRAMEWORK-BOUNDARY.html#合流闸门与任务状态">合流闸门与任务状态</a></p></details><h1 id="节点工具与框架双线边界及任务分配">节点工具与框架双线边界及任务分配</h1><p>更新：2026-10-17。<strong>用户直接管控两个独立项目</strong>；<code>main</code> 负责与具体工具无关的框架层，<code>tool-plugins</code> 负责具体工具及其所需的插件框架层。本文是双方共同遵守的职责和交接契约，不把 main 当成自动派工者，不建立第三套产品代码。双方当前 Git 基线和安全同步顺序见 <a href="TWO-PROJECT-BASELINE.html">TWO-PROJECT-BASELINE.md</a>。插件线的详细任务表在其工作树 <code>docs/PLUGIN-FRAMEWORK-CHECKLIST.md</code>，未提交内容不能计入 main 成果。</p>
+<h2 id="用户管控下的任务分配与验收">用户管控下的任务分配与验收</h2><table>
+<thead>
+<tr>
+<th>管理事项</th>
+<th>唯一负责方</th>
+<th>交付规则</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>优先级、两个项目各自的任务、验收时点与是否集成</td>
+<td>用户</td>
+<td>两项目分别报告原始证据、提交号、实际验证与剩余差异；任何自动化只辅助提醒，不代替用户调度</td>
+</tr>
+<tr>
+<td>跨线接口登记、冲突检查、最终集成与 <code>main</code> 推送</td>
+<td><code>main</code>，在用户要求集成时执行</td>
+<td>指定接口的单一提交所有者；审核双方提交及实际运行，不从另一工作树搬未提交文件</td>
+</tr>
+<tr>
+<td>原生节点配置公共架构、配置模型和生产控件模板</td>
+<td><code>tool-plugins</code> 插件线</td>
+<td>插件线负责真实可复用的节点框架，不把每个工具做成孤立窗口；在其工作树内可修改必要共享代码，合流时逐文件审查</td>
+</tr>
+<tr>
+<td>工具算法、独有参数、专属内容控件/操作适配器、工具依赖与原厂差分</td>
+<td><code>tool-plugins</code> 插件线</td>
+<td>每个工具任务须同时检查“原生证据→公共插件框架能力→工具适配→实际主窗口运行”；缺公共能力由插件线补齐，不把孤立工具测试当作集成完成</td>
+</tr>
+<tr>
+<td>工作流画布、节点位置/连线/交互、Tab/工具箱外框、Group、流程/方案所有权</td>
+<td><code>main</code> 框架线</td>
+<td>负责稳定宿主入口、生命周期及流程数据传递，不复制插件线的配置模板、工具参数页和单节点调试系统</td>
+</tr>
+<tr>
+<td>插件发现、注册与工具箱呈现</td>
+<td><code>main</code> 负责通用发现/装载生命周期与工具箱入口；插件线负责工具清单/元数据</td>
+<td><code>main</code> 不推断插件参数或专属UI；插件线不另造主界面工具箱。原生 <code>ToolBoxData.UpdateLoad</code> / <code>IMVSGroup.LoadAssemblies</code> 已提供审计线索，动态发现尚未闭合</td>
+</tr>
+<tr>
+<td>数据类型、动态端口、复合叶、订阅执行和 ROI/Fixture/Polygon 的交叉契约</td>
+<td>本轮按下表逐项锁定文件负责方</td>
+<td>插件线有用户授权的在制共享改动；主线已有复合与 Group 实现。先比对提交基线与数据形状，再合并，禁止用复制未提交文件覆盖任何一方</td>
+</tr>
+</tbody></table>
+<p>两线可以并行逆向<strong>不同原生证据</strong>，但同一原生控件/状态机只设一个功能主责。用户反馈记录差异，不代替原生源码或受控运行依据。声明“已完成”必须分别说明源码确认、托管实现、实际产品操作、原厂同状态差分四级证据，缺一项就标该级未验证。每个插件交付必须列出所依赖的框架接口以及在主界面/Group中的使用结果；每个 main 框架接口必须由至少一个真实插件消费验证。</p>
+<h2 id="共享文件锁与冲突状态">共享文件锁与冲突状态</h2><p>2026-10-17 只读复查：插件工作树 <code>worktrees/tool-plugins</code> 的最近提交为 <code>1d66877</code>，以下文件存在<strong>未提交在制改动</strong>。主线当前基线 <code>351c778</code>，远程分支同值；共同祖先为 <code>bf52c13</code>。两线还未拥有同一最新代码基线，具体同步闸门见 <a href="TWO-PROJECT-BASELINE.html">TWO-PROJECT-BASELINE.md</a>。</p>
+<table>
+<thead>
+<tr>
+<th>文件/范围</th>
+<th>当前在制主责</th>
+<th>main 在交接前的动作</th>
+<th>合流检查</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>src/VisionPluginContracts/*</code>，含新增 <code>ToolConfiguration*</code>、模板与订阅</td>
+<td>插件线</td>
+<td>不另建公共配置模型或通用窗口；只读审计现有 <code>IWpfToolEditorFactory</code> 和宿主需求</td>
+<td>审核 WPF 工厂过渡、模型生命周期、模板分派、兼容性；验证 main 的 ImageSource/ImageBinary 窗口仍能运行</td>
+</tr>
+<tr>
+<td><code>src/VisionFramework/Contracts.cs</code>、<code>GraphExecutor.cs</code>、<code>GraphValidator.cs</code>、<code>WorkflowSubscriptions.cs</code></td>
+<td>插件线当前在制动态端口/显式整数到浮点输入；main 已在自己的<code>Contracts.cs</code>提交流程<code>WaitTimeMs</code>（FCR-014），形成明确合流冲突点</td>
+<td>插件候选期间不再并发扩展这四个文件；双方保留各自提交，按字段/方法和FCR-013/014审查</td>
+<td>逐字段/逐方法整合动态端口、<code>AcceptInteger</code>、<code>WaitTimeMs</code>、旧类型与数组/Region/Fixture；验证普通端口仍严格、Group引用仍有效</td>
+</tr>
+<tr>
+<td><code>src/VisionEditor/MainWindow.xaml.cs</code>、<code>tool-catalog.json</code>、插件注册/配置入口</td>
+<td>插件线正在接配置宿主；main 原本负责工具箱与注册</td>
+<td>暂停同文件改动；动态发现先做原生审计和接口草案，不在 main 抢改入口</td>
+<td>先合宿主，再单独实现发现/注册；重复启动、分类与图标、缺插件/版本冲突、已有方案打开均要操作验证</td>
+</tr>
+<tr>
+<td><code>src/VisionEditor/ToolConfigurationHost.cs</code>、<code>ToolExecutionScope.cs</code>、<code>WorkflowExecution.cs</code>、<code>ToolDisplays.cs</code></td>
+<td>插件线</td>
+<td>不在 main 复制在制实现</td>
+<td>复核与 <code>ToolEditorHost</code>、<code>NodeDebugExecutor</code>、Group SelfRun 的作用域、取消、缓存及结果清理是否一致</td>
+</tr>
+<tr>
+<td><code>src/VisionEditor</code> 画布交互、<code>src/VisionEditor.Core</code> GraphEditor、Group专属配置、<code>SolutionStore</code></td>
+<td>main</td>
+<td>继续独立推进，不接入插件线的公共配置实现细节</td>
+<td>新工具在根流程与Group中实际拖放、连线、订阅、撤销、保存重开和运行</td>
+</tr>
+<tr>
+<td><code>src/VisionPlugins.*</code> 工具专用代码</td>
+<td>插件线；main 中已有 ImageSource/ImageBinary 是历史集成样本</td>
+<td>main 暂不扩展同名工具实现，避免两份算法/窗口继续分叉</td>
+<td>对同名插件逐工具选一个来源，明确保留/替换方案与差分证据</td>
+</tr>
+<tr>
+<td><code>AGENTS.md</code>、<code>docs/PARALLEL-WORK.md</code>、<code>docs/CONTRACT-REQUESTS.md</code>、两份职责/基线清单</td>
+<td>双方在各自工作树更新职责协议；用户决定合流</td>
+<td>不跨工作树覆盖文档；main本文及基线文件只代表当前分支</td>
+<td>插件线提交后按段落核对职责、基线SHA和合同请求，删除矛盾旧句；文档一致不等于代码已合</td>
+</tr>
+</tbody></table>
+<p>这是一份<strong>协调锁</strong>，不是撤销用户已经给插件线的共享代码授权。若其中某项必须跨线立刻修改，先指定一个提交所有者，另一线只提交接口请求和测试样例；功能合流后再解除文件锁。</p>
+<h2 id="合流闸门与任务状态">合流闸门与任务状态</h2><ol>
+<li>插件线完成 PF 子项与至少一个真实工具迁移，保存原生路径/哈希、接口差异、可运行证据；按用户要求先构建并留人工验收，再以中文提交和推送其分支。<strong>当前未提交在制文件不能直接挑选或当作已交付。</strong></li>
+<li>用户决定合流时，<code>main</code> 比对两线提交与受影响文件，先合公共合同，再合宿主，最后注册一个真实插件。必要时在 main 做增量适配，不整文件覆盖。</li>
+<li>在实际主窗口完成“工具箱出现→拖放→配置→订阅/ROI→运行/停止→结果/错误→Group内调用→保存重开→关闭释放”。检查结果数值与 UI 状态；测试通过、离屏截图和原厂差分分别记录。</li>
+<li>主线更新框架验收表并发布人工验收版本；保留尚未复现的原生数据类型/ABI、设备服务和模板差异。两线中文提交各自工作树；最终 <code>main</code> 集成推送的时点由用户决定。</li>
+</ol>
+<p>不额外创建“管理者代码项目”：用户可直接用两条对话和两份清单管控。定时提醒不是项目负责人，也不会在两轮人工沟通之间自动验收或合并。</p>
+<p class="meta">来源：docs/PLUGIN-FRAMEWORK-BOUNDARY.md · SHA256 61088cb5c17cc66845810e2ff67997028b7036461d176a77e3d1109f38131156<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

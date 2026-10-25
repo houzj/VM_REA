@@ -1,0 +1,451 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "VS01",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原typed int@0x295b0 / float@0x29eb0",
+      "to": "带第五栈字节的ModuleFrame batch调用",
+      "behavior": "两个原体对名称或payload指针为0返回0xe0000001，否则先调用ModuleFrame.VM_M_BatchSetGlobalVarInt/Float。原汇编明确RCX=context+8对象、RDX=变量名、R8=原payload指针、R9D=数量，并从typed入口第五字节实参写到调用前stack+0x20；不能因伪码只显示四个参数就称第五标志未传。IAT分别0x180055638和0x1800556c8绑定同名ModuleFrame导出。所选wrapper没有在batch调用前为数值数组分配/逐字节复制新的本地存储，传的是输入数组地址。",
+      "representation": "context内部对象/名称/原数值pointer/数量/额外字节是五项ABI载荷；额外字节业务意义未从名称猜测。",
+      "cache": "这里不是最终数值heap存储体，只是实际typed入口到ModuleFrame的下一跳；不把pointer转发写成深拷贝已完成。",
+      "release": "wrapper不释放传入数值数组；实际复制、旧值替换和free必须进入ModuleFrame batch导出再核。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.c",
+          "member": "1800295b0",
+          "sha256": "2449a91fe2e6fe9f4b18596b5aa8c1a2bd73f76632a98c2dd3bd9c9a2af953d1",
+          "start": 4,
+          "end": 8,
+          "excerpt": "int FUN_1800295b0(longlong param_1,char *param_2,longlong param_3,int param_4,undefined1 param_5,\n                 char param_6)\n\n{\n  char cVar1;",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.asm.txt",
+          "member": "1800295b0",
+          "sha256": "822831cc5378b9a8b85de7d457b20a5b414e4debccf5f1b5671883fec2d8f619",
+          "start": 17,
+          "end": 29,
+          "excerpt": "180029611\tMOVZX EAX,byte ptr [RSP + 0x140]\n180029619\tMOV byte ptr [RSP + 0x20],AL\n18002961d\tMOV R9D,dword ptr [RSP + 0x138]\n180029625\tMOV R8,qword ptr [RSP + 0x130]\n18002962d\tMOV RDX,qword ptr [RSP + 0x128]\n180029635\tMOV RAX,qword ptr [RSP + 0x120]\n18002963d\tMOV RCX,qword ptr [RAX + 0x8]\n180029641\tCALL qword ptr [0x180055638]\n180029647\tMOV dword ptr [RSP + 0x50],EAX\n18002964b\tCMP dword ptr [RSP + 0x50],0x0\n180029650\tJZ 0x18002965b\n180029652\tMOV EAX,dword ptr [RSP + 0x50]\n180029656\tJMP 0x18002997b",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/180029eb0.asm.txt",
+          "member": "180029eb0",
+          "sha256": "0db783b2247114a6983f0b821f13f86b37c19d67ba3f3095db855eefd594c974",
+          "start": 17,
+          "end": 29,
+          "excerpt": "180029f11\tMOVZX EAX,byte ptr [RSP + 0x140]\n180029f19\tMOV byte ptr [RSP + 0x20],AL\n180029f1d\tMOV R9D,dword ptr [RSP + 0x138]\n180029f25\tMOV R8,qword ptr [RSP + 0x130]\n180029f2d\tMOV RDX,qword ptr [RSP + 0x128]\n180029f35\tMOV RAX,qword ptr [RSP + 0x120]\n180029f3d\tMOV RCX,qword ptr [RAX + 0x8]\n180029f41\tCALL qword ptr [0x1800556c8]\n180029f47\tMOV dword ptr [RSP + 0x50],EAX\n180029f4b\tCMP dword ptr [RSP + 0x50],0x0\n180029f50\tJZ 0x180029f5b\n180029f52\tMOV EAX,dword ptr [RSP + 0x50]\n180029f56\tJMP 0x18002a27d",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "ModuleFrame.VM_M_BatchSetGlobalVarInt RVA0x134710及Float RVA0x134880为已绑定下一种子，本轮未取它们原体，底层存储所有权仍未知。"
+      ]
+    },
+    {
+      "id": "VS02",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原typed string@0x2a7b0",
+      "to": "0x60字节输入描述 → 0x10字节STRING_UNIT临时数组",
+      "behavior": "原体按数量×0x10分配临时数组；逐项从输入记录i×0x60的+0 pointer、+8长度、+0xc容量字段，写到输出i×0x10的同三字段。复制的是pointer/length/size描述，没有在这个循环复制指向的字符串字节。调用ModuleFrame.VM_M_BatchSetGlobalVarString时R8传临时数组、R9D传数量，另传第五栈字节；保存返回码后，无论返回码0还是非0，正常控制流立即对该临时数组delete[]，随后才判断结果/继续联动。IAT0x1800556a0绑定batch string，0x180055540绑定MSVCR120.dll::??_V@YAXPEAX@Z。",
+      "representation": "调用者ByteDataArray大描述 → 本地紧凑描述副本；两个描述中的pData借用同一个字符串内容地址。",
+      "cache": "临时紧凑数组不是长期字符串cache，也不是所有字符串内容的deep copy。",
+      "release": "本体只delete[]紧凑描述数组，不逐项free调用者字符串pointer；异常跨callee时是否清理需异常片段，不能把正常返回路径当全异常保证。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.c",
+          "member": "18002a7b0",
+          "sha256": "2a6cd84e9e0bc740f3ca5085f2d130e6dfc0bb2580105c4ea8349e994e6118b3",
+          "start": 50,
+          "end": 89,
+          "excerpt": "    local_80 = (ulonglong)param_4;\n    auVar1._8_8_ = 0;\n    auVar1._0_8_ = local_80;\n    _Var3 = SUB168(ZEXT816(0x10) * auVar1,0);\n    if (SUB168(ZEXT816(0x10) * auVar1,8) != 0) {\n      _Var3 = 0xffffffffffffffff;\n    }\n    local_b8 = (void *)thunk_FUN_1800502a4(_Var3);\n    local_50 = local_b8;\n    if (local_b8 == (void *)0x0) {\n      cVar2 = HSlog_ShouldLog(4);\n      if (cVar2 != '\\0') {\n        p_Var4 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n        uVar5 = FUN_180003ec0(p_Var4);\n        local_f0 = 0x827;\n        local_f8 = \"CVariableModuBase::SetVarStringValue\";\n        HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] STRING_UNIT new memory is error\",uVar5,\n                       *(undefined4 *)(param_1 + 0x48));\n      }\n      local_c4 = -0x1ffffffe;\n    }\n    else {\n      for (local_c8 = 0; local_c8 < param_4; local_c8 = local_c8 + 1) {\n        *(undefined8 *)((longlong)local_b8 + (longlong)local_c8 * 0x10) =\n             *(undefined8 *)(param_3 + (longlong)local_c8 * 0x60);\n        *(undefined4 *)((longlong)local_b8 + (longlong)local_c8 * 0x10 + 8) =\n             *(undefined4 *)(param_3 + 8 + (longlong)local_c8 * 0x60);\n        *(undefined4 *)((longlong)local_b8 + (longlong)local_c8 * 0x10 + 0xc) =\n             *(undefined4 *)(param_3 + 0xc + (longlong)local_c8 * 0x60);\n      }\n      local_f8 = (char *)CONCAT71(local_f8._1_7_,param_5);\n      local_c4 = VM_M_BatchSetGlobalVarString(*(undefined8 *)(param_1 + 8),param_2,local_b8,param_4)\n      ;\n      local_90 = local_b8;\n      operator_delete__(local_b8);\n      if (((local_c4 == 0) && (0 < param_4)) && (param_6 == '\\0')) {\n        basic_string<>(local_38,param_2);\n        psVar6 = (shared_ptr<class___ExceptionPtr> *)\n                 FUN_180035930((longlong *)(param_1 + 0xf8),\n                               (_String_val<std::_Simple_types<char>_> *)local_38);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.asm.txt",
+          "member": "18002a7b0",
+          "sha256": "b5d9117d2e42d29dfb2668e5b1bef10274cf222b89ae8b8dca2b1948f0f4fed1",
+          "start": 60,
+          "end": 84,
+          "excerpt": "18002a8ee\tMOVSXD RAX,dword ptr [RSP + 0x50]\n18002a8f3\tIMUL RAX,RAX,0x60\n18002a8f7\tMOVSXD RCX,dword ptr [RSP + 0x50]\n18002a8fc\tIMUL RCX,RCX,0x10\n18002a900\tMOV RDX,qword ptr [RSP + 0x60]\n18002a905\tMOV R8,qword ptr [RSP + 0x130]\n18002a90d\tMOV RAX,qword ptr [R8 + RAX*0x1]\n18002a911\tMOV qword ptr [RDX + RCX*0x1],RAX\n18002a915\tMOVSXD RAX,dword ptr [RSP + 0x50]\n18002a91a\tIMUL RAX,RAX,0x60\n18002a91e\tMOVSXD RCX,dword ptr [RSP + 0x50]\n18002a923\tIMUL RCX,RCX,0x10\n18002a927\tMOV RDX,qword ptr [RSP + 0x60]\n18002a92c\tMOV R8,qword ptr [RSP + 0x130]\n18002a934\tMOV EAX,dword ptr [R8 + RAX*0x1 + 0x8]\n18002a939\tMOV dword ptr [RDX + RCX*0x1 + 0x8],EAX\n18002a93d\tMOVSXD RAX,dword ptr [RSP + 0x50]\n18002a942\tIMUL RAX,RAX,0x60\n18002a946\tMOVSXD RCX,dword ptr [RSP + 0x50]\n18002a94b\tIMUL RCX,RCX,0x10\n18002a94f\tMOV RDX,qword ptr [RSP + 0x60]\n18002a954\tMOV R8,qword ptr [RSP + 0x130]\n18002a95c\tMOV EAX,dword ptr [R8 + RAX*0x1 + 0xc]\n18002a961\tMOV dword ptr [RDX + RCX*0x1 + 0xc],EAX\n18002a965\tJMP 0x18002a8d7",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.asm.txt",
+          "member": "18002a7b0",
+          "sha256": "b5d9117d2e42d29dfb2668e5b1bef10274cf222b89ae8b8dca2b1948f0f4fed1",
+          "start": 85,
+          "end": 101,
+          "excerpt": "18002a96a\tMOVZX EAX,byte ptr [RSP + 0x140]\n18002a972\tMOV byte ptr [RSP + 0x20],AL\n18002a976\tMOV R9D,dword ptr [RSP + 0x138]\n18002a97e\tMOV R8,qword ptr [RSP + 0x60]\n18002a983\tMOV RDX,qword ptr [RSP + 0x128]\n18002a98b\tMOV RAX,qword ptr [RSP + 0x120]\n18002a993\tMOV RCX,qword ptr [RAX + 0x8]\n18002a997\tCALL qword ptr [0x1800556a0]\n18002a99d\tMOV dword ptr [RSP + 0x54],EAX\n18002a9a1\tMOV RAX,qword ptr [RSP + 0x60]\n18002a9a6\tMOV qword ptr [RSP + 0x88],RAX\n18002a9ae\tMOV RCX,qword ptr [RSP + 0x88]\n18002a9b6\tCALL qword ptr [0x180055540]\n18002a9bc\tCMP dword ptr [RSP + 0x54],0x0\n18002a9c1\tJZ 0x18002a9cc\n18002a9c3\tMOV EAX,dword ptr [RSP + 0x54]\n18002a9c7\tJMP 0x18002acd3",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "ModuleFrame.VM_M_BatchSetGlobalVarString RVA0x1349f0是否同步复制字符串内容、是否保留临时描述pointer、旧值free与失败回滚仍缺原体。"
+      ]
+    },
+    {
+      "id": "VS03",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原typed设置成功后的运行参数联动",
+      "to": "只取第0个值，发送到记录中的linked模块/参数",
+      "behavior": "三个typed原体都仅在batch返回0、数量>0且typed入口第六字节为0时进入linked记录循环；记录中+0x43c是链接数量、+0x440按0x94字节步进，每项取目标模块ID及+0x14的参数名。int在调用格式helper0x1b450前，汇编实际从原payload第0项读EDX；伪码遗漏该实参，不能说无值输入。float同样读第0项到XMM1再调用0x1b650。字符串联动用原输入第0条描述的pData/nDataLen直接调用VM_M_SetBinayData，未按每个linked目标选择不同数组元素。",
+      "representation": "完整数组先送batch存储入口，随后参数联动使用首项，是两条不同数据边；不能从数组nValueNum推断每个目标都接整数组。",
+      "cache": "linked记录是另一个保留容器，当前新取值不自动删除它；wrapper临时格式化string退出后析构。",
+      "release": "VM_M_SetBinayData收到的数值格式化文本或原字符串内容pointer在调用点仅短期有效，下层是否复制/排队与最后读者仍未知。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.c",
+          "member": "1800295b0",
+          "sha256": "2449a91fe2e6fe9f4b18596b5aa8c1a2bd73f76632a98c2dd3bd9c9a2af953d1",
+          "start": 46,
+          "end": 90,
+          "excerpt": "    if (((local_c8 == 0) && (0 < param_4)) && (param_6 == '\\0')) {\n      basic_string<>(local_38,param_2);\n      psVar2 = (shared_ptr<class___ExceptionPtr> *)\n               FUN_180035930((longlong *)(param_1 + 0xf8),\n                             (_String_val<std::_Simple_types<char>_> *)local_38);\n      std::shared_ptr<__ExceptionPtr>::shared_ptr<__ExceptionPtr>(local_b0,psVar2);\n      ~basic_string<>((basic_string<char,std::char_traits<char>,std::allocator<char>_> *)local_38);\n      local_c0 = 0;\n      while (lVar3 = FUN_180009510((undefined8 *)local_b0),\n            local_c0 < (ulonglong)(longlong)*(int *)(lVar3 + 0x43c)) {\n        lVar3 = FUN_180009510((undefined8 *)local_b0);\n        local_88 = *(longlong *)(lVar3 + 0x440) + 0x14 + local_c0 * 0x94;\n        local_b8 = -1;\n        do {\n          local_b8 = local_b8 + 1;\n        } while (*(char *)(local_88 + local_b8) != '\\0');\n        if (local_b8 == 0) {\n          cVar1 = HSlog_ShouldLog(4);\n          if (cVar1 != '\\0') {\n            p_Var4 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n            uVar5 = FUN_180003ec0(p_Var4);\n            local_f0 = 0x7ad;\n            local_f8 = \"CVariableModuBase::SetVarIntValue\";\n            HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] link module Run ParamName is null\",uVar5,\n                           *(undefined4 *)(param_1 + 0x48));\n          }\n          local_9c = local_c8;\n          FUN_180016480((longlong)local_b0);\n          return local_9c;\n        }\n        FUN_18001b450(local_58);\n        local_70 = FUN_180003ee0((longlong)local_58);\n        local_98 = FUN_180003ec0((_String_val<std::_Simple_types<char>_> *)local_58);\n        lVar3 = FUN_180009510((undefined8 *)local_b0);\n        local_78 = *(longlong *)(lVar3 + 0x440) + 0x14 + local_c0 * 0x94;\n        lVar3 = FUN_180009510((undefined8 *)local_b0);\n        local_a0 = VM_M_SetBinayData(*(undefined4 *)(*(longlong *)(lVar3 + 0x440) + local_c0 * 0x94)\n                                     ,local_78,local_98,local_70 & 0xffffffff);\n        if ((local_a0 != 0) && (cVar1 = HSlog_ShouldLog(4), cVar1 != '\\0')) {\n          lVar3 = FUN_180009510((undefined8 *)local_b0);\n          local_68 = *(longlong *)(lVar3 + 0x440) + 0x14 + local_c0 * 0x94;\n          lVar3 = FUN_180009510((undefined8 *)local_b0);\n          local_90 = local_c0 * 0x94;\n          local_80 = *(longlong *)(lVar3 + 0x440);\n          p_Var4 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.asm.txt",
+          "member": "1800295b0",
+          "sha256": "822831cc5378b9a8b85de7d457b20a5b414e4debccf5f1b5671883fec2d8f619",
+          "start": 98,
+          "end": 103,
+          "excerpt": "1800297bd\tMOV EAX,0x4\n1800297c2\tIMUL RAX,RAX,0x0\n1800297c6\tMOV RCX,qword ptr [RSP + 0x130]\n1800297ce\tMOV EDX,dword ptr [RCX + RAX*0x1]\n1800297d1\tLEA RCX,[RSP + 0xc0]\n1800297d9\tCALL 0x18001b450",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/180029eb0.asm.txt",
+          "member": "180029eb0",
+          "sha256": "0db783b2247114a6983f0b821f13f86b37c19d67ba3f3095db855eefd594c974",
+          "start": 99,
+          "end": 103,
+          "excerpt": "18002a0c2\tIMUL RAX,RAX,0x0\n18002a0c6\tMOV RCX,qword ptr [RSP + 0x130]\n18002a0ce\tMOVSS XMM1,dword ptr [RCX + RAX*0x1]\n18002a0d3\tLEA RCX,[RSP + 0xc0]\n18002a0db\tCALL 0x18001b650",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.c",
+          "member": "18002a7b0",
+          "sha256": "2a6cd84e9e0bc740f3ca5085f2d130e6dfc0bb2580105c4ea8349e994e6118b3",
+          "start": 116,
+          "end": 130,
+          "excerpt": "          local_70 = 0;\n          local_48 = 0;\n          lVar7 = FUN_180009510((undefined8 *)local_a8);\n          local_60 = *(longlong *)(lVar7 + 0x440) + 0x14 + local_c0 * 0x94;\n          lVar7 = FUN_180009510((undefined8 *)local_a8);\n          local_98 = VM_M_SetBinayData(*(undefined4 *)\n                                        (*(longlong *)(lVar7 + 0x440) + local_c0 * 0x94),local_60,\n                                       *(undefined8 *)(param_3 + local_48),\n                                       *(undefined4 *)(param_3 + 8 + local_70));\n          if ((local_98 != 0) && (cVar2 = HSlog_ShouldLog(4), cVar2 != '\\0')) {\n            lVar7 = FUN_180009510((undefined8 *)local_a8);\n            local_88 = *(longlong *)(lVar7 + 0x440) + 0x14 + local_c0 * 0x94;\n            lVar7 = FUN_180009510((undefined8 *)local_a8);\n            local_68 = local_c0 * 0x94;\n            local_78 = *(longlong *)(lVar7 + 0x440);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.asm.txt",
+          "member": "18002a7b0",
+          "sha256": "b5d9117d2e42d29dfb2668e5b1bef10274cf222b89ae8b8dca2b1948f0f4fed1",
+          "start": 186,
+          "end": 194,
+          "excerpt": "18002ab97\tMOV RDX,qword ptr [RSP + 0x130]\n18002ab9f\tMOV R8,qword ptr [RSP + 0xa8]\n18002aba7\tMOV R9D,dword ptr [RDX + R8*0x1 + 0x8]\n18002abac\tMOV RDX,qword ptr [RSP + 0x130]\n18002abb4\tMOV R8,qword ptr [RSP + 0xd0]\n18002abbc\tMOV R8,qword ptr [RDX + R8*0x1]\n18002abc0\tMOV RDX,qword ptr [RSP + 0xb8]\n18002abc8\tMOV ECX,dword ptr [RAX + RCX*0x1]\n18002abcb\tCALL qword ptr [0x180055680]",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "第六字节精确控制是否联动，但其正式参数名/业务语义未取符号；不泛称订阅/copy开关。",
+        "ModuleFrame.VM_M_SetBinayData对这些linked参数文本的接收和租约仍未闭合。"
+      ]
+    },
+    {
+      "id": "VS04",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原typed返回码与后续链接异常门",
+      "to": "batch结果与各linked更新结果分开保留",
+      "behavior": "int/float保存在local_c8的batch结果，string保存在local_c4；batch非0时直接返回该码。batch成功后的linked VM_M_SetBinayData错误保存到另一个local_a0/local_98，仅在日志门下记录，不覆盖最终batch返回值。链接参数名为空时记录后提前返回的也仍是原batch码，剩余链接不再处理。因此函数返回0不能证明每个linked运行参数都已更新；这一结论来自实际局部赋值和返回门，不能把日志存在当作错误向上传播。",
+      "representation": "主存储调用结果与联动结果是两个结果域，不是统一事务。",
+      "cache": "没有在这些分支看到失败时恢复旧数组或撤销已成功linked更新；真实下层存储回滚亦不能从本包装推出。",
+      "release": "原payload和旧值的free仍在下层未知；所选局部shared_ptr释放只退役包装持有的linked记录引用。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.c",
+          "member": "1800295b0",
+          "sha256": "2449a91fe2e6fe9f4b18596b5aa8c1a2bd73f76632a98c2dd3bd9c9a2af953d1",
+          "start": 72,
+          "end": 75,
+          "excerpt": "          local_9c = local_c8;\n          FUN_180016480((longlong)local_b0);\n          return local_9c;\n        }",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.c",
+          "member": "1800295b0",
+          "sha256": "2449a91fe2e6fe9f4b18596b5aa8c1a2bd73f76632a98c2dd3bd9c9a2af953d1",
+          "start": 82,
+          "end": 105,
+          "excerpt": "        local_a0 = VM_M_SetBinayData(*(undefined4 *)(*(longlong *)(lVar3 + 0x440) + local_c0 * 0x94)\n                                     ,local_78,local_98,local_70 & 0xffffffff);\n        if ((local_a0 != 0) && (cVar1 = HSlog_ShouldLog(4), cVar1 != '\\0')) {\n          lVar3 = FUN_180009510((undefined8 *)local_b0);\n          local_68 = *(longlong *)(lVar3 + 0x440) + 0x14 + local_c0 * 0x94;\n          lVar3 = FUN_180009510((undefined8 *)local_b0);\n          local_90 = local_c0 * 0x94;\n          local_80 = *(longlong *)(lVar3 + 0x440);\n          p_Var4 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n          uVar5 = FUN_180003ec0(p_Var4);\n          local_d8 = local_68;\n          local_e0 = *(undefined4 *)(local_80 + local_90);\n          local_f0 = 0x7b4;\n          local_f8 = \"CVariableModuBase::SetVarIntValue\";\n          local_e8 = param_2;\n          HSlog_LogPrint(4,\n                         \"[%s] [ModuId:%d] [%s@%d] SetVarIntValue is error,varName:[%s],id:[%d],paramName:[%s]\"\n                         ,uVar5,*(undefined4 *)(param_1 + 0x48));\n        }\n        ~basic_string<>((basic_string<char,std::char_traits<char>,std::allocator<char>_> *)local_58)\n        ;\n        local_c0 = local_c0 + 1;\n      }\n      FUN_180016480((longlong)local_b0);",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.c",
+          "member": "1800295b0",
+          "sha256": "2449a91fe2e6fe9f4b18596b5aa8c1a2bd73f76632a98c2dd3bd9c9a2af953d1",
+          "start": 108,
+          "end": 109,
+          "excerpt": "  return local_c8;\n}",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.c",
+          "member": "18002a7b0",
+          "sha256": "2a6cd84e9e0bc740f3ca5085f2d130e6dfc0bb2580105c4ea8349e994e6118b3",
+          "start": 121,
+          "end": 148,
+          "excerpt": "          local_98 = VM_M_SetBinayData(*(undefined4 *)\n                                        (*(longlong *)(lVar7 + 0x440) + local_c0 * 0x94),local_60,\n                                       *(undefined8 *)(param_3 + local_48),\n                                       *(undefined4 *)(param_3 + 8 + local_70));\n          if ((local_98 != 0) && (cVar2 = HSlog_ShouldLog(4), cVar2 != '\\0')) {\n            lVar7 = FUN_180009510((undefined8 *)local_a8);\n            local_88 = *(longlong *)(lVar7 + 0x440) + 0x14 + local_c0 * 0x94;\n            lVar7 = FUN_180009510((undefined8 *)local_a8);\n            local_68 = local_c0 * 0x94;\n            local_78 = *(longlong *)(lVar7 + 0x440);\n            p_Var4 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n            uVar5 = FUN_180003ec0(p_Var4);\n            local_d8 = local_88;\n            local_e0 = *(undefined4 *)(local_78 + local_68);\n            local_f0 = 0x842;\n            local_f8 = \"CVariableModuBase::SetVarStringValue\";\n            local_e8 = param_2;\n            HSlog_LogPrint(4,\n                           \"[%s] [ModuId:%d] [%s@%d] SetVarStringValue is error,varName:[%s],id:[%d],paramName:[%s]\"\n                           ,uVar5,*(undefined4 *)(param_1 + 0x48));\n          }\n          local_c0 = local_c0 + 1;\n        }\n        FUN_180016480((longlong)local_a8);\n      }\n    }\n  }\n  return local_c4;",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.c",
+          "member": "18002a7b0",
+          "sha256": "2a6cd84e9e0bc740f3ca5085f2d130e6dfc0bb2580105c4ea8349e994e6118b3",
+          "start": 148,
+          "end": 149,
+          "excerpt": "  return local_c4;\n}",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "offline existing owned Ghidra project -noanalysis; not REA retained evidence"
+        }
+      ],
+      "unknowns": [
+        "native最终存储/引用表一致性与跨线程执行顺序未运行验证；正常返回0仅能按所选返回码来源解释。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "VSU01",
+      "target": "ModuleFrame batch typed final storage",
+      "question": "已取得GlobalVariable三个typed体，但实际值分配/替换/free在ModuleFrame.BatchSetGlobalVarInt/Float/String下层；本轮不能宣称已闭合。"
+    },
+    {
+      "id": "VSU02",
+      "target": "string descriptor and nested bytes lifetime",
+      "question": "紧凑描述在batch正常返回后立即delete[]，嵌套字节仍借用；callee同步copy还是保留pointer未知。"
+    },
+    {
+      "id": "VSU03",
+      "target": "linked propagation and old payload retirement",
+      "question": "first-element联动结果不覆盖batch返回码；下游文字payload复制/排队与旧值最后读者未证。"
+    }
+  ],
+  "provenance": {
+    "original": {
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+      "sha256": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+      "byteLength": 442880
+    },
+    "priorPeImports": {
+      "path": "docs/architecture-recovery/variable-native-receiver.resources/pe-layout.json",
+      "sha256": "4e9f1383eb791c7c8056ee9bf1983cd8fffce20976f5b4cfdd42f6a3753028d9",
+      "selected": [
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_BatchSetGlobalVarInt",
+          "iatRva": "0x55638",
+          "iatVa": "0x180055638"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_SetBinayData",
+          "iatRva": "0x55680",
+          "iatVa": "0x180055680"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_BatchSetGlobalVarString",
+          "iatRva": "0x556a0",
+          "iatVa": "0x1800556a0"
+        },
+        {
+          "module": "ModuleFrame.dll",
+          "name": "VM_M_BatchSetGlobalVarFloat",
+          "iatRva": "0x556c8",
+          "iatVa": "0x1800556c8"
+        },
+        {
+          "module": "MSVCR120.dll",
+          "name": "??_V@YAXPEAX@Z",
+          "iatRva": "0x55540",
+          "iatVa": "0x180055540"
+        }
+      ],
+      "meaning": "Reused original import-table evidence bound to same freshly rehashed DLL; not new runtime module-resolution evidence."
+    },
+    "moduleFrameNextSeeds": {
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/ModuleProxy/x64/ModuleFrame.dll",
+      "sha256": "45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b",
+      "exportMetadataSource": "docs/architecture-recovery/moduleframe-image.resources/pe-layout.json",
+      "exports": [
+        {
+          "name": "VM_M_BatchSetGlobalVarFloat",
+          "ordinal": 42,
+          "rva": "0x134880",
+          "va": "0x180134880",
+          "forwarder": null
+        },
+        {
+          "name": "VM_M_BatchSetGlobalVarInt",
+          "ordinal": 43,
+          "rva": "0x134710",
+          "va": "0x180134710",
+          "forwarder": null
+        },
+        {
+          "name": "VM_M_BatchSetGlobalVarString",
+          "ordinal": 44,
+          "rva": "0x1349f0",
+          "va": "0x1801349f0",
+          "forwarder": null
+        },
+        {
+          "name": "VM_M_DelGlobalVar",
+          "ordinal": 64,
+          "rva": "0x135660",
+          "va": "0x180135660",
+          "forwarder": null
+        }
+      ],
+      "bodyRecoveredInThisSlice": false
+    },
+    "selectedProcedures": 3,
+    "selectedCaseFragments": 0,
+    "files": [
+      {
+        "path": "tests/ArchitectureRecovery/Recover-GlobalVariableStorage.ps1",
+        "sha256": "2e8ba9f1351108db8c783d78d37df41164b3ceb31b242e3c59768e7267e8990e",
+        "byteLength": 2864
+      },
+      {
+        "path": "tests/NativeEvidence/VmNativeCapability.java",
+        "sha256": "3f8146857fed4c06c4fbb94a3cbc35a0aacd971a6d8c2a6fc73f1fcd5a177f83",
+        "byteLength": 2377
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.asm.txt",
+        "sha256": "822831cc5378b9a8b85de7d457b20a5b414e4debccf5f1b5671883fec2d8f619",
+        "byteLength": 6025
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/1800295b0.c",
+        "sha256": "2449a91fe2e6fe9f4b18596b5aa8c1a2bd73f76632a98c2dd3bd9c9a2af953d1",
+        "byteLength": 4627
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/180029eb0.asm.txt",
+        "sha256": "0db783b2247114a6983f0b821f13f86b37c19d67ba3f3095db855eefd594c974",
+        "byteLength": 6028
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/180029eb0.c",
+        "sha256": "9df6cca5b028806e966403dbdcd29260c2321ab774258e889b0350c12abd27f5",
+        "byteLength": 4653
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.asm.txt",
+        "sha256": "b5d9117d2e42d29dfb2668e5b1bef10274cf222b89ae8b8dca2b1948f0f4fed1",
+        "byteLength": 8408
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/18002a7b0.c",
+        "sha256": "2a6cd84e9e0bc740f3ca5085f2d130e6dfc0bb2580105c4ea8349e994e6118b3",
+        "byteLength": 6136
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/completion-typed.json",
+        "sha256": "5708310c94b1c76b20b0a8185027385f689e6e0fba5bcbe743f417a31fec8752",
+        "byteLength": 131
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/functions-1792584802321.tsv",
+        "sha256": "32e90000d3622b5edcf9f9dea97409dc7a700470b57c59495d21fdfc9ebcb566",
+        "byteLength": 699
+      },
+      {
+        "path": "docs/architecture-recovery/variable-native-storage.resources/invocation-typed.json",
+        "sha256": "94919d4aa9f7e2077efc7307e3cb35a2fe6f0539c55b60e67c9bfe77f392a477",
+        "byteLength": 2386
+      }
+    ],
+    "completion": {
+      "path": "docs/architecture-recovery/variable-native-storage.resources/completion-typed.json",
+      "vendorExecuted": false,
+      "finishedUtc": "2026-10-21T12:13:22.5753035Z",
+      "liveProcessHandle": null,
+      "exitCode": 0
+    },
+    "sourceProvider": "offline owned Ghidra project -noanalysis; not REA retained evidence",
+    "wholeBinaryAnalysisComplete": false,
+    "originalRuntimeExecuted": false,
+    "targetCodeExecuted": false,
+    "deviceCalled": false,
+    "anotherWorktreeRead": false,
+    "implementationChanges": false,
+    "liveProcessHandle": null,
+    "fullOriginalChainClosed": false
+  }
+}

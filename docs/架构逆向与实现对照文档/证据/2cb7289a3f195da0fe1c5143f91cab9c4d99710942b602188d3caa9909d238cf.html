@@ -1,0 +1,43 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 2cb7289a3f19 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 2cb7289a3f19</p><h1>原文证据 2cb7289a3f19</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 2cb7289a3f195da0fe1c5143f91cab9c4d99710942b602188d3caa9909d238cf。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>internal sealed class WorkflowRunContext
+{
+ readonly ProcedureDocument procedure; readonly int? groupLoopIndex;
+ readonly Dictionary&lt;string,PortValue> arguments;
+ readonly Dictionary&lt;string,PortValue> variables=new(StringComparer.Ordinal);
+ readonly Dictionary&lt;string,NodeRunRecord> records;
+ public WorkflowRunContext(ProcedureDocument procedure,IReadOnlyDictionary&lt;string,PortValue>? inputs,Dictionary&lt;string,NodeRunRecord> records,int? groupLoopIndex=null)
+ {
+  this.procedure=procedure;this.records=records;this.groupLoopIndex=groupLoopIndex;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);
+  foreach(var pair in arguments){var spec=procedure.Configuration.Inputs.SingleOrDefault(i=>i.Name==pair.Key)??throw new InvalidDataException(&quot;Unknown workflow input: &quot;+pair.Key);if(pair.Value is null||pair.Value.Kind!=spec.Kind||pair.Value.Cardinality!=spec.Cardinality)throw new InvalidDataException(&quot;Workflow input type mismatch: &quot;+pair.Key);}
+
+  foreach(var b in procedure.Configuration.Subscriptions.Where(b=>b.Source.Kind==WorkflowSourceKind.WorkflowInput)){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==b.Source.Id);if(!arguments.ContainsKey(spec.Name)&amp;&amp;spec.NodeId is null)throw new InvalidDataException(&quot;Missing workflow input: &quot;+spec.Name);}
+  foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);
+ }
+ PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&amp;&amp;r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&amp;&amp;r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException(&quot;Current-run source unavailable: &quot;+node+&quot;.&quot;+port);
+ // Only an executed successful producer with absent data may become a primitive
+ // missing-data result. Preserve the existing failure of unavailable predecessors.
+ public bool CanDeferNumericRead(WorkflowValueReference source)=>source.Kind==WorkflowSourceKind.NodeOutput&amp;&amp;records.TryGetValue(source.Id,out var record)&amp;&amp;record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch;
+ public PortValue Resolve(WorkflowValueReference source){if(source.ArrayIndex is not null)throw new InvalidDataException(&quot;Indexed input requires an opted-in primitive reader.&quot;);return source.Kind switch
+ {
+  WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException(&quot;Group LoopIndex requires an owned invocation context.&quot;),
+  WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),
+  WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),
+  WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),
+  WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),
+
+  WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),
+  WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException(&quot;Current-run variable unavailable: &quot;+source.Id),
+  WorkflowSourceKind.WorkflowInput=>Input(source.Id),
+  _=>throw new InvalidDataException(&quot;Unknown source kind.&quot;)
+ };}
+ PortValue Input(string id){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==id);return arguments.TryGetValue(spec.Name,out var value)?value:spec.NodeId is not null?Node(spec.NodeId,spec.Port!):throw new InvalidDataException(&quot;Missing workflow input: &quot;+spec.Name);}
+ public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}
+ public ExecutionSessionResult Complete(ExecutionSessionResult session)
+ {
+  var output=new Dictionary&lt;string,PortValue>(StringComparer.Ordinal);var errors=new List&lt;string>();
+  foreach(var spec in procedure.Configuration.Outputs){try{if(spec.NodeId is null)throw new InvalidDataException(&quot;Unbound workflow output: &quot;+spec.Name);var value=Node(spec.NodeId,spec.Port!);if(value.Kind!=spec.Kind&amp;&amp;!(spec.Kind==DataKind.Image&amp;&amp;DataKinds.IsImage(value.Kind)))throw new InvalidDataException(&quot;type mismatch&quot;);output.Add(spec.Name,value);}catch(InvalidDataException e){errors.Add(spec.Name+&quot;: &quot;+e.Message);}}
+  var displays=new Dictionary&lt;string,IReadOnlyList&lt;PortValue>>(StringComparer.Ordinal);var displayErrors=new List&lt;string>();foreach(var spec in procedure.Configuration.Displays){try{if(spec.NodeId is null)throw new InvalidDataException(&quot;Unbound display: &quot;+spec.Name);displays.Add(spec.Name,Array.AsReadOnly(new[]{Node(spec.NodeId,spec.Port!)}));}catch(InvalidDataException e){displayErrors.Add(e.Message);}}
+  return session with{WorkflowDisplays=new ReadOnlyDictionary&lt;string,IReadOnlyList&lt;PortValue>>(displays),DisplayErrors=displayErrors.AsReadOnly(),Status=errors.Count>0&amp;&amp;session.Status==SessionStatus.Success?SessionStatus.Failed:session.Status,WorkflowInputs=new ReadOnlyDictionary&lt;string,PortValue>(new Dictionary&lt;string,PortValue>(arguments,StringComparer.Ordinal)),WorkflowOutputs=new ReadOnlyDictionary&lt;string,PortValue>(output),LocalVariables=new ReadOnlyDictionary&lt;string,PortValue>(variables.ToDictionary(v=>procedure.Configuration.Variables.Single(i=>i.Id==v.Key).Name,v=>v.Value,StringComparer.Ordinal)),OutputErrors=errors.AsReadOnly()};
+
+ }
+}
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis.html">数据/global-variable-analysis.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

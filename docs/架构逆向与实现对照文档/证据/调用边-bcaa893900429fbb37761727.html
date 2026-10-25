@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ReadCategoryTools / RefreshToolCatalog · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ReadCategoryTools / RefreshToolCatalog · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C03"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ReadCategoryTools / RefreshToolCatalog → 显式插件合同注册 / 新分类状态</h2><p>读取 JSON；声明 Implementation 才按身份加载并注册，拒绝已注册身份；刷新清目录/分类状态与失败会话，重建工具栏。不是执行原 InfoCs 目录协议。</p><p><a href="../专题/loading-navigation.html#edge-C03">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/loading-navigation.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/loading-navigation.edges.json · SHA256 1aa075627c117289aeb061c4bf496955ccab2a4fae0d0b6c4af6d7aba8f13261</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="dccbea4d7abdb67aa8c8a3a31876f5dfe826d606883bab50c412b9cec1b6cec9">{
+  &quot;id&quot;: &quot;C03&quot;,
+  &quot;route&quot;: &quot;当前 · 分类加载&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;ReadCategoryTools / RefreshToolCatalog&quot;,
+  &quot;to&quot;: &quot;显式插件合同注册 / 新分类状态&quot;,
+  &quot;behavior&quot;: &quot;读取 JSON；声明 Implementation 才按身份加载并注册，拒绝已注册身份；刷新清目录/分类状态与失败会话，重建工具栏。不是执行原 InfoCs 目录协议。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolNavigation.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.ReadCategoryTools&quot;,
+      &quot;sha256&quot;: &quot;2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2&quot;,
+      &quot;start&quot;: 46,
+      &quot;end&quot;: 65,
+      &quot;excerpt&quot;: &quot;    IEnumerable&lt;CatalogTool> ReadCategoryTools(string id)\n    {\n        using var json=JsonDocument.Parse(File.ReadAllText(toolCatalogPath));\n        var group=json.RootElement.GetProperty(\&quot;Groups\&quot;).EnumerateArray().Single(g=>g.GetProperty(\&quot;Id\&quot;).GetString()==id);\n        foreach(var item in group.GetProperty(\&quot;Items\&quot;).EnumerateArray())\n        {\n            var tool=item.Deserialize&lt;CatalogTool>()??throw new InvalidDataException(\&quot;Empty tool metadata.\&quot;);\n            if(tool.Implementation is {} reference)\n            {\n                if(tool.ModuleId!=reference.ModuleId)throw new InvalidDataException(\&quot;Catalog module identity differs from selected implementation.\&quot;);\n                managedToolLoads.EnsureLoaded(reference,loaded=>\n                {\n                    if(plugins.Find(reference.ModuleId) is not null||modules.Descriptors.Any(d=>d.Id==reference.ModuleId))\n                        throw new InvalidOperationException(\&quot;Catalog plugin identity is already registered; refresh cannot replace a live module.\&quot;);\n                    plugins.Register(loaded.Plugin,modules,reference.ModuleId,reference.Version);\n                });\n            }\n            yield return tool;\n        }\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolNavigation.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.RefreshToolCatalog&quot;,
+      &quot;sha256&quot;: &quot;2414e9904c3b14d110d05b5b9fa19f2641d79268b961ae73c8aff41cb5842ed2&quot;,
+      &quot;start&quot;: 77,
+      &quot;end&quot;: 81,
+      &quot;excerpt&quot;: &quot;    void RefreshToolCatalog()\n    {\n        if(toolPopup is not null)toolPopup.IsOpen=false;\n        toolGroups=null;toolCategoryLoads.Clear();managedToolLoads.ClearFailures();BuildRail();\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;ManagedToolCatalogLoadSession 内部二进制装载、注册事务和版本合同需另图。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

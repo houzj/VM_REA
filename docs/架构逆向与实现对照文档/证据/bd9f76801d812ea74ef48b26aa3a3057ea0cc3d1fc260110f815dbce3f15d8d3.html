@@ -1,0 +1,67 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 bd9f76801d81 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 bd9f76801d81</p><h1>原文证据 bd9f76801d81</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 bd9f76801d812ea74ef48b26aa3a3057ea0cc3d1fc260110f815dbce3f15d8d3。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VariableManager.cs:1575–1639
+SHA256 1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38
+	public void ImportVar(string strImportFilePath, bool isFromUI = true, Dictionary&lt;string, VarRunParamInfo[]&gt; runParaminfo = null, Action delIOAct = null)
+	{
+		if (string.IsNullOrEmpty(strImportFilePath))
+		{
+			throw new VmException(-536870911);
+		}
+		((IUserBytesData)DataSource.Params)[&quot;GlobalValueImport&quot;] = StringUtil.UTF8GetBytesPadZero(strImportFilePath);
+		for (int num = DataSource.Outputs.Count - 1; num &gt;= 0; num--)
+		{
+			VmIO vmIO = DataSource.Outputs[num];
+			if (vmIO.CustomVisibleA)
+			{
+				try
+				{
+					UnBindGlobarVarItem(vmIO.Name, isFromUI);
+				}
+				catch (Exception ex)
+				{
+					if (ex is VmException ex2)
+					{
+						LogHelper.Error(&quot;UnBindingGlobalVariable is error:&quot; + ex2.errorMessage);
+					}
+					else
+					{
+						LogHelper.Error(&quot;UnBindingGlobalVariable is error:&quot; + ex.ToString());
+					}
+				}
+				ChangeToSendReceiveData(vmIO.Index);
+				if (runParaminfo.ContainsKey(vmIO.Name))
+				{
+					SetRunParamBind(vmIO.Name, vmIO.TypeName, runParaminfo[vmIO.Name], null);
+				}
+			}
+		}
+		delIOAct?.Invoke();
+		if (isFromUI)
+		{
+			ModuleVarDict.Clear();
+		}
+		List&lt;VarItem&gt; varList = new List&lt;VarItem&gt;();
+		GetAllVar(ref varList);
+		foreach (VarItem item in varList)
+		{
+			object ioType = GetIoType(item.Type);
+			if (ioType == null)
+			{
+				throw new Exception(&quot;type is not support&quot;);
+			}
+			List&lt;string&gt; leafIoNames = null;
+			if (item.IsCombination)
+			{
+				leafIoNames = item.SubIOInfos.Select((VarItem x) =&gt; x.Name).ToList();
+			}
+			VmIO vmIO2 = AddIoByType(ioType, item.Name, DataSource.Outputs, leafIoNames);
+			if (vmIO2 != null)
+			{
+				vmIO2.Index = item.Index;
+			}
+		}
+	}
+
+	public void AddGroup(string groupName)
+	{
+		if (string.IsNullOrEmpty(groupName))
+		{</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../专题/variable-file-entry-audit.html">变量文件入口：主菜单子窗口、gvar路径命令与订阅边界</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

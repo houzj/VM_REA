@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SetContainerZoomIndex · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>SetContainerZoomIndex · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-CV02"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>SetContainerZoomIndex → CanvasZoomIndex / Dirty / Changed</h2><p>索引限 0..19；无变化返回；替换目标 Procedure 的 CanvasZoomIndex，置 Dirty 并发 Changed，不增结构历史根或 Revision。字段默认 9，并随独立方案序列化。</p><p><a href="../专题/canvas-viewport.html#edge-CV02">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/canvas-viewport.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/canvas-viewport.edges.json · SHA256 4fed170ca686179656302412fc5543a52af51554793d8d6c7bc3c26b3cd24409</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="708df12b67851b555307807f153e2b834dce5e67f33764d77c2db62007fd0fd8">{
+  &quot;id&quot;: &quot;CV02&quot;,
+  &quot;route&quot;: &quot;当前 · 缩放与鹰眼&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;SetContainerZoomIndex&quot;,
+  &quot;to&quot;: &quot;CanvasZoomIndex / Dirty / Changed&quot;,
+  &quot;behavior&quot;: &quot;索引限 0..19；无变化返回；替换目标 Procedure 的 CanvasZoomIndex，置 Dirty 并发 Changed，不增结构历史根或 Revision。字段默认 9，并随独立方案序列化。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor.Core/GraphEditorDocument.Viewport.cs&quot;,
+      &quot;member&quot;: &quot;GraphEditorDocument.SetContainerZoomIndex&quot;,
+      &quot;sha256&quot;: &quot;5a349c47a1cb9f3ba23774ff58364057af999869b47cb47e2d8c5d3738644b1a&quot;,
+      &quot;start&quot;: 8,
+      &quot;end&quot;: 24,
+      &quot;excerpt&quot;: &quot;    public void SetContainerZoomIndex(string procedureId, int index)\n    {\n        if (index is &lt; 0 or > 19) throw new ArgumentOutOfRangeException(nameof(index));\n        var procedure = Procedure(procedureId);\n        if (procedure.CanvasZoomIndex == index) return;\n        document = document with\n        {\n            Procedures = document.Procedures.Select(p => p.Id == procedureId\n                ? p with { CanvasZoomIndex = index } : p).ToArray()\n        };\n        // UserData belongs to the current view, rather than a new structural edit.\n        // Existing document snapshots carry it; redo and canvas gesture revisions survive.\n        IsDirty = true;\n        Changed?.Invoke();\n    }\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/Contracts.cs&quot;,
+      &quot;member&quot;: &quot;ProcedureDocument.CanvasZoomIndex&quot;,
+      &quot;sha256&quot;: &quot;c31843c84f48a91264409edc33ff0fd4a870169c222fa255df4764deea24a269&quot;,
+      &quot;start&quot;: 27,
+      &quot;end&quot;: 27,
+      &quot;excerpt&quot;: &quot;public sealed record ProcedureDocument(string Id,string Name,IReadOnlyList&lt;NodeDocument> Nodes,IReadOnlyList&lt;ConnectionDocument> Connections,IReadOnlyList&lt;ExecutionLinkDocument>? ExecutionLinks=null){public GroupOwnership? GroupOwner{get;init;}public int CanvasZoomIndex{get;init;}=9;public double? OverviewX{get;init;}public double? OverviewY{get;init;}public int ContinuousRunIntervalMs{get;init;}=80;public int WaitTimeMs{get;init;}public bool StopOnNg{get;init;}public WorkflowConfiguration Configuration{get;init;}=new();}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/SolutionStore.cs&quot;,
+      &quot;member&quot;: &quot;SolutionStore.Save serialization&quot;,
+      &quot;sha256&quot;: &quot;533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365&quot;,
+      &quot;start&quot;: 18,
+      &quot;end&quot;: 18,
+      &quot;excerpt&quot;: &quot;        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\&quot;Solution exceeds size limit.\&quot;);&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;不写原版 ProceZoomIndex UserData 字节；不是 .sol 兼容声明。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

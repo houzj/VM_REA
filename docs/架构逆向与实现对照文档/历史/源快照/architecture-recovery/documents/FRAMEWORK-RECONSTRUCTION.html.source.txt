@@ -1,0 +1,55 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>配置框架逆向与重建</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../FRAMEWORK-RECONSTRUCTION.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#配置框架逆向与重建">配置框架逆向与重建</a></p><p style="margin-left:14px"><a href="#已确认的架构差异">已确认的架构差异</a></p><p style="margin-left:14px"><a href="#重建职责">重建职责</a></p><p style="margin-left:14px"><a href="#实施状态">实施状态</a></p></details><h1 id="配置框架逆向与重建">配置框架逆向与重建</h1><p>当前优先级是修正节点配置框架，再继续标定工具闭合。原有数值、文件和受控运行证据继续保留；旧窗口的可运行检查不构成原厂配置架构或 UI 已闭合。</p>
+<p>最新职责：本项目负责插件相关框架的完整任务设计与实现；主项目负责通用工作流/画布/Group/生命周期，用户自行管控两项目。具体能力与交叉文件所有权见 <a href="PLUGIN-DEVELOPMENT-BOUNDARY.html">PLUGIN-DEVELOPMENT-BOUNDARY.md</a>，不按程序集目录一刀切。当前只更新职责文档，保留已有验收候选。</p>
+<h2 id="已确认的架构差异">已确认的架构差异</h2><p>原厂普通模块链路为 <code>ModuleParam → AlgorithmTabRoot → ParamsConfigControlBase → ParamsTabUserControl → ParamListView/ParamUserControl → UserTempConverter → DataTemplate</code>。外层 <code>ParamsTabControlBase</code> 是普通参数窗口；<code>ParamsConfigWithRenderControlBase</code> 是另一种组合宿主，不能将其宽屏布局作为所有节点的默认参数窗。</p>
+<p>原厂配置模型与执行模块各有职责。<code>AlgorithmTabRoot</code> 承载页签、分组、外部参数、左右底部命令、选中页、窗口尺寸、订阅和 ROI 桥接。<code>NameValueItem</code> 的展示类型、状态和命令驱动模板选择。执行参数的整数、浮点、字符串类型不足以决定控件类型。<code>GroupLinkItem</code> 克隆公共组内容并设置父链；不是丢弃组后手写几个相似字段。</p>
+<p>当前 <code>ModuleDescriptor</code> 继续承担执行身份、输入输出及参数校验，这是合理的边界。缺失的是并列的配置模型及其公共宿主合同。<code>IWpfToolEditorFactory</code> 直接返回任意 <code>Window</code>，使插件各自决定页签、尺寸、按钮和调度；宿主又用 <code>ShowDialog()</code> 打开，造成系统性偏差。修复不能只扩大 <code>ModuleDescriptor</code> 或修改几个窗口尺寸。</p>
+<p>具体源码、行号、原始资源哈希和确认程度见 <code>docs/plugins/configuration-host-lifecycle-evidence.json</code>；模型和模板的专项清单继续补入本目录。没有执行原厂完整桌面生命周期的部分均保留为源码确认，不冒充运行验证。</p>
+<h2 id="重建职责">重建职责</h2><table>
+<thead>
+<tr>
+<th>层次</th>
+<th>负责内容</th>
+<th>禁止替代方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>执行合同</td>
+<td>输入输出、参数值、结果、错误、取消、会话作用域</td>
+<td>用 UI 控件替代参数语义</td>
+</tr>
+<tr>
+<td>配置模型</td>
+<td>原厂节点类型、页签与组顺序、展示键、状态、订阅、操作元数据</td>
+<td>从执行类型猜控件，丢弃隐藏/废弃/继承规则</td>
+</tr>
+<tr>
+<td>配置适配器</td>
+<td>插件特有数据读取、设置、操作及特殊内容扩展</td>
+<td>插件自行创建顶层窗口、捏造通用底部命令</td>
+</tr>
+<tr>
+<td>公共模板目录</td>
+<td>展示键到原厂控件模板的映射及明确覆盖状态</td>
+<td>未支持类型回退普通文本框并声称完成</td>
+</tr>
+<tr>
+<td>公共配置宿主</td>
+<td>窗口所有权、唯一当前实例、尺寸绑定、页签/滚动/固定命令栏</td>
+<td>普通参数窗与渲染组合宿主混用</td>
+</tr>
+<tr>
+<td>图像/ROI 与订阅桥接</td>
+<td>连接当前工作流和图像视图，保持原模型事件及生命周期</td>
+<td>每个插件创建另一套图像或订阅系统</td>
+</tr>
+</tbody></table>
+<p><code>NeedPopTip</code> 不能按名字统一解释为操作前确认。原厂清图先执行，再按成功/失败显示消息；重置参数有独立的确认流程。执行按钮、连续执行、生成文件和清除操作必须由各工具的 XML 和命令类型决定。连续自执行原厂有 300 ms 调度和结果回调门控；当前插件里的 1 ms 循环不是等价实现。</p>
+<h2 id="实施状态">实施状态</h2><ul>
+<li>已完成普通参数窗口生命周期的首个公共切片：同一节点重用当前窗口，换节点关闭旧窗，设置主窗口所有权，非模态 <code>Show()</code>，关闭释放身份，方案切换与宿主关闭清理。11 项离屏 WPF 生命周期检查通过；它们不是完整模板验证。</li>
+<li>已新增并列配置模型提供器，宿主优先使用公共 ModelWindow；标定加载已真实接入模型、生产模板、订阅/运行和文件通知服务。其余旧窗口工厂仍属于过渡状态，不能因此获得 UI 闭合认定。图像源正在迁移；N点复杂内容仍有明确缺口。</li>
+<li>普通配置、带渲染配置、专属控件、订阅、自动执行和公共显示仍需逐项迁移与跨节点回归。尚未把旧窗口机械缩小作为框架修复。</li>
+<li>N 点、N 图像、旋转及标定加载作为不同复杂度的迁移样本。完成后启动明确标记构建供用户手动验收，通过后再进行中文提交与推送。</li>
+</ul>
+<p>截图和验收启动辅助保留在 <code>tests</code>。只在本 worktree 写入代码、证据和构建输出，不修改其他工作目录，不进行设备测试。</p>
+<p>正式任务、主线协调与剩余跨线差异以 <code>PLUGIN-FRAMEWORK-CHECKLIST.md</code>、main <code>325b48c</code> 的边界/集成清单及 <code>CONTRACT-REQUESTS.md</code> 为准。通过状态/模板/控件专项检查不等于全部节点已迁移，原厂桌面逐状态差分仍单独记录。</p>
+<p class="meta">来源：docs/FRAMEWORK-RECONSTRUCTION.md · SHA256 ae35f2ff73f19b7d36cdf68cb5210510a416ed8bb58cd33978c73130688a3fb5<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

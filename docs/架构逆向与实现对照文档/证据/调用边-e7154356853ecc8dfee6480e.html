@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MainWindow.RefreshToolDisplay · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>MainWindow.RefreshToolDisplay · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C10"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>MainWindow.RefreshToolDisplay → 清旧帧 → provider.LastDisplay → 三个presenter</h2><p>每次递增request generation，捕获execution owner/procedure；先Show(null)清旧图/记录/列表并折叠，再仅有provider、node且results含node时LastDisplay，随后ApplyPositions。provider/位置异常只在Current门通过时写宿主诊断；再经request/owner/procedure门才Show新帧并按Tab显隐。Show(frame)在该try之外，其异常不受此catch保护。</p><p><a href="../专题/rendering-layers.html#edge-C10">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/rendering-layers.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/rendering-layers.edges.json · SHA256 28101fd3e74d0ef6d0fc0f2c5059c29b49d8a7d9e0e05a0081c069f7d6bfb43b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="a505f935dba47b997fdf667255af573b105aa1ced601db3c9e642b16d6e0d4cd">{
+  &quot;id&quot;: &quot;C10&quot;,
+  &quot;route&quot;: &quot;当前 · 实际结果呈现与有限导出&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;MainWindow.RefreshToolDisplay&quot;,
+  &quot;to&quot;: &quot;清旧帧 → provider.LastDisplay → 三个presenter&quot;,
+  &quot;behavior&quot;: &quot;每次递增request generation，捕获execution owner/procedure；先Show(null)清旧图/记录/列表并折叠，再仅有provider、node且results含node时LastDisplay，随后ApplyPositions。provider/位置异常只在Current门通过时写宿主诊断；再经request/owner/procedure门才Show新帧并按Tab显隐。Show(frame)在该try之外，其异常不受此catch保护。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolDisplays.cs&quot;,
+      &quot;member&quot;: &quot;Host pull and owner guards&quot;,
+      &quot;sha256&quot;: &quot;f3ae89186549591a8a025fc8d36d66bc2b5ea959ec3ed293d3e1030bcdd0e656&quot;,
+      &quot;start&quot;: 22,
+      &quot;end&quot;: 54,
+      &quot;excerpt&quot;: &quot; void RefreshToolDisplay(NodeDocument? node){\n  long request=++toolDisplayRequestGeneration;\n  var owner=CaptureExecutionOwner();string procedure=doc.CurrentProcedureId;\n  bool Current()=>request==toolDisplayRequestGeneration&amp;&amp;IsCurrentExecutionOwner(owner)&amp;&amp;doc.CurrentProcedureId==procedure;\n  // main's pull-view adapter clears the previous source before asking a new provider.\n  toolDisplayImage.Show(null);toolDisplayRecord.Show(null);toolDisplayList.Show(null);\n  toolDisplayImage.Visibility=toolDisplayRecord.Visibility=toolDisplayList.Visibility=Visibility.Collapsed;\n  Preview.Visibility=PreviewImageName.Visibility=Visibility.Visible;\n  EmptyImage.Visibility=Preview.Source is null?Visibility.Visible:Visibility.Collapsed;\n  var provider=node is null?null:plugins.Find(node.ModuleId) as IToolDisplayProvider;\n  ToolDisplayFrame? frame=null;\n  try{\n   if(provider is not null&amp;&amp;node is not null&amp;&amp;results.ContainsKey(node.Id))frame=provider.LastDisplay(node,doc.BaseDirectory,executionScope.ForProcedure(doc.CurrentProcedureId));\n   if(frame is not null&amp;&amp;node is not null)frame=ToolConfigurationDisplaySubscriptions.ApplyPositions(frame,node,doc.CurrentProcedureId,(source,port)=>results.GetValueOrDefault(source)?.Outputs.GetValueOrDefault(port));\n  }\n  catch(Exception error){if(!Current())return;StatusText.Text=\&quot;结果显示失败：\&quot;+error.Message;} // Independent host diagnostic; not native exception parity.\n  if(!Current())return;\n  toolRecordTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;\n  toolListTab.Visibility=provider is null?Visibility.Collapsed:Visibility.Visible;\n  if(provider is null&amp;&amp;DisplayTabs.SelectedIndex>1)DisplayTabs.SelectedIndex=0;\n  toolDisplayImage.Show(frame);toolDisplayRecord.Show(frame);toolDisplayList.Show(frame);\n  bool overlay=frame is not null&amp;&amp;DisplayTabs.SelectedIndex==0;\n  toolDisplayImage.Visibility=overlay?Visibility.Visible:Visibility.Collapsed;\n  Preview.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;\n  PreviewImageName.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;\n  if(overlay)EmptyImage.Visibility=Visibility.Collapsed;\n  ImagePreviewPane.Visibility=DisplayTabs.SelectedIndex==0?Visibility.Visible:Visibility.Collapsed;\n  ModuleResultsGrid.Visibility=DisplayTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;\n  toolDisplayRecord.Visibility=provider is not null&amp;&amp;DisplayTabs.SelectedIndex==2?Visibility.Visible:Visibility.Collapsed;\n  toolDisplayList.Visibility=provider is not null&amp;&amp;DisplayTabs.SelectedIndex==3?Visibility.Visible:Visibility.Collapsed;\n  toolDisplayImage.LayoutTransform=new ScaleTransform(previewScale,previewScale);\n }\n}&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/ToolDisplays.cs&quot;,
+      &quot;member&quot;: &quot;Presenter initialization&quot;,
+      &quot;sha256&quot;: &quot;f3ae89186549591a8a025fc8d36d66bc2b5ea959ec3ed293d3e1030bcdd0e656&quot;,
+      &quot;start&quot;: 14,
+      &quot;end&quot;: 20,
+      &quot;excerpt&quot;: &quot; void InitializeToolDisplays(){\n  ((Grid)Preview.Parent).Children.Add(toolDisplayImage);\n  var pane=(Grid)ImagePreviewPane.Parent;\n  Grid.SetRow(toolDisplayRecord,2);Grid.SetRow(toolDisplayList,2);\n  pane.Children.Add(toolDisplayRecord);pane.Children.Add(toolDisplayList);\n  DisplayTabs.Items.Add(toolRecordTab);DisplayTabs.Items.Add(toolListTab);\n }&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;这不是原版三仓/回调队列；provider逐工具快照与真实线程交错未在本片展开。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

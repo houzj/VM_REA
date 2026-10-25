@@ -1,0 +1,114 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 23fe51cbf90f · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 23fe51cbf90f</p><h1>原文证据 23fe51cbf90f</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 23fe51cbf90f57a2097242ab97418c42764c35749cfe85e3ac4c05b8356e607a。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using VisionCore;
+using VisionFramework;
+using VisionPluginContracts;
+namespace VisionPlugins.MapCalibration;
+
+public sealed partial class MapCalibrationPlugin:IVisionToolPlugin,IToolConfigurationProvider,IToolPointInputAliasProvider,IToolDisplayProvider {
+ public const string Id=&quot;vision.map-calibration&quot;;
+ public ToolManifest Manifest{get;}=new(Id,&quot;1.0.0&quot;,&quot;映射标定&quot;,&quot;calibration&quot;,&quot;catalog/IMVSMapCalibModuImageEnable.png&quot;);
+ public IReadOnlyList&lt;ToolPointInputAlias&gt; PointInputAliases{get;}=[new(&quot;Physical Point&quot;,&quot;PhysicalPointX&quot;,&quot;PhysicalPointY&quot;)];
+ public ToolDisplayDefinition DisplayDefinition{get;}=new(&quot;CurCornersPointNum:{0}ObjCornersPointNum:{1}ProCornersPointNum:{2}kx:{3}ky:{4}MapError:{5}Calib1:{6}Calib2:{7}Scale1:{8}Scale2:{9}&quot;,[&quot;CurCornersPointNum&quot;,&quot;ObjCornersPointNum&quot;,&quot;ProCornersPointNum&quot;,&quot;XRatio&quot;,&quot;YRatio&quot;,&quot;MapError&quot;,&quot;CalibStatus1&quot;,&quot;CalibStatus2&quot;,&quot;PixelScale1&quot;,&quot;PixelScale2&quot;],[&quot;CurCornersPointNum&quot;,&quot;ObjCornersPointNum&quot;,&quot;ProCornersPointNum&quot;,&quot;XRatio&quot;,&quot;YRatio&quot;,&quot;MapError&quot;,&quot;CalibStatus1&quot;,&quot;CalibStatus2&quot;,&quot;PixelScale1&quot;,&quot;PixelScale2&quot;],&quot;InputImage2&quot;);
+ public ToolDisplayFrame? LastDisplay(NodeDocument node,string baseDirectory,ModuleExecutionScope? scope){if(node.Parameters.TryGetValue(&quot;InputType&quot;,out var mode)&amp;&amp;mode.GetInt32()!=1)return null;var session=CurrentImages(node.Id,baseDirectory,scope);lock(session){if(session.Result is not {} result||session.Target is null)return null;var inputs=new Dictionary&lt;string,PortValue&gt;{{&quot;InputImage2&quot;,PortValue.Image(session.Target)}};inputs[&quot;InImage2&quot;]=inputs[&quot;InputImage2&quot;];var outputs=Runtime.ImageResult(result).Result.Outputs;var frame=ToolDisplayService.Build(DisplayDefinition,ToolDisplayService.Read(node.Parameters,DisplayDefinition),inputs,outputs);return frame with{Graphics=ToolDisplayGraphics.Build(MapCalibrationMetadata.DisplayObjects,node.Parameters,inputs,outputs),ImageLayers=ToolDisplayImageLayers.Build(MapCalibrationMetadata.DisplayObjects,node.Parameters,inputs,outputs),ImageVisible=false};}}
+ public ModuleDescriptor Descriptor{get;}=new(Id,&quot;1.0.0&quot;,&quot;映射标定&quot;,[
+  new(&quot;InputImage1&quot;,DataKind.GrayImage,false),new(&quot;InputImage2&quot;,DataKind.GrayImage,false),new(&quot;InputROI1&quot;,DataKind.Region,false),new(&quot;InputROI2&quot;,DataKind.Region,false),new(&quot;RefreshSignal&quot;,DataKind.Integer,false){SupportsDeferredIntegerRead=true},new(&quot;Physical Point&quot;,DataKind.Point,false),new(&quot;PhysicalPointX&quot;,DataKind.NumberArray,false){SupportsDeferredNumericRead=true},new(&quot;PhysicalPointY&quot;,DataKind.NumberArray,false){SupportsDeferredNumericRead=true},new(&quot;WorldRotateAngle&quot;,DataKind.NumberArray,false){SupportsDeferredNumericRead=true},new(&quot;Trigger&quot;,DataKind.Text,false){SupportsDeferredTextRead=true},new(&quot;TeachFlagInput&quot;,DataKind.Text,false){SupportsDeferredTextRead=true}
+ ],new[]{&quot;ModuStatus&quot;,&quot;CalibStatus&quot;,&quot;CurCornersPointNum&quot;,&quot;ObjCornersPointNum&quot;,&quot;ProCornersPointNum&quot;,&quot;CalibStatus1&quot;,&quot;CalibStatus2&quot;}.Select(n=&gt;new PortDescriptor(n,DataKind.Integer,false)).Append(new(&quot;ModuRunTime&quot;,DataKind.Number,true)).Concat(new[]{&quot;XRatio&quot;,&quot;YRatio&quot;,&quot;MapError&quot;,&quot;PixelScale1&quot;,&quot;PixelScale2&quot;}.Select(n=&gt;new PortDescriptor(n,DataKind.Number,false))).Concat(new[]{&quot;Current Corners Point&quot;,&quot;Object Corners Point&quot;,&quot;Projection Corners Point&quot;}.Select(n=&gt;new PortDescriptor(n,DataKind.Point,false){Cardinality=ValueCardinality.Array})).Concat(new[]{&quot;CornersCurPointX&quot;,&quot;CornersCurPointY&quot;,&quot;CornersObjPointX&quot;,&quot;CornersObjPointY&quot;,&quot;CornersProPointX&quot;,&quot;CornersProPointY&quot;,&quot;DetectCenterX&quot;,&quot;DetectCenterY&quot;,&quot;DetectWidth&quot;,&quot;DetectHeight&quot;,&quot;DetectAngle&quot;}.Select(n=&gt;new PortDescriptor(n,DataKind.NumberArray,false))).Append(new(&quot;ROI&quot;,DataKind.Region,false)).ToArray(),Parameters()){RoiEditor=new([RoiKind.Rectangle],Maximum:1,FullImage:true)};
+ static JsonElement J&lt;T&gt;(T value)=&gt;JsonSerializer.SerializeToElement(value);
+ static ParameterDescriptor[] Parameters()=&gt;[
+  new(&quot;InputType&quot;,ParameterKind.Integer,true,J(1),1,2),new(&quot;TeachEnable&quot;,ParameterKind.Boolean,true,J(false)),new(&quot;TeachFlag&quot;,ParameterKind.Text,true,J(&quot;&quot;)),new(&quot;CalibPath0&quot;,ParameterKind.Text,true,J(&quot;&quot;)),new(&quot;CalibPath1&quot;,ParameterKind.Text,true,J(&quot;&quot;)),new(&quot;CalibPathName&quot;,ParameterKind.Text,true,J(&quot;&quot;)),new(&quot;RefreshFileEnable&quot;,ParameterKind.Boolean,true,J(false)),new(&quot;CalibBoardType&quot;,ParameterKind.Integer,true,J(7),6,9),new(&quot;HomoFreedom&quot;,ParameterKind.Integer,true,J(1),1,3),new(&quot;WeightFun&quot;,ParameterKind.Integer,true,J(3),1,3),new(&quot;WeightFactor&quot;,ParameterKind.Integer,true,J(20),1,200),new(&quot;FilterStatus&quot;,ParameterKind.Integer,true,J(1),1,2),new(&quot;FilterStatus2&quot;,ParameterKind.Integer,true,J(1),1,2),new(&quot;ConfigurationUserData&quot;,ParameterKind.Text,true,J(&quot;{}&quot;)),new(ToolDisplayService.SettingsParameter,ParameterKind.Text,true,J(&quot;&quot;)),new(ToolConfigurationDisplaySubscriptions.ParameterName,ParameterKind.Text,true,J(&quot;{}&quot;)),new(ToolDisplayObjectStore.ParameterName,ParameterKind.Text,true,J(&quot;{}&quot;))
+ ];
+ readonly ConcurrentDictionary&lt;string,MapCalibrationFileSession&gt; standalone=new();
+ sealed class ImageSession {public GrayImage? Source,Target;public bool SourcePending,TargetPending,TeachTriggered;public MapCalibrationPose SourcePose,TargetPose,TeachPose;public MapCalibrationImageResult? Result;}
+ // One actual module/node ownership key: shell Retain/RemoveNode must retain and release both caches together.
+ sealed class ScopedState(string directory) {public readonly ImageSession Images=new();public readonly MapCalibrationFileSession File=new(directory);}
+ readonly ConcurrentDictionary&lt;string,ImageSession&gt; images=new();
+ ImageSession CurrentImages(string node,string directory,ModuleExecutionScope? scope)=&gt;scope?.State(Id,node,()=&gt;new ScopedState(directory)).Images??images.GetOrAdd(Path.GetFullPath(directory)+&quot;|&quot;+node,_=&gt;new());
+ MapCalibrationFileSession Current(string node,string directory,ModuleExecutionScope? scope)=&gt;scope?.State(Id,node,()=&gt;new ScopedState(directory)).File??standalone.GetOrAdd(Path.GetFullPath(directory)+&quot;|&quot;+node,_=&gt;new(directory));
+ public void Reset(string nodeId){foreach(var key in standalone.Keys.Where(k=&gt;k.EndsWith(&quot;|&quot;+nodeId,StringComparison.Ordinal)))standalone.TryRemove(key,out _);foreach(var key in images.Keys.Where(k=&gt;k.EndsWith(&quot;|&quot;+nodeId,StringComparison.Ordinal)))images.TryRemove(key,out _);}
+ public IModule CreateRuntime()=&gt;new Runtime(this);
+ public System.Windows.Forms.Form CreateEditor(ToolEditorContext context)=&gt;throw new InvalidOperationException(&quot;Use the shared configuration provider.&quot;);
+ sealed class Runtime(MapCalibrationPlugin plugin):IModule {
+  public ModuleDescriptor Descriptor=&gt;plugin.Descriptor;
+  public async ValueTask&lt;ModuleResult&gt; ExecuteAsync(ModuleExecutionContext c,CancellationToken token){
+   var timer=Stopwatch.StartNew();
+   var result=c.Integer(&quot;InputType&quot;)==1?await Image(c,token):await File(c,token);
+   var outputs=result.Outputs.ToDictionary(p=&gt;p.Key,p=&gt;p.Value);
+   outputs[&quot;ModuRunTime&quot;]=PortValue.Number(timer.Elapsed.TotalMilliseconds);
+   return result with{Outputs=outputs};
+  }
+  ValueTask&lt;ModuleResult&gt; File(ModuleExecutionContext c,CancellationToken token){
+   token.ThrowIfCancellationRequested();var state=plugin.Current(c.NodeId,c.BaseDirectory,c.Scope);lock(state){
+    for(int i=0;i&lt;2;i++){var path=c.Text(&quot;CalibPath&quot;+i);if(path!=state.InputPath(i)){uint code=state.SetInputPath(i,path);if(code!=0)return Fail(code,&quot;读取输入标定文件失败。&quot;);}}
+    state.RefreshOutput=c.Boolean(&quot;RefreshFileEnable&quot;);string output=c.Text(&quot;CalibPathName&quot;);if(output.Length&gt;0)state.SetOutputPath(output);
+    var signal=MapCalibrationInputReader.Integer(c,&quot;RefreshSignal&quot;);bool refresh=signal.ErrorCode==0&amp;&amp;signal.Value!=0;
+    if(refresh)for(int i=0;i&lt;2;i++){uint code=state.SetInputPath(i,state.InputPath(i));if(code!=0)return Fail(code,&quot;刷新输入标定文件失败。&quot;);}
+    var result=state.Run();if(result.ErrorCode!=0)return ValueTask.FromResult(new ModuleResult(ModuleStatus.Failed,new Dictionary&lt;string,PortValue&gt;{{&quot;ModuStatus&quot;,PortValue.Integer(0)},{&quot;CalibStatus&quot;,PortValue.Integer(0)}},&quot;0x&quot;+result.ErrorCode.ToString(&quot;x8&quot;),&quot;文件映射标定失败。结束状态已写出。&quot;){NativeErrorCode=result.ErrorCode});
+    // Source ProcessOutput's file branch publishes statuses only, even though the SDK has ratios.
+    return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary&lt;string,PortValue&gt;{{&quot;ModuStatus&quot;,PortValue.Integer(1)},{&quot;CalibStatus&quot;,PortValue.Integer(1)}}){NativeErrorCode=0});
+   }
+  }
+  ValueTask&lt;ModuleResult&gt; Image(ModuleExecutionContext c,CancellationToken token){
+   var session=plugin.CurrentImages(c.NodeId,c.BaseDirectory,c.Scope);lock(session){
+    MapCalibrationSave Save(bool validate=false)=&gt;MapCalibrationImageFiles.Save(c.Text(&quot;CalibPathName&quot;).Length==0?&quot;&quot;:c.ResolvePath(c.Text(&quot;CalibPathName&quot;)),session.Result,c.Boolean(&quot;TeachEnable&quot;),session.TeachTriggered,session.SourcePending,session.TargetPending,session.SourcePose,session.TargetPose,session.TeachPose,validateExtension:validate);
+    bool teach=false;
+    if(c.Boolean(&quot;TeachEnable&quot;)){
+     var trigger=MapCalibrationInputReader.Text(c,&quot;Trigger&quot;);var flag=MapCalibrationInputReader.Text(c,&quot;TeachFlagInput&quot;);
+     // 21690 checks only the SECOND return, both counts and C-string equality.
+     teach=flag.ErrorCode==0&amp;&amp;trigger.Count&gt;=1&amp;&amp;flag.Count&gt;=1&amp;&amp;trigger.Value.Split('\0')[0]==flag.Value.Split('\0')[0];
+    }
+    if(teach){
+     session.TeachPose=new(-999f,-999f,-999f);
+     var px=MapCalibrationInputReader.Float(c,&quot;PhysicalPointX&quot;);session.TeachPose=session.TeachPose with{X=MapCalibrationInputReader.Slot(px,-999f)};if(px.ErrorCode!=0)return Fail(px.ErrorCode,&quot;示教物理X读取失败。&quot;);
+     var py=MapCalibrationInputReader.Float(c,&quot;PhysicalPointY&quot;);session.TeachPose=session.TeachPose with{Y=MapCalibrationInputReader.Slot(py,-999f)};if(py.ErrorCode!=0)return Fail(py.ErrorCode,&quot;示教物理Y读取失败。&quot;);
+     var angle=MapCalibrationInputReader.Float(c,&quot;WorldRotateAngle&quot;);session.TeachPose=session.TeachPose with{Angle=MapCalibrationInputReader.Slot(angle,-999f)};if(angle.ErrorCode!=0)return Fail(angle.ErrorCode,&quot;示教角度读取失败。&quot;);
+     session.TeachTriggered=true;
+     if(session.SourcePending||session.TargetPending)return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary&lt;string,PortValue&gt;{{&quot;ModuStatus&quot;,PortValue.Integer(1)},{&quot;CalibStatus&quot;,PortValue.Integer(0)}}){NativeErrorCode=0});
+     var saved=Save();if(saved.ErrorCode!=0)return Fail(saved.ErrorCode,&quot;保存示教标定文件失败。&quot;);return ImageResult(session.Result!);
+    }
+    bool first=c.Inputs.TryGetValue(&quot;InputImage1&quot;,out var a),second=c.Inputs.TryGetValue(&quot;InputImage2&quot;,out var b);if(!first&amp;&amp;!second)return Fail(0xe0000314,&quot;没有新到达的输入图像。&quot;);
+    // Original GetInputImage resets each received frame angle to 0xc479c000 (-999f) before reading optional inputs.
+    MapCalibrationPose Pose(){
+     var x=MapCalibrationInputReader.Float(c,&quot;PhysicalPointX&quot;);var y=MapCalibrationInputReader.Float(c,&quot;PhysicalPointY&quot;);var angle=MapCalibrationInputReader.Float(c,&quot;WorldRotateAngle&quot;);
+     return new(MapCalibrationInputReader.Slot(x,-999999f),MapCalibrationInputReader.Slot(y,-999f),MapCalibrationInputReader.Slot(angle,-999f));
+    }
+    if(first){session.Source=a!.As&lt;GrayImage&gt;();session.SourcePending=true;session.SourcePose=Pose();}if(second){session.Target=b!.As&lt;GrayImage&gt;();session.TargetPending=true;session.TargetPose=Pose();}
+    if(!session.SourcePending||!session.TargetPending)return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,new Dictionary&lt;string,PortValue&gt;{{&quot;ModuStatus&quot;,PortValue.Integer(1)},{&quot;CalibStatus&quot;,PortValue.Integer(0)}}){NativeErrorCode=0});
+    session.SourcePending=session.TargetPending=false;
+    IReadOnlyList&lt;RoiDocument&gt; Group(int side)=&gt;c.RoiGroups.GetValueOrDefault(&quot;RoiType_&quot;+side)??(side==0?c.Rois:Array.Empty&lt;RoiDocument&gt;());
+    IReadOnlyList&lt;RoiDocument&gt; rois1,rois2;
+    try {
+     IReadOnlyList&lt;RoiDocument&gt; Region(int side){
+      RoiRegionValue? region=null;
+      if(c.Inputs.TryGetValue(&quot;InputROI&quot;+(side+1),out var value)){
+       if(value.Value is not RoiRegionValue supplied)throw new ArgumentException(&quot;UnsupportedRegion: Region载荷无效。&quot;);
+       region=supplied;
+      }
+      return MapCalibrationRegionInput.Resolve(Group(side),region);
+     }
+     rois1=Region(0);rois2=Region(1);
+    }catch(ArgumentException error){return ValueTask.FromResult(new ModuleResult(ModuleStatus.Failed,new Dictionary&lt;string,PortValue&gt;(),error.Message.StartsWith(&quot;RegionConfigurationConflict:&quot;,StringComparison.Ordinal)?&quot;RegionConfigurationConflict&quot;:&quot;UnsupportedRegion&quot;,error.Message));}
+    var result=MapCalibrationImageSolver.Solve(session.Source!,session.Target!,c.Integer(&quot;CalibBoardType&quot;),c.Integer(&quot;HomoFreedom&quot;),c.Integer(&quot;WeightFun&quot;),(float)c.Integer(&quot;WeightFactor&quot;)*.1f,c.Integer(&quot;FilterStatus&quot;),c.Integer(&quot;FilterStatus2&quot;),token,rois1.FirstOrDefault(),rois2.FirstOrDefault());session.Result=result.ErrorCode==0?result:null;
+    if(result.ErrorCode==0&amp;&amp;c.Boolean(&quot;RefreshFileEnable&quot;)&amp;&amp;c.Text(&quot;CalibPathName&quot;).Length&gt;0&amp;&amp;(!c.Boolean(&quot;TeachEnable&quot;)||session.TeachTriggered))Save();return ImageResult(result);
+   }
+  }
+  internal static ValueTask&lt;ModuleResult&gt; ImageResult(MapCalibrationImageResult result){
+    var output=new Dictionary&lt;string,PortValue&gt;{{&quot;ModuStatus&quot;,PortValue.Integer(result.ErrorCode==0?1:0)},{&quot;CalibStatus&quot;,PortValue.Integer(result.ErrorCode==0?1:0)}};
+    if(result.ErrorCode!=0)return ValueTask.FromResult(new ModuleResult(ModuleStatus.Failed,output,&quot;0x&quot;+result.ErrorCode.ToString(&quot;x8&quot;),&quot;图像映射求解失败；共享检测/IRLS的未闭合边界见工具证据。&quot;){NativeErrorCode=result.ErrorCode});
+    foreach(var p in new Dictionary&lt;string,float&gt;{{&quot;XRatio&quot;,result.XRatio},{&quot;YRatio&quot;,result.YRatio},{&quot;MapError&quot;,result.MapError},{&quot;PixelScale1&quot;,result.PixelScale1},{&quot;PixelScale2&quot;,result.PixelScale2}})output[p.Key]=PortValue.Number(p.Value);
+    output[&quot;CalibStatus1&quot;]=PortValue.Integer(1);output[&quot;CalibStatus2&quot;]=PortValue.Integer(1);
+    if(result.Boxes.Count&gt;0){Func&lt;MapCalibrationOutputBox,float&gt;[] fields=[b=&gt;b.X,b=&gt;b.Y,b=&gt;b.Width,b=&gt;b.Height,b=&gt;b.Angle];string[] names=[&quot;DetectCenterX&quot;,&quot;DetectCenterY&quot;,&quot;DetectWidth&quot;,&quot;DetectHeight&quot;,&quot;DetectAngle&quot;];for(int i=0;i&lt;fields.Length;i++)output[names[i]]=PortValue.Numbers(result.Boxes.Select(b=&gt;(double)fields[i](b)));output[&quot;ROI&quot;]=PortValue.Region(result.Boxes.Select((b,i)=&gt;(Box:b,Index:i)).Where(p=&gt;p.Box.Width&gt;0&amp;&amp;p.Box.Height&gt;0).Select(p=&gt;new RoiDocument(&quot;result-&quot;+p.Index,RoiKind.Rectangle,p.Box.X,p.Box.Y,p.Box.Width,p.Box.Height,AngleDegrees:p.Box.Angle)));}
+    void Points(string root,string count,string pair,IReadOnlyList&lt;MapCalibrationImagePoint&gt; points){output[count]=PortValue.Integer(points.Count);output[root+&quot;X&quot;]=PortValue.Numbers(points.Select(p=&gt;(double)p.X));output[root+&quot;Y&quot;]=PortValue.Numbers(points.Select(p=&gt;(double)p.Y));output[pair]=PortValue.PointArray(points.Select(p=&gt;new Point2(p.X,p.Y)));}
+    Points(&quot;CornersCurPoint&quot;,&quot;CurCornersPointNum&quot;,&quot;Current Corners Point&quot;,result.Source);Points(&quot;CornersObjPoint&quot;,&quot;ObjCornersPointNum&quot;,&quot;Object Corners Point&quot;,result.Target);Points(&quot;CornersProPoint&quot;,&quot;ProCornersPointNum&quot;,&quot;Projection Corners Point&quot;,result.Projection);
+    return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,output){NativeErrorCode=0});
+  }
+  static ValueTask&lt;ModuleResult&gt; Fail(uint code,string message)=&gt;ValueTask.FromResult(new ModuleResult(ModuleStatus.Failed,new Dictionary&lt;string,PortValue&gt;(),&quot;0x&quot;+code.ToString(&quot;x8&quot;),message){NativeErrorCode=code});
+ }
+}
+
+
+
+
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Calibration-IMVSMapCalibModu-c7166826.html">映射标定 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

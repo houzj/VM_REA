@@ -1,0 +1,72 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十六批：C01.1普通root/part真实实施关闭</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/BATCH16-20261019.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第十六批c011普通rootpart真实实施关闭">第十六批：C01.1普通root/part真实实施关闭</a></p><p style="margin-left:14px"><a href="#c011-完整实施">C01.1 完整实施</a></p><p style="margin-left:14px"><a href="#其他交付及锁">其他交付及锁</a></p><p style="margin-left:14px"><a href="#实际运行结果">实际运行结果</a></p><p style="margin-left:14px"><a href="#计分及审计">计分及审计</a></p></details><h1 id="第十六批c011普通rootpart真实实施关闭">第十六批：C01.1普通root/part真实实施关闭</h1><p>基线<code>258490780a0a31fe3b1a0a7df99c16e16d319358</code>。三子智能与root四方向：A实现当前托管插件加载API，B核对候选完整门槛并独立复审原撤销CIL，C实施引擎，D/root唯一改主文档历史及视图/保存接入并串行验证。不重复已done A01.2/A03.3，不重跑长稳失败。</p>
+<h2 id="c011-完整实施">C01.1 完整实施</h2><p>新增<code>DocumentHistoryEngine&lt;T&gt;</code>，有实际root/part集合与旧/新载荷。Register先按回放/lazy计数、当前root布尔forbid、predicate准入；首次Undo先标complete后采new、再迁栈并按原priority顺序执行。普通Undo先priority1逆序后其余逆序，Redo先1后其余正序；CopyModule Undo全部逆序，Redo先非2后2正序。lazy有符号引用计数与root布尔scope分开；默认15根、容量缩小规则和被拒绝part不清redo有实测。</p>
+<p>异常策略按已证原顺序：Update失败在迁栈前、complete标记已置；动作异常在迁栈后，不伪造rollback/自动retry；finally恢复回放准入。LastError/GraphEditorDocument.LastHistoryError是本地诊断增强。原方法证据及精确核验见<a href="C-root-part-engine-batch16.html">C实施</a>、<a href="B-history-engine-independent-review-batch16.html">B独立审查</a>。</p>
+<p>主文档已移除旧Snapshot双栈，每个普通Edit真正登记一个document part；配置scope按既有布尔规则保首old、首次Undo得最终new。New/Load清真实引擎，恢复仍深复制并按当前BaseDirectory重定位。同步Load在解析完成前没有录制回调，不虚构原异步SDK加载过程；引擎提供的lazy准入在框架实测，不等于已接原SDK回调。</p>
+<p>CanvasZoomIndex在Undo/Redo间的变更仅合并到相应反向view载荷，不替换结构old/new，这是保留A03.3合同的独立视图适配；引擎本身不自动改源payload。主文档普通数据仍是独立托管文档，C01.3原SDK参数、C04原TempFiles/密码Recover另项未完成，不称native全payload等价。</p>
+<p>固定C01.1“root/part操作旧新值及普通撤销重做”未改，主机真实接入及全部限定自审核后implementation记done；人工验收后置不混进分母。</p>
+<h2 id="其他交付及锁">其他交付及锁</h2><p>A新增<code>ManagedToolPluginLoader</code>，明确AssemblyPath/type/hash/id/version输入，按当前公开IVisionToolPlugin合同预检、加载、构造/身份/descriptor核对，真实自有fixture注册到既有ToolPluginRegistry/ModuleRegistry并执行图节点、存读及editor factory。没有新参数配置框架/manifest/人工审批，不执行原厂DLL、SDK或未知安装程序集。主窗口/目录发现注册入口协调锁保持、未接startup，故A07.1仍partial，FCR-026登记producer/consumer/lifecycle/compatibility和解除条件。见<a href="A07-managed-loader-partial-batch16.html">A报告</a>。</p>
+<p>B01.2完整候选语义仍缺实际Tab_Run/DisplayType/ComType/ISubInfo/SubscribeVisible生产；备选gvar原体只将路径交native Import/Export，不能猜XML。未做“缓存小修”假关闭，也未重派已有FCR静态问题。见<a href="B-selection-complete-gate-batch16.html">B完整门槛</a>。</p>
+<h2 id="实际运行结果">实际运行结果</h2><p>仅根线构建，禁止共享编译及项目并行；以下全exit0，本批无原SDK/桌面人工验收或设备操作。</p>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th align="right">通过项</th>
+<th>D日志</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>新engine源码规则</td>
+<td align="right">46</td>
+<td>engine-checks.log</td>
+</tr>
+<tr>
+<td>真实GraphEditorDocument root/part消费、late zoom、容量、异常</td>
+<td align="right">12</td>
+<td>history-host-checks.log</td>
+</tr>
+<tr>
+<td>既有配置布尔scope/Group bound</td>
+<td align="right">29</td>
+<td>configuration-history-checks.log</td>
+</tr>
+<tr>
+<td>文档缩放旧回归</td>
+<td align="right">29</td>
+<td>viewport-regression.log</td>
+</tr>
+<tr>
+<td>保存失败事务</td>
+<td align="right">22</td>
+<td>save-failure-regression.log</td>
+</tr>
+<tr>
+<td>SaveAs/历史/资源</td>
+<td align="right">23</td>
+<td>save-history-regression.log</td>
+</tr>
+<tr>
+<td>编辑核心语义</td>
+<td align="right">115</td>
+<td>editor-core-regression.log</td>
+</tr>
+<tr>
+<td>Group编辑/self-run</td>
+<td align="right">33</td>
+<td>group-editing-regression.log</td>
+</tr>
+<tr>
+<td>当前合同托管loader/实际节点</td>
+<td align="right">17</td>
+<td>managed-loader-checks.log</td>
+</tr>
+<tr>
+<td>实际WPF容器视口回归</td>
+<td align="right">29</td>
+<td>zoom-host-regression.log</td>
+</tr>
+</tbody></table>
+<p>合计355项限定自审核，不把断言数当进度。WPF依赖构建通过，既有MainWindow.xaml.cs:122 CS8603在两编译阶段共2告警保留，未声称零警告。保存失败专项原测试观察器从私有Snapshot栈改为观察实际engine两栈root/part及旧新payload，仍逐字比较失败前后全部内容，不删除事务断言。未改产品Save策略或加入盲重试。</p>
+<h2 id="计分及审计">计分及审计</h2><p><strong>实施33/96=34.38%，本批+1 C01.1，剩余63。</strong> 原源码51/96、验证29/96及原SDK差分未知继续保留。A07.1/B01.2、C01.3/C04未虚关，旧FAIL-STABILITY-SAVEAS原证据保持且未重跑。根线FCR-022补记真实main普通动作接入，未触碰其他工作树或自动采用其来信。</p>
+<p>总台账/HANDOFF/复算报告同步，原始CIL/反编译交叉核验、新代码/测试/运行hash在本地<code>analysis/full-audit/batch16-20261019/</code>。完整提交SHA记录HEAD-after.txt。中文本地提交，不自动推送。</p>
+<p class="meta">来源：docs/reverse/BATCH16-20261019.md · SHA256 b901f781bbf564ac4709936d13a496485bdd51a23426a7c5bed0aae1eb05a496<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,67 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 7e6b0a1a8268 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 7e6b0a1a8268</p><h1>原文证据 7e6b0a1a8268</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 7e6b0a1a82688b94d6eb699b5b92e1504d54ddb9794a7024b1f598b1292bed01。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>        private ParameterResolveResult ResolveDynamic(
+            ParamSetting binding,
+            IDictionary&lt;string, ToolResults> nodeResults)
+        {
+            // 🔍 关键日志：开始解析动态绑定
+            _logger?.Log(LogLevel.Info, 
+                $&quot;解析动态绑定: {binding.ParameterName} &lt;- {binding.SourceNodeId}.{binding.SourceProperty}&quot;, 
+                nameof(ParameterResolver));
+
+            if (string.IsNullOrEmpty(binding.SourceNodeId))
+            {
+                _logger?.Log(LogLevel.Warning, 
+                    $&quot;参数 {binding.ParameterName}: 源节点ID为空&quot;, 
+                    nameof(ParameterResolver));
+                return ParameterResolveResult.Failure(&quot;源节点ID为空&quot;);
+            }
+
+            if (string.IsNullOrEmpty(binding.SourceProperty))
+            {
+                _logger?.Log(LogLevel.Warning, 
+                    $&quot;参数 {binding.ParameterName}: 源属性名称为空&quot;, 
+                    nameof(ParameterResolver));
+                return ParameterResolveResult.Failure(&quot;源属性名称为空&quot;);
+            }
+
+            // 获取源节点结果
+            if (!nodeResults.TryGetValue(binding.SourceNodeId!, out var nodeResult))
+            {
+                // 🔍 关键日志：列出 nodeResults 中可用的节点ID
+                var availableNodes = string.Join(&quot;, &quot;, nodeResults.Keys);
+                _logger?.Log(LogLevel.Warning, 
+                    $&quot;参数 {binding.ParameterName}: 源节点 {binding.SourceNodeId} 不存在于结果缓存中. 可用节点: [{availableNodes}]&quot;, 
+                    nameof(ParameterResolver));
+                return ParameterResolveResult.Failure($&quot;源节点 {binding.SourceNodeId} 不存在于结果缓存中&quot;);
+            }
+
+            // 🔍 关键日志：节点存在，检查执行状态
+            _logger?.Log(LogLevel.Info, 
+                $&quot;源节点 {binding.SourceNodeId} 存在, IsSuccess={nodeResult.IsSuccess}&quot;, 
+                nameof(ParameterResolver));
+
+            // 检查执行状态
+            if (!nodeResult.IsSuccess)
+            {
+                _logger?.Log(LogLevel.Warning, 
+                    $&quot;参数 {binding.ParameterName}: 源节点 {binding.SourceNodeId} 执行未成功: {nodeResult.ErrorMessage}&quot;, 
+                    nameof(ParameterResolver));
+                return ParameterResolveResult.Failure($&quot;源节点 {binding.SourceNodeId} 执行未成功: {nodeResult.ErrorMessage}&quot;);
+            }
+
+            // 🔍 关键日志：尝试获取属性值
+            _logger?.Log(LogLevel.Info, 
+                $&quot;尝试获取属性: {binding.SourceProperty} 从节点 {binding.SourceNodeId}&quot;, 
+                nameof(ParameterResolver));
+
+            // 通过输出变量契约解析（唯一路径，无反射、无 GetResultItems 兜底）
+            var value = OutputVariableResolver.Resolve(nodeResults, binding.SourceNodeId!, binding.SourceProperty!);
+
+            var result = ParameterResolveResult.Success(value, binding.TargetType);
+            result.SourceNodeId = binding.SourceNodeId;
+            result.SourceProperty = binding.SourceProperty;
+
+            return result;
+        }
+
+        /// &lt;summary>
+        /// 类型转换</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis--GEX10.html">数据/global-variable-analysis--GEX10.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

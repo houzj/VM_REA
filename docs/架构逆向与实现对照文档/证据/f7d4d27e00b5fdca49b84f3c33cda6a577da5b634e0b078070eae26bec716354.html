@@ -1,0 +1,110 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 f7d4d27e00b5 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 f7d4d27e00b5</p><h1>原文证据 f7d4d27e00b5</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 f7d4d27e00b5fdca49b84f3c33cda6a577da5b634e0b078070eae26bec716354。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using VisionCore;
+using VisionFramework;
+using VisionPluginContracts;
+namespace VisionPlugins.Calibration;
+
+public sealed partial class CoordinateModulePlugin:IVisionToolPlugin,IWpfToolEditorFactory,IToolConfigurationProvider,IToolPointInputAliasProvider,IToolDisplayProvider
+{
+ public const string Id=&quot;vision.coordinate-module&quot;;
+ public ToolManifest Manifest{get;}=new(Id,&quot;1.0.0&quot;,&quot;坐标系&quot;,&quot;calibration&quot;,&quot;catalog/CoordinateModuleImageEnable.png&quot;);
+ public IReadOnlyList&lt;ToolPointInputAlias&gt; PointInputAliases{get;}=[new(&quot;Src Input Point&quot;,&quot;SrcPointX&quot;,&quot;SrcPointY&quot;)];
+ static ParameterDescriptor P&lt;T&gt;(string n,ParameterKind k,T v,double? min=null,double? max=null)=&gt;new(n,k,true,JsonSerializer.SerializeToElement(v),min,max);
+ public ModuleDescriptor Descriptor{get;}=new(Id,&quot;1.0.0&quot;,&quot;坐标系&quot;,
+  new[]{&quot;SrcPointX&quot;,&quot;SrcPointY&quot;,&quot;SrcAngle&quot;,&quot;CalibMatrix&quot;}.Select(n=&gt;new PortDescriptor(n,DataKind.NumberArray,false){SupportsDeferredNumericRead=true})
+   .Concat(new[]{new PortDescriptor(&quot;Src Input Point&quot;,DataKind.Point,false){Cardinality=ValueCardinality.Array},new(&quot;InputImage&quot;,DataKind.Image,true)}).ToArray(),
+  new[]{&quot;ModuRunTime&quot;,&quot;CoordinateOriPointX&quot;,&quot;CoordinateOriPointY&quot;,&quot;CoordinateAxisXX&quot;,&quot;CoordinateAxisXY&quot;,&quot;CoordinateAxisYX&quot;,&quot;CoordinateAxisYY&quot;}.Select(n=&gt;new PortDescriptor(n,DataKind.Number,false))
+   .Concat(new[]{new PortDescriptor(&quot;ModuStatus&quot;,DataKind.Integer,false),new(&quot;CorCalibMatrix&quot;,DataKind.NumberArray,false)}).ToArray(),
+  [P(&quot;CordinateCreate&quot;,ParameterKind.Integer,0,0,1),P(&quot;InputWay&quot;,ParameterKind.Integer,0,0,2),P(&quot;ConfigurationUserData&quot;,ParameterKind.Text,&quot;{}&quot;),P(ToolDisplayService.SettingsParameter,ParameterKind.Text,&quot;&quot;),P(ToolDisplayObjectStore.ParameterName,ParameterKind.Text,&quot;{}&quot;)]){RoiEditor=new([RoiKind.Coordinate],Maximum:1,FullImage:false,Exclusions:false)};
+ sealed class State{public readonly object Gate=new();public readonly CoordinateSession Session=new();public Dictionary&lt;string,PortValue&gt;? Inputs,Outputs;public ToolDisplayDiagnostic? Diagnostic;}
+ readonly Dictionary&lt;string,State&gt; fallback=[];readonly object gate=new();
+ State Get(string node,string directory,ModuleExecutionScope? scope){if(scope is not null)return scope.State(Id,node,()=&gt;new State());lock(gate){string key=Path.GetFullPath(directory)+&quot;|&quot;+node;if(!fallback.TryGetValue(key,out var s))fallback[key]=s=new();return s;}}
+ public void Reset(string nodeId){lock(gate)foreach(var key in fallback.Keys.Where(k=&gt;k.EndsWith(&quot;|&quot;+nodeId,StringComparison.Ordinal)).ToArray())fallback.Remove(key);}
+ public IModule CreateRuntime()=&gt;new Runtime(this);
+ public System.Windows.Forms.Form CreateEditor(ToolEditorContext c)=&gt;throw new InvalidOperationException(&quot;Use WPF editor factory.&quot;);
+ public System.Windows.Window CreateWpfEditor(ToolEditorContext c)=&gt;new ToolConfigurationModelWindow(c,CreateConfiguration(c));
+ static ToolNumericInputReadResult Read(ModuleExecutionContext c,string name,int index){
+  if(c.Scope?.Service&lt;IToolNumericInputReader&gt;() is {} reader)return reader.Read(c,name,index);
+  if(c.ReadNumericInput?.Invoke(name,index) is {} r)return new(r.ErrorCode,r.Count,r.Value);
+  if(c.Inputs.TryGetValue(name,out var input)){
+   var values=input.Kind==DataKind.NumberArray?input.As&lt;IReadOnlyList&lt;double&gt;&gt;():input.Kind==DataKind.Number?input.Elements().Select(v=&gt;v.As&lt;double&gt;()).ToArray():Array.Empty&lt;double&gt;();
+   if(index&gt;=0&amp;&amp;index&lt;values.Count)return new(0,values.Count,values[index]);
+   return new(0xe0000314,0,0);
+  }
+  // Independent materialized POINT compatibility. Normal configuration aliases
+  // use authoritative leaves; neither an explicit leaf error nor a scope/deferred
+  // result may be replaced with this parent payload.
+  if((name is &quot;SrcPointX&quot; or &quot;SrcPointY&quot;)&amp;&amp;c.Inputs.TryGetValue(&quot;Src Input Point&quot;,out var point)&amp;&amp;point.Kind==DataKind.Point){
+   var points=point.Elements().Select(p=&gt;p.As&lt;Point2&gt;()).ToArray();
+   if(points.Length==0)return new(0xe0000314,0,0);
+   if(index&lt;0||index&gt;=points.Length)return new(0xe0000014,0,0);
+   return new(0,points.Length,name==&quot;SrcPointX&quot;?points[index].X:points[index].Y);
+  }
+  return new(0xe0000314,0,0);
+ }
+ static CoordinateSession.NumericRead ReadFloat(ModuleExecutionContext c,string name){var r=Read(c,name,0);return new(r.ErrorCode,r.Count,(float)r.Value,r.ErrorCode==0&amp;&amp;r.Count&gt;0);}
+ // First helper discards GetFloat status but uses Count; second helper re-reads
+ // index0 and gates status/count. Per-index callback below is the managed batch
+ // adapter boundary, not a claim of one native BatchGetFloat invocation.
+ static (uint ErrorCode,float[] Values) ReadMatrix(ModuleExecutionContext c){
+  var probe=Read(c,&quot;CalibMatrix&quot;,0);int count=probe.Count;if(count is &lt;1 or &gt;9)return(0xe0000306,[]);
+  var first=Read(c,&quot;CalibMatrix&quot;,0);if(first.ErrorCode!=0)return(first.ErrorCode,[]);if(first.Count&lt;count)return(0xe0000001,[]);
+  if(count&gt;1&amp;&amp;c.Scope?.Service&lt;IToolNumericInputReader&gt;() is not null)throw new NotSupportedException(&quot;Dynamic scope matrix batch timing is unsupported by the per-index reader contract.&quot;);
+  if(count&gt;1&amp;&amp;c.Inputs.TryGetValue(&quot;CalibMatrix&quot;,out var immutable)&amp;&amp;immutable.Kind==DataKind.NumberArray){var snapshot=immutable.As&lt;IReadOnlyList&lt;double&gt;&gt;().Take(count).Select(v=&gt;(float)v).ToArray();return snapshot.Length==count?(0,snapshot):(0xe0000001,[]);}
+  var values=new float[count];values[0]=first.Count&gt;0?(float)first.Value:0;
+  for(int i=1;i&lt;count;i++){var r=Read(c,&quot;CalibMatrix&quot;,i);if(r.ErrorCode!=0)return(r.ErrorCode,[]);if(r.Count&lt;=i)return(0xe0000001,[]);values[i]=(float)r.Value;}
+  return(0,values);
+ }
+ sealed class Runtime(CoordinateModulePlugin owner):IModule{
+  public ModuleDescriptor Descriptor=&gt;owner.Descriptor;
+  public ValueTask&lt;ModuleResult&gt; ExecuteAsync(ModuleExecutionContext c,CancellationToken token){
+   token.ThrowIfCancellationRequested();var watch=Stopwatch.StartNew();var state=owner.Get(c.NodeId,c.BaseDirectory,c.Scope);
+   var output=new Dictionary&lt;string,PortValue&gt;();var nonFinite=new List&lt;string&gt;();uint inner=0;string? unsupported=null,unsupportedCode=null;uint outer=0;
+   void Number(string name,double value){if(double.IsFinite(value))output[name]=PortValue.Number(value);else nonFinite.Add(name);}
+   lock(state.Gate){
+    var image=c.Inputs.GetValueOrDefault(&quot;InputImage&quot;)?.As&lt;IImageData&gt;();
+    int format=image is null?0:(int)image.Format;
+    if(image is null)outer=0xe0000510;else if(image.Width&lt;1||image.Height&lt;1)outer=0xe0000001;
+    else if(format is not (0x01000000 or 0x01080001 or 0x02180014 or 0x02180021))outer=0xe0000510;
+    else if(image.Pixels.Length!=(long)image.Width*image.Height*(format is 0x02180014 or 0x02180021?3:1))outer=0xe0000314;
+    else{
+     var roi=(c.RoiGroups.GetValueOrDefault(&quot;RoiType&quot;)??c.Rois).FirstOrDefault(r=&gt;r.Kind==RoiKind.Coordinate);
+     if(roi is not null)roi=RoiGeometry.ToPixels(roi,image.Width,image.Height);
+     // Runtime pixel conversion must match the persisted geometry coordinate space.
+     (float X,float Y,float Angle)? point=roi is null?null:((float)roi.CenterX,(float)roi.CenterY,(float)roi.AngleDegrees);
+     try{inner=state.Session.Process(c.Integer(&quot;CordinateCreate&quot;),c.Integer(&quot;InputWay&quot;),point,n=&gt;ReadFloat(c,n),()=&gt;ReadMatrix(c));}
+     catch(NotSupportedException e){unsupported=e.Message;unsupportedCode=&quot;UnsupportedDynamicMatrixBatch&quot;;}
+     output[&quot;ModuStatus&quot;]=PortValue.Integer(state.Session.Status);
+     Number(&quot;CoordinateOriPointX&quot;,state.Session.X);Number(&quot;CoordinateOriPointY&quot;,state.Session.Y);
+     if(unsupported is null&amp;&amp;state.Session.UnsupportedDiagnostic is {} unknown){unsupported=unknown;unsupportedCode=&quot;NativeUninitializedMatrix&quot;;}
+     if(unsupported is null){
+      if(state.Session.Matrix.All(float.IsFinite))output[&quot;CorCalibMatrix&quot;]=PortValue.Numbers(state.Session.Matrix.Select(v=&gt;(double)v));else nonFinite.Add(&quot;CorCalibMatrix&quot;);var axes=state.Session.Axes();
+      string[] names=[&quot;CoordinateAxisXX&quot;,&quot;CoordinateAxisXY&quot;,&quot;CoordinateAxisYX&quot;,&quot;CoordinateAxisYY&quot;];for(int i=0;i&lt;4;i++)Number(names[i],axes[i]);
+     }
+    }
+    if(nonFinite.Count&gt;0)unsupported=&quot;Native non-finite state cannot be represented by finite PortValue: &quot;+string.Join(&quot;, &quot;,nonFinite);
+    output[&quot;ModuRunTime&quot;]=PortValue.Number(watch.Elapsed.TotalMilliseconds);
+    state.Inputs=c.Inputs.ToDictionary(p=&gt;p.Key,p=&gt;p.Value);state.Outputs=output;
+    state.Diagnostic=unsupported is not null?new(0,unsupported):inner!=0?new(inner,&quot;Original inner error; outer publishes retained state.&quot;):outer!=0?new(outer,&quot;Coordinate image prelude failed.&quot;):null;
+   }
+   return ValueTask.FromResult(new ModuleResult(outer!=0||unsupported is not null?ModuleStatus.Failed:ModuleStatus.Success,output,nonFinite.Count&gt;0?&quot;NativeNonFiniteResult&quot;:unsupportedCode??(outer!=0?&quot;CoordinateInput&quot;:null),unsupported){NativeErrorCode=outer});
+  }
+ }
+ // Original result view defaults to the related input IMAGE when this module has
+ // no owned display-image object. Explicit host adapter, not an invented InImage IO.
+ public ToolDisplayDefinition DisplayDefinition{get;}=new(&quot;Module Status:{0}&quot;,[&quot;ModuStatus&quot;],[&quot;ModuRunTime&quot;,&quot;ModuStatus&quot;,&quot;CorCalibMatrix&quot;],&quot;InputImage&quot;){TextVisible=false};
+ public static IReadOnlyList&lt;ToolDisplayObjectDefinition&gt; DisplayObjects{get;}=ToolDisplayObjectDefinition.Parse(Resource(&quot;CoordinateModuleDisplay.xml&quot;));
+ public ToolDisplayFrame? LastDisplay(NodeDocument node,string directory,ModuleExecutionScope? scope){
+  var state=Get(node.Id,directory,scope);lock(state.Gate){
+   if(state.Outputs is not {} outputs)return null;
+   // Omitted unsafe components are not zero-valued feature facts. The common
+   // graphic builder's missing-feature fallback must not invent an axis here.
+   bool complete=new[]{&quot;CoordinateOriPointX&quot;,&quot;CoordinateOriPointY&quot;,&quot;CoordinateAxisXX&quot;,&quot;CoordinateAxisXY&quot;,&quot;CoordinateAxisYX&quot;,&quot;CoordinateAxisYY&quot;}.All(outputs.ContainsKey);
+   return ToolDisplayService.Build(DisplayDefinition,ToolDisplayService.Read(node.Parameters,DisplayDefinition),state.Inputs??[],outputs,diagnostic:state.Diagnostic) with{Graphics=complete?ToolDisplayGraphics.Build(DisplayObjects,node.Parameters,state.Inputs??[],outputs):[]};
+  }
+ }
+ static string Resource(string name){using var stream=typeof(CoordinateModulePlugin).Assembly.GetManifestResourceStream(&quot;VisionPlugins.CoordinateModule.Resources.&quot;+name)??throw new InvalidDataException(name);using var reader=new StreamReader(stream);return reader.ReadToEnd();}
+}
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Calibration-CoordinateModule-0ac125ea.html">坐标系 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

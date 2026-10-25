@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RemoveItem · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>RemoveItem · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-EA11"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>RemoveItem → 先解绑弱事件，再Delete，失败不在此重新订阅</h2><p>事件/字符串项先RemoveHandler；SetTriggerItem(Delete)!=0直接返回，不进入集合移除与重新编号。成功才从对应集合移除并从1重新编号。故不能画成Delete失败后UI与订阅完全不变。</p><p><a href="../专题/communication-dispatch.html#edge-EA11">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-dispatch.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-dispatch.edges.json · SHA256 d34ac2c9aec1484fb92e82c332d4a27a4d13c63f212939464b494ebfca7769a3</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="caa135adb0ebed37a203c8c95ff922a07a5a5b7254f353e88098fd13fd27e58c">{
+  &quot;id&quot;: &quot;EA11&quot;,
+  &quot;route&quot;: &quot;原版 · 全局触发即时写入&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;classificationScope&quot;: &quot;Local decompiled source statements; selected EXE method identity and original raw CIL bytes are separately rechecked, without vendor execution.&quot;,
+  &quot;from&quot;: &quot;RemoveItem&quot;,
+  &quot;to&quot;: &quot;先解绑弱事件，再Delete，失败不在此重新订阅&quot;,
+  &quot;behavior&quot;: &quot;事件/字符串项先RemoveHandler；SetTriggerItem(Delete)!=0直接返回，不进入集合移除与重新编号。成功才从对应集合移除并从1重新编号。故不能画成Delete失败后UI与订阅完全不变。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs&quot;,
+      &quot;member&quot;: &quot;GlobalTriggerConfig.RemoveItem&quot;,
+      &quot;sha256&quot;: &quot;8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d&quot;,
+      &quot;start&quot;: 244,
+      &quot;end&quot;: 280,
+      &quot;excerpt&quot;: &quot;\tpublic void RemoveItem(object item)\n\t{\n\t\tif (item is GlobalTriggerEventItem)\n\t\t{\n\t\t\tWeakEventManager&lt;GlobalTriggerEventItem, PropertyChangedEventArgs>.RemoveHandler((GlobalTriggerEventItem)item, \&quot;PropertyChanged\&quot;, ValueChanged);\n\t\t}\n\t\telse if (item is GlobalTriggerStrItem)\n\t\t{\n\t\t\tWeakEventManager&lt;GlobalTriggerStrItem, PropertyChangedEventArgs>.RemoveHandler((GlobalTriggerStrItem)item, \&quot;PropertyChanged\&quot;, ValueChanged);\n\t\t}\n\t\tif (SetTriggerItem(item as ComTriggerItem, ActionType.Delete) != 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tint num = 1;\n\t\tif ((item as ComTriggerItem).IsEventTrigger)\n\t\t{\n\t\t\tCommEventTriggerA.Remove(item);\n\t\t\t{\n\t\t\t\tforeach (object item2 in CommEventTriggerA)\n\t\t\t\t{\n\t\t\t\t\t(item2 as ComTriggerItem).Index = num;\n\t\t\t\t\tnum++;\n\t\t\t\t}\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n\t\tCommStrTriggerA.Remove(item);\n\t\tforeach (object item3 in CommStrTriggerA)\n\t\t{\n\t\t\t(item3 as ComTriggerItem).Index = num;\n\t\t\tnum++;\n\t\t}\n\t}\n\n\t/// &lt;summary>\n\t/// 获取所有接收事件列表&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;失败是否发生、其它重新订阅/刷新路径、Index通知是否再次写native与最终资源一致性未知。&quot;
+  ],
+  &quot;nextMembers&quot;: [
+    &quot;GlobalTriggerConfig.RemoveItem / GetParamUnit reload&quot;,
+    &quot;ComTriggerItem.DeleteItem command and Index property&quot;
+  ],
+  &quot;priorLinks&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

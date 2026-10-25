@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>UpdateConnectionPreview / FinishConnection · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>UpdateConnectionPreview / FinishConnection · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-CA03"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>UpdateConnectionPreview / FinishConnection → 保留预览目标 → ConnectExecution</h2><p>预览路径按指针生成；松手保留上一命中节点、重新选最近端口，不在 Up 临时发现新节点；清捕获与 preview 后在 EditableCanvas 下提交。</p><p><a href="../专题/canvas-viewport.html#edge-CA03">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/canvas-viewport.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/canvas-viewport.edges.json · SHA256 4fed170ca686179656302412fc5543a52af51554793d8d6c7bc3c26b3cd24409</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="b031e6233c7ad31f3a609090591246c1e7240866a82e7446145bf7f19a083cd4">{
+  &quot;id&quot;: &quot;CA03&quot;,
+  &quot;route&quot;: &quot;当前 · 节点/建连&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;UpdateConnectionPreview / FinishConnection&quot;,
+  &quot;to&quot;: &quot;保留预览目标 → ConnectExecution&quot;,
+  &quot;behavior&quot;: &quot;预览路径按指针生成；松手保留上一命中节点、重新选最近端口，不在 Up 临时发现新节点；清捕获与 preview 后在 EditableCanvas 下提交。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowGestures.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.UpdateConnectionPreview&quot;,
+      &quot;sha256&quot;: &quot;9f40f3513f3c1667d6671ab025b2e1c4c31f975b63af4e8186061a987c4f9737&quot;,
+      &quot;start&quot;: 180,
+      &quot;end&quot;: 194,
+      &quot;excerpt&quot;: &quot; void UpdateConnectionPreview(Point point)\n {\n  if(pendingConnection is not {} source)return;\n  connectionTarget=FindConnectionTarget(point);\n  foreach(var pair in executionPorts){bool target=connectionTarget is {} hit&amp;&amp;pair.Key.Node==hit.Node;pair.Value.Visibility=pair.Key.Node==source.Node||target?Visibility.Visible:Visibility.Collapsed;SetPortHit(pair.Value,connectionTarget==pair.Key);}\n  var node=doc.CurrentProcedure.Nodes.Single(n=>n.Id==source.Node);\n  // Connector.AttachedDiagramItem_PreviewMouseMove always draws\n  // GetConnectionLine(source, current pointer). Target hit testing only\n  // highlights its nearest connector; the routed connection is made on up.\n  IReadOnlyList&lt;RoutePoint> route=VisionEditor.Core.VmRouting.VmOrthogonalRouter.Preview(Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),source.Port),new(point.X,point.Y));\n  if(connectionPreview is not null)GraphLayer.Children.Remove(connectionPreview);\n  connectionPreview=new System.Windows.Shapes.Path {Data=LineGeometry(route),Stroke=new SolidColorBrush(Color.FromRgb(255,167,15)),StrokeThickness=2,StrokeDashArray=new DoubleCollection {5,2.5},StrokeLineJoin=PenLineJoin.Round,IsHitTestVisible=false};Panel.SetZIndex(connectionPreview,60);GraphLayer.Children.Add(connectionPreview);\n }\n void FinishConnection(Point point)\n {&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowGestures.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.FinishConnection&quot;,
+      &quot;sha256&quot;: &quot;9f40f3513f3c1667d6671ab025b2e1c4c31f975b63af4e8186061a987c4f9737&quot;,
+      &quot;start&quot;: 193,
+      &quot;end&quot;: 216,
+      &quot;excerpt&quot;: &quot; void FinishConnection(Point point)\n {\n  // Connector.ToolItemGrid_PreviewMouseUp consumes oldItem recorded by\n  // AttachedDiagramItem_PreviewMouseMove; mouse-up cannot discover a new item.\n  // Only the nearest connector index is computed from the release position.\n  var source=pendingConnection;var previewTarget=connectionTarget;\n  (string Node,int Port)? target=null;\n  if(previewTarget is {} previous&amp;&amp;doc.CurrentProcedure.Nodes.FirstOrDefault(n=>n.Id==previous.Node) is {} node)\n  {\n   int index=Enumerable.Range(0,4).OrderBy(i=>{var p=Port(new(node.X,node.Y,NodeWidth,NodeVisualHeight(node)),i).Anchor;return Math.Pow(p.X-point.X,2)+Math.Pow(p.Y-point.Y,2);}).First();\n   target=(node.Id,index);\n  }\n  pendingConnection=null;connectionTarget=null;\n  CanvasViewport.ReleaseMouseCapture();\n  // Connector.ToolItemGrid_PreviewMouseUp removes the adorner and clears its\n  // path/context fields after every drag. RenderGraph clears the visual child\n  // collection during a successful commit, so clear this retained reference too;\n  // otherwise the next drag mistakes the detached preview for an active one and\n  // skips its first-move mouse capture.\n  if(connectionPreview is not null)GraphLayer.Children.Remove(connectionPreview);connectionPreview=null;\n  if(source is {} from&amp;&amp;target is {} to&amp;&amp;EditableCanvas)Safe(()=>doc.ConnectExecution(from.Node,to.Node,from.Port,to.Port));\n  RenderGraph();\n }\n void CancelCanvasGesture()&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

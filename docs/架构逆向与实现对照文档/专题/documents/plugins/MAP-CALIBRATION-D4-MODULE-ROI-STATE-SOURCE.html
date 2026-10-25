@@ -1,0 +1,83 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D4 空 ROI 跨轮状态与清理有限切片（2026-10-19） · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D4 空 ROI 跨轮状态与清理有限切片（2026-10-19）</p><h1>D4 空 ROI 跨轮状态与清理有限切片（2026-10-19）</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D4 空 ROI 跨轮状态与清理有限切片（2026-10-19）</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#d4-空-roi-跨轮状态与清理有限切片2026-10-19">D4 空 ROI 跨轮状态与清理有限切片（2026-10-19）</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#原件与产物">原件与产物</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#三层状态与实际入口">三层状态与实际入口</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#配置解析和正常全图路径">配置解析和正常全图路径</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#process取图和roifix">Process、取图和RoiFix</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#跨轮结果表静态条件不冒充运行trace">跨轮结果表（静态条件，不冒充运行trace）</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#deinitresetmember与析构">DeInit、ResetMember与析构</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.html#后续边界">后续边界</a></p></details><h1 id="d4-空-roi-跨轮状态与清理有限切片2026-10-19">D4 空 ROI 跨轮状态与清理有限切片（2026-10-19）</h1><p>结论必须区分两种“无ROI”：正常类型1消息生成全图矩形，下一次完整双图运行会调用SDK setter替换旧ROI；ResetRoiData后没有有效条目或RoiFix不支持的raw类型，则会产生空shape向量，ProcessAlg跳过setter，旧SDK ROI指针不会由这些模块路径主动清除。DeInit会销毁SDK工具，从而释放两侧clone。</p>
+<p>仅源码/汇编取证，无构建、原厂运行、共享产品修改。用户最新总进度口径为完整标定工具数/10，当前0/10=0%；内部D断点仍5/32，不作为总体完成度。</p>
+<h2 id="原件与产物">原件与产物</h2><p>模块 <code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSMapCalibModu/IMVSMapCalibModu.dll</code> SHA256 <code>658d63e2c4e2378e7eb1776d27b966990c0d0e01e29ca57ed82fe9acc740fde8</code>。SDK wrapper SHA256仍 <code>fb373e8ef51572f1ea377a1218bc3fcc230e61f8fa72264d6715445467b4b75a</code>。</p>
+<p>先复用现有Process/GetInputImage/ProcessAlg/Init/ResetMember/SetParam。DeInit、ResetRoiData、RoiFix、AnalyzeMultipleROIMsg缺C，另补析构及必要base槽15660/15830。身份匹配私有Ghidra工程 <code>-noanalysis -readOnly</code>，REA provider不可用沿用已有记录，无REA Evidence ID。新13体C/有限区间asm及xref位于 <code>analysis/map-calibration/d4-module-roi-state/source</code>，hash/SDK快速setter原PE字节/模块虚表/解析switch目标见 <code>source-index.json</code>。</p>
+<p>原noanalysis工程C有错误noreturn传播：新22d50 C在memset后截断，1fae0 C可能内联部分尾跳目标。完整ResetMember采用既有module-analyzed/180022d50.c及新asm交叉核实，不能仅以新C输出“有文件”判闭合。Analyze的1f9c0..1fadf是switch数据区；有限线性asm在此有伪指令/249条UNDECODED_BYTE，不作为代码执行证据。原PE switch索引单独解析确认case1/2/3/0xff目标；不将数据区误判成清理指令。</p>
+<h2 id="三层状态与实际入口">三层状态与实际入口</h2><table>
+<thead>
+<tr>
+<th>层</th>
+<th>source / target地址</th>
+<th>谁更新/销毁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模块raw ROI</td>
+<td>this+17190 / +17250，各0xc0字节结构</td>
+<td>SetParam RoiType_0/1先ResetRoiData，再Analyze；没有直接SDK ROI setter。</td>
+</tr>
+<tr>
+<td>模块工作shape向量</td>
+<td>begin/end/cap分别+17330/+17338/+17340；target再+0x18</td>
+<td>RoiFix每次先end=begin，再从raw条目填写；缓存shape另存+17310/+17318及+17320/+17328。</td>
+</tr>
+<tr>
+<td>SDK持有的clone</td>
+<td>双图参数对象+18 / +30</td>
+<td>SDK setter clone后替换、null清理、析构销毁。前一切片已恢复实际入口1ab0/1b70。</td>
+</tr>
+</tbody></table>
+<p>模块vptr原PE地址314e0：+8=Process21690、+18=SetParam23870、+58=base15830、+60=base15660。符号清单无独立Map <code>GetProcessInput</code>；实际逐帧取图是GetInputImage203d0，不能以不存在的方法名代替实际入口。</p>
+<h2 id="配置解析和正常全图路径">配置解析和正常全图路径</h2><p>SetParam23870的RoiType_0/1路径分别调用22ec0(rawSide)再1f390。22ec0把type设1，将三组raw条目vector的end退回begin，并清raw几何字段；不销毁模块缓存shape、不清工作shape向量、不调用SDK setter、不销毁SDK工具。</p>
+<p>Analyze1f390正常case1：写归一化矩形 <code>center=(0.5f,0.5f), size=(1f,1f), angle=0</code>，push入临时矩形条目vector，计入有效条目；成功末尾复制条目到raw ROI并写type1。因此正常全图消息并不留下“type1但无条目”。case2需要完整0x16字节矩形消息，case3需要0x1a字节扇环消息；只按当前有限空ROI问题核长度门，不展开其余几何算法。</p>
+<p>case0xff经模块槽+58实际调用15830。其非空raw结构分支构造同一全图矩形，先经槽+50调用一个base helper，返回0才push矩形并设type1；该helper内部未在本切片展开，不能把0xff视为无条件全图。Init槽+60实际15660在create cause!=2时读取外部默认配置文件，逐项调用模块SetParam；外部默认配置读取成功与具体条目另需原资源/返回值，不可说Init必然保留或必然覆盖旧ROI。</p>
+<p>Analyze本身空指针分支返回0xE0000001；但SetParam入口先拒绝null名称/载荷，不会因此进入ResetRoiData，不能把该直调Analyze分支当SetParam先清raw的可达路径。非null载荷进入ROI分支后，没有有效条目时返回0xE0000018；不支持消息码分支0xE0000514。这些解析失败之前SetParam已ResetRoiData，不能描述成完整保留旧raw条目。此时SDK旧clone与raw配置状态可能不同。</p>
+<h2 id="process取图和roifix">Process、取图和RoiFix</h2><p>GetInputImage203d0只获取两侧图像、创建/更新对应IMvdImage、写到帧标志/物理点字段；在可见体中无SDK ROI清除、无工作shape向量或raw ROI重置。</p>
+<p>Process21690：无新图早返；只到一帧则保留pending并写等待状态；两侧凑齐且像素类型检查通过后，依次调用RoiFix(source,0)、RoiFix(target,1)，随后调用ProcessAlg。asm21a12/21a27之后不测试EAX，直接跳21b94再调ProcessAlg，故不能假设RoiFix错误会自动阻止SDK运行。</p>
+<p>RoiFix22f40入口无条件令 <code>end(side)=begin(side)</code>。后续仅：</p>
+<ul>
+<li>raw type1/2且矩形条目非空：按条目更新/创建缓存矩形，push shape指针；中心/尺寸由图像宽高乘raw归一化值，角度字段传原shape setter。</li>
+<li>raw type3且扇环条目非空：更新/创建缓存扇环并push。</li>
+<li>对应条目为空、其他raw type：不push默认形状，返回0。多形状type0x80等不在本函数支持分支，不能按泛型ROI解析器的支持面外推Map运行支持。</li>
+<li>shape创建失败：返回其错误码；如果首条未push就失败，该侧仍为空；已经push的条目不在此处回滚。本切片不新增失败分配执行。</li>
+</ul>
+<p>ProcessAlg21e46..21e9b：该侧工作向量数量为0即跳过相应setter；非0只传首指针。前面的两个SetImage不会顺带清ROI：同hashSDK原PE1a90写image字段+10并置dirty字节+8=1，1b50写目标image字段+28并置dirty字节+9=1，随后RET；完整原字节记录在索引，不能把这两个setter简化成“只写image”。模式setter3330只写模式字段+8。SDK Run3e30复用既有basic参数对象，不重建双图参数，47f0读取其ROI并可清dirty字节；已有C中无清双图ROI字段的写回，不能把dirty清0当ROI销毁。</p>
+<h2 id="跨轮结果表静态条件不冒充运行trace">跨轮结果表（静态条件，不冒充运行trace）</h2><table>
+<thead>
+<tr>
+<th>前提/动作</th>
+<th>下一步到达SDK前后的ROI状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>旧ROI已有，正常type1消息解析成功，随后完整双图</td>
+<td>RoiFix生成全图shape；setter再次Clone，随后Destroy旧clone，替换为全图。</td>
+</tr>
+<tr>
+<td>旧ROI已有，raw reset后消息失败/无条目，随后完整双图</td>
+<td>RoiFix清工作向量数量且不填默认shape；ProcessAlg跳setter，旧SDK clone保持，未调用null setter。</td>
+</tr>
+<tr>
+<td>支持的raw条目成功生成shape</td>
+<td>模块缓存shape可复用，但SDK setter会将incoming与自身stored比较；正常外部缓存shape不同于SDK clone，所以仍走clone/替换。</td>
+</tr>
+<tr>
+<td>第一个shape创建失败且工作向量仍空</td>
+<td>Process忽略RoiFix返回值，仍可到ProcessAlg并跳setter；旧SDK clone不由此失败路径清除。算法后续是否成功不在本静态切片断言。</td>
+</tr>
+<tr>
+<td>无新图/半帧等待，或只切File模式</td>
+<td>当前可见路径不调用image ROI setter，不以图像等待或模式字段更新清旧clone。后续配置/销毁另论。</td>
+</tr>
+<tr>
+<td>DeInit销毁SDK工具</td>
+<td>两侧SDK clone沿工具→basic→双图参数析构链DestroyShapeInstance；不再保留旧SDK参数对象。</td>
+</tr>
+</tbody></table>
+<p>上述表证明的是具体模块/SDK参数字段与API调用的顺序；真实VM UI是否允许产生错误消息、空raw条目或不支持的raw类型，及错误后是否继续调Process，需要宿主输入证据。未把错误配置当正常“取消ROI”交互。</p>
+<h2 id="deinitresetmember与析构">DeInit、ResetMember与析构</h2><p>DeInit1fae0实际asm：两轮循环销毁各侧模块image；销毁缓存shape（+17310/+17318、+17320/+17328）并将其指针置0；将工作shape向量end退回begin。随后1fb65..1fb77加载SDK工具指针+16598到RCX，经IAT2e4c8调用DestroyMapCalibToolInstance，再把该指针置0；释放两侧文件缓冲后，<strong>1fbc9 JMP 22d50 ResetMember</strong>。</p>
+<p>SDK wrapper DestroyMapCalibToolInstance1070调工具虚析构；3990→4670销毁算法handle并对basic参数调虚析构；basic32a0→双图19c0→19f0释放两侧SDK clone。故模块缓存shape与SDK clone是两次不同层级的销毁，不把同一API名等同同一个地址。</p>
+<p>ResetMember本身不调SDK ROI setter/null、不销毁工具；它清状态、路径、raw ROI条目、模块缓存shape指针等。新asm确认其完整续段，不能使用本次被memset误截断的新C。它的原厂静态入边包括Init的CALL21380及DeInit的尾JMP1fbc9，<strong>纠正旧审计“仅Init调用”的结论</strong>。Init若已有SDK工具，不重建它；但其后默认配置加载可能经SetParam变更raw ROI，因此不承诺重复Init后的最终ROI值。</p>
+<p>模块析构1f280先调用DeInit，再析构两组工作shape向量与raw ROI容器，最后基类。DeInit的image销毁后此体没有将对应image字段置0；没有运行DeInit后复用同一模块对象，不能额外承诺这种调用序列安全。</p>
+<h2 id="后续边界">后续边界</h2><p>0x6f核心注册桥仍单列缺体；base15830内+50 helper、外部默认配置结果、具体Shape Clone内部、真实VM错误配置/跨轮调用与显示释放仍开放。本切片不新增探针替代原厂宿主，不据局部源码退出给D4 S1/S2加分。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-D4-MODULE-ROI-STATE-SOURCE.md · SHA256 7f8670a60784fdd93d167c7210bafb9384fc372099083afaa207fc3c870e0055<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

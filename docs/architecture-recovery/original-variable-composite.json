@@ -1,0 +1,660 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "VX01",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原GlobalVariableModule复合设置0x28250",
+      "to": "0x130描述逐项分发至已绑定typed入口",
+      "behavior": "入口RDX是描述数组、R8D是条数，按0x130步进读取+0x100类型与+0x104数量。类型0/1/2分别用+0x108/+0x110/+0x118的payload指针调用295b0/29eb0/2a7b0。汇编确认typed第五栈字节来自VM_M_SetGlobalVarLockStatus返回AL，第六栈字节固定1；据VS03已见第六字节非0跳过typed联动分支。起始SetGlobalVarLockStatus(moduleID,moduleID,1)，正常末尾同入口第三参0；这里只证API及实参，不能等同原生互斥锁实现。",
+      "representation": "复合描述数组引用→名称、typed payload地址、数量；本分发循环没有复制该数值payload。",
+      "cache": "每个已执行子设置覆盖同一个local_34；没有失败后break或保存第一个错误的分支，未知类型跳过。返回的是最后执行子设置结果，零项/全部跳过仍为初始0，不证明所有子项成功。",
+      "release": "不释放传入描述数组或数值pointer；typed及其ModuleFrame实际存储边沿用VS/VZ有限证据，不把这一循环称所有权移交。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180028250.c",
+          "member": "180028250",
+          "sha256": "d13de4fe198f10de61711272db17333e321458167a4f30fbe78796e3423b3504",
+          "start": 2,
+          "end": 66,
+          "excerpt": "int FUN_180028250(longlong param_1,longlong param_2,int param_3)\n\n{\n  int iVar1;\n  undefined1 uVar2;\n  undefined4 in_register_00000084;\n  int local_34;\n  ulonglong local_28;\n  ulonglong local_20;\n  \n  local_34 = 0;\n  uVar2 = VM_M_SetGlobalVarLockStatus\n                    (*(undefined4 *)(param_1 + 0x48),*(undefined4 *)(param_1 + 0x48),\n                     CONCAT71((int7)(CONCAT44(in_register_00000084,param_3) >> 8),1));\n  for (local_28 = 0; local_28 < (ulonglong)(longlong)param_3; local_28 = local_28 + 1) {\n    iVar1 = *(int *)(param_2 + 0x100 + local_28 * 0x130);\n    if (iVar1 == 0) {\n      if (*(longlong *)(param_2 + 0x108 + local_28 * 0x130) == 0) {\n        local_34 = VM_M_SetGlobalVarInt(*(undefined8 *)(param_1 + 8),param_2 + local_28 * 0x130,0,0)\n        ;\n      }\n      else {\n        local_34 = FUN_1800295b0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(longlong *)(param_2 + 0x108 + local_28 * 0x130),\n                                 *(int *)(param_2 + 0x104 + local_28 * 0x130),uVar2,'\\x01');\n      }\n    }\n    else if (iVar1 == 1) {\n      if (*(longlong *)(param_2 + 0x110 + local_28 * 0x130) == 0) {\n        local_34 = VM_M_SetGlobalVarFloat\n                             (*(undefined8 *)(param_1 + 8),param_2 + local_28 * 0x130,0,0);\n      }\n      else {\n        local_34 = FUN_180029eb0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(float **)(param_2 + 0x110 + local_28 * 0x130),\n                                 *(int *)(param_2 + 0x104 + local_28 * 0x130),uVar2,'\\x01');\n      }\n    }\n    else if (iVar1 == 2) {\n      if (*(longlong *)(param_2 + 0x118 + local_28 * 0x130) == 0) {\n        local_34 = VM_M_SetGlobalVarString(*(undefined8 *)(param_1 + 8),param_2 + local_28 * 0x130);\n      }\n      else {\n        local_34 = FUN_18002a7b0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(longlong *)(param_2 + 0x118 + local_28 * 0x130),\n                                 *(int *)(param_2 + 0x104 + local_28 * 0x130),uVar2,'\\x01');\n      }\n    }\n    else if ((iVar1 == 4) && (*(longlong *)(param_2 + 0x118 + local_28 * 0x130) != 0)) {\n      for (local_20 = 0;\n          local_20 < (ulonglong)(longlong)*(int *)(param_2 + 0x104 + local_28 * 0x130);\n          local_20 = local_20 + 1) {\n        local_34 = FUN_18002b2e0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(void **)(*(longlong *)(param_2 + 0x118 + local_28 * 0x130) +\n                                           local_20 * 0x60),\n                                 *(int *)(*(longlong *)(param_2 + 0x118 + local_28 * 0x130) + 8 +\n                                         local_20 * 0x60),(undefined4)local_20);\n      }\n    }\n  }\n  VM_M_SetGlobalVarLockStatus(*(undefined4 *)(param_1 + 0x48),*(undefined4 *)(param_1 + 0x48),0);\n  return local_34;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180028250.asm.txt",
+          "member": "180028250",
+          "sha256": "7cc6b22bb5ff82bdb67da5b73dc6cd5425e42191aade11b2a51170c8e6f65691",
+          "start": 1,
+          "end": 183,
+          "excerpt": "180028250\tMOV dword ptr [RSP + 0x18],R8D\n180028255\tMOV qword ptr [RSP + 0x10],RDX\n18002825a\tMOV qword ptr [RSP + 0x8],RCX\n18002825f\tSUB RSP,0x68\n180028263\tMOV dword ptr [RSP + 0x34],0x0\n18002826b\tMOV R8B,0x1\n18002826e\tMOV RAX,qword ptr [RSP + 0x70]\n180028273\tMOV EDX,dword ptr [RAX + 0x48]\n180028276\tMOV RAX,qword ptr [RSP + 0x70]\n18002827b\tMOV ECX,dword ptr [RAX + 0x48]\n18002827e\tCALL qword ptr [0x1800556e0]\n180028284\tMOV byte ptr [RSP + 0x30],AL\n180028288\tMOV qword ptr [RSP + 0x40],0x0\n180028291\tJMP 0x1800282a0\n180028293\tMOV RAX,qword ptr [RSP + 0x40]\n180028298\tINC RAX\n18002829b\tMOV qword ptr [RSP + 0x40],RAX\n1800282a0\tMOVSXD RAX,dword ptr [RSP + 0x80]\n1800282a8\tCMP qword ptr [RSP + 0x40],RAX\n1800282ad\tJNC 0x1800285e8\n1800282b3\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800282bc\tMOV RCX,qword ptr [RSP + 0x78]\n1800282c1\tMOV EAX,dword ptr [RCX + RAX*0x1 + 0x100]\n1800282c8\tMOV dword ptr [RSP + 0x38],EAX\n1800282cc\tCMP dword ptr [RSP + 0x38],0x0\n1800282d1\tJZ 0x1800282f9\n1800282d3\tCMP dword ptr [RSP + 0x38],0x1\n1800282d8\tJZ 0x1800283a7\n1800282de\tCMP dword ptr [RSP + 0x38],0x2\n1800282e3\tJZ 0x180028455\n1800282e9\tCMP dword ptr [RSP + 0x38],0x4\n1800282ee\tJZ 0x180028503\n1800282f4\tJMP 0x1800285e3\n1800282f9\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028302\tMOV RCX,qword ptr [RSP + 0x78]\n180028307\tCMP qword ptr [RCX + RAX*0x1 + 0x108],0x0\n180028310\tJZ 0x180028372\n180028312\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002831b\tIMUL RCX,qword ptr [RSP + 0x40],0x130\n180028324\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n18002832d\tMOV R8,qword ptr [RSP + 0x78]\n180028332\tADD R8,RDX\n180028335\tMOV RDX,R8\n180028338\tMOV byte ptr [RSP + 0x28],0x1\n18002833d\tMOVZX R8D,byte ptr [RSP + 0x30]\n180028343\tMOV byte ptr [RSP + 0x20],R8B\n180028348\tMOV R8,qword ptr [RSP + 0x78]\n18002834d\tMOV R9D,dword ptr [R8 + RAX*0x1 + 0x104]\n180028355\tMOV RAX,qword ptr [RSP + 0x78]\n18002835a\tMOV R8,qword ptr [RAX + RCX*0x1 + 0x108]\n180028362\tMOV RCX,qword ptr [RSP + 0x70]\n180028367\tCALL 0x1800295b0\n18002836c\tMOV dword ptr [RSP + 0x34],EAX\n180028370\tJMP 0x1800283a2\n180028372\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002837b\tMOV RCX,qword ptr [RSP + 0x78]\n180028380\tADD RCX,RAX\n180028383\tMOV RAX,RCX\n180028386\tXOR R9D,R9D\n180028389\tXOR R8D,R8D\n18002838c\tMOV RDX,RAX\n18002838f\tMOV RAX,qword ptr [RSP + 0x70]\n180028394\tMOV RCX,qword ptr [RAX + 0x8]\n180028398\tCALL qword ptr [0x1800556b0]\n18002839e\tMOV dword ptr [RSP + 0x34],EAX\n1800283a2\tJMP 0x1800285e3\n1800283a7\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800283b0\tMOV RCX,qword ptr [RSP + 0x78]\n1800283b5\tCMP qword ptr [RCX + RAX*0x1 + 0x110],0x0\n1800283be\tJZ 0x180028420\n1800283c0\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800283c9\tIMUL RCX,qword ptr [RSP + 0x40],0x130\n1800283d2\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n1800283db\tMOV R8,qword ptr [RSP + 0x78]\n1800283e0\tADD R8,RDX\n1800283e3\tMOV RDX,R8\n1800283e6\tMOV byte ptr [RSP + 0x28],0x1\n1800283eb\tMOVZX R8D,byte ptr [RSP + 0x30]\n1800283f1\tMOV byte ptr [RSP + 0x20],R8B\n1800283f6\tMOV R8,qword ptr [RSP + 0x78]\n1800283fb\tMOV R9D,dword ptr [R8 + RAX*0x1 + 0x104]\n180028403\tMOV RAX,qword ptr [RSP + 0x78]\n180028408\tMOV R8,qword ptr [RAX + RCX*0x1 + 0x110]\n180028410\tMOV RCX,qword ptr [RSP + 0x70]\n180028415\tCALL 0x180029eb0\n18002841a\tMOV dword ptr [RSP + 0x34],EAX\n18002841e\tJMP 0x180028450\n180028420\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028429\tMOV RCX,qword ptr [RSP + 0x78]\n18002842e\tADD RCX,RAX\n180028431\tMOV RAX,RCX\n180028434\tXORPS XMM3,XMM3\n180028437\tXOR R8D,R8D\n18002843a\tMOV RDX,RAX\n18002843d\tMOV RAX,qword ptr [RSP + 0x70]\n180028442\tMOV RCX,qword ptr [RAX + 0x8]\n180028446\tCALL qword ptr [0x1800556b8]\n18002844c\tMOV dword ptr [RSP + 0x34],EAX\n180028450\tJMP 0x1800285e3\n180028455\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002845e\tMOV RCX,qword ptr [RSP + 0x78]\n180028463\tCMP qword ptr [RCX + RAX*0x1 + 0x118],0x0\n18002846c\tJZ 0x1800284ce\n18002846e\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028477\tIMUL RCX,qword ptr [RSP + 0x40],0x130\n180028480\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n180028489\tMOV R8,qword ptr [RSP + 0x78]\n18002848e\tADD R8,RDX\n180028491\tMOV RDX,R8\n180028494\tMOV byte ptr [RSP + 0x28],0x1\n180028499\tMOVZX R8D,byte ptr [RSP + 0x30]\n18002849f\tMOV byte ptr [RSP + 0x20],R8B\n1800284a4\tMOV R8,qword ptr [RSP + 0x78]\n1800284a9\tMOV R9D,dword ptr [R8 + RAX*0x1 + 0x104]\n1800284b1\tMOV RAX,qword ptr [RSP + 0x78]\n1800284b6\tMOV R8,qword ptr [RAX + RCX*0x1 + 0x118]\n1800284be\tMOV RCX,qword ptr [RSP + 0x70]\n1800284c3\tCALL 0x18002a7b0\n1800284c8\tMOV dword ptr [RSP + 0x34],EAX\n1800284cc\tJMP 0x1800284fe\n1800284ce\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800284d7\tMOV RCX,qword ptr [RSP + 0x78]\n1800284dc\tADD RCX,RAX\n1800284df\tMOV RAX,RCX\n1800284e2\tXOR R9D,R9D\n1800284e5\tXOR R8D,R8D\n1800284e8\tMOV RDX,RAX\n1800284eb\tMOV RAX,qword ptr [RSP + 0x70]\n1800284f0\tMOV RCX,qword ptr [RAX + 0x8]\n1800284f4\tCALL qword ptr [0x180055698]\n1800284fa\tMOV dword ptr [RSP + 0x34],EAX\n1800284fe\tJMP 0x1800285e3\n180028503\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002850c\tMOV RCX,qword ptr [RSP + 0x78]\n180028511\tCMP qword ptr [RCX + RAX*0x1 + 0x118],0x0\n18002851a\tJZ 0x1800285e3\n180028520\tMOV qword ptr [RSP + 0x48],0x0\n180028529\tJMP 0x180028538\n18002852b\tMOV RAX,qword ptr [RSP + 0x48]\n180028530\tINC RAX\n180028533\tMOV qword ptr [RSP + 0x48],RAX\n180028538\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028541\tMOV RCX,qword ptr [RSP + 0x78]\n180028546\tMOVSXD RAX,dword ptr [RCX + RAX*0x1 + 0x104]\n18002854e\tCMP qword ptr [RSP + 0x48],RAX\n180028553\tJNC 0x1800285e3\n180028559\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028562\tIMUL RCX,qword ptr [RSP + 0x48],0x60\n180028568\tMOV RDX,qword ptr [RSP + 0x78]\n18002856d\tMOV RAX,qword ptr [RDX + RAX*0x1 + 0x118]\n180028575\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n18002857e\tIMUL R8,qword ptr [RSP + 0x48],0x60\n180028584\tMOV R9,qword ptr [RSP + 0x78]\n180028589\tMOV RDX,qword ptr [R9 + RDX*0x1 + 0x118]\n180028591\tIMUL R9,qword ptr [RSP + 0x40],0x130\n18002859a\tMOV R10,qword ptr [RSP + 0x78]\n18002859f\tADD R10,R9\n1800285a2\tMOV R9,R10\n1800285a5\tMOV qword ptr [RSP + 0x50],R9\n1800285aa\tMOVZX R10D,byte ptr [RSP + 0x30]\n1800285b0\tMOV byte ptr [RSP + 0x28],R10B\n1800285b5\tMOV R10D,dword ptr [RSP + 0x48]\n1800285ba\tMOV dword ptr [RSP + 0x20],R10D\n1800285bf\tMOV R9D,dword ptr [RAX + RCX*0x1 + 0x8]\n1800285c4\tMOV R8,qword ptr [RDX + R8*0x1]\n1800285c8\tMOV RAX,qword ptr [RSP + 0x50]\n1800285cd\tMOV RDX,RAX\n1800285d0\tMOV RCX,qword ptr [RSP + 0x70]\n1800285d5\tCALL 0x18002b2e0\n1800285da\tMOV dword ptr [RSP + 0x34],EAX\n1800285de\tJMP 0x18002852b\n1800285e3\tJMP 0x180028293\n1800285e8\tXOR R8D,R8D\n1800285eb\tMOV RAX,qword ptr [RSP + 0x70]\n1800285f0\tMOV EDX,dword ptr [RAX + 0x48]\n1800285f3\tMOV RAX,qword ptr [RSP + 0x70]\n1800285f8\tMOV ECX,dword ptr [RAX + 0x48]\n1800285fb\tCALL qword ptr [0x1800556e0]\n180028601\tMOV byte ptr [RSP + 0x30],AL\n180028605\tMOV EAX,dword ptr [RSP + 0x34]\n180028609\tADD RSP,0x68\n18002860d\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        }
+      ],
+      "unknowns": [
+        "负条数经MOVSXD后无符号比较的异常输入安全性未运行验证；不据正常条数循环推断边界校验。",
+        "复合条目的创建/命名及不同订阅者看到更新的原子性没有由此证明。"
+      ]
+    },
+    {
+      "id": "VX02",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "record退役0x25c40",
+      "to": "清零计数，释放+0x440/+0x458/+0x460/+0x468/+0x470",
+      "behavior": "0x25c40真实原体是缓冲清理，不是初始化：先写+0x43c=0、+0x450=0；非空+0x440、+0x458、+0x460分别delete[]，清pointer；+0x468调用1ba20(pointer,3)，+0x470调用1bc70(pointer,3)，返回后清pointer及+0x450。它未调用ModuleFrame删除变量值，不能把record缓冲清理等同全局最终存储删除。",
+      "representation": "这些record槽持有不同分配；+0x470是复合描述数组，+0x468是0x60描述数组。",
+      "cache": "计数与pointer分别复位；函数没有把+0x448复合标志清零，不能把它单独当完整record重置。",
+      "release": "释放动作沿具体delete链；不是GC、也不是仅移除字典引用。调用者是否仍保留已复制的payload地址必须另核。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180025c40.c",
+          "member": "180025c40",
+          "sha256": "6edd2a9bd46dcd4ab923b7c145363a8cb4044d28e699e39ecf5fef3915abf49e",
+          "start": 2,
+          "end": 64,
+          "excerpt": "void FUN_180025c40(undefined8 param_1,undefined8 *param_2)\n\n{\n  longlong lVar1;\n  \n  lVar1 = FUN_180009510(param_2);\n  *(undefined4 *)(lVar1 + 0x43c) = 0;\n  lVar1 = FUN_180009510(param_2);\n  *(undefined4 *)(lVar1 + 0x450) = 0;\n  lVar1 = FUN_180009510(param_2);\n  if (*(longlong *)(lVar1 + 0x440) != 0) {\n    lVar1 = FUN_180009510(param_2);\n    operator_delete__(*(void **)(lVar1 + 0x440));\n    lVar1 = FUN_180009510(param_2);\n    *(undefined8 *)(lVar1 + 0x440) = 0;\n    lVar1 = FUN_180009510(param_2);\n    *(undefined4 *)(lVar1 + 0x450) = 0;\n  }\n  lVar1 = FUN_180009510(param_2);\n  if (*(longlong *)(lVar1 + 0x458) != 0) {\n    lVar1 = FUN_180009510(param_2);\n    operator_delete__(*(void **)(lVar1 + 0x458));\n    lVar1 = FUN_180009510(param_2);\n    *(undefined8 *)(lVar1 + 0x458) = 0;\n    lVar1 = FUN_180009510(param_2);\n    *(undefined4 *)(lVar1 + 0x450) = 0;\n  }\n  lVar1 = FUN_180009510(param_2);\n  if (*(longlong *)(lVar1 + 0x460) != 0) {\n    lVar1 = FUN_180009510(param_2);\n    operator_delete__(*(void **)(lVar1 + 0x460));\n    lVar1 = FUN_180009510(param_2);\n    *(undefined8 *)(lVar1 + 0x460) = 0;\n    lVar1 = FUN_180009510(param_2);\n    *(undefined4 *)(lVar1 + 0x450) = 0;\n  }\n  lVar1 = FUN_180009510(param_2);\n  if (*(longlong *)(lVar1 + 0x468) != 0) {\n    lVar1 = FUN_180009510(param_2);\n    if (*(longlong **)(lVar1 + 0x468) != (longlong *)0x0) {\n      FUN_18001ba20(*(longlong **)(lVar1 + 0x468),3);\n    }\n    lVar1 = FUN_180009510(param_2);\n    *(undefined8 *)(lVar1 + 0x468) = 0;\n    lVar1 = FUN_180009510(param_2);\n    *(undefined4 *)(lVar1 + 0x450) = 0;\n  }\n  lVar1 = FUN_180009510(param_2);\n  if (*(longlong *)(lVar1 + 0x470) != 0) {\n    lVar1 = FUN_180009510(param_2);\n    if (*(void **)(lVar1 + 0x470) != (void *)0x0) {\n      FUN_18001bc70(*(void **)(lVar1 + 0x470),3);\n    }\n    lVar1 = FUN_180009510(param_2);\n    *(undefined8 *)(lVar1 + 0x470) = 0;\n    lVar1 = FUN_180009510(param_2);\n    *(undefined4 *)(lVar1 + 0x450) = 0;\n  }\n  FUN_180016480((longlong)param_2);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180025c40.asm.txt",
+          "member": "180025c40",
+          "sha256": "89b7ac963a7c3d9022accdeeb589c3520a4a3b6c1ebb9bcbd48a22c5be06b3de",
+          "start": 1,
+          "end": 111,
+          "excerpt": "180025c40\tMOV qword ptr [RSP + 0x10],RDX\n180025c45\tMOV qword ptr [RSP + 0x8],RCX\n180025c4a\tSUB RSP,0x78\n180025c4e\tMOV qword ptr [RSP + 0x68],-0x2\n180025c57\tMOV RCX,qword ptr [RSP + 0x88]\n180025c5f\tCALL 0x180009510\n180025c64\tMOV dword ptr [RAX + 0x43c],0x0\n180025c6e\tMOV RCX,qword ptr [RSP + 0x88]\n180025c76\tCALL 0x180009510\n180025c7b\tMOV dword ptr [RAX + 0x450],0x0\n180025c85\tMOV RCX,qword ptr [RSP + 0x88]\n180025c8d\tCALL 0x180009510\n180025c92\tCMP qword ptr [RAX + 0x440],0x0\n180025c9a\tJZ 0x180025cef\n180025c9c\tMOV RCX,qword ptr [RSP + 0x88]\n180025ca4\tCALL 0x180009510\n180025ca9\tMOV RAX,qword ptr [RAX + 0x440]\n180025cb0\tMOV qword ptr [RSP + 0x60],RAX\n180025cb5\tMOV RCX,qword ptr [RSP + 0x60]\n180025cba\tCALL qword ptr [0x180055540]\n180025cc0\tMOV RCX,qword ptr [RSP + 0x88]\n180025cc8\tCALL 0x180009510\n180025ccd\tMOV qword ptr [RAX + 0x440],0x0\n180025cd8\tMOV RCX,qword ptr [RSP + 0x88]\n180025ce0\tCALL 0x180009510\n180025ce5\tMOV dword ptr [RAX + 0x450],0x0\n180025cef\tMOV RCX,qword ptr [RSP + 0x88]\n180025cf7\tCALL 0x180009510\n180025cfc\tCMP qword ptr [RAX + 0x458],0x0\n180025d04\tJZ 0x180025d59\n180025d06\tMOV RCX,qword ptr [RSP + 0x88]\n180025d0e\tCALL 0x180009510\n180025d13\tMOV RAX,qword ptr [RAX + 0x458]\n180025d1a\tMOV qword ptr [RSP + 0x40],RAX\n180025d1f\tMOV RCX,qword ptr [RSP + 0x40]\n180025d24\tCALL qword ptr [0x180055540]\n180025d2a\tMOV RCX,qword ptr [RSP + 0x88]\n180025d32\tCALL 0x180009510\n180025d37\tMOV qword ptr [RAX + 0x458],0x0\n180025d42\tMOV RCX,qword ptr [RSP + 0x88]\n180025d4a\tCALL 0x180009510\n180025d4f\tMOV dword ptr [RAX + 0x450],0x0\n180025d59\tMOV RCX,qword ptr [RSP + 0x88]\n180025d61\tCALL 0x180009510\n180025d66\tCMP qword ptr [RAX + 0x460],0x0\n180025d6e\tJZ 0x180025dc3\n180025d70\tMOV RCX,qword ptr [RSP + 0x88]\n180025d78\tCALL 0x180009510\n180025d7d\tMOV RAX,qword ptr [RAX + 0x460]\n180025d84\tMOV qword ptr [RSP + 0x30],RAX\n180025d89\tMOV RCX,qword ptr [RSP + 0x30]\n180025d8e\tCALL qword ptr [0x180055540]\n180025d94\tMOV RCX,qword ptr [RSP + 0x88]\n180025d9c\tCALL 0x180009510\n180025da1\tMOV qword ptr [RAX + 0x460],0x0\n180025dac\tMOV RCX,qword ptr [RSP + 0x88]\n180025db4\tCALL 0x180009510\n180025db9\tMOV dword ptr [RAX + 0x450],0x0\n180025dc3\tMOV RCX,qword ptr [RSP + 0x88]\n180025dcb\tCALL 0x180009510\n180025dd0\tCMP qword ptr [RAX + 0x468],0x0\n180025dd8\tJZ 0x180025e53\n180025dda\tMOV RCX,qword ptr [RSP + 0x88]\n180025de2\tCALL 0x180009510\n180025de7\tMOV RAX,qword ptr [RAX + 0x468]\n180025dee\tMOV qword ptr [RSP + 0x50],RAX\n180025df3\tMOV RAX,qword ptr [RSP + 0x50]\n180025df8\tMOV qword ptr [RSP + 0x20],RAX\n180025dfd\tCMP qword ptr [RSP + 0x20],0x0\n180025e03\tJZ 0x180025e1b\n180025e05\tMOV EDX,0x3\n180025e0a\tMOV RCX,qword ptr [RSP + 0x20]\n180025e0f\tCALL 0x18001ba20\n180025e14\tMOV qword ptr [RSP + 0x38],RAX\n180025e19\tJMP 0x180025e24\n180025e1b\tMOV qword ptr [RSP + 0x38],0x0\n180025e24\tMOV RCX,qword ptr [RSP + 0x88]\n180025e2c\tCALL 0x180009510\n180025e31\tMOV qword ptr [RAX + 0x468],0x0\n180025e3c\tMOV RCX,qword ptr [RSP + 0x88]\n180025e44\tCALL 0x180009510\n180025e49\tMOV dword ptr [RAX + 0x450],0x0\n180025e53\tMOV RCX,qword ptr [RSP + 0x88]\n180025e5b\tCALL 0x180009510\n180025e60\tCMP qword ptr [RAX + 0x470],0x0\n180025e68\tJZ 0x180025ee3\n180025e6a\tMOV RCX,qword ptr [RSP + 0x88]\n180025e72\tCALL 0x180009510\n180025e77\tMOV RAX,qword ptr [RAX + 0x470]\n180025e7e\tMOV qword ptr [RSP + 0x48],RAX\n180025e83\tMOV RAX,qword ptr [RSP + 0x48]\n180025e88\tMOV qword ptr [RSP + 0x28],RAX\n180025e8d\tCMP qword ptr [RSP + 0x28],0x0\n180025e93\tJZ 0x180025eab\n180025e95\tMOV EDX,0x3\n180025e9a\tMOV RCX,qword ptr [RSP + 0x28]\n180025e9f\tCALL 0x18001bc70\n180025ea4\tMOV qword ptr [RSP + 0x58],RAX\n180025ea9\tJMP 0x180025eb4\n180025eab\tMOV qword ptr [RSP + 0x58],0x0\n180025eb4\tMOV RCX,qword ptr [RSP + 0x88]\n180025ebc\tCALL 0x180009510\n180025ec1\tMOV qword ptr [RAX + 0x470],0x0\n180025ecc\tMOV RCX,qword ptr [RSP + 0x88]\n180025ed4\tCALL 0x180009510\n180025ed9\tMOV dword ptr [RAX + 0x450],0x0\n180025ee3\tMOV RCX,qword ptr [RSP + 0x88]\n180025eeb\tCALL 0x180016480\n180025ef0\tADD RSP,0x78\n180025ef4\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        }
+      ],
+      "unknowns": [
+        "record整体析构、并发最后读者和调用0x25c40的全部路径未在本切片遍历。"
+      ]
+    },
+    {
+      "id": "VX03",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "record+0x470数组析构1bc70(pointer,3)",
+      "to": "逐0x130子描述析构，再释放cookie前的数组分配",
+      "behavior": "1bc70参数3同时启用vector析构与delete[]：从pointer-8读数量，以0x130步长调用1b900，然后delete[](pointer-8)。每个1b900对子描述+0x108/+0x110非空指针直接delete[]，清pointer与+0x104；+0x118非空则调用1ba20(pointer,3)。1ba20以0x60步长调用1b830并delete[]其pointer-8。1b830只有描述+0x50的int非0且+0pointer非0时才delete[]内容、清pointer与+8长度，最后始终清+0xc容量。",
+      "representation": "外层0x130数组拥有子数值分配；内层0x60描述的内容是否释放受+0x50标志控制。正式字段名尚缺符号，仅按偏移记录。",
+      "cache": "外层和内层数组数量来自各分配前cookie，不来自已被清零record+0x450；因此先清record计数不阻止vector析构。",
+      "release": "不是笼统deep-free：内层标志0会跳过内容delete，不能称所有字符串/图像内容都无条件释放。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001bc70.c",
+          "member": "18001bc70",
+          "sha256": "11b46f78b1959ef3c9cbce7aae2c72940501254693838e9840f8a2d5f36ab5f0",
+          "start": 2,
+          "end": 21,
+          "excerpt": "void * FUN_18001bc70(void *param_1,uint param_2)\n\n{\n  if ((param_2 & 2) == 0) {\n    FUN_18001b900((longlong)param_1);\n    if ((param_2 & 1) != 0) {\n      operator_delete(param_1);\n    }\n  }\n  else {\n    _eh_vector_destructor_iterator_(param_1,0x130,*(int *)((longlong)param_1 + -8),FUN_18001b900);\n    if ((param_2 & 1) != 0) {\n      operator_delete__((void *)((longlong)param_1 + -8));\n    }\n    param_1 = (void *)((longlong)param_1 + -8);\n  }\n  return param_1;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001bc70.asm.txt",
+          "member": "18001bc70",
+          "sha256": "c5542b39e99cbd120133433fc7cd87415104015d7851b0fd64113539e5a575cb",
+          "start": 1,
+          "end": 36,
+          "excerpt": "18001bc70\tMOV dword ptr [RSP + 0x10],EDX\n18001bc74\tMOV qword ptr [RSP + 0x8],RCX\n18001bc79\tSUB RSP,0x28\n18001bc7d\tMOV EAX,dword ptr [RSP + 0x38]\n18001bc81\tAND EAX,0x2\n18001bc84\tTEST EAX,EAX\n18001bc86\tJZ 0x18001bccf\n18001bc88\tLEA R9,[0x18001b900]\n18001bc8f\tMOV RAX,qword ptr [RSP + 0x30]\n18001bc94\tMOV R8D,dword ptr [RAX + -0x8]\n18001bc98\tMOV EDX,0x130\n18001bc9d\tMOV RCX,qword ptr [RSP + 0x30]\n18001bca2\tCALL 0x18005017c\n18001bca7\tMOV EAX,dword ptr [RSP + 0x38]\n18001bcab\tAND EAX,0x1\n18001bcae\tTEST EAX,EAX\n18001bcb0\tJZ 0x18001bcc4\n18001bcb2\tMOV RAX,qword ptr [RSP + 0x30]\n18001bcb7\tSUB RAX,0x8\n18001bcbb\tMOV RCX,RAX\n18001bcbe\tCALL qword ptr [0x180055540]\n18001bcc4\tMOV RAX,qword ptr [RSP + 0x30]\n18001bcc9\tSUB RAX,0x8\n18001bccd\tJMP 0x18001bcf4\n18001bccf\tMOV RCX,qword ptr [RSP + 0x30]\n18001bcd4\tCALL 0x18001b900\n18001bcd9\tMOV EAX,dword ptr [RSP + 0x38]\n18001bcdd\tAND EAX,0x1\n18001bce0\tTEST EAX,EAX\n18001bce2\tJZ 0x18001bcef\n18001bce4\tMOV RCX,qword ptr [RSP + 0x30]\n18001bce9\tCALL qword ptr [0x180055560]\n18001bcef\tMOV RAX,qword ptr [RSP + 0x30]\n18001bcf4\tADD RSP,0x28\n18001bcf8\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001b900.c",
+          "member": "18001b900",
+          "sha256": "c34f8805d2754e6161ebdf166119b0a4156bb176db6e466c9f7ba0c0a228909e",
+          "start": 2,
+          "end": 25,
+          "excerpt": "void FUN_18001b900(longlong param_1)\n\n{\n  if (*(longlong *)(param_1 + 0x108) != 0) {\n    operator_delete__(*(void **)(param_1 + 0x108));\n    *(undefined8 *)(param_1 + 0x108) = 0;\n    *(undefined4 *)(param_1 + 0x104) = 0;\n  }\n  if (*(longlong *)(param_1 + 0x110) != 0) {\n    operator_delete__(*(void **)(param_1 + 0x110));\n    *(undefined8 *)(param_1 + 0x110) = 0;\n    *(undefined4 *)(param_1 + 0x104) = 0;\n  }\n  if (*(longlong *)(param_1 + 0x118) != 0) {\n    if (*(longlong **)(param_1 + 0x118) != (longlong *)0x0) {\n      FUN_18001ba20(*(longlong **)(param_1 + 0x118),3);\n    }\n    *(undefined8 *)(param_1 + 0x118) = 0;\n    *(undefined4 *)(param_1 + 0x104) = 0;\n  }\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001b900.asm.txt",
+          "member": "18001b900",
+          "sha256": "b58f39f4d92f9e4a4019cbb2309a13b41f79e2abb6cb56a2c41bd05404335bc0",
+          "start": 1,
+          "end": 49,
+          "excerpt": "18001b900\tMOV qword ptr [RSP + 0x8],RCX\n18001b905\tSUB RSP,0x58\n18001b909\tMOV RAX,qword ptr [RSP + 0x60]\n18001b90e\tCMP qword ptr [RAX + 0x108],0x0\n18001b916\tJZ 0x18001b953\n18001b918\tMOV RAX,qword ptr [RSP + 0x60]\n18001b91d\tMOV RAX,qword ptr [RAX + 0x108]\n18001b924\tMOV qword ptr [RSP + 0x28],RAX\n18001b929\tMOV RCX,qword ptr [RSP + 0x28]\n18001b92e\tCALL qword ptr [0x180055540]\n18001b934\tMOV RAX,qword ptr [RSP + 0x60]\n18001b939\tMOV qword ptr [RAX + 0x108],0x0\n18001b944\tMOV RAX,qword ptr [RSP + 0x60]\n18001b949\tMOV dword ptr [RAX + 0x104],0x0\n18001b953\tMOV RAX,qword ptr [RSP + 0x60]\n18001b958\tCMP qword ptr [RAX + 0x110],0x0\n18001b960\tJZ 0x18001b99d\n18001b962\tMOV RAX,qword ptr [RSP + 0x60]\n18001b967\tMOV RAX,qword ptr [RAX + 0x110]\n18001b96e\tMOV qword ptr [RSP + 0x30],RAX\n18001b973\tMOV RCX,qword ptr [RSP + 0x30]\n18001b978\tCALL qword ptr [0x180055540]\n18001b97e\tMOV RAX,qword ptr [RSP + 0x60]\n18001b983\tMOV qword ptr [RAX + 0x110],0x0\n18001b98e\tMOV RAX,qword ptr [RSP + 0x60]\n18001b993\tMOV dword ptr [RAX + 0x104],0x0\n18001b99d\tMOV RAX,qword ptr [RSP + 0x60]\n18001b9a2\tCMP qword ptr [RAX + 0x118],0x0\n18001b9aa\tJZ 0x18001ba0d\n18001b9ac\tMOV RAX,qword ptr [RSP + 0x60]\n18001b9b1\tMOV RAX,qword ptr [RAX + 0x118]\n18001b9b8\tMOV qword ptr [RSP + 0x38],RAX\n18001b9bd\tMOV RAX,qword ptr [RSP + 0x38]\n18001b9c2\tMOV qword ptr [RSP + 0x20],RAX\n18001b9c7\tCMP qword ptr [RSP + 0x20],0x0\n18001b9cd\tJZ 0x18001b9e5\n18001b9cf\tMOV EDX,0x3\n18001b9d4\tMOV RCX,qword ptr [RSP + 0x20]\n18001b9d9\tCALL 0x18001ba20\n18001b9de\tMOV qword ptr [RSP + 0x40],RAX\n18001b9e3\tJMP 0x18001b9ee\n18001b9e5\tMOV qword ptr [RSP + 0x40],0x0\n18001b9ee\tMOV RAX,qword ptr [RSP + 0x60]\n18001b9f3\tMOV qword ptr [RAX + 0x118],0x0\n18001b9fe\tMOV RAX,qword ptr [RSP + 0x60]\n18001ba03\tMOV dword ptr [RAX + 0x104],0x0\n18001ba0d\tADD RSP,0x58\n18001ba11\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001ba20.c",
+          "member": "18001ba20",
+          "sha256": "d1d73efbd7d4ad5527cecc8488034b83c73a21c906105e1cecafdf980f016ec9",
+          "start": 2,
+          "end": 21,
+          "excerpt": "longlong * FUN_18001ba20(longlong *param_1,uint param_2)\n\n{\n  if ((param_2 & 2) == 0) {\n    FUN_18001b830(param_1);\n    if ((param_2 & 1) != 0) {\n      operator_delete(param_1);\n    }\n  }\n  else {\n    _eh_vector_destructor_iterator_(param_1,0x60,(int)param_1[-1],FUN_18001b830);\n    if ((param_2 & 1) != 0) {\n      operator_delete__(param_1 + -1);\n    }\n    param_1 = param_1 + -1;\n  }\n  return param_1;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001b830.c",
+          "member": "18001b830",
+          "sha256": "7e6193b9870c7592fca9ade5201711baf12456befb36436a0bc742a3a0fbf44a",
+          "start": 2,
+          "end": 14,
+          "excerpt": "void FUN_18001b830(longlong *param_1)\n\n{\n  if (((int)param_1[10] != 0) && (*param_1 != 0)) {\n    operator_delete__((void *)*param_1);\n    *param_1 = 0;\n    *(undefined4 *)(param_1 + 1) = 0;\n  }\n  *(undefined4 *)((longlong)param_1 + 0xc) = 0;\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001b830.asm.txt",
+          "member": "18001b830",
+          "sha256": "2c0a53c834241c38c68046e0dfbf0f17bd32a39ed2b4538e56331a6166e84ab8",
+          "start": 1,
+          "end": 22,
+          "excerpt": "18001b830\tMOV qword ptr [RSP + 0x8],RCX\n18001b835\tSUB RSP,0x38\n18001b839\tMOV RAX,qword ptr [RSP + 0x40]\n18001b83e\tCMP dword ptr [RAX + 0x50],0x0\n18001b842\tJZ 0x18001b87f\n18001b844\tMOV RAX,qword ptr [RSP + 0x40]\n18001b849\tCMP qword ptr [RAX],0x0\n18001b84d\tJZ 0x18001b87f\n18001b84f\tMOV RAX,qword ptr [RSP + 0x40]\n18001b854\tMOV RAX,qword ptr [RAX]\n18001b857\tMOV qword ptr [RSP + 0x20],RAX\n18001b85c\tMOV RCX,qword ptr [RSP + 0x20]\n18001b861\tCALL qword ptr [0x180055540]\n18001b867\tMOV RAX,qword ptr [RSP + 0x40]\n18001b86c\tMOV qword ptr [RAX],0x0\n18001b873\tMOV RAX,qword ptr [RSP + 0x40]\n18001b878\tMOV dword ptr [RAX + 0x8],0x0\n18001b87f\tMOV RAX,qword ptr [RSP + 0x40]\n18001b884\tMOV dword ptr [RAX + 0xc],0x0\n18001b88b\tADD RSP,0x38\n18001b88f\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        }
+      ],
+      "unknowns": [
+        "+0x50正式所有权语义、每个生产分支如何置位/转移仍未闭合；不由delete条件猜字段名。"
+      ]
+    },
+    {
+      "id": "VX04",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "复合描述构造1b890与先前VAR_TYPE浅描述复制",
+      "to": "初始化与后续嵌套释放边界分开",
+      "behavior": "本次取到1b890：清名称0x100字节、+0x104=0、+0x100类型=6、+0x108/+0x110/+0x118=0。先前VAR_TYPE分支已见按条数分配带cookie的0x130数组、逐项构造、随后整段memcpy_s输入描述；该整段复制包含指针字段，不能因调用memcpy_s就称嵌套payload已复制。新增析构体证明这些复制进来的非空数值pointer将进入delete[]，内层内容则受+0x50控制。",
+      "representation": "构造的空状态→描述字节副本→嵌套析构链；三个阶段分别可证。",
+      "cache": "只确认record+0x470保留描述副本；payload究竟由哪个接收路径分配/移交，需要补生产体及ABI，不能用本地数组分配代替。",
+      "release": "清理源体已取到，但复制输入与析构是否对同一有效拥有者配对、分配器是否兼容仍未证；不据静态形状声称无悬挂/双重释放。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001b890.c",
+          "member": "18001b890",
+          "sha256": "e1e6c7825bfb8e4ed17d1cee8e02dcb2aef695974c86f0f46112a7762af2f4a3",
+          "start": 2,
+          "end": 21,
+          "excerpt": "undefined1 * FUN_18001b890(undefined1 *param_1)\n\n{\n  longlong lVar1;\n  undefined1 *puVar2;\n  \n  *(undefined4 *)(param_1 + 0x104) = 0;\n  puVar2 = param_1;\n  for (lVar1 = 0x100; lVar1 != 0; lVar1 = lVar1 + -1) {\n    *puVar2 = 0;\n    puVar2 = puVar2 + 1;\n  }\n  *(undefined4 *)(param_1 + 0x100) = 6;\n  *(undefined8 *)(param_1 + 0x108) = 0;\n  *(undefined8 *)(param_1 + 0x110) = 0;\n  *(undefined8 *)(param_1 + 0x118) = 0;\n  return param_1;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-native-receiver.resources/1800245bd.c",
+          "member": "VAR_TYPE selected case fragment",
+          "sha256": "0a02e1c54378c1768420dcbf73a17d80d90f9704eccc957d5ddaad13feb9ad37",
+          "start": 66,
+          "end": 111,
+          "excerpt": "      uVar1 = *(uint *)(in_stack_00000058 + 0x304);\n      uVar5 = SUB168(ZEXT816(0x130) * ZEXT416(uVar1),0);\n      if (SUB168(ZEXT816(0x130) * ZEXT416(uVar1),8) != 0) {\n        uVar5 = 0xffffffffffffffff;\n      }\n      _Var6 = uVar5 + 8;\n      if (0xfffffffffffffff7 < uVar5) {\n        _Var6 = 0xffffffffffffffff;\n      }\n      in_stack_000001d8 = (uint *)thunk_FUN_1800502a4(_Var6);\n      if (in_stack_000001d8 == (uint *)0x0) {\n        puVar9 = (uint *)0x0;\n      }\n      else {\n        *in_stack_000001d8 = uVar1;\n        FUN_180050228((longlong)(in_stack_000001d8 + 2),0x130,uVar1,FUN_18001b890);\n        puVar9 = in_stack_000001d8 + 2;\n      }\n      lVar4 = FUN_180009510((undefined8 *)&stack0x00000048);\n      *(uint **)(lVar4 + 0x470) = puVar9;\n      lVar4 = FUN_180009510((undefined8 *)&stack0x00000048);\n      if (*(longlong *)(lVar4 + 0x470) == 0) {\n        in_stack_00000060 = -0x1ffffffe;\n      }\n      else {\n        iVar2 = *(int *)(in_stack_00000058 + 0x304) * 0x130;\n        in_stack_00000108 = iVar2;\n        lVar7 = FUN_180009510((undefined8 *)&stack0x00000048);\n        puVar8 = *(undefined1 **)(lVar7 + 0x470);\n        for (lVar4 = (longlong)iVar2; lVar4 != 0; lVar4 = lVar4 + -1) {\n          *puVar8 = 0;\n          puVar8 = puVar8 + 1;\n        }\n        _MaxCount = (rsize_t)in_stack_00000108;\n        _DstSize = (rsize_t)in_stack_00000108;\n        lVar4 = FUN_180009510((undefined8 *)&stack0x00000048);\n        memcpy_s(*(void **)(lVar4 + 0x470),_DstSize,*(void **)(in_stack_00000058 + 0x308),_MaxCount)\n        ;\n        lVar4 = FUN_180009510((undefined8 *)&stack0x00000048);\n        *(undefined1 *)(lVar4 + 0x448) = 1;\n        lVar4 = FUN_180009510((undefined8 *)&stack0x00000048);\n        *(undefined4 *)(lVar4 + 0x450) = *(undefined4 *)(in_stack_00000058 + 0x304);\n      }\n    }\n  }\n  iVar2 = in_stack_00000060;",
+          "evidenceType": "prior-offline-selected-case-fragment",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "provider": "prior owned Ghidra case fragment; inherited stack parameters are not standalone ABI"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18001b900.c",
+          "member": "18001b900",
+          "sha256": "c34f8805d2754e6161ebdf166119b0a4156bb176db6e466c9f7ba0c0a228909e",
+          "start": 2,
+          "end": 25,
+          "excerpt": "void FUN_18001b900(longlong param_1)\n\n{\n  if (*(longlong *)(param_1 + 0x108) != 0) {\n    operator_delete__(*(void **)(param_1 + 0x108));\n    *(undefined8 *)(param_1 + 0x108) = 0;\n    *(undefined4 *)(param_1 + 0x104) = 0;\n  }\n  if (*(longlong *)(param_1 + 0x110) != 0) {\n    operator_delete__(*(void **)(param_1 + 0x110));\n    *(undefined8 *)(param_1 + 0x110) = 0;\n    *(undefined4 *)(param_1 + 0x104) = 0;\n  }\n  if (*(longlong *)(param_1 + 0x118) != 0) {\n    if (*(longlong **)(param_1 + 0x118) != (longlong *)0x0) {\n      FUN_18001ba20(*(longlong **)(param_1 + 0x118),3);\n    }\n    *(undefined8 *)(param_1 + 0x118) = 0;\n    *(undefined4 *)(param_1 + 0x104) = 0;\n  }\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        }
+      ],
+      "unknowns": [
+        "VAR_TYPE case是大函数内片段，in_stack字段依赖原整体栈语义，不当成独立函数正式参数。",
+        "输入嵌套地址来源与借用/转移协议尚缺，不能直接断言原版存在double-free。"
+      ]
+    },
+    {
+      "id": "VX05",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原SetGlobalValue0x27080",
+      "to": "record中数值数组或紧凑字符串描述发布到ModuleFrame",
+      "behavior": "0x27080日志实名CVariableModuBase::SetGlobalValue，实际是发布体，不是清理体。record+0x450非0时先调用SetGlobalVarLockStatus(...,1)，int/float分支分别传+0x458/+0x460地址、数量、返回AL到BatchSet；string且+0x468非空时，分配数量×0x10临时数组，把每个0x60描述的pointer/+8长度/+0xc容量复制进去，调用BatchString后正常路径delete[]临时描述，随后SetGlobalVarLockStatus(...,0)。临时分配返回null分支记录日志并提前return，未经过正常末尾的status(...,0)；这只是所见控制流，不断言status就是实际mutex。",
+      "representation": "string转换复制描述，不复制内容字节；零计数另走初始文本+0x139的scalar设置路径，不能把两者混称空数组。",
+      "cache": "原record的+0x468及嵌套内容在这个发布循环保留；临时紧凑描述仅到batch返回。",
+      "release": "正常分支释放临时描述，不释放record源数组；异常路径和下层最终值生命周期沿VZ证据另列。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180027080.c",
+          "member": "180027080",
+          "sha256": "0d9cf59134ab7a7a0e04efdd5bbfa5a3f75a1769e66e85bbd17c39e4789fe2bc",
+          "start": 2,
+          "end": 240,
+          "excerpt": "void FUN_180027080(longlong param_1,undefined8 *param_2)\n\n{\n  byte bVar1;\n  undefined1 auVar2 [16];\n  undefined1 uVar3;\n  char cVar4;\n  int iVar5;\n  uint uVar6;\n  longlong lVar7;\n  byte *pbVar8;\n  longlong lVar9;\n  _String_val<std::_Simple_types<char>_> *p_Var10;\n  undefined8 uVar11;\n  __uint64 _Var12;\n  void *pvVar13;\n  longlong lVar14;\n  double dVar15;\n  int local_a4;\n  ulonglong local_90;\n  ulonglong local_88;\n  longlong local_80;\n  \n  lVar7 = FUN_180009510(param_2);\n  if (*(int *)(lVar7 + 0x450) != 0) {\n    uVar3 = VM_M_SetGlobalVarLockStatus\n                      (*(undefined4 *)(param_1 + 0x48),*(undefined4 *)(param_1 + 0x48),1);\n    lVar7 = FUN_180009510(param_2);\n    iVar5 = *(int *)(lVar7 + 0x450);\n    lVar7 = FUN_180009510(param_2);\n    pbVar8 = (byte *)(lVar7 + 0x129);\n    lVar7 = (longlong)&DAT_1800579bc - (longlong)pbVar8;\n    do {\n      bVar1 = *pbVar8;\n      if (bVar1 != pbVar8[lVar7]) {\n        uVar6 = -(uint)(bVar1 < pbVar8[lVar7]) | 1;\n        goto LAB_18002712e;\n      }\n      pbVar8 = pbVar8 + 1;\n    } while (bVar1 != 0);\n    uVar6 = 0;\nLAB_18002712e:\n    if (uVar6 == 0) {\n      lVar7 = FUN_180009510(param_2);\n      lVar9 = FUN_180009510(param_2);\n      iVar5 = VM_M_BatchSetGlobalVarInt\n                        (*(undefined8 *)(param_1 + 8),lVar9 + 0x29,*(undefined8 *)(lVar7 + 0x458),\n                         iVar5,uVar3);\n      if ((iVar5 != 0) && (cVar4 = HSlog_ShouldLog(4), cVar4 != '\\0')) {\n        p_Var10 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n        uVar11 = FUN_180003ec0(p_Var10);\n        HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] VM_M_BatchSetGlobalVarInt is error:[%x]\",uVar11,\n                       *(undefined4 *)(param_1 + 0x48),\"CVariableModuBase::SetGlobalValue\",0x617,\n                       iVar5);\n      }\n    }\n    else {\n      lVar7 = FUN_180009510(param_2);\n      pbVar8 = (byte *)(lVar7 + 0x129);\n      lVar7 = (longlong)\"float\" - (longlong)pbVar8;\n      do {\n        bVar1 = *pbVar8;\n        if (bVar1 != pbVar8[lVar7]) {\n          uVar6 = -(uint)(bVar1 < pbVar8[lVar7]) | 1;\n          goto LAB_180027229;\n        }\n        pbVar8 = pbVar8 + 1;\n      } while (bVar1 != 0);\n      uVar6 = 0;\nLAB_180027229:\n      if (uVar6 == 0) {\n        lVar7 = FUN_180009510(param_2);\n        lVar9 = FUN_180009510(param_2);\n        iVar5 = VM_M_BatchSetGlobalVarFloat\n                          (*(undefined8 *)(param_1 + 8),lVar9 + 0x29,*(undefined8 *)(lVar7 + 0x460),\n                           iVar5,uVar3);\n        if ((iVar5 != 0) && (cVar4 = HSlog_ShouldLog(4), cVar4 != '\\0')) {\n          p_Var10 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n          uVar11 = FUN_180003ec0(p_Var10);\n          HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] VM_M_BatchSetGlobalVarFloat is error:[%x]\",\n                         uVar11,*(undefined4 *)(param_1 + 0x48),\"CVariableModuBase::SetGlobalValue\",\n                         0x61e,iVar5);\n        }\n      }\n      else {\n        lVar7 = FUN_180009510(param_2);\n        pbVar8 = (byte *)(lVar7 + 0x129);\n        lVar7 = (longlong)\"string\" - (longlong)pbVar8;\n        do {\n          bVar1 = *pbVar8;\n          if (bVar1 != pbVar8[lVar7]) {\n            uVar6 = -(uint)(bVar1 < pbVar8[lVar7]) | 1;\n            goto LAB_18002732a;\n          }\n          pbVar8 = pbVar8 + 1;\n        } while (bVar1 != 0);\n        uVar6 = 0;\nLAB_18002732a:\n        if ((uVar6 == 0) && (lVar7 = FUN_180009510(param_2), *(longlong *)(lVar7 + 0x468) != 0)) {\n          auVar2._8_8_ = 0;\n          auVar2._0_8_ = (longlong)iVar5;\n          _Var12 = SUB168(ZEXT816(0x10) * auVar2,0);\n          if (SUB168(ZEXT816(0x10) * auVar2,8) != 0) {\n            _Var12 = 0xffffffffffffffff;\n          }\n          pvVar13 = (void *)thunk_FUN_1800502a4(_Var12);\n          if (pvVar13 == (void *)0x0) {\n            cVar4 = HSlog_ShouldLog(4);\n            if (cVar4 != '\\0') {\n              p_Var10 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n              uVar11 = FUN_180003ec0(p_Var10);\n              HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] STRING_UNIT new memory is error\",uVar11,\n                             *(undefined4 *)(param_1 + 0x48),\"CVariableModuBase::SetGlobalValue\",\n                             0x628);\n            }\n            FUN_180016480((longlong)param_2);\n            return;\n          }\n          for (local_a4 = 0; local_a4 < iVar5; local_a4 = local_a4 + 1) {\n            lVar7 = FUN_180009510(param_2);\n            *(undefined8 *)((longlong)pvVar13 + (longlong)local_a4 * 0x10) =\n                 *(undefined8 *)(*(longlong *)(lVar7 + 0x468) + (longlong)local_a4 * 0x60);\n            lVar7 = FUN_180009510(param_2);\n            *(undefined4 *)((longlong)pvVar13 + (longlong)local_a4 * 0x10 + 8) =\n                 *(undefined4 *)(*(longlong *)(lVar7 + 0x468) + 8 + (longlong)local_a4 * 0x60);\n            lVar7 = FUN_180009510(param_2);\n            *(undefined4 *)((longlong)pvVar13 + (longlong)local_a4 * 0x10 + 0xc) =\n                 *(undefined4 *)(*(longlong *)(lVar7 + 0x468) + 0xc + (longlong)local_a4 * 0x60);\n          }\n          lVar7 = FUN_180009510(param_2);\n          iVar5 = VM_M_BatchSetGlobalVarString\n                            (*(undefined8 *)(param_1 + 8),lVar7 + 0x29,pvVar13,iVar5,uVar3);\n          if ((iVar5 != 0) && (cVar4 = HSlog_ShouldLog(4), cVar4 != '\\0')) {\n            p_Var10 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n            uVar11 = FUN_180003ec0(p_Var10);\n            HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] VM_M_BatchSetGlobalVarString is error:[%x]\",\n                           uVar11,*(undefined4 *)(param_1 + 0x48),\n                           \"CVariableModuBase::SetGlobalValue\",0x633,iVar5);\n          }\n          operator_delete__(pvVar13);\n        }\n      }\n    }\n    VM_M_SetGlobalVarLockStatus(*(undefined4 *)(param_1 + 0x48),*(undefined4 *)(param_1 + 0x48),0);\n  }\n  lVar7 = FUN_180009510(param_2);\n  if (*(int *)(lVar7 + 0x450) == 0) {\n    lVar7 = FUN_180009510(param_2);\n    pbVar8 = (byte *)(lVar7 + 0x129);\n    lVar7 = (longlong)&DAT_1800579dc - (longlong)pbVar8;\n    do {\n      bVar1 = *pbVar8;\n      if (bVar1 != pbVar8[lVar7]) {\n        uVar6 = -(uint)(bVar1 < pbVar8[lVar7]) | 1;\n        goto LAB_1800275f7;\n      }\n      pbVar8 = pbVar8 + 1;\n    } while (bVar1 != 0);\n    uVar6 = 0;\nLAB_1800275f7:\n    if (uVar6 == 0) {\n      lVar7 = FUN_180009510(param_2);\n      iVar5 = atoi((char *)(lVar7 + 0x139));\n      lVar7 = FUN_180009510(param_2);\n      VM_M_SetGlobalVarInt(*(undefined8 *)(param_1 + 8),lVar7 + 0x29,0,iVar5);\n    }\n    else {\n      lVar7 = FUN_180009510(param_2);\n      pbVar8 = (byte *)(lVar7 + 0x129);\n      lVar7 = (longlong)\"float\" - (longlong)pbVar8;\n      do {\n        bVar1 = *pbVar8;\n        if (bVar1 != pbVar8[lVar7]) {\n          uVar6 = -(uint)(bVar1 < pbVar8[lVar7]) | 1;\n          goto LAB_180027685;\n        }\n        pbVar8 = pbVar8 + 1;\n      } while (bVar1 != 0);\n      uVar6 = 0;\nLAB_180027685:\n      if (uVar6 == 0) {\n        lVar7 = FUN_180009510(param_2);\n        dVar15 = atof((char *)(lVar7 + 0x139));\n        lVar7 = FUN_180009510(param_2);\n        VM_M_SetGlobalVarFloat(*(undefined8 *)(param_1 + 8),lVar7 + 0x29,0,(float)dVar15);\n      }\n      else {\n        lVar7 = FUN_180009510(param_2);\n        pbVar8 = (byte *)(lVar7 + 0x129);\n        lVar7 = (longlong)\"string\" - (longlong)pbVar8;\n        do {\n          bVar1 = *pbVar8;\n          if (bVar1 != pbVar8[lVar7]) {\n            uVar6 = -(uint)(bVar1 < pbVar8[lVar7]) | 1;\n            goto LAB_18002771b;\n          }\n          pbVar8 = pbVar8 + 1;\n        } while (bVar1 != 0);\n        uVar6 = 0;\nLAB_18002771b:\n        if (uVar6 == 0) {\n          lVar7 = FUN_180009510(param_2);\n          lVar9 = FUN_180009510(param_2);\n          VM_M_SetGlobalVarString(*(undefined8 *)(param_1 + 8),lVar9 + 0x29,0,lVar7 + 0x139);\n        }\n      }\n    }\n  }\n  local_90 = 0;\n  while( true ) {\n    lVar7 = FUN_180009510(param_2);\n    if ((ulonglong)(longlong)*(int *)(lVar7 + 0x43c) <= local_90) {\n      FUN_180016480((longlong)param_2);\n      return;\n    }\n    lVar7 = FUN_180009510(param_2);\n    local_80 = -1;\n    do {\n      local_80 = local_80 + 1;\n    } while (*(char *)(*(longlong *)(lVar7 + 0x440) + 0x14 + local_90 * 0x94 + local_80) != '\\0');\n    if (local_80 == 0) break;\n    lVar7 = FUN_180009510(param_2);\n    local_88 = 0xffffffffffffffff;\n    do {\n      local_88 = local_88 + 1;\n    } while (*(char *)(lVar7 + 0x139 + local_88) != '\\0');\n    lVar9 = FUN_180009510(param_2);\n    lVar7 = FUN_180009510(param_2);\n    lVar7 = *(longlong *)(lVar7 + 0x440);\n    lVar14 = FUN_180009510(param_2);\n    VM_M_SetBinayData(*(undefined4 *)(*(longlong *)(lVar14 + 0x440) + local_90 * 0x94),\n                      lVar7 + 0x14 + local_90 * 0x94,lVar9 + 0x139,local_88 & 0xffffffff);\n    local_90 = local_90 + 1;\n  }\n  FUN_180016480((longlong)param_2);\n  return;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180027080.asm.txt",
+          "member": "180027080",
+          "sha256": "4d161915316caf9abbbd9c65a36572040ab788011c11e092258e9b35ec02ab12",
+          "start": 1,
+          "end": 441,
+          "excerpt": "180027080\tMOV qword ptr [RSP + 0x10],RDX\n180027085\tMOV qword ptr [RSP + 0x8],RCX\n18002708a\tSUB RSP,0xe8\n180027091\tMOV qword ptr [RSP + 0xd0],-0x2\n18002709d\tMOV dword ptr [RSP + 0x48],0x0\n1800270a5\tMOV RCX,qword ptr [RSP + 0xf8]\n1800270ad\tCALL 0x180009510\n1800270b2\tCMP dword ptr [RAX + 0x450],0x0\n1800270b9\tJBE 0x1800275a8\n1800270bf\tMOV R8B,0x1\n1800270c2\tMOV RAX,qword ptr [RSP + 0xf0]\n1800270ca\tMOV EDX,dword ptr [RAX + 0x48]\n1800270cd\tMOV RAX,qword ptr [RSP + 0xf0]\n1800270d5\tMOV ECX,dword ptr [RAX + 0x48]\n1800270d8\tCALL qword ptr [0x1800556e0]\n1800270de\tMOV byte ptr [RSP + 0x40],AL\n1800270e2\tMOV RCX,qword ptr [RSP + 0xf8]\n1800270ea\tCALL 0x180009510\n1800270ef\tMOV EAX,dword ptr [RAX + 0x450]\n1800270f5\tMOV dword ptr [RSP + 0x4c],EAX\n1800270f9\tMOV RCX,qword ptr [RSP + 0xf8]\n180027101\tCALL 0x180009510\n180027106\tADD RAX,0x129\n18002710c\tLEA RCX,[0x1800579bc]\n180027113\tSUB RCX,RAX\n180027116\tMOVZX EDX,byte ptr [RAX]\n180027119\tCMP DL,byte ptr [RAX + RCX*0x1]\n18002711c\tJNZ 0x180027129\n18002711e\tINC RAX\n180027121\tTEST DL,DL\n180027123\tJNZ 0x180027116\n180027125\tXOR EAX,EAX\n180027127\tJMP 0x18002712e\n180027129\tSBB EAX,EAX\n18002712b\tOR EAX,0x1\n18002712e\tTEST EAX,EAX\n180027130\tJNZ 0x1800271f4\n180027136\tMOV RCX,qword ptr [RSP + 0xf8]\n18002713e\tCALL 0x180009510\n180027143\tMOV qword ptr [RSP + 0x78],RAX\n180027148\tMOV RCX,qword ptr [RSP + 0xf8]\n180027150\tCALL 0x180009510\n180027155\tADD RAX,0x29\n180027159\tMOVZX ECX,byte ptr [RSP + 0x40]\n18002715e\tMOV byte ptr [RSP + 0x20],CL\n180027162\tMOV R9D,dword ptr [RSP + 0x4c]\n180027167\tMOV RCX,qword ptr [RSP + 0x78]\n18002716c\tMOV R8,qword ptr [RCX + 0x458]\n180027173\tMOV RDX,RAX\n180027176\tMOV RAX,qword ptr [RSP + 0xf0]\n18002717e\tMOV RCX,qword ptr [RAX + 0x8]\n180027182\tCALL qword ptr [0x180055638]\n180027188\tMOV dword ptr [RSP + 0x48],EAX\n18002718c\tCMP dword ptr [RSP + 0x48],0x0\n180027191\tJZ 0x1800271ef\n180027193\tMOV ECX,0x4\n180027198\tCALL qword ptr [0x180055008]\n18002719e\tMOVZX EAX,AL\n1800271a1\tTEST EAX,EAX\n1800271a3\tJZ 0x1800271ef\n1800271a5\tCALL 0x180002020\n1800271aa\tMOV RCX,RAX\n1800271ad\tCALL 0x180003ec0\n1800271b2\tMOV ECX,dword ptr [RSP + 0x48]\n1800271b6\tMOV dword ptr [RSP + 0x30],ECX\n1800271ba\tMOV dword ptr [RSP + 0x28],0x617\n1800271c2\tLEA RCX,[0x1800584b8]\n1800271c9\tMOV qword ptr [RSP + 0x20],RCX\n1800271ce\tMOV RCX,qword ptr [RSP + 0xf0]\n1800271d6\tMOV R9D,dword ptr [RCX + 0x48]\n1800271da\tMOV R8,RAX\n1800271dd\tLEA RDX,[0x1800584e0]\n1800271e4\tMOV ECX,0x4\n1800271e9\tCALL qword ptr [0x180055010]\n1800271ef\tJMP 0x180027585\n1800271f4\tMOV RCX,qword ptr [RSP + 0xf8]\n1800271fc\tCALL 0x180009510\n180027201\tADD RAX,0x129\n180027207\tLEA RCX,[0x180057ca4]\n18002720e\tSUB RCX,RAX\n180027211\tMOVZX EDX,byte ptr [RAX]\n180027214\tCMP DL,byte ptr [RAX + RCX*0x1]\n180027217\tJNZ 0x180027224\n180027219\tINC RAX\n18002721c\tTEST DL,DL\n18002721e\tJNZ 0x180027211\n180027220\tXOR EAX,EAX\n180027222\tJMP 0x180027229\n180027224\tSBB EAX,EAX\n180027226\tOR EAX,0x1\n180027229\tTEST EAX,EAX\n18002722b\tJNZ 0x1800272f5\n180027231\tMOV RCX,qword ptr [RSP + 0xf8]\n180027239\tCALL 0x180009510\n18002723e\tMOV qword ptr [RSP + 0x88],RAX\n180027246\tMOV RCX,qword ptr [RSP + 0xf8]\n18002724e\tCALL 0x180009510\n180027253\tADD RAX,0x29\n180027257\tMOVZX ECX,byte ptr [RSP + 0x40]\n18002725c\tMOV byte ptr [RSP + 0x20],CL\n180027260\tMOV R9D,dword ptr [RSP + 0x4c]\n180027265\tMOV RCX,qword ptr [RSP + 0x88]\n18002726d\tMOV R8,qword ptr [RCX + 0x460]\n180027274\tMOV RDX,RAX\n180027277\tMOV RAX,qword ptr [RSP + 0xf0]\n18002727f\tMOV RCX,qword ptr [RAX + 0x8]\n180027283\tCALL qword ptr [0x1800556c8]\n180027289\tMOV dword ptr [RSP + 0x48],EAX\n18002728d\tCMP dword ptr [RSP + 0x48],0x0\n180027292\tJZ 0x1800272f0\n180027294\tMOV ECX,0x4\n180027299\tCALL qword ptr [0x180055008]\n18002729f\tMOVZX EAX,AL\n1800272a2\tTEST EAX,EAX\n1800272a4\tJZ 0x1800272f0\n1800272a6\tCALL 0x180002020\n1800272ab\tMOV RCX,RAX\n1800272ae\tCALL 0x180003ec0\n1800272b3\tMOV ECX,dword ptr [RSP + 0x48]\n1800272b7\tMOV dword ptr [RSP + 0x30],ECX\n1800272bb\tMOV dword ptr [RSP + 0x28],0x61e\n1800272c3\tLEA RCX,[0x180058528]\n1800272ca\tMOV qword ptr [RSP + 0x20],RCX\n1800272cf\tMOV RCX,qword ptr [RSP + 0xf0]\n1800272d7\tMOV R9D,dword ptr [RCX + 0x48]\n1800272db\tMOV R8,RAX\n1800272de\tLEA RDX,[0x180058550]\n1800272e5\tMOV ECX,0x4\n1800272ea\tCALL qword ptr [0x180055010]\n1800272f0\tJMP 0x180027585\n1800272f5\tMOV RCX,qword ptr [RSP + 0xf8]\n1800272fd\tCALL 0x180009510\n180027302\tADD RAX,0x129\n180027308\tLEA RCX,[0x180057a54]\n18002730f\tSUB RCX,RAX\n180027312\tMOVZX EDX,byte ptr [RAX]\n180027315\tCMP DL,byte ptr [RAX + RCX*0x1]\n180027318\tJNZ 0x180027325\n18002731a\tINC RAX\n18002731d\tTEST DL,DL\n18002731f\tJNZ 0x180027312\n180027321\tXOR EAX,EAX\n180027323\tJMP 0x18002732a\n180027325\tSBB EAX,EAX\n180027327\tOR EAX,0x1\n18002732a\tTEST EAX,EAX\n18002732c\tJNZ 0x180027585\n180027332\tMOV RCX,qword ptr [RSP + 0xf8]\n18002733a\tCALL 0x180009510\n18002733f\tCMP qword ptr [RAX + 0x468],0x0\n180027347\tJZ 0x180027585\n18002734d\tMOVSXD RAX,dword ptr [RSP + 0x4c]\n180027352\tMOV qword ptr [RSP + 0xc8],RAX\n18002735a\tMOV EAX,0x10\n18002735f\tMOV RCX,qword ptr [RSP + 0xc8]\n180027367\tMUL RCX\n18002736a\tMOV RCX,-0x1\n180027371\tCMOVO RAX,RCX\n180027375\tLEA RDX,[0x180067b10]\n18002737c\tMOV RCX,RAX\n18002737f\tCALL 0x18004fdf0\n180027384\tMOV qword ptr [RSP + 0x98],RAX\n18002738c\tMOV RAX,qword ptr [RSP + 0x98]\n180027394\tMOV qword ptr [RSP + 0x50],RAX\n180027399\tCMP qword ptr [RSP + 0x50],0x0\n18002739f\tJNZ 0x180027408\n1800273a1\tMOV ECX,0x4\n1800273a6\tCALL qword ptr [0x180055008]\n1800273ac\tMOVZX EAX,AL\n1800273af\tTEST EAX,EAX\n1800273b1\tJZ 0x1800273f6\n1800273b3\tCALL 0x180002020\n1800273b8\tMOV RCX,RAX\n1800273bb\tCALL 0x180003ec0\n1800273c0\tMOV dword ptr [RSP + 0x28],0x628\n1800273c8\tLEA RCX,[0x180058598]\n1800273cf\tMOV qword ptr [RSP + 0x20],RCX\n1800273d4\tMOV RCX,qword ptr [RSP + 0xf0]\n1800273dc\tMOV R9D,dword ptr [RCX + 0x48]\n1800273e0\tMOV R8,RAX\n1800273e3\tLEA RDX,[0x1800585c0]\n1800273ea\tMOV ECX,0x4\n1800273ef\tCALL qword ptr [0x180055010]\n1800273f5\tNOP\n1800273f6\tMOV RCX,qword ptr [RSP + 0xf8]\n1800273fe\tCALL 0x180016480\n180027403\tJMP 0x1800278f0\n180027408\tMOV dword ptr [RSP + 0x44],0x0\n180027410\tJMP 0x18002741c\n180027412\tMOV EAX,dword ptr [RSP + 0x44]\n180027416\tINC EAX\n180027418\tMOV dword ptr [RSP + 0x44],EAX\n18002741c\tMOV EAX,dword ptr [RSP + 0x4c]\n180027420\tCMP dword ptr [RSP + 0x44],EAX\n180027424\tJGE 0x1800274ca\n18002742a\tMOV RCX,qword ptr [RSP + 0xf8]\n180027432\tCALL 0x180009510\n180027437\tMOVSXD RCX,dword ptr [RSP + 0x44]\n18002743c\tIMUL RCX,RCX,0x60\n180027440\tMOV RAX,qword ptr [RAX + 0x468]\n180027447\tMOVSXD RDX,dword ptr [RSP + 0x44]\n18002744c\tIMUL RDX,RDX,0x10\n180027450\tMOV R8,qword ptr [RSP + 0x50]\n180027455\tMOV RAX,qword ptr [RAX + RCX*0x1]\n180027459\tMOV qword ptr [R8 + RDX*0x1],RAX\n18002745d\tMOV RCX,qword ptr [RSP + 0xf8]\n180027465\tCALL 0x180009510\n18002746a\tMOVSXD RCX,dword ptr [RSP + 0x44]\n18002746f\tIMUL RCX,RCX,0x60\n180027473\tMOV RAX,qword ptr [RAX + 0x468]\n18002747a\tMOVSXD RDX,dword ptr [RSP + 0x44]\n18002747f\tIMUL RDX,RDX,0x10\n180027483\tMOV R8,qword ptr [RSP + 0x50]\n180027488\tMOV EAX,dword ptr [RAX + RCX*0x1 + 0x8]\n18002748c\tMOV dword ptr [R8 + RDX*0x1 + 0x8],EAX\n180027491\tMOV RCX,qword ptr [RSP + 0xf8]\n180027499\tCALL 0x180009510\n18002749e\tMOVSXD RCX,dword ptr [RSP + 0x44]\n1800274a3\tIMUL RCX,RCX,0x60\n1800274a7\tMOV RAX,qword ptr [RAX + 0x468]\n1800274ae\tMOVSXD RDX,dword ptr [RSP + 0x44]\n1800274b3\tIMUL RDX,RDX,0x10\n1800274b7\tMOV R8,qword ptr [RSP + 0x50]\n1800274bc\tMOV EAX,dword ptr [RAX + RCX*0x1 + 0xc]\n1800274c0\tMOV dword ptr [R8 + RDX*0x1 + 0xc],EAX\n1800274c5\tJMP 0x180027412\n1800274ca\tMOV RCX,qword ptr [RSP + 0xf8]\n1800274d2\tCALL 0x180009510\n1800274d7\tADD RAX,0x29\n1800274db\tMOVZX ECX,byte ptr [RSP + 0x40]\n1800274e0\tMOV byte ptr [RSP + 0x20],CL\n1800274e4\tMOV R9D,dword ptr [RSP + 0x4c]\n1800274e9\tMOV R8,qword ptr [RSP + 0x50]\n1800274ee\tMOV RDX,RAX\n1800274f1\tMOV RAX,qword ptr [RSP + 0xf0]\n1800274f9\tMOV RCX,qword ptr [RAX + 0x8]\n1800274fd\tCALL qword ptr [0x1800556a0]\n180027503\tMOV dword ptr [RSP + 0x48],EAX\n180027507\tCMP dword ptr [RSP + 0x48],0x0\n18002750c\tJZ 0x18002756a\n18002750e\tMOV ECX,0x4\n180027513\tCALL qword ptr [0x180055008]\n180027519\tMOVZX EAX,AL\n18002751c\tTEST EAX,EAX\n18002751e\tJZ 0x18002756a\n180027520\tCALL 0x180002020\n180027525\tMOV RCX,RAX\n180027528\tCALL 0x180003ec0\n18002752d\tMOV ECX,dword ptr [RSP + 0x48]\n180027531\tMOV dword ptr [RSP + 0x30],ECX\n180027535\tMOV dword ptr [RSP + 0x28],0x633\n18002753d\tLEA RCX,[0x180058600]\n180027544\tMOV qword ptr [RSP + 0x20],RCX\n180027549\tMOV RCX,qword ptr [RSP + 0xf0]\n180027551\tMOV R9D,dword ptr [RCX + 0x48]\n180027555\tMOV R8,RAX\n180027558\tLEA RDX,[0x180058650]\n18002755f\tMOV ECX,0x4\n180027564\tCALL qword ptr [0x180055010]\n18002756a\tMOV RAX,qword ptr [RSP + 0x50]\n18002756f\tMOV qword ptr [RSP + 0xb8],RAX\n180027577\tMOV RCX,qword ptr [RSP + 0xb8]\n18002757f\tCALL qword ptr [0x180055540]\n180027585\tXOR R8D,R8D\n180027588\tMOV RAX,qword ptr [RSP + 0xf0]\n180027590\tMOV EDX,dword ptr [RAX + 0x48]\n180027593\tMOV RAX,qword ptr [RSP + 0xf0]\n18002759b\tMOV ECX,dword ptr [RAX + 0x48]\n18002759e\tCALL qword ptr [0x1800556e0]\n1800275a4\tMOV byte ptr [RSP + 0x40],AL\n1800275a8\tMOV RCX,qword ptr [RSP + 0xf8]\n1800275b0\tCALL 0x180009510\n1800275b5\tCMP dword ptr [RAX + 0x450],0x0\n1800275bc\tJNZ 0x18002776e\n1800275c2\tMOV RCX,qword ptr [RSP + 0xf8]\n1800275ca\tCALL 0x180009510\n1800275cf\tADD RAX,0x129\n1800275d5\tLEA RCX,[0x1800579dc]\n1800275dc\tSUB RCX,RAX\n1800275df\tMOVZX EDX,byte ptr [RAX]\n1800275e2\tCMP DL,byte ptr [RAX + RCX*0x1]\n1800275e5\tJNZ 0x1800275f2\n1800275e7\tINC RAX\n1800275ea\tTEST DL,DL\n1800275ec\tJNZ 0x1800275df\n1800275ee\tXOR EAX,EAX\n1800275f0\tJMP 0x1800275f7\n1800275f2\tSBB EAX,EAX\n1800275f4\tOR EAX,0x1\n1800275f7\tTEST EAX,EAX\n1800275f9\tJNZ 0x180027650\n1800275fb\tMOV RCX,qword ptr [RSP + 0xf8]\n180027603\tCALL 0x180009510\n180027608\tADD RAX,0x139\n18002760e\tMOV RCX,RAX\n180027611\tCALL qword ptr [0x1800553e8]\n180027617\tMOV dword ptr [RSP + 0x70],EAX\n18002761b\tMOV RCX,qword ptr [RSP + 0xf8]\n180027623\tCALL 0x180009510\n180027628\tADD RAX,0x29\n18002762c\tMOV ECX,dword ptr [RSP + 0x70]\n180027630\tMOV R9D,ECX\n180027633\tXOR R8D,R8D\n180027636\tMOV RDX,RAX\n180027639\tMOV RAX,qword ptr [RSP + 0xf0]\n180027641\tMOV RCX,qword ptr [RAX + 0x8]\n180027645\tCALL qword ptr [0x1800556b0]\n18002764b\tJMP 0x18002776e\n180027650\tMOV RCX,qword ptr [RSP + 0xf8]\n180027658\tCALL 0x180009510\n18002765d\tADD RAX,0x129\n180027663\tLEA RCX,[0x180057cd4]\n18002766a\tSUB RCX,RAX\n18002766d\tMOVZX EDX,byte ptr [RAX]\n180027670\tCMP DL,byte ptr [RAX + RCX*0x1]\n180027673\tJNZ 0x180027680\n180027675\tINC RAX\n180027678\tTEST DL,DL\n18002767a\tJNZ 0x18002766d\n18002767c\tXOR EAX,EAX\n18002767e\tJMP 0x180027685\n180027680\tSBB EAX,EAX\n180027682\tOR EAX,0x1\n180027685\tTEST EAX,EAX\n180027687\tJNZ 0x1800276e6\n180027689\tMOV RCX,qword ptr [RSP + 0xf8]\n180027691\tCALL 0x180009510\n180027696\tADD RAX,0x139\n18002769c\tMOV RCX,RAX\n18002769f\tCALL qword ptr [0x180055428]\n1800276a5\tCVTSD2SS XMM0,XMM0\n1800276a9\tMOVSS dword ptr [RSP + 0x74],XMM0\n1800276af\tMOV RCX,qword ptr [RSP + 0xf8]\n1800276b7\tCALL 0x180009510\n1800276bc\tADD RAX,0x29\n1800276c0\tMOVSS XMM0,dword ptr [RSP + 0x74]\n1800276c6\tMOVAPS XMM3,XMM0\n1800276c9\tXOR R8D,R8D\n1800276cc\tMOV RDX,RAX\n1800276cf\tMOV RAX,qword ptr [RSP + 0xf0]\n1800276d7\tMOV RCX,qword ptr [RAX + 0x8]\n1800276db\tCALL qword ptr [0x1800556b8]\n1800276e1\tJMP 0x18002776e\n1800276e6\tMOV RCX,qword ptr [RSP + 0xf8]\n1800276ee\tCALL 0x180009510\n1800276f3\tADD RAX,0x129\n1800276f9\tLEA RCX,[0x180057a84]\n180027700\tSUB RCX,RAX\n180027703\tMOVZX EDX,byte ptr [RAX]\n180027706\tCMP DL,byte ptr [RAX + RCX*0x1]\n180027709\tJNZ 0x180027716\n18002770b\tINC RAX\n18002770e\tTEST DL,DL\n180027710\tJNZ 0x180027703\n180027712\tXOR EAX,EAX\n180027714\tJMP 0x18002771b\n180027716\tSBB EAX,EAX\n180027718\tOR EAX,0x1\n18002771b\tTEST EAX,EAX\n18002771d\tJNZ 0x18002776e\n18002771f\tMOV RCX,qword ptr [RSP + 0xf8]\n180027727\tCALL 0x180009510\n18002772c\tADD RAX,0x139\n180027732\tMOV qword ptr [RSP + 0xa8],RAX\n18002773a\tMOV RCX,qword ptr [RSP + 0xf8]\n180027742\tCALL 0x180009510\n180027747\tADD RAX,0x29\n18002774b\tMOV RCX,qword ptr [RSP + 0xa8]\n180027753\tMOV R9,RCX\n180027756\tXOR R8D,R8D\n180027759\tMOV RDX,RAX\n18002775c\tMOV RAX,qword ptr [RSP + 0xf0]\n180027764\tMOV RCX,qword ptr [RAX + 0x8]\n180027768\tCALL qword ptr [0x180055698]\n18002776e\tMOV qword ptr [RSP + 0x58],0x0\n180027777\tJMP 0x180027786\n180027779\tMOV RAX,qword ptr [RSP + 0x58]\n18002777e\tINC RAX\n180027781\tMOV qword ptr [RSP + 0x58],RAX\n180027786\tMOV RCX,qword ptr [RSP + 0xf8]\n18002778e\tCALL 0x180009510\n180027793\tMOVSXD RAX,dword ptr [RAX + 0x43c]\n18002779a\tCMP qword ptr [RSP + 0x58],RAX\n18002779f\tJNC 0x1800278e3\n1800277a5\tMOV RCX,qword ptr [RSP + 0xf8]\n1800277ad\tCALL 0x180009510\n1800277b2\tIMUL RCX,qword ptr [RSP + 0x58],0x94\n1800277bb\tMOV RAX,qword ptr [RAX + 0x440]\n1800277c2\tLEA RAX,[RAX + RCX*0x1 + 0x14]\n1800277c7\tMOV qword ptr [RSP + 0x80],RAX\n1800277cf\tMOV qword ptr [RSP + 0x68],-0x1\n1800277d8\tINC qword ptr [RSP + 0x68]\n1800277dd\tMOV RAX,qword ptr [RSP + 0x80]\n1800277e5\tMOV RCX,qword ptr [RSP + 0x68]\n1800277ea\tCMP byte ptr [RAX + RCX*0x1],0x0\n1800277ee\tJNZ 0x1800277d8\n1800277f0\tMOV RAX,qword ptr [RSP + 0x68]\n1800277f5\tTEST RAX,RAX\n1800277f8\tJA 0x18002780c\n1800277fa\tMOV RCX,qword ptr [RSP + 0xf8]\n180027802\tCALL 0x180016480\n180027807\tJMP 0x1800278f0\n18002780c\tMOV RCX,qword ptr [RSP + 0xf8]\n180027814\tCALL 0x180009510\n180027819\tADD RAX,0x139\n18002781f\tMOV qword ptr [RSP + 0x90],RAX\n180027827\tMOV qword ptr [RSP + 0x60],-0x1\n180027830\tINC qword ptr [RSP + 0x60]\n180027835\tMOV RAX,qword ptr [RSP + 0x90]\n18002783d\tMOV RCX,qword ptr [RSP + 0x60]\n180027842\tCMP byte ptr [RAX + RCX*0x1],0x0\n180027846\tJNZ 0x180027830\n180027848\tMOV RAX,qword ptr [RSP + 0x60]\n18002784d\tMOV qword ptr [RSP + 0xa0],RAX\n180027855\tMOV RCX,qword ptr [RSP + 0xf8]\n18002785d\tCALL 0x180009510\n180027862\tADD RAX,0x139\n180027868\tMOV qword ptr [RSP + 0xb0],RAX\n180027870\tMOV RCX,qword ptr [RSP + 0xf8]\n180027878\tCALL 0x180009510\n18002787d\tIMUL RCX,qword ptr [RSP + 0x58],0x94\n180027886\tMOV RAX,qword ptr [RAX + 0x440]\n18002788d\tLEA RAX,[RAX + RCX*0x1 + 0x14]\n180027892\tMOV qword ptr [RSP + 0xc0],RAX\n18002789a\tMOV RCX,qword ptr [RSP + 0xf8]\n1800278a2\tCALL 0x180009510\n1800278a7\tIMUL RCX,qword ptr [RSP + 0x58],0x94\n1800278b0\tMOV RAX,qword ptr [RAX + 0x440]\n1800278b7\tMOV RDX,qword ptr [RSP + 0xa0]\n1800278bf\tMOV R9D,EDX\n1800278c2\tMOV RDX,qword ptr [RSP + 0xb0]\n1800278ca\tMOV R8,RDX\n1800278cd\tMOV RDX,qword ptr [RSP + 0xc0]\n1800278d5\tMOV ECX,dword ptr [RAX + RCX*0x1]\n1800278d8\tCALL qword ptr [0x180055680]\n1800278de\tJMP 0x180027779\n1800278e3\tMOV RCX,qword ptr [RSP + 0xf8]\n1800278eb\tCALL 0x180016480\n1800278f0\tADD RSP,0xe8\n1800278f7\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        }
+      ],
+      "unknowns": [
+        "锁状态API本身的同步含义及分配异常unwind尚未恢复；不由null失败分支推断所有异常路径。",
+        "本体末尾链接参数发送使用record+0x139初始文本，不能据数组设置成功推断每个链接拿到完整数组。"
+      ]
+    },
+    {
+      "id": "VX06",
+      "classification": "source-confirmed",
+      "stages": [
+        "variable",
+        "transfer",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "复合type4分支",
+      "to": "图像字节进入2b2e0及VM_M_SetGlobalVarImageEx，排除PointSet误归类",
+      "behavior": "28250的类型4将+0x118视作0x60描述数组，逐项取pointer/+8长度与下标，调用2b2e0。该helper日志set image start/end，正常申请0x145c0缓冲成功且pointer/handle均非0后，memcpy_s复制输入长度字节到新buffer，并设置局部描述长度。汇编确认调用ImageEx前RCX=context+8、RDX名称、R8D下标、R9=&局部描述；第五栈参数是0x145c0返回的handle，第六字节继承helper入口第六字节（上游由LockStatus返回AL写入）。伪码显示四参不等于handle/第六字节丢失。",
+      "representation": "这里确实复制图像内容，区别于数值pointer转发和string描述浅复制；本分支不能当作PointSet存储体。",
+      "cache": "helper在所见正常返回路径没有delete新buffer，不能因此断定泄漏或永久缓存；0x145c0与ImageEx接收所有权需另取体。",
+      "release": "调用者输入图像bytes没有在本helper释放；新buffer/handle最终释放者尚未在该切片闭合。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180028250.c",
+          "member": "180028250",
+          "sha256": "d13de4fe198f10de61711272db17333e321458167a4f30fbe78796e3423b3504",
+          "start": 2,
+          "end": 66,
+          "excerpt": "int FUN_180028250(longlong param_1,longlong param_2,int param_3)\n\n{\n  int iVar1;\n  undefined1 uVar2;\n  undefined4 in_register_00000084;\n  int local_34;\n  ulonglong local_28;\n  ulonglong local_20;\n  \n  local_34 = 0;\n  uVar2 = VM_M_SetGlobalVarLockStatus\n                    (*(undefined4 *)(param_1 + 0x48),*(undefined4 *)(param_1 + 0x48),\n                     CONCAT71((int7)(CONCAT44(in_register_00000084,param_3) >> 8),1));\n  for (local_28 = 0; local_28 < (ulonglong)(longlong)param_3; local_28 = local_28 + 1) {\n    iVar1 = *(int *)(param_2 + 0x100 + local_28 * 0x130);\n    if (iVar1 == 0) {\n      if (*(longlong *)(param_2 + 0x108 + local_28 * 0x130) == 0) {\n        local_34 = VM_M_SetGlobalVarInt(*(undefined8 *)(param_1 + 8),param_2 + local_28 * 0x130,0,0)\n        ;\n      }\n      else {\n        local_34 = FUN_1800295b0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(longlong *)(param_2 + 0x108 + local_28 * 0x130),\n                                 *(int *)(param_2 + 0x104 + local_28 * 0x130),uVar2,'\\x01');\n      }\n    }\n    else if (iVar1 == 1) {\n      if (*(longlong *)(param_2 + 0x110 + local_28 * 0x130) == 0) {\n        local_34 = VM_M_SetGlobalVarFloat\n                             (*(undefined8 *)(param_1 + 8),param_2 + local_28 * 0x130,0,0);\n      }\n      else {\n        local_34 = FUN_180029eb0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(float **)(param_2 + 0x110 + local_28 * 0x130),\n                                 *(int *)(param_2 + 0x104 + local_28 * 0x130),uVar2,'\\x01');\n      }\n    }\n    else if (iVar1 == 2) {\n      if (*(longlong *)(param_2 + 0x118 + local_28 * 0x130) == 0) {\n        local_34 = VM_M_SetGlobalVarString(*(undefined8 *)(param_1 + 8),param_2 + local_28 * 0x130);\n      }\n      else {\n        local_34 = FUN_18002a7b0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(longlong *)(param_2 + 0x118 + local_28 * 0x130),\n                                 *(int *)(param_2 + 0x104 + local_28 * 0x130),uVar2,'\\x01');\n      }\n    }\n    else if ((iVar1 == 4) && (*(longlong *)(param_2 + 0x118 + local_28 * 0x130) != 0)) {\n      for (local_20 = 0;\n          local_20 < (ulonglong)(longlong)*(int *)(param_2 + 0x104 + local_28 * 0x130);\n          local_20 = local_20 + 1) {\n        local_34 = FUN_18002b2e0(param_1,(char *)(param_2 + local_28 * 0x130),\n                                 *(void **)(*(longlong *)(param_2 + 0x118 + local_28 * 0x130) +\n                                           local_20 * 0x60),\n                                 *(int *)(*(longlong *)(param_2 + 0x118 + local_28 * 0x130) + 8 +\n                                         local_20 * 0x60),(undefined4)local_20);\n      }\n    }\n  }\n  VM_M_SetGlobalVarLockStatus(*(undefined4 *)(param_1 + 0x48),*(undefined4 *)(param_1 + 0x48),0);\n  return local_34;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/180028250.asm.txt",
+          "member": "180028250",
+          "sha256": "7cc6b22bb5ff82bdb67da5b73dc6cd5425e42191aade11b2a51170c8e6f65691",
+          "start": 1,
+          "end": 183,
+          "excerpt": "180028250\tMOV dword ptr [RSP + 0x18],R8D\n180028255\tMOV qword ptr [RSP + 0x10],RDX\n18002825a\tMOV qword ptr [RSP + 0x8],RCX\n18002825f\tSUB RSP,0x68\n180028263\tMOV dword ptr [RSP + 0x34],0x0\n18002826b\tMOV R8B,0x1\n18002826e\tMOV RAX,qword ptr [RSP + 0x70]\n180028273\tMOV EDX,dword ptr [RAX + 0x48]\n180028276\tMOV RAX,qword ptr [RSP + 0x70]\n18002827b\tMOV ECX,dword ptr [RAX + 0x48]\n18002827e\tCALL qword ptr [0x1800556e0]\n180028284\tMOV byte ptr [RSP + 0x30],AL\n180028288\tMOV qword ptr [RSP + 0x40],0x0\n180028291\tJMP 0x1800282a0\n180028293\tMOV RAX,qword ptr [RSP + 0x40]\n180028298\tINC RAX\n18002829b\tMOV qword ptr [RSP + 0x40],RAX\n1800282a0\tMOVSXD RAX,dword ptr [RSP + 0x80]\n1800282a8\tCMP qword ptr [RSP + 0x40],RAX\n1800282ad\tJNC 0x1800285e8\n1800282b3\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800282bc\tMOV RCX,qword ptr [RSP + 0x78]\n1800282c1\tMOV EAX,dword ptr [RCX + RAX*0x1 + 0x100]\n1800282c8\tMOV dword ptr [RSP + 0x38],EAX\n1800282cc\tCMP dword ptr [RSP + 0x38],0x0\n1800282d1\tJZ 0x1800282f9\n1800282d3\tCMP dword ptr [RSP + 0x38],0x1\n1800282d8\tJZ 0x1800283a7\n1800282de\tCMP dword ptr [RSP + 0x38],0x2\n1800282e3\tJZ 0x180028455\n1800282e9\tCMP dword ptr [RSP + 0x38],0x4\n1800282ee\tJZ 0x180028503\n1800282f4\tJMP 0x1800285e3\n1800282f9\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028302\tMOV RCX,qword ptr [RSP + 0x78]\n180028307\tCMP qword ptr [RCX + RAX*0x1 + 0x108],0x0\n180028310\tJZ 0x180028372\n180028312\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002831b\tIMUL RCX,qword ptr [RSP + 0x40],0x130\n180028324\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n18002832d\tMOV R8,qword ptr [RSP + 0x78]\n180028332\tADD R8,RDX\n180028335\tMOV RDX,R8\n180028338\tMOV byte ptr [RSP + 0x28],0x1\n18002833d\tMOVZX R8D,byte ptr [RSP + 0x30]\n180028343\tMOV byte ptr [RSP + 0x20],R8B\n180028348\tMOV R8,qword ptr [RSP + 0x78]\n18002834d\tMOV R9D,dword ptr [R8 + RAX*0x1 + 0x104]\n180028355\tMOV RAX,qword ptr [RSP + 0x78]\n18002835a\tMOV R8,qword ptr [RAX + RCX*0x1 + 0x108]\n180028362\tMOV RCX,qword ptr [RSP + 0x70]\n180028367\tCALL 0x1800295b0\n18002836c\tMOV dword ptr [RSP + 0x34],EAX\n180028370\tJMP 0x1800283a2\n180028372\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002837b\tMOV RCX,qword ptr [RSP + 0x78]\n180028380\tADD RCX,RAX\n180028383\tMOV RAX,RCX\n180028386\tXOR R9D,R9D\n180028389\tXOR R8D,R8D\n18002838c\tMOV RDX,RAX\n18002838f\tMOV RAX,qword ptr [RSP + 0x70]\n180028394\tMOV RCX,qword ptr [RAX + 0x8]\n180028398\tCALL qword ptr [0x1800556b0]\n18002839e\tMOV dword ptr [RSP + 0x34],EAX\n1800283a2\tJMP 0x1800285e3\n1800283a7\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800283b0\tMOV RCX,qword ptr [RSP + 0x78]\n1800283b5\tCMP qword ptr [RCX + RAX*0x1 + 0x110],0x0\n1800283be\tJZ 0x180028420\n1800283c0\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800283c9\tIMUL RCX,qword ptr [RSP + 0x40],0x130\n1800283d2\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n1800283db\tMOV R8,qword ptr [RSP + 0x78]\n1800283e0\tADD R8,RDX\n1800283e3\tMOV RDX,R8\n1800283e6\tMOV byte ptr [RSP + 0x28],0x1\n1800283eb\tMOVZX R8D,byte ptr [RSP + 0x30]\n1800283f1\tMOV byte ptr [RSP + 0x20],R8B\n1800283f6\tMOV R8,qword ptr [RSP + 0x78]\n1800283fb\tMOV R9D,dword ptr [R8 + RAX*0x1 + 0x104]\n180028403\tMOV RAX,qword ptr [RSP + 0x78]\n180028408\tMOV R8,qword ptr [RAX + RCX*0x1 + 0x110]\n180028410\tMOV RCX,qword ptr [RSP + 0x70]\n180028415\tCALL 0x180029eb0\n18002841a\tMOV dword ptr [RSP + 0x34],EAX\n18002841e\tJMP 0x180028450\n180028420\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028429\tMOV RCX,qword ptr [RSP + 0x78]\n18002842e\tADD RCX,RAX\n180028431\tMOV RAX,RCX\n180028434\tXORPS XMM3,XMM3\n180028437\tXOR R8D,R8D\n18002843a\tMOV RDX,RAX\n18002843d\tMOV RAX,qword ptr [RSP + 0x70]\n180028442\tMOV RCX,qword ptr [RAX + 0x8]\n180028446\tCALL qword ptr [0x1800556b8]\n18002844c\tMOV dword ptr [RSP + 0x34],EAX\n180028450\tJMP 0x1800285e3\n180028455\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002845e\tMOV RCX,qword ptr [RSP + 0x78]\n180028463\tCMP qword ptr [RCX + RAX*0x1 + 0x118],0x0\n18002846c\tJZ 0x1800284ce\n18002846e\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028477\tIMUL RCX,qword ptr [RSP + 0x40],0x130\n180028480\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n180028489\tMOV R8,qword ptr [RSP + 0x78]\n18002848e\tADD R8,RDX\n180028491\tMOV RDX,R8\n180028494\tMOV byte ptr [RSP + 0x28],0x1\n180028499\tMOVZX R8D,byte ptr [RSP + 0x30]\n18002849f\tMOV byte ptr [RSP + 0x20],R8B\n1800284a4\tMOV R8,qword ptr [RSP + 0x78]\n1800284a9\tMOV R9D,dword ptr [R8 + RAX*0x1 + 0x104]\n1800284b1\tMOV RAX,qword ptr [RSP + 0x78]\n1800284b6\tMOV R8,qword ptr [RAX + RCX*0x1 + 0x118]\n1800284be\tMOV RCX,qword ptr [RSP + 0x70]\n1800284c3\tCALL 0x18002a7b0\n1800284c8\tMOV dword ptr [RSP + 0x34],EAX\n1800284cc\tJMP 0x1800284fe\n1800284ce\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n1800284d7\tMOV RCX,qword ptr [RSP + 0x78]\n1800284dc\tADD RCX,RAX\n1800284df\tMOV RAX,RCX\n1800284e2\tXOR R9D,R9D\n1800284e5\tXOR R8D,R8D\n1800284e8\tMOV RDX,RAX\n1800284eb\tMOV RAX,qword ptr [RSP + 0x70]\n1800284f0\tMOV RCX,qword ptr [RAX + 0x8]\n1800284f4\tCALL qword ptr [0x180055698]\n1800284fa\tMOV dword ptr [RSP + 0x34],EAX\n1800284fe\tJMP 0x1800285e3\n180028503\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n18002850c\tMOV RCX,qword ptr [RSP + 0x78]\n180028511\tCMP qword ptr [RCX + RAX*0x1 + 0x118],0x0\n18002851a\tJZ 0x1800285e3\n180028520\tMOV qword ptr [RSP + 0x48],0x0\n180028529\tJMP 0x180028538\n18002852b\tMOV RAX,qword ptr [RSP + 0x48]\n180028530\tINC RAX\n180028533\tMOV qword ptr [RSP + 0x48],RAX\n180028538\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028541\tMOV RCX,qword ptr [RSP + 0x78]\n180028546\tMOVSXD RAX,dword ptr [RCX + RAX*0x1 + 0x104]\n18002854e\tCMP qword ptr [RSP + 0x48],RAX\n180028553\tJNC 0x1800285e3\n180028559\tIMUL RAX,qword ptr [RSP + 0x40],0x130\n180028562\tIMUL RCX,qword ptr [RSP + 0x48],0x60\n180028568\tMOV RDX,qword ptr [RSP + 0x78]\n18002856d\tMOV RAX,qword ptr [RDX + RAX*0x1 + 0x118]\n180028575\tIMUL RDX,qword ptr [RSP + 0x40],0x130\n18002857e\tIMUL R8,qword ptr [RSP + 0x48],0x60\n180028584\tMOV R9,qword ptr [RSP + 0x78]\n180028589\tMOV RDX,qword ptr [R9 + RDX*0x1 + 0x118]\n180028591\tIMUL R9,qword ptr [RSP + 0x40],0x130\n18002859a\tMOV R10,qword ptr [RSP + 0x78]\n18002859f\tADD R10,R9\n1800285a2\tMOV R9,R10\n1800285a5\tMOV qword ptr [RSP + 0x50],R9\n1800285aa\tMOVZX R10D,byte ptr [RSP + 0x30]\n1800285b0\tMOV byte ptr [RSP + 0x28],R10B\n1800285b5\tMOV R10D,dword ptr [RSP + 0x48]\n1800285ba\tMOV dword ptr [RSP + 0x20],R10D\n1800285bf\tMOV R9D,dword ptr [RAX + RCX*0x1 + 0x8]\n1800285c4\tMOV R8,qword ptr [RDX + R8*0x1]\n1800285c8\tMOV RAX,qword ptr [RSP + 0x50]\n1800285cd\tMOV RDX,RAX\n1800285d0\tMOV RCX,qword ptr [RSP + 0x70]\n1800285d5\tCALL 0x18002b2e0\n1800285da\tMOV dword ptr [RSP + 0x34],EAX\n1800285de\tJMP 0x18002852b\n1800285e3\tJMP 0x180028293\n1800285e8\tXOR R8D,R8D\n1800285eb\tMOV RAX,qword ptr [RSP + 0x70]\n1800285f0\tMOV EDX,dword ptr [RAX + 0x48]\n1800285f3\tMOV RAX,qword ptr [RSP + 0x70]\n1800285f8\tMOV ECX,dword ptr [RAX + 0x48]\n1800285fb\tCALL qword ptr [0x1800556e0]\n180028601\tMOV byte ptr [RSP + 0x30],AL\n180028605\tMOV EAX,dword ptr [RSP + 0x34]\n180028609\tADD RSP,0x68\n18002860d\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18002b2e0.c",
+          "member": "18002b2e0",
+          "sha256": "93e3995afef7e3a0c6e72ec4f4977391a832099d26de49b1320f3a0ef516879a",
+          "start": 5,
+          "end": 70,
+          "excerpt": "FUN_18002b2e0(longlong param_1,char *param_2,void *param_3,int param_4,undefined4 param_5)\n\n{\n  char cVar1;\n  int iVar2;\n  undefined4 uVar3;\n  _String_val<std::_Simple_types<char>_> *p_Var4;\n  undefined8 uVar5;\n  longlong lVar6;\n  int *piVar7;\n  void **ppvVar8;\n  undefined1 auStackY_e8 [32];\n  int local_b4;\n  longlong local_b0;\n  void *local_a8;\n  int local_a0 [34];\n  ulonglong local_18;\n  \n  local_18 = DAT_180067000 ^ (ulonglong)auStackY_e8;\n  cVar1 = HSlog_ShouldLog(4);\n  if (cVar1 != '\\0') {\n    p_Var4 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n    uVar5 = FUN_180003ec0(p_Var4);\n    HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] set image start\",uVar5,\n                   *(undefined4 *)(param_1 + 0x48));\n  }\n  if ((param_3 == (void *)0x0) || (param_2 == (char *)0x0)) {\n    uVar3 = 0xe0000001;\n  }\n  else {\n    local_a8 = (void *)0x0;\n    piVar7 = local_a0;\n    for (lVar6 = 0x88; lVar6 != 0; lVar6 = lVar6 + -1) {\n      *(undefined1 *)piVar7 = 0;\n      piVar7 = (int *)((longlong)piVar7 + 1);\n    }\n    ppvVar8 = &local_a8;\n    for (lVar6 = 0x90; lVar6 != 0; lVar6 = lVar6 + -1) {\n      *(undefined1 *)ppvVar8 = 0;\n      ppvVar8 = (void **)((longlong)ppvVar8 + 1);\n    }\n    local_b0 = 0;\n    local_b4 = 0;\n    FUN_180033e00(param_1,param_2,&local_b4);\n    iVar2 = FUN_1800145c0(param_1 + 0x50,*(undefined4 *)(param_1 + 0x48),(longlong)param_4,\n                          (longlong *)&local_a8,&local_b0,local_b4);\n    if (((iVar2 == 0) && (local_a8 != (void *)0x0)) && (local_b0 != 0)) {\n      memcpy_s(local_a8,(longlong)param_4,param_3,(longlong)param_4);\n      local_a0[0] = param_4;\n      uVar3 = VM_M_SetGlobalVarImageEx(*(undefined8 *)(param_1 + 8),param_2,param_5,&local_a8);\n      cVar1 = HSlog_ShouldLog(4);\n      if (cVar1 != '\\0') {\n        p_Var4 = (_String_val<std::_Simple_types<char>_> *)_Immortalize<>();\n        uVar5 = FUN_180003ec0(p_Var4);\n        HSlog_LogPrint(4,\"[%s] [ModuId:%d] [%s@%d] set image end\",uVar5,\n                       *(undefined4 *)(param_1 + 0x48));\n      }\n    }\n    else {\n      uVar3 = 0xe0000002;\n    }\n  }\n  return uVar3;\n}\n\n",
+          "evidenceType": "fresh-offline-ghidra-pseudocode",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        },
+        {
+          "path": "docs/architecture-recovery/variable-composite.resources/18002b2e0.asm.txt",
+          "member": "18002b2e0",
+          "sha256": "86e1e8a6f4b8686a3623a72d2893e1fb2ec2190b3203b6510819197be610b63e",
+          "start": 1,
+          "end": 115,
+          "excerpt": "18002b2e0\tMOV dword ptr [RSP + 0x20],R9D\n18002b2e5\tMOV qword ptr [RSP + 0x18],R8\n18002b2ea\tMOV qword ptr [RSP + 0x10],RDX\n18002b2ef\tMOV qword ptr [RSP + 0x8],RCX\n18002b2f4\tPUSH RDI\n18002b2f5\tSUB RSP,0xe0\n18002b2fc\tMOV RAX,qword ptr [0x180067000]\n18002b303\tXOR RAX,RSP\n18002b306\tMOV qword ptr [RSP + 0xd0],RAX\n18002b30e\tMOV ECX,0x4\n18002b313\tCALL qword ptr [0x180055008]\n18002b319\tMOVZX EAX,AL\n18002b31c\tTEST EAX,EAX\n18002b31e\tJZ 0x18002b362\n18002b320\tCALL 0x180002020\n18002b325\tMOV RCX,RAX\n18002b328\tCALL 0x180003ec0\n18002b32d\tMOV dword ptr [RSP + 0x28],0x87d\n18002b335\tLEA RCX,[0x180058f18]\n18002b33c\tMOV qword ptr [RSP + 0x20],RCX\n18002b341\tMOV RCX,qword ptr [RSP + 0xf0]\n18002b349\tMOV R9D,dword ptr [RCX + 0x48]\n18002b34d\tMOV R8,RAX\n18002b350\tLEA RDX,[0x180058f40]\n18002b357\tMOV ECX,0x4\n18002b35c\tCALL qword ptr [0x180055010]\n18002b362\tCMP qword ptr [RSP + 0x100],0x0\n18002b36b\tJZ 0x18002b378\n18002b36d\tCMP qword ptr [RSP + 0xf8],0x0\n18002b376\tJNZ 0x18002b382\n18002b378\tMOV EAX,0xe0000001\n18002b37d\tJMP 0x18002b508\n18002b382\tMOV qword ptr [RSP + 0x40],0x0\n18002b38b\tLEA RAX,[RSP + 0x48]\n18002b390\tMOV RDI,RAX\n18002b393\tXOR EAX,EAX\n18002b395\tMOV ECX,0x88\n18002b39a\tSTOSB.REP RDI\n18002b39c\tLEA RAX,[RSP + 0x40]\n18002b3a1\tMOV RDI,RAX\n18002b3a4\tXOR EAX,EAX\n18002b3a6\tMOV ECX,0x90\n18002b3ab\tSTOSB.REP RDI\n18002b3ad\tMOV qword ptr [RSP + 0x38],0x0\n18002b3b6\tMOV dword ptr [RSP + 0x34],0x0\n18002b3be\tLEA R8,[RSP + 0x34]\n18002b3c3\tMOV RDX,qword ptr [RSP + 0xf8]\n18002b3cb\tMOV RCX,qword ptr [RSP + 0xf0]\n18002b3d3\tCALL 0x180033e00\n18002b3d8\tMOVSXD RAX,dword ptr [RSP + 0x108]\n18002b3e0\tMOV RCX,qword ptr [RSP + 0xf0]\n18002b3e8\tADD RCX,0x50\n18002b3ec\tMOV EDX,dword ptr [RSP + 0x34]\n18002b3f0\tMOV dword ptr [RSP + 0x28],EDX\n18002b3f4\tLEA RDX,[RSP + 0x38]\n18002b3f9\tMOV qword ptr [RSP + 0x20],RDX\n18002b3fe\tLEA R9,[RSP + 0x40]\n18002b403\tMOV R8,RAX\n18002b406\tMOV RAX,qword ptr [RSP + 0xf0]\n18002b40e\tMOV EDX,dword ptr [RAX + 0x48]\n18002b411\tCALL 0x1800145c0\n18002b416\tMOV dword ptr [RSP + 0x30],EAX\n18002b41a\tCMP dword ptr [RSP + 0x30],0x0\n18002b41f\tJNZ 0x18002b431\n18002b421\tCMP qword ptr [RSP + 0x40],0x0\n18002b427\tJZ 0x18002b431\n18002b429\tCMP qword ptr [RSP + 0x38],0x0\n18002b42f\tJNZ 0x18002b43b\n18002b431\tMOV EAX,0xe0000002\n18002b436\tJMP 0x18002b508\n18002b43b\tMOVSXD RAX,dword ptr [RSP + 0x108]\n18002b443\tMOVSXD RCX,dword ptr [RSP + 0x108]\n18002b44b\tMOV R9,RAX\n18002b44e\tMOV R8,qword ptr [RSP + 0x100]\n18002b456\tMOV RDX,RCX\n18002b459\tMOV RCX,qword ptr [RSP + 0x40]\n18002b45e\tCALL qword ptr [0x180055568]\n18002b464\tMOV EAX,dword ptr [RSP + 0x108]\n18002b46b\tMOV dword ptr [RSP + 0x48],EAX\n18002b46f\tMOVZX EAX,byte ptr [RSP + 0x118]\n18002b477\tMOV byte ptr [RSP + 0x28],AL\n18002b47b\tMOV RAX,qword ptr [RSP + 0x38]\n18002b480\tMOV qword ptr [RSP + 0x20],RAX\n18002b485\tLEA R9,[RSP + 0x40]\n18002b48a\tMOV R8D,dword ptr [RSP + 0x110]\n18002b492\tMOV RDX,qword ptr [RSP + 0xf8]\n18002b49a\tMOV RAX,qword ptr [RSP + 0xf0]\n18002b4a2\tMOV RCX,qword ptr [RAX + 0x8]\n18002b4a6\tCALL qword ptr [0x180055668]\n18002b4ac\tMOV dword ptr [RSP + 0x30],EAX\n18002b4b0\tMOV ECX,0x4\n18002b4b5\tCALL qword ptr [0x180055008]\n18002b4bb\tMOVZX EAX,AL\n18002b4be\tTEST EAX,EAX\n18002b4c0\tJZ 0x18002b504\n18002b4c2\tCALL 0x180002020\n18002b4c7\tMOV RCX,RAX\n18002b4ca\tCALL 0x180003ec0\n18002b4cf\tMOV dword ptr [RSP + 0x28],0x88f\n18002b4d7\tLEA RCX,[0x180058f70]\n18002b4de\tMOV qword ptr [RSP + 0x20],RCX\n18002b4e3\tMOV RCX,qword ptr [RSP + 0xf0]\n18002b4eb\tMOV R9D,dword ptr [RCX + 0x48]\n18002b4ef\tMOV R8,RAX\n18002b4f2\tLEA RDX,[0x180058f98]\n18002b4f9\tMOV ECX,0x4\n18002b4fe\tCALL qword ptr [0x180055010]\n18002b504\tMOV EAX,dword ptr [RSP + 0x30]\n18002b508\tMOV RCX,qword ptr [RSP + 0xd0]\n18002b510\tXOR RCX,RSP\n18002b513\tCALL 0x18004fdd0\n18002b518\tADD RSP,0xe0\n18002b51f\tPOP RDI\n18002b520\tRET\n",
+          "evidenceType": "fresh-offline-ghidra-assembly",
+          "binaryIdentity": "SHA256 20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+          "provider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence"
+        }
+      ],
+      "unknowns": [
+        "0x145c0分配/复用、ImageEx对handle的保留与释放未取；无原版设备/SDK运行佐证。",
+        "PointSet原生最终存储路径仍未知，不能由类型4或图像分支补齐。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "VXU01",
+      "target": "composite nested payload production",
+      "question": "描述浅复制与析构链已证；嵌套payload分配来源、转移协议、+0x50字段全部置位路径未闭合。"
+    },
+    {
+      "id": "VXU02",
+      "target": "image handle and PointSet",
+      "question": "type4已证是图像分支；145c0缓冲/handle→ImageEx最终拥有者与PointSet真实native链仍待取体。"
+    },
+    {
+      "id": "VXU03",
+      "target": "status and concurrent readers",
+      "question": "LockStatus API调用参数可证，不能据名称假定互斥/原子更新、并发最后读者或失败回滚。"
+    }
+  ],
+  "provenance": {
+    "original": {
+      "path": "D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Global/GlobalVariableModule/GlobalVariableModule.dll",
+      "sha256": "20cd716e9471a2687c0cc777548dedb469bcd0356b9da90aa97c42e301e16ff0",
+      "byteLength": 442880
+    },
+    "sourceProvider": "existing owned offline Ghidra CLI -noanalysis; not REA Evidence; REA provider unavailable previously confirmed by root",
+    "selectedProcedures": [
+      {
+        "address": "180028250",
+        "name": "FUN_180028250",
+        "bodyBytes": 958,
+        "decompiled": true,
+        "callees": "1800295b0,180029eb0,18002a7b0,18002b2e0,EXTERNAL:0000000d,EXTERNAL:00000010,EXTERNAL:00000011,EXTERNAL:00000016"
+      },
+      {
+        "address": "180025c40",
+        "name": "FUN_180025c40",
+        "bodyBytes": 693,
+        "decompiled": true,
+        "callees": "180009510,180016480,18001ba20,18001bc70,EXTERNAL:000000c4"
+      },
+      {
+        "address": "180027080",
+        "name": "FUN_180027080",
+        "bodyBytes": 2168,
+        "decompiled": true,
+        "callees": "180002020,180003ec0,180009510,180016480,18004fdf0,EXTERNAL:00000001,EXTERNAL:0000000a,EXTERNAL:0000000d,EXTERNAL:0000000e,EXTERNAL:00000010,EXTERNAL:00000011,EXTERNAL:00000013,EXTERNAL:00000016,EXTERNAL:0000001f,EXTERNAL:00000020,EXTERNAL:00000099,EXTERNAL:000000a1,EXTERNAL:000000c4"
+      },
+      {
+        "address": "18001bc70",
+        "name": "FUN_18001bc70",
+        "bodyBytes": 137,
+        "decompiled": true,
+        "callees": "18001b900,18005017c,EXTERNAL:000000c4,EXTERNAL:000000c8"
+      },
+      {
+        "address": "18001ba20",
+        "name": "FUN_18001ba20",
+        "bodyBytes": 137,
+        "decompiled": true,
+        "callees": "18001b830,18005017c,EXTERNAL:000000c4,EXTERNAL:000000c8"
+      },
+      {
+        "address": "18002b2e0",
+        "name": "FUN_18002b2e0",
+        "bodyBytes": 577,
+        "decompiled": true,
+        "callees": "180002020,180003ec0,1800145c0,180033e00,18004fdd0,EXTERNAL:00000007,EXTERNAL:0000001f,EXTERNAL:00000020,EXTERNAL:000000c9"
+      },
+      {
+        "address": "18001b900",
+        "name": "FUN_18001b900",
+        "bodyBytes": 274,
+        "decompiled": true,
+        "callees": "18001ba20,EXTERNAL:000000c4"
+      },
+      {
+        "address": "18001b830",
+        "name": "FUN_18001b830",
+        "bodyBytes": 96,
+        "decompiled": true,
+        "callees": "EXTERNAL:000000c4"
+      },
+      {
+        "address": "18001b890",
+        "name": "FUN_18001b890",
+        "bodyBytes": 110,
+        "decompiled": true
+      }
+    ],
+    "completions": [
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/completion-composite.json",
+        "finishedUtc": "2026-10-21T13:06:36.7272068Z",
+        "liveProcessHandle": null,
+        "vendorExecuted": false,
+        "exitCode": 0
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/completion-retirement.json",
+        "vendorExecuted": false,
+        "finishedUtc": "2026-10-21T13:07:34.3725140Z",
+        "liveProcessHandle": null,
+        "exitCode": 0
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/completion-nested.json",
+        "finishedUtc": "2026-10-21T13:08:16.3852132Z",
+        "exitCode": 0,
+        "liveProcessHandle": null,
+        "vendorExecuted": false
+      }
+    ],
+    "files": [
+      {
+        "path": "tests/ArchitectureRecovery/Recover-VariableComposite.ps1",
+        "sha256": "78ef364ba56525a0d0711c78989475aec65177afa19fc990e4fd51b20fdf23ac",
+        "byteLength": 2860
+      },
+      {
+        "path": "tests/NativeEvidence/VmNativeCapability.java",
+        "sha256": "3f8146857fed4c06c4fbb94a3cbc35a0aacd971a6d8c2a6fc73f1fcd5a177f83",
+        "byteLength": 2377
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001b830.asm.txt",
+        "sha256": "2c0a53c834241c38c68046e0dfbf0f17bd32a39ed2b4538e56331a6166e84ab8",
+        "byteLength": 740
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001b830.c",
+        "sha256": "7e6193b9870c7592fca9ade5201711baf12456befb36436a0bc742a3a0fbf44a",
+        "byteLength": 269
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001b890.asm.txt",
+        "sha256": "309d44f7a6fa811525e445f999ddf7033406e4a4f767e1f3438833506b7672f1",
+        "byteLength": 699
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001b890.c",
+        "sha256": "e1e6c7825bfb8e4ed17d1cee8e02dcb2aef695974c86f0f46112a7762af2f4a3",
+        "byteLength": 458
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001b900.asm.txt",
+        "sha256": "b58f39f4d92f9e4a4019cbb2309a13b41f79e2abb6cb56a2c41bd05404335bc0",
+        "byteLength": 1800
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001b900.c",
+        "sha256": "c34f8805d2754e6161ebdf166119b0a4156bb176db6e466c9f7ba0c0a228909e",
+        "byteLength": 705
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001ba20.asm.txt",
+        "sha256": "e917e2cdea2410e8220c2a99aeaa72e641c38e5ca919f1953084bc0a21409654",
+        "byteLength": 1080
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001ba20.c",
+        "sha256": "d1d73efbd7d4ad5527cecc8488034b83c73a21c906105e1cecafdf980f016ec9",
+        "byteLength": 428
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001bc70.asm.txt",
+        "sha256": "c5542b39e99cbd120133433fc7cd87415104015d7851b0fd64113539e5a575cb",
+        "byteLength": 1081
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18001bc70.c",
+        "sha256": "11b46f78b1959ef3c9cbce7aae2c72940501254693838e9840f8a2d5f36ab5f0",
+        "byteLength": 487
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/180025c40.asm.txt",
+        "sha256": "89b7ac963a7c3d9022accdeeb589c3520a4a3b6c1ebb9bcbd48a22c5be06b3de",
+        "byteLength": 3933
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/180025c40.c",
+        "sha256": "6edd2a9bd46dcd4ab923b7c145363a8cb4044d28e699e39ecf5fef3915abf49e",
+        "byteLength": 2063
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/180027080.asm.txt",
+        "sha256": "4d161915316caf9abbbd9c65a36572040ab788011c11e092258e9b35ec02ab12",
+        "byteLength": 14325
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/180027080.c",
+        "sha256": "0d9cf59134ab7a7a0e04efdd5bbfa5a3f75a1769e66e85bbd17c39e4789fe2bc",
+        "byteLength": 9093
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/180028250.asm.txt",
+        "sha256": "7cc6b22bb5ff82bdb67da5b73dc6cd5425e42191aade11b2a51170c8e6f65691",
+        "byteLength": 6771
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/180028250.c",
+        "sha256": "d13de4fe198f10de61711272db17333e321458167a4f30fbe78796e3423b3504",
+        "byteLength": 2928
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18002b2e0.asm.txt",
+        "sha256": "86e1e8a6f4b8686a3623a72d2893e1fb2ec2190b3203b6510819197be610b63e",
+        "byteLength": 3724
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/18002b2e0.c",
+        "sha256": "93e3995afef7e3a0c6e72ec4f4977391a832099d26de49b1320f3a0ef516879a",
+        "byteLength": 2277
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/completion-composite.json",
+        "sha256": "a150841b1b08a1800a1b3e0d6270076a8ae43d6b95afff89092781ca66ac1b13",
+        "byteLength": 131
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/completion-nested.json",
+        "sha256": "fb8c572df4435fbdecd53ea0769a8f6383a35954ef34d7542d0dbd3f3eb510ea",
+        "byteLength": 131
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/completion-retirement.json",
+        "sha256": "f617a25a145ab673a16bad6ec1b48f1ec0e20924e76b1317039cbef62dec8002",
+        "byteLength": 131
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/functions-1792587996471.tsv",
+        "sha256": "d7a3cfd07cd712ca794eca40d7f5210c3efbc29f464b1a8409b5a5a8192ecabe",
+        "byteLength": 599
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/functions-1792588054133.tsv",
+        "sha256": "dda6593b1266a67a6666c60c0aff8165efc76dffc8a89d063a6f0f1f2fdddf41",
+        "byteLength": 378
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/functions-1792588096106.tsv",
+        "sha256": "377d243934c36fece35e7c2a32d254a9bc3806054bad0cdede709cc13e78ae66",
+        "byteLength": 190
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/invocation-composite.json",
+        "sha256": "4838c94e43be45bc43bf8620405d7410d7470c1f020f03c5caa47976cba36ad1",
+        "byteLength": 2354
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/invocation-nested.json",
+        "sha256": "03fdf071d39c5289eeb8c8fbaebffcdd78ff3c7380c07fbbac4c83903b66da67",
+        "byteLength": 2348
+      },
+      {
+        "path": "docs/architecture-recovery/variable-composite.resources/invocation-retirement.json",
+        "sha256": "0e5998dbbd99bd6acacb17c43b16ecb17d4f4636791c2410d6fb6d66cee7a971",
+        "byteLength": 2356
+      }
+    ],
+    "originalRuntimeExecuted": false,
+    "targetCodeExecuted": false,
+    "deviceCalled": false,
+    "anotherWorktreeRead": false,
+    "implementationChanges": false,
+    "liveProcessHandle": null,
+    "wholeBinaryAnalysisComplete": false,
+    "fullOriginalChainClosed": false
+  }
+}

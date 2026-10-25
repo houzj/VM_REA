@@ -1,0 +1,66 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十一轮：N 图像标定失败批次、恢复与 owned Group 消费 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 第十一轮：N 图像标定失败批次、恢复与 owned Group 消费</p><h1>第十一轮：N 图像标定失败批次、恢复与 owned Group 消费</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十一轮：N 图像标定失败批次、恢复与 owned Group 消费</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="20261020-pass11-nimage-state-chain.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="20261020-pass11-nimage-state-chain.html#第十一轮n-图像标定失败批次恢复与-owned-group-消费">第十一轮：N 图像标定失败批次、恢复与 owned Group 消费</a></p><p style="margin-left:14px"><a href="20261020-pass11-nimage-state-chain.html#原始证据与行为门槛">原始证据与行为门槛</a></p><p style="margin-left:14px"><a href="20261020-pass11-nimage-state-chain.html#当前实现与实际探针">当前实现与实际探针</a></p><p style="margin-left:14px"><a href="20261020-pass11-nimage-state-chain.html#留存的失败与未知">留存的失败与未知</a></p></details><h1 id="第十一轮n-图像标定失败批次恢复与-owned-group-消费">第十一轮：N 图像标定失败批次、恢复与 owned Group 消费</h1><p>范围仅为标定分类的 N 图像标定状态链及其标定加载/坐标系消费。第八轮已覆盖正常九帧链；本轮增量是<strong>第九帧失败后的拥有者状态、下一帧重置、恢复批次，以及保存重开后的 owned Group 传输</strong>。本报告的成功均指当前重建实现的自动化探针，未把它当作 VM 原桌面运行结果。</p>
+<h2 id="原始证据与行为门槛">原始证据与行为门槛</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>SHA256</th>
+<th>能确定的事实</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSNImageCalibModu/IMVSNImageCalibModu.dll</code></td>
+<td><code>68C04FC9782E873A80776D6EA4BC1E0515B87D54E9D13B41DBD73799747525EC</code></td>
+<td>N 图像标定原生模块身份。</td>
+</tr>
+<tr>
+<td>同目录 <code>IMVSNImageCalibModu.xml</code></td>
+<td><code>DAC2AA0C023F712DD0E693CE285FA66DE1E77DC4DD121060C573706A430E88FF</code></td>
+<td>原模块接口资源。</td>
+</tr>
+<tr>
+<td>同目录 <code>IMVSNImageCalibModuAlgorithmTab.xml</code></td>
+<td><code>A83474FEC309E81EAED70366AD813A2D5A06A02A8DCC9F12D398079E16E5C3C3</code></td>
+<td>原算法页资源。</td>
+</tr>
+<tr>
+<td><code>worktrees/tool-plugins/analysis/full-audit/n-image-calibration/native/180020b90.c</code>，<code>CIMVSNImageCalibModu::Process</code></td>
+<td><code>EED1AE6F4FD0B0A6AC39ECA2F0F9EAC5EDE090B3BA234A2E10798EFFFC37F2C1</code></td>
+<td>进入新帧前若现有数达到平移+旋转总数，销毁/清空旧图帧；读取三个运动输入，追加帧并增加计数；达到总数才调用 <code>ProcessAlg</code>，随后调用 <code>ProcessOutput</code>。见约 101–112、124–184、185–263、276 行。</td>
+</tr>
+<tr>
+<td><code>worktrees/tool-plugins/analysis/full-audit/n-image-calibration/native/180021450.c</code>，<code>ProcessAlg</code></td>
+<td><code>BA435B09E9D566A362F4DC93E780E566A25F8E01247DB91465A53BA48866B3BB</code></td>
+<td>按持有的列表顺序向 SDK BasicParam 增加图像/运动数据，然后调用 SDK Run；结果存在且开启刷新文件时调用 <code>WriteXmlData</code>。见约 85–160 行。反编译只显示虚表调用，不能由此确定 SDK 内部算法。</td>
+</tr>
+<tr>
+<td><code>worktrees/tool-plugins/analysis/full-audit/n-image-calibration/native/180021850.c</code>，<code>ProcessOutput</code></td>
+<td><code>21A81AFD487ED2C915D19F18842747C0A9297896D699767B8B5EBDDA72A0DAE4</code></td>
+<td>输出阶段读取 SDK 结果及字段；原错误路径/全部输出值仍受原生 SDK 返回约束。</td>
+</tr>
+<tr>
+<td><code>worktrees/tool-plugins/analysis/n-image-calibration/file-export-source/output/1800230e0.c</code>，<code>WriteXmlData</code></td>
+<td><code>F7437CF38A9B6C8BBF1B3D0B8095EDB06A9D3C1A315F4FBB2B5D2CFBE0FC6F67</code></td>
+<td>文件含 <code>CalibMatrix</code>；SDK 结果缺失分支可返回 <code>0x80100011</code>，见约 130–195、829 行。</td>
+</tr>
+</tbody></table>
+<p>原 SDK 结果缓存生命周期还有独立原生探针，见 <code>docs/plugins/N-IMAGE-RETAINED-SDK-RESULT-SOURCE-AUDIT.md</code>。原模块仅清帧列表时，旧 SDK 结果可能仍保留；真正进入 SDK Run 才清结果标记。因此不能把“帧重置”泛化为“所有结果均被清除”。本轮第九帧是 <strong>SDK Run/识别失败</strong> 路径，和只清帧、不运行 SDK 的路径不同。</p>
+<h2 id="当前实现与实际探针">当前实现与实际探针</h2><p>探针源：<code>tests/CalibrationNImageStateChain.Checks/Program.cs</code>；原图样本 <code>tests/NImageCalibration.PluginChecks/Fixtures/hik-i-help-derived.png</code>，SHA256 <code>CEA3978AF8112865B13E21D76646887DFDEC8D7F1A078BE4F3CB8A39A541912D</code>。样本派生 Gray8 平移帧；第九帧为恒值 Gray8 空白帧。真实 <code>GraphEditorDocument</code> 接线 <code>ImageSource.Image → NImage.InputImage</code>，各帧通过 <code>ModuleExecutionScope</code> 送入 <code>SolutionExecutor</code>，三个运动参数经订阅输入。不是直接调用 <code>NImageSequence.Add</code> 来冒充图运行。</p>
+<p>运行命令（工作目录为仓库根）：</p>
+<a class="site-evidence-link" data-evidence-key="a609a51d0a92df032ed5e567fa198f833f742540f497bf29f9564f5ef34d6df2" href="../../../../证据/a609a51d0a92df032ed5e567fa198f833f742540f497bf29f9564f5ef34d6df2.html#content">查看完整原文／记录 ↗ <small>a609a51d0a92</small></a>
+<p>结果：退出码 0，<strong>26/26</strong>；完整日志 <code>analysis/joint-audit/pass11-cal-nimage-state/run.log</code>，实际输出 <code>probe/recovered.xml</code>、<code>probe/nimage-group.vmx.json</code>、<code>probe/summary.json</code>。</p>
+<ol>
+<li>前八帧的公开 <code>NodeRunRecord.CurNum</code> 和 NImage owned <code>Inspect.Current</code> 均从 1 增到 8。</li>
+<li>第九空白帧达到总数后识别失败：<code>NodeRunRecord.Status=Failed</code>，当前实现错误码 <code>0x10103000</code>，公开 <code>CurNum</code> <strong>缺席</strong>；owned <code>Inspect.Current=9</code>，无自动 XML。公开输出缺席是框架对失败节点输出的处理，不能说原厂 <code>ProcessOutput</code> 没有执行。</li>
+<li>同一 owned 状态下显式导出抛出 <code>NImageExportException</code>，当前错误码 <code>0x80100011</code>；这与原 <code>WriteXmlData</code> 的 SDK 结果缺失分支一致，但尚未对原厂输入同一张空白图做运行差分。</li>
+<li>下一张有效帧启动新批次，公开/owned 当前数均为 1；再送八张有效帧后产生可读 XML，<code>CalibMatrix:NumberArray</code> 长度 9。此处验证的是新批次状态与消费形状，<strong>不是</strong>原厂数值矩阵的浮点位等价。</li>
+<li>新建真实图：<code>ImageSource</code> 执行至 owned Group；Group 内 <code>ReadCalibFile</code> 读取恢复 XML 并由 Group 输出 <code>CalibMatrix:NumberArray</code>；外层 <code>Coordinate</code> 同时接矩阵和实时 <code>Image</code>。Group 与 Coordinate 均成功，Coordinate 的 <code>CorCalibMatrix</code> 为九元素。保存方案、重开，确认 Group body/矩阵边仍在，重新送图后 Coordinate 再次成功。保存重开并未保存 NImage 尚未完成的采集会话；这里只保存了完成后的 XML 消费图。</li>
+</ol>
+<p>当前实现对应 <code>src/VisionPlugins.Calibration/NImageSequence.cs</code> 的满数后清帧再追加、<code>src/VisionPlugins.Calibration/NImagePlugin.cs</code> 的运行/导出状态、<code>src/VisionFramework/GraphExecutor.cs</code> 的失败节点输出发布和 <code>src/VisionFramework/SolutionExecutor.cs</code> 的图执行。Group、读取器和坐标系的源码/规格链另见第八轮报告；本轮检验其在失败恢复后的实际组合，并不重新声称原版 Group 行为已验证。</p>
+<h2 id="留存的失败与未知">留存的失败与未知</h2><ul>
+<li>首次编译的项目引用缺失、第二次命名空间错误分别保存在 <code>analysis/joint-audit/pass11-cal-nimage-state/compile-failure.log</code> 和 <code>compile-namespace-failure.log</code>；修正仅在本探针项目内，最终运行成功。</li>
+<li>未运行原厂桌面/原 SDK 对同一张空白图和恢复序列的差分。<code>0x10103000</code> 是当前实现本次探针返回，不能冒称原 SDK 同图错误码。</li>
+<li>原 <code>ProcessAlg</code> 的 SDK 虚表调用顺序可见，但 <code>AddCalibImageData</code>、Run 和 GetResult 的具体识别/数值分支及 UI 错误呈现，须另以 SDK 原函数和运行证据约束。</li>
+<li>原只 Clear 而未 Run 时的保留结果与本次识别失败需分开；本次探针不证明所有 Clear/失败分支都无可导出旧结果。</li>
+<li>未测试批次采集状态跨方案关闭重开持久化；本轮重开验证的是完成文件经 owned Group 的消费链。</li>
+</ul>
+<p class="meta">来源：docs/joint-audit/20261020-pass11-nimage-state-chain.md · SHA256 9fb04432d2decf37b13ae710f8deb56536679b2e48da2c05d1afcd254d3636db<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

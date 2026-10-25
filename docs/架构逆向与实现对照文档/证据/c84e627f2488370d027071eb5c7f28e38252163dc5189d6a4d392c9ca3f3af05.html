@@ -1,0 +1,110 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 c84e627f2488 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 c84e627f2488</p><h1>原文证据 c84e627f2488</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 c84e627f2488370d027071eb5c7f28e38252163dc5189d6a4d392c9ca3f3af05。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/image-chain.resources/VMBaseControls.ImageViewBox.decompiled.cs:1607–1714
+SHA256 3a9dd8e40e4758e056096a2432c1349f90f5df0997b1361d8ffa4fb480e8df50
+	private bool SetImageSource(bool isDirect = false, bool isInner = false)
+	{
+		if (isHighQualityImage != GlobalRenderVariable.IsHighQualityImage &amp;&amp; sImage != null)
+		{
+			isHighQualityImage = GlobalRenderVariable.IsHighQualityImage;
+			BitmapScalingMode bitmapScalingMode = (isHighQualityImage ? BitmapScalingMode.HighQuality : BitmapScalingMode.NearestNeighbor);
+			RenderOptions.SetBitmapScalingMode(sImage, bitmapScalingMode);
+		}
+		if (UpdateImageSize(out var imageSize))
+		{
+			if (double.IsNaN(imageSize.Width) || double.IsNaN(imageSize.Height))
+			{
+				return false;
+			}
+			System.Windows.Size size = new System.Windows.Size(imageSize.Width * ImageScale, imageSize.Height * ImageScale);
+			bool flag = (long)ImageDataSource.Width * (long)ImageDataSource.Height > 100000000;
+			if (GlobalRenderVariable.IsHighQualityImage &amp;&amp; !flag)
+			{
+				size = new System.Windows.Size(ImageDataSource.Width, ImageDataSource.Height);
+			}
+			double num = (double)ImageDataSource.Width / size.Width;
+			int num2 = (int)((double)OffSetXPixel / num);
+			int num3 = (int)((double)OffSetYPixel / num);
+			int num4 = (int)((double)ClipXPixel / num);
+			int num5 = (int)((double)ClipYPixel / num);
+			Thickness thickness = ImageMargin;
+			double left = ImageDesignWidth * (double)num2 / size.Width;
+			thickness.Left = left;
+			double top = ImageDesignWidth * (double)ImageSourceHeight / (double)ImageSourceWidth * (double)num3 / size.Height;
+			thickness.Top = top;
+			double right = ImageDesignWidth * (double)num4 / size.Width;
+			thickness.Right = right;
+			double bottom = ImageDesignWidth * (double)ImageSourceHeight / (double)ImageSourceWidth * (double)num5 / size.Height;
+			thickness.Bottom = bottom;
+			bool status = true;
+			ImageSource imageSource = null;
+			if (GlobalRenderVariable.IsHighQualityImage)
+			{
+				if (((ImageDataSource.Width - OffSetXPixel - ClipXPixel) * (ImageDataSource.Height - OffSetYPixel - ClipYPixel) &lt; 250000) | flag)
+				{
+					ImageMargin = thickness;
+					if (size.Width &lt; 1.0 || size.Height &lt; 1.0)
+					{
+						Source = null;
+					}
+					else
+					{
+						BitmapScalingMode bitmapScalingMode2 = BitmapScalingMode.NearestNeighbor;
+						RenderOptions.SetBitmapScalingMode(sImage, bitmapScalingMode2);
+						isHighQualityImage = false;
+						imageSource = _byte2Image.BuiltImageSourceA(ImageDataSource, (int)size.Width, (int)size.Height, ref status, OffSetXPixel, OffSetYPixel, ClipXPixel, ClipYPixel, isDirect);
+						if (!status)
+						{
+							return false;
+						}
+						Source = imageSource;
+						isCliped = true;
+					}
+				}
+				else if (!isInner || isCliped)
+				{
+					ImageMargin = default;
+					imageSource = _byte2Image.BuiltImageSourceA(ImageDataSource, (int)size.Width, (int)size.Height, ref status, 0, 0, 0, 0, isDirect);
+					if (!status)
+					{
+						return false;
+					}
+					Source = imageSource;
+					isCliped = false;
+				}
+			}
+			else
+			{
+				ImageMargin = thickness;
+				if (size.Width &lt; 1.0 || size.Height &lt; 1.0)
+				{
+					Source = null;
+				}
+				else
+				{
+					imageSource = _byte2Image.BuiltImageSourceA(ImageDataSource, (int)size.Width, (int)size.Height, ref status, OffSetXPixel, OffSetYPixel, ClipXPixel, ClipYPixel, isDirect);
+					if (!status)
+					{
+						return false;
+					}
+					Source = imageSource;
+					isCliped = true;
+				}
+			}
+			_imageViewWidth = imageSize.Width * ImageScale;
+			_imageViewHeight = imageSize.Height * ImageScale;
+		}
+		needFlash = true;
+		return true;
+	}
+
+	public void ChangeSize(System.Windows.Point centerPoint, double val)
+	{
+		if (ImageResizable &amp;&amp; val != 1.0 &amp;&amp; (!(val > 1.0) || EnableZoomOut) &amp;&amp; (!(val &lt; 1.0) || EnableZoomIn))
+		{
+			if (ImageScale * val &lt; 0.3)
+			{
+				val = 0.3 / ImageScale;
+			}
+			if (Math.Abs(curPoint.X - centerPoint.X) > 0.001 || Math.Abs(curPoint.Y - centerPoint.Y) > 0.001)
+			{
+				offset = new System.Windows.Point(offset.X + (centerPoint.X - curPoint.X) * (ImageScale - 1.0), offset.Y + (centerPoint.Y - curPoint.Y) * (ImageScale - 1.0));
+			}</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/image-pipeline.html">数据/image-pipeline.html</a></li><li><a href="../数据/image-pipeline--display.html">数据/image-pipeline--display.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

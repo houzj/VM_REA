@@ -1,0 +1,217 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CompatibleTool 版本迁移逆向记录 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / CompatibleTool 版本迁移逆向记录</p><h1>CompatibleTool 版本迁移逆向记录</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CompatibleTool 版本迁移逆向记录</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="COMPATIBLETOOL-VERSION-MIGRATION.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#compatibletool-版本迁移逆向记录">CompatibleTool 版本迁移逆向记录</a></p><p style="margin-left:14px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#证据与定位">证据与定位</a></p><p style="margin-left:28px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#sdk-托管边界的进一步确认静态">SDK 托管边界的进一步确认（静态）</a></p><p style="margin-left:28px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#安装版-v44-sol-样本容器观察静态">安装版 V4.4 `.sol` 样本容器观察（静态）</a></p><p style="margin-left:14px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#迁移调用链">迁移调用链</a></p><p style="margin-left:14px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#转换器职责拆分">转换器职责拆分</a></p><p style="margin-left:14px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#已发现的源码风险点">已发现的源码风险点</a></p><p style="margin-left:14px"><a href="COMPATIBLETOOL-VERSION-MIGRATION.html#逆向边界与下一步">逆向边界与下一步</a></p></details><h1 id="compatibletool-版本迁移逆向记录">CompatibleTool 版本迁移逆向记录</h1><p>更新：2026-10-18。范围是 VM 4.x 安装版 <code>CompatibleTool</code> 的托管迁移调度和 WPF 主程序调用链。证据为反编译重建源码的静态分析；未运行原版迁移器，也没有旧版 <code>.sol/.prc/.gro</code> 控制样本。因此本文确认的是托管调用和转换步骤，不确认原生容器格式、迁移成功率或输出可重开。</p>
+<h2 id="证据与定位">证据与定位</h2><table>
+<thead>
+<tr>
+<th>证据</th>
+<th>位置</th>
+<th>SHA-256</th>
+<th>可确认范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主程序版本检查及隐藏子进程启动</td>
+<td><code>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.Project/ProjectManager.cs:604-700</code></td>
+<td><code>1ae41a0841dd65f5dfa7461078c370822e61826877c42e299939af1fd47f9370</code></td>
+<td>查询原生方案版本、低版本提示、输出路径冲突处理、启动参数、等待进程和输出文件存在性检查</td>
+</tr>
+<tr>
+<td>迁移工具入口</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/Program.cs:10-46</code></td>
+<td><code>796184f7cbe03c2c9c267873b0992e1cc4b1574ff6f46814bf6285288aca2bb7</code></td>
+<td>参数组合、四类迁移入口、异常捕获、返回码与 SDK 释放</td>
+</tr>
+<tr>
+<td>方案/流程/Group/设计转换</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/ConvertHelper.cs:131-585</code></td>
+<td><code>e402795ab8954269b1886274786f7734afc0970abfbeb53c098701831c53ab35</code></td>
+<td>版本分段、迁移步骤、保存入口和原生 SDK 边界</td>
+</tr>
+<tr>
+<td>动态 IO 迁移规则</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/DynamicIOUtils.cs:33-520</code></td>
+<td><code>7e823cdab9ecfd0b5665e6ba2b2ecbd2b7851bdd5026430e7882cef343309515</code></td>
+<td>V4.2、V4.3、V4.4 的部分工具级动态输入输出改写</td>
+</tr>
+<tr>
+<td>IsReady 重建</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/CompatIsReadyPropertyUtils.cs:15-247</code></td>
+<td><code>41bf41e9727bf41405cb12ac5b1d9dccac1142b4efa6f583d2569aa48a948894</code></td>
+<td>递归检查流程/Group模块的动态输入是否就绪，并写 <code>IsReady</code>、<code>UnReadyModuleNames</code> UI 数据</td>
+</tr>
+<tr>
+<td>模板匹配模型迁移</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/TempMatchUtils.cs:21-620</code></td>
+<td><code>701d2b8f1c49357ce621ae19a9ae60e1e642fea68d3e8afb94c372b7cd0b85ff</code></td>
+<td>对明确列出的匹配/检测模块调用其专属模型转换控件和模型数据构建逻辑</td>
+</tr>
+<tr>
+<td>全局变量/绑定迁移</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/GlobalVarUtils.cs:53-453</code></td>
+<td><code>5b8a918bbfd387ddba0ceb47050c9efb885161d0038c5bef7ded6ffd0bbb826f</code></td>
+<td>读取全局变量与模块绑定，更新参数名/type/index并分批重建绑定</td>
+</tr>
+<tr>
+<td>定制模块迁移</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/CustomizedModuleUtils.cs:13-154</code></td>
+<td><code>0745a14106c9ed8a0a869a6dcaf4fbd2993a7bcaa6b9bae18889528a8fca056a</code></td>
+<td>扫描对象模块并分发专属 <code>CustomizedCompatible</code>；托管枚举中仅见 <code>TestModu</code></td>
+</tr>
+<tr>
+<td>前端设计迁移</td>
+<td><code>analysis/decompiled/CompatibleTool.Audit/CompatibleTool/FrontendUIUtils.cs:44-402</code></td>
+<td><code>dde697e974174d6bbe35535d90d6f17e63c44dfcb71b909959fc7c4e9d54c362</code></td>
+<td>设计器缓冲区读取、XAML/XML 改写、版本属性及布局转换</td>
+</tr>
+<tr>
+<td>序列化调用边界</td>
+<td><code>analysis/full-audit/solution-serialization-contract.json</code> 中 <code>save</code>、<code>load</code>、<code>version-migration</code> 链</td>
+<td>报告记录了托管文件与 SDK 头文件哈希</td>
+<td>方案读写由 SDK/native 承担；迁移器转换规则和原生容器仍有未知项</td>
+</tr>
+</tbody></table>
+<h3 id="sdk-托管边界的进一步确认静态">SDK 托管边界的进一步确认（静态）</h3><p>本轮对反编译的 <code>VM.PlatformSDKCS</code> 与 <code>VM.Core</code> 再核对，确认托管层没有实现 <code>.sol</code> 字节格式的读写器：<code>VmSolution</code> 最终把读写委托给 <code>SolutionManager.SyncSaveSolution/SyncLoadSolution</code>，后者再调用 <code>ServerSDKAPI.IMVS_SaveSolution/IMVS_LoadSolution</code>。常规 <code>SaveAs</code> 路径传给保存 API 的附加缓冲区是 <code>IntPtr.Zero</code>、长度 <code>0</code>；保存/加载调用返回非零即转成 <code>VmException</code>。同步 Save/Load 还会等待 SDK 回调；Load 在 SDK 模式下另检查异步加载错误码。方案版本查询同样通过 <code>IMVS_GetSolutionVersion</code> 返回原生结构中的 <code>strTargetSolutionInfo</code>。</p>
+<table>
+<thead>
+<tr>
+<th>反编译证据</th>
+<th>SHA-256</th>
+<th>本轮静态确认</th>
+<th>证据限制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/VmSolution.cs</code>（保存与加载委托）</td>
+<td><code>C141E2C53913B233B768782D6757FAE5997ECAF638B35DB2DDF98F5EF951A13E</code></td>
+<td>SaveAs 委托 base 的保存路径；底层同步保存传零指针/零长度；Load 委托 SDK 并经过回调/异常处理</td>
+<td>反编译重建源码，不是原始 C#；不能推出容器布局和原生事务语义</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/SolutionManager.cs</code>（SDK 包装）</td>
+<td><code>46B1D8249E3A30FE3BF7A0ED8E92207835F1A8E272833D5462041BC1756F220A</code></td>
+<td>Save/Load/version 三个调用的错误码、等待回调和异步错误检查</td>
+<td>仅描述托管包装器行为</td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs</code>（P/Invoke 声明）</td>
+<td><code>6A60F612FB385987FF96D6973844A256402F097D1EB371E7AD462C44E57127D0</code></td>
+<td>声明了 <code>IMVS_SaveSolution(handle,path,password,pData,nDataLen)</code>、<code>IMVS_LoadSolution(handle,path,password,checkFlag,silentFlag)</code> 及版本查询入口；DLL 名为 <code>iMVS-6000PlatformSDK.dll</code></td>
+<td>P/Invoke 声明是托管接口证据，不等于 native ABI/实现反汇编证据；调用约定、内部容器和字段未知</td>
+</tr>
+<tr>
+<td>安装版 SDK C 头 <code>Development/V4.x/Includes/iMVS-6000PlatformSDKC.h</code> 与 <code>iMVS-6000PlatformSDKDefine.h</code></td>
+<td>分别为 <code>2839B317C7F40E0791ADE924B2DBF1B6FB49E8CFCCD0BBE88B648C8C95331B2B</code>、<code>4F1D84AE3EB0C150AADF2682CFFE05B6CECF113B99329C64789CEFF3A57EE769</code></td>
+<td>公开的 V4.x C 接口声明 <code>__stdcall IMVS_PF_SaveSolution</code>、<code>IMVS_PF_SyncSaveSolution</code>、<code>IMVS_PF_LoadSolution</code> 和版本查询；保存输入结构明示路径、密码、<code>pAdditionData</code> 与 <code>nDataLen</code>，结构另有保留字段；头文件也声明 Save/Load 进度查询</td>
+<td>SDK 头是接口/字段定义证据，不包含其函数体；<code>IMVS_PF_*</code> 公共接口与托管 <code>IMVS_*</code> 入口的内部映射关系未由此证明；容器编码/压缩/加密/资源布局仍未知</td>
+</tr>
+</tbody></table>
+<p>安装目录还带有 SDK 样例源码，但它没有暴露 <code>.sol</code> 容器实现。本轮尝试使用 REA 打开已定位的 x64 SDK 二进制时，深度分析不可用：Ghidra 未配置，IDA 未注册连接，Hopper 不支持当前 Windows 主机。故目前比“只知托管包装”多确认了 V4.x 公开 C 接口的调用约定与保存数据结构，但仍没有获得 native 函数体；不能把接口声明写成原生序列化算法结论。</p>
+<h3 id="安装版-v44-sol-样本容器观察静态">安装版 V4.4 <code>.sol</code> 样本容器观察（静态）</h3><p>对安装包附带的 SDK 样本做只读头部与目录解析，没有调用 VM/SDK。三份方案样本均以 ZIP local-file signature <code>50 4B 03 04</code> 开头：</p>
+<table>
+<thead>
+<tr>
+<th>样本</th>
+<th>SHA-256</th>
+<th>观察</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Development/V4.x/Samples/VC/PlatformSDKSampleVC/CircleFind/CircleFind.sol</code></td>
+<td><code>B91A7736F467757E15A55AF7836E22364AE153478E17C69AAEB69E0C30674D0B</code></td>
+<td>.NET ZIP 目录读取成功；含 <code>SolutionFile/VmServer.xml</code>、<code>MoudleFrame</code>、<code>UiParamData/*</code> 和 <code>ModuleAttachments/*.bmp</code></td>
+</tr>
+<tr>
+<td><code>Development/V4.x/Samples/VC/PlatformSDKSampleVC/GetResultControl/GetResultSample.sol</code></td>
+<td><code>8B30CA25747F0F7254E44D0B209A1EE5C9F0348628BA1579FC8D3647815767D2</code></td>
+<td>文件头同为 <code>50 4B 03 04</code></td>
+</tr>
+<tr>
+<td><code>Development/V4.x/Samples/C#/ApplicationDemo/OCRDemoCs/OCRDemoEnglish.sol</code></td>
+<td><code>E4B4BD7576EF2DA6D55558ACD1DB0D557FFB86C9F590D8830A94375D47DAD462</code></td>
+<td>文件头同为 <code>50 4B 03 04</code></td>
+</tr>
+</tbody></table>
+<p><code>CircleFind.sol</code> 的 <code>SolutionFile/VmServer.xml</code> 可读 XML，包含版本 <code>V4.4.0</code>、方案名、模块及流程列表、连线/订阅关系；<code>UiParamData</code> 条目解压后是 VM 二进制记录（以 <code>fU3&quot;</code> 等字节起始），不应作为普通 XML 解析。目录内单独存放 <code>MoudleFrame</code> 与图像附件，说明方案包不只是单一 XML 文件。该样本证明的是“这些未加密 SDK 样本能按 ZIP 目录读取”，不是所有 <code>.sol</code> 版本/密码模式都用相同封装，更没有证明 SDK 保存时的压缩参数、加密、校验、写入顺序、未知条目保留策略或旧版本迁移往返。</p>
+<p>对本机 <code>D:\Program Files\VisionMaster4.4.0</code> 安装目录递归列出的 11 个 <code>.sol</code> 样本逐个读取 <code>SolutionFile/VmServer.xml</code> 版本节点，观察结果全为 <code>V4.4.0</code>。因此当前机器提供了 V4.4 同版本样本证据，但没有安装版旧版本 <code>.sol</code> 样本可做迁移前后差分；数量和版本只代表本次安装快照。</p>
+<h2 id="迁移调用链">迁移调用链</h2><ol>
+<li><code>ProjectManager</code> 调用 <code>IMVS_GetSolutionVersion</code>，对返回的 <code>strTargetSolutionInfo</code> 作字符串版本比较。低于本机 <code>Lang_version</code> 时，显示升级遮罩，并在原方案同目录选择 <code>原名_目标版本.sol</code>；文件已存在时依次尝试带序号的新名字，不覆盖旧迁移输出。</li>
+<li>主程序以隐藏、无 Shell、重定向标准输出/错误的子进程启动同目录 <code>CompatibleTool.exe</code>，传入 <code>VMSolution;源路径;密码;目标路径;目标版本</code>，等待退出，再检查目标文件是否存在。主程序不以子进程退出码作为唯一成功条件。</li>
+<li>工具先调用 <code>IMVS_GetSolutionVersion</code>、<code>IMVS_GetPrcVersion</code> 或 <code>IMVS_GetGroVersion</code> 取得文件版本，再由 <code>VmSolution.Load</code>、流程导入 API 或 <code>IMVSGroupTool.LoadIndependentGroup</code> 加载原对象。它设置 SDK 的版本升级标志，对对象作原生托管对象操作，最后调用 <code>VmSolution.SaveAs</code>、<code>SyncExportProcess</code> 或 <code>ExportGroup</code> 写出。</li>
+<li>方案从 V4.0/V4.1 到 V4.4 的托管步骤包括：IsReady 数据、动态 IO、模板匹配模型、前端设计、定制模块；V4.2→V4.3 处理动态 IO；V4.3→V4.4 更新前端设计、动态 IO、全局变量和定制模块。V4.4 的动态 IO步骤还会更新特定模块，并对原生模块类型 <code>0</code> 清空 <code>PathPoints</code> 用户数据。</li>
+<li>V4.3→V4.4 的设计文档转换有 XML 层实现；V4.0→V4.4 的设计 XML 路径经过 VM4.2、VM4.3/4.4 两个转换工具。以上只覆盖显式托管步骤，插件模型、附件、ROI 持久化和二进制容器仍由 SDK/插件层负责。</li>
+</ol>
+<h2 id="转换器职责拆分">转换器职责拆分</h2><table>
+<thead>
+<tr>
+<th>子系统</th>
+<th>反编译可见的具体行为</th>
+<th>不能由此推出的结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CompatIsReadyPropertyUtils</code></td>
+<td>读取流程/Group 的首层模块树；递归处理嵌套 <code>IMVSGroup</code>；按模块 XML 中的动态 IO 树解析 readiness；向对象 UI 数据写入未就绪模块名和 <code>IsReady</code> 字节</td>
+<td>这不是算法校验；未证明缺 XML、缺插件或 SDK 报错时状态完整</td>
+</tr>
+<tr>
+<td><code>DynamicIOUtils</code></td>
+<td>V4.2 路径扫描动态输入/输出用户数据并更新 IO；也处理 GlobalVariableModule。V4.3 路径针对 <code>IMVSTargetTrackModu</code> 更新动态 IO，并把订阅名 <code>roicenterx/roicentery/roiwidth/roiheight/roiangle</code> 改为 <code>BoxCenterx/BoxCentery/BoxWidth/BoxHeight/BoxAngle</code>。V4.4 路径应用特殊模块表，并删除 type 0 节点的 <code>PathPoints</code> UI blob</td>
+<td>未涵盖全部插件所有版本；迁移后的每个新参数/模型含义需工具线逐插件差分</td>
+</tr>
+<tr>
+<td><code>TempMatchUtils</code></td>
+<td>按模块名处理 HP/快速特征匹配、灰度匹配、MarkFind、Inspect、MarkInsp 等模型；部分通过加载插件 DLL、反射专属迁移控件并重建模型</td>
+<td>不能把模型迁移泛化到全工具集；真实模型字节与原厂可运行结果仍待对照</td>
+</tr>
+<tr>
+<td><code>FrontendUIUtils</code></td>
+<td>对 DESIGNERBUFFER 做 XML/XAML 转换；删/改特定 localization、标题和中文按钮文案；将 4.3 设计节点转成 4.4 节点并补充属性/尺寸</td>
+<td>不能视为任意第三方 XAML 的无损往返</td>
+</tr>
+<tr>
+<td><code>GlobalVarUtils</code></td>
+<td>用 <code>CompatibleTool.xml</code> 的 IO 改名映射，重建模块参数绑定；将索引订阅改为 <code>All</code>，绑定按 128 项批次写回，并更新全局变量结果参数名/type</td>
+<td>转换只在 solution 的 V4.4 路径显式调用；无全部变量种类和失败回滚差分</td>
+</tr>
+<tr>
+<td><code>CustomizedModuleUtils</code></td>
+<td>V4.2 扫描对象内流程/Group/模块，根据定制模块枚举分发 <code>CustomizedCompatible</code>；当前托管枚举只列 <code>TestModu</code>；V4.4 方法直接返回 <code>true</code></td>
+<td>这不是所有自定义插件的迁移支持证明</td>
+</tr>
+</tbody></table>
+<h2 id="已发现的源码风险点">已发现的源码风险点</h2><ul>
+<li><code>ConvertSolution</code>、<code>ConvertProcedure</code>、<code>ConvertGroup</code> 在版本分支之后都会无条件执行 <code>Convert*4_3To4_4</code> 并重新赋值给 <code>flag</code>。对 V4.2，前一阶段的动态 IO 返回值可能被覆盖；对 V4.0/V4.1，前一阶段聚合迁移结果也可能被覆盖。流程和 Group 的 V4.3→V4.4 帮助方法在反编译代码中只返回 <code>true</code>（流程还重复记录 GlobalVar 日志），因而静态控制流显示先前失败可能不再阻止保存。需要原版受控样本才能确认这是实际迁移器缺陷、反编译重建异常，还是受其他 SDK 状态门控。</li>
+<li><code>Program.Main</code> 先检查原始 <code>args.Count() &gt;= 4</code>，然后才把参数拼接并按分号切分，随后读取 <code>array[4]</code>。因此此检查并不保证切分后有五段；主程序传入的命令行实际如何落入 <code>args</code>，需结合 Windows 参数解析和原版进程观测复核。密码和包含分号的字段边界也未见可靠转义协议，静态风险不等于已复现崩溃。</li>
+<li>主程序启动迁移器后等待退出并检查输出文件。反编译代码没有显示读取迁移进程的 ExitCode，也没有显示 <code>Process</code> 的 <code>using</code>/<code>Dispose</code>；这是静态资源管理风险记录，不代表已观测到 VM 进程泄漏。</li>
+<li>同一启动路径把 <code>StandardOutput</code> 与 <code>StandardError</code> 都设为重定向，但先 <code>WaitForExit()</code>、之后才 <code>StandardOutput.ReadToEnd()</code>，且未见读取 <code>StandardError</code>。迁移器托管代码的可见诊断主要通过 <code>Console.Write</code> 写标准输出，暂未找到 <code>Console.Error</code> 写入。若任一管道实际输出超过系统缓冲区，可能形成父子进程互等；目前没有运行捕获证明会达到该条件，因此只登记为条件性死锁风险，不当作已复现故障或进程泄漏。</li>
+<li><code>ConvertSolution4_3To4_4</code> 将多个子步骤用按位 <code>&amp;</code> 汇总，能保证各步骤均被调用；早期分支则通过顺序赋值覆盖结果，不能把它们简化成相同的失败传播模型。</li>
+</ul>
+<h2 id="逆向边界与下一步">逆向边界与下一步</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>版本查询、输出命名、子进程启动及主程序门控</td>
+<td>反编译托管代码已确认；未作 VM 运行差分</td>
+</tr>
+<tr>
+<td>CompatibleTool 的转换分段和可见子步骤</td>
+<td>反编译托管代码已确认；具体插件/native写入结果未验证</td>
+</tr>
+<tr>
+<td><code>.sol/.prc/.gro</code> 容器解析与写入者</td>
+<td>未确认；托管层把实际读写委派到 SDK/native</td>
+</tr>
+<tr>
+<td>迁移的原子性、部分失败回滚、密码格式与版本支持矩阵</td>
+<td>未确认</td>
+</tr>
+<tr>
+<td>主框架 <code>.vmx.json</code> 与原生 <code>.sol</code> 互操作</td>
+<td>未实现，不能互称兼容</td>
+</tr>
+</tbody></table>
+<p>继续完成原生格式逆向需要旧版原厂文件与目标版迁移输出的成对样本、VM 原版迁移器受控运行、同一文件迁移前后版本查询，以及 native <code>IMVS_SaveSolution</code> / <code>IMVS_LoadSolution</code> 与插件模型/附件持久化写入者的交叉定位。在取得这些证据前，main 继续把 <code>.vmx.json</code> 明确标为独立格式；不编造 <code>.sol</code> 导出器，也不把静态反编译冒充运行验证。</p>
+<p class="meta">来源：docs/COMPATIBLETOOL-VERSION-MIGRATION.md · SHA256 67fe00e9eab4f99a039ff4b4d2789c705fff1b722732c724b79ca7dd30fe62ea<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

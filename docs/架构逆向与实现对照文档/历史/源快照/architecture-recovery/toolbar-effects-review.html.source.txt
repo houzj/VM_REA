@@ -1,0 +1,6293 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>外部工具栏脚本与保存效果</title><style>body{max-width:1300px;margin:auto;padding:25px;background:#0b1423;color:#dce8f5;font:15px/1.65 'Microsoft YaHei UI',sans-serif}a{color:#99cfff}section,details{background:#16273c;border:1px solid #395471;padding:14px;margin:12px 0;border-radius:9px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 Consolas,monospace}summary{cursor:pointer}</style><a href="global-toolbar.html">← 工具栏入口层级</a> · <a href="entry-routing-security.html">密码与加密</a><h1>工具栏：脚本保护、异步保存与另存结果</h1><section>20个聚焦方法，编译器闭包按原MethodDef token定位并校验共同TypeDef。显示名如.&lt;&gt;c并非完整嵌套名，精确身份以原件SHA/MVID、TypeDef/MethodDef token为准。未执行厂商代码，完整链和浏览器呈现未验收。</section><p>ToolControl owns its script-window cache; GlobalScript creates/replaces GlobalScriptUI.MainWindow, rejects nonzero GetShellParamer, reads shell password enable/value, shows PasswordCheckWindow and ignores modal bool before checking IsPasswordOK. SetWindowOwner is called before showing script UI, not before the password check in this body.</p><p>Original add/remove/add ExcuteEvent operands refer to three distinct MethodDef tokens. Their bodies all call VmSolution.Instance followed by VmModule.Run, but equal-looking lambdas do not prove removal of the originally registered delegate.</p><p>Public SaveSolution with path first Dispatcher.Invoke(SaveCalibUserData), then Task.Run re-reads VmSolution.Instance.SolutionPath and calls SaveAs(that current path,null), ContinueWith ResetParamStateFlag. That worker has no local catch; continuation body does not read antecedent Status/Exception. No path calls SaveAsSolutionProcess and discards bool.</p><p>SaveSolution(Task) is a separate overload. Worker catches Exception and logs/shows errors; continuation resets communication flag then optionally Start afterSaveTask without inspecting antecedent outcome. No-path branch starts afterSaveTask only if SaveAsSolutionProcess returns true.</p><p>SaveAsSolutionProcess authenticates existing protected solution through Decryption.ShowDialog()==true; the decryption result string is not copied into tempStrPassWord. It then resets temp password to empty, attaches encryptCheckClick to file-dialog button and shows file dialog.</p><p>Only FileDialogResult.Ok invokes SaveCalibUserData, SaveAs(selected path,temp password) and reset flag. SaveAs return value is discarded. File-dialog cancellation still reaches normal return true after disposal; auth rejection returns false earlier. No completed-save semantics are assigned to that true.</p><p>encryptCheckClick requires modal true and nonempty AccessAdministatorCode before storing tempStrPassWord; Encryption cancel is true plus empty and is filtered here. Existing solution password, newly requested file password and script password remain separate.</p><p>SaveCalibUserData enumerates VmSolution.Modules.OfType&lt;VmProcedure&gt; and calls IVmProcedure.SaveCalibData for each; actual calibration persistence and native SaveAs effects remain outside this slice.</p><p><a href="password-check-review.html">下游校验窗：字段比较、七处挂接与取消断点 ↗</a></p><h2>未知</h2><ul><li>Native SaveAs implementation, password encoding, file/container state and asynchronous save completion.</li><li>Task scheduler/thread behavior, continuation exceptions, UI owner/focus and host acceptance.</li><li>PasswordCheckWindow internal validation is now recovered in password-check-review; original BAML/runtime and GlobalScriptUI complete parameter/state lifecycle remain open.</li><li>All external callers, permission gates and error recovery remain separate; no original window, save operation or SDK was executed.</li></ul><h2>VMControls.WPF.ToolControl 0x02000046</h2><details><summary>get_globalScriptWindow 0x06000493</summary><pre>{
+  "name": "get_globalScriptWindow",
+  "token": "0x06000493",
+  "symbol": {
+    "token": "0x06000493",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "get_globalScriptWindow",
+    "parameters": 0,
+    "attributes": "Private, HideBySig, SpecialName",
+    "signatureBytes": "2000128401"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 35,
+  "ilSha256": "ca99ce54c579c853b0a1f4e185e1e53721deec1f0398a816691109958f6bfcc1",
+  "ilBytes": "00027b7d02000414fe010a062c0500140b2b0e027b7d02000475000100010b2b00072a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x0400027d",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "_globalScriptWindow",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "ldnull",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 10,
+      "label": "IL_000a",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 19
+    },
+    {
+      "offset": 14,
+      "label": "IL_000e",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 15,
+      "label": "IL_000f",
+      "opcode": "ldnull",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 16,
+      "label": "IL_0010",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 17,
+      "label": "IL_0011",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 33
+    },
+    {
+      "offset": 19,
+      "label": "IL_0013",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 20,
+      "label": "IL_0014",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x0400027d",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "_globalScriptWindow",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 25,
+      "label": "IL_0019",
+      "opcode": "isinst",
+      "operandKind": "InlineType",
+      "operand": {
+        "token": "0x01000100",
+        "kind": "TypeReference",
+        "type": "GlobalScriptUI.MainWindow"
+      }
+    },
+    {
+      "offset": 30,
+      "label": "IL_001e",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 31,
+      "label": "IL_001f",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 33
+    },
+    {
+      "offset": 33,
+      "label": "IL_0021",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 34,
+      "label": "IL_0022",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>set_globalScriptWindow 0x06000494</summary><pre>{
+  "name": "set_globalScriptWindow",
+  "token": "0x06000494",
+  "symbol": {
+    "token": "0x06000494",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "set_globalScriptWindow",
+    "parameters": 1,
+    "attributes": "Private, HideBySig, SpecialName",
+    "signatureBytes": "200101128401"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 9,
+  "ilSha256": "1d60bc0cf37a246eb89a95d644b06cd41640268b34d871b147cf7518117418a2",
+  "ilBytes": "0002037d7d0200042a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "ldarg.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 3,
+      "label": "IL_0003",
+      "opcode": "stfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x0400027d",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "_globalScriptWindow",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>GlobalScript 0x060004a1</summary><pre>{
+  "name": "GlobalScript",
+  "token": "0x060004a1",
+  "symbol": {
+    "token": "0x060004a1",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "GlobalScript",
+    "parameters": 0,
+    "attributes": "Public, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 425,
+  "ilSha256": "6b9170b0a4548d901fe2b681ae2a0a1c83d95a8467df3b8ba25a300b938e97cc",
+  "ilBytes": "000002289304000614fe010a062c390002733a04000a2894040006000228930400067eb9070004252d17267eb0070004fe06700e0006733b04000a2580b90700046f3c04000a00000228930400066f6003000a0b072c64000228930400067eba070004252d17267eb0070004fe06710e0006733b04000a2580ba0700046f3d04000a0002733a04000a2894040006000228930400067ebb070004252d17267eb0070004fe06720e0006733b04000a2580bb0700046f3c04000a00000228930400066f3e04000a16fe030c082c0600ddd50000000228930400066f3f04000a2c120228930400066f3f04000a6f4004000a2b01160d092c55000228930400066f3f04000a6f4104000a1304734204000a2511046f4304000a00130511056fce00000a2611056f4404000a130611062c1a00022893040006289c040006000228930400066fce00000a2600002b1a00022893040006289c040006000228930400066fce00000a260000de3f1307001107283204000a1308110814fe03130911092c18001108283304000a0011086f3404000a28a400000a00de1011076f3200000a28a400000a0000de002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 3,
+      "label": "IL_0003",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "ldnull",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 9,
+      "label": "IL_0009",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 13,
+      "label": "IL_000d",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 72
+    },
+    {
+      "offset": 15,
+      "label": "IL_000f",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 16,
+      "label": "IL_0010",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 17,
+      "label": "IL_0011",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043a",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": ".ctor",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 22,
+      "label": "IL_0016",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000494",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "set_globalScriptWindow",
+        "parameters": 1,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "200101128401"
+      }
+    },
+    {
+      "offset": 27,
+      "label": "IL_001b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 28,
+      "label": "IL_001c",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 29,
+      "label": "IL_001d",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 34,
+      "label": "IL_0022",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b9",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__52_0",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 39,
+      "label": "IL_0027",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 40,
+      "label": "IL_0028",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 65
+    },
+    {
+      "offset": 42,
+      "label": "IL_002a",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 43,
+      "label": "IL_002b",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b0",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9",
+        "attributes": "Public, Static, InitOnly"
+      }
+    },
+    {
+      "offset": 48,
+      "label": "IL_0030",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e70",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;GlobalScript&gt;b__52_0",
+        "parameters": 0,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 54,
+      "label": "IL_0036",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043b",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.ExcuteHandle",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 59,
+      "label": "IL_003b",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 60,
+      "label": "IL_003c",
+      "opcode": "stsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b9",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__52_0",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 65,
+      "label": "IL_0041",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043c",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": "add_ExcuteEvent",
+        "parameters": 1,
+        "signatureBytes": "200101128429"
+      }
+    },
+    {
+      "offset": 70,
+      "label": "IL_0046",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 71,
+      "label": "IL_0047",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 72,
+      "label": "IL_0048",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 73,
+      "label": "IL_0049",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 78,
+      "label": "IL_004e",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000360",
+        "kind": "member-ref",
+        "type": "VM.Controls.BaseWindow",
+        "name": "get_IsClosing",
+        "parameters": 0,
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 83,
+      "label": "IL_0053",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 84,
+      "label": "IL_0054",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 85,
+      "label": "IL_0055",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 187
+    },
+    {
+      "offset": 87,
+      "label": "IL_0057",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 88,
+      "label": "IL_0058",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 89,
+      "label": "IL_0059",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 94,
+      "label": "IL_005e",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007ba",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__52_1",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 99,
+      "label": "IL_0063",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 100,
+      "label": "IL_0064",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 125
+    },
+    {
+      "offset": 102,
+      "label": "IL_0066",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 103,
+      "label": "IL_0067",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b0",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9",
+        "attributes": "Public, Static, InitOnly"
+      }
+    },
+    {
+      "offset": 108,
+      "label": "IL_006c",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e71",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;GlobalScript&gt;b__52_1",
+        "parameters": 0,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 114,
+      "label": "IL_0072",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043b",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.ExcuteHandle",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 119,
+      "label": "IL_0077",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 120,
+      "label": "IL_0078",
+      "opcode": "stsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007ba",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__52_1",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 125,
+      "label": "IL_007d",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043d",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": "remove_ExcuteEvent",
+        "parameters": 1,
+        "signatureBytes": "200101128429"
+      }
+    },
+    {
+      "offset": 130,
+      "label": "IL_0082",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 131,
+      "label": "IL_0083",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 132,
+      "label": "IL_0084",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043a",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": ".ctor",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 137,
+      "label": "IL_0089",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000494",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "set_globalScriptWindow",
+        "parameters": 1,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "200101128401"
+      }
+    },
+    {
+      "offset": 142,
+      "label": "IL_008e",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 143,
+      "label": "IL_008f",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 144,
+      "label": "IL_0090",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 149,
+      "label": "IL_0095",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007bb",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__52_2",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 154,
+      "label": "IL_009a",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 155,
+      "label": "IL_009b",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 180
+    },
+    {
+      "offset": 157,
+      "label": "IL_009d",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 158,
+      "label": "IL_009e",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b0",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9",
+        "attributes": "Public, Static, InitOnly"
+      }
+    },
+    {
+      "offset": 163,
+      "label": "IL_00a3",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e72",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;GlobalScript&gt;b__52_2",
+        "parameters": 0,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 169,
+      "label": "IL_00a9",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043b",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.ExcuteHandle",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 174,
+      "label": "IL_00ae",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 175,
+      "label": "IL_00af",
+      "opcode": "stsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007bb",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__52_2",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 180,
+      "label": "IL_00b4",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043c",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": "add_ExcuteEvent",
+        "parameters": 1,
+        "signatureBytes": "200101128429"
+      }
+    },
+    {
+      "offset": 185,
+      "label": "IL_00b9",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 186,
+      "label": "IL_00ba",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 187,
+      "label": "IL_00bb",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 188,
+      "label": "IL_00bc",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 193,
+      "label": "IL_00c1",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043e",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": "GetShellParamer",
+        "parameters": 0,
+        "signatureBytes": "200008"
+      }
+    },
+    {
+      "offset": 198,
+      "label": "IL_00c6",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 199,
+      "label": "IL_00c7",
+      "opcode": "cgt.un",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 201,
+      "label": "IL_00c9",
+      "opcode": "stloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 202,
+      "label": "IL_00ca",
+      "opcode": "ldloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 203,
+      "label": "IL_00cb",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 211
+    },
+    {
+      "offset": 205,
+      "label": "IL_00cd",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 206,
+      "label": "IL_00ce",
+      "opcode": "leave",
+      "operandKind": "InlineBrTarget",
+      "operand": 424
+    },
+    {
+      "offset": 211,
+      "label": "IL_00d3",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 212,
+      "label": "IL_00d4",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 217,
+      "label": "IL_00d9",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043f",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": "get_ObjShellRun",
+        "parameters": 0,
+        "signatureBytes": "20001289ed"
+      }
+    },
+    {
+      "offset": 222,
+      "label": "IL_00de",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 242
+    },
+    {
+      "offset": 224,
+      "label": "IL_00e0",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 225,
+      "label": "IL_00e1",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 230,
+      "label": "IL_00e6",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043f",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": "get_ObjShellRun",
+        "parameters": 0,
+        "signatureBytes": "20001289ed"
+      }
+    },
+    {
+      "offset": 235,
+      "label": "IL_00eb",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000440",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.ShellRun",
+        "name": "get_IsPasswordEnabled",
+        "parameters": 0,
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 240,
+      "label": "IL_00f0",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 243
+    },
+    {
+      "offset": 242,
+      "label": "IL_00f2",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 243,
+      "label": "IL_00f3",
+      "opcode": "stloc.3",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 244,
+      "label": "IL_00f4",
+      "opcode": "ldloc.3",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 245,
+      "label": "IL_00f5",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 332
+    },
+    {
+      "offset": 247,
+      "label": "IL_00f7",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 248,
+      "label": "IL_00f8",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 249,
+      "label": "IL_00f9",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 254,
+      "label": "IL_00fe",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00043f",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.MainWindow",
+        "name": "get_ObjShellRun",
+        "parameters": 0,
+        "signatureBytes": "20001289ed"
+      }
+    },
+    {
+      "offset": 259,
+      "label": "IL_0103",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000441",
+        "kind": "member-ref",
+        "type": "GlobalScriptUI.ShellRun",
+        "name": "get_Password",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 264,
+      "label": "IL_0108",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 4
+    },
+    {
+      "offset": 266,
+      "label": "IL_010a",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000442",
+        "kind": "member-ref",
+        "type": "PasswordWindowUI.PasswordCheckWindow",
+        "name": ".ctor",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 271,
+      "label": "IL_010f",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 272,
+      "label": "IL_0110",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 4
+    },
+    {
+      "offset": 274,
+      "label": "IL_0112",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000443",
+        "kind": "member-ref",
+        "type": "PasswordWindowUI.PasswordCheckWindow",
+        "name": "set_OriginalPassword",
+        "parameters": 1,
+        "signatureBytes": "2001010e"
+      }
+    },
+    {
+      "offset": 279,
+      "label": "IL_0117",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 280,
+      "label": "IL_0118",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 5
+    },
+    {
+      "offset": 282,
+      "label": "IL_011a",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 5
+    },
+    {
+      "offset": 284,
+      "label": "IL_011c",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000ce",
+        "kind": "member-ref",
+        "type": "VM.Controls.BaseWindow",
+        "name": "ShowDialog",
+        "parameters": 0,
+        "signatureBytes": "2000151181410102"
+      }
+    },
+    {
+      "offset": 289,
+      "label": "IL_0121",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 290,
+      "label": "IL_0122",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 5
+    },
+    {
+      "offset": 292,
+      "label": "IL_0124",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000444",
+        "kind": "member-ref",
+        "type": "PasswordWindowUI.PasswordCheckWindow",
+        "name": "get_IsPasswordOK",
+        "parameters": 0,
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 297,
+      "label": "IL_0129",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 6
+    },
+    {
+      "offset": 299,
+      "label": "IL_012b",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 6
+    },
+    {
+      "offset": 301,
+      "label": "IL_012d",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 329
+    },
+    {
+      "offset": 303,
+      "label": "IL_012f",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 304,
+      "label": "IL_0130",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 305,
+      "label": "IL_0131",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 310,
+      "label": "IL_0136",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0600049c",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SetWindowOwner",
+        "parameters": 1,
+        "attributes": "Private, Static, HideBySig",
+        "signatureBytes": "0001011281e9"
+      }
+    },
+    {
+      "offset": 315,
+      "label": "IL_013b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 316,
+      "label": "IL_013c",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 317,
+      "label": "IL_013d",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 322,
+      "label": "IL_0142",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000ce",
+        "kind": "member-ref",
+        "type": "VM.Controls.BaseWindow",
+        "name": "ShowDialog",
+        "parameters": 0,
+        "signatureBytes": "2000151181410102"
+      }
+    },
+    {
+      "offset": 327,
+      "label": "IL_0147",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 328,
+      "label": "IL_0148",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 329,
+      "label": "IL_0149",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 330,
+      "label": "IL_014a",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 358
+    },
+    {
+      "offset": 332,
+      "label": "IL_014c",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 333,
+      "label": "IL_014d",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 334,
+      "label": "IL_014e",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 339,
+      "label": "IL_0153",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0600049c",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SetWindowOwner",
+        "parameters": 1,
+        "attributes": "Private, Static, HideBySig",
+        "signatureBytes": "0001011281e9"
+      }
+    },
+    {
+      "offset": 344,
+      "label": "IL_0158",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 345,
+      "label": "IL_0159",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 346,
+      "label": "IL_015a",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000493",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "get_globalScriptWindow",
+        "parameters": 0,
+        "attributes": "Private, HideBySig, SpecialName",
+        "signatureBytes": "2000128401"
+      }
+    },
+    {
+      "offset": 351,
+      "label": "IL_015f",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000ce",
+        "kind": "member-ref",
+        "type": "VM.Controls.BaseWindow",
+        "name": "ShowDialog",
+        "parameters": 0,
+        "signatureBytes": "2000151181410102"
+      }
+    },
+    {
+      "offset": 356,
+      "label": "IL_0164",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 357,
+      "label": "IL_0165",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 358,
+      "label": "IL_0166",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 359,
+      "label": "IL_0167",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 424
+    },
+    {
+      "offset": 361,
+      "label": "IL_0169",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 363,
+      "label": "IL_016b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 364,
+      "label": "IL_016c",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 366,
+      "label": "IL_016e",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000432",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "GetVmException",
+        "parameters": 1,
+        "signatureBytes": "0001128149128135"
+      }
+    },
+    {
+      "offset": 371,
+      "label": "IL_0173",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 8
+    },
+    {
+      "offset": 373,
+      "label": "IL_0175",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 8
+    },
+    {
+      "offset": 375,
+      "label": "IL_0177",
+      "opcode": "ldnull",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 376,
+      "label": "IL_0178",
+      "opcode": "cgt.un",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 378,
+      "label": "IL_017a",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 9
+    },
+    {
+      "offset": 380,
+      "label": "IL_017c",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 9
+    },
+    {
+      "offset": 382,
+      "label": "IL_017e",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 408
+    },
+    {
+      "offset": 384,
+      "label": "IL_0180",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 385,
+      "label": "IL_0181",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 8
+    },
+    {
+      "offset": 387,
+      "label": "IL_0183",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000433",
+        "kind": "member-ref",
+        "type": "Apps.UIHelper.Extern.ShowMessage",
+        "name": "ShowVmExceptionMessage",
+        "parameters": 1,
+        "signatureBytes": "0001011289e5"
+      }
+    },
+    {
+      "offset": 392,
+      "label": "IL_0188",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 393,
+      "label": "IL_0189",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 8
+    },
+    {
+      "offset": 395,
+      "label": "IL_018b",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000434",
+        "kind": "member-ref",
+        "type": "VM.PlatformSDKCS.VmException",
+        "name": "get_errorMessage",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 400,
+      "label": "IL_0190",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000a4",
+        "kind": "member-ref",
+        "type": "Apps.Log.LogHelper",
+        "name": "Error",
+        "parameters": 1,
+        "signatureBytes": "0001011c"
+      }
+    },
+    {
+      "offset": 405,
+      "label": "IL_0195",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 406,
+      "label": "IL_0196",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 424
+    },
+    {
+      "offset": 408,
+      "label": "IL_0198",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 410,
+      "label": "IL_019a",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000032",
+        "kind": "member-ref",
+        "type": "System.Object",
+        "name": "ToString",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 415,
+      "label": "IL_019f",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000a4",
+        "kind": "member-ref",
+        "type": "Apps.Log.LogHelper",
+        "name": "Error",
+        "parameters": 1,
+        "signatureBytes": "0001011c"
+      }
+    },
+    {
+      "offset": 420,
+      "label": "IL_01a4",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 421,
+      "label": "IL_01a5",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 422,
+      "label": "IL_01a6",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 424
+    },
+    {
+      "offset": 424,
+      "label": "IL_01a8",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": [
+    {
+      "kind": "Catch",
+      "catchType": "System.Exception",
+      "TryOffset": 1,
+      "TryLength": 360,
+      "HandlerOffset": 361,
+      "HandlerLength": 63
+    }
+  ]
+}</pre></details><details><summary>SaveSolution 0x060004a4</summary><pre>{
+  "name": "SaveSolution",
+  "token": "0x060004a4",
+  "symbol": {
+    "token": "0x060004a4",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "SaveSolution",
+    "parameters": 0,
+    "attributes": "Public, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 134,
+  "ilSha256": "3392b43e7a47354208f33b24edcdb7bb870748830b52fbbedb6674f1130c4e33",
+  "ilBytes": "0028b401000a6f4504000a283900000a16fe010a062c650002289600000a02fe06ba040006735300000a6fb600000a007ebd070004252d17267eb0070004fe06740e0006735300000a2580bd070004283301000a7ebe070004252d17267eb0070004fe06750e0006734604000a2580be0700046f4704000a26002b09000228ab04000626002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000445",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_SolutionPath",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000039",
+        "kind": "member-ref",
+        "type": "System.String",
+        "name": "IsNullOrEmpty",
+        "parameters": 1,
+        "signatureBytes": "0001020e"
+      }
+    },
+    {
+      "offset": 16,
+      "label": "IL_0010",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 17,
+      "label": "IL_0011",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 19,
+      "label": "IL_0013",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 20,
+      "label": "IL_0014",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 21,
+      "label": "IL_0015",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 124
+    },
+    {
+      "offset": 23,
+      "label": "IL_0017",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 24,
+      "label": "IL_0018",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 25,
+      "label": "IL_0019",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000096",
+        "kind": "member-ref",
+        "type": "System.Windows.Threading.DispatcherObject",
+        "name": "get_Dispatcher",
+        "parameters": 0,
+        "signatureBytes": "2000128471"
+      }
+    },
+    {
+      "offset": 30,
+      "label": "IL_001e",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 31,
+      "label": "IL_001f",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004ba",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "&lt;SaveSolution&gt;b__55_0",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 37,
+      "label": "IL_0025",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000053",
+        "kind": "member-ref",
+        "type": "System.Action",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 42,
+      "label": "IL_002a",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000b6",
+        "kind": "member-ref",
+        "type": "System.Windows.Threading.Dispatcher",
+        "name": "Invoke",
+        "parameters": 1,
+        "signatureBytes": "20010112826d"
+      }
+    },
+    {
+      "offset": 47,
+      "label": "IL_002f",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 48,
+      "label": "IL_0030",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007bd",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__55_1",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 53,
+      "label": "IL_0035",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 54,
+      "label": "IL_0036",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 79
+    },
+    {
+      "offset": 56,
+      "label": "IL_0038",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 57,
+      "label": "IL_0039",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b0",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9",
+        "attributes": "Public, Static, InitOnly"
+      }
+    },
+    {
+      "offset": 62,
+      "label": "IL_003e",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e74",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;SaveSolution&gt;b__55_1",
+        "parameters": 0,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 68,
+      "label": "IL_0044",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000053",
+        "kind": "member-ref",
+        "type": "System.Action",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 73,
+      "label": "IL_0049",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 74,
+      "label": "IL_004a",
+      "opcode": "stsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007bd",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__55_1",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 79,
+      "label": "IL_004f",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000133",
+        "kind": "member-ref",
+        "type": "System.Threading.Tasks.Task",
+        "name": "Run",
+        "parameters": 1,
+        "signatureBytes": "000112840d12826d"
+      }
+    },
+    {
+      "offset": 84,
+      "label": "IL_0054",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007be",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__55_2",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 89,
+      "label": "IL_0059",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 90,
+      "label": "IL_005a",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 115
+    },
+    {
+      "offset": 92,
+      "label": "IL_005c",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 93,
+      "label": "IL_005d",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b0",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9",
+        "attributes": "Public, Static, InitOnly"
+      }
+    },
+    {
+      "offset": 98,
+      "label": "IL_0062",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e75",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;SaveSolution&gt;b__55_2",
+        "parameters": 1,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "20010112840d"
+      }
+    },
+    {
+      "offset": 104,
+      "label": "IL_0068",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000446",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 109,
+      "label": "IL_006d",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 110,
+      "label": "IL_006e",
+      "opcode": "stsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007be",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__55_2",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 115,
+      "label": "IL_0073",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000447",
+        "kind": "member-ref",
+        "type": "System.Threading.Tasks.Task",
+        "name": "ContinueWith",
+        "parameters": 1,
+        "signatureBytes": "200112840d151282190112840d"
+      }
+    },
+    {
+      "offset": 120,
+      "label": "IL_0078",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 121,
+      "label": "IL_0079",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 122,
+      "label": "IL_007a",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 133
+    },
+    {
+      "offset": 124,
+      "label": "IL_007c",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 125,
+      "label": "IL_007d",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 126,
+      "label": "IL_007e",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004ab",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SaveAsSolutionProcess",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 131,
+      "label": "IL_0083",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 132,
+      "label": "IL_0084",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 133,
+      "label": "IL_0085",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>SaveCalibUserData 0x060004a5</summary><pre>{
+  "name": "SaveCalibUserData",
+  "token": "0x060004a5",
+  "symbol": {
+    "token": "0x060004a5",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "SaveCalibUserData",
+    "parameters": 0,
+    "attributes": "Private, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 63,
+  "ilSha256": "8a5d7e9085c6402c479198809391cde67d58ca323e99a3d1ce73aea629820801",
+  "ilBytes": "000028b401000a6f4503000a285300002b6f4804000a0a2b10066f4904000a0b00076f4a04000a0000066f9f00000a2de8de0b062c07066fa000000a00dc2a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000345",
+        "kind": "member-ref",
+        "type": "VM.Core.VmModuleSet",
+        "name": "get_Modules",
+        "parameters": 0,
+        "signatureBytes": "20001512848d01128269"
+      }
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x2b000053",
+        "kind": "method-spec",
+        "definition": {
+          "token": "0x0a0001bd",
+          "kind": "member-ref",
+          "type": "System.Linq.Enumerable",
+          "name": "OfType",
+          "parameters": 1,
+          "signatureBytes": "10010115128391011e00128379"
+        },
+        "instantiationSignatureBytes": "0a01128185"
+      }
+    },
+    {
+      "offset": 17,
+      "label": "IL_0011",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000448",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "GetEnumerator",
+        "parameters": 0,
+        "signatureBytes": "200015128131011300"
+      }
+    },
+    {
+      "offset": 22,
+      "label": "IL_0016",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 23,
+      "label": "IL_0017",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 41
+    },
+    {
+      "offset": 25,
+      "label": "IL_0019",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 26,
+      "label": "IL_001a",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000449",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "get_Current",
+        "parameters": 0,
+        "signatureBytes": "20001300"
+      }
+    },
+    {
+      "offset": 31,
+      "label": "IL_001f",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 32,
+      "label": "IL_0020",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 33,
+      "label": "IL_0021",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 34,
+      "label": "IL_0022",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00044a",
+        "kind": "member-ref",
+        "type": "VMControls.Interface.IVmProcedure",
+        "name": "SaveCalibData",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 39,
+      "label": "IL_0027",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 40,
+      "label": "IL_0028",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 41,
+      "label": "IL_0029",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 42,
+      "label": "IL_002a",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00009f",
+        "kind": "member-ref",
+        "type": "System.Collections.IEnumerator",
+        "name": "MoveNext",
+        "parameters": 0,
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 47,
+      "label": "IL_002f",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 25
+    },
+    {
+      "offset": 49,
+      "label": "IL_0031",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 62
+    },
+    {
+      "offset": 51,
+      "label": "IL_0033",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 52,
+      "label": "IL_0034",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 61
+    },
+    {
+      "offset": 54,
+      "label": "IL_0036",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 55,
+      "label": "IL_0037",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000a0",
+        "kind": "member-ref",
+        "type": "System.IDisposable",
+        "name": "Dispose",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 60,
+      "label": "IL_003c",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 61,
+      "label": "IL_003d",
+      "opcode": "endfinally",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 62,
+      "label": "IL_003e",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": [
+    {
+      "kind": "Finally",
+      "catchType": null,
+      "TryOffset": 23,
+      "TryLength": 28,
+      "HandlerOffset": 51,
+      "HandlerLength": 11
+    }
+  ]
+}</pre></details><details><summary>SaveAsSolution 0x060004a6</summary><pre>{
+  "name": "SaveAsSolution",
+  "token": "0x060004a6",
+  "symbol": {
+    "token": "0x060004a6",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "SaveAsSolution",
+    "parameters": 0,
+    "attributes": "Public, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 9,
+  "ilSha256": "f38573519c559d2fbef41e64f33f02276d7acdb685ea69b49b9426b9f91c5986",
+  "ilBytes": "000228ab040006262a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004ab",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SaveAsSolutionProcess",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>SaveSolution 0x060004aa</summary><pre>{
+  "name": "SaveSolution",
+  "token": "0x060004aa",
+  "symbol": {
+    "token": "0x060004aa",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "SaveSolution",
+    "parameters": 1,
+    "attributes": "Private, HideBySig",
+    "signatureBytes": "20010112840d"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 158,
+  "ilSha256": "efb6690e225138d1df0aa019fa7d1ea43240063e506d566854cefe80a51a4939",
+  "ilBytes": "73860e00060a06027dd907000406037dda0700040028b401000a6f4504000a283900000a16fe010b072c520002289600000a06fe06870e0006735300000a6fb600000a007ec1070004252d17267eb0070004fe06780e0006735300000a2580c1070004283301000a06fe06880e0006734604000a6f4704000a26002b20000228ab0400060c082c1400067bda070004252d03262b06285b04000a0000002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e86",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": ".ctor",
+        "parameters": 0,
+        "attributes": "Public, HideBySig, SpecialName, RTSpecialName",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 5,
+      "label": "IL_0005",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "stfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007d9",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": "&lt;&gt;4__this",
+        "attributes": "Public"
+      }
+    },
+    {
+      "offset": 13,
+      "label": "IL_000d",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 14,
+      "label": "IL_000e",
+      "opcode": "ldarg.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 15,
+      "label": "IL_000f",
+      "opcode": "stfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007da",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": "afterSaveTask",
+        "attributes": "Public"
+      }
+    },
+    {
+      "offset": 20,
+      "label": "IL_0014",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 21,
+      "label": "IL_0015",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 26,
+      "label": "IL_001a",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000445",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_SolutionPath",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 31,
+      "label": "IL_001f",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000039",
+        "kind": "member-ref",
+        "type": "System.String",
+        "name": "IsNullOrEmpty",
+        "parameters": 1,
+        "signatureBytes": "0001020e"
+      }
+    },
+    {
+      "offset": 36,
+      "label": "IL_0024",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 37,
+      "label": "IL_0025",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 39,
+      "label": "IL_0027",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 40,
+      "label": "IL_0028",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 41,
+      "label": "IL_0029",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 125
+    },
+    {
+      "offset": 43,
+      "label": "IL_002b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 44,
+      "label": "IL_002c",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 45,
+      "label": "IL_002d",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000096",
+        "kind": "member-ref",
+        "type": "System.Windows.Threading.DispatcherObject",
+        "name": "get_Dispatcher",
+        "parameters": 0,
+        "signatureBytes": "2000128471"
+      }
+    },
+    {
+      "offset": 50,
+      "label": "IL_0032",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 51,
+      "label": "IL_0033",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e87",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": "&lt;SaveSolution&gt;b__0",
+        "parameters": 0,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 57,
+      "label": "IL_0039",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000053",
+        "kind": "member-ref",
+        "type": "System.Action",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 62,
+      "label": "IL_003e",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000b6",
+        "kind": "member-ref",
+        "type": "System.Windows.Threading.Dispatcher",
+        "name": "Invoke",
+        "parameters": 1,
+        "signatureBytes": "20010112826d"
+      }
+    },
+    {
+      "offset": 67,
+      "label": "IL_0043",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 68,
+      "label": "IL_0044",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007c1",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__61_1",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 73,
+      "label": "IL_0049",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 74,
+      "label": "IL_004a",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 99
+    },
+    {
+      "offset": 76,
+      "label": "IL_004c",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 77,
+      "label": "IL_004d",
+      "opcode": "ldsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007b0",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9",
+        "attributes": "Public, Static, InitOnly"
+      }
+    },
+    {
+      "offset": 82,
+      "label": "IL_0052",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e78",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;SaveSolution&gt;b__61_1",
+        "parameters": 0,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 88,
+      "label": "IL_0058",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000053",
+        "kind": "member-ref",
+        "type": "System.Action",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 93,
+      "label": "IL_005d",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 94,
+      "label": "IL_005e",
+      "opcode": "stsfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007c1",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c",
+        "name": "&lt;&gt;9__61_1",
+        "attributes": "Public, Static"
+      }
+    },
+    {
+      "offset": 99,
+      "label": "IL_0063",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000133",
+        "kind": "member-ref",
+        "type": "System.Threading.Tasks.Task",
+        "name": "Run",
+        "parameters": 1,
+        "signatureBytes": "000112840d12826d"
+      }
+    },
+    {
+      "offset": 104,
+      "label": "IL_0068",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 105,
+      "label": "IL_0069",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000e88",
+        "kind": "method-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": "&lt;SaveSolution&gt;b__2",
+        "parameters": 1,
+        "attributes": "Assembly, HideBySig",
+        "signatureBytes": "20010112840d"
+      }
+    },
+    {
+      "offset": 111,
+      "label": "IL_006f",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000446",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 116,
+      "label": "IL_0074",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000447",
+        "kind": "member-ref",
+        "type": "System.Threading.Tasks.Task",
+        "name": "ContinueWith",
+        "parameters": 1,
+        "signatureBytes": "200112840d151282190112840d"
+      }
+    },
+    {
+      "offset": 121,
+      "label": "IL_0079",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 122,
+      "label": "IL_007a",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 123,
+      "label": "IL_007b",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 157
+    },
+    {
+      "offset": 125,
+      "label": "IL_007d",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 126,
+      "label": "IL_007e",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 127,
+      "label": "IL_007f",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004ab",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SaveAsSolutionProcess",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 132,
+      "label": "IL_0084",
+      "opcode": "stloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 133,
+      "label": "IL_0085",
+      "opcode": "ldloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 134,
+      "label": "IL_0086",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 156
+    },
+    {
+      "offset": 136,
+      "label": "IL_0088",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 137,
+      "label": "IL_0089",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 138,
+      "label": "IL_008a",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007da",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": "afterSaveTask",
+        "attributes": "Public"
+      }
+    },
+    {
+      "offset": 143,
+      "label": "IL_008f",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 144,
+      "label": "IL_0090",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 149
+    },
+    {
+      "offset": 146,
+      "label": "IL_0092",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 147,
+      "label": "IL_0093",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 155
+    },
+    {
+      "offset": 149,
+      "label": "IL_0095",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00045b",
+        "kind": "member-ref",
+        "type": "System.Threading.Tasks.Task",
+        "name": "Start",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 154,
+      "label": "IL_009a",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 155,
+      "label": "IL_009b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 156,
+      "label": "IL_009c",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 157,
+      "label": "IL_009d",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>SaveAsSolutionProcess 0x060004ab</summary><pre>{
+  "name": "SaveAsSolutionProcess",
+  "token": "0x060004ab",
+  "symbol": {
+    "token": "0x060004ab",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "SaveAsSolutionProcess",
+    "parameters": 0,
+    "attributes": "Private, HideBySig",
+    "signatureBytes": "200002"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 363,
+  "ilSha256": "bb43be99a216348f6e41c25a6a1207dcbfc8f30a809c075721867d827a930e5c",
+  "ilBytes": "0028b401000a6f5c04000a0a062c4900735404000a0b0728b401000a6f4504000a6f5504000a00076fce00000a0c081304171305120428c200000a1105fe01120428c300000a5f16fe010d092c0900161306381101000000735d04000a25735e04000a25726d360070283800000a7221000070285204000a284300000a735f04000a6f6004000a006f6104000a00257221000070285204000a284300000a6f6204000a0025176f6304000a001307000272290000707d8102000472773600707293360070283800000a736404000a1308110802fe06ad040006739f01000a6f6504000a0011076f6604000a11086f6704000a0011076f6804000a17fe01130911092c5000027b810200042c08027b810200042b057229000070130a02289600000a02fe06bb040006735300000a6fb600000a0011076f6904000a6f6a04000a110a286b04000a2628890500066f8d050006000000de0d11072c0811076fa000000a00dc1713062b0011062a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00045c",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_IsHasPassword",
+        "parameters": 0,
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 13,
+      "label": "IL_000d",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 88
+    },
+    {
+      "offset": 15,
+      "label": "IL_000f",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 16,
+      "label": "IL_0010",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000454",
+        "kind": "member-ref",
+        "type": "Apps.PcUI.Decryption",
+        "name": ".ctor",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 21,
+      "label": "IL_0015",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 22,
+      "label": "IL_0016",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 23,
+      "label": "IL_0017",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 28,
+      "label": "IL_001c",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000445",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_SolutionPath",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 33,
+      "label": "IL_0021",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000455",
+        "kind": "member-ref",
+        "type": "Apps.PcUI.Decryption",
+        "name": "set_SolutionPath",
+        "parameters": 1,
+        "signatureBytes": "2001010e"
+      }
+    },
+    {
+      "offset": 38,
+      "label": "IL_0026",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 39,
+      "label": "IL_0027",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 40,
+      "label": "IL_0028",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000ce",
+        "kind": "member-ref",
+        "type": "VM.Controls.BaseWindow",
+        "name": "ShowDialog",
+        "parameters": 0,
+        "signatureBytes": "2000151181410102"
+      }
+    },
+    {
+      "offset": 45,
+      "label": "IL_002d",
+      "opcode": "stloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 46,
+      "label": "IL_002e",
+      "opcode": "ldloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 47,
+      "label": "IL_002f",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 4
+    },
+    {
+      "offset": 49,
+      "label": "IL_0031",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 50,
+      "label": "IL_0032",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 5
+    },
+    {
+      "offset": 52,
+      "label": "IL_0034",
+      "opcode": "ldloca.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 4
+    },
+    {
+      "offset": 54,
+      "label": "IL_0036",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000c2",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "GetValueOrDefault",
+        "parameters": 0,
+        "signatureBytes": "20001300"
+      }
+    },
+    {
+      "offset": 59,
+      "label": "IL_003b",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 5
+    },
+    {
+      "offset": 61,
+      "label": "IL_003d",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 63,
+      "label": "IL_003f",
+      "opcode": "ldloca.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 4
+    },
+    {
+      "offset": 65,
+      "label": "IL_0041",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000c3",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "get_HasValue",
+        "parameters": 0,
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 70,
+      "label": "IL_0046",
+      "opcode": "and",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 71,
+      "label": "IL_0047",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 72,
+      "label": "IL_0048",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 74,
+      "label": "IL_004a",
+      "opcode": "stloc.3",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 75,
+      "label": "IL_004b",
+      "opcode": "ldloc.3",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 76,
+      "label": "IL_004c",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 87
+    },
+    {
+      "offset": 78,
+      "label": "IL_004e",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 79,
+      "label": "IL_004f",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 80,
+      "label": "IL_0050",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 6
+    },
+    {
+      "offset": 82,
+      "label": "IL_0052",
+      "opcode": "br",
+      "operandKind": "InlineBrTarget",
+      "operand": 360
+    },
+    {
+      "offset": 87,
+      "label": "IL_0057",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 88,
+      "label": "IL_0058",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00045d",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileSaveDialog",
+        "name": ".ctor",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 93,
+      "label": "IL_005d",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 94,
+      "label": "IL_005e",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00045e",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileTypeFilterCollection",
+        "name": ".ctor",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 99,
+      "label": "IL_0063",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 100,
+      "label": "IL_0064",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x7000366d",
+        "kind": "user-string",
+        "value": "解决方案"
+      }
+    },
+    {
+      "offset": 105,
+      "label": "IL_0069",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000038",
+        "kind": "member-ref",
+        "type": "Apps.Localization.AppLocalizationService",
+        "name": "GetLang",
+        "parameters": 1,
+        "signatureBytes": "00010e0e"
+      }
+    },
+    {
+      "offset": 110,
+      "label": "IL_006e",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x70000021",
+        "kind": "user-string",
+        "value": "."
+      }
+    },
+    {
+      "offset": 115,
+      "label": "IL_0073",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000452",
+        "kind": "member-ref",
+        "type": "Apps.Data.AppFileExtension",
+        "name": "get_Solution",
+        "parameters": 0,
+        "signatureBytes": "00000e"
+      }
+    },
+    {
+      "offset": 120,
+      "label": "IL_0078",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000043",
+        "kind": "member-ref",
+        "type": "System.String",
+        "name": "Concat",
+        "parameters": 2,
+        "signatureBytes": "00020e0e0e"
+      }
+    },
+    {
+      "offset": 125,
+      "label": "IL_007d",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00045f",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileTypeFilter",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002010e0e"
+      }
+    },
+    {
+      "offset": 130,
+      "label": "IL_0082",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000460",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "Add",
+        "parameters": 1,
+        "signatureBytes": "2001011300"
+      }
+    },
+    {
+      "offset": 135,
+      "label": "IL_0087",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 136,
+      "label": "IL_0088",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000461",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileSaveDialogBase",
+        "name": "set_FileTypeFilters",
+        "parameters": 1,
+        "signatureBytes": "200101128a01"
+      }
+    },
+    {
+      "offset": 141,
+      "label": "IL_008d",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 142,
+      "label": "IL_008e",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 143,
+      "label": "IL_008f",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x70000021",
+        "kind": "user-string",
+        "value": "."
+      }
+    },
+    {
+      "offset": 148,
+      "label": "IL_0094",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000452",
+        "kind": "member-ref",
+        "type": "Apps.Data.AppFileExtension",
+        "name": "get_Solution",
+        "parameters": 0,
+        "signatureBytes": "00000e"
+      }
+    },
+    {
+      "offset": 153,
+      "label": "IL_0099",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000043",
+        "kind": "member-ref",
+        "type": "System.String",
+        "name": "Concat",
+        "parameters": 2,
+        "signatureBytes": "00020e0e0e"
+      }
+    },
+    {
+      "offset": 158,
+      "label": "IL_009e",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000462",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileSaveDialogBase",
+        "name": "set_DefaultFileExtension",
+        "parameters": 1,
+        "signatureBytes": "2001010e"
+      }
+    },
+    {
+      "offset": 163,
+      "label": "IL_00a3",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 164,
+      "label": "IL_00a4",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 165,
+      "label": "IL_00a5",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 166,
+      "label": "IL_00a6",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000463",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileSaveDialogBase",
+        "name": "set_RestoreDirectory",
+        "parameters": 1,
+        "signatureBytes": "20010102"
+      }
+    },
+    {
+      "offset": 171,
+      "label": "IL_00ab",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 172,
+      "label": "IL_00ac",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 174,
+      "label": "IL_00ae",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 175,
+      "label": "IL_00af",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 176,
+      "label": "IL_00b0",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x70000029",
+        "kind": "user-string",
+        "value": ""
+      }
+    },
+    {
+      "offset": 181,
+      "label": "IL_00b5",
+      "opcode": "stfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x04000281",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "tempStrPassWord",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 186,
+      "label": "IL_00ba",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x70003677",
+        "kind": "user-string",
+        "value": "encryptButton"
+      }
+    },
+    {
+      "offset": 191,
+      "label": "IL_00bf",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x70003693",
+        "kind": "user-string",
+        "value": "加密选项"
+      }
+    },
+    {
+      "offset": 196,
+      "label": "IL_00c4",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000038",
+        "kind": "member-ref",
+        "type": "Apps.Localization.AppLocalizationService",
+        "name": "GetLang",
+        "parameters": 1,
+        "signatureBytes": "00010e0e"
+      }
+    },
+    {
+      "offset": 201,
+      "label": "IL_00c9",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000464",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.Controls.FileDialogButton",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002010e0e"
+      }
+    },
+    {
+      "offset": 206,
+      "label": "IL_00ce",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 8
+    },
+    {
+      "offset": 208,
+      "label": "IL_00d0",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 8
+    },
+    {
+      "offset": 210,
+      "label": "IL_00d2",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 211,
+      "label": "IL_00d3",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004ad",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "encryptCheckClick",
+        "parameters": 2,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "2002011c12811d"
+      }
+    },
+    {
+      "offset": 217,
+      "label": "IL_00d9",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00019f",
+        "kind": "member-ref",
+        "type": "System.EventHandler",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 222,
+      "label": "IL_00de",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000465",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.Controls.FileDialogButton",
+        "name": "add_Click",
+        "parameters": 1,
+        "signatureBytes": "200101128475"
+      }
+    },
+    {
+      "offset": 227,
+      "label": "IL_00e3",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 228,
+      "label": "IL_00e4",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 230,
+      "label": "IL_00e6",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000466",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileDialogBase",
+        "name": "get_Controls",
+        "parameters": 0,
+        "signatureBytes": "2000128a11"
+      }
+    },
+    {
+      "offset": 235,
+      "label": "IL_00eb",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 8
+    },
+    {
+      "offset": 237,
+      "label": "IL_00ed",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000467",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "Add",
+        "parameters": 1,
+        "signatureBytes": "2001011300"
+      }
+    },
+    {
+      "offset": 242,
+      "label": "IL_00f2",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 243,
+      "label": "IL_00f3",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 245,
+      "label": "IL_00f5",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000468",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileSaveDialog",
+        "name": "Show",
+        "parameters": 0,
+        "signatureBytes": "2000118a19"
+      }
+    },
+    {
+      "offset": 250,
+      "label": "IL_00fa",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 251,
+      "label": "IL_00fb",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 253,
+      "label": "IL_00fd",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 9
+    },
+    {
+      "offset": 255,
+      "label": "IL_00ff",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 9
+    },
+    {
+      "offset": 257,
+      "label": "IL_0101",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 339
+    },
+    {
+      "offset": 259,
+      "label": "IL_0103",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 260,
+      "label": "IL_0104",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 261,
+      "label": "IL_0105",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x04000281",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "tempStrPassWord",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 266,
+      "label": "IL_010a",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 276
+    },
+    {
+      "offset": 268,
+      "label": "IL_010c",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 269,
+      "label": "IL_010d",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x04000281",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "tempStrPassWord",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 274,
+      "label": "IL_0112",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 281
+    },
+    {
+      "offset": 276,
+      "label": "IL_0114",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x70000029",
+        "kind": "user-string",
+        "value": ""
+      }
+    },
+    {
+      "offset": 281,
+      "label": "IL_0119",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 10
+    },
+    {
+      "offset": 283,
+      "label": "IL_011b",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 284,
+      "label": "IL_011c",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000096",
+        "kind": "member-ref",
+        "type": "System.Windows.Threading.DispatcherObject",
+        "name": "get_Dispatcher",
+        "parameters": 0,
+        "signatureBytes": "2000128471"
+      }
+    },
+    {
+      "offset": 289,
+      "label": "IL_0121",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 290,
+      "label": "IL_0122",
+      "opcode": "ldftn",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004bb",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "&lt;SaveAsSolutionProcess&gt;b__62_0",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 296,
+      "label": "IL_0128",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000053",
+        "kind": "member-ref",
+        "type": "System.Action",
+        "name": ".ctor",
+        "parameters": 2,
+        "signatureBytes": "2002011c18"
+      }
+    },
+    {
+      "offset": 301,
+      "label": "IL_012d",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000b6",
+        "kind": "member-ref",
+        "type": "System.Windows.Threading.Dispatcher",
+        "name": "Invoke",
+        "parameters": 1,
+        "signatureBytes": "20010112826d"
+      }
+    },
+    {
+      "offset": 306,
+      "label": "IL_0132",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 307,
+      "label": "IL_0133",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 309,
+      "label": "IL_0135",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000469",
+        "kind": "member-ref",
+        "type": "starshipxac.Windows.Shell.Dialogs.FileSaveDialog",
+        "name": "get_ShellFile",
+        "parameters": 0,
+        "signatureBytes": "2000128a1d"
+      }
+    },
+    {
+      "offset": 314,
+      "label": "IL_013a",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046a",
+        "kind": "member-ref",
+        "type": "starshipxac.Shell.ShellFile",
+        "name": "get_Path",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 319,
+      "label": "IL_013f",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 10
+    },
+    {
+      "offset": 321,
+      "label": "IL_0141",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046b",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "SaveAs",
+        "parameters": 2,
+        "signatureBytes": "00020e0e0e"
+      }
+    },
+    {
+      "offset": 326,
+      "label": "IL_0146",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 327,
+      "label": "IL_0147",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000589",
+        "kind": "method-def",
+        "type": "VMControls.WPF.GlobalUI.GlobalCommunicationMgr",
+        "name": "get_Instance",
+        "parameters": 0,
+        "attributes": "Public, Static, HideBySig, SpecialName",
+        "signatureBytes": "0000128154"
+      }
+    },
+    {
+      "offset": 332,
+      "label": "IL_014c",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0600058d",
+        "kind": "method-def",
+        "type": "VMControls.WPF.GlobalUI.GlobalCommunicationMgr",
+        "name": "ResetParamStateFlag",
+        "parameters": 0,
+        "attributes": "Public, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 337,
+      "label": "IL_0151",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 338,
+      "label": "IL_0152",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 339,
+      "label": "IL_0153",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 340,
+      "label": "IL_0154",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 355
+    },
+    {
+      "offset": 342,
+      "label": "IL_0156",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 344,
+      "label": "IL_0158",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 354
+    },
+    {
+      "offset": 346,
+      "label": "IL_015a",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 7
+    },
+    {
+      "offset": 348,
+      "label": "IL_015c",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000a0",
+        "kind": "member-ref",
+        "type": "System.IDisposable",
+        "name": "Dispose",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 353,
+      "label": "IL_0161",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 354,
+      "label": "IL_0162",
+      "opcode": "endfinally",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 355,
+      "label": "IL_0163",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 356,
+      "label": "IL_0164",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 6
+    },
+    {
+      "offset": 358,
+      "label": "IL_0166",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 360
+    },
+    {
+      "offset": 360,
+      "label": "IL_0168",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 6
+    },
+    {
+      "offset": 362,
+      "label": "IL_016a",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": [
+    {
+      "kind": "Finally",
+      "catchType": null,
+      "TryOffset": 174,
+      "TryLength": 168,
+      "HandlerOffset": 342,
+      "HandlerLength": 13
+    }
+  ]
+}</pre></details><details><summary>encryptCheckClick 0x060004ad</summary><pre>{
+  "name": "encryptCheckClick",
+  "token": "0x060004ad",
+  "symbol": {
+    "token": "0x060004ad",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "encryptCheckClick",
+    "parameters": 2,
+    "attributes": "Private, HideBySig",
+    "signatureBytes": "2002011c12811d"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 164,
+  "ilSha256": "34b1e5f5bebf417931de2347c35e35d50f50f9c15dacffad22eb13c2f52d7ba0",
+  "ilBytes": "00736c04000a0a066fce00000a0b070d171304120328c200000a1104fe01120328c300000a5f0c082c7900066f6d04000a283900000a16fe01130511052c6300729d360070283800000a1b8dd1010001251672b1360070283800000aa2251772d5360070a22518067b6e04000a6f6f04000aa2251972a0090070a2251a72d9360070283800000aa228db00000a181628d200000a2602066f6d04000a7d8102000400002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "newobj",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046c",
+        "kind": "member-ref",
+        "type": "Apps.PcUI.Encryption",
+        "name": ".ctor",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000ce",
+        "kind": "member-ref",
+        "type": "VM.Controls.BaseWindow",
+        "name": "ShowDialog",
+        "parameters": 0,
+        "signatureBytes": "2000151181410102"
+      }
+    },
+    {
+      "offset": 13,
+      "label": "IL_000d",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 14,
+      "label": "IL_000e",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 15,
+      "label": "IL_000f",
+      "opcode": "stloc.3",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 16,
+      "label": "IL_0010",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 17,
+      "label": "IL_0011",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 4
+    },
+    {
+      "offset": 19,
+      "label": "IL_0013",
+      "opcode": "ldloca.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 3
+    },
+    {
+      "offset": 21,
+      "label": "IL_0015",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000c2",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "GetValueOrDefault",
+        "parameters": 0,
+        "signatureBytes": "20001300"
+      }
+    },
+    {
+      "offset": 26,
+      "label": "IL_001a",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 4
+    },
+    {
+      "offset": 28,
+      "label": "IL_001c",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 30,
+      "label": "IL_001e",
+      "opcode": "ldloca.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 3
+    },
+    {
+      "offset": 32,
+      "label": "IL_0020",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000c3",
+        "kind": "member-ref",
+        "type": "TypeSpecification",
+        "name": "get_HasValue",
+        "parameters": 0,
+        "signatureBytes": "200002"
+      }
+    },
+    {
+      "offset": 37,
+      "label": "IL_0025",
+      "opcode": "and",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 38,
+      "label": "IL_0026",
+      "opcode": "stloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 39,
+      "label": "IL_0027",
+      "opcode": "ldloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 40,
+      "label": "IL_0028",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 163
+    },
+    {
+      "offset": 42,
+      "label": "IL_002a",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 43,
+      "label": "IL_002b",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 44,
+      "label": "IL_002c",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046d",
+        "kind": "member-ref",
+        "type": "Apps.PcUI.Encryption",
+        "name": "get_AccessAdministatorCode",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 49,
+      "label": "IL_0031",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000039",
+        "kind": "member-ref",
+        "type": "System.String",
+        "name": "IsNullOrEmpty",
+        "parameters": 1,
+        "signatureBytes": "0001020e"
+      }
+    },
+    {
+      "offset": 54,
+      "label": "IL_0036",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 55,
+      "label": "IL_0037",
+      "opcode": "ceq",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 57,
+      "label": "IL_0039",
+      "opcode": "stloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 5
+    },
+    {
+      "offset": 59,
+      "label": "IL_003b",
+      "opcode": "ldloc.s",
+      "operandKind": "ShortInlineVar",
+      "operand": 5
+    },
+    {
+      "offset": 61,
+      "label": "IL_003d",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 162
+    },
+    {
+      "offset": 63,
+      "label": "IL_003f",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 64,
+      "label": "IL_0040",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x7000369d",
+        "kind": "user-string",
+        "value": "Lang_Sure"
+      }
+    },
+    {
+      "offset": 69,
+      "label": "IL_0045",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000038",
+        "kind": "member-ref",
+        "type": "Apps.Localization.AppLocalizationService",
+        "name": "GetLang",
+        "parameters": 1,
+        "signatureBytes": "00010e0e"
+      }
+    },
+    {
+      "offset": 74,
+      "label": "IL_004a",
+      "opcode": "ldc.i4.5",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 75,
+      "label": "IL_004b",
+      "opcode": "newarr",
+      "operandKind": "InlineType",
+      "operand": {
+        "token": "0x010001d1",
+        "kind": "TypeReference",
+        "type": "System.String"
+      }
+    },
+    {
+      "offset": 80,
+      "label": "IL_0050",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 81,
+      "label": "IL_0051",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 82,
+      "label": "IL_0052",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x700036b1",
+        "kind": "user-string",
+        "value": "SubWindowPassword"
+      }
+    },
+    {
+      "offset": 87,
+      "label": "IL_0057",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000038",
+        "kind": "member-ref",
+        "type": "Apps.Localization.AppLocalizationService",
+        "name": "GetLang",
+        "parameters": 1,
+        "signatureBytes": "00010e0e"
+      }
+    },
+    {
+      "offset": 92,
+      "label": "IL_005c",
+      "opcode": "stelem.ref",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 93,
+      "label": "IL_005d",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 94,
+      "label": "IL_005e",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 95,
+      "label": "IL_005f",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x700036d5",
+        "kind": "user-string",
+        "value": "："
+      }
+    },
+    {
+      "offset": 100,
+      "label": "IL_0064",
+      "opcode": "stelem.ref",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 101,
+      "label": "IL_0065",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 102,
+      "label": "IL_0066",
+      "opcode": "ldc.i4.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 103,
+      "label": "IL_0067",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 104,
+      "label": "IL_0068",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x0a00046e",
+        "kind": "member-ref",
+        "type": "Apps.PcUI.Encryption",
+        "name": "textCodeSet",
+        "parameters": null,
+        "signatureBytes": "06128a21"
+      }
+    },
+    {
+      "offset": 109,
+      "label": "IL_006d",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046f",
+        "kind": "member-ref",
+        "type": "System.Windows.Controls.PasswordBox",
+        "name": "get_Password",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 114,
+      "label": "IL_0072",
+      "opcode": "stelem.ref",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 115,
+      "label": "IL_0073",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 116,
+      "label": "IL_0074",
+      "opcode": "ldc.i4.3",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 117,
+      "label": "IL_0075",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x700009a0",
+        "kind": "user-string",
+        "value": "\r\n"
+      }
+    },
+    {
+      "offset": 122,
+      "label": "IL_007a",
+      "opcode": "stelem.ref",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 123,
+      "label": "IL_007b",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 124,
+      "label": "IL_007c",
+      "opcode": "ldc.i4.4",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 125,
+      "label": "IL_007d",
+      "opcode": "ldstr",
+      "operandKind": "InlineString",
+      "operand": {
+        "token": "0x700036d9",
+        "kind": "user-string",
+        "value": "Lang_Password"
+      }
+    },
+    {
+      "offset": 130,
+      "label": "IL_0082",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000038",
+        "kind": "member-ref",
+        "type": "Apps.Localization.AppLocalizationService",
+        "name": "GetLang",
+        "parameters": 1,
+        "signatureBytes": "00010e0e"
+      }
+    },
+    {
+      "offset": 135,
+      "label": "IL_0087",
+      "opcode": "stelem.ref",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 136,
+      "label": "IL_0088",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000db",
+        "kind": "member-ref",
+        "type": "System.String",
+        "name": "Concat",
+        "parameters": 1,
+        "signatureBytes": "00010e1d0e"
+      }
+    },
+    {
+      "offset": 141,
+      "label": "IL_008d",
+      "opcode": "ldc.i4.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 142,
+      "label": "IL_008e",
+      "opcode": "ldc.i4.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 143,
+      "label": "IL_008f",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000d2",
+        "kind": "member-ref",
+        "type": "VM.Controls.HikMessageBox",
+        "name": "Show",
+        "parameters": 4,
+        "signatureBytes": "00041184150e0e1187f902"
+      }
+    },
+    {
+      "offset": 148,
+      "label": "IL_0094",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 149,
+      "label": "IL_0095",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 150,
+      "label": "IL_0096",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 151,
+      "label": "IL_0097",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046d",
+        "kind": "member-ref",
+        "type": "Apps.PcUI.Encryption",
+        "name": "get_AccessAdministatorCode",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 156,
+      "label": "IL_009c",
+      "opcode": "stfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x04000281",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "tempStrPassWord",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 161,
+      "label": "IL_00a1",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 162,
+      "label": "IL_00a2",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 163,
+      "label": "IL_00a3",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>System.Windows.Markup.IComponentConnector.Connect 0x060004b4</summary><pre>{
+  "name": "System.Windows.Markup.IComponentConnector.Connect",
+  "token": "0x060004b4",
+  "symbol": {
+    "token": "0x060004b4",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "System.Windows.Markup.IComponentConnector.Connect",
+    "parameters": 2,
+    "attributes": "Private, Final, Virtual, HideBySig, VtableLayoutMask",
+    "signatureBytes": "200201081c"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 31,
+  "ilSha256": "ff2b4e6707d3a58e2188e9526e06f3223bd5a980495a3ee5d42f41e64d704d68",
+  "ilBytes": "00030a06172e022b0e020474460000027d850200042b0702177d860200042a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "ldarg.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 3,
+      "label": "IL_0003",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 4,
+      "label": "IL_0004",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 5,
+      "label": "IL_0005",
+      "opcode": "beq.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 9
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 23
+    },
+    {
+      "offset": 9,
+      "label": "IL_0009",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 10,
+      "label": "IL_000a",
+      "opcode": "ldarg.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "castclass",
+      "operandKind": "InlineType",
+      "operand": {
+        "token": "0x02000046",
+        "kind": "TypeDefinition",
+        "type": "VMControls.WPF.ToolControl"
+      }
+    },
+    {
+      "offset": 16,
+      "label": "IL_0010",
+      "opcode": "stfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x04000285",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "us",
+        "attributes": "Assembly"
+      }
+    },
+    {
+      "offset": 21,
+      "label": "IL_0015",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 30
+    },
+    {
+      "offset": 23,
+      "label": "IL_0017",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 24,
+      "label": "IL_0018",
+      "opcode": "ldc.i4.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 25,
+      "label": "IL_0019",
+      "opcode": "stfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x04000286",
+        "kind": "field-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "_contentLoaded",
+        "attributes": "Private"
+      }
+    },
+    {
+      "offset": 30,
+      "label": "IL_001e",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;SaveSolution&gt;b__55_0 0x060004ba</summary><pre>{
+  "name": "&lt;SaveSolution&gt;b__55_0",
+  "token": "0x060004ba",
+  "symbol": {
+    "token": "0x060004ba",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "&lt;SaveSolution&gt;b__55_0",
+    "parameters": 0,
+    "attributes": "Private, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 9,
+  "ilSha256": "bb9bea7e80240dbc7b7349f188bd89ed9d427e3fc393a1126d71e4619a794b6a",
+  "ilBytes": "000228a5040006002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004a5",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SaveCalibUserData",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;SaveAsSolutionProcess&gt;b__62_0 0x060004bb</summary><pre>{
+  "name": "&lt;SaveAsSolutionProcess&gt;b__62_0",
+  "token": "0x060004bb",
+  "symbol": {
+    "token": "0x060004bb",
+    "kind": "method-def",
+    "type": "VMControls.WPF.ToolControl",
+    "name": "&lt;SaveAsSolutionProcess&gt;b__62_0",
+    "parameters": 0,
+    "attributes": "Private, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 9,
+  "ilSha256": "bb9bea7e80240dbc7b7349f188bd89ed9d427e3fc393a1126d71e4619a794b6a",
+  "ilBytes": "000228a5040006002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004a5",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SaveCalibUserData",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 8,
+      "label": "IL_0008",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><h2>.&lt;&gt;c 0x0200012b</h2><details><summary>&lt;GlobalScript&gt;b__52_0 0x06000e70</summary><pre>{
+  "name": "&lt;GlobalScript&gt;b__52_0",
+  "token": "0x06000e70",
+  "symbol": {
+    "token": "0x06000e70",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c",
+    "name": "&lt;GlobalScript&gt;b__52_0",
+    "parameters": 0,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 13,
+  "ilSha256": "9a5d6bf7a57889f4e74cae498d7cb345679a5dbc36bbad934c52989f45fec08b",
+  "ilBytes": "0028b401000a6f4b0a000a002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000a4b",
+        "kind": "member-ref",
+        "type": "VM.Core.VmModule",
+        "name": "Run",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;GlobalScript&gt;b__52_1 0x06000e71</summary><pre>{
+  "name": "&lt;GlobalScript&gt;b__52_1",
+  "token": "0x06000e71",
+  "symbol": {
+    "token": "0x06000e71",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c",
+    "name": "&lt;GlobalScript&gt;b__52_1",
+    "parameters": 0,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 13,
+  "ilSha256": "9a5d6bf7a57889f4e74cae498d7cb345679a5dbc36bbad934c52989f45fec08b",
+  "ilBytes": "0028b401000a6f4b0a000a002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000a4b",
+        "kind": "member-ref",
+        "type": "VM.Core.VmModule",
+        "name": "Run",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;GlobalScript&gt;b__52_2 0x06000e72</summary><pre>{
+  "name": "&lt;GlobalScript&gt;b__52_2",
+  "token": "0x06000e72",
+  "symbol": {
+    "token": "0x06000e72",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c",
+    "name": "&lt;GlobalScript&gt;b__52_2",
+    "parameters": 0,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 13,
+  "ilSha256": "9a5d6bf7a57889f4e74cae498d7cb345679a5dbc36bbad934c52989f45fec08b",
+  "ilBytes": "0028b401000a6f4b0a000a002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000a4b",
+        "kind": "member-ref",
+        "type": "VM.Core.VmModule",
+        "name": "Run",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;SaveSolution&gt;b__55_1 0x06000e74</summary><pre>{
+  "name": "&lt;SaveSolution&gt;b__55_1",
+  "token": "0x06000e74",
+  "symbol": {
+    "token": "0x06000e74",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c",
+    "name": "&lt;SaveSolution&gt;b__55_1",
+    "parameters": 0,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 19,
+  "ilSha256": "f640f1fab71bac0d81ddfa4c452c4afe1c9be1056df458d3112f29c6ab5e4f96",
+  "ilBytes": "0028b401000a6f4504000a14286b04000a262a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000445",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_SolutionPath",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "ldnull",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046b",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "SaveAs",
+        "parameters": 2,
+        "signatureBytes": "00020e0e0e"
+      }
+    },
+    {
+      "offset": 17,
+      "label": "IL_0011",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 18,
+      "label": "IL_0012",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;SaveSolution&gt;b__55_2 0x06000e75</summary><pre>{
+  "name": "&lt;SaveSolution&gt;b__55_2",
+  "token": "0x06000e75",
+  "symbol": {
+    "token": "0x06000e75",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c",
+    "name": "&lt;SaveSolution&gt;b__55_2",
+    "parameters": 1,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "20010112840d"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 13,
+  "ilSha256": "b191b952def1ea5cfda3c6e54e5d16f90fa14d470c1659b88e60eb0e475e631b",
+  "ilBytes": "0028890500066f8d050006002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000589",
+        "kind": "method-def",
+        "type": "VMControls.WPF.GlobalUI.GlobalCommunicationMgr",
+        "name": "get_Instance",
+        "parameters": 0,
+        "attributes": "Public, Static, HideBySig, SpecialName",
+        "signatureBytes": "0000128154"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0600058d",
+        "kind": "method-def",
+        "type": "VMControls.WPF.GlobalUI.GlobalCommunicationMgr",
+        "name": "ResetParamStateFlag",
+        "parameters": 0,
+        "attributes": "Public, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;SaveSolution&gt;b__61_1 0x06000e78</summary><pre>{
+  "name": "&lt;SaveSolution&gt;b__61_1",
+  "token": "0x06000e78",
+  "symbol": {
+    "token": "0x06000e78",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c",
+    "name": "&lt;SaveSolution&gt;b__61_1",
+    "parameters": 0,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 77,
+  "ilSha256": "4301225e6ccb24dbb5be01fa1798a314306807cc2dd5860a6a0abe12892e8d72",
+  "ilBytes": "000028b401000a6f4504000a14286b04000a2600de360a0006283204000a0b0714fe030c082c160007283304000a00076f3404000a28a400000a00de0f066f3200000a28a400000a0000de002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0001b4",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_Instance",
+        "parameters": 0,
+        "signatureBytes": "00001287b9"
+      }
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000445",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "get_SolutionPath",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ldnull",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 13,
+      "label": "IL_000d",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00046b",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "SaveAs",
+        "parameters": 2,
+        "signatureBytes": "00020e0e0e"
+      }
+    },
+    {
+      "offset": 18,
+      "label": "IL_0012",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 19,
+      "label": "IL_0013",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 20,
+      "label": "IL_0014",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 76
+    },
+    {
+      "offset": 22,
+      "label": "IL_0016",
+      "opcode": "stloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 23,
+      "label": "IL_0017",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 24,
+      "label": "IL_0018",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 25,
+      "label": "IL_0019",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000432",
+        "kind": "member-ref",
+        "type": "VM.Core.VmSolution",
+        "name": "GetVmException",
+        "parameters": 1,
+        "signatureBytes": "0001128149128135"
+      }
+    },
+    {
+      "offset": 30,
+      "label": "IL_001e",
+      "opcode": "stloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 31,
+      "label": "IL_001f",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 32,
+      "label": "IL_0020",
+      "opcode": "ldnull",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 33,
+      "label": "IL_0021",
+      "opcode": "cgt.un",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 35,
+      "label": "IL_0023",
+      "opcode": "stloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 36,
+      "label": "IL_0024",
+      "opcode": "ldloc.2",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 37,
+      "label": "IL_0025",
+      "opcode": "brfalse.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 61
+    },
+    {
+      "offset": 39,
+      "label": "IL_0027",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 40,
+      "label": "IL_0028",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 41,
+      "label": "IL_0029",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000433",
+        "kind": "member-ref",
+        "type": "Apps.UIHelper.Extern.ShowMessage",
+        "name": "ShowVmExceptionMessage",
+        "parameters": 1,
+        "signatureBytes": "0001011289e5"
+      }
+    },
+    {
+      "offset": 46,
+      "label": "IL_002e",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 47,
+      "label": "IL_002f",
+      "opcode": "ldloc.1",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 48,
+      "label": "IL_0030",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000434",
+        "kind": "member-ref",
+        "type": "VM.PlatformSDKCS.VmException",
+        "name": "get_errorMessage",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 53,
+      "label": "IL_0035",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000a4",
+        "kind": "member-ref",
+        "type": "Apps.Log.LogHelper",
+        "name": "Error",
+        "parameters": 1,
+        "signatureBytes": "0001011c"
+      }
+    },
+    {
+      "offset": 58,
+      "label": "IL_003a",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 59,
+      "label": "IL_003b",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 76
+    },
+    {
+      "offset": 61,
+      "label": "IL_003d",
+      "opcode": "ldloc.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 62,
+      "label": "IL_003e",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a000032",
+        "kind": "member-ref",
+        "type": "System.Object",
+        "name": "ToString",
+        "parameters": 0,
+        "signatureBytes": "20000e"
+      }
+    },
+    {
+      "offset": 67,
+      "label": "IL_0043",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a0000a4",
+        "kind": "member-ref",
+        "type": "Apps.Log.LogHelper",
+        "name": "Error",
+        "parameters": 1,
+        "signatureBytes": "0001011c"
+      }
+    },
+    {
+      "offset": 72,
+      "label": "IL_0048",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 73,
+      "label": "IL_0049",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 74,
+      "label": "IL_004a",
+      "opcode": "leave.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 76
+    },
+    {
+      "offset": 76,
+      "label": "IL_004c",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": [
+    {
+      "kind": "Catch",
+      "catchType": "System.Exception",
+      "TryOffset": 1,
+      "TryLength": 21,
+      "HandlerOffset": 22,
+      "HandlerLength": 54
+    }
+  ]
+}</pre></details><h2>.&lt;&gt;c__DisplayClass61_0 0x02000133</h2><details><summary>&lt;SaveSolution&gt;b__0 0x06000e87</summary><pre>{
+  "name": "&lt;SaveSolution&gt;b__0",
+  "token": "0x06000e87",
+  "symbol": {
+    "token": "0x06000e87",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c__DisplayClass61_0",
+    "name": "&lt;SaveSolution&gt;b__0",
+    "parameters": 0,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "200001"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 14,
+  "ilSha256": "5cc31d678949db3b31f39da33e950aadba2c96b7e6d0d7bb34a73cd2e6a21824",
+  "ilBytes": "00027bd907000428a5040006002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 2,
+      "label": "IL_0002",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007d9",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": "&lt;&gt;4__this",
+        "attributes": "Public"
+      }
+    },
+    {
+      "offset": 7,
+      "label": "IL_0007",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x060004a5",
+        "kind": "method-def",
+        "type": "VMControls.WPF.ToolControl",
+        "name": "SaveCalibUserData",
+        "parameters": 0,
+        "attributes": "Private, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 13,
+      "label": "IL_000d",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><details><summary>&lt;SaveSolution&gt;b__2 0x06000e88</summary><pre>{
+  "name": "&lt;SaveSolution&gt;b__2",
+  "token": "0x06000e88",
+  "symbol": {
+    "token": "0x06000e88",
+    "kind": "method-def",
+    "type": ".&lt;&gt;c__DisplayClass61_0",
+    "name": "&lt;SaveSolution&gt;b__2",
+    "parameters": 1,
+    "attributes": "Assembly, HideBySig",
+    "signatureBytes": "20010112840d"
+  },
+  "status": "decoded",
+  "issue": null,
+  "ilSize": 31,
+  "ilSha256": "5e84a781427f7c6a0a0092d6400dfef153514fd1dde50e771bba0299b6364a1c",
+  "ilBytes": "0028890500066f8d05000600027bda070004252d03262b06285b04000a002a",
+  "instructions": [
+    {
+      "offset": 0,
+      "label": "IL_0000",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 1,
+      "label": "IL_0001",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x06000589",
+        "kind": "method-def",
+        "type": "VMControls.WPF.GlobalUI.GlobalCommunicationMgr",
+        "name": "get_Instance",
+        "parameters": 0,
+        "attributes": "Public, Static, HideBySig, SpecialName",
+        "signatureBytes": "0000128154"
+      }
+    },
+    {
+      "offset": 6,
+      "label": "IL_0006",
+      "opcode": "callvirt",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0600058d",
+        "kind": "method-def",
+        "type": "VMControls.WPF.GlobalUI.GlobalCommunicationMgr",
+        "name": "ResetParamStateFlag",
+        "parameters": 0,
+        "attributes": "Public, HideBySig",
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 11,
+      "label": "IL_000b",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 12,
+      "label": "IL_000c",
+      "opcode": "ldarg.0",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 13,
+      "label": "IL_000d",
+      "opcode": "ldfld",
+      "operandKind": "InlineField",
+      "operand": {
+        "token": "0x040007da",
+        "kind": "field-def",
+        "type": ".&lt;&gt;c__DisplayClass61_0",
+        "name": "afterSaveTask",
+        "attributes": "Public"
+      }
+    },
+    {
+      "offset": 18,
+      "label": "IL_0012",
+      "opcode": "dup",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 19,
+      "label": "IL_0013",
+      "opcode": "brtrue.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 24
+    },
+    {
+      "offset": 21,
+      "label": "IL_0015",
+      "opcode": "pop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 22,
+      "label": "IL_0016",
+      "opcode": "br.s",
+      "operandKind": "ShortInlineBrTarget",
+      "operand": 30
+    },
+    {
+      "offset": 24,
+      "label": "IL_0018",
+      "opcode": "call",
+      "operandKind": "InlineMethod",
+      "operand": {
+        "token": "0x0a00045b",
+        "kind": "member-ref",
+        "type": "System.Threading.Tasks.Task",
+        "name": "Start",
+        "parameters": 0,
+        "signatureBytes": "200001"
+      }
+    },
+    {
+      "offset": 29,
+      "label": "IL_001d",
+      "opcode": "nop",
+      "operandKind": "InlineNone",
+      "operand": null
+    },
+    {
+      "offset": 30,
+      "label": "IL_001e",
+      "opcode": "ret",
+      "operandKind": "InlineNone",
+      "operand": null
+    }
+  ],
+  "exceptions": []
+}</pre></details><p><a href="toolbar-effects-review.json">核查结论</a> · <a href="toolbar-effects-cil-evidence.json">完整指令</a> · <a href="toolbar-effects-artifact-identities.json">原件和精确选择</a>。主框架实施41/96＝42.71%（32包×3单元），本轮建图增量0。</p></html><script data-document-web src="document-web-links.js"></script>

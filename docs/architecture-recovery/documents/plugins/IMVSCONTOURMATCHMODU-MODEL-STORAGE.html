@@ -1,0 +1,63 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contour normal model storage — source slice</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/IMVSCONTOURMATCHMODU-MODEL-STORAGE.md">下载原始文件</a></nav><main><h1 id="contour-normal-model-storage--source-slice">Contour normal model storage — source slice</h1><p>Target is Contour module SHA256 <code>56156A8707FA92CE758485772BEB18A5289CB97599533D86897A9391817FCF64</code>. Private retained Ghidra export <code>ExportContourModelStorage.java</code> completed exit0/readOnly/noanalysis, without importing another copy or running the DLL. Eleven direct bodies and original assembly/call listings are in <code>analysis/contour-match/native-source/output</code>; <code>model-storage-completed.txt</code> records the finite set.</p>
+<table>
+<thead>
+<tr>
+<th>Actual method RVA</th>
+<th>Confirmed operation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>8040</td>
+<td>zero 260-byte pending public-name buffer d7e8 then memcpy_s; lock d7c0</td>
+</tr>
+<tr>
+<td>6c50</td>
+<td>reject null/zero data E0000001; first empty pointer among100; malloc/copy, actual/allocated lengths, selected1, Count++; copy pending name; full E0000326, allocation failure E0000002</td>
+</tr>
+<tr>
+<td>7270</td>
+<td>copy selected-index text into260-byte buffer, atoi→selected index at offsetd9f0 (<code>param1+367c*4</code>); rejects unsigned index&gt;100 <strong>after writing</strong>; accepts100, not a safe100-record access contract</td>
+</tr>
+<tr>
+<td>70b0</td>
+<td>rename selected record, rejects negative selected index; lacks matching upper check in this body; zero/copy260 name bytes</td>
+</tr>
+<tr>
+<td>6e70</td>
+<td>replace selected model buffer; frees previous before allocating replacement; rejects negative selection/zero length, allocation fail leaves old buffer gone; requires exact read of body for error path</td>
+</tr>
+<tr>
+<td>73a0</td>
+<td>free each of100 buffers then memset(this+8,d7b8), Count0; pending public name/selection fields after this range survive</td>
+</tr>
+<tr>
+<td>7440</td>
+<td>index unsigned&lt;100; free target, shift every following record left through99, clear last; Count-- even if target was empty</td>
+</tr>
+<tr>
+<td>80d0</td>
+<td>index1..99; scan preceding slots until nearest nonempty, call8250 swap helper; no neighbor yields success</td>
+</tr>
+<tr>
+<td>7600</td>
+<td>index0..98; scan following slots until nearest nonempty, call8250; no neighbor yields success</td>
+</tr>
+<tr>
+<td>7da0</td>
+<td>split comma into exactly2 strings, atoi index/flag; index&gt;=0 &amp;&amp; index&lt;Count and flag&lt;2; writes selected flag</td>
+</tr>
+<tr>
+<td>7980</td>
+<td>SetModelData is an XML <strong>file</strong> loader; load document, root→ModelData text; first empty slot; decode via1140, store filename-derived name/path and two distinct lengths; no Add-like Count++/selected1 assignment visible in this body, so import cannot be replaced by Add</td>
+</tr>
+</tbody></table>
+<p>Important boundaries: <code>7270</code> accepting index100 does not prove renaming slot100 is safe. Raw names are ANSI byte buffers; no encoding equivalence is inferred. <code>7440</code> deleting an empty slot can decrement Count; normal UI admission versus malformed/sparse states must be explicit. Decode1140 and swap8250 are required direct helper gaps before those two operations can be ported completely. Shared XML parser/file-IO calls remain evidence dependencies; no generic base64/hex format is guessed for ModelData.</p>
+<p><code>analysis/contour-match/proposals/implementation/ContourModelStorage.cs.candidate</code> implements only source-confirmed normal Add/public-name/Select/Delete/Clear and copied snapshots, with explicit safe admission for excessive names, sparse selection and empty-slot deletion. It is not yet product code, built, a model decoder, or a complete model pane. Source malformed pointer/allocator behavior is not simulated. The RangeScaleType plan is separately covered in PARAMETER-PROVIDER.</p>
+<p>Next finite implementation work is exact swap8250 and decoder1140, then connect normal model collection and current CreateDipolePyramid parameters to the dedicated training control. Matching/training numerical kernels remain genuine unimplemented scope; no tool-complete claim follows from the separate24 result/configuration checks.</p>
+<h2 id="follow-up-direct-helpers-and-production-list-integration">Follow-up: direct helpers and production list integration</h2><p>Both remaining direct helpers were acquired from the same hash-matched private retained project:1140 C SHA256 <code>6724F16A998678DEA13C4333C3863E96F8687C67689A4EE7A134CDAA0B80C12F</code>;8250 C SHA256 <code>E8ACB5640751E80FA7D752D0B3D3B056C0EEFCF720428D2C51165FB76E9D02EF</code>. Original alphabet pointer3f000→VA1800306b0 and its65 bytes including nul are recorded in <code>model-decoder-alphabet.json</code>. The decoder consumes groups4, maps unknown bytes toFF, stops on padding/incomplete tail, and does not skip arbitrary whitespace. It is ported explicitly rather than using Convert.FromBase64String. The XML loader alone skips one initial newline before calling this helper.8250 swaps exactly0x228 bytes; managed entries exchange full name/data/selection records without native pointers.</p>
+<p>Production <code>src/VisionPlugins.ContourMatch/ContourModel{Storage,Collection,Decoder,Controls}.cs</code> now implements normal-domain model ownership and source5-key sidecar shifts/swaps/deletion, Add failure&#39;s candidate removal, immutable copied snapshots, and actual configuration model list. <code>ContourConfiguration</code> evaluates the original runtime DisplayType (<code>BaseType.Name</code>) and registers the actual FeaturepatMatchConfigPanalData key; root supplied its source-confirmed shared template catalog entry through the generator. The list preserves row command names, selection, ordering, deletion, confirmation, name&#39;s LostFocus32-character/blank checks and original MaxLength63. Current actual FeatureMatchCommonControl classes were passively IL-exported for branch confirmation, rather than trusting the old readable source alone.</p>
+<p>Owned model buffers and opaque UI sidecars use a separate <code>ContourCandidateStorage</code> JSON parameter for this implementation&#39;s solution transport. This is explicitly not vendor .contourmxml file compatibility. Training/Load/Edit callbacks deliberately notify unimplemented operations; no fake patterns or empty-success matcher is supplied. Source Rename&#39;s IUnRedoService.SetForbidRecord try/finally remains an explicitly reported shared history-contract boundary; no shared changes were made by this line.</p>
+<p>Real production ProjectReference ModelChecks passed131:123 storage/decoder/sidecar checks,2 JSON checks,6 WPF checks opening original secondTab and exercising persisted CheckBox click, training rejection and confirmed Clear. Separate ResultChecks passed24 on the same production dependency set. Both final builds exited0 with0 warnings/0 errors. First model test build&#39;s CS0542 helper class/method name collision is preserved in model-build.log; only the test helper name was corrected. Final logs: model-build02.log/model-run.log/model-result-build.log/model-result-run.log.</p>
+<p>Before build436 production source/project/XML hashes were recorded. After managed release435 remained the same; shared ConfigurationTemplateCatalog had the expected separately owned metadata-label change fromBDF902F0730209E7EB91A7452322631D161D38D32E56FCDD948DE4A1A9403BDB toCBCA2A719E4B567AF16D9F7107858498E46024CBFABBB06E10D0B99574CB6BAA. Actual compiled Contracts PDB confirmsBDF902..., so this test is not misreported as the later current catalog snapshot. Exported68 PDB source documents are in model-compiled-source-manifest.json SHA256 <code>4696A8FEA73D569E2E88C4E532B8331301D3CAA3CCF1E17F21D14F7D476FA2CD</code>; Contour12 documents (including generated files) match current hashes0 differences.</p>
+<p>Still required: actual numerical single/multiple matching kernels, training kernel/dialog, real vendor file import, complete run-parameter side effects/formatting/error paths, result publication and full production host integration, shared outline/variable rectangles, and the above source history gate. This finite success is not complete-tool or native parity evidence.</p>
+<p class="meta">来源：docs/plugins/IMVSCONTOURMATCHMODU-MODEL-STORAGE.md · SHA256 2e7e679aeeba9ae9b82e0148583efc293ded828aa4a736fff72567af1e923c0b<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

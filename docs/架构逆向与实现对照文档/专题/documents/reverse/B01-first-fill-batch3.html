@@ -1,0 +1,80 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B01 第三批：原选择器首次填充与身份恢复 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / B01 第三批：原选择器首次填充与身份恢复</p><h1>B01 第三批：原选择器首次填充与身份恢复</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B01 第三批：原选择器首次填充与身份恢复</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="B01-first-fill-batch3.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="B01-first-fill-batch3.html#b01-第三批原选择器首次填充与身份恢复">B01 第三批：原选择器首次填充与身份恢复</a></p><p style="margin-left:14px"><a href="B01-first-fill-batch3.html#原件身份与取证来源">原件身份与取证来源</a></p><p style="margin-left:14px"><a href="B01-first-fill-batch3.html#源码级数据流">源码级数据流</a></p><p style="margin-left:14px"><a href="B01-first-fill-batch3.html#受控原方法与合成输入的边界">受控原方法与合成输入的边界</a></p><p style="margin-left:14px"><a href="B01-first-fill-batch3.html#复验与审计">复验与审计</a></p><p style="margin-left:14px"><a href="B01-first-fill-batch3.html#尚未关闭与下一步">尚未关闭与下一步</a></p></details><h1 id="b01-第三批原选择器首次填充与身份恢复">B01 第三批：原选择器首次填充与身份恢复</h1><p>2026-10-19。接续 <code>B01-selection-batch2.md</code>；本批首次运行原 <code>GetSubRunParamsTree</code> 的缓存缺失分支，未重复第二批20个缓存/确认谓词。8组合成输入、44个具名检查通过，只证明原托管方法对这些输入的行为。B01整体仍开放；未修改产品、共享合同、旧探针、tool-plugins，没有共享dotnet构建。</p>
+<h2 id="原件身份与取证来源">原件身份与取证来源</h2><ul>
+<li>原 Apps.XmlUI.dll：<code>D:/Program Files/VisionMaster4.4.0/Applications/myLibs/Apps.XmlUI.dll</code>，SHA256 <code>639D0FB9DFCA81E38DF690E201B73874CE006D1361B689DDC6D5F41F7B0B04FD</code>，MVID <code>a00f8b40-7a51-4c6d-8aeb-cad134724f1f</code>。</li>
+<li>CLR实际Apps.XmlParser从GAC加载：SHA256 <code>78EC7AE1E5ADEFFF29197099C7109B153A3F75D092B7C3E9DC253D8C1B25A8D1</code>，MVID <code>d0604401-ab61-48a4-938b-faad16d74e7c</code>。</li>
+<li>CLR实际VM.Core从GAC加载：SHA256 <code>936763F6C8A1BF9FCF59F22ACEBCA8FEB09B5F3D5701AE77C82BDC81E626190D</code>，MVID <code>290025bc-e040-4cd5-94dd-cd49b9af9c99</code>。两者与安装副本身份一致。</li>
+<li>沿用第二批REA身份 Evidence <code>ev_0b720b58c29ebc598cf14b4033d1cf52c913afcb9c9d066a53d694437e997b36</code>；其成员分析超67108864字节metadata预算的完整失败记录仍保留，不重复同一大查询。本批源码为已有反编译源，CIL为CLR Reflection原方法体，<strong>不是新的REA反编译输出</strong>。</li>
+<li>最终probe.json含126个方法/构造方法的原CIL、build-local token和已解码的调用/字段成员（不是全程序集覆盖，也不是执行覆盖计数）；实际程序集路径/MVID/SHA、进程原生模块清单一并保留。来源哈希见 <code>analysis/full-audit/batch3-20261019/B01/source-hashes.csv</code>。</li>
+</ul>
+<h2 id="源码级数据流">源码级数据流</h2><p>以下路径相对 <code>analysis/decompiled/</code>。</p>
+<ol>
+<li><code>VM.Core/VM.Core/VmModule.cs:305</code> 的Params仅返回 <code>_params</code>；ID仅从值类型moduleInfo.nNodeID返回。<code>ModuleParam.cs:139</code>附近的Data为自动属性。<code>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/VmModuleExtern.cs:28</code> 的GetParamRoot先检查Data，非null直接 <code>as AlgorithmTabRoot</code>，不会进入构造；Data为空才调用 <code>new AlgorithmTabRoot(param)</code>。</li>
+<li><code>AlgorithmTabRoot.cs:645–671</code> 的真实惰性构造从IParent取得Owner，若为ISubjectModel即InitLoad，随后loadXml/DynamicSetProperty。这个真实模块分支仍可能通过模块/参数回调接SDK，本批没有执行。</li>
+<li><code>AlgorithmTabRoot.cs:975–1040</code>：精确选择名称 <code>Tab_Run Params</code> 的Tab.Collection；IDynamicChild展开，普通项走AddSubChildToTree。只有非空DisplayNameA进入树，Between展开子列表；普通Holder保留原NameValueItem引用，显示名经MultiLanguageDisplayNameA。没有CustomVisible/SubscribeVisible总过滤。本批XML只用普通Integer/Float，未执行动态/Between分支。</li>
+<li><code>Apps.XmlUI/Apps.XmlUI.ParamTab/RunParamsSelectData.cs:193–294</code>：普通IVmModule的ID作cache键，缓存缺失时先GetParamRoot/GetRunParamsTree；只有isAllType=true才把Holder转新RunParamsBaseNode。TargetObject仍为同一个NameValueItem，ParentTree改为当前module Holder；OutputEnabled取原Holder。</li>
+<li>同文件230–240：IsFromVarBind时排除other占用；先用当前已选的<strong>模块ID+Name</strong>从局部other列表减去本变量已选名称，再从候选中排除剩余other。局部ToList不会回写OtherSelectedRunParmas字段或改调用方list。</li>
+<li>同文件241–251：仅遍历当前moduleID的已选项，按Name对新候选 <code>FirstOrDefault</code>，只恢复第一项的OutputEnabled。不使用TargetObject或类型区分同名项，不补树中缺失的项。</li>
+<li>同文件252–265：IsFromVarBind且varType非空，保留other或selected同模块同名项，否则保留 <code>!IsSupportSub || RunParamIoType == varType</code>。因此同名selected可以让另一类型的候选留下；不可订阅项也可跨IO类型留下。首次填充分支本身不按DisplayType/valueType筛选；那是缓存命中且isAllType=false的另一分支。</li>
+<li>最后allrunParams.Add；非空list才更新module.EnumEntrysA。首次直接isAllType=false仍会读取根/树，但不建立缓存，也不显示这批候选。</li>
+</ol>
+<p><code>RunParamsBaseNode.cs:138–183</code> 的ModuleID调用NameValueItem.GetVmModule()?.ID；IsSupportSub要求ISubInfo与SubscribeVisibleA；RunParamIoType为ISubInfo.ComType。<code>NameValueItem.cs:846</code> GetVmModule优先返回 <code>_vmModule</code>，否则向上找AlgorithmTabRoot.Owner。其SubscribeVisibleA为CanSubscribe &amp;&amp; SubscribeVisible；CanSubscribe检查直接父Category、其TabType是否Panal，以及Category.SubscribeVisibleA。<code>Tab.cs:53</code> TabTypeA只是字段转枚举，Category.SubscribeVisibleA只是字段读取；ValueBase.ComType默认int，Float覆盖为float。以上原getter/CIL及闭包原调用成员保留，未调用CurValue/IsSubA等会取SDK值的属性。</p>
+<h2 id="受控原方法与合成输入的边界">受控原方法与合成输入的边界</h2><p><code>tests/NativeEvidence/B01FirstFill/FirstFillProbe.cs</code>使用原解析器读取任务自有XML；Root.Owner为普通object，IParamsConfig为测试空值实现（字符串空、字节数组空，不转发原ModuleParam索引器），NeedNotifyLoaded=false。因而不向真实VmModule装配，也不执行Owner.InitLoad或root_XmlLoaded SDK装配。</p>
+<p>普通模块检查仍须通过原VmModule类型，所以只用 <code>FormatterServices.GetUninitializedObject(VmModule)</code> 的未初始化壳。ID默认为0，探针原CIL门槛检查其字段形状、模块无声明finalizer；抑制finalization。Params getter及ModuleParam.Data getter以原CIL的7字节字段读取形式及字段身份作强制门槛。构造普通ModuleParam仅赋Parent和Data，<strong>Data预置合成根</strong>，避开原GetParamRoot的lazy构造。</p>
+<p>每个合成NameValueItem的私有 <code>_vmModule</code> 明确注入该壳，让原ModuleID getter返回0；这绕过真实Owner寻址，不能据此证明真实模块的Params/Owner连接已经成立。没有调用VmModule构造、Dispose、Name/FullName、Inputs/Outputs、Params索引器、Ioc撤销、SDK初始化或设备。ModuleParam.Parent赋值不读取模块属性。</p>
+<p>8组分别重新创建Root/ModuleParam/Holder/selector/cache，记录source target、selected/other包装、结果包装与parent的RuntimeHelpers身份。原GetSubRunParamsTree没有被重写或拦截。44个检查包含每组的target引用、parent、Holder包装引用和调用方other列表引用，不能把这44项当44种用户操作。</p>
+<table>
+<thead>
+<tr>
+<th>合成输入组</th>
+<th>原方法结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>baseline</td>
+<td>6候选，重复Name的Integer/Float都在；包装TargetObject保持原解析对象引用</td>
+</tr>
+<tr>
+<td>occupied</td>
+<td>other占Busy，候选移除Busy，调用方other列表保留</td>
+</tr>
+<tr>
+<td>selected-wins</td>
+<td>Busy同时被当前选中和other占用，仍保留；已选指向Float Dup，却仅Integer Dup首包装勾选；两个Dup都按名称保留，即使varType=int</td>
+</tr>
+<tr>
+<td>type-int</td>
+<td>删除可订阅Float Dup/Wrong，保留不可订阅NoSub</td>
+</tr>
+<tr>
+<td>type-float</td>
+<td>保留Float Dup/Wrong，以及IO类型为int但不可订阅的NoSub</td>
+</tr>
+<tr>
+<td>not-bind</td>
+<td>即使给other及varType=int也保留全部6项</td>
+</tr>
+<tr>
+<td>first-typed</td>
+<td>缓存缺失时isAllType=false不缓存/显示候选</td>
+</tr>
+<tr>
+<td>missing-selected</td>
+<td>已选Missing不在原树，未补入新候选</td>
+</tr>
+</tbody></table>
+<h2 id="复验与审计">复验与审计</h2><p>复验命令：<code>powershell -NoProfile -ExecutionPolicy Bypass -File tests/NativeEvidence/B01FirstFill/Run.ps1</code>。只对该进程临时绕过脚本策略，未改系统设置。Framework64 csc独立编译，自有GUID目录，自有进程45秒超时；仅允许脚本终止它自己启动的probe。</p>
+<p>最终目录：<code>analysis/full-audit/batch3-20261019/B01/run-3c6e700c2cc6439aa0323d6f4eb16cd7/</code>，exit0，44/44 true，stderr为空。前后清单的探针源码、Apps.XmlUI、Apps.XmlParser、VM.Core哈希一致。实际进程模块清单未见iMVS/native PlatformSDK/工具原生模块；这是清单观察，不能推广为所有托管静态初始化完全无副作用。所有XML、exe与日志都写任务自有输出目录。</p>
+<ul>
+<li>最终probe.json SHA256 <code>D7E26F8251AC03D3776F07A9CD9E16C39270324D19A45B1FCB9B96E95DEA5DF3</code>。</li>
+<li>FirstFillProbe.cs SHA256 <code>7B89396C9DABFE6BC08D36A2CA3069D94A2C87115EBA1223D03D414B6CEB1BAE</code>。</li>
+<li>Run.ps1 SHA256 <code>2487034E137CA0AFEC33E8BE9A64A3940EEFB838708A9C87F1415229DD68A737</code>。</li>
+</ul>
+<p>开发记录全部保留：run-2764...为18谓词初版，run-3f671...因本机python别名不可执行而意外重复初版；没有丢弃该命令错误或累计两次的断言数。随后使用PowerShell编辑，run-f3e679...为44谓词版；最终run-3c6e...仅补充126方法/构造CIL成员清单。没有测试失败被改容差掩盖。</p>
+<h2 id="尚未关闭与下一步">尚未关闭与下一步</h2><ul>
+<li>真实模块Params.XmlPath/Data/Owner与ISubjectModel.InitLoad、原root_XmlLoaded专用装配仍未运行。本批刻意绕开，不等同真实VM实例。</li>
+<li>ModuleSet/Group递归、不同真实moduleID同名、动态/Between参数展开、首次null/异常根和本地化资源差异没有本批运行证据。</li>
+<li>原窗口取消、拒绝消息、全局变量setter和SDK订阅写入仍未执行；既有20谓词不能补这些边界。</li>
+<li>下一步宜在自有受控模块实例记录真实Params/Data/Owner和SDK调用，先核对初始化副作用；再对原窗口确认/取消及绑定写入采前后快照。无此实例资源时继续提取GlobalVariableItem.SelectedRunParams setter→GlobalVarExtern→绑定成员的原CIL，不能凭常规UI意图实现。</li>
+<li>对FCR-019可追加本批已确认的首次填充字段/生命周期证据，由main唯一写入；不建议据合成输入直接改插件配置或移除main兼容候选。</li>
+</ul>
+<p class="meta">来源：docs/reverse/B01-first-fill-batch3.md · SHA256 3c0257e7d2999229213ce012653b0deb9778dcdee4aa7603848ac35eb5091844<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

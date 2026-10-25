@@ -1,0 +1,68 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ModuleManager.Set/GetUIParamValue · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>ModuleManager.Set/GetUIParamValue · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-M09"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>ModuleManager.Set/GetUIParamValue → 托管缓冲 / 返回码 / 原生内存释放</h2><p>Set非空数据AllocHGlobal/Copy/SDK/Free后检查返回码；空数据走Delete。Get特殊码-536870911返回null，成功分配byte数组，Copy异常被捕获后仍释放原生内存并检查释放码；不能把返回数组视作一定已完整复制。ConfigAvailable不等于IsForbidden特殊分支。</p><p><a href="../专题/module-permissions.html#edge-M09">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/module-permissions.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/module-permissions.edges.json · SHA256 2066af0f66ebd27ff61430b9f9d11b5b774f434366135f41a3237d199c2696cd</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="04b4cc5c0da233d668582a34e2c09de176c8678ce3fa66daa352692c12fb7351">{
+  &quot;id&quot;: &quot;M09&quot;,
+  &quot;route&quot;: &quot;原版 · 模块属性与SDK&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;ModuleManager.Set/GetUIParamValue&quot;,
+  &quot;to&quot;: &quot;托管缓冲 / 返回码 / 原生内存释放&quot;,
+  &quot;behavior&quot;: &quot;Set非空数据AllocHGlobal/Copy/SDK/Free后检查返回码；空数据走Delete。Get特殊码-536870911返回null，成功分配byte数组，Copy异常被捕获后仍释放原生内存并检查释放码；不能把返回数组视作一定已完整复制。ConfigAvailable不等于IsForbidden特殊分支。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs&quot;,
+      &quot;member&quot;: &quot;ModuleManager.SetUIParamValue&quot;,
+      &quot;sha256&quot;: &quot;783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922&quot;,
+      &quot;start&quot;: 765,
+      &quot;end&quot;: 799,
+      &quot;excerpt&quot;: &quot;\tpublic void SetUIParamValue(uint nObjectID, string strParamName, byte[] data, uint nRecvWaitTime = 10000u)\n\t{\n\t\tif (strParamName == \&quot;IsForbidden\&quot; &amp;&amp; data != null)\n\t\t{\n\t\t\tuint nEnableFlag = ((!ExternalCallHelper.BytesToStruct&lt;bool>(data, 0, data.Length)) ? 1u : 0u);\n\t\t\tEnableModule(nObjectID, nEnableFlag);\n\t\t\treturn;\n\t\t}\n\t\tint num = -536870657;\n\t\tif (data != null &amp;&amp; data.Length != 0)\n\t\t{\n\t\t\tIntPtr intPtr = Marshal.AllocHGlobal(data.Length);\n\t\t\tMarshal.Copy(data, 0, intPtr, data.Length);\n\t\t\tnum = ServerSDKAPI.IMVS_SetUIParamValue(CVmObjectBase.mhandle, nObjectID, strParamName, intPtr, (uint)data.Length, nRecvWaitTime);\n\t\t\tMarshal.FreeHGlobal(intPtr);\n\t\t\tintPtr = IntPtr.Zero;\n\t\t}\n\t\telse\n\t\t{\n\t\t\ttry\n\t\t\t{\n\t\t\t\tDeleteUIParamValue(nObjectID, strParamName);\n\t\t\t\tnum = 0;\n\t\t\t}\n\t\t\tcatch (VmException ex)\n\t\t\t{\n\t\t\t\tnum = ex.errorCode;\n\t\t\t}\n\t\t}\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex2 = new VmException(num);\n\t\t\tthrow ex2;\n\t\t}\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs&quot;,
+      &quot;member&quot;: &quot;ModuleManager.GetUIParamValueByKey&quot;,
+      &quot;sha256&quot;: &quot;783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922&quot;,
+      &quot;start&quot;: 808,
+      &quot;end&quot;: 844,
+      &quot;excerpt&quot;: &quot;\tpublic byte[] GetUIParamValueByKey(uint nObjectID, string strParamName)\n\t{\n\t\tint num = -536870657;\n\t\tIntPtr pData = IntPtr.Zero;\n\t\tuint nDataLen = 0u;\n\t\tbyte[] array = null;\n\t\tnum = ServerSDKAPI.IMVS_GetUIParamValueByKey(CVmObjectBase.mhandle, nObjectID, strParamName, ref pData, ref nDataLen, 10000u);\n\t\tswitch (num)\n\t\t{\n\t\tcase -536870911:\n\t\t\treturn null;\n\t\tdefault:\n\t\t{\n\t\t\tVmException ex3 = new VmException(num);\n\t\t\tthrow ex3;\n\t\t}\n\t\tcase 0:\n\t\t\tarray = new byte[nDataLen];\n\t\t\tif (IntPtr.Zero != pData &amp;&amp; array != null)\n\t\t\t{\n\t\t\t\ttry\n\t\t\t\t{\n\t\t\t\t\tMarshal.Copy(pData, array, 0, (int)nDataLen);\n\t\t\t\t}\n\t\t\t\tcatch (Exception)\n\t\t\t\t{\n\t\t\t\t}\n\t\t\t}\n\t\t\tnum = ServerSDKAPI.IMVS_ReleaseDynamicMemory(CVmObjectBase.mhandle, ImvsSdkDefine.IMVS_RELEASE_MEMORY_TYPE.RELEASE_MEMORY_BASE_ARRAY, pData);\n\t\t\tif (num != 0)\n\t\t\t{\n\t\t\t\tVmException ex2 = new VmException(num);\n\t\t\t\tthrow ex2;\n\t\t\t}\n\t\t\tpData = IntPtr.Zero;\n\t\t\treturn array;\n\t\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ServerSDKAPI.cs&quot;,
+      &quot;member&quot;: &quot;ServerSDKAPI.SetUIParamValue&quot;,
+      &quot;sha256&quot;: &quot;f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14&quot;,
+      &quot;start&quot;: 983,
+      &quot;end&quot;: 986,
+      &quot;excerpt&quot;: &quot;\tpublic static int IMVS_SetUIParamValue(IntPtr handle, uint nObjectID, string strParamName, IntPtr pData, uint nDataLen, uint nRecvWaitTime)\n\t{\n\t\treturn NativeMethods.IMVS_SetUIParamValue(handle, nObjectID, strParamName, pData, nDataLen, nRecvWaitTime);\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ServerSDKAPI.cs&quot;,
+      &quot;member&quot;: &quot;ServerSDKAPI.GetUIParamValueByKey&quot;,
+      &quot;sha256&quot;: &quot;f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14&quot;,
+      &quot;start&quot;: 1009,
+      &quot;end&quot;: 1012,
+      &quot;excerpt&quot;: &quot;\tpublic static int IMVS_GetUIParamValueByKey(IntPtr handle, uint nObjectID, string strParamName, ref IntPtr pData, ref uint nDataLen, uint nRecvWaitTime)\n\t{\n\t\treturn NativeMethods.IMVS_GetUIParamValueByKey(handle, nObjectID, strParamName, ref pData, ref nDataLen, nRecvWaitTime);\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs&quot;,
+      &quot;member&quot;: &quot;NativeMethods.Set/GetUIParamValue declarations&quot;,
+      &quot;sha256&quot;: &quot;6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0&quot;,
+      &quot;start&quot;: 317,
+      &quot;end&quot;: 320,
+      &quot;excerpt&quot;: &quot;\tpublic static extern int IMVS_SetUIParamValue(IntPtr handle, uint nObjectID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \&quot;VM.PlatformSDKCS.UTF8Marshaler\&quot;)] string strParamName, IntPtr pData, uint nDataLen, uint nRecvWaitTime);\n\n\t[DllImport(\&quot;.\\\\iMVS-6000PlatformSDK.dll\&quot;)]\n\tpublic static extern int IMVS_GetUIParamValueByKey(IntPtr handle, uint nObjectID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \&quot;VM.PlatformSDKCS.UTF8Marshaler\&quot;)] string strParamName, ref IntPtr pData, ref uint nDataLen, uint nRecvWaitTime);&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;原生数据存储/方案序列化、分配异常释放、ABI与所有DynamicUIParam分支未闭合。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,113 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平移旋转标定标量输出位型对照 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 平移旋转标定标量输出位型对照</p><h1>平移旋转标定标量输出位型对照</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平移旋转标定标量输出位型对照</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="TRANSLATION-SCALAR-FLOAT-BITS.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="TRANSLATION-SCALAR-FLOAT-BITS.html#平移旋转标定标量输出位型对照">平移旋转标定标量输出位型对照</a></p><p style="margin-left:14px"><a href="TRANSLATION-SCALAR-FLOAT-BITS.html#比较方法">比较方法</a></p><p style="margin-left:14px"><a href="TRANSLATION-SCALAR-FLOAT-BITS.html#位型差异">位型差异</a></p><p style="margin-left:14px"><a href="TRANSLATION-SCALAR-FLOAT-BITS.html#已追到与尚未知">已追到与尚未知</a></p></details><h1 id="平移旋转标定标量输出位型对照">平移旋转标定标量输出位型对照</h1><h2 id="比较方法">比较方法</h2><p>原厂受控回放 <code>OriginalTranslationProbe.cpp</code> 的 <code>setFloat</code> 接收 <code>float</code>，并由 <code>num(float)</code> 以 <code>%.9g</code> 写入 JSON。九位有效数字足以恢复 binary32；因此本次把 evidence 的原厂十进制值读回 <code>float</code> 并读取 IEEE-754 原始位型。插件侧对 <code>PortValue.Number</code> 同样转换为 <code>float</code> 后取位型。这比较的是输出端口最终 binary32 值，而不是对 JSON 十进制文本做字节比较。</p>
+<p>原厂反编译 <code>CIMVSNPointCalibModu::ProcessOutput</code>（RVA <code>0x3c3f0</code>）从 SDK 结果对象取 float 到局部变量，再直接调用 <code>VM_M_SetFloat</code>；该路径没有额外的 double 转换或格式化。<code>TranslationPlugin.Results</code> 则把 <code>NPointSolveResult</code> 的 double 字段转成 float 后建端口值。对照结果显示差异已在 SDK getter 与插件 <code>NPointSolver</code> 结果值之间出现，不能归因于 JSON 日志十进制舍入或 <code>ProcessOutput</code> 的额外数值转换。</p>
+<h2 id="位型差异">位型差异</h2><p>基于现有 <code>translation-calibration-evidence.json</code> 的成功标量输出比较，发现 <strong>172 个</strong>原厂/插件 binary32 不同值，分布在 18 个字段。全部仍落在现有数值容差内；故本轮没有收紧为位级断言，也没有扩大容差。</p>
+<p>最大绝对差：</p>
+<ul>
+<li><code>append-rotation / RotCenterWorldY</code>：原厂 <code>1390.2864</code>，bits <code>0x44ADC92A</code>；插件 <code>1390.2858</code>，bits <code>0x44ADC925</code>；差 <code>0.0006</code>（同号相差 5 个相邻 float 编码）。</li>
+<li><code>append-rotation / DeltaY</code>：原厂 <code>753.4807</code>，bits <code>0x443C5EC4</code>；插件 <code>753.4802</code>，bits <code>0x443C5EBC</code>；差 <code>0.0005</code>。</li>
+<li><code>append-rotation / RotCenterImageY</code>：原厂 <code>753.4807</code>，bits <code>0x443C5EC4</code>；插件 <code>753.4803</code>，bits <code>0x443C5EBD</code>；差 <code>0.0004</code>。</li>
+</ul>
+<p>另有接近零的符号翻转：<code>complete-translation / DeltaX</code> 原厂 <code>+2.1274268e-6</code> (<code>0x360EC4EA</code>)，插件 <code>-1.9807087e-6</code> (<code>0xB604EC51</code>)，绝对差 <code>4.1081355e-6</code>；<code>DeltaY</code> 原厂 <code>+2.2741465e-6</code> (<code>0x36189D8A</code>)，插件 <code>-3.3011809e-6</code> (<code>0xB65D89DB</code>)，绝对差 <code>5.5753274e-6</code>。近零符号差在方向比等字段的多个场景也出现，不能把其当作日志舍入后强制归零。</p>
+<p>按字段最大绝对差：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th align="right">位型不同数</th>
+<th align="right">本组最大绝对差</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DeltaX</code></td>
+<td align="right">11</td>
+<td align="right">0.000216</td>
+</tr>
+<tr>
+<td><code>DeltaY</code></td>
+<td align="right">7</td>
+<td align="right">0.0005</td>
+</tr>
+<tr>
+<td><code>DirectionRatio</code></td>
+<td align="right">25</td>
+<td align="right">7e-7</td>
+</tr>
+<tr>
+<td><code>PixelPrecision</code></td>
+<td align="right">3</td>
+<td align="right">5e-7</td>
+</tr>
+<tr>
+<td><code>Rotate</code></td>
+<td align="right">19</td>
+<td align="right">3e-7</td>
+</tr>
+<tr>
+<td><code>RotCenterImageX</code></td>
+<td align="right">9</td>
+<td align="right">0.000228</td>
+</tr>
+<tr>
+<td><code>RotCenterImageY</code></td>
+<td align="right">5</td>
+<td align="right">0.0004</td>
+</tr>
+<tr>
+<td><code>RotCenterWorldX</code></td>
+<td align="right">11</td>
+<td align="right">0.000226</td>
+</tr>
+<tr>
+<td><code>RotCenterWorldY</code></td>
+<td align="right">7</td>
+<td align="right">0.0006</td>
+</tr>
+<tr>
+<td><code>RotErrMax</code></td>
+<td align="right">11</td>
+<td align="right">2.3284e-5</td>
+</tr>
+<tr>
+<td><code>RotError</code></td>
+<td align="right">11</td>
+<td align="right">1.134e-5</td>
+</tr>
+<tr>
+<td><code>RotErrWorldMax</code></td>
+<td align="right">11</td>
+<td align="right">4.891e-5</td>
+</tr>
+<tr>
+<td><code>RotWorldError</code></td>
+<td align="right">11</td>
+<td align="right">2.3826e-5</td>
+</tr>
+<tr>
+<td><code>Scale</code></td>
+<td align="right">3</td>
+<td align="right">1.8e-7</td>
+</tr>
+<tr>
+<td><code>Tilt</code></td>
+<td align="right">19</td>
+<td align="right">3.65e-7</td>
+</tr>
+<tr>
+<td><code>TransError</code></td>
+<td align="right">3</td>
+<td align="right">5e-7</td>
+</tr>
+<tr>
+<td><code>TransErrWorldMax</code></td>
+<td align="right">3</td>
+<td align="right">4e-6</td>
+</tr>
+<tr>
+<td><code>TransEstMax</code></td>
+<td align="right">3</td>
+<td align="right">4e-6</td>
+</tr>
+</tbody></table>
+<h2 id="已追到与尚未知">已追到与尚未知</h2><p>平移结果由插件 <code>NPointSolver.Solve</code> 生成，包括选点拟合、SDK风格 float 逆矩阵、反投影残差、float 累加平均与误差/像素精度计算；旋转结果由 <code>SolveRotation</code> 生成，包括角度映射、中心拟合、最大/平均残差和 world 误差。插件端 <code>Results</code> 是同名字段的薄映射并在边界处转成 float。原厂 <code>ProcessOutput</code> 的 getter/vtable 槽位及 setter 顺序已记录于 <a href="TRANSLATION-RESULT-FIELD-MAP.html">字段映射</a>，但当前原厂模块输出不暴露相应 SDK 结果对象内部 double/float 中间矩阵或误差累计值。因此虽然能证实输出结果的位型差异，并能排除 ProcessOutput 写端转换为原因，仍不能把误差归结到某一个原厂 SDK 中间运算步骤；本轮不据差异调参或改算法。</p>
+<p>检查保留既定标量数值容差，同时在每次回放时生成完整的位型差异清单供复核。最近一次 <code>TranslationCalibration.PluginChecks</code> 为 <code>7465 checks passed</code>，退出码 0；清单 <code>analysis/full-audit/translation-calibration/checks/scalar-bit-differences.txt</code> SHA-256：<code>fe4e1a70eed3189a7019f3a788dcfc0abcff09cf705aa991da81ab7ebc92a5d2</code>。原始 probe <code>OriginalTranslationProbe.cpp</code> SHA-256：<code>003bce4dfc1348eed67a29e8f10961841814004ecc857e75700b90c8f0503183</code>；原厂证据 JSON SHA-256：<code>58d502cb0d8d7dbd145bd81776193402816408cdb24450cf621b73d68ae729c9</code>；检查程序 SHA-256：<code>e77fa6130d644ec5fd52b4e9818251d475023e3caeae32b853efcafd7df8185e</code>；<code>NPointSolver.cs</code> SHA-256：<code>f39de6e04388b6bc9aa1b0c4b1b97b65e5c9b174380c7f8bcaa767a1c2a624cc</code>。</p>
+<p class="meta">来源：docs/plugins/TRANSLATION-SCALAR-FLOAT-BITS.md · SHA256 6bd3bccad516a61600c3f44ae0fa52b6740d35366d8f6dfb9b6b75dc7aa4f499<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

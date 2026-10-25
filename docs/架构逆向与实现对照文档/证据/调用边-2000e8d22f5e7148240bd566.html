@@ -1,0 +1,78 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NotifyValueChanged / Object.cctor后台线程 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>NotifyValueChanged / Object.cctor后台线程 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-T07"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>NotifyValueChanged / Object.cctor后台线程 → 局部队列门、数组交换、ValueChanged分发与槽计数</h2><p>Notify先FillValue和写valueExecuteCount；无事件订阅立即返回并跳过末尾sum/max复位。有订阅创建RenderDataEventArgs，dataNumForReceiveStore&lt;maxStoreLen门在lock外，锁内写数组/增加接收数及执行次数余数槽received；满队列正常不入队仍复位sum/max。静态初始化maxStoreLen=1000、双数组和后台线程；线程有待收项才锁内交换数组/计数，逐项先OnValueChanged再sent槽++、清发送引用，并仅对字典已有且次数不同时更新procedureSendExecuteCount，最后清发送数、Sleep(3)。不能称无损队列、算法完成计数或全后台异常保护。</p><p><a href="../专题/rendering-layers.html#edge-T07">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/rendering-layers.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/rendering-layers.edges.json · SHA256 28101fd3e74d0ef6d0fc0f2c5059c29b49d8a7d9e0e05a0081c069f7d6bfb43b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="ecfa4449f28828ad6fbc7a5cf21e0062dcf324db61553f42b990862b23a2946e">{
+  &quot;id&quot;: &quot;T07&quot;,
+  &quot;route&quot;: &quot;原版 · Show Text参数到文字结果对象&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;NotifyValueChanged / Object.cctor后台线程&quot;,
+  &quot;to&quot;: &quot;局部队列门、数组交换、ValueChanged分发与槽计数&quot;,
+  &quot;behavior&quot;: &quot;Notify先FillValue和写valueExecuteCount；无事件订阅立即返回并跳过末尾sum/max复位。有订阅创建RenderDataEventArgs，dataNumForReceiveStore&lt;maxStoreLen门在lock外，锁内写数组/增加接收数及执行次数余数槽received；满队列正常不入队仍复位sum/max。静态初始化maxStoreLen=1000、双数组和后台线程；线程有待收项才锁内交换数组/计数，逐项先OnValueChanged再sent槽++、清发送引用，并仅对字典已有且次数不同时更新procedureSendExecuteCount，最后清发送数、Sleep(3)。不能称无损队列、算法完成计数或全后台异常保护。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/text-producer-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;Apps.XmlParser.Object::NotifyValueChanged&quot;,
+      &quot;sha256&quot;: &quot;44dea0ebf4dbf25c2f878970404fd4f08deeeb8c1f3bd9325870257905353239&quot;,
+      &quot;start&quot;: 4255,
+      &quot;end&quot;: 4274,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060001db\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060001db\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;Apps.XmlParser.Object\&quot;,\n            \&quot;name\&quot;: \&quot;NotifyValueChanged\&quot;,\n            \&quot;parameters\&quot;: 1,\n            \&quot;attributes\&quot;: \&quot;Assembly, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;20010108\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 299,\n          \&quot;ilSha256\&quot;: \&quot;97fa603065f4a40074b535c2bcce6f4a53d755b7f8e1936bae2abf953ab70168\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;000202031428de0100067df900000402027bf10000040b1201283a01000a2d03162b071201283901000a7dfa0000040228340100060c082c0538ec0000000273ed01000a25027bf90000047d3c01000a250228710100067dee01000a25027bf10000040b1201283a01000a2d03162b071201283901000a7d3801000a25027b8d0000047def01000a73f001000a0a7ee70000047ee9000004fe040d092c7e007ee600000413041613051104120528c700000a00007eea0000047ee700000406a27ee7000004175880e7000004161306027bf10000040b1201283a01000a2d03162b071201283901000a130711077ee9000004120628e501000a267eee00000411068f5d010001254a17585400de0d11052c08110428c800000a00dc0002167df500000402167df70000042a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1 / MVID d0604401-ab61-48a4-938b-faad16d74e7c&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/text-producer-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;Apps.XmlParser.Object::.cctor&quot;,
+      &quot;sha256&quot;: &quot;44dea0ebf4dbf25c2f878970404fd4f08deeeb8c1f3bd9325870257905353239&quot;,
+      &quot;start&quot;: 411,
+      &quot;end&quot;: 430,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060001d0\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060001d0\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;Apps.XmlParser.Object\&quot;,\n            \&quot;name\&quot;: \&quot;.cctor\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Private, Static, HideBySig, SpecialName, RTSpecialName\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 209,\n          \&quot;ilSha256\&quot;: \&quot;652c9f80ab2662d016c970c38fdfd6f86d46c7296af4dc5609a4a532aee195e4\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;1480e60000041680e70000041680e800000420e803000080e90000047ee90000048d1200000180ec0000047ee90000048d1200000180ed0000047ee90000048d5d01000180ee0000047ee90000048d5d01000180ef00000473df01000a80f000000400723f0f00706f1e01000a80e400000472d90c00706f1e01000a80e5000004739a01000a267eec00000480ea0000047eed00000480eb0000047e24070004fe062410000673e001000a73e101000a25176fe201000a0025176fe301000a0080e60000047ee60000046fe401000a002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;ldnull\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1 / MVID d0604401-ab61-48a4-938b-faad16d74e7c&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/text-producer-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;.&lt;>c::&lt;.cctor>b__13_0&quot;,
+      &quot;sha256&quot;: &quot;44dea0ebf4dbf25c2f878970404fd4f08deeeb8c1f3bd9325870257905353239&quot;,
+      &quot;start&quot;: 36779,
+      &quot;end&quot;: 36798,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06001024\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06001024\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;.\\u003C\\u003Ec\&quot;,\n            \&quot;name\&quot;: \&quot;\\u003C.cctor\\u003Eb__13_0\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Assembly, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 334,\n          \&quot;ilSha256\&quot;: \&quot;e6a6f855dc5266a57cc377be3a6d8ca0ff0df568e6a4228c68640e4f2005a37b\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;003840010000007ee700000416fe020a063928010000007eeb0000040b7ee60000040c160d08120328c700000a00007eea00000480eb0000047ee700000480e80000041680e70000040780ea00000400de0b092c070828c800000a00dc16130438c0000000007eeb00000411049a755c00001b130511056f7707000a11056f7807000a6f330100060016130611056f7807000a7b3801000a130711077ee9000004120628e501000a267eef00000411068f5d010001254a1758547eeb000004110414a27ef000000411056f7707000a7bfd00000412086fe601000a2c15110811056f7807000a7b3801000afe0116fe012b0116130911092c25007ef000000411056f7707000a7bfd00000411056f7807000a7b3801000a6ffc01000a00000011041758130411047ee8000004fe04130a110a3a2effffff1680e8000004001928e204000a000017130b38b8feffff\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1 / MVID d0604401-ab61-48a4-938b-faad16d74e7c&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/Object.cs&quot;,
+      &quot;member&quot;: &quot;Notification payload and bounded receive buffer&quot;,
+      &quot;sha256&quot;: &quot;feed3ecc1a21de9e05092b5895a7dc369a947c20ca2b3cf63b5d8e7b125ce0c1&quot;,
+      &quot;start&quot;: 281,
+      &quot;end&quot;: 313,
+      &quot;excerpt&quot;: &quot;\tinternal void NotifyValueChanged(int maxlenth)\n\t{\n\t\tvalue = FillValue(maxlenth);\n\t\tvalueExecuteCount = ExecuteCount ?? 0;\n\t\tif (IsValueChangedNull())\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\tTuple&lt;Object, RenderDataEventArgs> tuple = new Tuple&lt;Object, RenderDataEventArgs>(this, new RenderDataEventArgs\n\t\t{\n\t\t\tValue = value,\n\t\t\tValueType = TypeA,\n\t\t\tExecuteCount = (ExecuteCount ?? 0),\n\t\t\tIsLowQuality = IsLowQuality\n\t\t});\n\t\tif (dataNumForReceiveStore &lt; maxStoreLen)\n\t\t{\n\t\t\tlock (refreshParamthread)\n\t\t\t{\n\t\t\t\tforReceiveStore[dataNumForReceiveStore] = tuple;\n\t\t\t\tdataNumForReceiveStore++;\n\t\t\t\tint result = 0;\n\t\t\t\tint a = (int)(ExecuteCount ?? 0);\n\t\t\t\tMath.DivRem(a, maxStoreLen, out result);\n\t\t\t\tnumStoreForReceived[result]++;\n\t\t\t}\n\t\t}\n\t\tvalueStoreSumNum = 0;\n\t\tmaxValueLenth = 0;\n\t}\n\n\tinternal override void ClearTempValue()\n\t{&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/Object.cs&quot;,
+      &quot;member&quot;: &quot;Background swap and dispatch loop&quot;,
+      &quot;sha256&quot;: &quot;feed3ecc1a21de9e05092b5895a7dc369a947c20ca2b3cf63b5d8e7b125ce0c1&quot;,
+      &quot;start&quot;: 91,
+      &quot;end&quot;: 161,
+      &quot;excerpt&quot;: &quot;\tstatic Object()\n\t{\n\t\trefreshParamthread = null;\n\t\tdataNumForReceiveStore = 0;\n\t\tdataNumForSendStore = 0;\n\t\tmaxStoreLen = 1000;\n\t\tdataStore = new object[maxStoreLen];\n\t\tdataStore2 = new object[maxStoreLen];\n\t\tnumStoreForReceived = new int[maxStoreLen];\n\t\tnumStoreForSent = new int[maxStoreLen];\n\t\tprocedureSendExecuteCount = new ConcurrentDictionary&lt;uint, uint>();\n\t\tImageStrCode = \&quot;Image\&quot;.GetHashCode();\n\t\tPixelInfoValueStrCode = \&quot;PixelInfoValue\&quot;.GetHashCode();\n\t\tnew ImageData();\n\t\tforReceiveStore = dataStore;\n\t\tforSendStore = dataStore2;\n\t\trefreshParamthread = new Thread(() =>\n\t\t{\n\t\t\twhile (true)\n\t\t\t{\n\t\t\t\tif (dataNumForReceiveStore > 0)\n\t\t\t\t{\n\t\t\t\t\tobject[] array = forSendStore;\n\t\t\t\t\tlock (refreshParamthread)\n\t\t\t\t\t{\n\t\t\t\t\t\tforSendStore = forReceiveStore;\n\t\t\t\t\t\tdataNumForSendStore = dataNumForReceiveStore;\n\t\t\t\t\t\tdataNumForReceiveStore = 0;\n\t\t\t\t\t\tforReceiveStore = array;\n\t\t\t\t\t}\n\t\t\t\t\tfor (int i = 0; i &lt; dataNumForSendStore; i++)\n\t\t\t\t\t{\n\t\t\t\t\t\tTuple&lt;Object, RenderDataEventArgs> tuple = forSendStore[i] as Tuple&lt;Object, RenderDataEventArgs>;\n\t\t\t\t\t\ttuple.Item1.OnValueChanged(tuple.Item2);\n\t\t\t\t\t\tint result = 0;\n\t\t\t\t\t\tint executeCount = (int)tuple.Item2.ExecuteCount;\n\t\t\t\t\t\tMath.DivRem(executeCount, maxStoreLen, out result);\n\t\t\t\t\t\tnumStoreForSent[result]++;\n\t\t\t\t\t\tforSendStore[i] = null;\n\t\t\t\t\t\tif (procedureSendExecuteCount.TryGetValue(tuple.Item1.ownerProID, out var num) &amp;&amp; num != tuple.Item2.ExecuteCount)\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tprocedureSendExecuteCount[tuple.Item1.ownerProID] = tuple.Item2.ExecuteCount;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tdataNumForSendStore = 0;\n\t\t\t\t}\n\t\t\t\tThread.Sleep(3);\n\t\t\t}\n\t\t})\n\t\t{\n\t\t\tIsBackground = true,\n\t\t\tPriority = ThreadPriority.BelowNormal\n\t\t};\n\t\trefreshParamthread.Start();\n\t}\n\n\tpublic static bool GetDataSendFinishState(uint proID, uint executeCount)\n\t{\n\t\tint result = 0;\n\t\tMath.DivRem((int)executeCount, maxStoreLen, out result);\n\t\tuint num = executeCount;\n\t\tprocedureSendExecuteCount.TryGetValue(proID, out num);\n\t\tbool flag = numStoreForSent[result] == numStoreForReceived[result] || executeCount &lt; num;\n\t\tif (flag)\n\t\t{\n\t\t\tnumStoreForReceived[result] = 0;\n\t\t\tnumStoreForSent[result] = 0;\n\t\t}\n\t\treturn !flag;\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ObjectBase.cs&quot;,
+      &quot;member&quot;: &quot;ValueChanged invocation local source&quot;,
+      &quot;sha256&quot;: &quot;73168438e06dfd74cae70f910db9aecdabf313db0c376753652180c5bc35d006&quot;,
+      &quot;start&quot;: 361,
+      &quot;end&quot;: 372,
+      &quot;excerpt&quot;: &quot;\tinternal void OnValueChanged(EventArgs args)\n\t{\n\t\ttry\n\t\t{\n\t\t\tValueChanged?.Invoke(this, args);\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Error(ex.Message + ex.StackTrace);\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;容量门锁外且无内层复检；并发越界/丢弃的实际发生、发送者全集、计数回绕和全部生命周期未知。ObjectBase.OnValueChanged的catch仅为本地源码证据，不在所选49体；后台闭包EH仅Monitor finally。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

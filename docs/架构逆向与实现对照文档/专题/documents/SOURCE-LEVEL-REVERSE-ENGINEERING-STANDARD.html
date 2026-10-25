@@ -1,0 +1,21 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>源码级逆向与复刻标准 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 源码级逆向与复刻标准</p><h1>源码级逆向与复刻标准</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>源码级逆向与复刻标准</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="SOURCE-LEVEL-REVERSE-ENGINEERING-STANDARD.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="SOURCE-LEVEL-REVERSE-ENGINEERING-STANDARD.html#源码级逆向与复刻标准">源码级逆向与复刻标准</a></p><p style="margin-left:14px"><a href="SOURCE-LEVEL-REVERSE-ENGINEERING-STANDARD.html#证据等级">证据等级</a></p><p style="margin-left:14px"><a href="SOURCE-LEVEL-REVERSE-ENGINEERING-STANDARD.html#每个节点的必填审计项">每个节点的必填审计项</a></p><p style="margin-left:14px"><a href="SOURCE-LEVEL-REVERSE-ENGINEERING-STANDARD.html#实施顺序">实施顺序</a></p></details><h1 id="源码级逆向与复刻标准">源码级逆向与复刻标准</h1><p>本标准适用于插件线后续所有节点。目标是让实现逐项追到原厂源码、XAML/资源和可复核的运行行为，避免按名称、界面截图或“常见做法”推测功能。</p>
+<h2 id="证据等级">证据等级</h2><p>每个结论必须标记为以下一种：</p>
+<ul>
+<li><strong>原厂源码确认</strong>：反编译源码中的精确类型、成员、分支、调用顺序或常量；记录证据文件、行号/符号和 SHA-256。XAML、XML、模板、图片及其他资源同样记录原始路径和哈希。</li>
+<li><strong>原厂运行确认</strong>：原厂程序的可复现输入、操作序列、输出/界面状态及采集记录。说明版本、宿主、依赖、输入数据和触发条件。</li>
+<li><strong>独立实现</strong>：本项目自行实现或抽象的部分，记录实现文件和行为；不得将其写成原厂行为。</li>
+<li><strong>未确认</strong>：证据缺失、原生依赖不可用、反编译还原不充分或原厂行为尚未复测。明确缺项，不用猜测填补。</li>
+</ul>
+<p>用户反馈和截图是差异线索或验收结果，不单独构成行为规格。测试通过仅说明本项目检查通过，不自动升级为原厂源码/运行确认。</p>
+<h2 id="每个节点的必填审计项">每个节点的必填审计项</h2><ol>
+<li><strong>对象身份</strong>：原厂模块 ID、程序集/版本/文件哈希、托管入口、原生入口与依赖；本项目注册状态和对应实现。</li>
+<li><strong>配置 UI</strong>：原始 XML/XAML/资源、控件类型、模板 key、字段名与顺序、默认值/范围/格式、绑定路径、可见/启用条件、用户数据回写方式、弹层尺寸与生命周期。每个字段能追到源定义和消费代码。</li>
+<li><strong>事件与状态</strong>：初始化、Loaded、选择/编辑/确认/取消、执行/连续执行、复位、关闭、持久化等事件；列出调用链、状态读写、异常和边界。</li>
+<li><strong>运行逻辑</strong>：输入/输出类型、参数读取、算法调用及顺序、原生互操作、结果映射、错误码/失败语义、资源释放。不得以 UI 声明推断算法行为。</li>
+<li><strong>差异矩阵</strong>：逐条列出源码确认行为、当前实现位置、差异、证据等级、修复状态和验证方式；没有证据的行为写“未知”。</li>
+<li><strong>回归与验收</strong>：源事实对应的独立检查、原厂差分检查和人工验收分开记录。记录命令、版本、结果与报告路径；不适用的设备测试明确排除。</li>
+</ol>
+<h2 id="实施顺序">实施顺序</h2><p>原生ABI特别规则（2026-10-19原厂补证）：不能从反编译器显示的实参数量推出调用只传了那些参数。函数只改写RCX时，RDX/R8/R9可能原样保留供下游消费；须核对调用前指令、寄存器活性和实际入口寄存器。本次标定板SDK <code>0x2980</code> 的硬件断点确认name/value分别从RDX/R8传入算法，推翻旧“一参数导致值未传递”结论。不同函数/板型的参数块偏移也必须逐路径核验，不把未命中断点解释成参数不存在。</p>
+<p>先核验原始证据及哈希，再形成源事实表；按差异矩阵实现；对每条有确定性证据的差异增加针对性检查；运行节点专属回归和公共框架回归；最后检查产品注册、实际宿主分发和人工验收状态。修复不能以“视觉相似”替代字段、绑定、触发与生命周期的源码追踪。</p>
+<p>新增节点逆向暂停在已实现节点审计闭合之后。若某项因原厂证据不可获得而无法闭合，记录阻塞证据和范围，经审计台账明示后再决定是否继续；不得静默跳项。</p>
+<p class="meta">来源：docs/SOURCE-LEVEL-REVERSE-ENGINEERING-STANDARD.md · SHA256 9919f759f6d926d55effd71bb2fce085d928e9113093b71fe3e1c9714a416364<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

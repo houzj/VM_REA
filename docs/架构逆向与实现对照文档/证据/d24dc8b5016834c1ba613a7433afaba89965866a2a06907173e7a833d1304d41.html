@@ -1,0 +1,56 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 d24dc8b50168 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 d24dc8b50168</p><h1>原文证据 d24dc8b50168</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 d24dc8b5016834c1ba613a7433afaba89965866a2a06907173e7a833d1304d41。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/result-query-ownership.resources/VM.PlatformSDKCS.ModuleManager.decompiled.cs:1431–1482
+证据类型 original-managed-offline-ilspy-decompilation
+程序集身份 34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1 / MVID e7b3a3b0-7083-486a-8ca2-97cecec02ea2
+SHA256 783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922
+	public int GetBinaryData(uint moduleId, string paramName, ref byte[] data, uint recvTimeOut = 3000u)
+	{
+		ImvsSdkDefine.IMVS_GET_BINARY_LENGTH_INFO strValue = new ImvsSdkDefine.IMVS_GET_BINARY_LENGTH_INFO
+		{
+			strName = StringUtil.UTF8GetFixLenBytes(paramName, 256)
+		};
+		int num = ServerSDKAPI.IMVS_GetBinaryLength(CVmObjectBase.mhandle, moduleId, ref strValue, recvTimeOut);
+		if (num != 0)
+		{
+			return num;
+		}
+		if (strValue.nBinaryLength == 0)
+		{
+			return -536870911;
+		}
+		ImvsSdkDefine.IMVS_GET_BINARY_DATA_INFO strValue2 = new ImvsSdkDefine.IMVS_GET_BINARY_DATA_INFO
+		{
+			strName = StringUtil.UTF8GetFixLenBytes(paramName, 256),
+			nBinaryDataMallocSize = strValue.nBinaryLength,
+			nBinaryLength = strValue.nBinaryLength
+		};
+		data = new byte[strValue.nBinaryLength];
+		GCHandle gCHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
+		try
+		{
+			strValue2.pBinaryData = gCHandle.AddrOfPinnedObject();
+			if (!gCHandle.IsAllocated)
+			{
+				return -536870911;
+			}
+			num = ServerSDKAPI.IMVS_GetBinaryData(CVmObjectBase.mhandle, moduleId, ref strValue2, recvTimeOut);
+			if (num != 0)
+			{
+				data = null;
+				return num;
+			}
+			gCHandle.Free();
+		}
+		catch (Exception)
+		{
+			throw;
+		}
+		finally
+		{
+			if (gCHandle.IsAllocated)
+			{
+				gCHandle.Free();
+			}
+		}
+		return 0;
+	}
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/domain-data-obligations--F-16.html">数据/domain-data-obligations--F-16.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

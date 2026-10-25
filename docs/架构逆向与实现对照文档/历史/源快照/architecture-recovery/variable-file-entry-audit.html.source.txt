@@ -1,0 +1,1143 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>变量文件入口：主菜单子窗口、gvar路径命令与订阅边界</title><style>body{max-width:1300px;margin:auto;padding:24px;background:#102032;color:#e1edf8;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#9bd4ff}article{padding:18px;margin:20px 0;background:#1a3047;border-left:4px solid #eab873}.independent-implementation{border-color:#80c9ff}.unknown{border:1px dashed #e7a2bd}details{margin:13px 0}summary{cursor:pointer}pre{font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}p{overflow-wrap:anywhere}.notice{padding:16px;background:#2b3e55}</style><a href="main-ui-map.html#menu">主界面菜单区</a> · <a href="variable-manager-review.html">已有变量管理器证据</a> · <a href="parameter-candidates.html">已有参数候选</a><h1>变量文件入口：主菜单子窗口、gvar路径命令与订阅边界</h1><p class="notice">B05/F17有限文件入口切片；不穷尽变量CRUD/初始化/执行或宣称原gvar格式已恢复。<br>主菜单GlobalVariable → GlobalVariableDialog → 子窗口BtnImport/BtnExport → VariableManager → UTF8尾零路径命令 → SDK/native payload未知。10项结论，51引用，50个原CIL体；文件内容编码/保护仍未知。没有读取个人配置/凭据或gvar样本，没有执行原程序/SDK/设备/FTP。</p><article id="VF01" class="source-confirmed"><h2>VF01 · 主菜单GlobalVariable数据项 → GlobalVariableDialog → 窗口内导入/导出按钮</h2><p>source-confirmed：主菜单methodName=GlobalVariable接TitleMenueItemData.GlobalVariable；原方法取GetGlobalVarModule，CheckConfigAvailable为true则返回，空模块时按固定路径加载GlobalVariableModuleCs.dll并选首个IVmModule可赋类型实例化，再取模块。模块非null才new GlobalVariableDialog、DecorateSource=该模块、ShowDialog。导入/导出属于此子窗口动作，绝不是两个顶层主菜单。窗口原BAML底部btnImport/btnExport接BtnImport_Click/BtnExport_Click，远程模式弹出Local/Remote按钮各接独立handler；原generated Connect也保留事件接线。</p><p>待追：实际主菜单绑定、插件类型注册和模块实例未运行确认；控件IsRunning反向可用绑定不是handler内再次运行状态校验。BAML输出匹配本地，未另记内层payload digest。</p><details><summary>VisionMaster.AppMainWindow.TitleMenueItemData::GlobalVariable · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:520–539
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x060002df&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002df&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData&quot;,
+            &quot;name&quot;: &quot;GlobalVariable&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 317,
+          &quot;ilSha256&quot;: &quot;1c38cf09f48a5672dde9e2cadf613fda47be52112e4abb1fc1a422bb3d368471&quot;,
+          &quot;ilBytes&quot;: &quot;0000288703000a0a0628e40200060b072c0600dd240100000614fe010c082c6800284303000a6f4403000a72cb3b0070283600000a0d09284503000a130411046f5b00000a7ee2010004252d17267ed5010004fe0683030006735c00000a2580e2010004280100002b13051105178d150000012516288800000aa2284603000a26288703000a0a000614fe03130611062c2300738803000a80070100047e07010004066f8903000a007e070100046fbf01000a260000dd81000000130700141308110775270000012d1111076f9700000a752700000114fe032b0117130911092c3c00110775270000011308110814fe01130a110a2c100011076f9700000a75270000011308001108289c00000a0011086f7300000a289b00000a00de1e11076f7c00000a1916282c01000a2611076f7c00000a289b00000a00de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Main-menu global-variable host · local-decompiled-source</summary><pre>analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs:1193–1218
+SHA256 b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187
+	public static void GlobalVariable()
+	{
+		try
+		{
+			VmModule globalVarModule = VmModuleExtern.GetGlobalVarModule();
+			if (CheckConfigAvailable(globalVarModule))
+			{
+				return;
+			}
+			if (globalVarModule == null)
+			{
+				string path = CurrentPathHelper.Instance.GetCurrentPath() + &quot;module(sp)\\x64\\Global\\GlobalVariableModule\\GlobalVariableModuleCs.dll&quot;;
+				Assembly assembly = Assembly.LoadFile(path);
+				Type type = assembly.GetTypes().FirstOrDefault((Type p) =&gt; typeof(IVmModule).IsAssignableFrom(p));
+				Activator.CreateInstance(type, VmSolution.Instance);
+				globalVarModule = VmModuleExtern.GetGlobalVarModule();
+			}
+			if (globalVarModule != null)
+			{
+				globalVariableDialog = new GlobalVariableDialog();
+				globalVariableDialog.DecorateSource = globalVarModule;
+				globalVariableDialog.ShowDialog();
+			}
+		}
+		catch (Exception ex)
+		{</pre></details><details><summary>Original main-menu global variable receiver · local-extracted-resource</summary><pre>docs/architecture-recovery/menu-universe-next-MenuItems.xml:319–322
+SHA256 d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959
+					&lt;methodName&gt;GlobalVariable&lt;/methodName&gt;
+					&lt;isShowExternal&gt;true&lt;/isShowExternal&gt;
+					&lt;toolGroupItemInfo&gt;
+						&lt;groupName&gt;group2&lt;/groupName&gt;</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::System.Windows.Markup.IComponentConnector.Connect · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:30733–30752
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600068e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600068e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;System.Windows.Markup.IComponentConnector.Connect&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200201081c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 759,
+          &quot;ilSha256&quot;: &quot;268dac15ba29efde6d8b994f8436c5e83ea49a2f2a4493fb283e124d083456f9&quot;,
+          &quot;ilBytes&quot;: &quot;00030a061759451c000000050000001600000074020000740200007402000027000000440000007402000061000000720000008f000000b8000000c9000000e6000000030100002c0100003d0100005a01000077010000a0010000bd010000e60100000c0200003202000058020000740200007402000066020000386f020000020474730000027d960300043865020000020474700000017d9703000438540200000474b900000102fe0683060006735900000a6f5a00000a0038370200000474a902000102fe0682060006735900000a6f5b00000a00381a0200000204747c0000017d98030004380902000004743600000102fe066e060006735900000a6f5b00000a0038ec010000020474360000017d99030004027b9903000402fe067b060006735900000a6f5b00000a0038c3010000020474370000017d9a03000438b201000004743600000102fe0688060006735900000a6f5b00000a00389501000004743600000102fe0689060006735900000a6f5b00000a003878010000020474360000017d9b030004027b9b03000402fe067d060006735900000a6f5b00000a00384f010000020474370000017d9c030004383e01000004743600000102fe068a060006735900000a6f5b00000a00382101000004743600000102fe068b060006735900000a6f5b00000a0038040100000204747c0000017d9d030004027b9d03000402fe0670060006731906000a6f1a06000a0038db00000004743600000102fe066d060006735900000a6f5b00000a0038be000000020474360000017d9e030004027b9e03000402fe067a060006735900000a6f5b00000a003895000000020474360000017d9f030004027b9f03000402fe0678060006735900000a6f5b00000a002b6f020474360000017da0030004027ba003000402fe0679060006735900000a6f5b00000a002b49020474360000017da1030004027ba103000402fe066f060006735900000a6f5b00000a002b23020474b20000017da20300042b15020474a50000017da30300042b0702177da40300042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Original child dialog import/export controls · local-extracted-resource</summary><pre>docs/architecture-recovery/variable-file-entry-audit.resources/globalvariabledialog.xaml:561–585
+SHA256 17fd6594d9b0e5a893075d9ebf54d4abdf7f79ea9731168751d2fd9366354163
+          &lt;Button Name=&quot;btnImport&quot; Content=&quot;{DynamicResource 导入}&quot; Margin=&quot;10,0,0,0&quot; Width=&quot;50&quot; Height=&quot;32&quot; Style=&quot;{StaticResource importButtonStyle}&quot; IsEnabled=&quot;{Binding Path=SolutionData.(VMInterface:IVMRun.IsRunning), ElementName=source, Converter={StaticResource BoolBackToEnable}}&quot; Click=&quot;BtnImport_Click&quot; /&gt;
+          &lt;Popup Name=&quot;PopImport&quot; StaysOpen=&quot;False&quot; Margin=&quot;0&quot; AllowsTransparency=&quot;True&quot; PlacementTarget=&quot;{Binding ElementName=btnImport}&quot;&gt;
+            &lt;Grid Height=&quot;60&quot; Width=&quot;80&quot; HorizontalAlignment=&quot;Left&quot; Background=&quot;#00FFFFFF&quot;&gt;
+              &lt;Border BorderBrush=&quot;#00FFFFFF&quot; BorderThickness=&quot;1&quot; CornerRadius=&quot;4&quot; Padding=&quot;0,4,0,4&quot; Background=&quot;{DynamicResource GlobalBorderBg}&quot;&gt;
+                &lt;UIElement.Effect&gt;
+                  &lt;DropShadowEffect Color=&quot;#1F0E01&quot; BlurRadius=&quot;4&quot; ShadowDepth=&quot;4&quot; Opacity=&quot;0.4&quot; /&gt;
+                &lt;/UIElement.Effect&gt;
+                &lt;StackPanel&gt;
+                  &lt;Button Content=&quot;{DynamicResource Local}&quot; Style=&quot;{StaticResource MyButtonStyle}&quot; Click=&quot;LocalImport_Click&quot; /&gt;
+                  &lt;Button Content=&quot;{DynamicResource Remote}&quot; Style=&quot;{StaticResource MyButtonStyle}&quot; Click=&quot;RemoteImport_Click&quot; /&gt;
+                &lt;/StackPanel&gt;
+              &lt;/Border&gt;
+            &lt;/Grid&gt;
+          &lt;/Popup&gt;
+          &lt;Button Name=&quot;btnExport&quot; Content=&quot;{DynamicResource 导出}&quot; Margin=&quot;10,0,0,0&quot; Width=&quot;50&quot; Height=&quot;32&quot; Style=&quot;{StaticResource importButtonStyle}&quot; IsEnabled=&quot;{Binding Path=SolutionData.(VMInterface:IVMRun.IsRunning), ElementName=source, Converter={StaticResource BoolBackToEnable}}&quot; Click=&quot;BtnExport_Click&quot; /&gt;
+          &lt;Popup Name=&quot;PopExport&quot; StaysOpen=&quot;False&quot; Margin=&quot;0&quot; AllowsTransparency=&quot;True&quot; PlacementTarget=&quot;{Binding ElementName=btnExport}&quot;&gt;
+            &lt;Grid Height=&quot;60&quot; Width=&quot;80&quot; HorizontalAlignment=&quot;Left&quot; Background=&quot;#00FFFFFF&quot;&gt;
+              &lt;Border BorderBrush=&quot;#00FFFFFF&quot; BorderThickness=&quot;1&quot; CornerRadius=&quot;4&quot; Padding=&quot;0,4,0,4&quot; Background=&quot;{DynamicResource GlobalBorderBg}&quot;&gt;
+                &lt;UIElement.Effect&gt;
+                  &lt;DropShadowEffect Color=&quot;#1F0E01&quot; BlurRadius=&quot;4&quot; ShadowDepth=&quot;4&quot; Opacity=&quot;0.4&quot; /&gt;
+                &lt;/UIElement.Effect&gt;
+                &lt;StackPanel&gt;
+                  &lt;Button Content=&quot;{DynamicResource Local}&quot; Style=&quot;{StaticResource MyButtonStyle}&quot; Click=&quot;LocalExport_Click&quot; /&gt;
+                  &lt;Button Content=&quot;{DynamicResource Remote}&quot; Style=&quot;{StaticResource MyButtonStyle}&quot; Click=&quot;RemoteExport_Click&quot; /&gt;
+                &lt;/StackPanel&gt;</pre></details></article><article id="VF02" class="source-confirmed"><h2>VF02 · BtnImport_Click → 普通本地.gvar文件选择与确认</h2><p>source-confirmed：DecorateSource为null返回；非RemoteOperate.IsRemoteMode时OpenFileDialog要求文件/路径存在并设置*.gvar过滤，ShowDialog返回flag.Value且当前无项或确认覆盖才继续。FileInfo.Length被读取但未用于大小门，随后设置进度显示并调用async void ImportGlobalVar(fileName)。外层catch提示/日志，不可据此声称已捕获async后续所有异常。远程分支只打开PopImport。</p><p>待追：过滤器不能证明文件编码或内容校验；实际文件、权限、取消null回执和异步异常传播未执行。</p><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::BtnImport_Click · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:24939–24958
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600067b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600067b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;BtnImport_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 291,
+          &quot;ilSha256&quot;: &quot;40b8fc61b41d3555fce831faec6646ffff108c4dec8c7b877737eaa5d2150110&quot;,
+          &quot;ilBytes&quot;: &quot;000002283e06000614fe010a062c0600dd0d01000028a500000a16fe010b0739ba0000000073b800000a0c08176fb900000a0008176fba00000a000872e45900706fbd00000a00086fc100000a0d086fc500000a1304120328fc05000a130511052c78000228580600066fcb05000a16fe02130711072c2e0072005a0070283800000a72205a0070283800000a17171616285a04000a17fe0116fe01130811082c0300de7d00110473fd05000a28fe05000a130602727f540070283800000a2855060006000272bb500070285306000600021104287c0600060000002b0f00027b9a030004176fff05000a000000de3213090072425a0070283800000a285703000a267eee05000a725e5a007011096f3200000a284300000a6f0006000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Local import choice, confirmation and unused length · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1578–1611
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	private void BtnImport_Click(object sender, RoutedEventArgs e)
+	{
+		try
+		{
+			if (DecorateSource == null)
+			{
+				return;
+			}
+			if (!RemoteOperate.IsRemoteMode)
+			{
+				Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+				openFileDialog.CheckFileExists = true;
+				openFileDialog.CheckPathExists = true;
+				openFileDialog.Filter = &quot;*.gvar|*.gvar&quot;;
+				bool? flag = openFileDialog.ShowDialog();
+				string fileName = openFileDialog.FileName;
+				if (flag.Value &amp;&amp; (Items.Count &lt;= 0 || HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_ImportSure&quot;), AppLocalizationService.GetLang(&quot;Lang_ImportEmpty&quot;), MessageButtons.YesOrNo, MessageIcons.Question) == VM.Controls.DialogResult.Yes))
+				{
+					long length = new FileInfo(fileName).Length;
+					ProcessbarMessage = AppLocalizationService.GetLang(&quot;Lang_Import&quot;);
+					IsShowProcessbar = &quot;Visible&quot;;
+					ImportGlobalVar(fileName);
+				}
+			}
+			else
+			{
+				PopImport.IsOpen = true;
+			}
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_LoadFail&quot;));
+			LogHelper.objLog.Error(&quot;全局变量导入失败，ex:&quot; + ex.ToString());
+		}</pre></details></article><article id="VF03" class="source-confirmed"><h2>VF03 · ImportGlobalVar任务与原闭包 → 先按Name捕获运行参数关联，再执行ImportVar与IO回调</h2><p>source-confirmed：原async方法以Task.Factory.StartNew执行，初设nRet=0。Dispatcher?.Invoke枚举当前Items，以item.Name为字典键，SelectedRunParams经GlobalVarExtern映射为ModuleID/Name/Type/IsSupportSub/Owner。随后ImportVar(path,true,dict,callback)，callback在Dispatcher内逆序Dispose模块当前Outputs全部项。重复变量Name导致Dictionary.Add抛错；捕获/路径命令/输出Dispose是有顺序的独立步骤，不是完整回滚事务。</p><p>待追：Owner/ModuleID.Value和Dispatcher缺失/异常、原始变量全局身份与重名可达性未知；未把按名称旧关联捕获称为跨导入身份稳定。</p><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::ImportGlobalVar · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:26016–26035
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600067c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600067c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;ImportGlobalVar&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 55,
+          &quot;ilSha256&quot;: &quot;0263edb54a2dcc7626d5db54eb87ca8f5704c0053cbbce5ad00fe357e9ebb40d&quot;,
+          &quot;ilBytes&quot;: &quot;730f0f00060a06027d5108000406037d5008000406280106000a7d4f08000406157d4e080004067b4f0800040b12011200287700002b2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>.&lt;&gt;c__DisplayClass126_0::&lt;ImportGlobalVar&gt;b__0 · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:39694–39713
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000f06&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f06&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec__DisplayClass126_0&quot;,
+            &quot;name&quot;: &quot;\u003CImportGlobalVar\u003Eb__0&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 301,
+          &quot;ilSha256&quot;: &quot;cd53a43cb60d22f143343ef4605904da0a0d08b0ac9a45903605b5719ead2af3&quot;,
+          &quot;ilBytes&quot;: &quot;730b0f00060a06027d4b08000400730d0f00060b07067d4d080004000773720a000a7d4c080004027b46080004289600000a252d03262b1207fe060e0f0006735300000a28b600000a00027b460800047b73030004027b4708000417077b4c08000402fe06070f0006735300000a6f730a000a0000de3c0c00027b46080004289600000a02fe06090f0006735300000a6fb600000a007eee05000a721ea60070086f3200000a284300000a6f0006000a00de79027b4808000416fe010d092c2b00027b46080004147d7f030004027b46080004289600000a02fe060a0f0006735300000a6fb600000a000006027b480800042c0c72425a0070283800000a2b0a72e6470070283800000a7d4a080004027b46080004289600000a06fe060c0f0006735300000a6fb600000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>.&lt;&gt;c__DisplayClass126_2::&lt;ImportGlobalVar&gt;b__3 · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:42425–42444
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000f0e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f0e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec__DisplayClass126_2&quot;,
+            &quot;name&quot;: &quot;\u003CImportGlobalVar\u003Eb__3&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 91,
+          &quot;ilSha256&quot;: &quot;c0575025a6834ae2e7258f2b83a7237993bf79f0e49da41a767e589b8f3be1f6&quot;,
+          &quot;ilBytes&quot;: &quot;0000027b4d0800047b4b0800047b4608000428580600066fd005000a0a2b26066fd105000a0b00027b4c080004076fb0060006076fd106000628e30600066f770a000a0000066f9f00000a2dd2de0b062c07066fa000000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVarExtern::GetLinkModuleInfoByRunParams · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:38657–38676
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x060006e3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060006e3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVarExtern&quot;,
+            &quot;name&quot;: &quot;GetLinkModuleInfoByRunParams&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00011d1284e915128155011284cd&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 191,
+          &quot;ilSha256&quot;: &quot;c745a6c3d26abeb4a4694ab72a0152da8235e067d3bba53b9e7ba5b2959077e4&quot;,
+          &quot;ilBytes&quot;: &quot;00022c0b026f7b05000a16fe022b01160a0639a000000000026f7b05000a8d3a0100010b160c2b7800735006000a0d0902086f5106000a6f5206000a13041204285306000a6f5406000a000902086f5106000a6f5506000a6f5606000a000902086f5106000a6f5706000a6f5806000a000902086f5106000a6f5906000a6f5a06000a000902086f5106000a7b8b05000a6f5b06000a00070809a2000817580c08026f7b05000afe04130511053a76ffffff0713062b051413062b0011062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Original import task snapshot and delete callback · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1614–1650
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	private async void ImportGlobalVar(string filePath)
+	{
+		int nRet = 0;
+		Task importTask = Task.Factory.StartNew(() =&gt;
+		{
+			try
+			{
+				Dictionary&lt;string, VarRunParamInfo[]&gt; varRunParamDict = new Dictionary&lt;string, VarRunParamInfo[]&gt;();
+				Dispatcher?.Invoke(() =&gt;
+				{
+					foreach (GlobalVariableItem item in Items)
+					{
+						varRunParamDict.Add(item.Name, GlobalVarExtern.GetLinkModuleInfoByRunParams(item.SelectedRunParams));
+					}
+				});
+				varManager.ImportVar(filePath, isFromUI: true, varRunParamDict, () =&gt;
+				{
+					Dispatcher?.Invoke(() =&gt;
+					{
+						if (DecorateSource is VmModule vmModule)
+						{
+							for (int num = vmModule.Outputs.Count - 1; num &gt;= 0; num--)
+							{
+								vmModule.Outputs[num].Dispose();
+							}
+						}
+					});
+				});
+			}
+			catch (Exception ex)
+			{
+				Dispatcher.Invoke(() =&gt;
+				{
+					IsShowProcessbar = &quot;Collapsed&quot;;
+					HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_LoadFail&quot;), MessageIcons.Error);
+				});
+				LogHelper.objLog.Error(&quot;导入失败:&quot; + ex.ToString());</pre></details><details><summary>Captured run-parameter identity · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVarExtern.cs:170–190
+SHA256 5201b707d47a70bd2aa814c23b69561c20986787917b6af145e75a214c96a4cf
+	public static VarRunParamInfo[] GetLinkModuleInfoByRunParams(List&lt;RunParamsBaseNode&gt; SelectedRunParams)
+	{
+		if (SelectedRunParams != null &amp;&amp; SelectedRunParams.Count &gt; 0)
+		{
+			VarRunParamInfo[] array = new VarRunParamInfo[SelectedRunParams.Count];
+			for (int i = 0; i &lt; SelectedRunParams.Count; i++)
+			{
+				VarRunParamInfo varRunParamInfo = new VarRunParamInfo();
+				varRunParamInfo.nModuleID = (int)SelectedRunParams[i].ModuleID.Value;
+				varRunParamInfo.Name = SelectedRunParams[i].Name;
+				varRunParamInfo.Type = SelectedRunParams[i].RunParamIoType;
+				varRunParamInfo.IsSupportSub = SelectedRunParams[i].IsSupportSub;
+				varRunParamInfo.Owner = SelectedRunParams[i].TargetObject;
+				array[i] = varRunParamInfo;
+			}
+			return array;
+		}
+		return null;
+	}
+}
+</pre></details></article><article id="VF04" class="source-confirmed"><h2>VF04 · VariableManager.ImportVar/ExportVar → UTF8+尾零的是路径命令，不是.gvar文件内容</h2><p>source-confirmed：空路径抛VmException(-536870911)；ExportVar仅把StringUtil.UTF8GetBytesPadZero(path)写DataSource.Params的IUserBytesData[GlobalValueExport]，ImportVar先写GlobalValueImport再处理链接/IO。原StringUtil(string)明确Encoding.UTF8.GetBytes后多分配1字节并写末尾0。VM.Core.ModuleParam的IUserBytesData setter在Parent.IsOnDispose时直接返回；否则可能先登记模型undo，再按VmModuleSet且key以%开头走动态参数，其余SetBinaryData(Parent.ID,key,value,TimeOut)，非0抛Exception。所选GlobalValue*普通键走后者。托管包装未读写.gvar文件payload，路径UTF8不能当文件UTF8证明。</p><p>待追：未获取SDK/native GlobalValueImport/GlobalValueExport实际文件解析/序列化体；编码、版本、压缩、加密/保护、校验/原子写和文件替换仍未知，不能按扩展名推断。Parent已释放时void返回也不证明文件真的生成。</p><details><summary>Apps.XmlParser.Variable.VariableManager::ExportVar · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:11804–11823
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000230&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000230&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.Variable.VariableManager&quot;,
+            &quot;name&quot;: &quot;ExportVar&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 52,
+          &quot;ilSha256&quot;: &quot;0afb96d1ac2ff88e5d6c131fed25de46edcedcec2d9acbb219eb61b35b099af0&quot;,
+          &quot;ilBytes&quot;: &quot;0003288c00000a0a062c0c0020010000e073d502000a7a027b050100046fc502000a725a2100700328db00000a6fdb02000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.Variable.VariableManager::ImportVar · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:12003–12022
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000231&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000231&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.Variable.VariableManager&quot;,
+            &quot;name&quot;: &quot;ImportVar&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2004010e02151275020e1d1280b8128275&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 565,
+          &quot;ilSha256&quot;: &quot;707a67d2f478cd14de492484d4be4e768f46a39410e6c0aecf272e1e38cb2345&quot;,
+          &quot;ilBytes&quot;: &quot;0003288c00000a0b072c0c0020010000e073d502000a7a027b050100046fc502000a727e2100700328db00000a6fdb02000a00027b050100046fb702000a6fdc02000a17590c38ce00000000027b050100046fb702000a086ff602000a0d096ff702000a1304110439a7000000000002096fd300000a0428130200062600de4d1305001105754d00000125130614fe03130711072c1b0072761e007011066fff00000a28aa00000a280101000a00002b190072761e007011056f7300000a28aa00000a280101000a000000de0002096fe402000a1617161616281a0200060005096fd300000a6ff802000a130811082c220002096fd300000a096f7602000a05096fd300000a6ff902000a14282a020006000000000817590c0816fe0416fe01130911093a22ffffff0e042d022b080e046ffa02000a0004130a110a2c0d007e030100046f9e02000a000073ae02000a0a02120028240200060000066ffb02000a130b38af000000120b28fc02000a130c0002110c6f8d0200062868020006130d110d14fe01131011102c0c0072101e0070734a00000a7a14130e110c6f9b020006131111112c3400110c6f950200067e8b070004252d17267e7e070004fe065a10000673fd02000a25808b070004287000002b281d00002b130e0002110d110c6f8b020006027b050100046fb702000a110e2869020006130f110f14fe03131211122c1100110f110c6f890200066fdd02000a000000120b28fe02000a3a45ffffffde0f120bfe168300001b6f6200000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.PlatformSDKCS.StringUtil::UTF8GetBytesPadZero · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:17118–17137
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600067c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600067c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.PlatformSDKCS.StringUtil&quot;,
+            &quot;name&quot;: &quot;UTF8GetBytesPadZero&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00011d050e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 51,
+          &quot;ilSha256&quot;: &quot;f87c1e70c1f20b33f87d7c17751e15a2ee383f740bbc6baf511bf3e2611f080f&quot;,
+          &quot;ilBytes&quot;: &quot;00283e01000a026f3f01000a0a068e6917588d660000010b06160716068e6928df00000a0007078e691759169c070c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VM.Core.ModuleParam::VMControls.BaseInterface.IUserBytesData.set_Item · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:15240–15259
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x060005c1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060005c1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.ModuleParam&quot;,
+            &quot;name&quot;: &quot;VMControls.BaseInterface.IUserBytesData.set_Item&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e1d05&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 556,
+          &quot;ilSha256&quot;: &quot;4e05a9105aa59baf6c4736a98ff5ba27bb287ed8d28db68eca46c1a980fee604&quot;,
+          &quot;ilBytes&quot;: &quot;00027b0e0200047bf200000416fe010a06391502000000027b0e0200046f660200060c0839480100000002d04900000228b000000a28ca01000ad00e02000428cb01000a28cc01000ad02003000628cd01000a744a010001280600002b28cf01000a280700002b280800002b0d721b040070722f04007028b301000a027b0e0200046fe704000672e226007028b301000a28d101000a1304280500002b252d062638ca00000002fe06ca05000673ef03000a02fe06c905000673ef03000a02fe06cb05000673f003000a739204000625027b0e0200046fe70400067d7e01000425097d7f01000425147d80010004736e0400061104d0ef00000128b000000a726904007028d401000a1305d0f000000128b000000a727904007028d401000a130602d04900000228b000000a28ca01000ad0c805000628cd01000a744a010001188dc700000125161105a225171106a228cf01000a188d4900000125161105a225171106a2280900002b6fd501000a000020ff0000e00b027b0e02000475680000022c0d0372190100706fc303000a2b0116130711072c4c0003178d3501000125161f2c9d6ff501000a1308284801000a7b4901000a027b0e0200046f490200061108169a041108285100002b17300772350200702b041108179a6fda04000a0b002b2500284801000a7b4901000a027b0e0200046f4902000603040228ba0500066fdb04000a0b000716fe03130911092c170072e22c0070078c3601000128b501000a73da01000a7a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Path command transport · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VariableManager.cs:1566–1585
+SHA256 1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38
+	public void ExportVar(string strExportPath)
+	{
+		if (string.IsNullOrEmpty(strExportPath))
+		{
+			throw new VmException(-536870911);
+		}
+		((IUserBytesData)DataSource.Params)[&quot;GlobalValueExport&quot;] = StringUtil.UTF8GetBytesPadZero(strExportPath);
+	}
+
+	public void ImportVar(string strImportFilePath, bool isFromUI = true, Dictionary&lt;string, VarRunParamInfo[]&gt; runParaminfo = null, Action delIOAct = null)
+	{
+		if (string.IsNullOrEmpty(strImportFilePath))
+		{
+			throw new VmException(-536870911);
+		}
+		((IUserBytesData)DataSource.Params)[&quot;GlobalValueImport&quot;] = StringUtil.UTF8GetBytesPadZero(strImportFilePath);
+		for (int num = DataSource.Outputs.Count - 1; num &gt;= 0; num--)
+		{
+			VmIO vmIO = DataSource.Outputs[num];
+			if (vmIO.CustomVisibleA)</pre></details><details><summary>NUL-terminated UTF8 path bytes · local-decompiled-source</summary><pre>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/StringUtil.cs:15–22
+SHA256 a7c8631e83c9f4d515b2e51ec5d337caf4b77c569385086af44e7ddb173006e4
+	public static byte[] UTF8GetBytesPadZero(string str)
+	{
+		byte[] bytes = Encoding.UTF8.GetBytes(str);
+		byte[] array = new byte[bytes.Length + 1];
+		Buffer.BlockCopy(bytes, 0, array, 0, bytes.Length);
+		array[array.Length - 1] = 0;
+		return array;
+	}</pre></details><details><summary>Binary setter command dispatch · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/ModuleParam.cs:80–113
+SHA256 af392bf2d3af006c6a16021a271d67dd8ef2017b268580841874ab6fede1da48
+			if (Parent.IsOnDispose)
+			{
+				return;
+			}
+			if (Parent.IsContainsModel)
+			{
+				Expression&lt;Func&lt;object&gt;&gt; oldModel = () =&gt; Parent.GetModel();
+				string displayName = string.Format(&quot;{0}{1}{2}&quot;, AppLocalizationService.GetLang(&quot;Lang_Edit&quot;), Parent.FullName, AppLocalizationService.GetLang(&quot;模型&quot;));
+				Ioc.Get&lt;IUnRedoService&gt;()?.Register(new ModelUnRedoOperation(Model_Redo, Model_Undo, Model_Update, new UnRedo_ModelData
+				{
+					ModuleFullName = Parent.FullName,
+					OldModel = oldModel,
+					NewModel = null
+				}), displayName, (IBuilder builder, IUnRedoOperation operation) =&gt; CanRegisterModel(builder, operation));
+			}
+			int num = -536870657;
+			if (Parent is VmModuleSet &amp;&amp; key.StartsWith(&quot;%&quot;))
+			{
+				string[] array = key.Split(&#39;,&#39;);
+				num = ServerSDKManager.serverSDKManager.mModuleManager.SetDynamicBinaryParamValue(Parent.ID, array[0], value, (array.Count() &gt; 1) ? array[1] : &quot;&quot;);
+			}
+			else
+			{
+				num = ServerSDKManager.serverSDKManager.mModuleManager.SetBinaryData(Parent.ID, key, value, TimeOut);
+			}
+			if (num != 0)
+			{
+				throw new Exception($&quot;{num:X000}&quot;);
+			}
+		}
+	}
+
+	public string XmlPath { get; set; }
+</pre></details></article><article id="VF05" class="source-confirmed"><h2>VF05 · ImportVar发出底层命令之后 → 旧订阅解绑/运行参数初始化 → IO重建</h2><p>source-confirmed：ImportVar逆序遍历DataSource.Outputs，仅CustomVisibleA项先UnBindGlobarVarItem(name,isFromUI)，其异常单项catch并日志；随后ChangeToSendReceiveData(index)，再runParaminfo.ContainsKey(name)命中则SetRunParamBind(name,type,旧列表,null)。后两步不在前一个catch内；默认runParaminfo=null但此处未null保护。SetRunParamBind(oldModule,linkModule=null)针对支持订阅的旧项尝试DelModuleParamBinding，成功写UserData[@param]=false并(item.Owner as ISubInfo).SetInit；不是恢复旧订阅。其后delIOAct?.Invoke，isFromUI才ModuleVarDict.Clear，再GetAllVar重取、GetIoType、组合变量子名、AddIoByType并设原Index。不支持类型抛异常，已执行的底层导入或解绑无本地事务回滚。</p><p>待追：UnBind/SendDatas/ReadDatas完整算法已有/另列，未扩所有变量操作；输出列表Dispose是否改变迭代、native失败/部分写入、实际订阅身份和组合类型全部规则未知。</p><details><summary>Apps.XmlParser.Variable.VariableManager::ImportVar · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:12003–12022
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000231&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000231&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.Variable.VariableManager&quot;,
+            &quot;name&quot;: &quot;ImportVar&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2004010e02151275020e1d1280b8128275&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 565,
+          &quot;ilSha256&quot;: &quot;707a67d2f478cd14de492484d4be4e768f46a39410e6c0aecf272e1e38cb2345&quot;,
+          &quot;ilBytes&quot;: &quot;0003288c00000a0b072c0c0020010000e073d502000a7a027b050100046fc502000a727e2100700328db00000a6fdb02000a00027b050100046fb702000a6fdc02000a17590c38ce00000000027b050100046fb702000a086ff602000a0d096ff702000a1304110439a7000000000002096fd300000a0428130200062600de4d1305001105754d00000125130614fe03130711072c1b0072761e007011066fff00000a28aa00000a280101000a00002b190072761e007011056f7300000a28aa00000a280101000a000000de0002096fe402000a1617161616281a0200060005096fd300000a6ff802000a130811082c220002096fd300000a096f7602000a05096fd300000a6ff902000a14282a020006000000000817590c0816fe0416fe01130911093a22ffffff0e042d022b080e046ffa02000a0004130a110a2c0d007e030100046f9e02000a000073ae02000a0a02120028240200060000066ffb02000a130b38af000000120b28fc02000a130c0002110c6f8d0200062868020006130d110d14fe01131011102c0c0072101e0070734a00000a7a14130e110c6f9b020006131111112c3400110c6f950200067e8b070004252d17267e7e070004fe065a10000673fd02000a25808b070004287000002b281d00002b130e0002110d110c6f8b020006027b050100046fb702000a110e2869020006130f110f14fe03131211122c1100110f110c6f890200066fdd02000a000000120b28fe02000a3a45ffffffde0f120bfe168300001b6f6200000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.Variable.VariableManager::ChangeToSendReceiveData · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:3416–3435
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600021a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600021a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.Variable.VariableManager&quot;,
+            &quot;name&quot;: &quot;ChangeToSendReceiveData&quot;,
+            &quot;parameters&quot;: 6,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200601080802020202&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 231,
+          &quot;ilSha256&quot;: &quot;62d6211c67ed42763539fb9ad2e7af2ad3e1815632c4d7bc1e8b5c6e704d7a98&quot;,
+          &quot;ilBytes&quot;: &quot;00724b1b00701a8d120000012516038c5d010001a22517048c5d010001a22518058c82010001a225190e048c82010001a2289600000a287c02000a0073c102000a0a28cd00000a0672e01b0070166fcc02000a0028cd00000a0672001c0070166fcc02000a0000066fcd02000a0b2b5c120128ce02000a0c00086fcf02000a72e01b0070286300000a0d092c150002080304050e040e050e06281802000600002b29086fcf02000a72001c0070286300000a130411042c130002080304050e040e050e062819020006000000120128d002000a2d9bde0f1201fe167d00001b6f6200000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.Variable.VariableManager::SetRunParamBind · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:8404–8423
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600022a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600022a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.Variable.VariableManager&quot;,
+            &quot;name&quot;: &quot;SetRunParamBind&quot;,
+            &quot;parameters&quot;: 4,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2004010e0e1d1280b81d1280b8&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 1013,
+          &quot;ilSha256&quot;: &quot;f8d2171482182e70877ae8be254984f1f6b5bd19262903f28688523c143a59ab&quot;,
+          &quot;ilBytes&quot;: &quot;000514fe030a06393301000073881000060b000773a102000a7daa0700040507fe068910000673ec02000a286e00002b0002077baa07000428150200060c00050d16130438eb000000738a100006130511050911049a7dab0700040011057bab0700046f8202000616fe01130711072c060038b7000000081105fe068b10000673a402000a286600002b1306110614fe01130811082c0600389100000011066fed02000a11057bab0700046f7e02000611057bab0700046f800200066fef02000a130911092c480011066fd700000a722e20007011057bab0700046f7e02000628aa00000a72001d007028db00000a6fdc00000a0011057bab0700046f8402000675380100026fd80b000600002b1e00727e20007011057bab0700046f7e02000628aa00000a280101000a0000001104175813041104098e693f0bffffff000e0414fe03130a110a39a7020000738c100006130b00110b73a102000a7dac0700040e04110bfe068d10000673ec02000a286e00002b0002110b7bac0700042815020006130c000e04130d16130e3856020000738e100006130f110f110d110e9a7dad07000400110f7bad0700046f8202000616fe01131211122c0600382102000004110f7bad0700046f80020006283900000a131311132c06003803020000110c110ffe068f10000673a402000a286600002b1310111014fe01131411142c060038dc01000011106fed02000a110f7bad0700046f7e0200066ff002000a13111111288c00000a16fe01131511153900010000001111178d6c01000125161f209d6fe700000a131611168e691731231116169a1217281c01000a2c1611176a027b050100046f2e01000a6efe0116fe012b01161318111839b600000000280601000a7b0701000a11176ff102000a2d0b111720c8320000fe012b011713191119398c000000001116179a178d6c01000125161f2e9d6fe700000a179a131a111a1f5b166f2c01000a131b111b16fe02131c111c2c5b00111a16111b6f9500000a131a7306020006131d111d111a73860200062511106f2e01000a6f7d0200060025110f7bad0700046f7e0200066f7f0200060025110f7bad0700046f800200066f81020006001611176f2c020006000000000011106fed02000a110f7bad0700046f7e020006110f7bad0700046f80020006197247030070027b050100046f2e01000a031772dd1800701672470300706fee02000a131e111e2c480011106fd700000a722e200070110f7bad0700046f7e02000628aa00000a720c1d007028db00000a6fdc00000a00110f7bad0700046f8402000675380100026fd80b000600002b1e007232200070110f7bad0700046f7e02000628aa00000a280101000a000000110e1758130e110e110d8e693f9ffdffff002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Import command then cleanup and rebuild · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VariableManager.cs:1575–1639
+SHA256 1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38
+	public void ImportVar(string strImportFilePath, bool isFromUI = true, Dictionary&lt;string, VarRunParamInfo[]&gt; runParaminfo = null, Action delIOAct = null)
+	{
+		if (string.IsNullOrEmpty(strImportFilePath))
+		{
+			throw new VmException(-536870911);
+		}
+		((IUserBytesData)DataSource.Params)[&quot;GlobalValueImport&quot;] = StringUtil.UTF8GetBytesPadZero(strImportFilePath);
+		for (int num = DataSource.Outputs.Count - 1; num &gt;= 0; num--)
+		{
+			VmIO vmIO = DataSource.Outputs[num];
+			if (vmIO.CustomVisibleA)
+			{
+				try
+				{
+					UnBindGlobarVarItem(vmIO.Name, isFromUI);
+				}
+				catch (Exception ex)
+				{
+					if (ex is VmException ex2)
+					{
+						LogHelper.Error(&quot;UnBindingGlobalVariable is error:&quot; + ex2.errorMessage);
+					}
+					else
+					{
+						LogHelper.Error(&quot;UnBindingGlobalVariable is error:&quot; + ex.ToString());
+					}
+				}
+				ChangeToSendReceiveData(vmIO.Index);
+				if (runParaminfo.ContainsKey(vmIO.Name))
+				{
+					SetRunParamBind(vmIO.Name, vmIO.TypeName, runParaminfo[vmIO.Name], null);
+				}
+			}
+		}
+		delIOAct?.Invoke();
+		if (isFromUI)
+		{
+			ModuleVarDict.Clear();
+		}
+		List&lt;VarItem&gt; varList = new List&lt;VarItem&gt;();
+		GetAllVar(ref varList);
+		foreach (VarItem item in varList)
+		{
+			object ioType = GetIoType(item.Type);
+			if (ioType == null)
+			{
+				throw new Exception(&quot;type is not support&quot;);
+			}
+			List&lt;string&gt; leafIoNames = null;
+			if (item.IsCombination)
+			{
+				leafIoNames = item.SubIOInfos.Select((VarItem x) =&gt; x.Name).ToList();
+			}
+			VmIO vmIO2 = AddIoByType(ioType, item.Name, DataSource.Outputs, leafIoNames);
+			if (vmIO2 != null)
+			{
+				vmIO2.Index = item.Index;
+			}
+		}
+	}
+
+	public void AddGroup(string groupName)
+	{
+		if (string.IsNullOrEmpty(groupName))
+		{</pre></details><details><summary>Old runtime binding removal and init · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.Variable/VariableManager.cs:1329–1368
+SHA256 1be5f6b78fc53ce0fcad229ddec4b1943818efca32331a2b599706dd4905ac38
+	private void SetRunParamBind(string varName, string varType, VarRunParamInfo[] oldModule, VarRunParamInfo[] linkModule)
+	{
+		if (oldModule != null)
+		{
+			List&lt;int&gt; BindListId = new List&lt;int&gt;();
+			Array.ForEach(oldModule, (VarRunParamInfo x) =&gt;
+			{
+				BindListId.Add(x.nModuleID);
+			});
+			List&lt;VmModule&gt; vmModulesByIDArray = GetVmModulesByIDArray(BindListId);
+			foreach (VarRunParamInfo item in oldModule)
+			{
+				if (!item.IsSupportSub)
+				{
+					continue;
+				}
+				VmModule vmModule = vmModulesByIDArray.FirstOrDefault((VmModule p) =&gt; p.ID == item.nModuleID);
+				if (vmModule != null)
+				{
+					if (vmModule.ParamSubManager.DelModuleParamBinding(item.Name, item.Type))
+					{
+						vmModule.UserData[&quot;@&quot; + item.Name] = StringUtil.UTF8GetBytesPadZero(&quot;false&quot;);
+						(item.Owner as ISubInfo).SetInit();
+					}
+					else
+					{
+						LogHelper.Error(&quot;DelModuleParamBinding is failed,name:&quot; + item.Name);
+					}
+				}
+			}
+		}
+		if (linkModule == null)
+		{
+			return;
+		}
+		List&lt;int&gt; BindListId2 = new List&lt;int&gt;();
+		Array.ForEach(linkModule, (VarRunParamInfo x) =&gt;
+		{
+			BindListId2.Add(x.nModuleID);
+		});</pre></details></article><article id="VF06" class="source-confirmed"><h2>VF06 · Import任务后段/GetData/AddNewItem → 清UI再读原结构、CommInit/Name/Index与输出对齐</h2><p>source-confirmed：初始try失败时Dispatcher隐藏进度并提示后return。后续nRet==0路径中该局部未接底层返回码：清选择/分组/Items、页码和计数，设bFirstGetData，重取分组与GetAllVar(ref IMVS_VARIABLE[])并GetData，最后按nRet显示成功。GetData锁内把原结构经StructToGlobalVarItem投影：Index、CommInit=bCommEnable、Type/Value/Name/Remark/Group等；AddNewItem通过CheckVarAddIO设置DecorateSource/Index、SetVarManager并挂弱PropertyChanged。它重建UI/IO，不保证导入值等于初始化值或持久化已经成功；部分后处理在初始try之外。</p><p>待追：GetAllVar快照内存边界已有variable-manager-review，未重数为全域闭合；报告事件、数组/结构所有分支、初始化真正执行点和通知失败后恢复未知。</p><details><summary>.&lt;&gt;c__DisplayClass126_0::&lt;ImportGlobalVar&gt;b__1 · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:41487–41506
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000f0a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f0a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec__DisplayClass126_0&quot;,
+            &quot;name&quot;: &quot;\u003CImportGlobalVar\u003Eb__1&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 179,
+          &quot;ilSha256&quot;: &quot;3bdfe0d9f644c8ac1a866ba7482cb7c75c0564a8869609df0ad20e559820f2b1&quot;,
+          &quot;ilBytes&quot;: &quot;00027b460800042848060006252d03262b0628f006000600027b4608000414284906000600027b460800042846060006252d03262b0628760a000a00027b4608000428580600066fcc05000a00027b4608000416284d06000600027b4608000416284b06000600027b46080004287706000600027b46080004177d8e030004027b46080004288606000626168d3c0100010a027b460800047b7303000412006fd805000a00027b4608000406286a060006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>.&lt;&gt;c__DisplayClass126_1::&lt;ImportGlobalVar&gt;b__2 · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:42184–42203
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000f0c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f0c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec__DisplayClass126_1&quot;,
+            &quot;name&quot;: &quot;\u003CImportGlobalVar\u003Eb__2&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 54,
+          &quot;ilSha256&quot;: &quot;c5dfdbc97cec849e0ebeac3a8384a4d6e164ccd4c6663f97043a91392778b6f1&quot;,
+          &quot;ilBytes&quot;: &quot;00027b4b0800047b4608000472a7500070285306000600027b4a080004027b4b0800047b480800042c03192b011a16282e01000a262a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::GetData · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:20855–20874
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600066a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600066a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;GetData&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011d1184f1&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 941,
+          &quot;ilSha256&quot;: &quot;374f5c749adf28ab00fdd3f2d64b3013fb0c7daaa85966540c05525ae69a0659&quot;,
+          &quot;ilBytes&quot;: &quot;0000027b780300040a160b061201281c01000a000002283e0600062c1302283e060006753f0000012c060314fe012b0117130611062c0600dd6f03000002283e060006759a0000016f9005000a0c027b830300046fca05000a000228580600066fcb05000a038e69fe02130711072c0e000228580600066fcc05000a000073f500000a0d1613082b4c00022869060006130a110a2c110072cb570070287b00000a00dd05030000031108a33c01000128e10600061309021109162860060006000911096fb00600066f0501000a00001108175813081108038e69fe04130b110b2da7027b830300047e27080004252d17267e23080004fe06db0e000673cd05000a2580270800046fce05000a0002027b8303000473cf05000a285906000600000228580600066fd005000a130c2b19110c6fd105000a130d00110d0228580600066faa0600060000110c6f9f00000a2ddede0d110c2c08110c6fa000000a00dc02283e060006759a000001130411046fd205000a7e28080004252d17267e23080004fe06dc0e000673d305000a258028080004287100002b281500002b13050011056f0a01000a130e2b6e73f20e0006130f110f120e280b01000a7d3b080004007ed405000a110f7b3b080004280100002b131011102c03002b3e09110ffe06f30e000673b105000a6fb205000a16fe04131111112c210011046fd205000a110f7b3b0800046fd505000a252d03262b066fd605000a000000120e280e01000a2d89de0f120efe160e00001b6fa000000a00dc027b8e0300041312111239e50000000002167d8e0300040228480600062c470228580600067e29080004252d17267e23080004fe06dd0e000673aa05000a258029080004286a00002b0228580600066fcb05000a33100228580600066fcb05000a16fe022b0116131311132c5f00000228580600066fd005000a13142b1e11146fd105000a13150011150228480600066fe90600066fd0060006000011146f9f00000a2dd9de0d11142c0811146fa000000a00dc027b730300040228480600066fe90600066fd705000a0000021628630600060002727f540070283800000a2855060006000272a7500070285306000600002b0a0002172863060006000000de0b072c0706281d01000a00dc00de6a13160072f357007011166f3200000a284300000a28a400000a000272a75000702853060006007217580070283800000a13171116283204000a1318111814fe03131911192c1700111772a009007011186f3404000a283a00000a13170011171916282e01000a2600de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::AddNewItem · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:19496–19515
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000660&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000660&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;AddNewItem&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011281e402&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 299,
+          &quot;ilSha256&quot;: &quot;8b088cc302967a18f5045b7e097e5b98ff9daff85ddb0730ff0343ad1a831fe4&quot;,
+          &quot;ilBytes&quot;: &quot;000314fe010b072c0600381b010000030228580600066faa06000600040c0839930000000000027b73030004036fb0060006036fb606000672290000700228480600066fe90600066fab05000a0000de490d007245560070036fb0060006725556007009283204000a6f3200000a28e800000a28a400000a00726d560070283800000a729b560070284300000a1916282e01000a26dd90000000022858060006036fac05000a00022848060006036fef06000600002b0f00027b83030004036fad05000a0000027b73030004036fb0060006036fb6060006036fbe0600066fae05000a0a0614fe03130411042c170003066fa80600060006036fbe0600066faf05000a000003027b730300046fda060006000372d94a007002fe0662060006733005000a28b005000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVarExtern::StructToGlobalVarItem · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:34273–34292
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x060006e1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060006e1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVarExtern&quot;,
+            &quot;name&quot;: &quot;StructToGlobalVarItem&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00011281e41184f1&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 1266,
+          &quot;ilSha256&quot;: &quot;f3b8124de5021391689bd010d12789128a1e9ae450fc1bdcef10ce26877b495e&quot;,
+          &quot;ilBytes&quot;: &quot;0073e006000625027b3706000a6fbf0600060025027b3806000a6fbd0600060025027bda05000a28dd04000a6fb70600060025027b3906000a28dd04000a6fbb0600060025027bd905000a28dd04000a6fb10600060025027b3a06000a28dd04000a6fce0600060025027b3b06000a28dd04000a6fd0060006000a027b3c06000a7b3d06000a16fe030c08392304000000066fb606000672761b0070288a00000a0d0939b900000000027b3c06000a7b3d06000a8dd70100011304027b3c06000a7b3d06000a6ed0d701000128fc00000a28fd00000a6a5a69130511058df70100011306027b3c06000a7b3e06000a1106161105283f06000a0011061611041611068e69284006000a000611048e698dd10100016fb9060006000611047e83080004252d17267e82080004fe06370f0006734106000a258083080004288000002b6fb906000600061104168fd7010001285200000a6fbb06000600003830030000066fb6060006727e1b0070288a00000a1307110739b900000000027b3c06000a7b3d06000a8d740200011308027b3c06000a7b3d06000a6ed07402000128fc00000a28fd00000a6a5a69130911098df7010001130a027b3c06000a7b4306000a110a161109283f06000a00110a16110816110a8e69284006000a000611088e698dd10100016fb9060006000611087e84080004252d17267e82080004fe06380f0006734406000a258084080004288100002b6fb906000600061108168f7402000128f503000a6fbb0600060000385e020000066fb606000672981b0070288a00000a130b110b39f500000000027b3c06000a7b4506000a027b3c06000a7b3d06000a288200002b130c06027b3c06000a7b3d06000a8dd10100016fb90600060016130d389800000000110c110d8f4f0100017b4606000a16fe03130e110e2c5e00110c110d8f4f0100017b4606000a8df7010001130f110c110d8f4f0100017b4706000a110f16110f8e69283f06000a00110f284806000a1310066fb8060006110d1110a2110d16fe01131111112c0b000611106fbb0600060000002b1b00110d16fe01131211122c0e000672290000706fbb06000600000000110d1758130d110d6a027b3c06000a7b3d06000a6efe04131311133a4effffff003850010000066fb6060006728a1b0070288a00000a13141114393701000000027b3c06000a7b4506000a027b3c06000a7b3d06000a288200002b131506027b3c06000a7b3d06000a8dd10100016fb90600060016131638df00000000111511168f4f0100017b4606000a20ffffff7ffe0516fe01131711172c2900724b600070111511168f4f0100017c4606000a288e01000a284300000a28a400000a003891000000111511168f4f0100017b4606000a16fe03131811182c5e00111511168f4f0100017b4606000a8df70100011319111511168f4f0100017b4706000a11191611198e69283f06000a00111928dd04000a131a066fb80600061116111aa2111616fe01131b111b2c0b0006111a6fbb0600060000002b1b00111616fe01131c111c2c0e000672290000706fbb0600060000000011161758131611166a027b3c06000a7b3d06000a6efe04131d111d3a07ffffff0006027b3c06000a7b3d06000a17360b027b4906000a16fe012b01166fdf0600060000168d4e0100010b027b4a06000a16fe02131e111e2c1400027b4b06000a027b4a06000a288300002b0b00060728e20600066fd20600060006131f2b00111f2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Post-import clearing and resnapshot · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1653–1681
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+			if (nRet == 0)
+			{
+				oldSelectedItem = null;
+				Dispatcher.Invoke(() =&gt;
+				{
+					SelectGroupItem?.Clear();
+					SelectGroupItem = null;
+					VarItemGroups?.Clear();
+					Items.Clear();
+					CurrentPageNum = 0;
+					ItemsTotalCount = 0;
+					UpdateBtnEnable();
+					bFirstGetData = true;
+					GetVarGroupMsg();
+					VariableManager.IMVS_VARIABLE[] vARIABLEs = new VariableManager.IMVS_VARIABLE[0];
+					varManager.GetAllVar(ref vARIABLEs);
+					GetData(vARIABLEs);
+				});
+			}
+			string msg = ((nRet == 0) ? AppLocalizationService.GetLang(&quot;Lang_LoadSuccess&quot;) : AppLocalizationService.GetLang(&quot;Lang_LoadFail&quot;));
+			Dispatcher.Invoke(() =&gt;
+			{
+				IsShowProcessbar = &quot;Collapsed&quot;;
+				HikMessageBox.Show(msg, (nRet == 0) ? MessageIcons.Ok : MessageIcons.Error);
+			});
+		});
+		await importTask;
+	}
+</pre></details><details><summary>Native variable record to UI identity · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVarExtern.cs:31–45
+SHA256 5201b707d47a70bd2aa814c23b69561c20986787917b6af145e75a214c96a4cf
+	public static GlobalVariableItem StructToGlobalVarItem(VariableManager.IMVS_VARIABLE value)
+	{
+		GlobalVariableItem globalVariableItem = new GlobalVariableItem
+		{
+			Index = value.nIndex,
+			CommInit = value.bCommEnable,
+			Type = StringUtil.UTF8GetString(value.chszValueType),
+			Value = StringUtil.UTF8GetString(value.chszValue),
+			Name = StringUtil.UTF8GetString(value.chszValueName),
+			RemarkInfo = StringUtil.UTF8GetString(value.chszRemark),
+			VarGroupInfo = StringUtil.UTF8GetString(value.chsGroupInfo)
+		};
+		if (value.stVarValue.nValueNum != 0)
+		{
+			if (globalVariableItem.Type == &quot;int&quot;)</pre></details><details><summary>Output model identity and weak notification · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:678–687
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+		VmIO vmIO = varManager.CheckVarAddIO(item.Name, item.Type, item.Index);
+		if (vmIO != null)
+		{
+			item.DecorateSource = vmIO;
+			vmIO.Index = item.Index;
+		}
+		item.SetVarManager(varManager);
+		WeakEventManager&lt;GlobalVariableItem, PropertyChangedEventArgs&gt;.AddHandler(item, &quot;PropertyChanged&quot;, ValueChanged);
+	}
+</pre></details></article><article id="VF07" class="source-confirmed"><h2>VF07 · BtnExport_Click / ExportGlobalVar → 窗口本地导出与远程本地/服务器分流</h2><p>source-confirmed：普通导出要求DecorateSource!=null且Items.Count&gt;0；本地SaveFileDialog *.gvar确定后ExportGlobalVar(path)，远程只打开PopExport。Export任务调用varManager.ExportVar，异常提示/日志后return；nRet仍初设0，没有接取SDK返回码。downLoadPath非空时原体FtpDownloadFile(handle,downLoadPath,filePath,true)并File.Exists(downLoadPath)门，成功后FtpRemoveFile(handle,filePath)；按原实参顺序记录，不推断远端真实传输结果。LocalExport先创建固定远程目录，再以远程temp.gvar和本地保存路径调用；RemoteExport选服务器路径直接调用。</p><p>待追：此处RemoteOperate是文件端点分流，未展开运行模式内部；未执行FTP/服务。临时文件覆盖/清理失败、下载参数语义、原文件payload仍未知。</p><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::BtnExport_Click · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:26241–26260
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600067d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600067d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;BtnExport_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 213,
+          &quot;ilSha256&quot;: &quot;64996a9126f33392ea9ea45c6e0c31b509577fdd6b7a4041c7f0510052dbbf59&quot;,
+          &quot;ilBytes&quot;: &quot;000002283e0600062c130228580600066fcb05000a16fe0216fe012b01170a062c0600ddac00000028a500000a16fe010b072c5c00730306000a0c0872e45900706fbd00000a0008176f0406000a0008176f0506000a00086fc100000a1304171305120428c200000a1105fe01120428c300000a5f0d092c140002086fc500000a7229000070287e0600060000002b0f00027b9c030004176fff05000a000000de32130600726c480070283800000a285703000a267eee05000a72785a007011066f3200000a284300000a6f0006000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::ExportGlobalVar · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:27066–27085
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600067e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600067e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;ExportGlobalVar&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 62,
+          &quot;ilSha256&quot;: &quot;5aa7f25a6c277cf59a5c86093b1237b889a80e14a3ae690d4bb69f90587e5201&quot;,
+          &quot;ilBytes&quot;: &quot;73160f00060a06027d5e08000406037d5c08000406047d5d08000406280106000a7d5b08000406157d5a080004067b5b0800040b12011200287800002b2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>.&lt;&gt;c__DisplayClass128_0::&lt;ExportGlobalVar&gt;b__0 · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:43871–43890
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000f13&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f13&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;.\u003C\u003Ec__DisplayClass128_0&quot;,
+            &quot;name&quot;: &quot;\u003CExportGlobalVar\u003Eb__0&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Assembly, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 352,
+          &quot;ilSha256&quot;: &quot;fb74a06f03ffb026adbbefcc497a5e7a4c83a43828070528b72a1ea3fd97f1a7&quot;,
+          &quot;ilBytes&quot;: &quot;73140f00060a0006167d5908000400027b550800047b73030004027b560800046f800a000a0000de520b00027b55080004289600000a7e30080004252d17267e23080004fe06e40e0006735300000a2580300800046fb600000a007eee05000a722aa60070076f3200000a284300000a6f0006000a00dde4000000027b570800047229000070285100000a0c083996000000007e7600000a027b57080004027b560800041728810a000a2c10027b5708000428c600000a16fe012b01170d092c55007eee05000a1b8dd10100012516723ea60070a22517027b57080004a225187290a60070a22519027b56080004a2251a7221000070a228db00000a6f0006000a00725e5d0070283800000a1916282e01000a262b497e7600000a027b5608000428820a000a260006067b590800042c07725e5d00702b0572464800707d58080004027b55080004289600000a06fe06150f0006735300000a6fb600000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::LocalExport_Click · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:29655–29674
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600068a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600068a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;LocalExport_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 157,
+          &quot;ilSha256&quot;: &quot;3e708a3d39f676fb4026c5ab0703d3b7d0ec608949054858b2ca3116ba7ec402&quot;,
+          &quot;ilBytes&quot;: &quot;0000730306000a0a0672e45900706fbd00000a0006176f0406000a0006176f0506000a00066fc100000a0c170d120228c200000a09fe01120228c300000a5f0b072c24007e7600000a721a5d007028d500000a2602721e5c0070066fc500000a287e060006000000de32130400725e5d0070283800000a285703000a267eee05000a72785a007011046f3200000a284300000a6f0006000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::RemoteExport_Click · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:30252–30271
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600068b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600068b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;RemoteExport_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 125,
+          &quot;ilSha256&quot;: &quot;c30f34a194802106e6033017cbc33b2d685b1655b38c82e2c4c0f8148a362730&quot;,
+          &quot;ilBytes&quot;: &quot;0000731406000a0a0672e45900706f1506000a00066fce00000a0c170d120228c200000a09fe01120228c300000a5f0b072c140002067b1606000a7229000070287e060006000000de32130400725e5d0070283800000a285703000a267eee05000a72785a007011046f3200000a284300000a6f0006000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Export dialog admission · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1682–1710
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	private void BtnExport_Click(object sender, RoutedEventArgs e)
+	{
+		try
+		{
+			if (DecorateSource == null || Items.Count &lt;= 0)
+			{
+				return;
+			}
+			if (!RemoteOperate.IsRemoteMode)
+			{
+				Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog();
+				saveFileDialog.Filter = &quot;*.gvar|*.gvar&quot;;
+				saveFileDialog.FilterIndex = 1;
+				saveFileDialog.RestoreDirectory = true;
+				if (saveFileDialog.ShowDialog() == true)
+				{
+					ExportGlobalVar(saveFileDialog.FileName);
+				}
+			}
+			else
+			{
+				PopExport.IsOpen = true;
+			}
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_ExportFailed&quot;));
+			LogHelper.objLog.Error(&quot;全局变量导出失败，ex:&quot; + ex.ToString());
+		}</pre></details><details><summary>Export task and finite transfer predicate · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1713–1755
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	private async void ExportGlobalVar(string filePath, string downLoadPath = &quot;&quot;)
+	{
+		Task exportTask = Task.Factory.StartNew(() =&gt;
+		{
+			int nRet = 0;
+			try
+			{
+				varManager.ExportVar(filePath);
+			}
+			catch (Exception ex)
+			{
+				Dispatcher.Invoke(() =&gt;
+				{
+					HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_ExportFailed&quot;), MessageIcons.Error);
+				});
+				LogHelper.objLog.Error(&quot;导出全局变量失败:&quot; + ex.ToString());
+				return;
+			}
+			if (downLoadPath != &quot;&quot;)
+			{
+				if (!ServerSDKAPI.FtpDownloadFile(CVmObjectBase.mhandle, downLoadPath, filePath, bCover: true) || !File.Exists(downLoadPath))
+				{
+					LogHelper.objLog.Error(&quot;Down load file error, local file path = &quot; + downLoadPath + &quot;, remote file path = &quot; + filePath + &quot;.&quot;);
+					HikMessageBox.Show(AppLocalizationService.GetLang(&quot;导出失败&quot;), MessageIcons.Error);
+					return;
+				}
+				ServerSDKAPI.FtpRemoveFile(CVmObjectBase.mhandle, filePath);
+			}
+			string msg = ((nRet == 0) ? &quot;Lang_ExportSuccess&quot; : &quot;导出失败&quot;);
+			Dispatcher.Invoke(() =&gt;
+			{
+				HikMessageBox.Show(AppLocalizationService.GetLang(msg), (nRet == 0) ? MessageIcons.Ok : MessageIcons.Error);
+			});
+		});
+		await exportTask;
+	}
+
+	private void Sv_ScrollChanged(object sender, ScrollChangedEventArgs e)
+	{
+		if (!CanScroll)
+		{
+			CanScroll = true;
+		}</pre></details><details><summary>Remote-mode local export route · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:2039–2057
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	private void LocalExport_Click(object sender, RoutedEventArgs e)
+	{
+		try
+		{
+			Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog();
+			saveFileDialog.Filter = &quot;*.gvar|*.gvar&quot;;
+			saveFileDialog.FilterIndex = 1;
+			saveFileDialog.RestoreDirectory = true;
+			if (saveFileDialog.ShowDialog() == true)
+			{
+				ServerSDKAPI.FtpCreatDir(CVmObjectBase.mhandle, &quot;/root/vmtempfiles/ftp/ModelFiles/&quot;);
+				ExportGlobalVar(&quot;/root/vmtempfiles/ftp/ModelFiles/temp.gvar&quot;, saveFileDialog.FileName);
+			}
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;导出失败&quot;));
+			LogHelper.objLog.Error(&quot;全局变量导出失败，ex:&quot; + ex.ToString());
+		}</pre></details></article><article id="VF08" class="source-confirmed"><h2>VF08 · LocalImport/RemoteImport / LightSave / OnClosing → 文件端点与方案保存、报告释放分别登记</h2><p>source-confirmed：远程模式LocalImport先将选中文件上传到固定temp.gvar，再确认覆盖，成功条件下ImportGlobalVar；上传发生在确认之前，未在该体看到导入后删除temp文件。RemoteImport用服务器浏览器选路径直接导入。LightSave是另一个按钮：ItemsTotalCount&lt;=0返回；SolutionPath空时仍提示保存成功并返回；非空才LightSaveSolutionEx，catch VmException提示。OnClosing先base，再SetReportState(false)、ClearCache、VarValueReportEvent退订，本体没有逐步finally保障后续清理。导入/导出成功提示与方案保存、报告释放不能互相替代。</p><p>待追：LightSave/native实际保存内容、进口是否改变方案脏状态、所有关闭路径及报告事件在导入期间交错未知；本专题不重建所有变量算法。</p><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::LocalImport_Click · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:27857–27876
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000688&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000688&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;LocalImport_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 295,
+          &quot;ilSha256&quot;: &quot;8a43eda9786c83d48745cabe4b2be09d2b8bb5145d0d3d9c22359dbe1eee0aae&quot;,
+          &quot;ilBytes&quot;: &quot;000073b800000a0a06176fb900000a0006176fba00000a000672e45900706fbd00000a00066fc100000a0b120128fc05000a2d0772290000702b05721e5c00700c120128fc05000a0d0939a2000000007e7600000a066fc500000a721e5c0070171728dc00000a16fe01130411042c360072425a0070283800000a285703000a267eee05000a72745c0070066fc500000a729a5c0070283a00000a6f0006000a00dd800000000228580600066fcb05000a16fe02130511052c2e0072005a0070283800000a72205a0070283800000a17171616285a04000a17fe0116fe01130611062c0300de3f000208287c060006000000de3213070072425a0070283800000a285703000a267eee05000a725e5a007011076f3200000a284300000a6f0006000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::RemoteImport_Click · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:28892–28911
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000689&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000689&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;RemoteImport_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 201,
+          &quot;ilSha256&quot;: &quot;d62bc3e6af870bf3eff5527a8b4cb1f1a3c675d692aa6debc09b48756c6d67e8&quot;,
+          &quot;ilBytes&quot;: &quot;000073c900000a0a0672e45900706fcb00000a0006176fca00000a00066fce00000a0b120128fc05000a2d0772290000702b08066fcf00000a169a0c120128fc05000a0d092c4c000228580600066fcb05000a16fe02130411042c2e0072005a0070283800000a72205a0070283800000a17171616285a04000a17fe0116fe01130511052c0300de3f000208287c060006000000de3213060072425a0070283800000a285703000a267eee05000a725e5a007011066f3200000a284300000a6f0006000a0000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::LightSave_Click · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:24234–24253
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x0600066f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600066f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;LightSave_Click&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 202,
+          &quot;ilSha256&quot;: &quot;edec7cc78f37ed65a593b7142f09463cae72041fb38390021b21518f234d2a4c&quot;,
+          &quot;ilBytes&quot;: &quot;0002284a06000616fe0216fe010a062c060038b200000028b401000a6f4504000a283900000a0b072c2b0002284006000672e50000707281580070283800000a283a00000a1a1a20e803000028eb05000a00002b740000288701000a7bec05000a6fed05000a0002284006000672e50000707281580070283800000a283a00000a1a1a20e803000028eb05000a0000de370c007eee05000a72a3580070086fd300000a8cd7010001283a05000a6fef05000a0072c9580070283800000a1916282e01000a2600de00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.GlobalUI.GlobalVariableDialog::OnClosing · original-managed-cil</summary><pre>docs/architecture-recovery/variable-file-entry-audit.cil.json:20606–20625
+SHA256 ad766053f9beed8606d64f6dbbb32e36cb6ae5fed8608b7435071a7467f2e813
+          &quot;token&quot;: &quot;0x06000668&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000668&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.GlobalUI.GlobalVariableDialog&quot;,
+            &quot;name&quot;: &quot;OnClosing&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011283f1&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 64,
+          &quot;ilSha256&quot;: &quot;c0ac299d7d591d21720dff0d51dea70632bf6f6692d98d892a6dadab79fb335a&quot;,
+          &quot;ilBytes&quot;: &quot;00020328f504000a00027b73030004166fc605000a00027b730300046fc705000a0002283e06000675a602000102fe063b060006739f01000a6fc805000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Upload-before-confirm local-file route · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1988–2018
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	private void LocalImport_Click(object sender, RoutedEventArgs e)
+	{
+		try
+		{
+			Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+			openFileDialog.CheckFileExists = true;
+			openFileDialog.CheckPathExists = true;
+			openFileDialog.Filter = &quot;*.gvar|*.gvar&quot;;
+			bool? flag = openFileDialog.ShowDialog();
+			string filePath = (flag.Value ? &quot;/root/vmtempfiles/ftp/ModelFiles/temp.gvar&quot; : &quot;&quot;);
+			if (flag.Value)
+			{
+				if (!ServerSDKAPI.FtpUploadFile(CVmObjectBase.mhandle, openFileDialog.FileName, &quot;/root/vmtempfiles/ftp/ModelFiles/temp.gvar&quot;, bCreatDir: true, bCover: true))
+				{
+					HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_LoadFail&quot;));
+					LogHelper.objLog.Error(&quot;Upload local file &quot; + openFileDialog.FileName + &quot; to remote path /root/vmtempfiles/ftp/ModelFiles/temp.gvar fail&quot;);
+				}
+				else if (Items.Count &lt;= 0 || HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_ImportSure&quot;), AppLocalizationService.GetLang(&quot;Lang_ImportEmpty&quot;), MessageButtons.YesOrNo, MessageIcons.Question) == VM.Controls.DialogResult.Yes)
+				{
+					ImportGlobalVar(filePath);
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;Lang_LoadFail&quot;));
+			LogHelper.objLog.Error(&quot;全局变量导入失败，ex:&quot; + ex.ToString());
+		}
+	}
+
+	private void RemoteImport_Click(object sender, RoutedEventArgs e)</pre></details><details><summary>Separate variable save operation · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1276–1299
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	private void LightSave_Click(object sender, RoutedEventArgs e)
+	{
+		if (ItemsTotalCount &lt;= 0)
+		{
+			return;
+		}
+		if (string.IsNullOrEmpty(VmSolution.Instance.SolutionPath))
+		{
+			HikMessageBox.Show(DisplayName + &quot; &quot; + AppLocalizationService.GetLang(&quot;Lang_SaveSuccess&quot;), MessageIcons.Ok, MessageButtons.NoButton, 1000u);
+			return;
+		}
+		try
+		{
+			ServerSDKManager.serverSDKManager.mVmInterfaceManager.LightSaveSolutionEx();
+			HikMessageBox.Show(DisplayName + &quot; &quot; + AppLocalizationService.GetLang(&quot;Lang_SaveSuccess&quot;), MessageIcons.Ok, MessageButtons.NoButton, 1000u);
+		}
+		catch (VmException ex)
+		{
+			LogHelper.objLog.Info(&quot;全局变量保存文件数据失败，错误码为:&quot; + ex.errorCode);
+			HikMessageBox.Show(AppLocalizationService.GetLang(&quot;保存文件数据失败&quot;), MessageIcons.Error);
+		}
+	}
+
+	private void SearchText_TextChanged(object sender, TextChangedEventArgs e)</pre></details><details><summary>Close report and cache cleanup · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalVariableDialog.xaml.cs:1016–1022
+SHA256 1c094b64a96a507586386affe364c9589a7feb889b25a0e2818a7b49dafb0296
+	protected override void OnClosing(CancelEventArgs e)
+	{
+		base.OnClosing(e);
+		varManager.SetReportState(isEnable: false);
+		varManager.ClearCache();
+		(DecorateSource as IVarModule).VarValueReportEvent -= VarValueReportEvent;
+	}</pre></details></article><article id="VF09" class="independent-implementation"><h2>VF09 · 当前局部变量窗 / SolutionStore → 按钮禁用与独立JSON方案存储</h2><p>independent-implementation：当前WorkflowLocalVariablesWindow原生变量导入/导出按钮IsEnabled=false，提示格式尚未接入；当前主工具栏全局变量入口也以null action占位。SolutionStore.Save通过ValidateStructure后SerializeToUtf8Bytes整个SolutionDocument，限32MiB、拒绝重复属性并临时文件Flush/Move覆盖；这是独立方案JSON持久化，不能改扩展名或将它当原.gvar导入/导出。当前局部变量身份/typed订阅范围另见既有参数/变量视图，本批只作文件入口对照。</p><p>待追：未运行当前程序；没有原gvar兼容实现或文件内容差分证明。</p><details><summary>Current disabled native variable file actions · current-source</summary><pre>src/VisionEditor/WorkflowLocalVariablesWindow.xaml:8–8
+SHA256 aaae126b3a90d2846f5671f27b52687f651c7716beeb2ad6ba44590da25403c8
+   &lt;DockPanel&gt;&lt;StackPanel DockPanel.Dock=&quot;Right&quot; Orientation=&quot;Horizontal&quot;&gt;&lt;Button x:Name=&quot;TopButton&quot; Content=&quot;⇈&quot; ToolTip=&quot;置顶&quot; Width=&quot;28&quot; Click=&quot;MoveTop&quot;/&gt;&lt;Button x:Name=&quot;UpButton&quot; Content=&quot;↑&quot; ToolTip=&quot;上移&quot; Width=&quot;28&quot; Click=&quot;MoveUp&quot;/&gt;&lt;Button x:Name=&quot;DownButton&quot; Content=&quot;↓&quot; ToolTip=&quot;下移&quot; Width=&quot;28&quot; Click=&quot;MoveDown&quot;/&gt;&lt;/StackPanel&gt;&lt;StackPanel Orientation=&quot;Horizontal&quot;&gt;&lt;Button Content=&quot;＋ 添加变量&quot; Width=&quot;88&quot; Height=&quot;32&quot; Click=&quot;AddVariable&quot;/&gt;&lt;Button Content=&quot;导入&quot; Width=&quot;50&quot; IsEnabled=&quot;False&quot; ToolTip=&quot;原生变量导入格式尚未接入&quot;/&gt;&lt;Button Content=&quot;导出&quot; Width=&quot;50&quot; IsEnabled=&quot;False&quot; ToolTip=&quot;原生变量导出格式尚未接入&quot;/&gt;&lt;Grid Width=&quot;190&quot; Margin=&quot;10,0,0,0&quot;&gt;&lt;TextBox x:Name=&quot;Search&quot; ToolTip=&quot;搜索变量名称&quot; TextChanged=&quot;SearchChanged&quot;/&gt;&lt;TextBlock Text=&quot;请输入变量名称&quot; Foreground=&quot;#999999&quot; Margin=&quot;5,0&quot; VerticalAlignment=&quot;Center&quot; IsHitTestVisible=&quot;False&quot;&gt;&lt;TextBlock.Style&gt;&lt;Style TargetType=&quot;TextBlock&quot;&gt;&lt;Setter Property=&quot;Visibility&quot; Value=&quot;Collapsed&quot;/&gt;&lt;Style.Triggers&gt;&lt;DataTrigger Binding=&quot;{Binding Text, ElementName=Search}&quot; Value=&quot;&quot;&gt;&lt;Setter Property=&quot;Visibility&quot; Value=&quot;Visible&quot;/&gt;&lt;/DataTrigger&gt;&lt;/Style.Triggers&gt;&lt;/Style&gt;&lt;/TextBlock.Style&gt;&lt;/TextBlock&gt;&lt;/Grid&gt;&lt;/StackPanel&gt;&lt;/DockPanel&gt;</pre></details><details><summary>Current global-variable placeholder · current-source</summary><pre>src/VisionEditor/MainWindow.xaml.cs:52–52
+SHA256 034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a
+  Tool(&quot;toolbar_toolbarSave_normal.png&quot;,&quot;保存&quot;,()=&gt;Save(false));Tool(&quot;toolbar_toolbarOpen_normal.png&quot;,&quot;打开方案&quot;,Open);undoToolButton=Tool(&quot;toolbar_ic_topbar_undo_normal.png&quot;,&quot;撤销&quot;,UndoShell);SetToolbarStateIcon(undoToolButton,&quot;toolbar_ic_topbar_undo_normal.png&quot;,&quot;toolbar_ic_topbar_undo_disable.png&quot;);redoToolButton=Tool(&quot;toolbar_ic_topbar_redo_normal.png&quot;,&quot;重做&quot;,RedoShell);SetToolbarStateIcon(redoToolButton,&quot;toolbar_ic_topbar_redo_normal.png&quot;,&quot;toolbar_ic_topbar_redo_disable.png&quot;);lockToolButton=Tool(&quot;toolbar_ic_topbar_lock_normal.png&quot;,&quot;锁定工作区&quot;,RequestWorkAreaLock);Sep();Tool(&quot;toolbar_ic_topbar_camera_normal.png&quot;,&quot;相机列表&quot;,()=&gt;RefreshCameraProvider(true));Tool(&quot;toolbar_ic_全局变量_normal.png&quot;,&quot;全局变量（变量模型尚未接入）&quot;,null);Tool(&quot;toolbar_ic_通信管理_normal.png&quot;,&quot;通信管理（通信模块尚未接入）&quot;,null);Tool(&quot;toolbar_ic_topbar_全局触发_normal.png&quot;,&quot;全局触发（触发器尚未接入）&quot;,null);Tool(&quot;toolbar_ic_script_normal.png&quot;,&quot;脚本（脚本引擎尚未接入）&quot;,null);Sep();Tool(&quot;toolbar_toolbarStart_normal.png&quot;,&quot;运行流程&quot;,()=&gt;{_=Run();});continuousToolButton=Tool(&quot;toolbar_toolbarRunRepeat_normal.png&quot;,&quot;连续运行&quot;,StartContinuous);stopToolButton=Tool(&quot;toolbar_toolBarStop_normal.png&quot;,&quot;停止&quot;,()=&gt;activeRun?.Cancel());Tool(&quot;toolbar_ic_topbar_综合配置_normal.png&quot;,&quot;综合配置（系统配置尚未接入）&quot;,null);</pre></details><details><summary>Independent JSON solution save · current-source</summary><pre>src/VisionFramework/SolutionStore.cs:17–24
+SHA256 533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365
+    public static void Save(string path,SolutionDocument solution) {
+        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length&gt;MaximumBytes)throw new InvalidDataException(&quot;Solution exceeds size limit.&quot;);
+        // Opaque plugin payloads can contain duplicate members. Reject the same
+        // serialized shape as Load before creating directories or replacing a file.
+        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);
+        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,&quot;.&quot;+Path.GetFileName(full)+&quot;.&quot;+Guid.NewGuid().ToString(&quot;N&quot;)+&quot;.tmp&quot;);
+        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}
+    }</pre></details></article><article id="VF-U01" class="unknown"><h2>VF-U01 · 仍缺原.gvar文件payload与native接收体 → GlobalValueImport/Export → SDK/native格式与保护</h2><p>unknown：已证入口只把路径送ModuleParam.SetBinaryData普通键分支，缺ServerSDK/GlobalVariableModule底层对GlobalValueImport/GlobalValueExport的实际解析/序列化函数体、原文件版本/类型身份、加密/保护若存在及失败原子性。下一原件候选是部署GlobalVariableModule.dll及SDK SetBinaryData命令接收路径，必须先定位实际处理函数，不能凭DLL同名或字符串出现接成调用边。</p><p>待追：未打开任何.gvar样本、个人配置/凭据，也未执行厂商或SDK；原格式、初始化/订阅全合同、native持久化/保护与活UI仍unknown。</p></article><p class="notice">当前独立JSON方案持久化不等于gvar；静态方法/引用数不计入口完成率。运行模式内部暂缓，实施41/96＝42.71%，文档增量0。</p><a href="variable-file-entry-audit.json">机器台账</a></html><script data-document-web src="document-web-links.js"></script>

@@ -1,0 +1,86 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定普通配置与结果显示 source→product 覆盖矩阵</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-UI-COVERAGE.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#映射标定普通配置与结果显示-sourceproduct-覆盖矩阵">映射标定普通配置与结果显示 source→product 覆盖矩阵</a></p><p style="margin-left:14px"><a href="#原厂身份与路径">原厂身份与路径</a></p><p style="margin-left:14px"><a href="#覆盖矩阵">覆盖矩阵</a></p><p style="margin-left:14px"><a href="#本轮修正与验证">本轮修正与验证</a></p><p style="margin-left:14px"><a href="#仍需的最小原厂证据">仍需的最小原厂证据</a></p></details><h1 id="映射标定普通配置与结果显示-sourceproduct-覆盖矩阵">映射标定普通配置与结果显示 source→product 覆盖矩阵</h1><p>审计范围：普通配置页、算法配置组与结果显示资源及对应托管路径。非设备测试；没有修改共享框架或其他工作树。</p>
+<h2 id="原厂身份与路径">原厂身份与路径</h2><ul>
+<li>模块定义：<code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSMapCalibModu/IMVSMapCalibModu.xml</code>，SHA-256 <code>228bf45a24691c0cd13c2201e516941f20e6b1e5352478ccb60ed01c774b4f5f</code>。</li>
+<li>算法配置：同目录 <code>IMVSMapCalibModuAlgorithmTab.xml</code>，SHA-256 <code>cc91e61790265b3dad51ec37bb87cf65edd6b1fad718630253b390ddc0a46bf2</code>；与 <code>src/VisionPlugins.MapCalibration/Resources/MapCalibrationAlgorithmTab.xml</code> SHA-256 完全相同。</li>
+<li>结果显示：同目录 <code>IMVSMapCalibModuDisplay.xml</code>，SHA-256 <code>d630451cd94d6d6eb4b1a69f5b9204707b18b083799b6218e4493a84700ca0a4</code>；与 <code>src/VisionPlugins.MapCalibration/Resources/MapCalibrationDisplay.xml</code> SHA-256 完全相同。</li>
+<li>托管公开类型：<code>analysis/full-audit/calibration-dependencies/decompiled/IMVSMapCalibModuCs/IMVSMapCalibModuCs/MapCalibParam.cs</code>、<code>MapCalibResult.cs</code>、<code>IMVSMapCalibModuTool.cs</code>。<code>IMVSMapCalibModuTool.ModuResult</code> 通过 <code>QueryModuleOneResult</code> 与 <code>SetModuleResult</code> 装配 <code>MapCalibResult</code>；工具 <code>Run()</code> 则调用 SDK 的 <code>SyncSelfRun</code>。</li>
+</ul>
+<h2 id="覆盖矩阵">覆盖矩阵</h2><table>
+<thead>
+<tr>
+<th>原厂路径</th>
+<th>原厂可确认行为</th>
+<th>当前 Map 产品对应</th>
+<th>证据/状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Basic / <code>InputType</code></td>
+<td>值1输入图像、值2输入文件；原XML trigger 控制两组图像源、ROI、示教控件与双文件/刷新控件的显隐</td>
+<td><code>MapCalibrationMetadata.Definition()</code> 解析原XML；<code>MapCalibrationPlugin.CreateConfiguration()</code> 使用公共普通配置状态与 Map 文件/ROI/source controls</td>
+<td><code>tests/MapCalibration.ConfigurationChecks</code> 对原parser default/file/image/teach显隐逐控件比较；源、目标各自ROI输入映射检查通过。dynamic image-source候选弹层尚无原厂桌面差分</td>
+</tr>
+<tr>
+<td><code>ImageSource_0/1</code></td>
+<td><code>EnumerationG</code> 对前级 <code>IMAGE</code> 项执行 <code>GetFrontParamItemsOperation</code>、<code>GetSelectedCombinationOperation</code>；选择变更触发 <code>SetCombinationSourceOperation</code>，分别面向 <code>InputImage1/2</code></td>
+<td>两个原始声明由 ConfigurationDefinition 解析；图像执行端口分别为 <code>InputImage1/2</code></td>
+<td>原XML与资源身份同上；现有窗口检查未逐项对照原厂动态候选/展开弹层，需桌面证据</td>
+</tr>
+<tr>
+<td><code>RoiType_0/1</code></td>
+<td>独立 <code>ROISelecter</code>，ROI 类型 Box，分别关联图像1/2；<code>MapCalibParam</code> 构造器 InputROI1/2 是原生 ROIBOX 输入</td>
+<td>公共 <code>RoiGroups</code> 会话分别映射 <code>RoiType_0→InputImage1</code>、<code>RoiType_1→InputImage2</code>；执行接口传两组ROI</td>
+<td>配置检查覆盖两来源；双ROI真实SDK mask/插件运行证据见 <code>MAP-CALIBRATION.md</code> ROI 段。本矩阵不重做数值回归</td>
+</tr>
+<tr>
+<td>示教 / 物理参数</td>
+<td><code>CalibPointInput</code> 的点/坐标选择；<code>PhysicalPoint</code>、X/Y 与 <code>WorldRotateAngle</code> 为输入选择器；<code>TeachEnable</code> 控制 Trigger/TeachFlagInput 可见</td>
+<td>Descriptor 暴露 <code>Physical Point</code>、X/Y、angle、Trigger、TeachFlagInput；<code>PointInputAliases</code> 将物理点分量合并到共享点入口；窗口使用公共订阅控件</td>
+<td>source class 与 AlgorithmTab 字段相符；配置 parser 可见性已比较，真实 trigger、缓存结果和完整写文件由 PluginChecks/SessionChecks 测试。弹层像素尚无原厂桌面证据</td>
+</tr>
+<tr>
+<td>Align File</td>
+<td><code>SaveCalibPath</code> 命令执行 <code>SaveCalibPath</code>；<code>CalibPathName</code> 是校准文件对话框；<code>RefreshFileEnable</code> 控制刷新</td>
+<td><code>ToolConfigurationCalibrationPathControls</code>、公共 <code>SaveFileDialog→Command</code>、单选文件控件与 <code>MapCalibrationImageFiles</code>/<code>MapCalibrationFiles</code></td>
+<td>Map ConfigurationChecks 检查 Command/路径叶尺寸、Filter、单选、取消和成功历史；原模块 writer 与完整XML对照详见 <code>MAP-CALIBRATION.md</code></td>
+</tr>
+<tr>
+<td>Run Params</td>
+<td><code>CalibBoardType</code> 允许7/6/9/8；<code>HomoFreedom</code> 为1 Perspective/2 Affine/3 Similarity；<code>WeightFun</code> 为1/2/3；<code>WeightFactor</code> 值1..200。配置组 <code>Input Source 1/2</code> 暴露 FilterStatus；contrast及subpixel参数标记弃用/隐藏</td>
+<td>Descriptor 参数与枚举范围相符；普通窗口解析相同算法Tab及配置组</td>
+<td>字段定义映射直接检查；parser合成运行只覆盖常见显隐相位，不含每个 weight、Filter 和重置场景的原厂桌面截图</td>
+</tr>
+<tr>
+<td>ResultShow</td>
+<td><code>CurCornersPoint/ObjCornersPoint/ProCornersPoint</code> 分别以 <code>BridgeObj.GetDisplayObjectOperation</code> 绑定三个点显示对象；<code>TextDisplayGroup</code> 链接文本设置</td>
+<td><code>MapCalibrationDisplay.xml</code> 原样消费三组XY/count；<code>DisplayDefinition</code> 与 <code>ToolDisplayObjectStore</code> 绑定 InputImage2、文字和对象设置</td>
+<td>显示XML字节/hash与原厂相同；真实运行输出点数组、计数、比例、误差有既有数值回放。原厂桌面中的三种图元开关/工具提示没有逐像素对照</td>
+</tr>
+<tr>
+<td>Display 的 <code>Coordinate System</code></td>
+<td>原厂显示资源引用 <code>CalibOriPointX/Y</code> 与两向量分量</td>
+<td>同一 XML 原样保留该对象，但 <code>IMVSMapCalibModu.xml</code> 的输出定义与公开 <code>MapCalibResult</code> 均没有这些名字</td>
+<td>源资源存在引用，公开输出源不存在。不能从资源本身推断坐标图元可见、有效或该对象是遗留项；需要原厂结果显示窗口/运行值确认</td>
+</tr>
+<tr>
+<td>ModuRunTime 输出</td>
+<td>模块 <code>IMVSMapCalibModu.xml</code> 将 <code>ModuRunTime</code> 声明为 <code>float</code>, <code>IsForce=true</code>, <code>IsArray=false</code>；SDK <code>CModuleResultBase.ModuRunTime</code> 注释为 “Module Run Time”。<code>ModuleResultManager.SetModuleResult</code> 无条件把 <code>stModuleResult.fModuleTime</code> 复制到该基类属性；通用 <code>ProcedureResult.ModuRunTime</code> 查询结果存在时也直接返回 <code>fModuleTime</code>，查询无结果则返回 <code>0</code>。UI 资源将 <code>ModuRunTime</code> 显示为“耗时（ms）”/“Time（ms）”，因此单位有直接 UI 证据</td>
+<td>先前 Map Descriptor 把端口标为 optional，文件与图像 <code>ModuleResult.Outputs</code> 均未给值。现改为 required，并在 <code>Runtime.ExecuteAsync</code> 统一加入单次执行毫秒值</td>
+<td>SDK/壳层证实该值来自原生结果结构 <code>fModuleTime</code>，并以毫秒呈现；尚未恢复产生 <code>fModuleTime</code> 的原生计时起止函数。SDK <code>VM_M_SetFloat</code> 只是通用 float 输出接口，头文件未给出此专用输出的写入者或计时来源。<code>SetModuleResult</code> 对带错误码的结果仍会复制 <code>fModuleTime</code>，但没有 Map 的失败/未运行逐态 trace。当前 Stopwatch 是独立实现，无法声称区间相同</td>
+</tr>
+</tbody></table>
+<h2 id="本轮修正与验证">本轮修正与验证</h2><p>原厂 module XML 已强制 <code>ModuRunTime</code> 输出，但 Map 插件先前成功的文件模式、单图等待、双图结果与Teach缓存结果都没有该输出，GraphExecutor也不会把 <code>NodeRunRecord.ElapsedMilliseconds</code> 注入插件端口。现在 Map descriptor 将其标为必需，所有正常返回（成功或失败）由 <code>Runtime.ExecuteAsync</code> 外围统一附加执行耗时，确保各种提前返回都不会漏掉。SDK <code>ModuleResultManager.SetModuleResult</code> 直接复制原生结果结构 <code>fModuleTime</code>，壳层资源确认显示单位为 ms；但 <code>VM_M_SetFloat</code> 文档只描述一般 float 输出，不能据此定位 <code>fModuleTime</code> 的写入者。当前实现取值采用毫秒 <code>double</code>，区间为插件入口到模式处理完成；原厂区间和未执行语义尚无直接证据，Stopwatch 仅是独立替代实现。</p>
+<p>本轮追查源文件（哈希均为 SHA256）：<code>VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleResultManager.cs</code> <code>FD3960EE308FB739729AF43589035D628544BB5B26941BE5EB6F3250A41739E7</code>（第 15–18 行设置错误码、执行次数及 <code>fModuleTime</code>；后续按结果属性名反射映射输出）；<code>CModuleResultBase.cs</code> <code>3295ED4E4CC9DB4D7EDA35281C9195E1E1E842CCAEFA2BF7186A1B5D15469092</code>（第 14–27 行属性注释、默认 0）；<code>ProcedureResult.cs</code> <code>DCBCFC9E2BB9D1110C35D8527B1C6CE620AAE4A979624F857FC5A4AC600866AA</code>（第 37–49 行查询 <code>fModuleTime</code>，无结果返回 0）；SDK <code>VmModuleBase.h</code> <code>4AC3FC2368E710DC9040E46F5B308A1DBADACAE1AC67745F26153AE25145C9E7</code>（第 342–351 行 <code>VM_M_SetFloat</code> 是具名 float 结果写接口，没有描述计时）；<code>zh-cn.xaml</code> <code>C3AD9209618D7B36FA3F59C6AF2103FB2DEFB7066A03804E8DE80E992471610E</code>（第 1737 行将该结果资源化为“耗时（ms）”）。Map XML SHA256 <code>228BF45A24691C0D13C2201E516941F20E6B1E5352478CCB60ED01C774B4F5F</code>，第 87 行为必需 float 声明。</p>
+<p>定向验证：</p>
+<ul>
+<li><code>dotnet run --project tests/MapCalibration.PluginChecks/MapCalibration.PluginChecks.csproj -c Release</code>：PASS 54。保留原厂运行步骤错误码与原始输出断言，另检查 descriptor 要求、8个文件运行阶段均含有限非负运行值、单图等待和完整双图求解也含运行值。</li>
+<li><code>dotnet run --project tests/MapCalibration.ConfigurationChecks/MapCalibration.ConfigurationChecks.csproj -c Release</code>：PASS 184。保留原parser显隐比较、两组ROI来源及文件叶检查；额外覆盖 WeightFun 三值下当前普通配置叶状态。原parser已采集相位仅含默认 WeightFun=3，不把新加的三值检查误作三份原厂runtime结果。</li>
+<li><code>dotnet build src/VisionPlugins.MapCalibration/VisionPlugins.MapCalibration.csproj -c Release --no-restore</code>：成功，0 warning / 0 error。</li>
+</ul>
+<h2 id="仍需的最小原厂证据">仍需的最小原厂证据</h2><ol>
+<li>原厂普通配置窗口分别打开 Image、File、Teach enabled 状态；一组包含两路 ImageSource 候选/当前绑定和两个 ROI 面板，另一组展示 WeightFun 与 WeightFactor 实际显隐、Reset 后状态。这样区分 XML 原始声明与桌面模板运行结果。</li>
+<li>原厂结果窗口在一组成功双图运行后截取文字、三组点显示的开关、ROI/Coordinate System 对象；同时保存输出列表/结果面板中对应字段值。重点查 <code>CalibOriPoint*</code> 是否存在动态输出、坐标对象是否实际显示。</li>
+<li>要闭合 <code>ModuRunTime</code> 数值语义，最小新增原厂 trace 为同一 Map 模块进程的一次成功运行、一次带错误码的已运行结果和一次未运行/无结果查询：记录模块 <code>Process</code>/调度入口与返回的单调时钟时间戳、返回码、<code>IMVS_MODULE_RESULT_INFO_LIST_EX.fModuleTime</code>、<code>nErrorCode</code>，并记录 <code>QueryModuleOneResult</code> 是否有值。若要精确定位计时边界，还需原生 <code>fModuleTime</code> 生成函数或可将模块处理开始/结束函数与该值相关联的调用栈。现有 <code>VM_M_SetFloat</code> 头文件声明和 UI 单位资源不能提供这些时点。原厂 Map trace 当前未记录该字段；本轮未调整 Stopwatch 行为。</li>
+</ol>
+<p>这些人工证据只用于消除可见性、绑定候选和显示对象的未知，不替代 XML 控制流证据，也不把等待截图当作行为规范。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-UI-COVERAGE.md · SHA256 b844fb35a037c381c813754cb347555ea200dfde8496ab9bda67563e529cda33<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

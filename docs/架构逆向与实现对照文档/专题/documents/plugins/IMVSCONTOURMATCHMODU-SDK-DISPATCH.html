@@ -1,0 +1,65 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>轮廓匹配：独立SDK实际分派 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 轮廓匹配：独立SDK实际分派</p><h1>轮廓匹配：独立SDK实际分派</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>轮廓匹配：独立SDK实际分派</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="IMVSCONTOURMATCHMODU-SDK-DISPATCH.html">下载原始文件</a></nav><main><h1 id="轮廓匹配独立sdk实际分派">轮廓匹配：独立SDK实际分派</h1><p>2026-10-20，当前MVDContourPatMatchCpp.dll SHA b2ee17f6d7b38e67e055c68a63f4e5ecf9149b4977bb9891f19ffbe61bfd6fdf。analysis/contour-match/sdk-source/project/contour-sdk为独立只读取体工程，原件仅导入一次；两轮headless均exit0。初始3export加其一层callee6体、Tool原vtable245d8按模块实际调用槽定向11体，均输出C/asm/calls。没有原厂执行/产品构建，不能以方法存在冒实施完成。</p>
+<table>
+<thead>
+<tr>
+<th>原模块已证调用</th>
+<th>实际SDK地址</th>
+<th>当前源证</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CreateContourPatMatchToolInstance</td>
+<td>10b0→14d90→17300</td>
+<td>分配0x128实例，Tool vtable245d8；17300 CreateHandle(type0x201)，创建prepro-mask/basicparam/result对象；空outPtr80100006</td>
+</tr>
+<tr>
+<td>DestroyContourPatMatchToolInstance</td>
+<td>1070→vtable0=14e60→14e90</td>
+<td>空ptr80100006；scalar deleting destructor flags&amp;1才operator_delete；14e90实际成员销毁体尚待补</td>
+</tr>
+<tr>
+<td>SetInputImage/SetRegionImage/SetROI</td>
+<td>+10=14fb0/+98=14fd0/+20=14ff0</td>
+<td>具体指针/ROI入口体已取得；SDK内部ROI映射及mask预处理Run helper未全审，不套典型crop算法</td>
+</tr>
+<tr>
+<td>GetBasicParam</td>
+<td>+28=1a9f0</td>
+<td>返回Tool成员BasicParam，由模块OutLine flags控制；首字节开关需要按当前体实际消费</td>
+</tr>
+<tr>
+<td>SetRunParam</td>
+<td>+70=15630</td>
+<td>实际MVD_Algorithm_SetValueByString(handle+8)；asm只改RCX，原RDX/R8键值保持，伪码缺参不可照抄；非0包装IMVDException(code,type7)抛出</td>
+</tr>
+<tr>
+<td>ClearPatterns/AddPatternBuffer</td>
+<td>+108=15ac0/+f0=15a40</td>
+<td>Clear分别清+90与+c0容器；Add非空buffer及长度写入+c0记录，空buffer抛80100006；容器ABI/buffer所有权清理尚需callee17c50/17d20/17b90</td>
+</tr>
+<tr>
+<td>Run</td>
+<td>+88=162c0</td>
+<td>首先success+60=0、AlgTime清0；输入image为空抛80100004；16000/178e0处理参数，组装图像/ROI/mask输入；调用MVD_Algorithm_Process(handle,0x20d,input,output)；将结果写wrapper对象；BasicParam开关非0才再Process0x20e补轮廓点；尾部成功flag+60=1</td>
+</tr>
+<tr>
+<td>GetResult</td>
+<td>+40=15330</td>
+<td>仅success+60非0返回+20结果对象，否则null；不能失败后仍暴露旧对象</td>
+</tr>
+<tr>
+<td>CreateContourPatternInstance</td>
+<td>1000→9100</td>
+<td>分配0x120 Pattern，创建prepro-mask并MVD_Algorithm_CreateHandle(type0x200)，不是匹配Tool的0x201；模块UI训练CreateDipolePyramid路径仍需与此句柄具体操作对应</td>
+</tr>
+</tbody></table>
+<p>核心入口原件MVD_Algorithm.dll SHA85D17ECC87D52E9A62D8BB86C8D5208AC999BCD31EC6D0806453F8165733F549；PE实际CAPI RVAs：CreateHandle14930、Process152b0、SetValueByString15460、DestroyHandle15270，见core-api-identities.json。复用本线既有C1源14930/152b0，不能拿标定专用1c4e0/20480当此匹配router。14930中0x1f5&lt;=type&lt;0x203一组分配0x6a0→5aeb0 ctor，因此pattern200/tool201都走该对象族；具体vtable+18 Process分派到20d/20e的目标体仍待取，已开始只读复用保留核心工程定向5aeb0，不重导核心全DLL。</p>
+<h2 id="仍需闭合">仍需闭合</h2><ol>
+<li>原core0x201对象的vtable Process/SetValue与20d主匹配/20e轮廓细化具体callee、参数结构、模板读写/训练与匹配算法；目前只是精确caller，不猜常规NCC/边缘匹配。</li>
+<li>wrapper Run16000/178e0/19510：参数预检、ROI/mask图构造、图像format与stride、模型固定prefix/缓冲及结果坐标映射；原模块Current source还需完整对应。</li>
+<li>SDK结果对象的初始化/拷贝/边缘点权重/score与输出mask，14e90所有权/原PE异常路径；现头部示意C不证明所有边界。</li>
+<li>模块SetParam786行与原56默认/114命名控件/68strcmp anchors的完整字段链审查；declared-field-surface.json只原锚点，不把声明当完整语义。</li>
+<li>原模块UpdateMatchResult用SDK隐藏结构返回：26908 LEA RDX,[RSP+60]→GetPosition+10，2699c..269b1复制两个float；伪码local_1d8/1d4貌似未初始化实为隐藏out目的槽，不能据此实现未知值/0。已用原asm核ABI，后续产品应保真实字段方向。</li>
+</ol>
+<p>未改产品/共享框架、无托管构建或新原厂样本；HP/Fast仍独立，未以继承关系复用本算法。</p>
+<p class="meta">来源：docs/plugins/IMVSCONTOURMATCHMODU-SDK-DISPATCH.md · SHA256 107aa95b3fe408360d114bc8412d654216e6db787e6edce92e9d9fc6147e17d7<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

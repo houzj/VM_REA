@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CompressZipFiles · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>CompressZipFiles · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-P12"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>CompressZipFiles → FileMode.Create → level门/递归写 → Finish/Close/Dispose → 删目录</h2><p>输出FileStream using，ZipOutputStream按CompressLevel在0～9时使用该值，否则6；InnerWalkZip后才Finish和Close，并在finally Dispose。外层using完成后，仅zipFinishRemoved=true才Directory.Delete(dir,false)。异常不会自动继续执行末尾删目录；正常写回前原临时归档已被删除，不能把此段归为前述解包catch可恢复区。</p><p><a href="../专题/communication-protection.html#edge-P12">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-protection.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-protection.edges.json · SHA256 78cdc1eaa90290bfce0f1009a8bdde609e5f46002e27f42770a3f3f12b6bb046</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="7043d105f52af4665cda9acab950d4735937b81b1820d01c0b4c19d89b9a081b">{
+  &quot;id&quot;: &quot;P12&quot;,
+  &quot;route&quot;: &quot;原版 · 重压缩与清理&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;CompressZipFiles&quot;,
+  &quot;to&quot;: &quot;FileMode.Create → level门/递归写 → Finish/Close/Dispose → 删目录&quot;,
+  &quot;behavior&quot;: &quot;输出FileStream using，ZipOutputStream按CompressLevel在0～9时使用该值，否则6；InnerWalkZip后才Finish和Close，并在finally Dispose。外层using完成后，仅zipFinishRemoved=true才Directory.Delete(dir,false)。异常不会自动继续执行末尾删目录；正常写回前原临时归档已被删除，不能把此段归为前述解包catch可恢复区。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/CommunicationEncryService.cs&quot;,
+      &quot;member&quot;: &quot;CommunicationEncryService.CompressZipFiles&quot;,
+      &quot;sha256&quot;: &quot;a1a98bf19b95958cf2b49b96d0f3dfd95e0c5336a6fa89afa85e3b6e675c4aba&quot;,
+      &quot;start&quot;: 50,
+      &quot;end&quot;: 81,
+      &quot;excerpt&quot;: &quot;\tprivate static void CompressZipFiles(string dir, string zipedFile, bool zipFinishRemoved, int CompressLevel = 6)\n\t{\n\t\t//IL_000d: Unknown result type (might be due to invalid IL or missing references)\n\t\t//IL_0013: Expected Obj, but got Unknown\n\t\tusing (FileStream fileStream = new FileStream(zipedFile, FileMode.Create))\n\t\t{\n\t\t\tZipOutputStream val = new ZipOutputStream((Stream)fileStream);\n\t\t\ttry\n\t\t\t{\n\t\t\t\tif (CompressLevel > -1 &amp;&amp; CompressLevel &lt; 10)\n\t\t\t\t{\n\t\t\t\t\tval.SetLevel(CompressLevel);\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tval.SetLevel(6);\n\t\t\t\t}\n\t\t\t\tInnerWalkZip(dir, dir, val, zipedFile, zipFinishRemoved);\n\t\t\t\t((DeflaterOutputStream)val).Finish();\n\t\t\t\t((Stream)(object)val).Close();\n\t\t\t}\n\t\t\tfinally\n\t\t\t{\n\t\t\t\t((IDisposable)val)?.Dispose();\n\t\t\t}\n\t\t}\n\t\tif (zipFinishRemoved)\n\t\t{\n\t\t\tDirectory.Delete(dir, recursive: false);\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-protection-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VMControls.WPF.GlobalUI.CommunicationEncryService::CompressZipFiles&quot;,
+      &quot;sha256&quot;: &quot;092ee644f1e760b48ff5ef5727fcc7237a7d09a862137215d9403da5ad54e72a&quot;,
+      &quot;start&quot;: 11426,
+      &quot;end&quot;: 11445,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000579\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000579\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VMControls.WPF.GlobalUI.CommunicationEncryService\&quot;,\n            \&quot;name\&quot;: \&quot;CompressZipFiles\&quot;,\n            \&quot;parameters\&quot;: 4,\n            \&quot;attributes\&quot;: \&quot;Private, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;0004010e0e0208\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 129,\n          \&quot;ilSha256\&quot;: \&quot;96bad4bc82061d1c7dd7e0f247b88dff3a3a4747eaed67b774f15167a21aa41b\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00030a0618730f05000a0b0007731005000a0c0005153107051f0afe042b01160d092c0c0008056f1105000a00002b0a00081c6f1105000a00000202080604287a05000600086f1205000a00086f1305000a0000de0b082c07086fa000000a00dc00de0b072c07076fa000000a00dc04130411042c0a000216280d05000a00002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;压缩实现/默认level、写入/Finish/Dispose失败、实际归档有效性未知；不由using推断业务回滚。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

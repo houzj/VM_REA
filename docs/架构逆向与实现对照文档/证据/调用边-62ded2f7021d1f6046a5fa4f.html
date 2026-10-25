@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>InnerWriteLibFile · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>InnerWriteLibFile · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-P11"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>InnerWriteLibFile → 选加/解 → null返回false / 非null创建并写回</h2><p>按isEncry选择变换；结果null立即false，不创建流。非null用FileMode.Create写全部数组并Close，返回true。catch记LogHelper.Error后置flag=true并throw ex；finally再次Close，并用File.Exists(path) &amp; flag决定删除文件（位与会求两侧）。调用者不读bool，所以false不同于异常，且日志/Close/删除自身抛错的传播不能当已恢复。</p><p><a href="../专题/communication-protection.html#edge-P11">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-protection.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-protection.edges.json · SHA256 78cdc1eaa90290bfce0f1009a8bdde609e5f46002e27f42770a3f3f12b6bb046</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="2d0d915ca9aa919c7ff4e62fa101a77538188b18d26c0e579cc6f57f570817c9">{
+  &quot;id&quot;: &quot;P11&quot;,
+  &quot;route&quot;: &quot;原版 · 变换与字节写回&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;InnerWriteLibFile&quot;,
+  &quot;to&quot;: &quot;选加/解 → null返回false / 非null创建并写回&quot;,
+  &quot;behavior&quot;: &quot;按isEncry选择变换；结果null立即false，不创建流。非null用FileMode.Create写全部数组并Close，返回true。catch记LogHelper.Error后置flag=true并throw ex；finally再次Close，并用File.Exists(path) &amp; flag决定删除文件（位与会求两侧）。调用者不读bool，所以false不同于异常，且日志/Close/删除自身抛错的传播不能当已恢复。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/CommunicationEncryService.cs&quot;,
+      &quot;member&quot;: &quot;CommunicationEncryService.InnerWriteLibFile&quot;,
+      &quot;sha256&quot;: &quot;a1a98bf19b95958cf2b49b96d0f3dfd95e0c5336a6fa89afa85e3b6e675c4aba&quot;,
+      &quot;start&quot;: 236,
+      &quot;end&quot;: 268,
+      &quot;excerpt&quot;: &quot;\tprivate static bool InnerWriteLibFile(string path, byte[] libData, bool isEncry)\n\t{\n\t\tFileStream fileStream = null;\n\t\tbool flag = false;\n\t\ttry\n\t\t{\n\t\t\tbyte[] array = (isEncry ? GetInnerEncryptedData(libData) : GetInnerDecryptedData(libData));\n\t\t\tif (array == null)\n\t\t\t{\n\t\t\t\treturn false;\n\t\t\t}\n\t\t\tfileStream = new FileStream(path, FileMode.Create);\n\t\t\tfileStream.Write(array, 0, array.Length);\n\t\t\tfileStream.Close();\n\t\t\treturn true;\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Error(ex.Message);\n\t\t\tflag = true;\n\t\t\tthrow ex;\n\t\t}\n\t\tfinally\n\t\t{\n\t\t\tfileStream?.Close();\n\t\t\tif (File.Exists(path) &amp; flag)\n\t\t\t{\n\t\t\t\tFile.Delete(path);\n\t\t\t}\n\t\t}\n\t}\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/communication-protection-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VMControls.WPF.GlobalUI.CommunicationEncryService::InnerWriteLibFile&quot;,
+      &quot;sha256&quot;: &quot;092ee644f1e760b48ff5ef5727fcc7237a7d09a862137215d9403da5ad54e72a&quot;,
+      &quot;start&quot;: 15634,
+      &quot;end&quot;: 15653,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x06000580\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x06000580\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VMControls.WPF.GlobalUI.CommunicationEncryService\&quot;,\n            \&quot;name\&quot;: \&quot;InnerWriteLibFile\&quot;,\n            \&quot;parameters\&quot;: 3,\n            \&quot;attributes\&quot;: \&quot;Private, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;0003020e1d0502\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 138,\n          \&quot;ilSha256\&quot;: \&quot;2cc609d6d718e92634cf67657dfc01bc0cdf24cf2671263ac7750f34d5149b34\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;00140a160b00042d0803287e0500062b0603287f0500060c0814fe010d092c05161304de620218730f05000a0a060816088e696f1b05000a00066f1305000a00171304de4213050011056fa300000a28a400000a00170b11057a000614fe03130611062c0900066f1305000a00000228c600000a075f130711072c090002280e05000a000000dc11042a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;99ffa401c8784472913ad43813d68a8a5577890c00e149506e3e5664fa61c97d / MVID d144317f-3992-4275-9b0f-13fb6163e07d&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;写盘/关闭失败、日志失败与finally掩盖异常的实际结果未知；所选函数无flush/原子替换证明，未在真实文件上运行。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

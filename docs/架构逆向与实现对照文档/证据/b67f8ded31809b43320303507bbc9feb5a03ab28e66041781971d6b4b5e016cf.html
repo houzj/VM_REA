@@ -1,0 +1,56 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 b67f8ded3180 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 b67f8ded3180</p><h1>原文证据 b67f8ded3180</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 b67f8ded31809b43320303507bbc9feb5a03ab28e66041781971d6b4b5e016cf。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">using System.Buffers.Binary;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using VisionFramework;
+using VisionPluginContracts;
+namespace VisionPlugins.ImageSource;
+
+/// &lt;summary&gt;Independent reconstruction of LightModule, including the native 748-byte command boundary.&lt;/summary&gt;
+public sealed class LightPlugin:IVisionToolPlugin,IWpfToolEditorFactory {
+ public const string Id=&quot;vision.light&quot;;
+ public ToolManifest Manifest{get;}=new(Id,&quot;1.0.0&quot;,&quot;光源&quot;,&quot;collection&quot;,&quot;catalog/LightModuleImageEnable.png&quot;);
+ public static int NormalizeDeviceType(int type)=&gt;type switch{1 or 0x1004=&gt;101,2 or 0x440101=&gt;103,3 or 0x880204=&gt;110,4 or 0x204=&gt;107,5 or 0x880000=&gt;106,6 or 0x380000=&gt;108,7 or 0x881304=&gt;201,0x1006=&gt;102,0xff0204=&gt;109,0x2cf0208=&gt;114,_=&gt;type};
+ public static int BrightnessMaximum(int type)=&gt;NormalizeDeviceType(type) is 103 or 104 or 105 or 107 or 109 or 110 or 114?100:255;
+ // EnumerationLight applies LightSourceHelper's old-global-resource mapping before passing the selection to the native module.
+ public static string DeviceSelection(AcquisitionLightDevice device){int type=device.DeviceType;if(device.ModuleId==14000)type=type switch{4100=&gt;101,4456705=&gt;103,4456706=&gt;104,8913412=&gt;110,516=&gt;107,8912896=&gt;106,3670016=&gt;108,25690628=&gt;105,47120904=&gt;114,_=&gt;type};return $&quot;{device.DeviceIndex}#{device.ModuleId}#{NormalizeDeviceType(type)}#{device.DeviceGuid}&quot;;}
+ public sealed record Device(int Index,int ModuleId,int Type,string Guid){public static Device Parse(string text){var parts=text.Split('#',4);return parts.Length&gt;=4&amp;&amp;int.TryParse(parts[0],out int index)&amp;&amp;int.TryParse(parts[1],out int module)&amp;&amp;int.TryParse(parts[2],out int type)?new(index,module,NormalizeDeviceType(type),parts[3]):new(-1,-1,0,&quot;&quot;);}}
+ static ParameterDescriptor P&lt;T&gt;(string name,ParameterKind kind,T value,double? min=null,double? max=null)=&gt;new(name,kind,true,JsonSerializer.SerializeToElement(value),min,max);
+ static ParameterDescriptor[] Parameters(){var result=new List&lt;ParameterDescriptor&gt;{P(&quot;LightDevice&quot;,ParameterKind.Text,&quot;&quot;),P(&quot;TriggerTime&quot;,ParameterKind.Integer,500,-1,65535),P(&quot;OutputType&quot;,ParameterKind.Integer,1),P(&quot;InputType&quot;,ParameterKind.Integer,1,1,2)};for(int i=1;i&lt;=8;i++){result.Add(P($&quot;Channel{i}Enable&quot;,ParameterKind.Boolean,false));result.Add(P($&quot;Channel{i}Brightness&quot;,ParameterKind.Integer,0,0,255));result.Add(P($&quot;Channel{i}LightState&quot;,ParameterKind.Integer,1));result.Add(P($&quot;Channel{i}EdgeType&quot;,ParameterKind.Integer,1));result.Add(P($&quot;Channel{i}DurationTime&quot;,ParameterKind.Integer,0,0,30000));}result.Add(P(&quot;Channel1LightStateVB&quot;,ParameterKind.Integer,1));result.Add(P(&quot;Channel2LightStateVB&quot;,ParameterKind.Integer,1));return result.ToArray();}
+ public ModuleDescriptor Descriptor{get;}=new(Id,&quot;1.0.0&quot;,&quot;光源&quot;,Enumerable.Range(1,8).Select(i=&gt;new PortDescriptor($&quot;InputChannel{i}Brightness&quot;,DataKind.Integer,false)).Append(new(&quot;InputString&quot;,DataKind.Text,false)).ToArray(),Enumerable.Range(1,8).SelectMany(i=&gt;new[]{&quot;Enable&quot;,&quot;Brightness&quot;,&quot;LightState&quot;,&quot;EdgeType&quot;,&quot;DurationTime&quot;}.Select(s=&gt;new PortDescriptor($&quot;Channel{i}{s}&quot;,DataKind.Integer,false))).Concat(new[]{new PortDescriptor(&quot;ModuStatus&quot;,DataKind.Integer),new(&quot;ModuRunTime&quot;,DataKind.Number)}).ToArray(),Parameters());
+ public IModule CreateRuntime()=&gt;new Runtime(this);
+ public Form CreateEditor(ToolEditorContext context)=&gt;throw new InvalidOperationException(&quot;Use WPF editor factory.&quot;);
+ public System.Windows.Window CreateWpfEditor(ToolEditorContext context)=&gt;new LightWindow(context);
+ sealed class State {public readonly SemaphoreSlim Gate=new(1,1);public string Device=&quot;&quot;;public readonly int[] Brightness=new int[8];}
+ readonly Dictionary&lt;string,State&gt; fallback=new();readonly object gate=new();
+ State GetState(ModuleExecutionContext c){if(c.Scope is {} scope)return scope.State(Id,c.NodeId,()=&gt;new State());lock(gate){string key=Path.GetFullPath(c.BaseDirectory)+&quot;|&quot;+c.NodeId;if(!fallback.TryGetValue(key,out var state))fallback[key]=state=new();return state;}}
+ public void Reset(string nodeId){lock(gate)foreach(string key in fallback.Keys.Where(k=&gt;k.EndsWith(&quot;|&quot;+nodeId,StringComparison.Ordinal)).ToArray())fallback.Remove(key);}
+ public static byte[] Encode(Device device,int triggerTime,IReadOnlyList&lt;bool&gt; enabled,IReadOnlyList&lt;int&gt; brightness,IReadOnlyList&lt;int&gt; lightStates,IReadOnlyList&lt;int&gt; edges,IReadOnlyList&lt;int&gt; durations){
+  if(new[]{enabled.Count,brightness.Count,lightStates.Count,edges.Count,durations.Count}.Any(n=&gt;n!=8))throw new ArgumentException(&quot;Eight channel values required.&quot;);
+  // Native copies a fixed 16-byte UTF-8 identifier. Zero short-field padding instead of copying uninitialized storage.
+  byte[] data=new byte[748];void I(int offset,int value)=&gt;BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(offset,4),value);I(0,device.Index);I(4,device.Type);var identifier=Encoding.UTF8.GetBytes(device.Guid);identifier.AsSpan(0,Math.Min(16,identifier.Length)).CopyTo(data.AsSpan(8,16));I(24,triggerTime);
+  for(int i=0;i&lt;8;i++){int offset=28+i*44;I(offset,i+1);data[offset+4]=enabled[i]?(byte)1:(byte)0;I(offset+8,brightness[i]);I(offset+12,lightStates[i]);I(offset+16,edges[i]);I(offset+20,durations[i]);}return data;
+ }
+ sealed class Runtime(LightPlugin owner):IModule {
+  public ModuleDescriptor Descriptor=&gt;owner.Descriptor;
+  public async ValueTask&lt;ModuleResult&gt; ExecuteAsync(ModuleExecutionContext c,CancellationToken token){token.ThrowIfCancellationRequested();var timer=Stopwatch.StartNew();var state=owner.GetState(c);await state.Gate.WaitAsync(token);var output=new Dictionary&lt;string,PortValue&gt;();uint code=0;int status=0;string? message=null;
+   try{string text=c.Text(&quot;LightDevice&quot;);var device=Device.Parse(text);if(state.Device!=text){state.Device=text;if(device.Index&gt;=0)Array.Clear(state.Brightness);}int max=BrightnessMaximum(device.Type);var enabled=Enumerable.Range(1,8).Select(i=&gt;c.Boolean($&quot;Channel{i}Enable&quot;)).ToArray();var states=Enumerable.Range(1,8).Select(i=&gt;c.Integer($&quot;Channel{i}LightState&quot;)).ToArray();if(device.Type is 103 or 104){states[0]=c.Integer(&quot;Channel1LightStateVB&quot;);if(device.Type==104)states[1]=c.Integer(&quot;Channel2LightStateVB&quot;);}var edges=Enumerable.Range(1,8).Select(i=&gt;c.Integer($&quot;Channel{i}EdgeType&quot;)).ToArray();var durations=Enumerable.Range(1,8).Select(i=&gt;c.Integer($&quot;Channel{i}DurationTime&quot;)).ToArray();
+    if(Enumerable.Range(1,8).Any(i=&gt;c.Integer($&quot;Channel{i}Brightness&quot;) is &lt;0||c.Integer($&quot;Channel{i}Brightness&quot;)&gt;255)||durations.Any(n=&gt;n is &lt;0 or &gt;30000)||c.Integer(&quot;TriggerTime&quot;) is &lt;-1 or &gt;65535){code=0xe000030e;message=&quot;光源参数超出原厂范围。&quot;;output[&quot;ModuStatus&quot;]=PortValue.Integer(0);}
+    else{
+     string trigger=c.Inputs.TryGetValue(&quot;InputString&quot;,out var input)?input.As&lt;string&gt;():&quot;&quot;;int nul=trigger.IndexOf('\0');if(nul&gt;=0)trigger=trigger[..nul];bool match=c.Integer(&quot;OutputType&quot;)==1&amp;&amp;trigger==&quot;OK&quot;||c.Integer(&quot;OutputType&quot;)==2&amp;&amp;trigger==&quot;NG&quot;;
+     if(device.Index&gt;=0&amp;&amp;match){for(int i=0;i&lt;8;i++)state.Brightness[i]=c.Inputs.TryGetValue($&quot;InputChannel{i+1}Brightness&quot;,out var value)?checked((int)value.As&lt;long&gt;()):c.Integer($&quot;Channel{i+1}Brightness&quot;);
+      // Original sends the staged bytes before validating subscribed brightness for outputs.
+      var transport=c.Scope?.Service&lt;IAcquisitionLightModuleTransport&gt;();try{if(transport is not null){await transport.SetBinaryDataAsync(device.ModuleId,&quot;LightDeviceParamSetTrigger&quot;,Encode(device,c.Integer(&quot;TriggerTime&quot;),enabled,state.Brightness,states,edges,durations),token);status=1;}else message=&quot;光源传输服务不可用。&quot;;}catch(OperationCanceledException){throw;}catch(IOException ex){message=ex.Message;}
+     }
+     output[&quot;ModuStatus&quot;]=PortValue.Integer(status);for(int i=0;i&lt;8;i++)output[$&quot;Channel{i+1}Enable&quot;]=PortValue.Integer(enabled[i]?1:0);
+     for(int i=0;i&lt;8;i++){if(state.Brightness[i]&lt;0||state.Brightness[i]&gt;max){code=0xe000030e;message=&quot;订阅亮度超出原厂范围。&quot;;break;}output[$&quot;Channel{i+1}Brightness&quot;]=PortValue.Integer(state.Brightness[i]);}
+     if(code==0&amp;&amp;device.Type is &gt;=2 and &lt;=6)for(int i=0;i&lt;8;i++){output[$&quot;Channel{i+1}LightState&quot;]=PortValue.Integer(states[i]);output[$&quot;Channel{i+1}EdgeType&quot;]=PortValue.Integer(edges[i]);output[$&quot;Channel{i+1}DurationTime&quot;]=PortValue.Integer(durations[i]);}
+    }
+   }finally{state.Gate.Release();}
+   if(code!=0)output[&quot;ModuStatus&quot;]=PortValue.Integer(0);output[&quot;ModuRunTime&quot;]=PortValue.Number(timer.Elapsed.TotalMilliseconds);return new(code!=0?ModuleStatus.Failed:status==1?ModuleStatus.Success:ModuleStatus.NoMatch,output,code!=0?&quot;LightParameterRange&quot;:null,message){NativeErrorCode=code};
+  }
+ }
+}
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Collection-LightModule-0d9b47ce.html">光源 · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

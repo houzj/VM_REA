@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GlobalTrigger → LoadGlobalTrigger · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GlobalTrigger → LoadGlobalTrigger · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-H04"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GlobalTrigger → LoadGlobalTrigger → 模块14200 / 拒绝门 / 动态程序集 → 模型与窗口</h2><p>先查方案模块ID14200再调用拒绝门；放行且缺模块时按固定GlobalTriggerModuleCs.dll路径Assembly.LoadFile，取首个可赋给IVmModule的类型并Activator.CreateInstance(type,VmSolution.Instance)，之后重查14200。非null才创建GlobalTriggerConfig并设DecorateSource，再new GloablTriggleConfigUI(vmModule)、绑定DataContext并ShowDialog。</p><p><a href="../专题/configuration-hosts.html#edge-H04">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/configuration-hosts.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/configuration-hosts.edges.json · SHA256 42d9ff5e82c1446b90b2e991b8fb374c00927cd6b4054f029298d5be7d45b9b7</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="5f092bc5a8e44a6de61014fd93194d66e214829114dc19af51397e854dcf720d">{
+  &quot;id&quot;: &quot;H04&quot;,
+  &quot;route&quot;: &quot;原版 · 配置宿主入口&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;GlobalTrigger → LoadGlobalTrigger&quot;,
+  &quot;to&quot;: &quot;模块14200 / 拒绝门 / 动态程序集 → 模型与窗口&quot;,
+  &quot;behavior&quot;: &quot;先查方案模块ID14200再调用拒绝门；放行且缺模块时按固定GlobalTriggerModuleCs.dll路径Assembly.LoadFile，取首个可赋给IVmModule的类型并Activator.CreateInstance(type,VmSolution.Instance)，之后重查14200。非null才创建GlobalTriggerConfig并设DecorateSource，再new GloablTriggleConfigUI(vmModule)、绑定DataContext并ShowDialog。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs&quot;,
+      &quot;member&quot;: &quot;global trigger module factory&quot;,
+      &quot;sha256&quot;: &quot;b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187&quot;,
+      &quot;start&quot;: 1366,
+      &quot;end&quot;: 1412,
+      &quot;excerpt&quot;: &quot;\tprivate static void LoadGlobalTrigger()\n\t{\n\t\ttry\n\t\t{\n\t\t\tVmModule vmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 14200);\n\t\t\tif (CheckConfigAvailable(vmModule))\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (vmModule == null)\n\t\t\t{\n\t\t\t\tstring path = CurrentPathHelper.Instance.GetCurrentPath() + \&quot;module(sp)\\\\x64\\\\Global\\\\GlobalTriggerModule\\\\GlobalTriggerModuleCs.dll\&quot;;\n\t\t\t\tAssembly assembly = Assembly.LoadFile(path);\n\t\t\t\tType type = assembly.GetTypes().FirstOrDefault((Type p) => typeof(IVmModule).IsAssignableFrom(p));\n\t\t\t\tActivator.CreateInstance(type, VmSolution.Instance);\n\t\t\t\tvmModule = VmSolution.Instance.Modules.FirstOrDefault((VmModule x) => x.ID == 14200);\n\t\t\t}\n\t\t\tif (vmModule != null)\n\t\t\t{\n\t\t\t\tGlobalTriggerConfig globalTriggerConfig = new GlobalTriggerConfig();\n\t\t\t\tglobalTriggerConfig.DecorateSource = vmModule;\n\t\t\t\tglobalTriggerDialog = new GloablTriggleConfigUI(vmModule);\n\t\t\t\tglobalTriggerDialog.DataContext = globalTriggerConfig;\n\t\t\t\tglobalTriggerDialog.ShowDialog();\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tVmException ex2 = null;\n\t\t\tif (ex is VmException || ex.InnerException is VmException)\n\t\t\t{\n\t\t\t\tex2 = ex as VmException;\n\t\t\t\tif (ex2 == null)\n\t\t\t\t{\n\t\t\t\t\tex2 = ex.InnerException as VmException;\n\t\t\t\t}\n\t\t\t\tShowMessage.ShowVmExceptionMessage(ex2);\n\t\t\t\tLogHelper.Error(ex2.errorMessage);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tHikMessageBox.Show(ex.Message, MessageIcons.Error);\n\t\t\t\tLogHelper.Error(ex.Message);\n\t\t\t}\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/configuration-hosts-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::GlobalTrigger&quot;,
+      &quot;sha256&quot;: &quot;d5f2749dff501d356fbae8c199cb4578ed1b98678fc8ddd8fe80df89704b941a&quot;,
+      &quot;start&quot;: 3585,
+      &quot;end&quot;: 3604,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002e3\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002e3\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;GlobalTrigger\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Public, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;200001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 8,\n          \&quot;ilSha256\&quot;: \&quot;4f6a560cab39f21ee553b28d84e3de316e75a140087a421cacffbeeddb07e450\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0028e2020006002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;docs/architecture-recovery/configuration-hosts-cil-evidence.json&quot;,
+      &quot;member&quot;: &quot;VisionMaster.AppMainWindow.TitleMenueItemData::LoadGlobalTrigger&quot;,
+      &quot;sha256&quot;: &quot;d5f2749dff501d356fbae8c199cb4578ed1b98678fc8ddd8fe80df89704b941a&quot;,
+      &quot;start&quot;: 2131,
+      &quot;end&quot;: 2150,
+      &quot;excerpt&quot;: &quot;          \&quot;token\&quot;: \&quot;0x060002e2\&quot;,\n          \&quot;symbol\&quot;: {\n            \&quot;token\&quot;: \&quot;0x060002e2\&quot;,\n            \&quot;kind\&quot;: \&quot;method-def\&quot;,\n            \&quot;type\&quot;: \&quot;VisionMaster.AppMainWindow.TitleMenueItemData\&quot;,\n            \&quot;name\&quot;: \&quot;LoadGlobalTrigger\&quot;,\n            \&quot;parameters\&quot;: 0,\n            \&quot;attributes\&quot;: \&quot;Private, Static, HideBySig\&quot;,\n            \&quot;signatureBytes\&quot;: \&quot;000001\&quot;\n          },\n          \&quot;status\&quot;: \&quot;decoded\&quot;,\n          \&quot;issue\&quot;: null,\n          \&quot;ilSize\&quot;: 420,\n          \&quot;ilSha256\&quot;: \&quot;bc1137efbd7d34a7d30540ad3e412d04dad92f697bcdfeb1e4d47a15bf0d1ab0\&quot;,\n          \&quot;ilBytes\&quot;: \&quot;0000288800000a6feb00000a7ee3010004252d17267ed5010004fe0684030006734203000a2580e3010004283700002b0a0628e40200060b072c0600dd620100000614fe010c08399100000000284303000a6f4403000a72583c0070283600000a0d09284503000a130411046f5b00000a7ee4010004252d17267ed5010004fe0685030006735c00000a2580e4010004280100002b13051105178d150000012516288800000aa2284603000a26288800000a6feb00000a7ee5010004252d17267ed5010004fe0686030006734203000a2580e5010004283700002b0a000614fe03130611062c3500739503000a13071107066f9603000a0006739703000a80090100047e0901000411076f8d00000a007e090100046fbf01000a260000dd81000000130800141309110875270000012d1111086f9700000a752700000114fe032b0117130a110a2c3c00110875270000011309110914fe01130b110b2c100011086f9700000a75270000011309001109289c00000a0011096f7300000a289b00000a00de1e11086f7c00000a1916282c01000a2611086f7c00000a289b00000a00de002a\&quot;,\n          \&quot;instructions\&quot;: [\n            {\n              \&quot;offset\&quot;: 0,\n              \&quot;label\&quot;: \&quot;IL_0000\&quot;,\n              \&quot;opcode\&quot;: \&quot;nop\&quot;,&quot;,
+      &quot;evidenceType&quot;: &quot;original-managed-cil&quot;,
+      &quot;binaryIdentity&quot;: &quot;42e2437780ec21c9d1ade2d07ace0a26635961f5c90559934a7fde7e233e0c23 / MVID 77c739a5-b0ec-4834-8a1e-64dd9b618ae5&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs&quot;,
+      &quot;member&quot;: &quot;GlobalTrigger public wrapper&quot;,
+      &quot;sha256&quot;: &quot;b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187&quot;,
+      &quot;start&quot;: 1413,
+      &quot;end&quot;: 1416,
+      &quot;excerpt&quot;: &quot;\tpublic void GlobalTrigger()\n\t{\n\t\tLoadGlobalTrigger();\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;源中的ID/类型筛选lambda及实际程序集版本/注册、构造/模块加入/原机激活仍未全证；本任务不加载或执行插件。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

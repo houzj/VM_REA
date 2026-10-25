@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RunCore返回bool / CreateExecutionProgress · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>RunCore返回bool / CreateExecutionProgress · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-M08"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>RunCore返回bool / CreateExecutionProgress → NoMatch停止策略与动态端口runSequence门</h2><p>RunCore状态图标把Success/NoMatch/Skipped视为正常，但返回ok要求SessionStatus.Success且节点只为Success/Skipped；因此含NoMatch可图标正常而ok=false，连续模式StopOnNg会使用该false。CreateExecutionProgress只接受owner有效且workflowExecuteCounts相同的事件，仅SupportsDynamicOutputs=true才写liveDynamicDescriptors；当前流程且非overview才重画。该端口描述更新不是历史帧/像素提交，owner、轮次、流程显隐各为独立门。</p><p><a href="../专题/execution-storage.html#edge-M08">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/execution-storage.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/execution-storage.edges.json · SHA256 a9ff89e4868a237886b3ceade3029c19466278ee1454727fd4d7198e4fa01ae8</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="1f1d3187fbacc6c9585329f147f94a7b254805374088315a82c08a3001ee91ac">{
+  &quot;id&quot;: &quot;M08&quot;,
+  &quot;route&quot;: &quot;当前 · 结果状态与进度&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;RunCore返回bool / CreateExecutionProgress&quot;,
+  &quot;to&quot;: &quot;NoMatch停止策略与动态端口runSequence门&quot;,
+  &quot;behavior&quot;: &quot;RunCore状态图标把Success/NoMatch/Skipped视为正常，但返回ok要求SessionStatus.Success且节点只为Success/Skipped；因此含NoMatch可图标正常而ok=false，连续模式StopOnNg会使用该false。CreateExecutionProgress只接受owner有效且workflowExecuteCounts相同的事件，仅SupportsDynamicOutputs=true才写liveDynamicDescriptors；当前流程且非overview才重画。该端口描述更新不是历史帧/像素提交，owner、轮次、流程显隐各为独立门。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowExecution.cs&quot;,
+      &quot;member&quot;: &quot;Current result status, commit and return predicate&quot;,
+      &quot;sha256&quot;: &quot;62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4&quot;,
+      &quot;start&quot;: 47,
+      &quot;end&quot;: 66,
+      &quot;excerpt&quot;: &quot;   WorkflowCallbacks.PublishModuleResult(\n    () => {\n      if(!IsCurrentExecutionOwner(owner))return;\n      if(doc.HasCurrentProcedure&amp;&amp;doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString(\&quot;F2\&quot;);StatusText.Text=\&quot;流程完成：\&quot;+session.Status+(session.OutputErrors.Count>0?\&quot; · \&quot;+string.Join(\&quot;；\&quot;,session.OutputErrors):\&quot;\&quot;);StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?\&quot;bottombar_run.png\&quot;:\&quot;bottombar_abnormal.png\&quot;);RefreshRight();}\n      if(workflowOverview)RenderWorkflowOverview();\n      if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();\n    },\n    () => {\n      StoreWorkflowCallResults(procedureId,session);RecordWorkflowRun(procedureId,elapsed);\n      if(!windowClosed)RecordFrameworkRunHistory(procedureId,session);\n    });\n   return session.Status==SessionStatus.Success&amp;&amp;session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.Skipped);\n  }\n  catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))StatusText.Text=\&quot;运行已停止\&quot;;}\n  catch(Exception e){if(IsCurrentExecutionOwner(owner))StatusText.Text=\&quot;运行失败：\&quot;+e.Message;}\n  return false;\n }\n void ClearWorkflowCallResults(string procedure){var seen=new HashSet&lt;string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);ClearToolDebugResults(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}\n void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){ClearToolDebugResults(procedure);clearedWorkflowResultViews.Remove(procedure);workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}\n void RestoreWorkflowResults()&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/DynamicOutputPresentation.cs&quot;,
+      &quot;member&quot;: &quot;Current dynamic descriptor owner/run admission&quot;,
+      &quot;sha256&quot;: &quot;a133ea86f4ecf2e0e114b9de2748c3a9ec985f08d8bac4eec5c9a1fd3b5cc1e1&quot;,
+      &quot;start&quot;: 18,
+      &quot;end&quot;: 26,
+      &quot;excerpt&quot;: &quot;    IProgress&lt;ExecutionEvent> CreateExecutionProgress(string procedureId, ExecutionOwnerStamp owner, uint runSequence)=>new Progress&lt;ExecutionEvent>(executionEvent=>\n    {\n        if(!IsCurrentExecutionOwner(owner)||workflowExecuteCounts.GetValueOrDefault(procedureId)!=runSequence)return;\n        if(executionEvent.UpdatedDescriptor is not {SupportsDynamicOutputs:true} descriptor)return;\n        if(!liveDynamicDescriptors.TryGetValue(procedureId,out var descriptors))liveDynamicDescriptors[procedureId]=descriptors=new(StringComparer.Ordinal);\n        descriptors[executionEvent.NodeId]=descriptor;\n        if(!windowClosed&amp;&amp;doc.HasCurrentProcedure&amp;&amp;doc.CurrentProcedureId==procedureId&amp;&amp;!workflowOverview)RenderGraph();\n    });\n&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;独立托管状态与原WorkState/ModuStatus、动态端口原native生产和跨线程时序仍不等价；不能把图标正常当作全部执行成功。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

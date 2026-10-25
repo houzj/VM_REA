@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-01 主菜单剩余边界审计 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / MF-01 主菜单剩余边界审计</p><h1>MF-01 主菜单剩余边界审计</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MF-01 主菜单剩余边界审计</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="MF01-MENU-OPEN-BOUNDARIES.html">下载原始文件</a></nav><main><h1 id="mf-01-主菜单剩余边界审计">MF-01 主菜单剩余边界审计</h1><p>本表依据 <code>analysis/decompiled/VisionMaster.Exe.Audit/menuitems.xml</code>、<code>VisionMaster.AppMainWindow/TitleMenueItemData.cs</code> 和 <code>VisionMasterMain.AppMainWindow/TitleBar.xaml</code>；当前 WPF 入口见 <code>src/VisionEditor/MainWindow.xaml.cs</code> 的 <code>BuildChrome</code>。源码菜单项的存在不等于本项目已经具备相应后端。</p>
+<table>
+<thead>
+<tr>
+<th>原始入口</th>
+<th>原始命令链</th>
+<th>本项目状态与归属</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>设置：权限、软件、方案、运行、采集策略</td>
+<td><code>AuthSet/VMSet/Solset/ProcRunSet/CollectSet</code> → 软件设置窗和 SDK/方案状态</td>
+<td>当前“所选模块参数”并非上述入口。需要对应配置数据与持久化契约；不从 Shell 造空窗。</td>
+</tr>
+<tr>
+<td>工具：标定向导与外部工具</td>
+<td><code>CreateCalibGuide/OpenExe/OpenExeByLang/OpenModuleParamTool</code></td>
+<td>当前撤消/重做/校验/适应画布是独立 WPF 操作，非原始工具菜单目录。外部工具产物及配置缺失。</td>
+</tr>
+<tr>
+<td>系统：日志</td>
+<td><code>LogShow</code> → <code>UILogManager(true).ShowDialog()</code></td>
+<td>本项目无原生日志模型和窗口；执行历史表不能替代日志管理器。</td>
+</tr>
+<tr>
+<td>系统：通信、相机</td>
+<td><code>CommSet/CameraSet</code> → 动态通信 DLL、<code>VmSolution.Modules</code>、<code>GlobalCameraManager</code>、登录权限</td>
+<td>属于插件与 SDK 契约；相机工具栏当前仅刷新独立相机提供器，不能声称等同原机相机设置。</td>
+</tr>
+<tr>
+<td>帮助：本地手册</td>
+<td><code>HelpDoc</code> → <code>GuideHelper.GetHelp(true)</code> → 本地帮助文件或“帮助文档缺失”告警</td>
+<td>当前工程无手册文件；静态操作提示不是原生帮助文档。</td>
+</tr>
+<tr>
+<td>运行模式</td>
+<td><code>TitleBar.xaml</code> 的 <code>FrontedButton</code> → <code>OpenRunSetCommand</code></td>
+<td>当前仅静态文字。需全局运行参数配置服务和窗口，不能用虚设切换代替。</td>
+</tr>
+</tbody></table>
+<p>另：<code>TitleBar.IsButtonClickEnabled</code> 绑定 <code>MainView.IsShowProgressMask</code> 的取反，同时约束菜单和工具栏；当前框架缺该操作掩罩状态，不能简单用 <code>activeRun</code> 等同。已闭合的文件菜单、最近方案、锁定、标题栏和 NOItem 状态不在本表重复。以上为源码审计，未宣称运行验收或原生像素一致。</p>
+<p class="meta">来源：docs/MF01-MENU-OPEN-BOUNDARIES.md · SHA256 a8e9ffdbb9180bdf3b65247f9267f4557099ff51a26cb2b6a02571806e0faf39<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

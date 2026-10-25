@@ -1,0 +1,1184 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenCV原生依赖的静态装配与候选身份</title><style>body{max-width:1280px;margin:auto;padding:24px;background:#101a29;color:#e3edf8;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#96d1ff}p,small{color:#b0c6dc}.notice{background:#1c2d43;border-left:4px solid #dfb16e;padding:15px}details{background:#17273c;padding:14px;border:1px solid #3f5671;margin:14px 0}summary{cursor:pointer}.unknown{border-color:#d299ac}pre{font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1524;padding:12px}code{overflow-wrap:anywhere}</style><a href="index.html">← 架构索引</a> · <a href="export-text-rendering-audit.html#T10">导出文字的PInvoke边界</a><h1>OpenCV原生依赖的静态装配与候选身份</h1><p class="notice">原Main→包装静态初始化→目录/架构分支→Win32 LoadLibrary声明；三候选仅核PE身份和五个选定导出。实际装载路径仍未知，未执行厂商或native。</p><p><a href="rendering-native-loader-audit.json">完整专题JSON</a> · <a href="rendering-native-loader-audit.cil.json">独立CIL</a> · <a href="rendering-native-loader-audit.pe.json">PE表和静态路径代入</a></p><nav><a href="#L01">L01</a> · <a href="#L02">L02</a> · <a href="#L03">L03</a> · <a href="#L04">L04</a> · <a href="#L05">L05</a> · <a href="#L06">L06</a> · <a href="#L07">L07</a> · <a href="#L08">L08</a> · <a href="#L09">L09</a> · <a href="#L10">L10</a> · <a href="#L11">L11</a> · <a href="#L12">L12</a> · <a href="#U01">U01</a></nav><details id="L01" class="source-confirmed"><summary>L01 · 原VisionMaster.exe PE/CLI入口 → x64原件与Main的cwd设置 · source-confirmed</summary><p>原EXE静态身份为PE32+ machine0x8664，CLI il-only，入口token0x0600010a。原Program.Main先Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory)，再按IsMultiApp选择StartApp/SingleInstance路径；StartApp构造App并Run。该静态cwd赋值不证明之后进程cwd、环境或已装载模块状态未变化。</p><p>待核：没有启动原EXE；宿主实际BaseDirectory/cwd/架构环境值未采集。</p><details><summary>VisionMaster.Program::Main · 163–182</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600010a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600010a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.Program&quot;,
+            &quot;name&quot;: &quot;Main&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0001011d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 87,
+          &quot;ilSha256&quot;: &quot;1d87c3879a82503589023e8b834fa0d1c8748edbf580d1cafb6dc34aa491f8c6&quot;,
+          &quot;ilBytes&quot;: &quot;00283f00000a6f5900000a289701000a0072a1160070284400000a0a0672f908007028b900000a0b072c0a0002280b010006002b21280c010006289801000a0c0002280b0100060000de0b082c07086fa200000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VisionMaster.Program::StartApp · 519–538</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600010b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600010b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.Program&quot;,
+            &quot;name&quot;: &quot;StartApp&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0001011d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 51,
+          &quot;ilSha256&quot;: &quot;6a8160a79cddd59bf224728306169ff58e9163f06384da4637b62cd228e19c64&quot;,
+          &quot;ilBytes&quot;: &quot;00028e16fe030a062c0800280d01000600000280680000047e68000004731000000680670000047e670000046fba00000a262a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Original EXE PE identity · 33–44</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.exe-identity.json · original-managed-metadata · SHA 7dad9f7e7fb8842e6c2a26a8df44b966132520cec933c83f94657ec2adf49466</code></p><pre>      &quot;machine_hex&quot;: &quot;0x8664&quot;,
+      &quot;architecture&quot;: &quot;x86_64&quot;,
+      &quot;optional_header&quot;: &quot;pe32-plus&quot;,
+      &quot;section_count&quot;: 2,
+      &quot;characteristics&quot;: 34,
+      &quot;cli&quot;: {
+        &quot;header_offset&quot;: 512,
+        &quot;header_size&quot;: 72,
+        &quot;runtime_version&quot;: &quot;2.5&quot;,
+        &quot;flags&quot;: 1,
+        &quot;flag_names&quot;: [
+          &quot;il-only&quot;</pre></details></details><details id="L02" class="source-confirmed"><summary>L02 · 原EXE旁exe.config → CLR配置中的目录声明与文件来源 · source-confirmed</summary><p>原件旁exe.config声明v4.0/.NETFramework4.6.1，assemblyBinding下probing privatePath含3rdLib/OpenCv、myLibs、PublicFile/x64等；选定原旁文件与已有本地app.config逐字节相符。所选WindowsLibraryLoader方法没有读取这个probing字符串，不能把它直接当作LoadLibraryRaw的传入目录列表。</p><p>待核：不能由CLR配置的静态目录声明确定NativeMethods实际绑定到哪份包装程序集或native文件。</p><details><summary>Original sidecar probing · 151–151</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/VisionMaster.exe.config · shipped-sidecar-configuration · SHA 9c5dbc6b41d66ec4e902400299808f5a68356fe35438fbc621444b053f4fea9d</code></p><pre>      &lt;probing privatePath=&quot;3rdLib;3rdLib\System;3rdLib\NPOI;myLibs;myLibs\Hik.VM.CodeBuild;3rdLib\MsgPack;3rdLib\OpenCv;3rdLib\ICSharpCode;GateWay;3rdLib\VisionDesigner.NET;PublicFile\x64;PublicFile\x64\QtPlugins;PublicFile\x64\QtPlugins\imageformats;PublicFile\x64\QtPlugins\platforms;3rdLib\OxyPlot;3rdLib\MVD;&quot; /&gt;</pre></details><details><summary>Original supported runtime · 135–135</summary><p><code>D:/Program Files/VisionMaster4.4.0/Applications/VisionMaster.exe.config · shipped-sidecar-configuration · SHA 9c5dbc6b41d66ec4e902400299808f5a68356fe35438fbc621444b053f4fea9d</code></p><pre>    &lt;supportedRuntime version=&quot;v4.0&quot; sku=&quot;.NETFramework,Version=v4.6.1&quot; /&gt;</pre></details></details><details id="L03" class="source-confirmed"><summary>L03 · NativeMethods.cctor → 空依赖数组→LoadLibraries→TryPInvoke · source-confirmed</summary><p>原静态初始化将tried=false，RuntimeDllNames与OpenCVDllNames均初始化空数组，配置两个错误回调，然后LoadLibraries(WindowsLibraryLoader.Instance.AdditionalPaths)，之后才TryPInvoke。这不是执行加载的证据；LoadLibraries中的redirectError若先抛出，也不能说之后TryPInvoke已执行。</p><p>待核：静态初始化实际触发时机/线程、类型初始化失败和重试行为未运行；其它代码是否修改可变AdditionalPaths另留未知。</p><details><summary>OpenCvSharp.NativeMethods::.cctor · 909–928</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600151b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600151b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.NativeMethods&quot;,
+            &quot;name&quot;: &quot;.cctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig, SpecialName, RTSpecialName, HasSecurity&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 91,
+          &quot;ilSha256&quot;: &quot;638702139f719103c6bd4d9e2546a6104827bb985b37bb7484fc233857e0e814&quot;,
+          &quot;ilBytes&quot;: &quot;1680fc050004168d4b00000180ff050004168d4b00000180000600047e22080004fe06261f0006738302000680030600047e22080004fe06271f000673830200068004060004281a1900066f1b190006281c150006281e1500062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldc.i4.0&quot;,</pre></details><details><summary>OpenCvSharp.NativeMethods · 4901–4921</summary><p><code>docs/architecture-recovery/export-text-rendering-audit.resources/OpenCvSharp.NativeMethods.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA e3d29507c7ac7c97f8f4b283df9f552107bc633d83501af3553bc73c8ec5d081</code></p><pre>	static NativeMethods()
+	{
+		tried = false;
+		RuntimeDllNames = new string[0];
+		OpenCVDllNames = new string[0];
+		ErrorHandlerThrowException = (ErrorCode status, string funcName, string errMsg, string fileName, int line, IntPtr userdata) =&gt;
+		{
+			try
+			{
+				int num = 0;
+			}
+			finally
+			{
+				throw new OpenCVException(status, funcName, errMsg, fileName, line);
+			}
+		};
+		ErrorHandlerIgnorance = (ErrorCode status, string funcName, string errMsg, string fileName, int line, IntPtr userdata) =&gt; 0;
+		LoadLibraries(WindowsLibraryLoader.Instance.AdditionalPaths);
+		TryPInvoke();
+	}
+</pre></details></details><details id="L04" class="source-confirmed"><summary>L04 · NativeMethods.LoadLibraries → 非Unix平台的预加载顺序与redirectError · source-confirmed</summary><p>IsUnix把Unix/MacOSX/128视为Unix，其它走Windows分支。additionalPaths null变空数组；运行库搜索列表另加System目录，OpenCV模块用名称+400，而Extern用原additionalPaths数组。所选静态初始化两依赖数组为空，故所见初值对应枚举无元素，但Extern.LoadLibrary与后续redirectError仍在直线路径。没有把System目录自动加到Extern显式附加路径。</p><p>待核：数组后续是否被外部反射改写或环境特殊平台不推断；redirectError本体native未执行。</p><details><summary>OpenCvSharp.NativeMethods::LoadLibraries · 1191–1210</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600151c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600151c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.NativeMethods&quot;,
+            &quot;name&quot;: &quot;LoadLibraries&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00010115124d010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 179,
+          &quot;ilSha256&quot;: &quot;02f9e29d392e2bc7fc88fa63de4b8076d0f0058ab556a82795965e2d171a4c6a&quot;,
+          &quot;ilBytes&quot;: &quot;28201500062c012a022c0802283400002b2b06168d4b0000010a0673a202000a0b071f2528a302000a6fa402000a7eff0500040d1613042b190911049a1305281a1900061105076f201900061104175813041104098e6932e07e000600040d1613042b230911049a1306281a190006110672d923007028a502000a066f201900061104175813041104098e6932d6281a19000672e1230070066f201900067e3200000a0c7e0306000408120228660f0006262a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;call&quot;,</pre></details><details><summary>OpenCvSharp.NativeMethods::IsUnix · 2457–2476</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001520&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001520&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.NativeMethods&quot;,
+            &quot;name&quot;: &quot;IsUnix&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 30,
+          &quot;ilSha256&quot;: &quot;bdace0d5aaf346e123db8b01d1f253b73a2d85b4c631dc790b4e92bbbeaca610&quot;,
+          &quot;ilBytes&quot;: &quot;28aa02000a6fab02000a0a061a2e0d061c2e09062080000000fe012a172a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;call&quot;,</pre></details><details><summary>OpenCvSharp.NativeMethods · 4922–4945</summary><p><code>docs/architecture-recovery/export-text-rendering-audit.resources/OpenCvSharp.NativeMethods.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA e3d29507c7ac7c97f8f4b283df9f552107bc633d83501af3553bc73c8ec5d081</code></p><pre>	public static void LoadLibraries(IEnumerable&lt;string&gt; additionalPaths = null)
+	{
+		if (!IsUnix())
+		{
+			string[] array = ((additionalPaths == null) ? new string[0] : EnumerableEx.ToArray(additionalPaths));
+			List&lt;string&gt; list = new List&lt;string&gt;(array);
+			list.Add(Environment.GetFolderPath(Environment.SpecialFolder.System));
+			string[] runtimeDllNames = RuntimeDllNames;
+			foreach (string dllName in runtimeDllNames)
+			{
+				WindowsLibraryLoader.Instance.LoadLibrary(dllName, list);
+			}
+			runtimeDllNames = OpenCVDllNames;
+			foreach (string text in runtimeDllNames)
+			{
+				WindowsLibraryLoader.Instance.LoadLibrary(text + &quot;400&quot;, array);
+			}
+			WindowsLibraryLoader.Instance.LoadLibrary(&quot;OpenCvSharpExtern&quot;, array);
+			IntPtr prevUserdata = IntPtr.Zero;
+			redirectError(ErrorHandlerThrowException, prevUserdata, ref prevUserdata);
+		}
+	}
+
+	private static void SetDefaultHandler(IntPtr currentHandler)</pre></details></details><details id="L05" class="source-confirmed"><summary>L05 · WindowsLibraryLoader实例/平台门/缓存 → 空AdditionalPaths与按名称记录成功 · source-confirmed</summary><p>实例由静态属性初值new建立，构造把AdditionalPaths置空List。平台只接受Win32NT或Win32Windows；否则LoadLibrary立即返回。锁内先查loadedAssemblies.Contains(dllName)，命中即返回；LoadLibraryRaw只有Win32LoadLibrary返回非零才把名称加入List。缓存按dllName，不记录成功文件完整路径或实际导出/ABI。</p><p>待核：缓存不是系统已装载模块的独立清单，AdditionalPaths是可变List；本专题未证明初始化前所有写入者。</p><details><summary>OpenCvSharp.WindowsLibraryLoader::.cctor · 6831–6850</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001927&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001927&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;.cctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 11,
+          &quot;ilSha256&quot;: &quot;c06fa6e32d561fc7d3f6b92cc7df500a8e0e30ee6f5a613dc8b0166be93a69bf&quot;,
+          &quot;ilBytes&quot;: &quot;731d19000680240600042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::.ctor · 2801–2820</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600191d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600191d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 184,
+          &quot;ilSha256&quot;: &quot;6ad97a4516a84425bb1fce7d2643dcb497c21a974efede26185ff6fa264da0d1&quot;,
+          &quot;ilBytes&quot;: &quot;0273ae02000a7d280600040228af02000a73b002000a25722724007072272400706fb102000a25722f240070723b2400706fb102000a257243240070724d2400706fb102000a25725d24007072652400706fb102000a7d290600040228af02000a73b202000a2572272400701a6fb302000a25722f2400701e6fb302000a2572432400701e6fb302000a25725d2400701a6fb302000a7d2a06000402738f00000a7d2c06000402288f00000a0273ae02000a281c1900062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::get_AdditionalPaths · 2753–2772</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600191b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600191b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;get_AdditionalPaths&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2000151259010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;daf62b8be4bcc931258c62f20071fd010ad9eaf36c736b7855254d9e39714fae&quot;,
+          &quot;ilBytes&quot;: &quot;027b2b0600042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::IsCurrentPlatformSupported · 3588–3607</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600191f&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600191f&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;IsCurrentPlatformSupported&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200002&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 29,
+          &quot;ilSha256&quot;: &quot;62c8f2c877982a87f161e651b2d05d3d8a32a1030f135eeb153e028a94bbd403&quot;,
+          &quot;ilBytes&quot;: &quot;28aa02000a6fab02000a182e0e28aa02000a6fab02000a17fe012a172a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;call&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::LoadLibrary · 3714–3733</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001920&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001920&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;LoadLibrary&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e15124d010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 390,
+          &quot;ilSha256&quot;: &quot;4d934230e786315ca50cd9865288697807752c18fd5ce782453c5302dfca02d6&quot;,
+          &quot;ilBytes&quot;: &quot;02281f1900062d012a042d08168d4b000001100200027b2c0600040a160b06120128b402000a027b28060004036fb502000a2c05dd4c0100000228211900060c046fb702000a13052b2311056fb802000a13060203110628231900067e3200000a289500000a2c05dd1801000011056f1800000a2dd4de0c11052c0711056f1700000adc28b902000a6fba02000a28bb02000a0d0203090828221900067e3200000a289500000a2c05ddd700000028bc02000a6fbd02000a28be02000a0d0203090828221900067e3200000a289500000a2c05ddad00000028bf02000a28be02000a0d0203090828221900067e3200000a289500000a2c05dd8800000028c002000a2c3128c002000a6fc102000a72712400706fc202000a28be02000a0d0203090828221900067e3200000a289500000a2c02de5073c302000a13041104727924007003086f291f00066fc402000a26086f2d1f00062c13110472ed240070086f2f1f00066fc502000a2611046f5500000a739e00000a7a072c060628b602000adc26de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::LoadLibraryRaw · 6101–6120</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001923&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001923&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;LoadLibraryRaw&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002180e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 73,
+          &quot;ilSha256&quot;: &quot;df74b2124885974e2333aabb24d3a9dccf4629b2c1d6118d8f84c59fa3795e7b&quot;,
+          &quot;ilBytes&quot;: &quot;7e3200000a0a02040328ca02000a28241900060b0728ac00000a2c2b0728261900060a067e3200000a289500000a2c0c027b28060004036fa402000ade092628cb02000a26de00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldsfld&quot;,</pre></details></details><details id="L06" class="source-confirmed"><summary>L06 · GetProcessArchitecture / 两映射字典 → 环境字符串与指针宽度的有限分支 · source-confirmed</summary><p>架构先取PROCESSOR_ARCHITECTURE；非空原样保存，否则IntPtr.Size==8取x64、其它取x86并记录警告。随后直接用架构字符串索引地址宽度字典（键x86/AMD64/IA64/ARM）；AMD64且实际4字节才改成x86，别的宽度不符仅记警告。平台映射为x86→x86、AMD64→x64、IA64→Itanium、ARM→WinCE。缺环境8字节分支产生的x64字面量没有同名字典键；这里只保留原分支，不能假设总能得到x64路径。</p><p>待核：空/未知架构引发的字典异常会在LoadLibrary外层catch中被吞；原机环境字符串未观察，不宣称实际触发此分支故障。</p><details><summary>OpenCvSharp.WindowsLibraryLoader::GetProcessArchitecture · 5065–5084</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001921&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001921&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;GetProcessArchitecture&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20001288b8&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 244,
+          &quot;ilSha256&quot;: &quot;0603dc3b30678228e9c985a430ce0bb5d162f26ec05dbae512daaa4c27793411&quot;,
+          &quot;ilBytes&quot;: &quot;721125007028c602000a0a73281f00060b06287100000a2d0907066f2a1f00062b2b07723f250070168d120000016f2e1f00060728c702000a1e2e0772272400702b05723b2400706f2a1f0006027b2a060004076f291f00066fc802000a0c0828c702000a3b88000000076f291f0006722f2400701b28c902000a2c4528c702000a1a333d0772272400706f2a1f00060772bb250070198d120000012516076f291f0006a22517088c4a000001a2251828c702000a8c4a000001a26f2e1f00062b300772c2260070198d120000012516076f291f0006a22517088c4a000001a2251828c702000a8c4a000001a26f2e1f0006072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldstr&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::GetPlatformName · 6665–6684</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001925&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001925&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;GetPlatformName&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 30,
+          &quot;ilSha256&quot;: &quot;4217e84e722711079ef971e77848573d133274713f9d06c32d98b1f1651881ec&quot;,
+          &quot;ilBytes&quot;: &quot;03287100000a2c02142a027b290600040312006fcd02000a2c02062a142a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.1&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader · 45–65</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.resources/OpenCvSharp.WindowsLibraryLoader.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA 3c087dd8dad8497696441340addf5c31f99c4a30d75469aa6e15b1fedb8eaa93</code></p><pre>	private readonly Dictionary&lt;string, string&gt; processorArchitecturePlatforms = new Dictionary&lt;string, string&gt;(StringComparer.OrdinalIgnoreCase)
+	{
+		{ &quot;x86&quot;, &quot;x86&quot; },
+		{ &quot;AMD64&quot;, &quot;x64&quot; },
+		{ &quot;IA64&quot;, &quot;Itanium&quot; },
+		{ &quot;ARM&quot;, &quot;WinCE&quot; }
+	};
+
+	private readonly Dictionary&lt;string, int&gt; processorArchitectureAddressWidthPlatforms = new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase)
+	{
+		{ &quot;x86&quot;, 4 },
+		{ &quot;AMD64&quot;, 8 },
+		{ &quot;IA64&quot;, 8 },
+		{ &quot;ARM&quot;, 4 }
+	};
+
+	private readonly object syncLock = new object();
+
+	private const CharSet DefaultCharSet = CharSet.Auto;
+
+	public static WindowsLibraryLoader Instance { get; } = new WindowsLibraryLoader();</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader · 154–188</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.resources/OpenCvSharp.WindowsLibraryLoader.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA 3c087dd8dad8497696441340addf5c31f99c4a30d75469aa6e15b1fedb8eaa93</code></p><pre>	private ProcessArchitectureInfo GetProcessArchitecture()
+	{
+		string environmentVariable = Environment.GetEnvironmentVariable(&quot;PROCESSOR_ARCHITECTURE&quot;);
+		ProcessArchitectureInfo processArchitectureInfo = new ProcessArchitectureInfo();
+		if (!string.IsNullOrEmpty(environmentVariable))
+		{
+			processArchitectureInfo.Architecture = environmentVariable;
+		}
+		else
+		{
+			processArchitectureInfo.AddWarning(&quot;Failed to detect processor architecture, falling back to x86.&quot;);
+			processArchitectureInfo.Architecture = ((IntPtr.Size == 8) ? &quot;x64&quot; : &quot;x86&quot;);
+		}
+		int num = processorArchitectureAddressWidthPlatforms[processArchitectureInfo.Architecture];
+		if (num != IntPtr.Size)
+		{
+			if (string.Equals(processArchitectureInfo.Architecture, &quot;AMD64&quot;, StringComparison.OrdinalIgnoreCase) &amp;&amp; IntPtr.Size == 4)
+			{
+				processArchitectureInfo.Architecture = &quot;x86&quot;;
+				processArchitectureInfo.AddWarning(&quot;Expected the detected processing architecture of {0} to have an address width of {1} Bytes but was {2} Bytes, falling back to x86.&quot;, processArchitectureInfo.Architecture, num, IntPtr.Size);
+			}
+			else
+			{
+				processArchitectureInfo.AddWarning(&quot;Expected the detected processing architecture of {0} to have an address width of {1} Bytes but was {2} Bytes.&quot;, processArchitectureInfo.Architecture, num, IntPtr.Size);
+			}
+		}
+		return processArchitectureInfo;
+	}
+
+	private IntPtr LoadLibraryInternal(string dllName, string baseDirectory, ProcessArchitectureInfo processArchInfo)
+	{
+		string platformName = GetPlatformName(processArchInfo.Architecture);
+		string baseDirectory2 = Path.Combine(Path.Combine(baseDirectory, &quot;dll&quot;), platformName);
+		return LoadLibraryRaw(dllName, baseDirectory2);
+	}</pre></details></details><details id="L07" class="source-confirmed"><summary>L07 · WindowsLibraryLoader.LoadLibrary → 附加目录直查→四类基目录的dll/平台目录 · source-confirmed</summary><p>取得架构后先按additionalPaths顺序直接LoadLibraryRaw(dllName,additionalPath)；非零立即返回。再依次取执行程序集Location目录、BaseDirectory、CurrentDirectory及HttpContext存在时的Web bin，每个交LoadLibraryInternal。Internal把基目录拼为base/dll/GetPlatformName(architecture)，再交Raw；不是直接搜索每个基目录根。多处返回都保留，Web路径有条件门。</p><p>待核：执行程序集Location未在本专题运行采样；独立静态路径代入只显示候选与当下文件存在性，不决定实际装载。</p><details><summary>OpenCvSharp.WindowsLibraryLoader::LoadLibrary · 3714–3733</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001920&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001920&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;LoadLibrary&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e15124d010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 390,
+          &quot;ilSha256&quot;: &quot;4d934230e786315ca50cd9865288697807752c18fd5ce782453c5302dfca02d6&quot;,
+          &quot;ilBytes&quot;: &quot;02281f1900062d012a042d08168d4b000001100200027b2c0600040a160b06120128b402000a027b28060004036fb502000a2c05dd4c0100000228211900060c046fb702000a13052b2311056fb802000a13060203110628231900067e3200000a289500000a2c05dd1801000011056f1800000a2dd4de0c11052c0711056f1700000adc28b902000a6fba02000a28bb02000a0d0203090828221900067e3200000a289500000a2c05ddd700000028bc02000a6fbd02000a28be02000a0d0203090828221900067e3200000a289500000a2c05ddad00000028bf02000a28be02000a0d0203090828221900067e3200000a289500000a2c05dd8800000028c002000a2c3128c002000a6fc102000a72712400706fc202000a28be02000a0d0203090828221900067e3200000a289500000a2c02de5073c302000a13041104727924007003086f291f00066fc402000a26086f2d1f00062c13110472ed240070086f2f1f00066fc502000a2611046f5500000a739e00000a7a072c060628b602000adc26de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::LoadLibraryInternal · 5926–5945</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001922&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001922&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;LoadLibraryInternal&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2003180e0e1288b8&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 40,
+          &quot;ilSha256&quot;: &quot;64ac140c6414e1afd38c924cf35152effefa52bf7370d2328b8e4d2ed7a0436a&quot;,
+          &quot;ilBytes&quot;: &quot;02056f291f000628251900060a04729f27007028ca02000a0628ca02000a0b02030728231900062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader · 91–162</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.resources/OpenCvSharp.WindowsLibraryLoader.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA 3c087dd8dad8497696441340addf5c31f99c4a30d75469aa6e15b1fedb8eaa93</code></p><pre>	public void LoadLibrary(string dllName, IEnumerable&lt;string&gt; additionalPaths = null)
+	{
+		if (!IsCurrentPlatformSupported())
+		{
+			return;
+		}
+		if (additionalPaths == null)
+		{
+			additionalPaths = new string[0];
+		}
+		try
+		{
+			lock (syncLock)
+			{
+				if (loadedAssemblies.Contains(dllName))
+				{
+					return;
+				}
+				ProcessArchitectureInfo processArchitecture = GetProcessArchitecture();
+				foreach (string additionalPath in additionalPaths)
+				{
+					if (LoadLibraryRaw(dllName, additionalPath) != IntPtr.Zero)
+					{
+						return;
+					}
+				}
+				string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+				if (LoadLibraryInternal(dllName, directoryName, processArchitecture) != IntPtr.Zero)
+				{
+					return;
+				}
+				directoryName = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
+				if (LoadLibraryInternal(dllName, directoryName, processArchitecture) != IntPtr.Zero)
+				{
+					return;
+				}
+				directoryName = Path.GetFullPath(Directory.GetCurrentDirectory());
+				if (LoadLibraryInternal(dllName, directoryName, processArchitecture) != IntPtr.Zero)
+				{
+					return;
+				}
+				if (HttpContext.Current != null)
+				{
+					directoryName = Path.GetFullPath(HttpContext.Current.Server.MapPath(&quot;bin&quot;));
+					if (LoadLibraryInternal(dllName, directoryName, processArchitecture) != IntPtr.Zero)
+					{
+						return;
+					}
+				}
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.AppendFormat(&quot;Failed to find dll \&quot;{0}\&quot;, for processor architecture {1}.&quot;, dllName, processArchitecture.Architecture);
+				if (processArchitecture.HasWarnings)
+				{
+					stringBuilder.AppendFormat(&quot;\r\nWarnings: \r\n{0}&quot;, processArchitecture.WarningText());
+				}
+				throw new Exception(stringBuilder.ToString());
+			}
+		}
+		catch (Exception)
+		{
+		}
+	}
+
+	private ProcessArchitectureInfo GetProcessArchitecture()
+	{
+		string environmentVariable = Environment.GetEnvironmentVariable(&quot;PROCESSOR_ARCHITECTURE&quot;);
+		ProcessArchitectureInfo processArchitectureInfo = new ProcessArchitectureInfo();
+		if (!string.IsNullOrEmpty(environmentVariable))
+		{
+			processArchitectureInfo.Architecture = environmentVariable;
+		}
+		else</pre></details></details><details id="L08" class="source-confirmed"><summary>L08 · LoadLibraryRaw / FixUpDllFileName / Win32LoadLibrary → File.Exists门、成功记名与异常吞掉 · source-confirmed</summary><p>Raw先Path.Combine(base,dllName)，FixUp在Windows类平台且尚无.dll（忽略大小写）时补扩展；File.Exists才调用Win32LoadLibrary。非零记名，异常只调用GetLastWin32Error并返回零。外层LoadLibrary在找不到后构造包含架构与警告的异常，却在catch(Exception)中吞掉。Win32声明kernel32/EntryPoint=LoadLibrary/CharSet.Auto/SetLastError；未配置SetDllDirectory/AddDllDirectory。</p><p>待核：这里的未配置限所选方法，不排除进程其它组件/父进程/系统设置。返回零不提供本专题中的实际失败日志。</p><details><summary>OpenCvSharp.WindowsLibraryLoader::LoadLibraryRaw · 6101–6120</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001923&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001923&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;LoadLibraryRaw&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002180e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 73,
+          &quot;ilSha256&quot;: &quot;df74b2124885974e2333aabb24d3a9dccf4629b2c1d6118d8f84c59fa3795e7b&quot;,
+          &quot;ilBytes&quot;: &quot;7e3200000a0a02040328ca02000a28241900060b0728ac00000a2c2b0728261900060a067e3200000a289500000a2c0c027b28060004036fa402000ade092628cb02000a26de00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldsfld&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::FixUpDllFileName · 6405–6424</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001924&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001924&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;FixUpDllFileName&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 62,
+          &quot;ilSha256&quot;: &quot;184c78be5a38a145442bd89469c3014e86e17c53961bf3eea6db666cb77c5d77&quot;,
+          &quot;ilBytes&quot;: &quot;03287100000a2d3428aa02000a6fab02000a0a062c0c06172e0806182e040619331a0372a72700701b6fcc02000a2d0c0372a727007028a502000a2a032a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.1&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::LoadLibrary · 3714–3733</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001920&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001920&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;LoadLibrary&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e15124d010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 390,
+          &quot;ilSha256&quot;: &quot;4d934230e786315ca50cd9865288697807752c18fd5ce782453c5302dfca02d6&quot;,
+          &quot;ilBytes&quot;: &quot;02281f1900062d012a042d08168d4b000001100200027b2c0600040a160b06120128b402000a027b28060004036fb502000a2c05dd4c0100000228211900060c046fb702000a13052b2311056fb802000a13060203110628231900067e3200000a289500000a2c05dd1801000011056f1800000a2dd4de0c11052c0711056f1700000adc28b902000a6fba02000a28bb02000a0d0203090828221900067e3200000a289500000a2c05ddd700000028bc02000a6fbd02000a28be02000a0d0203090828221900067e3200000a289500000a2c05ddad00000028bf02000a28be02000a0d0203090828221900067e3200000a289500000a2c05dd8800000028c002000a2c3128c002000a6fc102000a72712400706fc202000a28be02000a0d0203090828221900067e3200000a289500000a2c02de5073c302000a13041104727924007003086f291f00066fc402000a26086f2d1f00062c13110472ed240070086f2f1f00066fc502000a2611046f5500000a739e00000a7a072c060628b602000adc26de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader · 238–239</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.resources/OpenCvSharp.WindowsLibraryLoader.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA 3c087dd8dad8497696441340addf5c31f99c4a30d75469aa6e15b1fedb8eaa93</code></p><pre>	[DllImport(&quot;kernel32&quot;, BestFitMapping = false, CharSet = CharSet.Auto, EntryPoint = &quot;LoadLibrary&quot;, SetLastError = true, ThrowOnUnmappableChar = true)]
+	private static extern IntPtr Win32LoadLibrary(string dllPath);</pre></details></details><details id="L09" class="source-confirmed"><summary>L09 · TryPInvoke与PInvokeHelper.CreateException → tried门与有限首次探测 · source-confirmed</summary><p>TryPInvoke若tried已true早退；先将tried=true再调用core_Mat_sizeof。DllNotFound与BadImageFormat分别包装成OpenCvSharpException（保留inner），尝试Console输出后抛包装异常；其它异常记录inner或自身消息再throw。它不验证core_putTextZh或OutputArray出口，且运行前LoadLibraries的redirectError可能已先触发PInvoke。</p><p>待核：未实际运行探测，不把tried当作已成功装载/可调用全部出口的状态。</p><details><summary>OpenCvSharp.NativeMethods::TryPInvoke · 1886–1905</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600151e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600151e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.NativeMethods&quot;,
+            &quot;name&quot;: &quot;TryPInvoke&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 120,
+          &quot;ilSha256&quot;: &quot;c9a392aa7d91e9609e56b689143fbaaf3211685a894017965b050989556eaa66&quot;,
+          &quot;ilBytes&quot;: &quot;7efc0500042c012a1780fc05000428d110000626de6128521a00060a066fa702000a28a802000ade0326de0000de0326de00067a28521a00060b076fa702000a28a802000ade0326de0000de0326de00077a0c086fa902000a252d0226080d096fa702000a28a802000ade0326de0000de0326de00fe1a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldsfld&quot;,</pre></details><details><summary>OpenCvSharp.Util.PInvokeHelper::CreateException · 6901–6920</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001a52&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001a52&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.Util.PInvokeHelper&quot;,
+            &quot;name&quot;: &quot;CreateException&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00011220128091&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 13,
+          &quot;ilSha256&quot;: &quot;bfd201d62ae57fb301158428356f14073a175bfd9b3f9638b56865a27448b156&quot;,
+          &quot;ilBytes&quot;: &quot;026fa702000a02732a0200062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.NativeMethods · 4970–5035</summary><p><code>docs/architecture-recovery/export-text-rendering-audit.resources/OpenCvSharp.NativeMethods.decompiled.cs · original-managed-offline-ilspy-decompilation · SHA e3d29507c7ac7c97f8f4b283df9f552107bc633d83501af3553bc73c8ec5d081</code></p><pre>	public static void TryPInvoke()
+	{
+		if (tried)
+		{
+			return;
+		}
+		tried = true;
+		try
+		{
+			core_Mat_sizeof();
+		}
+		catch (DllNotFoundException ex)
+		{
+			OpenCvSharpException ex2 = PInvokeHelper.CreateException(ex);
+			try
+			{
+				Console.WriteLine(ex2.Message);
+			}
+			catch
+			{
+			}
+			try
+			{
+			}
+			catch
+			{
+			}
+			throw ex2;
+		}
+		catch (BadImageFormatException ex3)
+		{
+			OpenCvSharpException ex4 = PInvokeHelper.CreateException(ex3);
+			try
+			{
+				Console.WriteLine(ex4.Message);
+			}
+			catch
+			{
+			}
+			try
+			{
+			}
+			catch
+			{
+			}
+			throw ex4;
+		}
+		catch (Exception ex5)
+		{
+			Exception ex6 = ex5.InnerException ?? ex5;
+			try
+			{
+				Console.WriteLine(ex6.Message);
+			}
+			catch
+			{
+			}
+			try
+			{
+			}
+			catch
+			{
+			}
+			throw;
+		}
+	}</pre></details></details><details id="L10" class="source-confirmed"><summary>L10 · 三份已出货native候选PE表 → 选定core_putTextZh与OutputArray出口身份 · source-confirmed</summary><p>对三份候选直接读取PE头/节/RVA/导出名称、ordinal和EAT地址，只选择core_putTextZh、core_OutputArray_new_byMat、core_OutputArray_delete、core_Mat_sizeof、redirectError；存在/缺失、转发和入口文件位置见nativePeEvidence。3rdLib/OpenCv与PublicFile/x64原件字节相同且为x64；PublicFile/x86为x86且摘要不同，缺少精确名core_putTextZh但另外四个选定名存在。名称存在并不验证函数签名、语义或被装载路径。</p><p>待核：导出表不是native实现/ABI证据；同hash双路径即使以后只有模块hash，也未必可决定加载路径。</p><details><summary>Selected original PE export identity · 8–435</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.pe.json · original-native-static-pe · SHA 869381e3e0ce4e3aefde49154ae264951288f6474dd04b8adb13988dbc361068</code></p><pre>  &quot;candidates&quot;: [
+    {
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/3rdLib/OpenCv/OpenCvSharpExtern.dll&quot;,
+      &quot;sha256&quot;: &quot;a5f159e4a8266104b03b973a3431c3725fbfacf8046251aa3568b94f166ce62d&quot;,
+      &quot;byteLength&quot;: 60497920,
+      &quot;machine&quot;: 34404,
+      &quot;format&quot;: &quot;pe32-plus&quot;,
+      &quot;coffCharacteristics&quot;: 8226,
+      &quot;exportDirectory&quot;: {
+        &quot;rva&quot;: 58466432,
+        &quot;byteLength&quot;: 309564,
+        &quot;fileOffset&quot;: 58460288,
+        &quot;internalName&quot;: &quot;OpenCvSharpExtern.dll&quot;,
+        &quot;ordinalBase&quot;: 1,
+        &quot;numberFunctions&quot;: 5964,
+        &quot;numberNames&quot;: 5964
+      },
+      &quot;selectedExports&quot;: [
+        {
+          &quot;name&quot;: &quot;core_Mat_sizeof&quot;,
+          &quot;ordinal&quot;: 4066,
+          &quot;nameRva&quot;: 58718497,
+          &quot;nameFileOffset&quot;: 58712353,
+          &quot;eatEntryFileOffset&quot;: 58476588,
+          &quot;rva&quot;: 29162864,
+          &quot;fileOffset&quot;: 29159792,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;b860000000c3cccccccccccccccccccc&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_OutputArray_delete&quot;,
+          &quot;ordinal&quot;: 4078,
+          &quot;nameRva&quot;: 58718681,
+          &quot;nameFileOffset&quot;: 58712537,
+          &quot;eatEntryFileOffset&quot;: 58476636,
+          &quot;rva&quot;: 29161824,
+          &quot;fileOffset&quot;: 29158752,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;4885c9740aba18000000e9f547d000c3&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_OutputArray_new_byMat&quot;,
+          &quot;ordinal&quot;: 4083,
+          &quot;nameRva&quot;: 58718818,
+          &quot;nameFileOffset&quot;: 58712674,
+          &quot;eatEntryFileOffset&quot;: 58476656,
+          &quot;rva&quot;: 29205328,
+          &quot;fileOffset&quot;: 29202256,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;40534883ec20488bd9b918000000e87d&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_putTextZh&quot;,
+          &quot;ordinal&quot;: 4273,
+          &quot;nameRva&quot;: 58722777,
+          &quot;nameFileOffset&quot;: 58716633,
+          &quot;eatEntryFileOffset&quot;: 58477416,
+          &quot;rva&quot;: 29337744,
+          &quot;fileOffset&quot;: 29334672,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;405355565741564881ec7001000048c7&quot;
+        },
+        {
+          &quot;name&quot;: &quot;redirectError&quot;,
+          &quot;ordinal&quot;: 5278,
+          &quot;nameRva&quot;: 58752474,
+          &quot;nameFileOffset&quot;: 58746330,
+          &quot;eatEntryFileOffset&quot;: 58481436,
+          &quot;rva&quot;: 29124912,
+          &quot;fileOffset&quot;: 29121840,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;e9bbc31b00cccccccccccccccccccccc&quot;
+        }
+      ],
+      &quot;missingSelectedExports&quot;: [],
+      &quot;directImportNames&quot;: [
+        {
+          &quot;name&quot;: &quot;KERNEL32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769852
+        },
+        {
+          &quot;name&quot;: &quot;USER32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769872
+        },
+        {
+          &quot;name&quot;: &quot;GDI32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769892
+        },
+        {
+          &quot;name&quot;: &quot;COMDLG32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769912
+        },
+        {
+          &quot;name&quot;: &quot;ADVAPI32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769932
+        },
+        {
+          &quot;name&quot;: &quot;ole32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769952
+        },
+        {
+          &quot;name&quot;: &quot;OLEAUT32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769972
+        },
+        {
+          &quot;name&quot;: &quot;WS2_32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769992
+        }
+      ],
+      &quot;importDirectory&quot;: {
+        &quot;rva&quot;: 58775996,
+        &quot;byteLength&quot;: 180
+      },
+      &quot;limitations&quot;: [
+        &quot;File-backed static exports/import names only; no ABI, function implementation, dependency resolution or runtime loaded-module evidence.&quot;
+      ],
+      &quot;runtimeExecuted&quot;: false,
+      &quot;runtimeResolved&quot;: false,
+      &quot;reaEvidence&quot;: &quot;ev_16dc80ef1bf204524862a66b94e9ba3b77748b57a517f252d893aff8f8394d7e&quot;
+    },
+    {
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x86/OpenCvSharpExtern.dll&quot;,
+      &quot;sha256&quot;: &quot;7e8af1f007422c634671850294ceb54d94f44ea4c9acf92906d26e6c56e40903&quot;,
+      &quot;byteLength&quot;: 37835776,
+      &quot;machine&quot;: 332,
+      &quot;format&quot;: &quot;pe32&quot;,
+      &quot;coffCharacteristics&quot;: 8450,
+      &quot;exportDirectory&quot;: {
+        &quot;rva&quot;: 36329584,
+        &quot;byteLength&quot;: 303840,
+        &quot;fileOffset&quot;: 36323440,
+        &quot;internalName&quot;: &quot;OpenCvSharpExtern.dll&quot;,
+        &quot;ordinalBase&quot;: 1,
+        &quot;numberFunctions&quot;: 5963,
+        &quot;numberNames&quot;: 5963
+      },
+      &quot;selectedExports&quot;: [
+        {
+          &quot;name&quot;: &quot;core_Mat_sizeof&quot;,
+          &quot;ordinal&quot;: 4066,
+          &quot;nameRva&quot;: 36575941,
+          &quot;nameFileOffset&quot;: 36569797,
+          &quot;eatEntryFileOffset&quot;: 36339740,
+          &quot;rva&quot;: 15071808,
+          &quot;fileOffset&quot;: 15068736,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;b83800000033d2c3cccccccccccccccc&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_OutputArray_delete&quot;,
+          &quot;ordinal&quot;: 4078,
+          &quot;nameRva&quot;: 36576125,
+          &quot;nameFileOffset&quot;: 36569981,
+          &quot;eatEntryFileOffset&quot;: 36339788,
+          &quot;rva&quot;: 15070832,
+          &quot;fileOffset&quot;: 15067760,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;558bec8b450885c0740b6a1050e88f71&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_OutputArray_new_byMat&quot;,
+          &quot;ordinal&quot;: 4083,
+          &quot;nameRva&quot;: 36576262,
+          &quot;nameFileOffset&quot;: 36570118,
+          &quot;eatEntryFileOffset&quot;: 36339808,
+          &quot;rva&quot;: 15114512,
+          &quot;fileOffset&quot;: 15111440,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;558bec6a10e866c29f008b4d0883c404&quot;
+        },
+        {
+          &quot;name&quot;: &quot;redirectError&quot;,
+          &quot;ordinal&quot;: 5277,
+          &quot;nameRva&quot;: 36609903,
+          &quot;nameFileOffset&quot;: 36603759,
+          &quot;eatEntryFileOffset&quot;: 36344584,
+          &quot;rva&quot;: 15036752,
+          &quot;fileOffset&quot;: 15033680,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;558bec5de9f70a1400cccccccccccccc&quot;
+        }
+      ],
+      &quot;missingSelectedExports&quot;: [
+        &quot;core_putTextZh&quot;
+      ],
+      &quot;directImportNames&quot;: [
+        {
+          &quot;name&quot;: &quot;KERNEL32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627280
+        },
+        {
+          &quot;name&quot;: &quot;USER32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627300
+        },
+        {
+          &quot;name&quot;: &quot;GDI32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627320
+        },
+        {
+          &quot;name&quot;: &quot;COMDLG32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627340
+        },
+        {
+          &quot;name&quot;: &quot;ADVAPI32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627360
+        },
+        {
+          &quot;name&quot;: &quot;ole32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627380
+        },
+        {
+          &quot;name&quot;: &quot;OLEAUT32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627400
+        },
+        {
+          &quot;name&quot;: &quot;WS2_32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 36627420
+        }
+      ],
+      &quot;importDirectory&quot;: {
+        &quot;rva&quot;: 36633424,
+        &quot;byteLength&quot;: 180
+      },
+      &quot;limitations&quot;: [
+        &quot;File-backed static exports/import names only; no ABI, function implementation, dependency resolution or runtime loaded-module evidence.&quot;
+      ],
+      &quot;runtimeExecuted&quot;: false,
+      &quot;runtimeResolved&quot;: false,
+      &quot;reaEvidence&quot;: &quot;ev_8a563ecace6369206888232c7c0a6383a8eb3487357171112be66e79958609aa&quot;
+    },
+    {
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/OpenCvSharpExtern.dll&quot;,
+      &quot;sha256&quot;: &quot;a5f159e4a8266104b03b973a3431c3725fbfacf8046251aa3568b94f166ce62d&quot;,
+      &quot;byteLength&quot;: 60497920,
+      &quot;machine&quot;: 34404,
+      &quot;format&quot;: &quot;pe32-plus&quot;,
+      &quot;coffCharacteristics&quot;: 8226,
+      &quot;exportDirectory&quot;: {
+        &quot;rva&quot;: 58466432,
+        &quot;byteLength&quot;: 309564,
+        &quot;fileOffset&quot;: 58460288,
+        &quot;internalName&quot;: &quot;OpenCvSharpExtern.dll&quot;,
+        &quot;ordinalBase&quot;: 1,
+        &quot;numberFunctions&quot;: 5964,
+        &quot;numberNames&quot;: 5964
+      },
+      &quot;selectedExports&quot;: [
+        {
+          &quot;name&quot;: &quot;core_Mat_sizeof&quot;,
+          &quot;ordinal&quot;: 4066,
+          &quot;nameRva&quot;: 58718497,
+          &quot;nameFileOffset&quot;: 58712353,
+          &quot;eatEntryFileOffset&quot;: 58476588,
+          &quot;rva&quot;: 29162864,
+          &quot;fileOffset&quot;: 29159792,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;b860000000c3cccccccccccccccccccc&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_OutputArray_delete&quot;,
+          &quot;ordinal&quot;: 4078,
+          &quot;nameRva&quot;: 58718681,
+          &quot;nameFileOffset&quot;: 58712537,
+          &quot;eatEntryFileOffset&quot;: 58476636,
+          &quot;rva&quot;: 29161824,
+          &quot;fileOffset&quot;: 29158752,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;4885c9740aba18000000e9f547d000c3&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_OutputArray_new_byMat&quot;,
+          &quot;ordinal&quot;: 4083,
+          &quot;nameRva&quot;: 58718818,
+          &quot;nameFileOffset&quot;: 58712674,
+          &quot;eatEntryFileOffset&quot;: 58476656,
+          &quot;rva&quot;: 29205328,
+          &quot;fileOffset&quot;: 29202256,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;40534883ec20488bd9b918000000e87d&quot;
+        },
+        {
+          &quot;name&quot;: &quot;core_putTextZh&quot;,
+          &quot;ordinal&quot;: 4273,
+          &quot;nameRva&quot;: 58722777,
+          &quot;nameFileOffset&quot;: 58716633,
+          &quot;eatEntryFileOffset&quot;: 58477416,
+          &quot;rva&quot;: 29337744,
+          &quot;fileOffset&quot;: 29334672,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;405355565741564881ec7001000048c7&quot;
+        },
+        {
+          &quot;name&quot;: &quot;redirectError&quot;,
+          &quot;ordinal&quot;: 5278,
+          &quot;nameRva&quot;: 58752474,
+          &quot;nameFileOffset&quot;: 58746330,
+          &quot;eatEntryFileOffset&quot;: 58481436,
+          &quot;rva&quot;: 29124912,
+          &quot;fileOffset&quot;: 29121840,
+          &quot;forwarder&quot;: null,
+          &quot;section&quot;: &quot;.text&quot;,
+          &quot;prefix16Hex&quot;: &quot;e9bbc31b00cccccccccccccccccccccc&quot;
+        }
+      ],
+      &quot;missingSelectedExports&quot;: [],
+      &quot;directImportNames&quot;: [
+        {
+          &quot;name&quot;: &quot;KERNEL32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769852
+        },
+        {
+          &quot;name&quot;: &quot;USER32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769872
+        },
+        {
+          &quot;name&quot;: &quot;GDI32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769892
+        },
+        {
+          &quot;name&quot;: &quot;COMDLG32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769912
+        },
+        {
+          &quot;name&quot;: &quot;ADVAPI32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769932
+        },
+        {
+          &quot;name&quot;: &quot;ole32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769952
+        },
+        {
+          &quot;name&quot;: &quot;OLEAUT32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769972
+        },
+        {
+          &quot;name&quot;: &quot;WS2_32.dll&quot;,
+          &quot;descriptorFileOffset&quot;: 58769992
+        }
+      ],
+      &quot;importDirectory&quot;: {
+        &quot;rva&quot;: 58775996,
+        &quot;byteLength&quot;: 180
+      },
+      &quot;limitations&quot;: [
+        &quot;File-backed static exports/import names only; no ABI, function implementation, dependency resolution or runtime loaded-module evidence.&quot;
+      ],
+      &quot;runtimeExecuted&quot;: false,
+      &quot;runtimeResolved&quot;: false,
+      &quot;reaEvidence&quot;: &quot;ev_0ee08819a895898dda18fa54df5c1f045dfccb4f7030dc40bab642962bcfe282&quot;
+    }
+  ],
+  &quot;binaryPairs&quot;: [
+    {
+      &quot;left&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/3rdLib/OpenCv/OpenCvSharpExtern.dll&quot;,
+      &quot;right&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/OpenCvSharpExtern.dll&quot;,
+      &quot;byteIdentical&quot;: true,
+      &quot;shaEqual&quot;: true
+    }
+  ],
+  &quot;candidatePaths&quot;: [
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv&quot;,
+      &quot;platform&quot;: &quot;x64&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv\\dll\\x64\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv&quot;,
+      &quot;platform&quot;: &quot;x86&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv\\dll\\x86\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications&quot;,
+      &quot;platform&quot;: &quot;x64&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\dll\\x64\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications&quot;,
+      &quot;platform&quot;: &quot;x86&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\dll\\x86\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;selected-shipped-candidate&quot;,
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/3rdLib/OpenCv/OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: true,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;selected-shipped-candidate&quot;,
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x86/OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: true,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;selected-shipped-candidate&quot;,
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: true,
+      &quot;runtimeResolved&quot;: false
+    }
+  ],
+  &quot;runtimeExecuted&quot;: false,
+  &quot;runtimeResolved&quot;: false
+}
+</pre></details></details><details id="L11" class="source-confirmed"><summary>L11 · native PE导入名称与预加载候选路径 → 仅一层依赖声明/文件存在性 · source-confirmed</summary><p>nativePeEvidence保留每候选的静态导入模块名称及descriptor位置，未递归分析所有OpenCV函数或依赖。按所选原loader公式独立代入wrapper所在目录和EXE目录的dll/x64及dll/x86路径，另列三原件路径的当前存在性；四个代入的dll/平台路径在当前文件系统均不存在。原文件存在、导出存在、目录在配置出现和loader可能产生路径是四种不同事实。</p><p>待核：依赖DLL实际解析、系统加载策略、native转发和依赖初始化不由这层名称声明关闭。</p><details><summary>Native import names and candidate path substitutions · 380–435</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.pe.json · independent-static-path-substitution · SHA 869381e3e0ce4e3aefde49154ae264951288f6474dd04b8adb13988dbc361068</code></p><pre>  &quot;candidatePaths&quot;: [
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv&quot;,
+      &quot;platform&quot;: &quot;x64&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv\\dll\\x64\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv&quot;,
+      &quot;platform&quot;: &quot;x86&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\3rdLib\\OpenCv\\dll\\x86\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications&quot;,
+      &quot;platform&quot;: &quot;x64&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\dll\\x64\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;independent-static-path-substitution&quot;,
+      &quot;base&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications&quot;,
+      &quot;platform&quot;: &quot;x86&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\dll\\x86\\OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: false,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;selected-shipped-candidate&quot;,
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/3rdLib/OpenCv/OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: true,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;selected-shipped-candidate&quot;,
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x86/OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: true,
+      &quot;runtimeResolved&quot;: false
+    },
+    {
+      &quot;organization&quot;: &quot;selected-shipped-candidate&quot;,
+      &quot;path&quot;: &quot;D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/OpenCvSharpExtern.dll&quot;,
+      &quot;exists&quot;: true,
+      &quot;runtimeResolved&quot;: false
+    }
+  ],
+  &quot;runtimeExecuted&quot;: false,
+  &quot;runtimeResolved&quot;: false
+}
+</pre></details></details><details id="L12" class="source-confirmed"><summary>L12 · 主程序静态入口/包装loader/候选原件 → 有限可复核装配链与证据分类 · source-confirmed</summary><p>本专题可恢复原Main的cwd赋值、包装程序集静态初始化、平台/名称/目录选择、File.Exists/LoadLibrary调用、失败与异常分支及选定原件出口；未在所选链中找到把PublicFile/x64或3rdLib/OpenCv根目录显式加入Extern.AdditionalPaths的调用证据。资源/配置引用与原loader静态代码不能代替进程真实装载事件。</p><p>待核：这不是对全部依赖程序集、父进程、PATH或所有AdditionalPaths写入点的穷尽；未定位的目录设置保留检索任务，不据缺少证据选定某份DLL。</p><details><summary>VisionMaster.Program::Main · 163–182</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600010a&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600010a&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VisionMaster.Program&quot;,
+            &quot;name&quot;: &quot;Main&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0001011d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 87,
+          &quot;ilSha256&quot;: &quot;1d87c3879a82503589023e8b834fa0d1c8748edbf580d1cafb6dc34aa491f8c6&quot;,
+          &quot;ilBytes&quot;: &quot;00283f00000a6f5900000a289701000a0072a1160070284400000a0a0672f908007028b900000a0b072c0a0002280b010006002b21280c010006289801000a0c0002280b0100060000de0b082c07086fa200000a00dc2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::LoadLibrary · 3714–3733</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x06001920&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06001920&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;LoadLibrary&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002010e15124d010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 390,
+          &quot;ilSha256&quot;: &quot;4d934230e786315ca50cd9865288697807752c18fd5ce782453c5302dfca02d6&quot;,
+          &quot;ilBytes&quot;: &quot;02281f1900062d012a042d08168d4b000001100200027b2c0600040a160b06120128b402000a027b28060004036fb502000a2c05dd4c0100000228211900060c046fb702000a13052b2311056fb802000a13060203110628231900067e3200000a289500000a2c05dd1801000011056f1800000a2dd4de0c11052c0711056f1700000adc28b902000a6fba02000a28bb02000a0d0203090828221900067e3200000a289500000a2c05ddd700000028bc02000a6fbd02000a28be02000a0d0203090828221900067e3200000a289500000a2c05ddad00000028bf02000a28be02000a0d0203090828221900067e3200000a289500000a2c05dd8800000028c002000a2c3128c002000a6fc102000a72712400706fc202000a28be02000a0d0203090828221900067e3200000a289500000a2c02de5073c302000a13041104727924007003086f291f00066fc402000a26086f2d1f00062c13110472ed240070086f2f1f00066fc502000a2611046f5500000a739e00000a7a072c060628b602000adc26de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.WindowsLibraryLoader::get_AdditionalPaths · 2753–2772</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600191b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600191b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.WindowsLibraryLoader&quot;,
+            &quot;name&quot;: &quot;get_AdditionalPaths&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2000151259010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;daf62b8be4bcc931258c62f20071fd010ad9eaf36c736b7855254d9e39714fae&quot;,
+          &quot;ilBytes&quot;: &quot;027b2b0600042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>OpenCvSharp.NativeMethods::.cctor · 909–928</summary><p><code>docs/architecture-recovery/rendering-native-loader-audit.cil.json · original-managed-cil · SHA 6fb283895af9aae658a8942ead14ce40eb9f68b89c82f21a976ba02a365779f3</code></p><pre>          &quot;token&quot;: &quot;0x0600151b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600151b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;OpenCvSharp.NativeMethods&quot;,
+            &quot;name&quot;: &quot;.cctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig, SpecialName, RTSpecialName, HasSecurity&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 91,
+          &quot;ilSha256&quot;: &quot;638702139f719103c6bd4d9e2546a6104827bb985b37bb7484fc233857e0e814&quot;,
+          &quot;ilBytes&quot;: &quot;1680fc050004168d4b00000180ff050004168d4b00000180000600047e22080004fe06261f0006738302000680030600047e22080004fe06271f000673830200068004060004281a1900066f1b190006281c150006281e1500062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldc.i4.0&quot;,</pre></details></details><details id="U01" class="unknown"><summary>U01 · 可确认的静态装配规则与三候选 → 实际加载模块/路径/依赖及绘字实现仍未知 · unknown</summary><p>没有启动厂商程序、装载DLL或调用native函数；不能从静态候选、名字匹配、PE架构或配置路径证明原运行使用哪份OpenCvSharpExtern。原生PutTextZh绘字实现不属于本专题。</p><p>待核：实际进程模块路径/基址/摘要、环境/PATH、有效AdditionalPaths、已缓存系统模块、加载成功/失败时序、依赖解析和字体ABI仍未知。</p></details><p>主框架实施41/96＝42.71%（32包×3具名单元），本专题增量0。静态候选不代表真实装载。</p></html><script data-document-web src="document-web-links.js"></script>

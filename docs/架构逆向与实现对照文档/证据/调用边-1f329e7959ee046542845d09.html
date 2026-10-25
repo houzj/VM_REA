@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GraphEditorDocument.Load / Save · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GraphEditorDocument.Load / Save · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-I01"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GraphEditorDocument.Load / Save → SolutionStore独立JSON读写</h2><p>当前加载先读取JSON并做结构验证；保存序列化为UTF-8 JSON、拒绝重复属性后写临时文件、Flush(true)并替换目标。这些选定方法没有密码参数或加密变换；不能视为原版gro/grox/grow导入导出的实现。</p><p><a href="../专题/group-file-storage.html#edge-I01">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/group-file-storage.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/group-file-storage.edges.json · SHA256 108c2f010ca802431d85882831edd1281fb1bead8af1b350d25782a196de3cdf</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="cf660ae6a235a059edd32b2c90a2f18b99c2177c4841d62c68d6aea446b37d7c">{
+  &quot;id&quot;: &quot;I01&quot;,
+  &quot;route&quot;: &quot;当前独立实现 · 格式与所属关系&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;GraphEditorDocument.Load / Save&quot;,
+  &quot;to&quot;: &quot;SolutionStore独立JSON读写&quot;,
+  &quot;behavior&quot;: &quot;当前加载先读取JSON并做结构验证；保存序列化为UTF-8 JSON、拒绝重复属性后写临时文件、Flush(true)并替换目标。这些选定方法没有密码参数或加密变换；不能视为原版gro/grox/grow导入导出的实现。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor.Core/GraphEditorDocument.cs&quot;,
+      &quot;member&quot;: &quot;Load/Save&quot;,
+      &quot;sha256&quot;: &quot;4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558&quot;,
+      &quot;start&quot;: 59,
+      &quot;end&quot;: 77,
+      &quot;excerpt&quot;: &quot;    public void Load(string path) {\n        string full = Path.GetFullPath(path); var loaded = SolutionStore.Load(full);\n        var baseDirectory=Path.GetDirectoryName(full)!;\n        var separated=Copy(loaded with{Procedures=loaded.Procedures.Select(ProcedureGraph.Separate).ToArray()});\n        var prepared=PrepareLoad?.Invoke(separated,baseDirectory)??separated;\n        SolutionStore.ValidateStructure(prepared);\n        document = Copy(prepared); CurrentProcedureId = prepared.Procedures.FirstOrDefault()?.Id??\&quot;\&quot;;\n        FilePath = full; BaseDirectory = Path.GetDirectoryName(full)!; solutionGeneration++;configurationHistory=null;history.Clear(); IsDirty = false; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();\n    }\n    public void Save(string path) {\n        string full = Path.GetFullPath(path), directory = Path.GetDirectoryName(full)!;\n        var prepared=PrepareSave?.Invoke(Copy(document),BaseDirectory)??document;\n        var rebased = Rebase(prepared, BaseDirectory, directory);\n        SolutionStore.Save(full, rebased); // Commit editor state only after an atomic successful write.\n        document = rebased; BaseDirectory = directory; FilePath = full; IsDirty = false; Revision++; Changed?.Invoke();\n    }\n    public void SelectProcedure(string id) { if (!document.Procedures.Any(p => p.Id == id)) throw new KeyNotFoundException(id); if(CurrentProcedureId == id)return; CurrentProcedureId = id; Changed?.Invoke(); }\n    // Edit a bound configuration target without switching the visible canvas or its undo selection.\n    // Work on an isolated draft so a multi-field callback either commits once or leaves no edit.&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionFramework/SolutionStore.cs&quot;,
+      &quot;member&quot;: &quot;SolutionStore.Load/Save&quot;,
+      &quot;sha256&quot;: &quot;533f7dfd5314570ef1ca97c41ed0dce44b926953135b2b286133b52fe5f50365&quot;,
+      &quot;start&quot;: 11,
+      &quot;end&quot;: 25,
+      &quot;excerpt&quot;: &quot;    public static SolutionDocument Load(string path) {\n        using var input=File.OpenRead(path);if(input.Length>MaximumBytes)throw new InvalidDataException(\&quot;Solution exceeds size limit.\&quot;);\n        using var json=JsonDocument.Parse(input);RejectDuplicateProperties(json.RootElement);\n        var solution=json.RootElement.Deserialize&lt;SolutionDocument>(Options)??throw new InvalidDataException(\&quot;Missing solution.\&quot;);ValidateStructure(solution);return solution;\n    }\n    public static SolutionWorkspace OpenWorkspace(string path)=>new(Load(path),Path.GetDirectoryName(Path.GetFullPath(path))!);\n    public static void Save(string path,SolutionDocument solution) {\n        ValidateStructure(solution);byte[] json=JsonSerializer.SerializeToUtf8Bytes(solution,Options);if(json.Length>MaximumBytes)throw new InvalidDataException(\&quot;Solution exceeds size limit.\&quot;);\n        // Opaque plugin payloads can contain duplicate members. Reject the same\n        // serialized shape as Load before creating directories or replacing a file.\n        using(var parsed=JsonDocument.Parse(json))RejectDuplicateProperties(parsed.RootElement);\n        string full=Path.GetFullPath(path),directory=Path.GetDirectoryName(full)!;Directory.CreateDirectory(directory);string temp=Path.Combine(directory,\&quot;.\&quot;+Path.GetFileName(full)+\&quot;.\&quot;+Guid.NewGuid().ToString(\&quot;N\&quot;)+\&quot;.tmp\&quot;);\n        try{using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){output.Write(json);output.Flush(true);}File.Move(temp,full,overwrite:true);}finally{if(File.Exists(temp))File.Delete(temp);}\n    }\n    public static void ValidateStructure(SolutionDocument solution){&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;PrepareLoad/PrepareSave扩展生产者、所有文件入口及原版受保护文件兼容性须另查；本边不声称全程序无加密。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

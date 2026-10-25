@@ -1,0 +1,106 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>节点插件影响面：双线任务与集成验收清单 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 节点插件影响面：双线任务与集成验收清单</p><h1>节点插件影响面：双线任务与集成验收清单</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>节点插件影响面：双线任务与集成验收清单</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.html">下载原始文件</a></nav><main><h1 id="节点插件影响面双线任务与集成验收清单">节点插件影响面：双线任务与集成验收清单</h1><p>更新：2026-10-17。用户分别管控两个项目。分工和文件锁见 <a href="PLUGIN-FRAMEWORK-BOUNDARY.html">边界规则</a>，当前 Git 状态与同步闸门见 <a href="TWO-PROJECT-BASELINE.html">开发基线</a>。这是 <code>main</code> 在用户选择合流时使用的<strong>集成清单</strong>，对应插件线在制 <code>docs/PLUGIN-FRAMEWORK-CHECKLIST.md</code> 的 PF-001～014；不复制其未提交实现，也不把插件线测试数记作 main 验收。独立任务分配见 <a href="TWO-PROJECT-WORKLISTS.html">双项目清单</a>。</p>
+<p>状态词：<code>主线现有子集</code>、<code>插件线在制（未合）</code>、<code>待原生审计</code>、<code>待合流</code>、<code>待原厂差分</code>。通过本项目测试只能关闭托管实现层，不能自动关闭原生等价层。</p>
+<table>
+<thead>
+<tr>
+<th>ID / 顺序</th>
+<th>对节点工具的影响及原生依据</th>
+<th>主责、协作</th>
+<th>当前状态</th>
+<th>合流验收条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NFI-01 / P0</td>
+<td><strong>配置模型</strong>：<code>ModuleParam→AlgorithmTabRoot→ParamsConfigControlBase→ParamsTabUserControl</code>；页签、组、尺寸、底栏、状态不能仅由执行 <code>ParameterKind</code> 猜出</td>
+<td>插件线 PF-001/003；main 审核</td>
+<td>插件线在制（未合）；main 只有 <code>ModuleDescriptor</code> 和各工具自建窗</td>
+<td>普通工具配置定义完整序列化/读回；隐藏、继承、无效与分组变化作用于真实窗口及运行值</td>
+</tr>
+<tr>
+<td>NFI-02 / P0</td>
+<td><strong>公共模板</strong>：<code>NameValueItem.DisplayType</code> 与 <code>paramusercontroldatatemplate.xaml</code> 选择控件；专属内容和顶层窗口分离</td>
+<td>插件线 PF-002/005/010；main 审核</td>
+<td>插件线模板目录与单值控件在制（未合）</td>
+<td>原生展示键逐项映射；未知键显式报缺口；图像源、标定加载、N点各一例对照 UI/事件/数据</td>
+</tr>
+<tr>
+<td>NFI-03 / P0</td>
+<td><strong>窗口宿主</strong>：普通参数窗和带渲染窗有不同结构；<code>VmModuleDecorator</code> 普通窗的 Owner、同节点重用、切换关闭</td>
+<td>插件线 PF-004；main 负责 WPF Shell 接入</td>
+<td>插件线普通非模态宿主在制（未合）；main 目前 <code>IWpfToolEditorFactory</code> 任意 Window＋<code>ShowDialog</code></td>
+<td>根流程/Group打开、重复打开、切换节点/流程/方案、关闭/取消/释放；专属窗口过渡兼容清楚标注</td>
+</tr>
+<tr>
+<td>NFI-04 / P0</td>
+<td><strong>订阅与动态端口</strong>：<code>ButtonSelecter</code>、<code>SetFilterSourceOperation.RelateIndex</code>、<code>VM.Core.DynamicInput/Output</code> 的标量/数组/叶与动态 schema</td>
+<td>插件线 PF-006 提配置树/动态节点描述；main 审核与 Group/复合端口合流</td>
+<td>两边均有独立子集；共享文件插件线在制</td>
+<td>类型和顺序校验、整数索引、Group父输入/局部变量、叶路径、动态增删输出、保存重开和失效引用清理；普通端口不被隐式放宽</td>
+</tr>
+<tr>
+<td>NFI-05 / P0</td>
+<td><strong>单节点调试/配置执行</strong>：<code>BottomCommand→VmModule.Run→ModuleManager.SelfRun</code> 与回调/连续/Stop状态</td>
+<td>插件线 PF-007/008/009 配置执行；main 负责流程/Group会话和结果作用域</td>
+<td>两边有不同实现子集，待合流</td>
+<td>同一节点根流程/Group单次、连续、停止、失败、切换方案、关闭；不可读旧缓存、不可跨流程写结果；300ms等原生时序单独差分</td>
+</tr>
+<tr>
+<td>NFI-06 / P0</td>
+<td><strong>ROI、Fixture、Polygon与图像预览</strong>：原生参数模板、ROI XML 与 <code>DynamicInput/Output</code> 各自定义数据形状</td>
+<td>main 现有 <code>VisionUi</code>/Region与Fixture协议；插件线 PF-011 提真实工具参数/专属控件</td>
+<td>main 部分 ROI/Fixture、独立 Polygon 容器；插件线桥接在制</td>
+<td>同一个共享模型在参数窗、Group、执行器和预览间往返；动态ROI/Fixture零尺度/Polygon对象边界不得被同名类型粗暴替换；实工具算法消费验证</td>
+</tr>
+<tr>
+<td>NFI-07 / P0</td>
+<td><strong>工具发现与工具箱</strong>：<code>ToolBoxData.UpdateLoad</code> 扫 <code>ToolItemInfo.xml</code>，<code>ToolItemGrid</code> 按模块类型/路径拖放；当前项目硬编码两插件与静态目录</td>
+<td>main 主责；插件线 PF-012 提工具元数据/清单</td>
+<td>原生目录审计及独立元数据扫描子集已完成，见 <code>TOOL-DISCOVERY-METADATA.md</code>；主窗/注册未接入</td>
+<td>已注册插件能在正确分类展示并拖入；缺失/版本冲突/禁用、图标及类别重载明确；不扫描任意未知 DLL 后立即执行</td>
+</tr>
+<tr>
+<td>NFI-08 / P0</td>
+<td><strong>工具结果、显示与错误</strong>：原生输出叶、图像结果、模块状态和 UI 显示规则并行存在</td>
+<td>插件线给每工具输出/显示适配；main 负责 <code>PortValue</code>、复合叶、图像结果宿主</td>
+<td>main 有少数类型子集；插件线显示框架在制</td>
+<td>真实插件输出→下游订阅→Group累积/结果显示；NoMatch/失败/取消不泄漏上次结果；原生缺失指标不捏造</td>
+</tr>
+<tr>
+<td>NFI-09 / P0</td>
+<td><strong>存储与资源</strong>：原生 <code>.sol</code>、插件独有配置/模型文件和模块目录；当前 <code>.vmx.json</code> 为独立格式</td>
+<td>main <code>SolutionStore</code>；插件线供专属配置读写/文件语义</td>
+<td>双方子集；原生 <code>.sol</code> 往返未完成</td>
+<td>同一工具参数、动态端口、文件/ROI、订阅与结果配置保存重开；路径移动/缺文件错误明确；不宣称 <code>.sol</code> 等价</td>
+</tr>
+<tr>
+<td>NFI-10 / P0</td>
+<td><strong>真实迁移样本</strong>：先用图像源/标定加载证明公共模板与宿主，再用 N点/N图像覆盖复杂控件</td>
+<td>插件线 PF-013；main 集成</td>
+<td>插件线在制（未合），main 现有图像源/二值化子集</td>
+<td>逐工具原厂资源+受控运行+实际主窗口操作；先构建留人工验收，再按提交合流；不按“窗口能打开”判定完成</td>
+</tr>
+<tr>
+<td>NFI-11 / P0</td>
+<td><strong>共享文件与分支基线</strong>：插件线已授权改自身工作树中的必要共享代码；main 同文件不可并发改</td>
+<td>用户决定合流；插件线交付提交和差异，main 负责集成实现</td>
+<td>插件线多个共享文件未提交，暂不合</td>
+<td>提交号、变更清单、原生证据、合同差异、兼容矩阵齐备；main 逐文件增量集成并复跑完整回归</td>
+</tr>
+<tr>
+<td>NFI-12 / P1</td>
+<td><strong>设备/原生 ABI 差分</strong>：原生 SDK 的相机/光源/通信、原生精度与时序</td>
+<td>两线按所有权分别取证</td>
+<td>未完整；本轮设备测试排除</td>
+<td>不因无设备阻塞托管子集，但明确标原生设备/ABI未验；不得用模拟服务冒充设备证据</td>
+</tr>
+</tbody></table>
+<h2 id="不重复逆向的执行规则">不重复逆向的执行规则</h2><ol>
+<li>每个新工具先在插件线清单登记原生二进制/资源、参数/UI展示键、执行与结果；用 NFI ID 指向所需公共能力。若已有共享实现，只补工具适配器，不再写公共模板副本。</li>
+<li>公共配置框架证据由插件线集中维护；主线只审查与流程、Group、ROI、数据端口、导航集成有关的交界。主线对同一 <code>ButtonSelecter</code>/模板所做的既有局部实现记为过渡子集，合流时逐状态比较，不简单累计完成率。</li>
+<li>交叉类型或入口先写契约差异：调用方、数据形状、生命周期、旧方案兼容、源码位置及验收样例。指定<strong>一个</strong>共享文件提交所有者；另一线提交证据和测试需求，等提交后再合。</li>
+<li>主线按 NFI-01→05→07→08→09→10 的依赖顺序合流；ROI/数据形状 NFI-06 要在真实工具消费前先定形。插件线可继续独立取证和算法，不把未合公共代码视为主程序能力。</li>
+<li>插件线每个工具任务必须同时列出依赖的插件公共框架能力、缺口和实际主窗口/Group消费结果；主线每个供插件使用的新接口必须用至少一个真实工具复验。不能出现“工具功能已实现但公共节点框架未接”或“框架接口已做但真实工具未消费”却宣称闭合。</li>
+</ol>
+<p>相关原生入口：<code>analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs</code>、<code>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/ToolItemGrid.cs</code>、<code>analysis/decompiled/VM.Core/VM.Core/IMVSGroup.cs</code>、<code>analysis/decompiled/VM.Core/VM.Core/DynamicInput.cs</code>、<code>DynamicOutput.cs</code>、<code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/ButtonSelecter.cs</code>；插件线配置架构原始路径与哈希见其 <code>configuration-*-evidence.json</code>。本表仅记录核对到的源码/在制状态，未在本轮执行原厂桌面差分。</p>
+<p class="meta">来源：docs/PLUGIN-FRAMEWORK-INTEGRATION-CHECKLIST.md · SHA256 b0fc820e148b86c5f51a80511afe3b5954dfc2510acafed4288b7cd377aed6d8<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

@@ -1,0 +1,318 @@
+{
+  "id": "tool-run",
+  "title": "工具窗单次与连续调试",
+  "question": "工具窗如何使用缓存输入并只执行当前模块？",
+  "current": [
+    {
+      "id": "ETU01",
+      "from": "CreateScopedToolEditorContext",
+      "to": "ToolDebugSession delegate",
+      "member": "MainWindow.CreateScopedToolEditorContext",
+      "condition": "owner/solution/flow/node guards; no workflow or other tool busy",
+      "behavior": "会话捕获solution、flow、node和owner；execute delegate核当前状态后取缓存结果/调用输入，在scope lease中Task.Run NodeDebugExecutor。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolEditorHost.cs",
+          "member": "ToolEditorContext CreateScopedToolEditorContext(",
+          "sha256": "452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3",
+          "start": 32,
+          "end": 46,
+          "excerpt": " ToolEditorContext CreateScopedToolEditorContext(string flow,string id,Func<string> activeScope)\n {\n  EnsureToolDebugSolution();var owner=CaptureExecutionOwner();string solution=doc.SolutionId;var node=ConfigurationProcedure(flow).Nodes.Single(n=>n.Id==id);\n  void Guard(){Dispatcher.VerifyAccess();if(!IsCurrentExecutionOwner(owner)||windowClosed||isLocked||activeRun is not null||doc.SolutionId!=solution||activeScope()!=doc.CurrentProcedureId||!ConfigurationProcedure(flow).Nodes.Any(n=>n.Id==id))throw new InvalidOperationException(\"当前模块调试会话已失效或流程正在运行。\");}\n  ToolDebugSession? session=null;\n  session=new ToolDebugSession(async(values,token)=>{\n   Guard();if(toolDebugSessions.Any(s=>!ReferenceEquals(s,session)&&s.IsBusy))throw new InvalidOperationException(\"其他模块正在调试。\");\n   var procedure=ConfigurationProcedure(flow);var cached=ToolDebugInputs(flow);var baseDirectory=doc.BaseDirectory;var invocationInputs=workflowSessions.GetValueOrDefault(flow)?.WorkflowInputs;var invocationIndex=workflowSessions.GetValueOrDefault(flow)?.GroupLoopIndex;InvalidateToolDebugResult(flow,id);NodeRunRecord record;var ownerScope=executionScope;using var scopeLease=ownerScope.Enter();\n   try{record=await Task.Run(()=>new NodeDebugExecutor(modules).RunAsync(procedure,id,baseDirectory,values,cached,invocationInputs,cancellationToken:token,groupLoopIndex:invocationIndex,scope:ownerScope.ForProcedure(flow)));}catch(InvalidDataException e){record=new(id,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),0,\"DebugInputUnavailable\",e.Message);}\n   if(IsCurrentExecutionOwner(owner)&&!token.IsCancellationRequested&&session!.State!=ToolDebugState.Disposed&&doc.SolutionId==solution)StoreToolDebugResult(flow,record);return record;\n  });toolDebugSessions.Add(session);\n  return new(node,doc.BaseDirectory,values=>{Guard();doc.SetProcedureNodeParameters(flow,id,values);InvalidateToolDebugResult(flow,id);},values=>session.RunOnceAsync(values),ConfigurationProcedure(flow).Nodes.ToList().FindIndex(n=>n.Id==id)){Session=session,ApplyConfigurationChange=(values,rois,clear)=>{Guard();doc.SetProcedureToolConfiguration(flow,id,values,rois,clear);InvalidateToolDebugResult(flow,id);},ClearInput=port=>{Guard();doc.SetProcedureInputSubscription(flow,id,port,null);InvalidateToolDebugResult(flow,id);},PreviewInput=port=>IsCurrentExecutionOwner(owner)?ResolveToolInput(flow,id,port):null,ApplyDisplayStyles=styles=>{Guard();doc.SetProcedureDisplayStyles(flow,id,styles);},InputLabel=port=>IsCurrentExecutionOwner(owner)?ToolInputLabel(flow,id,port):\"\",EditInput=(port,owner)=>{Guard();EditToolInput(flow,id,port,owner);},PreviewImage=()=>IsCurrentExecutionOwner(owner)?ResolveGroupToolImage(flow,id):null,ApplyConfiguration=(values,rois)=>{Guard();doc.SetProcedureToolConfiguration(flow,id,values,rois);InvalidateToolDebugResult(flow,id);}};\n }\n string ToolInputLabel(string flow,string id,string port){var p=ConfigurationProcedure(flow);var edge=p.Connections.FirstOrDefault(e=>e.ToNode==id&&e.ToPort==port);if(edge is not null)return p.Nodes.Single(n=>n.Id==edge.FromNode).Name+\".\"+edge.FromPort;var subscription=p.Configuration.Subscriptions.FirstOrDefault(b=>b.NodeId==id&&!b.IsParameter&&b.Target==port);if(subscription is null)return \"------\";var source=subscription.Source;return source.Kind==WorkflowSourceKind.NodeOutput?p.Nodes.Single(n=>n.Id==source.Id).Name+\".\"+source.Port:source.Kind+\".\"+source.Id;}\n void EditToolInput(string flow,string id,string port,Window owner){var stamp=CaptureExecutionOwner();var p=ConfigurationProcedure(flow);var node=p.Nodes.Single(n=>n.Id==id);var input=modules.GetDescriptor(node).Inputs.Single(i=>i.Name==port);var options=WorkflowSources(flow,input.Kind).Where(o=>o.NodeId!=id&&o.Cardinality==input.Cardinality).Select(o=>o with{Reference=new(WorkflowSourceKind.NodeOutput,o.NodeId,o.Port)}).Concat(p.Configuration.Inputs.Where(i=>i.Kind==input.Kind&&i.Cardinality==input.Cardinality).Select(i=>new WorkflowSourceOption(\"workflow-input\",i.Name,i.Kind,\"流程输入.\"+i.Name){Reference=new(WorkflowSourceKind.WorkflowInput,i.Id)})).Concat(p.Configuration.Variables.Where(v=>input.Cardinality==ValueCardinality.Scalar&&WorkflowSubscriptions.VariableKind(v.Type)==input.Kind).Select(v=>new WorkflowSourceOption(\"local-variable\",v.Name,input.Kind,\"局部变量.\"+v.Name){Reference=new(WorkflowSourceKind.LocalVariable,v.Id)}));var picker=new WorkflowSourcePicker(new[]{new WorkflowSourceOption(\"\",\"\",input.Kind,\"解除订阅\")}.Concat(options)){Owner=owner};if(picker.ShowDialog()==true&&picker.Selection is {} choice){if(!IsCurrentExecutionOwner(stamp))throw new InvalidOperationException(\"调试会话已失效。\");doc.SetProcedureInputSubscription(flow,id,port,choice.Reference);InvalidateToolDebugResult(flow,id);}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source",
+      "branchId": "debug-session"
+    },
+    {
+      "id": "ETU02",
+      "from": "ToolDebugSession.RunOnceAsync / continuous",
+      "to": "Start → execute(snapshot,token)",
+      "member": "ToolDebugSession.Start / RunOnceAsync / RunContinuousAsync",
+      "condition": "closing=false; active completed; linked cancellation",
+      "behavior": "Start锁内拒绝重入；单次克隆参数，连续每轮重新Snapshot并在Failed/TimedOut/Cancelled后退出，间隔是会话配置。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/ToolDebugSession.cs",
+          "member": "Task<T> Start<T>(",
+          "sha256": "8e9030cc070fb8c9ec6263452f73b936287a87f0bae0456e913a1d531ada0211",
+          "start": 21,
+          "end": 32,
+          "excerpt": " Task<T> Start<T>(ToolDebugState mode,CancellationToken token,Func<CancellationToken,Task<T>> action)\n {\n  lock(gate){ObjectDisposedException.ThrowIf(closing,this);if(active is {IsCompleted:false})throw new InvalidOperationException(\"Debug session is already running.\");state=mode;var owner=CancellationTokenSource.CreateLinkedTokenSource(token);cancellation=owner;var task=Execute();active=task;return task;\n   async Task<T> Execute(){await Task.Yield();try{return await action(owner.Token);}finally{lock(gate){if(ReferenceEquals(cancellation,owner)){cancellation=null;state=closing?ToolDebugState.Disposed:ToolDebugState.Idle;}}owner.Dispose();}}\n  }\n }\n public Task<NodeRunRecord> RunOnceAsync(IReadOnlyDictionary<string,JsonElement> values,CancellationToken cancellationToken=default){var snapshot=Snapshot(values);return Start(ToolDebugState.RunningOnce,cancellationToken,token=>execute(snapshot,token));}\n public async Task RunContinuousAsync(Func<IReadOnlyDictionary<string,JsonElement>> values,Action<NodeRunRecord> completed,CancellationToken cancellationToken=default)\n {\n  ArgumentNullException.ThrowIfNull(values);ArgumentNullException.ThrowIfNull(completed);\n  await Start(ToolDebugState.RunningContinuous,cancellationToken,async token=>{while(true){token.ThrowIfCancellationRequested();var record=await execute(Snapshot(values()),token);token.ThrowIfCancellationRequested();completed(record);if(record.Status is NodeRunStatus.Failed or NodeRunStatus.TimedOut or NodeRunStatus.Cancelled)break;if(intervalMs>0)await Task.Delay(intervalMs,token);else await Task.Yield();}return true;});\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/ToolDebugSession.cs",
+          "member": "public async Task RunContinuousAsync(",
+          "sha256": "8e9030cc070fb8c9ec6263452f73b936287a87f0bae0456e913a1d531ada0211",
+          "start": 28,
+          "end": 32,
+          "excerpt": " public async Task RunContinuousAsync(Func<IReadOnlyDictionary<string,JsonElement>> values,Action<NodeRunRecord> completed,CancellationToken cancellationToken=default)\n {\n  ArgumentNullException.ThrowIfNull(values);ArgumentNullException.ThrowIfNull(completed);\n  await Start(ToolDebugState.RunningContinuous,cancellationToken,async token=>{while(true){token.ThrowIfCancellationRequested();var record=await execute(Snapshot(values()),token);token.ThrowIfCancellationRequested();completed(record);if(record.Status is NodeRunStatus.Failed or NodeRunStatus.TimedOut or NodeRunStatus.Cancelled)break;if(intervalMs>0)await Task.Delay(intervalMs,token);else await Task.Yield();}return true;});\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source",
+      "branchId": "debug-session"
+    },
+    {
+      "id": "ETU03",
+      "from": "NodeDebugExecutor.RunAsync",
+      "to": "isolated ProcedureDocument → GraphExecutor",
+      "member": "NodeDebugExecutor.RunAsync",
+      "condition": "enabled non-Group node; explicit compatible cached inputs",
+      "behavior": "只从显式缓存/订阅解析输入并克隆参数；构造仅一个节点的隔离流程交GraphExecutor，不执行上游生产者。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/NodeDebugExecutor.cs",
+          "member": "public async Task<NodeRunRecord> RunAsync(",
+          "sha256": "c673966959f33e76ea98498147e367be5e554c82f6881e5dc6ffaf2d89f57133",
+          "start": 17,
+          "end": 27,
+          "excerpt": " public async Task<NodeRunRecord> RunAsync(ProcedureDocument procedure,string nodeId,string baseDirectory,IReadOnlyDictionary<string,JsonElement> values,IReadOnlyList<NodeRunRecord>? cachedResults=null,IReadOnlyDictionary<string,PortValue>? workflowInputs=null,CancellationToken cancellationToken=default,int? groupLoopIndex=null,ModuleExecutionScope? scope=null)\n {\n  var node=procedure.Nodes.SingleOrDefault(n=>n.Id==nodeId)??throw new InvalidDataException(\"Debug node no longer exists.\");\n  if(node.ModuleId==WorkflowCalls.ModuleId)throw new InvalidOperationException(\"Group debugging requires its module-set execution service.\");\n  if(!node.Enabled)throw new InvalidOperationException(\"Disabled node cannot self-run.\");\n  var descriptor=registry.GetDescriptor(node);var records=(cachedResults??[]).Where(r=>r.NodeId!=nodeId).Select(r=>r with{Outputs=CompoundOutputFields.Expand(r.Outputs)}).ToDictionary(r=>r.NodeId);\n  var scoped=procedure with{Configuration=procedure.Configuration with{Subscriptions=procedure.Configuration.Subscriptions.Where(b=>b.NodeId==nodeId).ToArray()}};var context=new WorkflowRunContext(scoped,workflowInputs,records,groupLoopIndex);\n  foreach(var source in records.Keys)context.Update(source);\n  var inputs=new Dictionary<string,PortValue>(StringComparer.Ordinal);\n  foreach(var edge in procedure.Connections.Where(c=>c.ToNode==nodeId))inputs.Add(edge.ToPort,context.Resolve(new(WorkflowSourceKind.NodeOutput,edge.FromNode,edge.FromPort)));\n  var parameters=values.ToDictionary(p=>p.Key,p=>p.Value.Clone(),StringComparer.Ordinal);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/NodeDebugExecutor.cs",
+          "member": "var isolated=new ProcedureDocument(",
+          "sha256": "c673966959f33e76ea98498147e367be5e554c82f6881e5dc6ffaf2d89f57133",
+          "start": 35,
+          "end": 40,
+          "excerpt": "  var isolated=new ProcedureDocument(procedure.Id,procedure.Name,[node with{Parameters=parameters}],[],[]){Configuration=new(){Inputs=inputSpecs,Subscriptions=inputSpecs.Select(p=>new WorkflowSubscription(nodeId,p.Name,false,new(WorkflowSourceKind.WorkflowInput,p.Id))).ToArray()}};\n  var originalSuccessors=Array.AsReadOnly(ProcedureGraph.ExecutionEdges(procedure).Where(edge=>edge.FromNode==nodeId).Select(edge=>new ExecutionSuccessor(edge.ToNode)).ToArray());\n  // Read selectors during this execution, not while materializing cached input containers.\n  var numericReader=numericIndices.Count==0?null:new WorkflowNumericInputRead(inputs,numericIndices,context.Resolve);\n  var run=await new GraphExecutor(registry).RunAsync(isolated,baseDirectory,cancellationToken:cancellationToken,inputs:inputs,scope:scope,numericInputRead:(id,name,index)=>id==nodeId?numericReader?.Read(name,index):null,integerInputRead:(id,name,index)=>id==nodeId?numericReader?.ReadInteger(name,index):null,textInputRead:(id,name,index,capacity)=>id==nodeId?numericReader?.ReadText(name,index,capacity):null,executionSuccessorRead:id=>id==nodeId?originalSuccessors:null);\n  return run.Nodes.Single();",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source",
+      "branchId": "debug-session"
+    },
+    {
+      "id": "ETU04",
+      "from": "debug callback record",
+      "to": "StoreToolDebugResult / results / RefreshRight",
+      "member": "CreateScopedToolEditorContext / StoreToolDebugResult",
+      "condition": "current owner+solution; token not cancelled; session not disposed",
+      "behavior": "结果发布受owner/solution/session门保护，按solution/procedure/node身份保存，当前显示流程才恢复/刷新右侧。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolEditorHost.cs",
+          "member": "if(IsCurrentExecutionOwner(owner)&&!token.IsCancellationRequested",
+          "sha256": "452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3",
+          "start": 41,
+          "end": 41,
+          "excerpt": "   if(IsCurrentExecutionOwner(owner)&&!token.IsCancellationRequested&&session!.State!=ToolDebugState.Disposed&&doc.SolutionId==solution)StoreToolDebugResult(flow,record);return record;",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/ToolEditorHost.cs",
+          "member": "void StoreToolDebugResult(string flow,NodeRunRecord record)",
+          "sha256": "452e7aff9f62299ed5f6ff8a00705acd1ee9d775d6b7db414573c16202d77fb3",
+          "start": 25,
+          "end": 27,
+          "excerpt": " void StoreToolDebugResult(string flow,NodeRunRecord record){InvalidateToolDebugResult(flow,record.NodeId);toolDebugRecords[DebugIdentity(flow,record.NodeId)]=record;\n  if(doc.CurrentProcedureId==flow){RestoreWorkflowResults();RefreshRight();StatusText.Text=\"模块调试：\"+record.Status+(record.Message is null?\"\":\" · \"+record.Message);}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source",
+      "branchId": "debug-session"
+    },
+    {
+      "id": "ETU05",
+      "from": "普通配置运行回调",
+      "to": "RunConfiguredTool captured available/results",
+      "member": "MainWindow.RunConfiguredTool",
+      "condition": "configuration/owner alive; selected node still exists",
+      "behavior": "这条普通配置执行路径捕获workflowSessions与configurationResults作为本次可用上游快照，再解析输入/参数；不经过ToolDebugSession.Start。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "async Task<NodeRunRecord> RunConfiguredTool(",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 154,
+          "end": 165,
+          "excerpt": " async Task<NodeRunRecord> RunConfiguredTool(string procedureId,string nodeId,Dictionary<string,System.Text.Json.JsonElement> values,Func<bool>? configurationAlive=null){\n  var runOwner=CaptureExecutionOwner();\n  bool CanPublish()=>IsCurrentExecutionOwner(runOwner)&&(configurationAlive?.Invoke()??true);\n  if(!CanPublish())throw new InvalidOperationException(\"配置会话已失效。\");\n  var procedure=doc.Document.Procedures.Single(p=>p.Id==procedureId);var node=procedure.Nodes.Single(n=>n.Id==nodeId);var descriptor=modules.GetDescriptor(node);var inputs=new Dictionary<string,PortValue>();var parameters=values.ToDictionary(p=>p.Key,p=>p.Value.Clone());\n  // Capture this self-run's upstream records before dispatch; dynamic selectors read this\n  // invocation's snapshot, never a mutable latest-result dictionary from another round.\n  var available=(workflowSessions.TryGetValue(procedureId,out var priorSession)?priorSession.Nodes:[]).ToDictionary(r=>r.NodeId,StringComparer.Ordinal);\n  if(configurationResults.TryGetValue(procedureId,out var configured))foreach(var cached in configured)available[cached.Key]=cached.Value;\n  PortValue Output(string id,string port){\n   NodeRunRecord? record=available.GetValueOrDefault(id);\n   return record is not null&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&CompoundOutputFields.Expand(record.Outputs).TryGetValue(port,out var value)?value:throw new InvalidDataException(\"订阅图像或数据尚无运行结果。\");",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source",
+      "branchId": "configuration-self-run"
+    },
+    {
+      "id": "ETU06",
+      "from": "RunConfiguredTool isolated node",
+      "to": "GraphExecutor.RunAsync(token=ownerScope.Stopping)",
+      "member": "MainWindow.RunConfiguredTool",
+      "condition": "isolated graph built; scope lease active",
+      "behavior": "构造单节点隔离流程直接Task.Run GraphExecutor，token来自ownerScope.Stopping；guard通过才发布configurationResults。这与另一个会话分支的debug CTS并非同一取消域。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/ToolExecutionScope.cs",
+          "member": "var run=await Task.Run(()=>new GraphExecutor(modules).RunAsync(isolated",
+          "sha256": "bb92b32267ff332b4e0955ef3dc600a8bc7b2f7b38a8804128c146dae439a52a",
+          "start": 193,
+          "end": 202,
+          "excerpt": "   var run=await Task.Run(()=>new GraphExecutor(modules).RunAsync(isolated,baseDirectory,cancellationToken:ownerScope.Stopping,inputs:inputs,scope:ownerScope,control:new ModuleRunControl{Mode=ExecutionMode.SelfRun,ParameterSeed=id=>id==nodeId?node.Parameters:null},resources:resources,numericInputRead:(id,name,index)=>id==nodeId?numericReader?.Read(name,index):null,integerInputRead:(id,name,index)=>id==nodeId?numericReader?.ReadInteger(name,index):null,textInputRead:(id,name,index,capacity)=>id==nodeId?numericReader?.ReadText(name,index,capacity):null,executionSuccessorRead:id=>id==nodeId?originalSuccessors:null));\n   record=run.Nodes.Single();\n  }catch(Exception ex){record=new(nodeId,NodeRunStatus.Failed,new Dictionary<string,PortValue>(),clock.Elapsed.TotalMilliseconds,\"SelfRunFailed\",ex.Message);}\n  finally{if(IsCurrentExecutionOwner(runOwner)){activeConfigurationRuns--;if(configurationRunsByProcedure.TryGetValue(procedureId,out int count)){if(count<=1)configurationRunsByProcedure.Remove(procedureId);else configurationRunsByProcedure[procedureId]=count-1;}}}\n  if(CanPublish()&&doc.SolutionId==ownerSolution&&ReferenceEquals(executionScope,ownerScope)&&doc.Document.Procedures.Any(p=>p.Id==procedureId&&p.Nodes.Any(n=>n.Id==nodeId&&n.ModuleId==node.ModuleId&&n.ModuleVersion==node.ModuleVersion))){\n   if(!configurationResults.TryGetValue(procedureId,out var cached))configurationResults[procedureId]=cached=new(StringComparer.Ordinal);\n   cached[nodeId]=record;\n   if(doc.CurrentProcedureId==procedureId){\n    results[nodeId]=record;RefreshRight();RenderGraph();\n    StatusText.Text=\"模块执行：\"+node.Name+\" · \"+record.Status+(record.Message is null?\"\":\" · \"+record.Message);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "主工具栏activeRun.Cancel不会由本调用点自动取消这条scope.Stopping分支。"
+      ],
+      "relationEvidence": "actual-current-source",
+      "branchId": "configuration-self-run"
+    }
+  ],
+  "original": [
+    {
+      "id": "EOT00",
+      "from": "原工具窗Run按钮/编辑器事件",
+      "to": "VmModule.Run receiver",
+      "member": "generic tool-window run binding",
+      "condition": "not recovered in this slice",
+      "behavior": "已复用参数窗打开原证据，但本轮未证其Run按钮怎样选定并调用此普通模块Run成员；必须显示这个gap。",
+      "classification": "unknown",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml.cs",
+          "member": "ProcedureConfigControl window creation and publication",
+          "sha256": "36be1620196c60a72efb03dab8afb4fa302ba1ba8ec4acf7eb1f5f61883678bd",
+          "start": 739,
+          "end": 771,
+          "excerpt": "\t\t\tTabWinBase tabWinBase2 = GetExternTabWin(vmModule) ?? new ParamsTabControlBase();\n\t\t\ttabWinBase2.ROIPartUI = partUI;\n\t\t\ttabWinBase2.IsEditState = IsParamsEditState;\n\t\t\tLogHelper.Info(\"ParamsConfig value start.\");\n\t\t\ttabWinBase2.ParamsConfig = vmModule.Params;\n\t\t\tLogHelper.Info(\"ParamsConfig value end.\");\n\t\t\tif (Application.Current != null)\n\t\t\t{\n\t\t\t\tWindow window = Window.GetWindow(this);\n\t\t\t\ttabWinBase2.Owner = window ?? Application.Current.MainWindow;\n\t\t\t\ttabWinBase2.AlongParent = this;\n\t\t\t}\n\t\t\telse if (PresentationSource.FromDependencyObject(this) is HwndSource hwndSource)\n\t\t\t{\n\t\t\t\tWindowInteropHelper windowInteropHelper = new WindowInteropHelper(tabWinBase2)\n\t\t\t\t{\n\t\t\t\t\tOwner = hwndSource.Handle\n\t\t\t\t};\n\t\t\t}\n\t\t\tElementHost.EnableModelessKeyboardInterop(tabWinBase2);\n\t\t\ttabWinBase2.Show();\n\t\t\tSetCurrentValue(IsOpenParamsProperty, true);\n\t\t\tcurTabControlBase = tabWinBase2;\n\t\t\tWeakEventManager<Window, EventArgs>.AddHandler(curTabControlBase, \"Closed\", CurTabControlBase_Closed);\n\t\t\tif (ROIPartUI is ModuleResultView moduleResultView2)\n\t\t\t{\n\t\t\t\tmoduleResultView2.Tag = curTabControlBase;\n\t\t\t\tmoduleResultView2.SetRoiVisible();\n\t\t\t}\n\t\t\tDecoratorSelectedItem = data;\n\t\t\tLogHelper.Info(\"OpenParamsTabControl end.\");\n\t\t}\n\t\tcatch (VmException ex)",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "参数窗Show不能替代Run按钮命令/接收者证据。"
+      ],
+      "relationEvidence": "explicit-gap"
+    },
+    {
+      "id": "EOT01",
+      "classification": "source-confirmed",
+      "from": "VmModule.Run",
+      "to": "ModuleManager.SelfRun(moduleInfo.nNodeID)",
+      "member": "VM.Core.VmModule.Run",
+      "condition": "ordinary VmModule receiver; continuous-self-execute affects running flags",
+      "behavior": "非连续自执行时先设置流程self-run与IsRunning；调用ModuleManager.SelfRun，VmException分支清这些状态再抛。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+          "member": "public virtual void Run()",
+          "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+          "start": 3753,
+          "end": 3772,
+          "excerpt": "\tpublic virtual void Run()\n\t{\n\t\tif (!((IVmSolution)VmSolution.Instance).IsContinuousSelfExecute)\n\t\t{\n\t\t\t((IVmProcedure)Root)?.SetInnerModuleIsSelfRuning(true);\n\t\t\tIsRunning = true;\n\t\t}\n\t\ttry\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SelfRun(moduleInfo.nNodeID);\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\t((IVmProcedure)Root)?.SetInnerModuleIsSelfRuning(false);\n\t\t\tIsRunning = false;\n\t\t\tthrow ex;\n\t\t}\n\t}\n\n\t/// <summary>",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Static call-site edge; does not by itself establish a particular live invocation, native parity or the same frame."
+      ]
+    },
+    {
+      "id": "EOT02",
+      "classification": "source-confirmed",
+      "from": "ModuleManager.SelfRun",
+      "to": "ServerSDKAPI.IMVS_SelfExecuteOneModule",
+      "member": "ModuleManager.SelfRun",
+      "condition": "native return !=0 throws VmException",
+      "behavior": "传全局mhandle与nModuleId到SDK包装；这里是SelfRun，不偷换成SyncSelfRun等待策略。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "public void SelfRun(uint nModuleId)",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 256,
+          "end": 264,
+          "excerpt": "\tpublic void SelfRun(uint nModuleId)\n\t{\n\t\tint num = ServerSDKAPI.IMVS_SelfExecuteOneModule(CVmObjectBase.mhandle, nModuleId);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "Static call-site edge; does not by itself establish a particular live invocation, native parity or the same frame."
+      ]
+    },
+    {
+      "id": "EOT03",
+      "classification": "source-confirmed",
+      "from": "ServerSDKAPI.IMVS_SelfExecuteOneModule",
+      "to": "NativeMethods.IMVS_SelfExecuteOneModule",
+      "member": "ServerSDKAPI / NativeMethods",
+      "condition": "PInvoke declaration only; native callee not recovered here",
+      "behavior": "直接转同名PInvoke；声明为原SDK DLL入口，不能以托管声明补出内部线程/排队/上游准备行为。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "public static int IMVS_SelfExecuteOneModule(",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 229,
+          "end": 232,
+          "excerpt": "\tpublic static int IMVS_SelfExecuteOneModule(IntPtr handle, uint nModuleId)\n\t{\n\t\treturn NativeMethods.IMVS_SelfExecuteOneModule(handle, nModuleId);\n\t}",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "public static extern int IMVS_SelfExecuteOneModule(",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 95,
+          "end": 95,
+          "excerpt": "\tpublic static extern int IMVS_SelfExecuteOneModule(IntPtr handle, uint nModuleId);",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "generic tool-window caller及native SelfExecute body分列待证。"
+      ]
+    }
+  ],
+  "unknowns": [
+    "ToolDebugSession/NodeDebugExecutor是当前独立实现；原SelfRun的上游准备与运行线程不能由它模拟成已恢复。"
+  ],
+  "joinPolicy": "Edges are individually evidenced relationships. Array order is a reading order; no adjacent pair is automatically the same invocation/object/thread. Explicit gaps remain visible.",
+  "branches": [
+    {
+      "id": "debug-session",
+      "title": "专用工具编辑器调试会话",
+      "edgeIds": [
+        "ETU01",
+        "ETU02",
+        "ETU03",
+        "ETU04"
+      ],
+      "cancellation": "ToolDebugSession linked CTS; StopAsync cancels and awaits"
+    },
+    {
+      "id": "configuration-self-run",
+      "title": "普通工具配置执行",
+      "edgeIds": [
+        "ETU05",
+        "ETU06"
+      ],
+      "cancellation": "ownerScope.Stopping; not the main activeRun CTS"
+    }
+  ]
+}

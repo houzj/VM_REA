@@ -1,0 +1,85 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>标定工具并行依赖取证</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/CALIBRATION-DEPENDENCIES.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#标定工具并行依赖取证">标定工具并行依赖取证</a></p><p style="margin-left:14px"><a href="#证据与复查">证据与复查</a></p><p style="margin-left:14px"><a href="#模块对照">模块对照</a></p><p style="margin-left:14px"><a href="#可共享的代码边界">可共享的代码边界</a></p><p style="margin-left:14px"><a href="#建议接口准备及后续顺序">建议接口准备及后续顺序</a></p><p style="margin-left:14px"><a href="#未验证范围">未验证范围</a></p></details><h1 id="标定工具并行依赖取证">标定工具并行依赖取证</h1><p>2026-10-17。本专项仅补齐其余标定工具的静态源码、资源和依赖清点，不实现产品、不执行设备或原厂桌面运行。N点、N图像分别由其他工作项推进；坐标系仅登记文件和导入依赖，按用户要求最后开发。</p>
+<p>最新任务设计按 <a href="../PLUGIN-DEVELOPMENT-BOUNDARY.html">插件职责与配套表</a> 执行：工具、公共节点框架和主项目接口必须同时安排。本文件的静态取证范围不替代配置/调试/ROI/显示任务；N点/N图像仍最高优先级，坐标系最后。</p>
+<h2 id="证据与复查">证据与复查</h2><p>原厂安装目录：<code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration</code>。机器可读清单 <a href="../../../plugins/calibration-dependencies.json">calibration-dependencies.json</a> 记录 8 项、98 个原厂文件的绝对路径、长度、SHA-256，以及 153 个 AlgorithmTab 直接控件。声明保留嵌套组合数据，避免把姿态/点数组当成单标量。计数是 XML 直接 Items 子节点数，不能当成原厂实际运行端口数。</p>
+<p>复现生成器：<code>tests/Export-CalibrationDependencies.py</code>，只读目标文件、解析 XML 和 PE 导入表，不装载或执行目标。辅助反编译由本机 ilspycmd 生成于本工作树 <code>analysis/full-audit/calibration-dependencies/decompiled/&lt;模块&gt;Cs</code>，两个实际存在的专属 Control 程序集也单独反编译；生成器记录逐个 C# 文件哈希、公开属性和方法名。原始生成目录不纳入 Git。</p>
+<p>REA 对 <code>ReadCalibFileModuControl.dll</code> 的静态托管检查证据：<code>ev_ca66bc7e6c4cc7a9571f53344daf7263f2ee1dc9fa37fd17dc18320bb536c94d</code>，SHA-256 <code>9c5c2c529b5242f9735a51def23c30fe90b2e3cbfe16c1ff31f95d0f1c129300</code>。确认 .NET Framework 4.6.1 / AnyCPU / CIL，元数据完整；只确认托管身份、引用和资源，不代表 CLR 加载或执行成功。原始返回保存在本工作树分析目录 <code>rea-read-calib-control.json</code>。</p>
+<h2 id="模块对照">模块对照</h2><p>下表输入/输出是主声明 XML 中 Category 的直接 Items 数量，括号内为 UI 控件数。</p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>原厂模块</th>
+<th align="right">输入/输出（控件）</th>
+<th>已确认原生算法依赖</th>
+<th>文件选择资源</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>标定板标定</td>
+<td>IMVSCalibBoardCalibModu</td>
+<td align="right">1/16（26）</td>
+<td>MVDCalibBoardCalibCpp</td>
+<td><code>.iwcal</code></td>
+</tr>
+<tr>
+<td>相机映射</td>
+<td>IMVSCameraMapModu</td>
+<td align="right">16/10（16）</td>
+<td>MVDCameraMapCpp、MVDMatrixToParamCpp</td>
+<td><code>.iwcal</code></td>
+</tr>
+<tr>
+<td>畸变标定</td>
+<td>IMVSImageCalibModu</td>
+<td align="right">2/10（30）</td>
+<td>MVDImageCalibCpp</td>
+<td><code>.iccal</code></td>
+</tr>
+<tr>
+<td>映射标定</td>
+<td>IMVSMapCalibModu</td>
+<td align="right">9/17（36）</td>
+<td>MVDMapCalibCpp</td>
+<td>输入 <code>.xml;.iwcal</code>，保存/加载 <code>.xml</code></td>
+</tr>
+<tr>
+<td>标定加载</td>
+<td>ReadCalibFileModu</td>
+<td align="right">10/12（13）</td>
+<td>ModuleFrame；未直接导入专用 MVD 算法 DLL</td>
+<td><code>.xml</code></td>
+</tr>
+<tr>
+<td>旋转标定</td>
+<td>RotateCalibModu</td>
+<td align="right">5/7（9）</td>
+<td>MVDNPointCalibCpp</td>
+<td>资源原文 <code>.xml|*.xml;*.iwcal</code></td>
+</tr>
+<tr>
+<td>平移旋转标定</td>
+<td>TranslationCalibModu</td>
+<td align="right">6/28（23）</td>
+<td>MVDNPointCalibCpp</td>
+<td><code>.xml</code>，点列表编辑器另有 <code>.txt</code></td>
+</tr>
+</tbody></table>
+<p>每个结论均可回查 <code>&lt;模块&gt;/&lt;模块&gt;.xml</code> 的 <code>Category[@Name=&#39;Input&#39;/&#39;Output&#39;]/Items</code>、<code>&lt;模块&gt;AlgorithmTab.xml</code> 的 <code>FileOption/FilterName</code>，以及生成器解析的原生 <code>&lt;模块&gt;.dll</code> 导入目录。文件过滤器只说明 UI 接受的扩展名，不证明格式相同或可互换。</p>
+<p>坐标系 <code>CoordinateModule.dll</code> 导入 <code>MVDMatrixToParamCpp.dll</code>，其余基础依赖见 JSON；未深入配置语义，不据此改变最后开发的优先级。</p>
+<h2 id="可共享的代码边界">可共享的代码边界</h2><ol>
+<li><strong>标定结果不能仅表示为单个矩阵。</strong> 标定加载 XML 明确包含 <code>CalibMatrix</code>（float 数组）、<code>RotCenterImage</code>/<code>RotCenterWorld</code> 等 POSTURE 组合；其 SDK <code>ReadCalibFileResult.cs</code> 公布 <code>List&lt;float&gt; CalibMatrix</code>。平移旋转声明还包括图像/物理点数组、旋转中心、方向、图像和世界误差、比例和平移旋转参数。矩阵维度、行列顺序、坐标约定、单位尚未在本专项恢复，不能从 List&lt;float&gt; 推断为固定 3×3。</li>
+<li><strong>加载器支持运行时结果结构。</strong> <code>ReadCalibFileModuControl/Apps.XmlParser.ParamTab/ReadFileConfigData.cs</code> 的 <code>ReadData(bool needAddoutput=false)</code> 从 <code>((IUserBytesData)vmModule.Params)[$&quot;Get{NameA}&quot;]</code> 取得 UTF-8 文本；本工具 XML 的控件名为 <code>CalibInputParam</code>。<code>AnalyzeString</code> 先以 <code>;</code> 分类型段，再以 <code>#</code> 分类型和正文、<code>$</code> 分条目、<code>,</code> 分名称和值，姿态内部以 <code>~</code> 分 X/Y/R。类型分支为 <code>int</code>、<code>float</code>、<code>string</code>、<code>CalibPointList</code>、<code>CalibPointF</code>、<code>FloatList</code>。这是原生返回给 UI 的参数描述协议，<strong>不是磁盘 XML 的序列化格式</strong>。</li>
+<li><code>ReadData(true)</code> 倒序删除模块现有 <code>DynamicVmIO</code> 和 <code>Combination</code> 后，通过 <code>IOutput.AddOutput</code> 重建输出；<code>ReadData()</code> 默认不重建。不能仅依据读取显示调用，就声称执行图的输出结构已更新。<code>OpenFileDialog4ReadFile.ValueChangedCmdExecute</code> 先调用基类，再调用其私有 <code>ReadData()</code>，由后者调用该显示读取方法。</li>
+<li><strong>平移旋转专属点表可复用交互基础，但字段不能照抄 N点。</strong> <code>TranslationCalibModuControl/TranslationCalibModuControl/NPointList.xaml.cs</code> 的 <code>Init</code> 读取 <code>CalibPointTotalNum + RotPointTotalNum</code> 行，每行 <code>ImagePointX/Y</code>、<code>WorldPointX/Y</code>、<code>DeltaAngle</code>；展示采用当前文化 <code>float.Parse(...).ToString(&quot;f3&quot;)</code>。<code>GetPointListText</code> 验证五个 float，按五列、空格及 CRLF 导出；<code>GetPointListByText</code> 按 CRLF/空格拆分，仅处理现有数量范围。导入异常、缺列处理及浮点文化需要后续受控运行对照，不能用一个宽松 CSV 导入器代替。</li>
+<li><strong>专属 UI 与公共编辑器分开。</strong> 本范围实际存在 <code>ReadCalibFileModuControl.dll</code> 和 <code>TranslationCalibModuControl.dll</code>；其余五项安装目录没有同名前缀 Control.dll，主要配置在 AlgorithmTab XML。它们仍使用 <code>OpenFileForCalibDialog</code>、<code>ImageViewConfig</code>、点组合选择器、ROI 及条件显示等公共控件。不能把无专属 Control.dll 理解成没有 UI，也不能只复制面板截图而省略图像/ROI 交互。</li>
+</ol>
+<h2 id="建议接口准备及后续顺序">建议接口准备及后续顺序</h2><p>主线负责在 CONTRACT-REQUESTS.md 统一登记和落地，避免多代理并行修改公共合同：</p>
+<ul>
+<li>标定结果载体需显式携带模型种类、矩阵系数及其约定、点/姿态数组、误差和状态；在原生验证前允许未知维度，不预先固化单位或矩阵顺序。</li>
+<li>标定文件服务要区分 <code>.xml</code>、<code>.iwcal</code>、<code>.iccal</code> 及点表 <code>.txt</code>；读写原子性、刷新、方案内缓存矩阵与文件外部变更要由运行证据确定。ReadCalibFile 的 <code>SaveCalibDataEnable</code> 是明确独立参数。</li>
+<li>点表配置需要行增删/采样、不同字段集、导入导出、订阅写入与撤销生命周期；UI 点和姿态组合与独立 X/Y 分量订阅均在 XML 中存在。</li>
+<li>动态加载结果需要配置变更后端口重建、订阅失效检查和方案持久化，而不能只提供任意字符串字典。</li>
+</ul>
+<p>保持用户最高优先级 <strong>N点标定 → N图像标定</strong>。建议之后先推进共享 <code>MVDNPointCalibCpp</code> 的平移旋转和旋转，再做标定加载的读写互通，接着标定板、相机映射、映射、畸变；坐标系最后。这是基于依赖的建议，不是已确认的执行先决关系。标定加载的文件结构调查可提前作为 N点保存加载的验证辅助，但不能以本静态清单宣称格式兼容。</p>
+<h2 id="未验证范围">未验证范围</h2><p>本专项没有运行原厂算法、采集原厂 UI、核对像素或标定数值、读写真实标定文件、验证设备。原生求解、退化条件、误差定义、矩阵系数顺序、刷新与缓存策略、跨工具文件互通仍待各工具的受控运行证据。此报告仅闭合并行依赖清点，不构成七项工具实现完成或原生等价声明。</p>
+<p class="meta">来源：docs/plugins/CALIBRATION-DEPENDENCIES.md · SHA256 361a8a7d0243aac0540b4a05c86457926d799662a841c79a8a41180149d68a18<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

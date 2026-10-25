@@ -1,0 +1,1422 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>真实工具显示设置入口：Blob文字、Setter与[Display]供应</title><style>body{max-width:1300px;margin:auto;padding:24px;background:#101b2b;color:#e3edf8;font:15px/1.7 "Microsoft YaHei",sans-serif}a{color:#9cd4ff}p{color:#b5cbe0}.notice{background:#1c3048;border-left:4px solid #dfa76b;padding:15px}article{background:#17283d;border:1px solid #3a536d;padding:17px;margin:14px 0}.unknown{border-style:dashed;border-color:#dd9db9}details{padding:8px 0}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 Consolas,monospace}</style><a href="main-ui-map.html#plugin-ui">← 逆向核心：插件UI向上</a> · <a href="index.html">证据索引</a><h1>真实工具显示设置入口：Blob文字、Setter与[Display]供应</h1><p class="notice">真实指随包具体工具类型/资源，不表示原机已激活。本文从Blob工具显示设置向上查共享组、UI模板、Setter和[Display]供应。ImageSource取图模式不是文字生产者。配置、结果值、绘制和保存是分离的证据阶段。</p><p>5份原资源摘要与副本、30个原件独立CIL体、DTD禁止的XML语义对照；完整运行链、当前逐工具对应、原BAML激活及浏览器呈现均未验证。</p><article id="TR01" class="source-confirmed"><h2>TR01 · IMVSBlobFindModuAlgorithmTab.xml显示设置 → ResutlText眼睛项及TextDisplayGroup</h2><p>source-confirmed：所选真实随包Blob工具AlgorithmTab中ImageViewConfig名按原拼写ResutlText，AccessMode=O、PanVisible=False，BrigdgeSetter指GetDisplayObjectOperation(Show Text)；其后GroupLinkItem引用TextDisplayGroup。它是Blob工具的显示设置载体，不能用ImageSource取图模式下拉替代。</p><p>仍待追：该模块运行时XmlPath、根Owner、实际参数窗和BAML实例尚未观察；资源存在本身不证明UI已显示。</p><details><summary>Blob display text toggle declaration · local-extracted-resource</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.resources/IMVSBlobFindModuAlgorithmTab.xml:2683–2695
+SHA256 34a0cc5423a3d66b92dc272e0f50b013310e5180e801c648005383c3adddfdec
+            &lt;ImageViewConfig Name=&quot;ResutlText&quot;&gt;
+              &lt;Description&gt;Text&lt;/Description&gt;
+              &lt;DisplayName&gt;RunParam_Text&lt;/DisplayName&gt;
+              &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+              &lt;PanVisible&gt;False&lt;/PanVisible&gt;
+              &lt;BrigdgeSetter&gt;
+                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                &lt;OperationName&gt;GetDisplayObjectOperation&lt;/OperationName&gt;
+                &lt;OperationParams&gt;Show Text&lt;/OperationParams&gt;
+              &lt;/BrigdgeSetter&gt;
+            &lt;/ImageViewConfig&gt;
+            &lt;ImageViewConfig Name=&quot;BlindZone&quot;&gt;
+              &lt;Description&gt;ExternROI&lt;/Description&gt;</pre></details><details><summary>Blob common text settings link · local-extracted-resource</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.resources/IMVSBlobFindModuAlgorithmTab.xml:2717–2720
+SHA256 34a0cc5423a3d66b92dc272e0f50b013310e5180e801c648005383c3adddfdec
+        &lt;GroupLinkItem Name=&quot;TextDisplayGroup&quot;&gt;
+          &lt;LinkName&gt;TextDisplayGroup&lt;/LinkName&gt;
+        &lt;/GroupLinkItem&gt;
+      &lt;/Categorys&gt;</pre></details></article><article id="TR02" class="source-confirmed"><h2>TR02 · GroupLinkItem.AfterAddedToArray → GroupsRoot → Group.xml克隆条目并重设父节点</h2><p>source-confirmed：GroupLinkItem先调用base并从列表移除自己，再从GroupsRoot[LinkName]查GroupInfoItem；非目标类型或clone/Items为空则返回，原占位项不会在此重新加回。成功时逐项加入原列表并SetParentNode。GroupsRoot构造把defaultNameSpace设Apps.XmlParser.ParamTab，按CurrentPathHelper.GetCurrentPath()+Module(sp)/Group.xml载入并吞加载异常，按首次具名项建立表。</p><p>仍待追：实际CurrentPathHelper路径选择/Group.xml副本、Clone及BaseNode载入类型实例化、加载失败后UI状态仍未知；不把缺组当作默认补齐。</p><details><summary>Apps.XmlParser.ParamTab.GroupLinkItem::AfterAddedToArray · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:1571–1590
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000a2e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000a2e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GroupLinkItem&quot;,
+            &quot;name&quot;: &quot;AfterAddedToArray&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011280f9&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 177,
+          &quot;ilSha256&quot;: &quot;c22b41d4d807e86f8bd84d4a1bb3d3fc02ffada4c06a3a64da13a070340c6301&quot;,
+          &quot;ilBytes&quot;: &quot;000314fe010b072c0538a2000000020328c505000a0003026fe100000a0028320a0006027b120400046f360a00060a0675f500000214fe030c082c74000675f50000026fce00002b0d092c0b097b1104000414fe032b0116130411042c510000097b110400046fc401000a13052b2711056f0501000a742e0000011306000311066fcc01000a26110602283301000a6f1401000a000011056f6d00000a2dd0de0d11052c0811056f6200000a00dc00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GroupsRoot::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:493–512
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000a33&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000a33&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GroupsRoot&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 72,
+          &quot;ilSha256&quot;: &quot;0e32e39216c9dd59d9e0bd0b277cde42dc865588ea6b62f3b9a1f69517232c8e&quot;,
+          &quot;ilBytes&quot;: &quot;0273c605000a7d140400040228bc00000a000072d028007080c500000a0228c200000a6fc300000a722c53007028aa00000a7dc705000a000228c805000a0000de05260000de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GroupsRoot::InitItems · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:775–794
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000a35&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000a35&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GroupsRoot&quot;,
+            &quot;name&quot;: &quot;InitItems&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 141,
+          &quot;ilSha256&quot;: &quot;7e0f14ca510427feb738cf2a4c792729c16b7534372892f0cb2b5359ae2a5d8b&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1704000414fe030a062c7e0000027b170400046fc401000a0b2b58076f0501000a0c0008752f0000012c2808752f0000016f1300000a2c1b027b1404000408752f0000016f1300000a6fc905000a16fe012b01160d092c1a00027b1404000408752f0000016f1300000a086fca05000a000000076f6d00000a2da0de0b072c07076f6200000a00dc002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Cloned shared settings replace link placeholder · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/GroupLinkItem.cs:13–37
+SHA256 acdecf33ca3089455247c104140f565c1ef633c445f7441d34d5986d3a331a9e
+	public override void AfterAddedToArray(IList list)
+	{
+		if (list == null)
+		{
+			return;
+		}
+		base.AfterAddedToArray(list);
+		list.Remove(this);
+		BaseNode baseNode = GroupsRoot.GetInstance()[LinkName];
+		if (!(baseNode is GroupInfoItem))
+		{
+			return;
+		}
+		GroupInfoItem groupInfoItem = (baseNode as GroupInfoItem).Clone&lt;GroupInfoItem&gt;();
+		if (groupInfoItem == null || groupInfoItem.Items == null)
+		{
+			return;
+		}
+		foreach (BaseNode item in groupInfoItem.Items)
+		{
+			list.Add(item);
+			item.SetParentNode(GetParentNode());
+		}
+	}
+</pre></details><details><summary>Shared configuration resource path and load failure · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/GroupsRoot.cs:33–46
+SHA256 dfd6f20250947f9ef660c9709fbe6a0a4df7611d3e325f68cc90eae90e0d2b9b
+	private GroupsRoot()
+	{
+		BaseNode.defaultNameSpace = &quot;Apps.XmlParser.ParamTab&quot;;
+		defaultFileName = CurrentPathHelper.Instance.GetCurrentPath() + &quot;\\Module(sp)\\Group.xml&quot;;
+		try
+		{
+			loadXml();
+		}
+		catch
+		{
+		}
+	}
+
+	public override BaseNode Init(XmlNode node)</pre></details></article><article id="TR03" class="source-confirmed"><h2>TR03 · Group.xml / TextDisplayGroup → PositionX/Y初始化与CurValue写回两个操作</h2><p>source-confirmed：共享组的PositionX/Y是ButtonSelecter：Initers中的TargetName=CurValue、GetSelectedDisplayFilterOperation分别带DisplayoutputPositionX/Y；Triggers监视Property=CurValue，调用SetResultIOToModuleOperation(DisplayoutputPositionX/Y;float)。DropOpenSetter另取int/float候选。此处找到了激活两操作的具体配置，不能只因类存在就称已执行。</p><p>仍待追：候选树、初次初始化/重入和具体UI对象的执行时序需调用者证据；本报告不运行操作。</p><details><summary>Shared text position operation declarations · local-extracted-resource</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.resources/Group.xml:2767–2905
+SHA256 9129b82a0f9906dde591347498a80e2e8c019c0fb959a721ecfd24fbbb5207dc
+	&lt;GroupInfoItem Name=&quot;TextDisplayGroup&quot;&gt;
+	   &lt;Items&gt;
+		 &lt;Category Name=&quot;文本显示&quot;&gt;
+                    &lt;Items&gt;
+                        &lt;StringConfig Name=&quot;Content&quot; NameSpace=&quot;Standard&quot;&gt;
+                            &lt;Description&gt;RunParam_Content&lt;/Description&gt;
+                            &lt;DisplayName&gt;RunParam_Content&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;CurValue&gt;&lt;/CurValue&gt;
+                            &lt;DefaultValue&gt;&lt;/DefaultValue&gt;
+                            &lt;Length&gt;0x00000020&lt;/Length&gt;
+                            &lt;PropertyName&gt;Value&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectFeatureOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text;Content&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/StringConfig&gt;
+                        &lt;ColorConfig Name=&quot;OKColor&quot;&gt;
+                            &lt;Description&gt;OK颜色&lt;/Description&gt;
+                            &lt;DisplayName&gt;OK颜色&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;PropertyName&gt;okcolor&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/ColorConfig&gt;
+                        &lt;ColorConfig Name=&quot;NGColor&quot;&gt;
+                            &lt;Description&gt;NG颜色&lt;/Description&gt;
+                            &lt;DisplayName&gt;NG颜色&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;PropertyName&gt;ngcolor&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/ColorConfig&gt;
+                        &lt;FloatConfig Name=&quot;CharacterSize&quot; NameSpace=&quot;Standard&quot;&gt;
+                            &lt;Description&gt;字号&lt;/Description&gt;
+                            &lt;DisplayName&gt;字号&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;MinValue&gt;6&lt;/MinValue&gt;
+                            &lt;MaxValue&gt;72&lt;/MaxValue&gt;
+                            &lt;IncValue&gt;1&lt;/IncValue&gt;
+                            &lt;PropertyName&gt;Value&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectFeatureOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text;FontSize&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/FloatConfig&gt;
+                        &lt;FloatConfig Name=&quot;Transparency&quot;&gt;
+                            &lt;Description&gt;透明度&lt;/Description&gt;
+                            &lt;DisplayName&gt;透明度&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;MinValue&gt;0&lt;/MinValue&gt;
+                            &lt;MaxValue&gt;1&lt;/MaxValue&gt;
+                            &lt;IncValue&gt;0.1&lt;/IncValue&gt;
+                            &lt;PropertyName&gt;opacity&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/FloatConfig&gt;
+						&lt;ButtonSelecter Name=&quot;PositionX&quot;&gt;
+							&lt;Description&gt;位置X&lt;/Description&gt;
+                            &lt;DisplayName&gt;位置X&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+							&lt;DropOpenSetter&gt;
+                                &lt;TargetName&gt;EnumEntrys&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetFrontAndSelfFilterTreeOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;int;float&lt;/OperationParams&gt;
+                            &lt;/DropOpenSetter&gt;
+							&lt;Triggers&gt;
+								&lt;Trigger&gt;
+									&lt;Property&gt;CurValue&lt;/Property&gt;
+									&lt;Setters&gt;
+										&lt;Setter&gt;
+											&lt;OperationName&gt;SetResultIOToModuleOperation&lt;/OperationName&gt;
+											&lt;OperationParams&gt;DisplayoutputPositionX;float&lt;/OperationParams&gt;
+										&lt;/Setter&gt;																				
+									&lt;/Setters&gt;
+								&lt;/Trigger&gt;								
+							&lt;/Triggers&gt;
+							&lt;Initers&gt;
+								&lt;Setter&gt;
+									&lt;TargetName&gt;CurValue&lt;/TargetName&gt;
+									&lt;OperationName&gt;GetSelectedDisplayFilterOperation&lt;/OperationName&gt;
+									&lt;OperationParams&gt;DisplayoutputPositionX&lt;/OperationParams&gt;
+								&lt;/Setter&gt;
+							&lt;/Initers&gt;
+						&lt;/ButtonSelecter&gt;
+						&lt;ButtonSelecter Name=&quot;PositionY&quot;&gt;
+							&lt;Description&gt;位置Y&lt;/Description&gt;
+                            &lt;DisplayName&gt;位置Y&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+							&lt;DropOpenSetter&gt;
+                                &lt;TargetName&gt;EnumEntrys&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetFrontAndSelfFilterTreeOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;int;float&lt;/OperationParams&gt;
+                            &lt;/DropOpenSetter&gt;
+							&lt;Triggers&gt;
+								&lt;Trigger&gt;
+									&lt;Property&gt;CurValue&lt;/Property&gt;
+									&lt;Setters&gt;
+										&lt;Setter&gt;
+											&lt;OperationName&gt;SetResultIOToModuleOperation&lt;/OperationName&gt;
+											&lt;OperationParams&gt;DisplayoutputPositionY;float&lt;/OperationParams&gt;
+										&lt;/Setter&gt;										
+									&lt;/Setters&gt;
+								&lt;/Trigger&gt;
+							&lt;/Triggers&gt;
+							&lt;Initers&gt;
+								&lt;Setter&gt;
+									&lt;TargetName&gt;CurValue&lt;/TargetName&gt;
+									&lt;OperationName&gt;GetSelectedDisplayFilterOperation&lt;/OperationName&gt;
+									&lt;OperationParams&gt;DisplayoutputPositionY&lt;/OperationParams&gt;
+								&lt;/Setter&gt;
+							&lt;/Initers&gt;
+						&lt;/ButtonSelecter&gt;                        
+                    &lt;/Items&gt;
+           &lt;/Category&gt;
+	   &lt;/Items&gt;
+	&lt;/GroupInfoItem&gt;
+	
+	&lt;GroupInfoItem Name=&quot;BottomCommandGroup2&quot;&gt;
+	   &lt;Items&gt;
+		 &lt;ContinuousExecuteBottomCommand Name=&quot;ContinuousExecute&quot;&gt;</pre></details></article><article id="TR04" class="source-confirmed"><h2>TR04 · ButtonSelecter公共参数模板 → 文本/树操作绑定CurValueA</h2><p>source-confirmed：NameValueItem.DisplayType返回GetType().Name；共享字典ButtonSelecter键包含ButtonSelecter_sub，其中DeleteTextBox.Text双向绑定CurValueA，树事件分别接IndexClickCommand/ClickCommand，下拉打开接DropDownCommand。已定位配置编辑的UI声明和属性通道；附加行为、资源优先级和实际DataContext仍与声明分开。</p><p>仍待追：当前窗口是否选中该模板、文本提交/树选择真实路由及按键/失焦/取消行为未原机验证；不是已证明的输入语义全集。</p><details><summary>Apps.XmlParser.ParamTab.NameValueItem::get_DisplayType · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:5803–5822
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000c14&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000c14&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.NameValueItem&quot;,
+            &quot;name&quot;: &quot;get_DisplayType&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20000e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 17,
+          &quot;ilSha256&quot;: &quot;6635eccb4454820d1d535da3751ab95c5ad43ac0b2210406821e371f2fa791c2&quot;,
+          &quot;ilBytes&quot;: &quot;000228b300000a6fb500000a0a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>ButtonSelecter template entry · local-extracted-resource</summary><pre>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:1545–1555
+SHA256 96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63
+  &lt;DataTemplate x:Key=&quot;ButtonSelecter&quot;&gt;
+    &lt;localParamTab:LeftRightControl Height=&quot;32&quot;&gt;
+      &lt;localParamTab:LeftRightControl.LeftContent&gt;
+        &lt;Control Template=&quot;{StaticResource TextLeft}&quot; /&gt;
+      &lt;/localParamTab:LeftRightControl.LeftContent&gt;
+      &lt;localParamTab:LeftRightControl.RightContent&gt;
+        &lt;ContentControl ContentTemplate=&quot;{StaticResource ButtonSelecter_sub}&quot; Content=&quot;{Binding}&quot; /&gt;
+      &lt;/localParamTab:LeftRightControl.RightContent&gt;
+    &lt;/localParamTab:LeftRightControl&gt;
+  &lt;/DataTemplate&gt;
+  &lt;DataTemplate x:Key=&quot;CommandWithTip_sub&quot;&gt;</pre></details><details><summary>ButtonSelecter text and popup declarations · local-extracted-resource</summary><pre>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:255–335
+SHA256 96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63
+  &lt;DataTemplate x:Key=&quot;ButtonSelecter_sub&quot;&gt;
+    &lt;Grid&gt;
+      &lt;Grid.ColumnDefinitions&gt;
+        &lt;ColumnDefinition Width=&quot;*&quot; /&gt;
+        &lt;ColumnDefinition Width=&quot;32&quot; /&gt;
+      &lt;/Grid.ColumnDefinitions&gt;
+      &lt;Border Grid.ColumnSpan=&quot;2&quot; CornerRadius=&quot;2&quot;&gt;
+        &lt;FrameworkElement.Style&gt;
+          &lt;Style TargetType=&quot;{x:Type Border}&quot;&gt;
+            &lt;Setter Property=&quot;BorderThickness&quot; Value=&quot;0&quot; /&gt;
+            &lt;Setter Property=&quot;BorderBrush&quot; Value=&quot;#00FFFFFF&quot; /&gt;
+            &lt;Style.Triggers&gt;
+              &lt;DataTrigger Value=&quot;True&quot; Binding=&quot;{Binding IsSelectedSubscribeParam}&quot;&gt;
+                &lt;Setter Property=&quot;BorderThickness&quot; Value=&quot;3&quot; /&gt;
+                &lt;Setter Property=&quot;BorderBrush&quot; Value=&quot;{DynamicResource Col_Theme_Mouse}&quot; /&gt;
+              &lt;/DataTrigger&gt;
+            &lt;/Style.Triggers&gt;
+          &lt;/Style&gt;
+        &lt;/FrameworkElement.Style&gt;
+      &lt;/Border&gt;
+      &lt;PControl:PopupButton Name=&quot;et&quot; Grid.Column=&quot;0&quot; HorizontalOffsetVal=&quot;0&quot; Style=&quot;{x:Null}&quot; IsPopupOpen=&quot;{Binding IsTextDropDownOpen, Mode=TwoWay}&quot;&gt;
+        &lt;PControl:PopupButton.ButtonStyle&gt;
+          &lt;Style TargetType=&quot;{x:Type ToggleButton}&quot;&gt;
+            &lt;Setter Property=&quot;Template&quot;&gt;
+              &lt;Setter.Value&gt;
+                &lt;ControlTemplate TargetType=&quot;{x:Type ToggleButton}&quot;&gt;
+                  &lt;localParamTab:DeleteTextBox Background=&quot;#00FFFFFF&quot; FontSize=&quot;14&quot; Foreground=&quot;{Binding ReadOnlyA, Converter={StaticResource FgConverter}}&quot; IsReadOnly=&quot;{Binding ReadOnlyA}&quot; Text=&quot;{Binding CurValueA, Mode=TwoWay}&quot;&gt;
+                    &lt;i:Interaction.Triggers&gt;
+                      &lt;i:EventTrigger EventName=&quot;OnTBFoucsChanged&quot;&gt;
+                        &lt;PCommon:ParamsEventCommand Command=&quot;{Binding FocusedCommand}&quot; /&gt;
+                      &lt;/i:EventTrigger&gt;
+                    &lt;/i:Interaction.Triggers&gt;
+                  &lt;/localParamTab:DeleteTextBox&gt;
+                &lt;/ControlTemplate&gt;
+              &lt;/Setter.Value&gt;
+            &lt;/Setter&gt;
+          &lt;/Style&gt;
+        &lt;/PControl:PopupButton.ButtonStyle&gt;
+        &lt;PControl:PopupButton.SubContent&gt;
+          &lt;DataTemplate&gt;
+            &lt;Border Margin=&quot;0,4,0,0&quot; BorderBrush=&quot;{DynamicResource TextBox.Static.Border}&quot; BorderThickness=&quot;1&quot; CornerRadius=&quot;4&quot; Padding=&quot;0,6,0,6&quot; Background=&quot;{DynamicResource ComboBoxBorderS}&quot; Visibility=&quot;{Binding IsTextPopupVisible, Converter={StaticResource bool2VisibilityConverter}}&quot;&gt;
+              &lt;localParamTab:SubTreeView Width=&quot;180&quot; Height=&quot;180&quot;&gt;
+                &lt;i:Interaction.Triggers&gt;
+                  &lt;i:EventTrigger EventName=&quot;OnTreeNodeDoubleClick&quot;&gt;
+                    &lt;PCommon:ParamsEventCommand Command=&quot;{Binding IndexClickCommand}&quot; /&gt;
+                  &lt;/i:EventTrigger&gt;
+                &lt;/i:Interaction.Triggers&gt;
+              &lt;/localParamTab:SubTreeView&gt;
+            &lt;/Border&gt;
+          &lt;/DataTemplate&gt;
+        &lt;/PControl:PopupButton.SubContent&gt;
+      &lt;/PControl:PopupButton&gt;
+      &lt;PControl:PopupButton Name=&quot;rt&quot; Grid.Column=&quot;1&quot; HorizontalOffsetVal=&quot;-150&quot; Style=&quot;{StaticResource LinkPopButton}&quot; IsPopupOpen=&quot;{Binding IsDropDownOpen, Mode=TwoWay}&quot;&gt;
+        &lt;PControl:PopupButton.SubContent&gt;
+          &lt;DataTemplate&gt;
+            &lt;Grid Background=&quot;#00FFFFFF&quot; Margin=&quot;0,4,0,0&quot;&gt;
+              &lt;Grid.ColumnDefinitions&gt;
+                &lt;ColumnDefinition Width=&quot;*&quot; /&gt;
+                &lt;ColumnDefinition Width=&quot;27&quot; /&gt;
+              &lt;/Grid.ColumnDefinitions&gt;
+              &lt;Border BorderBrush=&quot;{DynamicResource TextBox.Static.Border}&quot; BorderThickness=&quot;1&quot; CornerRadius=&quot;4&quot; Padding=&quot;0,6,0,6&quot; Background=&quot;{DynamicResource ComboBoxBorderS}&quot;&gt;
+                &lt;localParamTab:SubTreeView Width=&quot;180&quot; Height=&quot;180&quot;&gt;
+                  &lt;i:Interaction.Triggers&gt;
+                    &lt;i:EventTrigger EventName=&quot;OnTreeNodeDoubleClick&quot;&gt;
+                      &lt;PCommon:ParamsEventCommand Command=&quot;{Binding ClickCommand}&quot; /&gt;
+                    &lt;/i:EventTrigger&gt;
+                  &lt;/i:Interaction.Triggers&gt;
+                &lt;/localParamTab:SubTreeView&gt;
+              &lt;/Border&gt;
+              &lt;Button Grid.Column=&quot;1&quot; HorizontalAlignment=&quot;Right&quot; VerticalAlignment=&quot;Top&quot; ToolTip=&quot;{DynamicResource Lang_OpenSubscriptionWindow}&quot; Style=&quot;{StaticResource PopWindowButtonStyle}&quot; Command=&quot;{Binding PopSubscribeWindowCommand}&quot; Visibility=&quot;{Binding SubscribeInPopWindowEnableA, Converter={StaticResource bool2VisibilityConverter}}&quot; /&gt;
+            &lt;/Grid&gt;
+          &lt;/DataTemplate&gt;
+        &lt;/PControl:PopupButton.SubContent&gt;
+        &lt;i:Interaction.Triggers&gt;
+          &lt;i:EventTrigger EventName=&quot;DropDownOpened&quot;&gt;
+            &lt;i:InvokeCommandAction Command=&quot;{Binding DropDownCommand}&quot; /&gt;
+          &lt;/i:EventTrigger&gt;
+        &lt;/i:Interaction.Triggers&gt;
+      &lt;/PControl:PopupButton&gt;
+      &lt;Border BorderThickness=&quot;1&quot; CornerRadius=&quot;4&quot; BorderBrush=&quot;{DynamicResource TextBox.Static.Border}&quot; Grid.Column=&quot;0&quot; Grid.ColumnSpan=&quot;2&quot; /&gt;
+    &lt;/Grid&gt;</pre></details></article><article id="TR05" class="source-confirmed"><h2>TR05 · NameValueItem.Init / Trigger.Init → Setter创建 → OperationManager反射注入Executor</h2><p>source-confirmed：NameValueItem.Init为Initers逐项CreatOperateInstance；Trigger.Init为Setters创建操作。OperationManager将自身namespace与OperationName拼成类型名，只有ActivatorWrap.TypeTable含该名才带TargetName构造，转IOperation后设Executor；未登记且IgnoreUnknown=false才抛异常。Setter.Operate把OperationParams按分号切开，并可随后写PropertyName+A；catch仅needThrowException=true时重抛新Exception(message)。</p><p>仍待追：TypeTable所有注册/程序集版本、具体实例构造/异常和XML成员映射还需核对；类型名匹配不是运行激活证明。</p><details><summary>Apps.XmlParser.ParamTab.NameValueItem::Init · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:4698–4717
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000bec&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000bec&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.NameValueItem&quot;,
+            &quot;name&quot;: &quot;Init&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011280b91280ed&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 103,
+          &quot;ilSha256&quot;: &quot;0969af3199082d40c8f61db17979683bc75f4b55f1d44ed2e8261475a5b1d848&quot;,
+          &quot;ilBytes&quot;: &quot;00020328c600000a26027b660500042c10027b660500046ff003000a16fe022b01160a062c3b0000027b660500046fc401000a0b2b15076f0501000a746c0100020c00086f4d0f00060000076f6d00000a2de3de0b072c07076f6200000a00dc00020d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.Trigger::Init · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:7357–7376
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000f5d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f5d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.Trigger&quot;,
+            &quot;name&quot;: &quot;Init&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011280b91280ed&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 92,
+          &quot;ilSha256&quot;: &quot;5c45bb705fcd7ed01f8714e980024586bdf0e68ff4f101ad0dbc2f843e47d527&quot;,
+          &quot;ilBytes&quot;: &quot;00020328c600000a26027bc70600046ff003000a16fe020a062c3b0000027bc70600046fc401000a0b2b15076f0501000a746c0100020c00086f4d0f00060000076f6d00000a2de3de0b072c07076f6200000a00dc00020d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.Setter::CreatOperateInstance · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:5965–5984
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000f4d&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f4d&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.Setter&quot;,
+            &quot;name&quot;: &quot;CreatOperateInstance&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 9,
+          &quot;ilSha256&quot;: &quot;e8f2b1ac02de5278a90ad448fa734efe84a83c368c0d43b47d69f438a8466a1a&quot;,
+          &quot;ilBytes&quot;: &quot;000228200b0006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.OperationManager::CreatInstanceBySetter · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:6713–6732
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000b20&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000b20&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.OperationManager&quot;,
+            &quot;name&quot;: &quot;CreatInstanceBySetter&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0001011285b0&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 158,
+          &quot;ilSha256&quot;: &quot;3fb4e7d04eafd23ae1b8f0152bb2194c281193e27c404108ef1bc23d5913a3bb&quot;,
+          &quot;ilBytes&quot;: &quot;00027bbe060004288c00000a16fe010a06398700000000140b28df05000a6fe005000a6f2a05000a7287040070027bbe06000428dd00000a0c285405000a086fc905000a0d092c340008178d120000012516027bbd060004a2282c05000a0b020775130100026f4b0f000600026f4a0f0006026f1b0b000600002b207ee105000a16fe01130411042c120008728c53007028aa00000a734a00000a7a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.Setter::Operate · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:6029–6048
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000f4e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f4e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.Setter&quot;,
+            &quot;name&quot;: &quot;Operate&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011d1c02&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 163,
+          &quot;ilSha256&quot;: &quot;fae24142f310604054193239ff4df82a9891f57e311817ab72f477a60d682a5f&quot;,
+          &quot;ilBytes&quot;: &quot;000002284a0f000614fe030a062c3d02284a0f000603252d0726168d12000001027bbf0600042c18027bbf060004178d6c01000125161f3b9d6fe700000a2b06168d560100016f1c0b000600027bc00600042c0b0228480f000614fe032b01160b072c24000228480f0006027bc006000472b637007028aa00000a027bc10600046ff30b0006000000de170c00040d092c0d00086f5900000a734a00000a7a00de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Configured operation type and executor creation · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/OperationManager.cs:9–28
+SHA256 bd69e7d163c45830a72e8886e3b202aa2b516d55d2182f4d6862f5f8d1fd48ba
+	public static void CreatInstanceBySetter(Setter setter)
+	{
+		if (!string.IsNullOrEmpty(setter.OperationName))
+		{
+			object obj = null;
+			string text = MethodBase.GetCurrentMethod().DeclaringType.Namespace + &quot;.&quot; + setter.OperationName;
+			if (ActivatorWrap.TypeTable.Contains(text))
+			{
+				obj = ActivatorWrap.CreateInstance(text, new object[1] { setter.TargetName });
+				setter.Operation = obj as IOperation;
+				setter.Operation.Executor = setter;
+			}
+			else if (!ActivatorWrap.IgnoreUnknown)
+			{
+				throw new Exception(text + &quot;is unKnown&quot;);
+			}
+		}
+	}
+}
+</pre></details><details><summary>Operation argument and failure dispatch · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/Setter.cs:97–121
+SHA256 f48adc3b464e037ed813bf76bb1966f54423118b341b54f93482face16678d32
+	public void Operate(object[] Params, bool needThrowException = false)
+	{
+		try
+		{
+			if (Operation != null)
+			{
+				Operation.Operate(Params ?? new object[0], (OperationParams == null) ? new string[0] : OperationParams.Split(&#39;;&#39;));
+			}
+			if (PropertyName != null &amp;&amp; TargetObj != null)
+			{
+				TargetObj.SetPropertyValueByName(PropertyName + &quot;A&quot;, Value);
+			}
+		}
+		catch (Exception ex)
+		{
+			if (needThrowException)
+			{
+				throw new Exception(ex.Message);
+			}
+		}
+	}
+
+	private void GetTargetObj()
+	{
+		if (string.IsNullOrEmpty(TargetName))</pre></details></article><article id="TR06" class="source-confirmed"><h2>TR06 · AlgorithmTabRoot.DoIniter → Tab.DoIniter → InniterBusiness → GetSelectedDisplayFilterOperation</h2><p>source-confirmed：原根DoIniter遍历Tab，Tab遍历Collection调用InniterBusiness；NameValueItem将Initers逐项Operate(null)。GetSelectedDisplayFilterOperation从Executor找父NameValueItem、取得根Owner为VmModule，按ExtraParams[0]先找Inputs，SubAlgorithmTabRoot还试带HashCode名称，再找Outputs/百分号名；只有未找到IO才GetDisplaySelectedFilter，从[Display].Show Text取Name=parentItem.Name的Feature，回填TargetName+A且不触发。</p><p>仍待追：GetDisplaySelectedFilter对缺Feature仍可解引用并抛错；Setter默认可吞异常。Blob具体Tab.Collection建立及这一根是否实际DoIniter仍需对象/调用者取证。</p><details><summary>Apps.XmlParser.ParamTab.AlgorithmTabRoot::DoIniter · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:20558–20577
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x0600039b&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600039b&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.AlgorithmTabRoot&quot;,
+            &quot;name&quot;: &quot;DoIniter&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 341,
+          &quot;ilSha256&quot;: &quot;aaf04884adb662fc789d6aaed90d641940c33f9740826c5841cd2913f0d797e8&quot;,
+          &quot;ilBytes&quot;: &quot;00027b9401000414fe030a062c3b0000027b940100046fc401000a0b2b15076f0501000a746e0100020c00086f7c0f00060000076f6d00000a2de3de0b072c07076f6200000a00dc00027b9701000414fe030d092c480000027b970100046fc401000a13042b1e11046f0501000a13050011057539010002252d03262b066fed0b0006000011046f6d00000a2dd9de0d11042c0811046f6200000a00dc00027b9801000414fe03130611062c480000027b980100046fc401000a13072b1e11076f0501000a13080011087539010002252d03262b066fed0b0006000011076f6d00000a2dd9de0d11072c0811076f6200000a00dc00027b9901000414fe03130911092c480000027b990100046fc401000a130a2b1e110a6f0501000a130b00110b7539010002252d03262b066fed0b00060000110a6f6d00000a2dd9de0d110a2c08110a6f6200000a00dc0002146f92030006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.Tab::DoIniter · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:22017–22036
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000f7c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f7c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.Tab&quot;,
+            &quot;name&quot;: &quot;DoIniter&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 133,
+          &quot;ilSha256&quot;: &quot;8c2c9813f85f6c7ebe36c8f82c8852e3c11df6484cae4ecf3adf3ad9a92e9f52&quot;,
+          &quot;ilBytes&quot;: &quot;000228720f000614fe030a062c7600000228720f00066fc401000a0b2b15076f0501000a74390100020c00086fed0b00060000076f6d00000a2de3de0b072c07076f6200000a00dc000228720f00066fc401000a0d2b17096f0501000a743901000213040011046fee0b00060000096f6d00000a2de1de0b092c07096f6200000a00dc002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.NameValueItem::InniterBusiness · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:5150–5169
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000bed&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000bed&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.NameValueItem&quot;,
+            &quot;name&quot;: &quot;InniterBusiness&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 156,
+          &quot;ilSha256&quot;: &quot;dab86dcaf0ae6f6154a2cdc998059bb6e63a33a9cbcae0421338037a4602a240&quot;,
+          &quot;ilBytes&quot;: &quot;00027b6605000414fe030a062c3d0000027b660500046fc401000a0b2b17076f0501000a746c0100020c000814166f4e0f00060000076f6d00000a2de1de0b072c07076f6200000a00dc00027b6705000414fe030d092c430000027b670500046fc401000a13042b1911046f0501000a746a0100021305001105026f2f0f0006000011046f6d00000a2ddede0d11042c0811046f6200000a00dc002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GetSelectedDisplayFilterOperation::Operate · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:10943–10962
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000703&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000703&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GetSelectedDisplayFilterOperation&quot;,
+            &quot;name&quot;: &quot;Operate&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011d1c1d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 349,
+          &quot;ilSha256&quot;: &quot;5e7cdd51e0463ccb2542dc948882b64660a99649983d8925f67150eb08d7b14f&quot;,
+          &quot;ilBytes&quot;: &quot;000414fe010d092c05384e0100000228000700066f8500002b0a160b06756600000214fe03130411042c0e000675660000026f7d0500060b0072470300700c048e16fe03130511052c060004169a0c000614fe031306110639ff00000000066f3101000a752e000001130711077548000001252d0426142b056f4c01000a753f00000125130814fe031309110939c90000000014130a0011086fc703000a086f2d05000a130a110a2d0f1107755200000225130b14fe032b0116130c110c2c270011086fc703000a0872fb050070110b6fb004000628dd00000a28cb00000a6f2d05000a130a00110a14fe01130d110d2c0f11086fb702000a086f2d05000a130a110a14fe01130e110e2c1e11086fb702000a72f90000700872f900007028dd00000a6f2d05000a130a110a14fe01130f110f2c1300110806027bb7020004280407000600002b1100110a06027bb7020004280507000600000000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GetSelectedDisplayFilterOperation::GetDisplaySelectedFilter · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:12244–12263
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000704&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000704&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GetSelectedDisplayFilterOperation&quot;,
+            &quot;name&quot;: &quot;GetDisplaySelectedFilter&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;0003011280fd1284e40e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 241,
+          &quot;ilSha256&quot;: &quot;894e6bbe4a8a0bf80dedb1c27e16b3240ea77b773e964ef9ee44502ac65d39ab&quot;,
+          &quot;ilBytes&quot;: &quot;73631100060a06037d59080004000028cd00000a026f2400000a72b82a007028aa00000a6f2d01000a75190000020b072d03142b340728c8000006282000002b7e5b080004252d17267e5a080004fe066711000673ef00000a25805b08000428b300002b28b400002b0c082d03142b1c087b9b00000406fe0664110006736a01000a28b500002b28b600002b75210000020d067b590800040472b637007028aa00000a097b4000000472ab060070286300000a2d1a02097b400000046fcf00000a252d0426142b05282204000a2b06097b410000046ff40b00060000de1013040011046f5900000a734a00000a7a2b002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>Read current display mapping and no-trigger property write · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/GetSelectedDisplayFilterOperation.cs:26–97
+SHA256 0c475ef78bc75bc433f152b020b6f16738a2f52c2f976ecab145c7258ceaf589
+	public void Operate(object[] Params, string[] ExtraParams)
+	{
+		if (ExtraParams == null)
+		{
+			return;
+		}
+		NameValueItem parentNode = Executor.GetParentNode&lt;NameValueItem&gt;();
+		int num = 0;
+		if (parentNode is ButtonSelecter)
+		{
+			num = (parentNode as ButtonSelecter).Type;
+		}
+		string text = &quot;&quot;;
+		if (ExtraParams.Length != 0)
+		{
+			text = ExtraParams[0];
+		}
+		if (parentNode == null)
+		{
+			return;
+		}
+		BaseNode baseNode = parentNode.GetTopBaseNode() as BaseNode;
+		if ((baseNode as IOwner)?.Owner is VmModule vmModule)
+		{
+			VmIO vmIO = null;
+			vmIO = vmModule.Inputs.GetLeafIO(text);
+			if (vmIO == null &amp;&amp; baseNode is SubAlgorithmTabRoot subAlgorithmTabRoot)
+			{
+				vmIO = vmModule.Inputs.GetLeafIO(AppLocalizationService.UnDoTranslate(text + &quot;_&quot; + subAlgorithmTabRoot.HashCode));
+			}
+			if (vmIO == null)
+			{
+				vmIO = vmModule.Outputs.GetLeafIO(text);
+			}
+			if (vmIO == null)
+			{
+				vmIO = vmModule.Outputs.GetLeafIO(&quot;%&quot; + text + &quot;%&quot;);
+			}
+			if (vmIO == null)
+			{
+				GetDisplaySelectedFilter(vmModule, parentNode, TargetName);
+			}
+			else
+			{
+				GetOutputSelectedFilter(vmIO, parentNode, TargetName);
+			}
+		}
+	}
+
+	public static void GetDisplaySelectedFilter(VmModule node, NameValueItem parentItem, string TargetName)
+	{
+		try
+		{
+			Feature feature = ((VmSolution.Instance[((IVmFullPath)node).FullPath + &quot;.[Display]&quot;] is ParamRoot paramRoot) ? (from a in paramRoot.GetDisplayList().OfType&lt;Object&gt;()
+				where a.Name == &quot;Show Text&quot;
+				select a).FirstOrDefault() : null)?.Features.Where((FeatureBase a) =&gt; a.Name == parentItem.Name).FirstOrDefault() as Feature;
+			parentItem.SetPropertyValueByNameNotrigger(TargetName + &quot;A&quot;, (feature.Mapping == &quot;NULL&quot;) ? feature.Value : node.GetIO(feature.Mapping)?.ModulePathName);
+		}
+		catch (Exception ex)
+		{
+			throw new Exception(ex.Message);
+		}
+	}
+
+	public static void GetOutputSelectedFilter(VmIO thisFilter, NameValueItem parentItem, string TargetName)
+	{
+		if (parentItem == null || thisFilter == null)
+		{
+			return;
+		}
+		string value = null;
+		VmIO relateIO = thisFilter.RelateIO;</pre></details></article><article id="TR07" class="source-confirmed"><h2>TR07 · ButtonSelecter.CurValueA setter → OnPropertyChanged → TriggerBusiness → Trigger.OnTrigger</h2><p>source-confirmed：值未变早退；改变时先保存OldCurValue并写CurValue，再OnPropertyChanged(CurValueA)。NameValueItem先通知事件，再在未被TriggerCondition阻断时TriggerBusiness；Trigger.CheckProperty按Property+A匹配。所选XML未设Trigger.Value，因此OnTrigger向Setter提供GetParentNode和当前属性值，needThrowException=true。ButtonSelecter只捕获OnPropertyChanged调用抛出的异常并尝试恢复旧CurValue；此前日志和InvokeOnParamValueChanged不在该try保护内，已发生的其它操作不因此回滚。</p><p>仍待追：事件订阅者抛错、触发重入、PreExecuteRun及真实控件提交时机未闭合；局部恢复旧值不能描述为事务回滚。</p><details><summary>Apps.XmlParser.ParamTab.ButtonSelecter::set_CurValueA · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:9428–9447
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000582&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000582&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.ButtonSelecter&quot;,
+            &quot;name&quot;: &quot;set_CurValueA&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 232,
+          &quot;ilSha256&quot;: &quot;e87c40a0c51dbfae64056ce19bdf8b9b0d1ec564b39304b1e443cee8daefe1cb&quot;,
+          &quot;ilBytes&quot;: &quot;00027b3402000403283900000a0a0639d30000000002027b3402000428800500060002037d3402000402287f0500062c0b027b3402000414fe032b01160b072c74007e76050004252d03262b5472323900701c8d5601000125160228060c0006a225177243030070a22518723839007028c601000aa2251902287f050006a2251a724239007028c601000aa2251b027b34020004a2283201000a166f0705000a260202287f050006027b3402000428330c0006000000000272070000706fe30b00060000de200c000002720700007002287f0500066ff30b00060000de05260000de0000de00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.NameValueItem::OnPropertyChanged · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:2682–2701
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000be3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000be3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.NameValueItem&quot;,
+            &quot;name&quot;: &quot;OnPropertyChanged&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 276,
+          &quot;ilSha256&quot;: &quot;01e4fa0ebf4492fbfd81958a8b8aa52c7213fc69295f1ed8816c9548fa04f7f3&quot;,
+          &quot;ilBytes&quot;: &quot;00027b5505000414fe030a062c1500027b55050004020373b100000a6fb200000a0000027b59050004288c00000a2d0e027b59050004036f2a04000a2b01160b072c060038ca0000000000020328eb0b000600721108007003286300000a0c082c4900027b2601000a751f0000020d0914fe03130411042c3100096fab01000613051105130611062c1f000228d400002b1307110714fe03130811082c0a0011076f800f00062600000000720700007003286300000a130911092c2100027b7a05000414fe03130a110a2c1000027b7a05000402146fbd11000600000000de33130b00037207000070286300000a2c0b02756600000214fe032b0116130c110c2c0e00110b6f5900000a734a00000a7a00de002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.NameValueItem::TriggerBusiness · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:3785–3804
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000beb&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000beb&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.NameValueItem&quot;,
+            &quot;name&quot;: &quot;TriggerBusiness&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001010e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 229,
+          &quot;ilSha256&quot;: &quot;41170beb7464930347b0619b1dea3473875a5689358cde72d1df841b74bad7f9&quot;,
+          &quot;ilBytes&quot;: &quot;00027b6505000414fe030a0639d300000000007f8005000428e905000a2600027b650500046fc401000a0b2b20076f0501000a746a0100020c0008036f300f00060d092c07086f2e0f00060000076f6d00000a2dd8de0b072c07076f6200000a00dc00027b650500046fc401000a13042b2711046f0501000a746a0100021305001105036f300f0006130611062c091105026f2f0f0006000011046f6d00000a2dd0de0d11042c0811046f6200000a00dc00de2f007f8005000428ea05000a267e800500042d0a7e8105000416fe022b0116130711072c09000228570c0006000000dc002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.Trigger::CheckProperty · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:7768–7787
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000f5e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f5e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.Trigger&quot;,
+            &quot;name&quot;: &quot;CheckProperty&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001020e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 28,
+          &quot;ilSha256&quot;: &quot;de5cd837c58992304150abe583e9fedad65be8cbdedaacfcdff35659dad87055&quot;,
+          &quot;ilBytes&quot;: &quot;00027bc506000472b637007028aa00000a03286300000a0a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.Trigger::OnTrigger · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:7890–7909
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000f60&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000f60&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.Trigger&quot;,
+            &quot;name&quot;: &quot;OnTrigger&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 343,
+          &quot;ilSha256&quot;: &quot;19a484b4ad3232b9a6c7702e0d302d5871913c8bddd090b0bf865f25b7487249&quot;,
+          &quot;ilBytes&quot;: &quot;000375390100020a0614fe010d092c05384101000006027bc506000472b637007028aa00000a6ff50b00060b140c027bc70600042c060314fe032b011613041104391001000000027bc606000414fe031305110539a6000000000714fe0313061106399500000000120207027bc606000428620f0006000814fe03130711072c7a00086f7300000a178d6c01000125161f7c9d6fe700000a076f7300000a28610f0006130811082c510000027bc70600046fc401000a13092b2711096f0501000a746c010002130a00110a188d12000001251608a2251707a2176f4e0f0006000011096f6d00000a2dd0de0d11092c0811096f6200000a00dc000000002b560000027bc70600046fc401000a130b2b2c110b6f0501000a746c010002130c00110c188d12000001251602283301000aa2251707a2176f4e0f00060000110b6f6d00000a2dcbde0d110b2c08110b6f6200000a00dc00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Value change and local recovery attempt · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/ButtonSelecter.cs:90–129
+SHA256 a04c04dc557328269a06d67c194f6c3a64b68659acc1f76e4de778f5da858931
+	public virtual string CurValueA
+	{
+		get
+		{
+			return CurValue;
+		}
+		set
+		{
+			if (!(CurValue != value))
+			{
+				return;
+			}
+			OldCurValue = CurValue;
+			CurValue = value;
+			if (OldCurValue != null &amp;&amp; CurValue != null)
+			{
+				NameValueItem.logManager?.LogCreate(&quot;信息&quot;, FullDisplayName + &quot; &quot; + AppLocalizationService.GetLang(&quot;参数修改&quot;) + OldCurValue + AppLocalizationService.GetLang(&quot;新值&quot;) + CurValue, ifLang: false);
+				InvokeOnParamValueChanged(OldCurValue, CurValue);
+			}
+			try
+			{
+				OnPropertyChanged(&quot;CurValueA&quot;);
+			}
+			catch (Exception)
+			{
+				try
+				{
+					SetPropertyValueByName(&quot;CurValueA&quot;, OldCurValue);
+				}
+				catch
+				{
+				}
+			}
+		}
+	}
+
+	public IList EnumEntrysA
+	{
+		get
+		{</pre></details><details><summary>Unconditional trigger passes parent and current value · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/Trigger.cs:106–148
+SHA256 8d0e50fb8d51ed11f9e0199ea7e03a22d7dbf6e364bb2212b0fce3c297b064e9
+	public void OnTrigger(object obj)
+	{
+		if (!(obj is NameValueItem nameValueItem))
+		{
+			return;
+		}
+		object propertyValueByName = nameValueItem.GetPropertyValueByName(Property + &quot;A&quot;);
+		object TValue = null;
+		if (Setters == null || obj == null)
+		{
+			return;
+		}
+		if (Value != null)
+		{
+			if (propertyValueByName == null)
+			{
+				return;
+			}
+			GetValue(ref TValue, propertyValueByName, Value);
+			if (TValue == null || !StrArrContain(TValue.ToString().Split(&#39;|&#39;), propertyValueByName.ToString()))
+			{
+				return;
+			}
+			{
+				foreach (Setter setter3 in Setters)
+				{
+					setter3.Operate(new object[2] { TValue, propertyValueByName }, needThrowException: true);
+				}
+				return;
+			}
+		}
+		foreach (Setter setter4 in Setters)
+		{
+			setter4.Operate(new object[2]
+			{
+				GetParentNode(),
+				propertyValueByName
+			}, needThrowException: true);
+		}
+	}
+
+	public static bool StrArrContain(string[] strArr, string str)
+	{</pre></details></article><article id="TR08" class="source-confirmed"><h2>TR08 · SetResultIOToModuleOperation.Operate → 隐式动态输出/订阅 → Show Text.PositionX/Y.Mapping</h2><p>source-confirmed：输入门要求Params&gt;=2、父节点/根VmModule和两个ExtraParams。先查GetIO(配置输出名)：已有则从Outputs移除并设IsResultShow，缺失则new隐藏DynamicVmIO；文本非空白才加回Outputs。之后才解析输入/常量/索引，失败时可把ButtonSelecter.CurValueA改回旧值，但未见恢复先前Outputs变更。最终按父Name选Show Text.Feature，非空白SetMapping到配置输出名，否则NULL，再obj.InitVmIOs。选坐标来源不是已经画字或写盘。</p><p>仍待追：GetOutputInfo/GetBindIndex/动态IO/native值、失败部分状态、Feature.InitVmIOs后绘制与保存未知；操作已知无完整事务，不能推断实际失败已发生。</p><details><summary>Apps.XmlParser.ParamTab.SetResultIOToModuleOperation::Operate · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:13153–13172
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x0600074c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600074c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.SetResultIOToModuleOperation&quot;,
+            &quot;name&quot;: &quot;Operate&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011d1c1d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 1033,
+          &quot;ilSha256&quot;: &quot;513802c9cf09921826f5216a4785ae29e6b2a48cf80e04ec002eb271aaf7f713&quot;,
+          &quot;ilBytes&quot;: &quot;73681100060a00042c0b032c08038e6918fe042b0117130411042c0538e70300000603169a75390100027d5c080004067b5c08000414fe01130511052c0538c5030000160b067b5c08000475660000020c0814fe03130611062c0900086f7d0500060b0003179a75560100010d067b5c08000414fe0313071107398903000000067b5c0800046f3101000a752e000001130811087548000001252d0426142b056f4c01000a753f00000125130914fe03130a110a394e03000000048e6917fe02130b110b393d0300000004169a130c04179a130d110c288c00000a16fe011311111139a1000000001109110c6fcf00000a1312111214fe03131311132c1c0011096fb702000a11126f3405000a261112176f3505000a00002b4d0073c203000a25110c6feb02000a002511096fc303000a002511096fc403000a0025110d6fe502000a0025176f3505000a0025166f3605000a0025166f3705000a0025166f3a04000a001312000928cc00000a16fe01131411142c110011096fb702000a11126f3805000a000000110c288c00000a16fe01131511153998010000001109110c6fcf00000a131611162d0f1108755200000225131714fe032b0116131c111c2c23001109110c72fb05007011176fb004000628dd00000a28cb00000a6fcf00000a13160014131814131916131a16131b11090912181219121a111b284b07000616fe01131d111d2c1d000814fe03131e111e2c0d08086f7f0500066f820500060038e2010000111814fe03131f111f399e0000000011187e2904000afe01132111212c0400002b1c11186f4801000a14fe01132211222c0c00111811096fc303000a000011186f7602000a288c00000a132311232c1100111811166f7602000a6fe502000a0000111875f100000125132014fe03132411242c37000211206fd300000a11166f7602000a284907000616fe01132511252c180072122b007028c601000a1816282b04000a2638380100000000111614fe03132611262c5500141327111875f100000125132814fe03132911292c0d0011286f3905000a1327002b0b0011166f3905000a132700111611186fc802000a00111611091119284a0700066f3105000a00111611276f3a05000a00000028cd00000a11096f2400000a72b82a007028aa00000a6f2d01000a7519000002130e110e2d03142b35110e28c8000006282000002b7e5e080004252d17267e5d080004fe066c11000673ef00000a25805e08000428b300002b28b400002b130f110f2d03142b1d110f7b9b00000406fe0669110006736a01000a28b500002b28b600002b75210000021310111014fe03132a112a2c2e000928cc00000a16fe01132b112b2c0e001110110c6fc901000600002b0f00111072ab0600706fc9010006000000110f2d022b08110f28e3010006000000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>Output allocation before subscription checks · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/SetResultIOToModuleOperation.cs:162–253
+SHA256 128c8e2a13cca393a27f3df1e4aaa7001a78649e787f311e895c7c33a5bdd027
+	public void Operate(object[] Params, string[] ExtraParams)
+	{
+		if (ExtraParams == null || Params == null || Params.Length &lt; 2)
+		{
+			return;
+		}
+		NameValueItem parentItem = Params[0] as NameValueItem;
+		if (parentItem == null)
+		{
+			return;
+		}
+		int num = 0;
+		ButtonSelecter buttonSelecter = parentItem as ButtonSelecter;
+		if (buttonSelecter != null)
+		{
+			num = buttonSelecter.Type;
+		}
+		string text = Params[1] as string;
+		if (parentItem == null)
+		{
+			return;
+		}
+		BaseNode baseNode = parentItem.GetTopBaseNode() as BaseNode;
+		if (!((baseNode as IOwner)?.Owner is VmModule vmModule) || ExtraParams.Length &lt;= 1)
+		{
+			return;
+		}
+		string text2 = ExtraParams[0];
+		string typeName = ExtraParams[1];
+		if (!string.IsNullOrEmpty(text2))
+		{
+			VmIO vmIO = vmModule.GetIO(text2);
+			if (vmIO != null)
+			{
+				vmModule.Outputs.Remove(vmIO);
+				vmIO.IsResultShow = true;
+			}
+			else
+			{
+				vmIO = new DynamicVmIO
+				{
+					Name = text2,
+					Root = vmModule,
+					Parent = vmModule,
+					TypeName = typeName,
+					IsResultShow = true,
+					Visible = false,
+					VisibleInResultTree = false,
+					CustomVisibleA = false
+				};
+			}
+			if (!string.IsNullOrWhiteSpace(text))
+			{
+				vmModule.Outputs.Add(vmIO);
+			}
+		}
+		if (!string.IsNullOrEmpty(text2))
+		{
+			VmIO iO = vmModule.GetIO(text2);
+			if (iO == null &amp;&amp; baseNode is SubAlgorithmTabRoot subAlgorithmTabRoot)
+			{
+				iO = vmModule.GetIO(AppLocalizationService.UnDoTranslate(text2 + &quot;_&quot; + subAlgorithmTabRoot.HashCode));
+			}
+			VmIO outputFilter = null;
+			string BindingIndex = null;
+			bool isBindGlobalVar = false;
+			bool isShellModule = false;
+			if (!GetOutputInfo(vmModule, text, ref outputFilter, ref BindingIndex, ref isBindGlobalVar, isShellModule))
+			{
+				if (buttonSelecter != null)
+				{
+					buttonSelecter.CurValueA = buttonSelecter.OldCurValue;
+				}
+				return;
+			}
+			if (outputFilter != null)
+			{
+				if (outputFilter != VmSolution.ExternIO &amp;&amp; outputFilter.Root == null)
+				{
+					outputFilter.Root = vmModule;
+				}
+				if (string.IsNullOrEmpty(outputFilter.TypeName))
+				{
+					outputFilter.TypeName = iO.TypeName;
+				}
+				if (outputFilter is VmConstantIO vmConstantIO &amp;&amp; !CheckValue(vmConstantIO.Name, iO.TypeName))
+				{
+					HikMessageBox.Show(AppLocalizationService.GetLang(&quot;订阅失败&quot;), MessageIcons.Warning);
+					return;
+				}
+			}
+			if (iO != null)</pre></details></article><article id="TR09" class="source-confirmed"><h2>TR09 · Content/字号/颜色等Bridge配置 → BridgeObjA懒解析 → 具体Show Text Object或Feature</h2><p>source-confirmed：TextDisplayGroup里Content.StringConfig的PropertyName=Value且GetDisplayObjectFeatureOperation(Show Text;Content)，字号同理指FontSize；颜色/透明度等GetDisplayObjectOperation(Show Text)。BridgeObjA仅缓存为空时创建BrigdgeSetter操作并Operate(null)。两个Operation按参数根Owner的FullPath查[Display]，对象选择使用NameA精确Single，Feature再按名取得，通过SetPropertyValueByNameNotrigger写BridgeObjA。这比仅在显示端搜Show Text更靠近真实配置入口。</p><p>仍待追：Single缺失/重复对象、缓存失效和实际附加绑定的提交时机未知；这些操作仅供应对象/Feature，不直接证明文字渲染。</p><details><summary>Apps.XmlParser.ParamTab.BridgeItemBase::get_BridgeObjA · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:10424–10443
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x0600053e&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x0600053e&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.BridgeItemBase&quot;,
+            &quot;name&quot;: &quot;get_BridgeObjA&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;20001c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 110,
+          &quot;ilSha256&quot;: &quot;4daae5d880670df4dffb0e10f6060cba28a237938a5c8d081683659c1c348a2e&quot;,
+          &quot;ilBytes&quot;: &quot;00027b1302000414fe010a062c5300027b1202000414fe030b072c4400027b120200046f4a0f000614fe010c082c0e00027b120200046f4d0f00060000027b120200046f4a0f000614fe030d092c1000027b1202000414166f4e0f000600000000027b1302000413042b0011042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GetDisplayObjectOperation::Operate · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:17597–17616
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000ab9&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ab9&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GetDisplayObjectOperation&quot;,
+            &quot;name&quot;: &quot;Operate&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011d1c1d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 203,
+          &quot;ilSha256&quot;: &quot;8f3ff5b3e3a616a2cab06c6240c69f604e3cef77021a02f8acf3dcd6f4ad89a5&quot;,
+          &quot;ilBytes&quot;: &quot;000228b60a00066f8500002b0a048e16fe030b072c7e0004169a0c0614fe030d092c6e00066f3101000a7541000002130411042c0c11046f7903000614fe032b0116130511052c480011046f79030006754b00000113060211060828ba0a000613070006027b4a04000472b637007028aa00000a11076ff40b00060000de1013080011086f5900000a734a00000a7a0000002b3600067b5e05000428c601000a727242007028c601000a72d42e00700228b60a00067bbe06000428c601000a28e400000a734a00000a7a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GetDisplayObjectOperation::GetDisplayObject · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:18383–18402
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000aba&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000aba&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GetDisplayObjectOperation&quot;,
+            &quot;name&quot;: &quot;GetDisplayObject&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20021c12812d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 116,
+          &quot;ilSha256&quot;: &quot;f865dcdbddf65650d6c0d1abe6ad564da93e5bb39027cfa7250cd000ab18a594&quot;,
+          &quot;ilBytes&quot;: &quot;73991100060a06047d71080004000314fe010c082c04140d2b5828cd00000a0375740000016f2400000a72b82a007028aa00000a6f2d01000a75190000020b0714fe03130411042c2400076fc8000006282000002b06fe069a11000673ef00000a282100002b130511050d2b0500140d2b00092a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GetDisplayObjectFeatureOperation::Operate · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:18880–18899
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000ab1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ab1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GetDisplayObjectFeatureOperation&quot;,
+            &quot;name&quot;: &quot;Operate&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Public, Final, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011d1c1d0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 213,
+          &quot;ilSha256&quot;: &quot;ce6859fa64b041a0def24d0c9fc47eaa96f8b759c80a3fd9c62fa70fa76a6c4a&quot;,
+          &quot;ilBytes&quot;: &quot;000228ae0a00066f8500002b0a048e6917fe020b0739840000000004169a0c04179a0d0614fe03130411042c6e00066f3101000a7541000002130511052c0c11056f7903000614fe032b0116130611062c480011056f79030006754b00000113071107080928b20a000613080006027b4704000472b637007028aa00000a11086ff40b00060000de1013090011096f5900000a734a00000a7a0000002b3600067b5e05000428c601000a727242007028c601000a72d42e00700228ae0a00067bbe06000428c601000a28e400000a734a00000a7a2a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamTab.GetDisplayObjectFeatureOperation::GetDisplayObjectFeature · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:19701–19720
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x06000ab2&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ab2&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamTab.GetDisplayObjectFeatureOperation&quot;,
+            &quot;name&quot;: &quot;GetDisplayObjectFeature&quot;,
+            &quot;parameters&quot;: 3,
+            &quot;attributes&quot;: &quot;Public, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;00031c12812d0e0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 122,
+          &quot;ilSha256&quot;: &quot;51f6756b5c72a20274052372ed29aeba9ab4defb75d1a788144f43b1e288fe30&quot;,
+          &quot;ilBytes&quot;: &quot;73971100060a06037d70080004000214fe010d092c051413042b5c28cd00000a0275740000016f2400000a72b82a007028aa00000a6f2d01000a75190000020b0714fe01130511052c051413042b28076fc8000006282000002b06fe069811000673ef00000a282100002b0c08046ff501000613042b0011042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>Bridge lazy object supply and binding path · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/BridgeItemBase.cs:26–50
+SHA256 1755641dbcdece3df9375b3882dc1c77ad756cc2919cc9739daba6c053f627e5
+	public object BridgeObjA
+	{
+		get
+		{
+			if (_BridgeObj == null &amp;&amp; BrigdgeSetter != null)
+			{
+				if (BrigdgeSetter.Operation == null)
+				{
+					BrigdgeSetter.CreatOperateInstance();
+				}
+				if (BrigdgeSetter.Operation != null)
+				{
+					BrigdgeSetter.Operate(null);
+				}
+			}
+			return _BridgeObj;
+		}
+		set
+		{
+			_BridgeObj = value;
+		}
+	}
+
+	public override int GetParamUnit()
+	{</pre></details><details><summary>Shared content/font/colour bridge configuration · local-extracted-resource</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.resources/Group.xml:2767–2839
+SHA256 9129b82a0f9906dde591347498a80e2e8c019c0fb959a721ecfd24fbbb5207dc
+	&lt;GroupInfoItem Name=&quot;TextDisplayGroup&quot;&gt;
+	   &lt;Items&gt;
+		 &lt;Category Name=&quot;文本显示&quot;&gt;
+                    &lt;Items&gt;
+                        &lt;StringConfig Name=&quot;Content&quot; NameSpace=&quot;Standard&quot;&gt;
+                            &lt;Description&gt;RunParam_Content&lt;/Description&gt;
+                            &lt;DisplayName&gt;RunParam_Content&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;CurValue&gt;&lt;/CurValue&gt;
+                            &lt;DefaultValue&gt;&lt;/DefaultValue&gt;
+                            &lt;Length&gt;0x00000020&lt;/Length&gt;
+                            &lt;PropertyName&gt;Value&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectFeatureOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text;Content&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/StringConfig&gt;
+                        &lt;ColorConfig Name=&quot;OKColor&quot;&gt;
+                            &lt;Description&gt;OK颜色&lt;/Description&gt;
+                            &lt;DisplayName&gt;OK颜色&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;PropertyName&gt;okcolor&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/ColorConfig&gt;
+                        &lt;ColorConfig Name=&quot;NGColor&quot;&gt;
+                            &lt;Description&gt;NG颜色&lt;/Description&gt;
+                            &lt;DisplayName&gt;NG颜色&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;PropertyName&gt;ngcolor&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/ColorConfig&gt;
+                        &lt;FloatConfig Name=&quot;CharacterSize&quot; NameSpace=&quot;Standard&quot;&gt;
+                            &lt;Description&gt;字号&lt;/Description&gt;
+                            &lt;DisplayName&gt;字号&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;MinValue&gt;6&lt;/MinValue&gt;
+                            &lt;MaxValue&gt;72&lt;/MaxValue&gt;
+                            &lt;IncValue&gt;1&lt;/IncValue&gt;
+                            &lt;PropertyName&gt;Value&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectFeatureOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text;FontSize&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/FloatConfig&gt;
+                        &lt;FloatConfig Name=&quot;Transparency&quot;&gt;
+                            &lt;Description&gt;透明度&lt;/Description&gt;
+                            &lt;DisplayName&gt;透明度&lt;/DisplayName&gt;
+                            &lt;Visibility&gt;Beginner&lt;/Visibility&gt;
+                            &lt;AccessMode&gt;O&lt;/AccessMode&gt;
+                            &lt;MinValue&gt;0&lt;/MinValue&gt;
+                            &lt;MaxValue&gt;1&lt;/MaxValue&gt;
+                            &lt;IncValue&gt;0.1&lt;/IncValue&gt;
+                            &lt;PropertyName&gt;opacity&lt;/PropertyName&gt;
+                            &lt;BrigdgeSetter&gt;
+                                &lt;TargetName&gt;BridgeObj&lt;/TargetName&gt;
+                                &lt;OperationName&gt;GetDisplayObjectOperation&lt;/OperationName&gt;
+                                &lt;OperationParams&gt;Show Text&lt;/OperationParams&gt;
+                            &lt;/BrigdgeSetter&gt;
+                        &lt;/FloatConfig&gt;</pre></details></article><article id="TR10" class="source-confirmed"><h2>TR10 · 普通显示设置模板 → 眼睛／文本／字号绑定声明</h2><p>source-confirmed：共享ImageViewConfig的眼睛ToggleButton绑定BridgeObjA.IsDisplayA，弹出受PanVisibleA控制；StringConfig_sub使用AttachBinding.BindingString指向Text:{BindingPathA}，FloatConfig_sub使用StartValue:{BindingPathA}。BridgeItemBase.BindingPathA返回BridgeObjA.+PropertyName+A。因此上述Content配置目标是BridgeObjA.ValueA，而不是ImageSource的取图模式。</p><p>仍待追：AttachBinding具体解析/BindingMode、输入校验、Standard命名域、字典原BAML和实际对象未在此全部核；这是声明证据，不是运行输入验收。</p><details><summary>Show-object eye toggle and popup · local-extracted-resource</summary><pre>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:2544–2555
+SHA256 96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63
+  &lt;DataTemplate x:Key=&quot;ImageViewConfig&quot;&gt;
+    &lt;localParamTab:LeftRightControl Height=&quot;32&quot; HorizontalAlignment=&quot;Left&quot;&gt;
+      &lt;localParamTab:LeftRightControl.LeftContent&gt;
+        &lt;Control Template=&quot;{StaticResource TextLeft}&quot; /&gt;
+      &lt;/localParamTab:LeftRightControl.LeftContent&gt;
+      &lt;localParamTab:LeftRightControl.RightContent&gt;
+        &lt;UniformGrid Width=&quot;100&quot; Columns=&quot;2&quot;&gt;
+          &lt;ToggleButton Style=&quot;{StaticResource eyeToggleButton}&quot; IsChecked=&quot;{Binding BridgeObjA.IsDisplayA, Mode=TwoWay}&quot; /&gt;
+          &lt;PControl:PopupButton HorizontalOffsetVal=&quot;-90&quot; SubContent=&quot;{StaticResource ImageViewConfig_subContent}&quot; Visibility=&quot;{Binding PanVisibleA, Converter={StaticResource bool2VisibilityConverter}}&quot; /&gt;
+        &lt;/UniformGrid&gt;
+      &lt;/localParamTab:LeftRightControl.RightContent&gt;
+    &lt;/localParamTab:LeftRightControl&gt;</pre></details><details><summary>String bridge input declaration · local-extracted-resource</summary><pre>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:2557–2573
+SHA256 96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63
+  &lt;DataTemplate x:Key=&quot;StringConfig_sub&quot;&gt;
+    &lt;PControl:PopupButton Name=&quot;et&quot; Grid.Column=&quot;0&quot; HorizontalOffsetVal=&quot;0&quot; Style=&quot;{x:Null}&quot; IsPopupOpen=&quot;{Binding IsTextDropDownOpen, Mode=TwoWay}&quot;&gt;
+      &lt;PControl:PopupButton.ButtonStyle&gt;
+        &lt;Style TargetType=&quot;{x:Type ToggleButton}&quot;&gt;
+          &lt;Setter Property=&quot;Template&quot;&gt;
+            &lt;Setter.Value&gt;
+              &lt;ControlTemplate TargetType=&quot;{x:Type ToggleButton}&quot;&gt;
+                &lt;Grid&gt;
+                  &lt;Border BorderThickness=&quot;1&quot; CornerRadius=&quot;4&quot; BorderBrush=&quot;#CCCCCD&quot; Background=&quot;#FFFFFFFF&quot; IsHitTestVisible=&quot;False&quot; /&gt;
+                  &lt;localParamTab:DeleteTextBox Background=&quot;#00FFFFFF&quot; FontSize=&quot;14&quot; Foreground=&quot;#808080&quot; IsReadOnly=&quot;{Binding ReadOnly}&quot; HPCommom:AttachBinding.BindingString=&quot;{Binding Path=BindingPathA, StringFormat=Text:{0}}&quot;&gt;
+                    &lt;i:Interaction.Triggers&gt;
+                      &lt;i:EventTrigger EventName=&quot;OnTBFoucsChanged&quot;&gt;
+                        &lt;HPCommom:ParamsEventCommand Command=&quot;{Binding FocusedCommand}&quot; /&gt;
+                      &lt;/i:EventTrigger&gt;
+                    &lt;/i:Interaction.Triggers&gt;
+                  &lt;/localParamTab:DeleteTextBox&gt;
+                &lt;/Grid&gt;</pre></details><details><summary>Float bridge value declaration · local-extracted-resource</summary><pre>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:2615–2624
+SHA256 96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63
+  &lt;DataTemplate x:Key=&quot;FloatConfig_sub&quot;&gt;
+    &lt;PCListView:SliderArrangeFloat SliderTickFrequency=&quot;{Binding IncValueA}&quot; Minimum=&quot;{Binding MinValueA}&quot; Maximum=&quot;{Binding MaxValueA}&quot; HPCommom:AttachBinding.BindingString=&quot;{Binding Path=BindingPathA, StringFormat=StartValue:{0}}&quot; /&gt;
+  &lt;/DataTemplate&gt;
+  &lt;DataTemplate x:Key=&quot;FloatConfig&quot;&gt;
+    &lt;localParamTab:LeftRightControl Height=&quot;32&quot;&gt;
+      &lt;localParamTab:LeftRightControl.RightContent&gt;
+        &lt;ContentControl VerticalAlignment=&quot;Stretch&quot; HorizontalAlignment=&quot;Stretch&quot; VerticalContentAlignment=&quot;Stretch&quot; HorizontalContentAlignment=&quot;Stretch&quot; ContentTemplate=&quot;{StaticResource FloatConfig_sub}&quot; Content=&quot;{Binding}&quot; /&gt;
+      &lt;/localParamTab:LeftRightControl.RightContent&gt;
+    &lt;/localParamTab:LeftRightControl&gt;
+  &lt;/DataTemplate&gt;</pre></details><details><summary>Dynamic bridge property path · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/BridgeItemBase.cs:11–11
+SHA256 1755641dbcdece3df9375b3882dc1c77ad756cc2919cc9739daba6c053f627e5
+	public string BindingPathA =&gt; &quot;BridgeObjA.&quot; + PropertyName + &quot;A&quot;;</pre></details></article><article id="TR11" class="source-confirmed"><h2>TR11 · [Display]外部路径 → VmModule工厂 → ParamRoot.InitNode → ModuleTypeNameDisplay.xml</h2><p>source-confirmed：VmModule.GetSelfExternNode先查ExternPathStartNodes，未缓存时从TypeTable克隆中Single查VmExternPathAttribute.KeyName==key的类型，创建并InitNode(this)后才入缓存。Apps.XmlParser.ParamRoot声明[VmExternPath(&quot;[Display]&quot;)]；InitNode在datas为IVmModule时按ModuleDir+ModuleTypeName+Display.xml加载(ignoreUnknown=true)，随后赋owner、恢复DynamicObject/UserData、ReloadProperty和InitVmIOs。ParamRoot.Init临时把默认namespace改Apps.XmlParser；GetDisplayList返回Display分类Items。</p><p>仍待追：实际TypeTable注册/唯一匹配、BaseNode子Object/Feature构造、模块ModuleDir/ModuleTypeName及所选文件、失败后缓存/静态namespace、UserData覆盖和SDK参数恢复未运行验证。</p><details><summary>VM.Core.VmModule::GetSelfExternNode · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:23073–23092
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x060002ac&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060002ac&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VM.Core.VmModule&quot;,
+            &quot;name&quot;: &quot;GetSelfExternNode&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig, VtableLayoutMask&quot;,
+            &quot;signatureBytes&quot;: &quot;20011c0e&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 288,
+          &quot;ilSha256&quot;: &quot;7627024233accce88c3ddb69066b1570a163affa6359544cbf4b183faba26865&quot;,
+          &quot;ilBytes&quot;: &quot;73d90700060a00032c0b036f3201000a16fe012b0117130411042c090002130538f800000003178d3501000125161f2e9d6ff501000a0b140c0607169a7d71030004027bf3000004067b710300046f8b03000a130611062c1600027bf3000004067b710300046f8c03000a0c002b6800288d03000a6f8e03000a75db000001130711076f8f03000a284700002b06fe06da070006739003000a284800002b284900002b13081413071108289203000a0c0875ca000001252d03262b07026f6300000a00027bf3000004067b71030004086f9303000a0000031f2e6f9403000a17580d0916fe03130911092c2c0003096f5f02000a130a0875ca000001110a6f6200000a0c0875ca000001252d03262b07146f6300000a00000813052b0011052a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;newobj&quot;,</pre></details><details><summary>Apps.XmlParser.ParamRoot::InitNode · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:16997–17016
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x060000c1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000c1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamRoot&quot;,
+            &quot;name&quot;: &quot;InitNode&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 87,
+          &quot;ilSha256&quot;: &quot;169706bbbf2e25f41bf8ca42073ba816284e05e01f64df49f692e0c0c070959b&quot;,
+          &quot;ilBytes&quot;: &quot;0003754b000001250a14fe030b072c4600066f0201000a0c066f0301000a727f04007008729306007028e400000a0d02091728c400000a0002067d3b000004020628c6000006000228c4000006000228c200000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Apps.XmlParser.ParamRoot::GetDisplayList · original-managed-cil</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.cil.json:17375–17394
+SHA256 5e475d6b992e133d8ba4a4ddeeff21735a4cb832a7444cfe96fcbdd883491c48
+          &quot;token&quot;: &quot;0x060000c8&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x060000c8&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;Apps.XmlParser.ParamRoot&quot;,
+            &quot;name&quot;: &quot;GetDisplayList&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200015128129011c&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 36,
+          &quot;ilSha256&quot;: &quot;af30912cd311d1ab791a96d6e2a80d91203d818a96958c5319d1a1f51e02a099&quot;,
+          &quot;ilBytes&quot;: &quot;000228ba00000614fe030a062c0f000228ba0000067bac0000040b2b0500140b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>External path type factory and cache · local-decompiled-source</summary><pre>analysis/decompiled/VM.Core/VM.Core/VmModule.cs:1601–1635
+SHA256 53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce
+	protected virtual object GetSelfExternNode(string sub)
+	{
+		if (sub == null || sub.Length == 0)
+		{
+			return this;
+		}
+		string[] array = sub.Split(&#39;.&#39;);
+		object obj = null;
+		string key = array[0];
+		if (ExternPathStartNodes.ContainsKey(key))
+		{
+			obj = ExternPathStartNodes[key];
+		}
+		else
+		{
+			Hashtable hashtable = ActivatorWrap.TypeTable.Clone() as Hashtable;
+			Type type = (from p in hashtable.Values.OfType&lt;Type&gt;()
+				where p.IsDefined(typeof(VmExternPathAttribute), inherit: false) &amp;&amp; (p.GetCustomAttribute(typeof(VmExternPathAttribute), inherit: false) as VmExternPathAttribute).KeyName == key
+				select p).Single();
+			hashtable = null;
+			obj = ActivatorWrap.CreateInstance(type);
+			(obj as IVmExternPath)?.InitNode(this);
+			ExternPathStartNodes.Add(key, obj);
+		}
+		int num = sub.IndexOf(&#39;.&#39;) + 1;
+		if (num != 0)
+		{
+			string key2 = sub.Substring(num);
+			obj = (obj as IVmExternPath).GetExternNode(key2);
+			(obj as IVmExternPath)?.InitNode();
+		}
+		return obj;
+	}
+
+	void IVmExternPath.InitNode(object datas)</pre></details><details><summary>Display attribute identity · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ParamRoot.cs:18–21
+SHA256 41d349894d2cfcb017f2840ebeb79d922a71b09a3f77f905f68dfd619435a24a
+[VmExternPath(&quot;[Display]&quot;)]
+public class ParamRoot : BaseNode, IOwner, IRoot, INotifyPropertyChanged, IVmExternPath, IReload
+{
+	internal const string SavePreName = &quot;[ParamRoot]_&quot;;</pre></details><details><summary>Module-specific display resource loading · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ParamRoot.cs:221–234
+SHA256 41d349894d2cfcb017f2840ebeb79d922a71b09a3f77f905f68dfd619435a24a
+	private void InitNode(object datas)
+	{
+		if (datas is IVmModule { ModuleTypeName: var moduleTypeName } vmModule)
+		{
+			string fileName = vmModule.ModuleDir + &quot;\\&quot; + moduleTypeName + &quot;Display.xml&quot;;
+			loadXml(fileName, ignoreUnknown: true);
+			owner = vmModule;
+			InitDynamicObject(vmModule);
+			ReloadProperty();
+			InitVmIOs();
+		}
+	}
+
+	public void InitVmIOs()</pre></details><details><summary>Display XML default namespace · local-decompiled-source</summary><pre>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser/ParamRoot.cs:106–113
+SHA256 41d349894d2cfcb017f2840ebeb79d922a71b09a3f77f905f68dfd619435a24a
+	public override BaseNode Init(XmlNode node)
+	{
+		string text = BaseNode.defaultNameSpace;
+		BaseNode.defaultNameSpace = &quot;Apps.XmlParser&quot;;
+		base.Init(node);
+		BaseNode.defaultNameSpace = text;
+		return this;
+	}</pre></details></article><article id="TR12" class="source-confirmed"><h2>TR12 · 实际随包Blob Display XML → 活动Show Text text对象及Content/映射默认值</h2><p>source-confirmed：安全XML解析（DTD禁止、XmlResolver=null）确认IMVSBlobFindModuDisplay.xml有1个活动Object Name=Show Text Type=text；PositionX/Y默认Mapping=NULL/Value=0，FontSize=10，Content Value=Blob Area:{0}且Mapping=Area，Status映射BlobStatus。相对地，所选ImageSourceDisplay没有活动Show Text；IMVSGroupDisplay出现的同名段只是XML注释，也没有活动对象。不能把字符串命中或Data Record当作同一个文字生产者。</p><p>仍待追：这是五个显式资源样本的语义解析，不是162工具覆盖率；文件默认值不证明运行中的参数、输出Area和绘制文本实际相同。</p><details><summary>Real Blob text object and feature defaults · local-extracted-resource</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.resources/IMVSBlobFindModuDisplay.xml:87–98
+SHA256 b3bc63e6cf7c8ca120baf5b632bbe1359843138cf77cb5a64fc698ef22465112
+        &lt;Object Name=&quot;Show Text&quot; Type=&quot;text&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;PositionX&quot; Mapping=&quot;NULL&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;PositionY&quot; Mapping=&quot;NULL&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;FontSize&quot; Mapping=&quot;NULL&quot; Value=&quot;10&quot; /&gt;
+            &lt;Feature Name=&quot;Angle&quot; Mapping=&quot;NULL&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Content&quot; Value=&quot;Blob Area:{0}&quot; Mapping=&quot;Area&quot; /&gt;
+            &lt;Feature Name=&quot;Status&quot; Value=&quot;0&quot; Mapping=&quot;BlobStatus&quot; ArrayMatch=&quot;true&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt;
+        &lt;Object Name=&quot;Data Record&quot; Type=&quot;datarecord&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;2&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;</pre></details><details><summary>Commented Group Show Text is not an object · local-extracted-resource</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.resources/IMVSGroupDisplay.xml:6–16
+SHA256 aa56da3d573a730981b759113756a1544eaafa8387407da5f415a38053c46fc9
+        &lt;!-- &lt;Object Name=&quot;Show Text&quot; Type=&quot;text&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; IsDisplay=&quot;true&quot;&gt;
+          &lt;Features&gt;
+            &lt;Feature Name=&quot;PositionX&quot; Mapping=&quot;NULL&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;PositionY&quot; Mapping=&quot;NULL&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;FontSize&quot; Mapping=&quot;NULL&quot; Value=&quot;10&quot; /&gt;
+            &lt;Feature Name=&quot;Angle&quot; Mapping=&quot;NULL&quot; Value=&quot;0&quot; /&gt;
+            &lt;Feature Name=&quot;Content&quot; Value=&quot;Result:{0}&quot; Mapping=&quot;ModuStatus&quot; /&gt;
+            &lt;Feature Name=&quot;Status&quot; Value=&quot;0&quot; Mapping=&quot;ModuStatus&quot; /&gt;
+          &lt;/Features&gt;
+        &lt;/Object&gt; --&gt;
+        &lt;Object Name=&quot;datarecord&quot; Type=&quot;datarecord&quot; okcolor=&quot;#66ff00&quot; ngcolor=&quot;#ff0000&quot; hotcolor=&quot;#66ff00&quot; opacity=&quot;1&quot; linetype=&quot;1&quot; linewidth=&quot;2&quot; IsDisplay=&quot;true&quot;&gt;</pre></details><details><summary>DTD-prohibited semantic resource inventory · local-decompiled-source</summary><pre>docs/architecture-recovery/tool-rendering-entry-audit.xml-semantics.json:3–8
+SHA256 18b3cbc01db71d584d797a297a3e67b974a4e95ddaa067c82f4d12cb654026b9
+  &quot;Parser&quot;: &quot;System.Xml.XmlReader + XmlDocument&quot;,
+  &quot;DtdProhibited&quot;: true,
+  &quot;XmlResolverNull&quot;: true,
+  &quot;RuntimeExecuted&quot;: false,
+  &quot;Resources&quot;: [
+    {</pre></details></article><article id="TR-U01" class="unknown"><h2>TR-U01 · 配置链供应证据 → 具体实例、当前实现、绘制与持久化仍未闭合</h2><p>unknown：本页将真实Blob显示设置→共享组→具体Setter/Operation→Show Text资源供应串成有限调查链；不把资源、参数写入、动态IO或Root.Owner接口视为同一活对象已贯通，也不把文字设置等同SDK画字。</p><p>仍待追：下一原成员：Blob模块.ModuleDir/ModuleTypeName/Params.XmlPath及实际GetParamRoot调用者；Hik.Xml.BaseNode.Init/AfterAddedToArray节点实例化；Apps.UIHelper.AttachBinding绑定创建；Feature/FeatureBase映射值生产及Render消费；Object/UserData/方案保存往返；当前独立实现逐工具对应。</p></article><p class="notice">主框架实施41/96＝42.71%（32包×3具名单元）；本页不增加实施数。未运行厂商/SDK/设备/服务。运行模式内部仍暂缓。</p><a href="tool-rendering-entry-audit.json">机器清单与全部调查边</a></html><script data-document-web src="document-web-links.js"></script>

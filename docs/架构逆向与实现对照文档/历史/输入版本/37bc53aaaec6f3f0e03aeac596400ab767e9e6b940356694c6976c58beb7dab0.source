@@ -1,0 +1,46 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第二十六轮 A05.1 壳入口收口审查</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/A05-shell-close-batch26.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#第二十六轮-a051-壳入口收口审查">第二十六轮 A05.1 壳入口收口审查</a></p><p style="margin-left:14px"><a href="#身份与范围">身份与范围</a></p><p style="margin-left:14px"><a href="#入口到执行链核对">入口到执行链核对</a></p><p style="margin-left:14px"><a href="#可复验操作">可复验操作</a></p><p style="margin-left:14px"><a href="#结论">结论</a></p></details><h1 id="第二十六轮-a051-壳入口收口审查">第二十六轮 A05.1 壳入口收口审查</h1><h2 id="身份与范围">身份与范围</h2><ul>
+<li>子任务：A05.1（完整菜单、工具栏、快捷键入口清点）；本轮基线 <code>ea64cb0e573a9e658e656c3eebc951e9daf8a514</code>。</li>
+<li>原始证据沿用第十七轮 <code>A05-full-menu-map-batch17.md</code>、<code>tests/MenuEntryInventory17/Reconcile.py</code> 及 <code>analysis/full-audit/batch17-20261019/A</code>。本轮没有启动原厂程序、没有触碰安装原件，也没有访问 <code>tool-plugins</code>。</li>
+<li>本轮只尝试关闭仍有源码依据的入口清点/壳实现，不把静态清单或人工桌面验收计为实施单元。</li>
+</ul>
+<h2 id="入口到执行链核对">入口到执行链核对</h2><p>当前 main 的已接入入口仍可从以下成员追到实际动作：</p>
+<table>
+<thead>
+<tr>
+<th>原入口</th>
+<th>main 入口</th>
+<th>当前结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CreateNewSolution</code> / <code>OpenSolution</code></td>
+<td><code>MainWindow.xaml.cs</code>、<code>MainWindow.ShellOpenSolution.cs</code></td>
+<td>已有独立本地动作；打开前清连续运行、文件选择后记忆目录、待保存确认、加载并刷新最近项。</td>
+</tr>
+<tr>
+<td><code>SaveSolution</code> / <code>SaveAsSolution</code></td>
+<td><code>MainWindow.ShellSaveSolution.cs</code></td>
+<td>已有保存/另存文件链。</td>
+</tr>
+<tr>
+<td><code>Undo</code> / <code>Redo</code></td>
+<td><code>MainWindow.ShellHistory.cs</code></td>
+<td>已进入统一历史守卫；编辑器打开、锁定、运行态按现有源码分支拦截。原 <code>UndoList</code> 明细下拉仍无源码合同。</td>
+</tr>
+<tr>
+<td><code>SigRun</code> / <code>MutiRun</code> / <code>StopRun</code></td>
+<td><code>MainWindow.xaml.cs</code></td>
+<td>已连接真实运行、连续运行和取消动作；不是本轮新增。</td>
+</tr>
+<tr>
+<td><code>OnlineHelpDoc</code> / <code>VerInfo</code> / <code>Exit</code></td>
+<td><code>MainWindow.ShellHelp.cs</code>、<code>MainWindow.ShellAbout.cs</code>、<code>MainWindow.ShellFileMenu.cs</code></td>
+<td>已有本地壳动作。</td>
+</tr>
+</tbody></table>
+<p>原资源中剩余 resolver 仍要求外部服务或未取得的原生数据合同：算法导出、流程导入、权限/软件/方案/采集设置、日志、通信、光源、全局变量/脚本/触发器、语言刷新、本地帮助、历史明细、综合配置、前端设计器及外部工具检查/启动。空菜单项、禁用按钮或假窗口不能闭合这些入口；这些缺口与 A05.3 服务门槛报告一致。</p>
+<p>窗口 <code>VisionMasterMain.MainWindow.BaseWindow_PreviewKeyDown</code> 的原始 CIL 仍为 <code>nop; ret</code>（RVA <code>0x818C</code>，原库 SHA 在第十七轮审计中记录），因此没有证据为主窗口补 F5/Ctrl+S 等快捷键。画布局部快捷键继续由 <code>WorkflowCanvas</code> 的焦点/锁定分支独立负责，不能上提为全局壳入口。</p>
+<h2 id="可复验操作">可复验操作</h2><p><code>Reconcile.py</code> 是既有静态对账探针，要求原 <code>menuitems.xml</code> 的 53 个具名节点、43 个 resolver、工具栏/隐藏节点和每个当前 main 锚点均存在，并拒绝未分类 resolver。当前环境的 <code>python.exe</code> 是 WindowsApps 占位路径，<code>py -3</code> 也报告未安装 Python，因此本轮未能重跑探针；该失败已写入本轮审计 JSON，不把历史退出 0 冒充本轮验证。原探针代码和第十七轮输出未修改。</p>
+<h2 id="结论">结论</h2><p>本轮没有发现可以在不引入未证服务合同的情况下独立闭合的 A05.1 实施单元。现有本地入口属于历史已实施内容；剩余入口的源码链在外部服务、原生模块/配置或 A06 设计器交付处断开。<strong>实施增量 +0，不计入 96 项总进度。</strong></p>
+<p>解除条件：取得对应原始服务的完整入口→状态/权限→会话或 native 调用→错误/关闭链，或用户明确选择独立兼容合同后再实施；不能用静态清点、截图或禁用菜单替代。</p>
+<p class="meta">来源：docs/reverse/A05-shell-close-batch26.md · SHA256 0ced279e7b348d72b66bca561dd1c7814d153e14794002e57a0ea387c235981f<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

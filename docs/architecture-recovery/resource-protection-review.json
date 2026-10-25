@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "methods": 22,
+  "originalRuntimeExecuted": false,
+  "semanticBindingsAdded": 0,
+  "closedEntryChainsAdded": 0,
+  "facts": [
+    "BaseNode belongs to VM.Xml.dll; AesCryptHelper resolves by metadata to VM.Util.dll, ZIP helper to VM.Compress.dll. These identities match selected originals; runtime assembly binding remains unverified.",
+    "Aes string Encrypt: UTF8 → byte Encrypt → Base64. Decrypt: FromBase64String → byte Decrypt → UTF8.GetString → TrimEnd with a newly allocated single zero char array.",
+    "Byte operations call Rijndael.Create, set Key from a shipped UTF8 literal, set static MY_IV, then CryptoStream. No explicit mode/padding setters appear in these bodies. No claim about effective framework defaults or .sol cryptography.",
+    "Byte Decrypt allocates output equal to ciphertext length, calls Stream.Read once and discards count, returns entire array. Stream finally regions are present; Rijndael object has no explicit Dispose in these bodies.",
+    "BaseNode file load changes IgnoreUnknown before locking, sets file attributes before branch selection, decrypts only XML marker path, ZIP branch loads the returned stream directly. IgnoreUnknown=false lies after lock, outside finally; exceptions can bypass reset.",
+    "String/byte load overloads use loadXmlByString; that body parses and Init without marker decryption. Its failure wraps ex.Message and can bypass IgnoreUnknown reset.",
+    "Referenced ZIP helper calls DecompressToBytes; each entry gets Stream.Length-sized buffer, one Read whose count is discarded, then whole buffers are concatenated via BlockCopy. Entry names are not selected here. ZIP Length, reader dispatch and conditional CRC are recovered separately in zip-stream-review; underlying inflater/input-buffer and format combinations remain open.",
+    "Save(string) writes ToXmlStringWithHead output into relative temp.xml, disposes writer, deletes existing target, creates directory, copies temp, deletes temp. No Encrypt call in this save body; this is not proof of an inverse protected-resource round trip or all derived serialization behavior.",
+    "Original static IV initialization is now linked to a bounded 16-byte FieldRVA payload and its SHA256, matching the CIL InitializeArray token and both set_IV consumers. No provider execution or protected-resource round trip was performed."
+  ],
+  "unknowns": [
+    "Original cipher provider defaults, effective host configuration and possible indirect runtime mutation; the static IV initializer bytes are now recovered.",
+    "All callers, derived provider replacement, embedded/encrypted resource inventory and runtime assembly binding.",
+    "ZIP Length/reader/CRC branches are now linked in zip-stream-review; inflater/input-buffer, CRC arithmetic, encryption internals and runtime malformed/multiple entry behavior remain open.",
+    "Native .sol/password licensing algorithms remain independent and unrecovered.",
+    "Original runtime, failure injection and protected-resource round trips not executed."
+  ],
+  "staticIv": {
+    "fieldToken": "0x040001a1",
+    "byteLength": 16,
+    "dataSha256": "c512d92e3545b2f1222e4b4c6af6d330ec3002a04bcaa41df9cc2c49628496d6",
+    "evidence": "resource-iv-rva.json",
+    "runtimeExecuted": false
+  }
+}

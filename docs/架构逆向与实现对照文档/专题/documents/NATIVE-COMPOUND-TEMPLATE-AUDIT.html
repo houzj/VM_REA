@@ -1,0 +1,223 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Group 复合输出原生控件模板核验 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / Group 复合输出原生控件模板核验</p><h1>Group 复合输出原生控件模板核验</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Group 复合输出原生控件模板核验</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#group-复合输出原生控件模板核验">Group 复合输出原生控件模板核验</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#关键结论">关键结论</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#原生行模板逐项清单">原生行模板逐项清单</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#booleansub外观与事件不是一回事">Boolean_sub：外观与事件不是一回事</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#原生层级树及数组索引事件">原生层级树及数组索引事件</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#累积输出实际数据链">累积输出实际数据链</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#资源依赖与可复用资产">资源依赖与可复用资产</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#可独立闭合的实现包及验收">可独立闭合的实现包及验收</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#本次原始证据-sha-256">本次原始证据 SHA-256</a></p><p style="margin-left:14px"><a href="NATIVE-COMPOUND-TEMPLATE-AUDIT.html#本轮独立控件交付主线待串行验证">本轮独立控件交付（主线待串行验证）</a></p></details><h1 id="group-复合输出原生控件模板核验">Group 复合输出原生控件模板核验</h1><p>日期：2026-10-17。范围：现有反编译 XAML、托管代码、资源引用与当前框架实现的静态对照。本报告没有运行或构建产品，没有操纵真实 VM，没有修改插件或共享产品代码。本文的“原生确认”只表示本地已恢复代码支持，不表示已完成实际 VM 差分验收。</p>
+<h2 id="关键结论">关键结论</h2><ol>
+<li><strong>ShowChildWin 不是已确认可见的复合字段树入口。</strong> <code>VmIODecorate.cs:144</code> 明确 <code>IsShowChildButton =&gt; false</code>。对全部反编译 <code>.xaml</code>、<code>.cs</code> 检索 <code>DisplayChildrenCommand</code>，只发现其在 <code>VmIODecorate.cs:231-247</code> 定义，以及 <code>:362-367</code> 的执行方法；<code>DynamicIOConfigControl.xaml:34-36</code> 类型单元格没有双击、命令或菜单绑定。不能把自建双击叶字段窗口称为原生复刻。</li>
+<li><strong>实际可见的层级入口是订阅树。</strong> <code>ButtonSelecter_sub</code> 由正文索引 Popup 与右侧链图标订阅 Popup 组成，树的叶节点双击提交。当前整格 Button 打开带勾选和确认按钮的 <code>WorkflowSourcePicker</code> 是独立实现，结构和提交方式不同。</li>
+<li><strong>ShowChildWin 本身是只读叶名称列表，不是可编辑 TreeView。</strong> 其内容宽370、高420，取消按钮隐藏、CenterOwner；内容是 <code>LeafIOs</code> 的只读 TextBox，没有显示值、勾选或单叶累积编辑。</li>
+<li><strong>复合累积是对所有原生叶 IO 逐一设置 report mode。</strong> 不应把显示树的层级名称误认为原生 ABI 传输结构；显示字段、订阅路径、叶 IO 名称、report mode 键应明确区分。</li>
+</ol>
+<h2 id="原生行模板逐项清单">原生行模板逐项清单</h2><p>以下相对路径均以 <code>analysis/decompiled</code> 为根。</p>
+<table>
+<thead>
+<tr>
+<th>控件/行为</th>
+<th>源文件与行</th>
+<th>绑定、条件、资源</th>
+<th>当前实现及差异</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>行布局</td>
+<td><code>DynamicObjectConfigControl/DynamicObjectConfigControl/DynamicIOConfigControl.xaml:16-24</code></td>
+<td>高32，Margin 0,0,5,6；列70、68、星号、Auto、42；微软雅黑14；主题前景</td>
+<td><code>src/VisionEditor/GroupNativeControls.cs:17</code> 高度和大部分列一致，但累积列固定53，不是 Auto</td>
+</tr>
+<tr>
+<td>名称</td>
+<td>同文件<code>:25-33</code></td>
+<td>68×32；一向 Name 绑定；LostFocus -&gt; TextChangedCommand(Text)；最大名长 VmIO.MaxNameLenth；完整文本 tooltip</td>
+<td><code>GroupConfigurationControls.cs:49</code> LostKeyboardFocus 后写配置，未复用原生完整输入模板、最大长度与本地化回译</td>
+</tr>
+<tr>
+<td>类型</td>
+<td>同文件<code>:34-36</code></td>
+<td>只读、68×32、Margin8；ValueType 一向绑定；tooltip；<strong>没有双击入口</strong></td>
+<td>当前<code>:50</code> 同为只读；不得在这里加入声称原生的字段树入口</td>
+</tr>
+<tr>
+<td>订阅正文</td>
+<td>同文件<code>:37-43</code>；<code>Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:255-306</code></td>
+<td>正文列星号，右侧32；DeleteTextBox.CurValueA 双向；ReadOnlyA；OnTBFoucsChanged -&gt; FocusedCommand；正文 Popup.IsTextDropDownOpen 双向；索引树180×180，IsTextPopupVisible 控制</td>
+<td>当前<code>:51</code> 整格 Button + 模态单选对话框；无正文删除、光标索引、正文/链接双入口</td>
+</tr>
+<tr>
+<td>订阅链按钮</td>
+<td><code>paramusercontroldatatemplate.xaml:307-335</code></td>
+<td>HorizontalOffset=-150；IsDropDownOpen 双向；DropDownOpened -&gt; DropDownCommand；180×180树；叶双击 -&gt; ClickCommand</td>
+<td>当前没有贴附 Popup 和按需刷新链路；模态 picker 是兼容实现</td>
+</tr>
+<tr>
+<td>订阅高亮</td>
+<td>同文件<code>:261-275</code></td>
+<td>IsSelectedSubscribeParam 时边框厚3、主题 Col_Theme_Mouse；否则厚0</td>
+<td>当前未看到对应独立订阅选中状态</td>
+</tr>
+<tr>
+<td>独立订阅窗入口</td>
+<td>同文件<code>:324</code></td>
+<td>27宽侧栏，25×25展开图标按钮；仅 SubscribeInPopWindowEnableA 可见；PopSubscribeWindowCommand</td>
+<td>不能无条件增加；还依赖全局 IsSubscribeInWindow 状态</td>
+</tr>
+<tr>
+<td>显示勾选</td>
+<td><code>DynamicIOConfigControl.xaml:44-60</code>；<code>VmIODecorate.cs:105-141</code></td>
+<td>IsShowDisplayCheckBox 为true才生成；输出按 OutputDisplayDic 是否包含类型；输入仅 IMAGE/PIXELIMAGE；IsDisplayForImage 写显示对象并 ChangedCommandExecute</td>
+<td>当前<code>:51</code> 仅 GrayImage；原生输出条件不是单纯 image，也不能无证据把所有类型都开放</td>
+</tr>
+<tr>
+<td>累积开关</td>
+<td><code>DynamicIOConfigControl.xaml:65-76</code>；<code>VmIODecorate.cs:204</code></td>
+<td>仅 Owner.Owner 为 IMVSGroup 且 DecorateSource.IsOutput；Content 绑定 Boolean 对象，不是 bool</td>
+<td>当前<code>:52</code> CheckBox+位图；功能是自有事件写配置，非原生对象及SDK</td>
+</tr>
+<tr>
+<td>删除</td>
+<td><code>DynamicIOConfigControl.xaml:80-93</code></td>
+<td>DeleteCommand；normal图像，Tag=click图像；祖先 ParamsTabUserControl.IsEditState=false 时隐藏</td>
+<td>当前<code>:53</code> 已有图像按钮；编辑态隐藏需要继续对照宿主状态，不可仅禁用替代</td>
+</tr>
+<tr>
+<td>表头</td>
+<td>同文件<code>:108-119</code></td>
+<td>左边距18；原生累积标题宽95、ellipsis；Visibility 取父级 IsShowAccumulatedOutput</td>
+<td>当前<code>:47</code> 与行共用五列，标题跨度2；不等同原生四列表头</td>
+</tr>
+<tr>
+<td>新增</td>
+<td>同文件<code>:131-148,155-157</code></td>
+<td>类型Combo68×32，SelectedValuePath=Item2；InputOutputTypes；SelectedType双向；AddCommand；非编辑态整个 AddStack隐藏</td>
+<td>当前<code>:55</code> 类型清单硬编码；Group/插件复合类型注册映射需另核对，不能假设原生枚举就这7种</td>
+</tr>
+<tr>
+<td>空白处提交焦点</td>
+<td>同文件<code>:101</code>及 <code>.xaml.cs:16-19</code></td>
+<td>Focusable Grid；MouseDown 调用 Focus()</td>
+<td>当前应核实点击空白能否触发重命名提交，与保存/刷新状态同步</td>
+</tr>
+</tbody></table>
+<h2 id="booleansub外观与事件不是一回事">Boolean_sub：外观与事件不是一回事</h2><p><code>Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:63-78</code>：BooleanControl.IsChecked 与 CurValueA 双向；OffContent/OnContent 分别是 <code>/Apps.XmlUI;component/Resources/swith_off.png</code>、<code>swith_on.png</code>，Stretch=None；OnCheckedChange -&gt; ValueChangedCommand。</p>
+<p><code>Apps.XmlUI/Apps.XmlUI.ParamTabControl/BooleanControl.xaml:4-11</code> 只在 IsChecked=true 时替换 ContentPresenter 内容；没有文字、系统勾选框或背景标签。<code>.xaml.cs:43-50</code> 在 IsChecked 属性变化时发出 OnCheckedChange；不只鼠标 Click 才触发。当前 <code>NativeGroupSwitch</code> 通过 CheckBox 模板重建像素外观，业务回调却在 Click 上，程序化状态变化的事件语义需独立验证，不能仅截图认定一致。</p>
+<h2 id="原生层级树及数组索引事件">原生层级树及数组索引事件</h2><ul>
+<li><code>Apps.XmlUI/Apps.XmlUI.ParamTab/SubTreeView.xaml:85</code> 给 TreeViewItem 安装 MouseDoubleClick；<code>.xaml.cs:107-116</code> 只允许 Items.Count==0 的叶节点产生 OnTreeNodeDoubleClick。分支双击不能直接订阅。</li>
+<li><code>.xaml:135-143</code> 使用 EnumEntrysA 的 HierarchicalDataTemplate；复选框受 IsMultiCheck 控制。<code>.xaml.cs:99</code> 注册默认 false，故普通单选订阅不应始终出现勾选框。</li>
+<li><code>.xaml.cs:118-162</code> 根据当前 ModulePathName（移除 <code>[]</code>）及 LastItemName[type] 寻找上次订阅项；不是每次都从默认根开始。</li>
+<li><code>Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/ButtonSelecter.cs:321-345</code> 订阅展开先执行 DropOpenSetter，初始化必要 Operation，再处理独立订阅窗口模式，刷新而非固定 mock 树。</li>
+<li><code>:347-382</code> 选 VmIO 后写 ModulePathName；已有方括号时保留索引后缀，否则补 <code>[]</code>；null Holder 解绑。禁止把路径展平为只有显示标签。</li>
+<li><code>:455-485</code> IndexClickCommand 仅替换当前方括号内容；null清空索引。与整个源订阅更换是不同命令。</li>
+<li><code>:517-586</code> FocusedCommand：只在可编辑、光标处于匹配方括号中时准备索引枚举、记 SelectionStart、弹出索引树；失焦关闭。不能把点击正文无条件设为索引选择。</li>
+<li><code>Apps.XmlUI/Apps.XmlUI.ParamTab/DeleteTextBox.xaml.cs:60-68</code> KeyUp Delete 清空文本；<code>:71-92</code> 发送 Text、IsFocus、SelectionStart；IsNumberOnly 场景另有输入法/字符/粘贴限制，不能套用到全部复合路径。</li>
+<li><code>ButtonSelecter.cs:598-608</code> 独立订阅窗设置 SelectedSubscribeParam 和 IsSubscribeInWindow；<code>Apps.XmlUI/Apps.XmlUI/ParamSubscribeWindow.xaml:2,21-45</code> 窗口240×480、不显示任务栏、无最大最小按钮，两棵互斥索引/订阅树；标题含默认方式勾选框。这不是 ShowChildWin。</li>
+</ul>
+<h2 id="累积输出实际数据链">累积输出实际数据链</h2><p><code>VmIODecorate.cs:162-200</code> 懒建 Boolean：默认false；叶读取 IOModes[Name]，复合读取 GetAllLeafIO 的首个命中 mode；mode=0 为累积。<code>:279-329</code> 每次更改重新遍历 Owner.ItemsA，叶直接写，复合 GetAllLeafIO 逐叶写，最多1024记录；每项 nMode 为 true-&gt;0、false-&gt;1，strParamName UTF8固定128字节；<code>:331-345</code> SetGroupIOReportMode 失败记录错误并弹窗。当前自有数据类型、独立调度和JSON保存没有原生ABI保证。</p>
+<p><code>ShowChildWin.xaml:2,11-17</code> 只读列表的 LeafIOs 来源是 <code>VmIODecorate.cs:228-229</code> 的 GetAllLeafIO.Select(Name)。列表没有 value、array index、accumulate checkbox、树枝展开或叶选择提交。源中不能推出“点击类型格打开可选字段树”的交互。</p>
+<h2 id="资源依赖与可复用资产">资源依赖与可复用资产</h2><table>
+<thead>
+<tr>
+<th>资源</th>
+<th>精确来源</th>
+<th>状态/依赖</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>switch</td>
+<td><code>Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:66-70</code></td>
+<td>swith_off.png / swith_on.png，无文字</td>
+</tr>
+<tr>
+<td>链按钮</td>
+<td><code>Apps.PcUI.ImageSourceAudit/styles/pcuistyle.xaml:3-26</code></td>
+<td>32×32，Apps.Style combo_ic_关联_normal.png；MouseOver-&gt;hover、IsChecked-&gt;click；项目 <code>src/VisionUi/SourceAssets</code> 已有三张</td>
+</tr>
+<tr>
+<td>独立窗展开按钮</td>
+<td><code>Apps.Style/buttonstyle/normalbuttonstyle.xaml:1830-1856</code></td>
+<td>ic_dialog_expandArrows_normal/disable/click.png；25×25；图像24×24</td>
+</tr>
+<tr>
+<td>增删</td>
+<td><code>DynamicIOConfigControl.xaml:80-85,140-145</code></td>
+<td>Apps.Style Resources/add_normal/add_click/delete_normal/delete_click；BaseImage_ButtonStyle <code>normalbuttonstyle.xaml:1398-1411</code> 是 ContentPresenter，MouseOver换Tag，不是随意用通用按钮hover</td>
+</tr>
+<tr>
+<td>主题</td>
+<td><code>DynamicIOConfigControl.xaml:5-12</code></td>
+<td>ColorThemesResourceDictionary、RecScrollBarStyle、NormalButtonStyle、ItemsControlStyle、ListViewComboBoxStyle、ParamUserControlDataTemplate、CheckBoxStyle</td>
+</tr>
+<tr>
+<td>订阅 Popup</td>
+<td><code>paramusercontroldatatemplate.xaml:3-13,295-334</code></td>
+<td>主题 TextBox.Static.Border、ComboBoxBorderS、Col_Theme_Mouse、FgConverter、bool2VisibilityConverter、PopupButton、SubTreeView；必须核实资源作用域，不可只复制一小段 XAML</td>
+</tr>
+</tbody></table>
+<h2 id="可独立闭合的实现包及验收">可独立闭合的实现包及验收</h2><p><strong>A. 原生订阅单元格控件（优先）</strong>：新建独立 WPF 控件文件，输入当前路径、只读态、订阅/索引树提供器、当前索引、可见展开窗能力；输出明确“换源/清源/换索引”事件。还原星号+32列、链图标三态、180×180非模态树、叶双击提交、分支不提交、展开时刷新、失焦关闭、保留路径索引。接入 Group 后需验证真实叶输出运行数据；单控件像素和事件测试不够。</p>
+<p><strong>B. 行模板收口</strong>：独立资源字典实现边框/名称/只读类型/增删/Auto累积列/编辑态隐藏；宿主只负责业务命令。验证非编辑态无删除和新增入口，空白焦点提交名称，错误名恢复，不泄漏不属于原生的控件。</p>
+<p><strong>C. 开关事件一致化</strong>：Boolean对象/状态和 ChangedCommand 各一次；鼠标、键盘、重新绑定、程序化赋值都检查；避免初始化时误写所有 mode。使用位图保持无文字，按现有数据模型做源指导的独立实现而非声称原生运行模块。</p>
+<p><strong>D. 独立订阅窗口</strong>：后续独立包，240×480、单选叶双击、索引树/源树互斥、默认方式持久化、当前目标高亮同步；没有完整 SelectedSubscribeParam 生命周期前不应只做按钮外壳。</p>
+<p><strong>E. ShowChildWin</strong>：保留为已恢复但入口隐藏的证据；可以用于专用测试查看叶名列表，但不得作为产品新入口声称原生。若未来VM实际操作显示入口，需补版本、截图、调用证据后再决定。</p>
+<p>上述包尚未在本报告实现。当前完成的是静态源码核验，真实 VM 主题/DPI/弹层关闭边界、缺失程序集内动态绑定及全局订阅窗生命周期仍待实际差分验证。</p>
+<h2 id="本次原始证据-sha-256">本次原始证据 SHA-256</h2><p>原始文件未写入本次报告提交；下列摘要定位本次读取的本地证据，Git 仅有报告不能替代原始源码。</p>
+<table>
+<thead>
+<tr>
+<th>本地证据路径</th>
+<th>SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl/DynamicIOConfigControl.xaml</code></td>
+<td><code>d3e824a8a2aa832188e98d29c3133c0c58b7791c6c089811f74e35a16dfff79a</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl/DynamicIOConfigControl.xaml.cs</code></td>
+<td><code>94914c2ed29e383c84b625325df452ab6687d4e84bdfe0053e10ad046bd3f812</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl/VmIODecorate.cs</code></td>
+<td><code>76cc8ad13647773172a15309a0971c27fd05aa59e05a9ff242f678cbeb47a4f8</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl.UI/ShowChildWin.xaml</code></td>
+<td><code>d804edbba7a76e9da94a5300a16377a4b62499eb394a310dcc5094933cb004c2</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml</code></td>
+<td><code>96b98f06fbaf9bc2cf1f481b2a24323ecfc11831c05698e9fa5b18ec294e0f63</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTabControl/BooleanControl.xaml</code></td>
+<td><code>dc32518f4f08c24619ea8da7e7c6657b75b61d3c074e233e7f19c6fa92bc3c7a</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTabControl/BooleanControl.xaml.cs</code></td>
+<td><code>8760a110405d4cf95890433b999b1d5dfeefbe0e5eff8afc6a720c02685657dc</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTab/SubTreeView.xaml</code></td>
+<td><code>6ecb778a669c66f23d9880d80e3cd388c4c497aee5791eaef86af2f70ec0da65</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTab/SubTreeView.xaml.cs</code></td>
+<td><code>125d85828d6abfc811ce41106b790065393814d79eb339b0c7b2d32254e8c3ab</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI.ParamTab/DeleteTextBox.xaml.cs</code></td>
+<td><code>303385857c5c26740d3d2634d149e90bf610c1677cb94d99e3ed39bfa069525a</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/ButtonSelecter.cs</code></td>
+<td><code>a04c04dc557328269a06d67c194f6c3a64b68659acc1f76e4de778f5da858931</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.PcUI.ImageSourceAudit/styles/pcuistyle.xaml</code></td>
+<td><code>6f65b4bf5bc604dd966dc71b8c2f48c1f8a81f2a8392851d9d1867f54bc2e4d2</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.Style/buttonstyle/normalbuttonstyle.xaml</code></td>
+<td><code>0ca27d6dd39d1ac0943b526664af4a07306a6a344833fa15f50e4c3041b33ea8</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/Apps.XmlUI/Apps.XmlUI/ParamSubscribeWindow.xaml</code></td>
+<td><code>146d6411e3aedf19f70b167411114fa87f9a7d70cec1edb199f50bc04eae93a0</code></td>
+</tr>
+</tbody></table>
+<h2 id="本轮独立控件交付主线待串行验证">本轮独立控件交付（主线待串行验证）</h2><p>经主线授权，已新增 <code>src/VisionEditor/NativeCompoundSourceSelector.cs</code> 与独立验收 <code>tests/VisionEditor.WpfChecks/NativeCompoundSelectorChecks.cs</code>。只闭合有实际 WorkflowSourceOption 提供器支持的订阅侧：32宽原资源链图标、打开刷新、180×180非模态树、分支不提交、叶双击一次回调并关闭、显式解除订阅、owner卸载关闭。原生索引正文依赖光标位置与索引元数据，本控件正文明确只读，不伪造索引树；原生独立订阅窗模式亦未实现。主线负责接入 Group、构建、运行、截图检查和实际数据验收；本分支未运行这些检查，不能标记已通过。</p>
+<p class="meta">来源：docs/NATIVE-COMPOUND-TEMPLATE-AUDIT.md · SHA256 ef12c1cf9296c5c656f6dcd65cb9efee2a5c3316d44934a6cab44607f0691e10<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

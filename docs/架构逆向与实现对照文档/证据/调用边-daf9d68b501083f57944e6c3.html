@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PasswordBoxBindingHelper附加属性 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>PasswordBoxBindingHelper附加属性 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-T07"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>PasswordBoxBindingHelper附加属性 → 另一套PasswordChanged同步载体</h2><p>注册Password/Attach/IsUpdating。Attach按旧值解除、新值订阅事件；PasswordChanged以IsUpdating门回写附加Password；属性变更临时解除事件再更新PasswordBox。所选PasswordString模板未引用此helper，不合并两套机制。</p><p><a href="../专题/password-parameters.html#edge-T07">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/password-parameters.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/password-parameters.edges.json · SHA256 ed82ef951cd54357017b9c03f5853c0f059621875f62b51b340a2474b448f98b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="248289e5a95cf3cd2cf7adb9e25859ce45cb11c413599ebc635968652a9ace76">{
+  &quot;id&quot;: &quot;T07&quot;,
+  &quot;route&quot;: &quot;参数面板 · 密码字符串&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;PasswordBoxBindingHelper附加属性&quot;,
+  &quot;to&quot;: &quot;另一套PasswordChanged同步载体&quot;,
+  &quot;behavior&quot;: &quot;注册Password/Attach/IsUpdating。Attach按旧值解除、新值订阅事件；PasswordChanged以IsUpdating门回写附加Password；属性变更临时解除事件再更新PasswordBox。所选PasswordString模板未引用此helper，不合并两套机制。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlUI/Apps.XmlUI/PasswordBoxBindingHelper.cs&quot;,
+      &quot;member&quot;: &quot;attached registration&quot;,
+      &quot;sha256&quot;: &quot;958ecd4b48eb218a77be443648220676b9b1454c0512e4f64b328aecc313fb35&quot;,
+      &quot;start&quot;: 8,
+      &quot;end&quot;: 12,
+      &quot;excerpt&quot;: &quot;\tpublic static readonly DependencyProperty PasswordProperty = DependencyProperty.RegisterAttached(\&quot;Password\&quot;, typeof(string), typeof(PasswordBoxBindingHelper), new FrameworkPropertyMetadata(string.Empty, OnPasswordPropertyChanged));\n\n\tpublic static readonly DependencyProperty AttachProperty = DependencyProperty.RegisterAttached(\&quot;Attach\&quot;, typeof(bool), typeof(PasswordBoxBindingHelper), new PropertyMetadata(false, Attach));\n\n\tprivate static readonly DependencyProperty IsUpdatingProperty = DependencyProperty.RegisterAttached(\&quot;IsUpdating\&quot;, typeof(bool), typeof(PasswordBoxBindingHelper));&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/Apps.XmlUI/Apps.XmlUI/PasswordBoxBindingHelper.cs&quot;,
+      &quot;member&quot;: &quot;synchronization callbacks&quot;,
+      &quot;sha256&quot;: &quot;958ecd4b48eb218a77be443648220676b9b1454c0512e4f64b328aecc313fb35&quot;,
+      &quot;start&quot;: 44,
+      &quot;end&quot;: 78,
+      &quot;excerpt&quot;: &quot;\tprivate static void OnPasswordPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)\n\t{\n\t\tPasswordBox passwordBox = sender as PasswordBox;\n\t\tpasswordBox.PasswordChanged -= PasswordChanged;\n\t\tif (!GetIsUpdating(passwordBox))\n\t\t{\n\t\t\tpasswordBox.Password = (string)e.NewValue;\n\t\t}\n\t\tpasswordBox.PasswordChanged += PasswordChanged;\n\t}\n\n\tprivate static void Attach(DependencyObject sender, DependencyPropertyChangedEventArgs e)\n\t{\n\t\tif (sender is PasswordBox passwordBox)\n\t\t{\n\t\t\tif ((bool)e.OldValue)\n\t\t\t{\n\t\t\t\tpasswordBox.PasswordChanged -= PasswordChanged;\n\t\t\t}\n\t\t\tif ((bool)e.NewValue)\n\t\t\t{\n\t\t\t\tpasswordBox.PasswordChanged += PasswordChanged;\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate static void PasswordChanged(object sender, RoutedEventArgs e)\n\t{\n\t\tPasswordBox passwordBox = sender as PasswordBox;\n\t\tSetIsUpdating(passwordBox, value: true);\n\t\tSetPassword(passwordBox, passwordBox.Password);\n\t\tSetIsUpdating(passwordBox, value: false);\n\t}\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;实际消费者、重复注册/异常恢复和BAML激活未确认。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

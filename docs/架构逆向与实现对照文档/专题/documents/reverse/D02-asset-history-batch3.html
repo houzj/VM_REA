@@ -1,0 +1,41 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D02 第三批：实际 PrepareSave 与跨目录历史 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / D02 第三批：实际 PrepareSave 与跨目录历史</p><h1>D02 第三批：实际 PrepareSave 与跨目录历史</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D02 第三批：实际 PrepareSave 与跨目录历史</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="D02-asset-history-batch3.html">下载原始文件</a></nav><main><h1 id="d02-第三批实际-preparesave-与跨目录历史">D02 第三批：实际 PrepareSave 与跨目录历史</h1><p>基线 main <code>6a2cf54</code>。本批使用 main 已交付的 ImageSourcePlugin、ToolPluginRegistry、GraphEditorDocument 和 SolutionStore，不读取 tool-plugins。属于独立实现集成诊断，不代表原厂 VM 行为。</p>
+<h2 id="已核对调用链">已核对调用链</h2><p><code>src/VisionEditor.Core/GraphEditorDocument.cs</code> 的 Save 对当前文档调用 PrepareSave，再 Rebase、存储和提交；Snapshot 保存 Doc/ProcedureId/BaseDir，Restore 将旧快照 Rebase 到当前基目录。Rebase 处理通用资源路径与内置 vision.image-file 的 Path，不处理插件私有 ImagePaths。</p>
+<p><code>src/VisionPluginContracts/Contracts.cs::ToolPluginRegistry.PrepareSave</code> 遍历节点并调用资产参与者。<code>src/VisionPlugins.ImageSource/ImageSourceAssets.cs::PrepareSave</code> 将 ImagePaths 等转换为绝对路径，并生成嵌入映射与资源。<code>OpenEncodedImage</code> 优先使用启用的嵌入映射，否则按当前基目录打开路径。保存前历史仍有相对路径、空映射和零资源。</p>
+<h2 id="实际操作与失败">实际操作与失败</h2><p>诊断 <code>tests/VisionEditor.AssetHistoryProbe</code> 用自有有效 BMP：载入未经准备的相对路径方案 → 改流程名 → 跨目录另存 → Undo → Redo → 删除自有外部图像 → 重开嵌入方案。通过实际插件 OpenEncodedImage 比较编码字节及路径身份，未运行模块 ExecuteAsync 或原厂 SDK。</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>路径身份/字节</th>
+<th>资源数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>载入未准备方案</td>
+<td>true/true</td>
+<td>0</td>
+</tr>
+<tr>
+<td>准备并另存</td>
+<td>true/true</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Undo 到准备前快照</td>
+<td>false/false，DirectoryNotFoundException</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Redo</td>
+<td>true/true</td>
+<td>1</td>
+</tr>
+<tr>
+<td>删除外部文件后重开</td>
+<td>true/true</td>
+<td>1</td>
+</tr>
+</tbody></table>
+<p>原文件在 Undo 时仍存在；失败来自新 saved 基目录解释旧 assets/rows.bmp。原结果为 <strong>exit1、passed=false</strong>，保存在 <code>analysis/full-audit/batch3-20261019/D02/asset-history-d657fad77f514ab28af698c9ebb08645/observations.json</code>，日志 asset-history.log。首次运行项目名为 AssetHistoryChecks，之后仅改名 Probe 并补 README，未更改诊断逻辑或抹去失败。</p>
+<p>独立审查见 <a href="D02-asset-history-review-batch3.html">复核</a>。不能对旧历史批量执行带 scope、运行状态和 I/O 的 PrepareSave；不能在 Core 硬编码插件私有字段。登记 FCR-024 的纯资产重定位合同，待用户选择跨项目交接；本批无产品补丁。多层历史、实际执行、原生方案及桌面差分仍开放。</p>
+<p class="meta">来源：docs/reverse/D02-asset-history-batch3.md · SHA256 a969ec9bf73f6b8804dfacae05290eff7516fe508aa75235a386221c7b67d2bf<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

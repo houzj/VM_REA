@@ -1,0 +1,58 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LoginWindow输入/显示模式 · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>LoginWindow输入/显示模式 · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-A04"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>LoginWindow输入/显示模式 → 控件同步 / 输入事件 / 剪贴板命令</h2><p>IfShowPassword在明文框与PasswordBox间复制并切Visibility；输入事件允许字母数字并拦空格，两个控件声明Paste/Cut/Copy的CanExecute处理器。切角色清两框及提示。这里只证明UI事件，不把它当所有程序化输入的校验。</p><p><a href="../专题/role-access.html#edge-A04">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/role-access.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/role-access.edges.json · SHA256 4984da42c75ab531507f0974797fa811932b13982ae101c36799f832b3ef2d5f</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="65f2d8a00dc5b23ced95128b332da1b8be5a544ea690b962861904622f94f3c1">{
+  &quot;id&quot;: &quot;A04&quot;,
+  &quot;route&quot;: &quot;原版 · 角色入口与登录&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;from&quot;: &quot;LoginWindow输入/显示模式&quot;,
+  &quot;to&quot;: &quot;控件同步 / 输入事件 / 剪贴板命令&quot;,
+  &quot;behavior&quot;: &quot;IfShowPassword在明文框与PasswordBox间复制并切Visibility；输入事件允许字母数字并拦空格，两个控件声明Paste/Cut/Copy的CanExecute处理器。切角色清两框及提示。这里只证明UI事件，不把它当所有程序化输入的校验。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs&quot;,
+      &quot;member&quot;: &quot;LoginWindow.IfShowPassword&quot;,
+      &quot;sha256&quot;: &quot;819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2&quot;,
+      &quot;start&quot;: 20,
+      &quot;end&quot;: 46,
+      &quot;excerpt&quot;: &quot;\tpublic bool IfShowPassword\n\t{\n\t\tget\n\t\t{\n\t\t\treturn ifShowPassword;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (ifShowPassword != value)\n\t\t\t{\n\t\t\t\tif (value)\n\t\t\t\t{\n\t\t\t\t\ttextBoxUserCode.Text = userCode.Password;\n\t\t\t\t\ttextBoxUserCode.Visibility = Visibility.Visible;\n\t\t\t\t\tuserCode.Visibility = Visibility.Collapsed;\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tuserCode.Password = textBoxUserCode.Text;\n\t\t\t\t\ttextBoxUserCode.Visibility = Visibility.Collapsed;\n\t\t\t\t\tuserCode.Visibility = Visibility.Visible;\n\t\t\t\t}\n\t\t\t\tifShowPassword = value;\n\t\t\t}\n\t\t}\n\t}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml.cs&quot;,
+      &quot;member&quot;: &quot;LoginWindow input/reset handlers&quot;,
+      &quot;sha256&quot;: &quot;819af952bbe6c40ec7b62214741afb8e7abf2d4b96287dd3eedb2a6de5a2a3d2&quot;,
+      &quot;start&quot;: 180,
+      &quot;end&quot;: 208,
+      &quot;excerpt&quot;: &quot;\tprivate void tb_PreviewTextInput(object sender, TextCompositionEventArgs e)\n\t{\n\t\tRegex regex = new Regex(\&quot;^[0-9a-zA-Z]*$\&quot;);\n\t\te.Handled = !regex.IsMatch(e.Text);\n\t}\n\n\tprivate void text_PreviewKeyDown(object sender, KeyEventArgs e)\n\t{\n\t\tif (e.Key == Key.Space)\n\t\t{\n\t\t\te.Handled = true;\n\t\t}\n\t}\n\n\tprivate void RadioUser_Click(object sender, RoutedEventArgs e)\n\t{\n\t\tuserCode.Password = \&quot;\&quot;;\n\t\ttextBoxUserCode.Text = \&quot;\&quot;;\n\t\tcodeErrorTips.Visibility = Visibility.Collapsed;\n\t\tcodeEmptyTips.Visibility = Visibility.Collapsed;\n\t}\n\n\tprivate void CommandBinding_CanExecute(object sender, CanExecuteRoutedEventArgs e)\n\t{\n\t\te.CanExecute = false;\n\t\te.Handled = true;\n\t}\n}\n&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml&quot;,
+      &quot;member&quot;: &quot;LoginWindow password input/command bindings&quot;,
+      &quot;sha256&quot;: &quot;1b65b96c523dbca874a7b2151a2b6d193ea92858de0030e31d00ded51e73f060&quot;,
+      &quot;start&quot;: 108,
+      &quot;end&quot;: 116,
+      &quot;excerpt&quot;: &quot;                &lt;PasswordBox Name=\&quot;userCode\&quot; Margin=\&quot;0\&quot; Style=\&quot;{StaticResource textCodeBoxStyle}\&quot; Tag=\&quot;{DynamicResource 请输入密码}\&quot; Width=\&quot;294\&quot; Height=\&quot;40\&quot; BorderThickness=\&quot;0\&quot; input:InputMethod.IsInputMethodEnabled=\&quot;False\&quot; PreviewTextInput=\&quot;tb_PreviewTextInput\&quot; PreviewKeyDown=\&quot;text_PreviewKeyDown\&quot;>\n                  &lt;UIElement.CommandBindings>\n                    &lt;input:CommandBinding Command=\&quot;ApplicationCommands.Paste\&quot; CanExecute=\&quot;CommandBinding_CanExecute\&quot; />\n                    &lt;input:CommandBinding Command=\&quot;ApplicationCommands.Cut\&quot; CanExecute=\&quot;CommandBinding_CanExecute\&quot; />\n                    &lt;input:CommandBinding Command=\&quot;ApplicationCommands.Copy\&quot; CanExecute=\&quot;CommandBinding_CanExecute\&quot; />\n                  &lt;/UIElement.CommandBindings>\n                &lt;/PasswordBox>\n                &lt;TextBox Name=\&quot;textBoxUserCode\&quot; Margin=\&quot;0\&quot; VerticalAlignment=\&quot;Top\&quot; Width=\&quot;294\&quot; Height=\&quot;40\&quot; BorderThickness=\&quot;0\&quot; Visibility=\&quot;Collapsed\&quot; Style=\&quot;{StaticResource textBoxStyle}\&quot; Tag=\&quot;{DynamicResource 请输入密码}\&quot; input:InputMethod.IsInputMethodEnabled=\&quot;False\&quot; Text=\&quot;{Binding ElementName=userCode, Path=Password, Mode=TwoWay}\&quot; PreviewTextInput=\&quot;tb_PreviewTextInput\&quot; PreviewKeyDown=\&quot;text_PreviewKeyDown\&quot;>\n                  &lt;UIElement.CommandBindings>&quot;,
+      &quot;evidenceType&quot;: &quot;local-extracted-resource&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VisionMasterMain/VisionMasterMain/LoginWindow.xaml&quot;,
+      &quot;member&quot;: &quot;LoginWindow visible input/command bindings&quot;,
+      &quot;sha256&quot;: &quot;1b65b96c523dbca874a7b2151a2b6d193ea92858de0030e31d00ded51e73f060&quot;,
+      &quot;start&quot;: 115,
+      &quot;end&quot;: 123,
+      &quot;excerpt&quot;: &quot;                &lt;TextBox Name=\&quot;textBoxUserCode\&quot; Margin=\&quot;0\&quot; VerticalAlignment=\&quot;Top\&quot; Width=\&quot;294\&quot; Height=\&quot;40\&quot; BorderThickness=\&quot;0\&quot; Visibility=\&quot;Collapsed\&quot; Style=\&quot;{StaticResource textBoxStyle}\&quot; Tag=\&quot;{DynamicResource 请输入密码}\&quot; input:InputMethod.IsInputMethodEnabled=\&quot;False\&quot; Text=\&quot;{Binding ElementName=userCode, Path=Password, Mode=TwoWay}\&quot; PreviewTextInput=\&quot;tb_PreviewTextInput\&quot; PreviewKeyDown=\&quot;text_PreviewKeyDown\&quot;>\n                  &lt;UIElement.CommandBindings>\n                    &lt;input:CommandBinding Command=\&quot;ApplicationCommands.Paste\&quot; CanExecute=\&quot;CommandBinding_CanExecute\&quot; />\n                    &lt;input:CommandBinding Command=\&quot;ApplicationCommands.Cut\&quot; CanExecute=\&quot;CommandBinding_CanExecute\&quot; />\n                    &lt;input:CommandBinding Command=\&quot;ApplicationCommands.Copy\&quot; CanExecute=\&quot;CommandBinding_CanExecute\&quot; />\n                  &lt;/UIElement.CommandBindings>\n                &lt;/TextBox>\n              &lt;/Grid>\n              &lt;ToggleButton Style=\&quot;{StaticResource eyeToggleButton}\&quot; Width=\&quot;40\&quot; Margin=\&quot;250,0,0,0\&quot; IsChecked=\&quot;{Binding ElementName=loginWindow, Path=IfShowPassword, Mode=TwoWay}\&quot; />&quot;,
+      &quot;evidenceType&quot;: &quot;local-extracted-resource&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;Password不是普通依赖属性；明文绑定和代码同步的实际运行行为未验证。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

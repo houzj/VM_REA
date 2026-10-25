@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>legacy frame.Text / Graphics type=text · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>legacy frame.Text / Graphics type=text · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C13"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>legacy frame.Text / Graphics type=text → Canvas中的WPF TextBlock</h2><p>TextVisible时新增单个legacy TextBlock，直接设Text/FontSize/Opacity/Brush和Canvas Left/Top。DrawGraphics先删除旧Path与Tag为string的TextBlock，逐graphic处理；text字体&lt;=0跳过，其余每点独立TextBlock，文本空值为空串、坐标直接取point。两支未指定FontFamily，依赖WPF继承/默认；不是原TextShape按Position聚合的FormattedText/DrawText与Visual组透明度。</p><p><a href="../专题/rendering-layers.html#edge-C13">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/rendering-layers.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/rendering-layers.edges.json · SHA256 28101fd3e74d0ef6d0fc0f2c5059c29b49d8a7d9e0e05a0081c069f7d6bfb43b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="de85ccd7fc65ec3a5d666f004801fb1d1f39cbbd90f00de796ebd681a6d76d6e">{
+  &quot;id&quot;: &quot;C13&quot;,
+  &quot;route&quot;: &quot;当前 · 实际结果呈现与有限导出&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;legacy frame.Text / Graphics type=text&quot;,
+  &quot;to&quot;: &quot;Canvas中的WPF TextBlock&quot;,
+  &quot;behavior&quot;: &quot;TextVisible时新增单个legacy TextBlock，直接设Text/FontSize/Opacity/Brush和Canvas Left/Top。DrawGraphics先删除旧Path与Tag为string的TextBlock，逐graphic处理；text字体&lt;=0跳过，其余每点独立TextBlock，文本空值为空串、坐标直接取point。两支未指定FontFamily，依赖WPF继承/默认；不是原TextShape按Position聚合的FormattedText/DrawText与Visual组透明度。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolDisplayPresenter.cs&quot;,
+      &quot;member&quot;: &quot;Legacy text overlay&quot;,
+      &quot;sha256&quot;: &quot;0148527f597e5db2239b4efab3987ca992b2216317cd166a95f9f51f7238c6e2&quot;,
+      &quot;start&quot;: 66,
+      &quot;end&quot;: 73,
+      &quot;excerpt&quot;: &quot;        if (frame.TextVisible)\n        {\n            var text = new W.TextBlock { Name = \&quot;DisplayOverlayText\&quot;, Text = frame.Text, FontSize = frame.FontSize, Opacity = frame.Opacity,\n                Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFromInvariantString(frame.Color)! };\n            W.Canvas.SetLeft(text, frame.PositionX); W.Canvas.SetTop(text, frame.PositionY); labels.Children.Add(text);\n        }\n        DrawGraphics();\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionPluginContracts/ToolDisplayPresenter.cs&quot;,
+      &quot;member&quot;: &quot;Per-point graphic text&quot;,
+      &quot;sha256&quot;: &quot;0148527f597e5db2239b4efab3987ca992b2216317cd166a95f9f51f7238c6e2&quot;,
+      &quot;start&quot;: 74,
+      &quot;end&quot;: 89,
+      &quot;excerpt&quot;: &quot;    void DrawGraphics(){\n        foreach(var shape in labels.Children.OfType&lt;System.Windows.Shapes.Path>().ToArray())labels.Children.Remove(shape);\n        foreach(var text in labels.Children.OfType&lt;W.TextBlock>().Where(t=>t.Tag is string).ToArray())labels.Children.Remove(text);\n        if(Frame is null)return;\n        double scale=Math.Min(ActualWidth/scene.Width,ActualHeight/scene.Height);if(!double.IsFinite(scale)||scale&lt;=0)scale=1;\n        foreach(var graphic in Frame.Graphics){\n            if(graphic.Type==\&quot;text\&quot;){\n                // FontSize zero is the source conversion fallback. Avoid an invalid\n                // WPF FontSize assignment; original native zero-font rendering remains unverified.\n                if(graphic.FontSize&lt;=0)continue;\n                foreach(var point in graphic.Points){var text=new W.TextBlock{Tag=graphic.Name,Text=point.Text??\&quot;\&quot;,FontSize=graphic.FontSize,Opacity=graphic.Opacity,Foreground=(Brush)new BrushConverter().ConvertFromInvariantString(graphic.Color)!};W.Canvas.SetLeft(text,point.X);W.Canvas.SetTop(text,point.Y);labels.Children.Add(text);}\n                continue;\n            }\n            void Add(ToolDisplayGraphic item,string? tip,bool markers=true){\n                var path=new System.Windows.Shapes.Path{Tag=item.Name,Data=ToolDisplayGraphicGeometry.Create(item,scene.Width,scale,markers),Stroke=(Brush)new BrushConverter().ConvertFromInvariantString(item.Color)!,StrokeThickness=item.StrokeThickness/scale,Opacity=item.Opacity,IsHitTestVisible=!string.IsNullOrEmpty(tip),ToolTip=tip};\n                if(item.Type==\&quot;coordinate\&quot;)path.Fill=path.Stroke;&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;没有证明字体继承、自动换行、尺寸约束、同点分组或原版非法字号fallback等价；命名graphic.Name为空/非预期Tag类型的清理可达性未验。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,63 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平移旋转标定点表导入 UI 源码对照 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 平移旋转标定点表导入 UI 源码对照</p><h1>平移旋转标定点表导入 UI 源码对照</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平移旋转标定点表导入 UI 源码对照</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="TRANSLATION-POINT-IMPORT-UI-TRACE.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="TRANSLATION-POINT-IMPORT-UI-TRACE.html#平移旋转标定点表导入-ui-源码对照">平移旋转标定点表导入 UI 源码对照</a></p><p style="margin-left:14px"><a href="TRANSLATION-POINT-IMPORT-UI-TRACE.html#原厂成员与动作顺序">原厂成员与动作顺序</a></p><p style="margin-left:14px"><a href="TRANSLATION-POINT-IMPORT-UI-TRACE.html#发现并修复的独立实现差异">发现并修复的独立实现差异</a></p><p style="margin-left:14px"><a href="TRANSLATION-POINT-IMPORT-UI-TRACE.html#证据身份">证据身份</a></p><p style="margin-left:14px"><a href="TRANSLATION-POINT-IMPORT-UI-TRACE.html#边界与验证">边界与验证</a></p></details><h1 id="平移旋转标定点表导入-ui-源码对照">平移旋转标定点表导入 UI 源码对照</h1><h2 id="原厂成员与动作顺序">原厂成员与动作顺序</h2><p>原厂模板资源 <code>TranslationCalibModuControl/datatemplate/paramusercontroldatatemplate.xaml</code> 中 <code>EditButton_Calib</code> 的按钮命令绑定 <code>EditDialogA.ClickCommand</code>。<code>EditButton_Calib : Integer</code> 暴露 <code>EditDialogA</code>，其 XML <code>EditDialog</code> 指向 <code>TranslationCalibModuControl.NPointList</code>。</p>
+<p>点表窗口在 <code>NPointListWindow.Init</code> 中将宽度设为 520，初始高度根据点数计算；<code>NPointList.UserControl_Loaded</code> 再将窗口高度设为 399。<code>NPointList.Init</code> 按 <code>CalibPointTotalNum + RotPointTotalNum</code> 创建行，初始 getter 通过 <code>float.Parse(...).ToString(&quot;f3&quot;)</code> 格式化点值。</p>
+<p>原厂导入路径的关键顺序位于 <code>NPointList.ButtonImport_Click</code> → <code>GetPointListByText</code>：</p>
+<ol>
+<li>读取当前 DataGrid 的点数作为容量，按 <code>\r\n</code> 拆分文件，最多处理当前容量的行。</li>
+<li><code>GetPointListByText</code> 在本地新建 <code>ObservableCollection&lt;PointList&gt;</code>。逐行先对所有空格分隔字段调用 <code>MathHelper.IsNumber</code>；然后按原字符串创建 <code>PointList</code>，只用前五列赋给图像 X/Y、物理 X/Y 和角度。少于当前容量的有效文件会返回较短集合；空文件返回空集合；多余行截断。</li>
+<li><code>PointList</code> 五个属性 setter 会分别写 <code>IUserStringData[paramName + ID]</code>。所以处理到后续坏行前，之前成功创建的行已经写入参数存储。</li>
+<li>只有 <code>GetPointListByText</code> 返回非 null 后，调用者才执行 <code>PointList = pointListByText</code> 替换 DataGrid 集合。坏行返回 null 或解析异常时，旧集合仍显示；此前成功 setter 的参数副作用不回滚。</li>
+<li>成功导入后，DataGrid 直接绑定新集合。表格显示行数等于成功解析的行数，导入文本保留原字符串；导入行之外的总点数参数不在此处修改。</li>
+</ol>
+<h2 id="发现并修复的独立实现差异">发现并修复的独立实现差异</h2><p>旧版 <code>TranslationTableWindow</code> 导入使用 <code>finally { Load(); }</code>，不论解析成功或失败，都按参数里的点总数重建 DataGrid。它因此与原厂成功导入后的集合行数不符；失败时也会把已发生的有效前缀参数写入重新加载并显示，而原厂保留当前 DataGrid 的旧 <code>PointList</code> 集合。成功导入时旧实现还将解析出的浮点值重新格式化为三位小数，原厂导入行则显示 <code>PointList</code> 中的原始字符串。</p>
+<p>现在 <code>TranslationTableWindow.ImportPointText</code> 先验证当前行所有已有 token，再按原厂对象初始化器的 <code>ImagePointX → ImagePointY → WorldPointX → WorldPointY → DeltaAngle</code> 次序逐字段更新参数；每个 setter 对应一次即时参数发布。只有完整行结束后才计入待显示的新集合。解析中途失败时，已完成行和当前行已执行的属性 setter 副作用保留，但不调用 <code>Load</code>，所以旧 DataGrid 集合继续显示。成功时按完整行数替换 DataGrid，并保留导入原始文本；成功的空文本将表格替换为空集合，点数量参数维持原值，符合原厂 <code>GetPointListByText</code> 不改计数和成功后直接赋集合的顺序。</p>
+<p>专属检查在真实 WPF <code>TranslationTableWindow</code> 上确认：短文件导入后显示两行但配置点数仍是 9；高精度原始文本如 <code>1.23456</code> 原样显示；第二行含非数字 token 时，当前坏行无字段写入、之前完整行副作用保留，旧 UI 集合不变。少于五列但所有现有 token 都是数字时，原厂先完成全部现有 token 校验，再按对象初始化顺序写 <code>ImagePointX0</code>、<code>ImagePointY0</code>、<code>WorldPointX0</code>、<code>WorldPointY0</code>；求值 <code>DeltaAngle = array2[4]</code> 时抛 <code>IndexOutOfRangeException</code>，因此 <code>DeltaAngle0</code> 不变且尚未完成构造的当前 <code>PointList</code> 不加入集合，旧 UI 集合仍被保留。检查复现前四个值已写入、角度保持旧值及 UI 原集合不变。空文件成功后表格为空。</p>
+<h2 id="证据身份">证据身份</h2><table>
+<thead>
+<tr>
+<th>文件/制品</th>
+<th>SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原厂 <code>TranslationCalibModu.dll</code></td>
+<td><code>a85a7ca08ea265b2cf881b4ff01bf7538a60e9edb7466478476584b08fe25183</code></td>
+</tr>
+<tr>
+<td>原厂 <code>TranslationCalibModuControl.dll</code></td>
+<td><code>6353098907df95e3e4f430b3372a97a9c7a5fedab8f656fba50bbb1a1417b0be</code></td>
+</tr>
+<tr>
+<td>工作树 AlgorithmTab 语义副本 <code>TranslationCalibModuAlgorithmTab.xml</code></td>
+<td><code>11a2fc389098112ea40f45b0684affa19e5102be557ac1cbcefa4590cf97d8fe</code>（原始资源 SHA 见 <a href="../../../../plugins/translation-calibration-definition.json">translation-calibration-definition.json</a>：<code>3d626213bab65b7192fc27cfe3b0d5a2e13e595b5f349424adc327fe2aead062</code>）</td>
+</tr>
+<tr>
+<td>反编译 <code>NPointList.xaml.cs</code></td>
+<td><code>af17cdab8a3b4e57f94097f948db7c9a4e1070bcba328319683b0e98085b3835</code></td>
+</tr>
+<tr>
+<td>反编译 <code>PointList.cs</code></td>
+<td><code>cf0a718f5a12e085fb018ee628b07129c4bec290c5f5ae4acce4838c583bb624</code></td>
+</tr>
+<tr>
+<td>反编译 <code>NPointList.xaml</code></td>
+<td><code>1156090a91cecfa8dc09042943202b5a7b4a3b19c17b913f31a210b722e644a5</code></td>
+</tr>
+<tr>
+<td>反编译 <code>NPointListWindow.cs</code></td>
+<td><code>41d9a177d1facacaa6294b94ec0f198e7830f77c8ea90b7a749b624efc247b5d</code></td>
+</tr>
+<tr>
+<td>当前 <code>TranslationWindow.cs</code></td>
+<td><code>0bfc35b29f49804b07d6c2ea14fa1f2503963042d058a24fd271baf64a33275a</code></td>
+</tr>
+<tr>
+<td><code>TranslationCalibration.PluginChecks/UiChecks.cs</code></td>
+<td><code>dbfa3734f7a36fc428a86f313ea769f52cd805e6b9b02f10a42ac23ca41873e7</code></td>
+</tr>
+</tbody></table>
+<h2 id="边界与验证">边界与验证</h2><p>这次闭合点表导入后 DataGrid 集合、原始文本显示和少于五列数字行的逐字段副作用顺序。异常发生在当前行 <code>DeltaAngle</code> 数组索引读取处；它不是整行原子拒绝。由 <code>PointList</code> setter 内部捕获的参数存储写入异常会停止对应属性 setter 更新，但原厂桌面点表异常提示/本地化消息框没有在独立 UI 中像素复刻。</p>
+<ul>
+<li><code>dotnet run --project tests/TranslationCalibration.PluginChecks/TranslationCalibration.PluginChecks.csproj -c Release</code>：<code>TranslationCalibration.PluginChecks: 7463 checks passed</code>。</li>
+<li>无设备测试；没有修改主框架工作树。</li>
+</ul>
+<p class="meta">来源：docs/plugins/TRANSLATION-POINT-IMPORT-UI-TRACE.md · SHA256 3fdb23b2fd001b51b24830f5a118f4df27a35189236ea75676ed59392e2f6618<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

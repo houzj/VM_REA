@@ -1,0 +1,746 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VariableManager原件与内存/错误边界</title><style>:root{color-scheme:dark;background:#0d1727;color:#e5eef8;font:15px/1.7 "Microsoft YaHei UI",sans-serif}body{max-width:1300px;margin:auto;padding:25px}a{color:#9aceff}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#14273b;padding:14px;font:12px/1.6 Consolas,monospace}summary{cursor:pointer}</style><a href="compatibility-tool.html#edge-G09">← VariableManager调用层级</a><h1>数组快照、链接模块与修改命令</h1><p>原程序集引用身份与选中定义匹配，仍未证明运行装配。读取ref数组、按ID还原模块和修改命令分别记录；没有执行原代码。</p><pre>{
+  &quot;schemaVersion&quot;: 1,
+  &quot;complete&quot;: false,
+  &quot;artifacts&quot;: [
+    {
+      &quot;key&quot;: &quot;xmlparser&quot;,
+      &quot;path&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\Apps.XmlParser.dll&quot;,
+      &quot;sha256&quot;: &quot;78ec7ae1e5adefff29197099c7109b153a3f75d092b7c3e9dc253d8c1b25a8d1&quot;,
+      &quot;mvid&quot;: &quot;d0604401-ab61-48a4-938b-faad16d74e7c&quot;,
+      &quot;reaEvidence&quot;: &quot;ev_b3a71726ac88c3bfa26cb2a7f52cae18a1c0b089aa5306d29d074a63ad2ee5f7&quot;
+    }
+  ],
+  &quot;reference&quot;: {
+    &quot;artifact&quot;: &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\CompatibleTool.exe&quot;,
+    &quot;sha256&quot;: &quot;af413cf17cf5683582b604d4cd3079234cb2af3f7f56e14594e3ab73b77d90e4&quot;,
+    &quot;mvid&quot;: &quot;22070afa-2e59-4765-93c6-cdf80c45681f&quot;,
+    &quot;token&quot;: &quot;0x01000045&quot;,
+    &quot;type&quot;: &quot;Apps.XmlParser.Variable.VariableManager&quot;,
+    &quot;resolutionScopeToken&quot;: &quot;0x23000008&quot;,
+    &quot;assembly&quot;: {
+      &quot;name&quot;: &quot;Apps.XmlParser&quot;,
+      &quot;version&quot;: &quot;1.0.0.0&quot;,
+      &quot;publicKeyOrToken&quot;: &quot;ea83335d1d9bd50f&quot;
+    },
+    &quot;meaning&quot;: &quot;Metadata reference identity only; runtime binding and callee behavior not established.&quot;,
+    &quot;selectedDefinitionAssembly&quot;: {
+      &quot;name&quot;: &quot;Apps.XmlParser&quot;,
+      &quot;version&quot;: &quot;1.0.0.0&quot;,
+      &quot;culture&quot;: null,
+      &quot;flags&quot;: 1,
+      &quot;hash_algorithm&quot;: 32772,
+      &quot;public_key&quot;: {
+        &quot;kind&quot;: &quot;public-key&quot;,
+        &quot;byte_length&quot;: 160,
+        &quot;sha256&quot;: &quot;db5631114cc2076cf62a81339e3ad7190e5dd4994f1598d36e3c8a5e00092bc7&quot;,
+        &quot;token&quot;: &quot;ea83335d1d9bd50f&quot;
+      },
+      &quot;token&quot;: &quot;0x20000001&quot;,
+      &quot;row_offset&quot;: 559754
+    },
+    &quot;match&quot;: &quot;Assembly name/version/public-key token matched; runtime resolution remains unverified.&quot;
+  },
+  &quot;snapshot&quot;: {
+    &quot;token&quot;: &quot;0x06000223&quot;,
+    &quot;keys&quot;: [
+      &quot;VarCount&quot;,
+      &quot;GlobalValueList&quot;
+    ],
+    &quot;note&quot;: &quot;Output ref array is only assigned after positive parsed count and non-null, struct-size-divisible byte data; other branches retain caller input. Count is a gate, not an equality check against parsed records.&quot;
+  },
+  &quot;modify&quot;: {
+    &quot;token&quot;: &quot;0x0600022c&quot;,
+    &quot;allocation&quot;: {
+      &quot;offset&quot;: 205,
+      &quot;label&quot;: &quot;IL_00cd&quot;,
+      &quot;opcode&quot;: &quot;call&quot;,
+      &quot;operandKind&quot;: &quot;InlineMethod&quot;,
+      &quot;operand&quot;: {
+        &quot;token&quot;: &quot;0x0a0002e8&quot;,
+        &quot;kind&quot;: &quot;member-ref&quot;,
+        &quot;type&quot;: &quot;System.Runtime.InteropServices.Marshal&quot;,
+        &quot;name&quot;: &quot;AllocHGlobal&quot;,
+        &quot;parameters&quot;: 1,
+        &quot;signatureBytes&quot;: &quot;00011808&quot;
+      }
+    },
+    &quot;copy&quot;: {
+      &quot;offset&quot;: 217,
+      &quot;label&quot;: &quot;IL_00d9&quot;,
+      &quot;opcode&quot;: &quot;call&quot;,
+      &quot;operandKind&quot;: &quot;InlineMethod&quot;,
+      &quot;operand&quot;: {
+        &quot;token&quot;: &quot;0x0a0002e9&quot;,
+        &quot;kind&quot;: &quot;member-ref&quot;,
+        &quot;type&quot;: &quot;System.Runtime.InteropServices.Marshal&quot;,
+        &quot;name&quot;: &quot;Copy&quot;,
+        &quot;parameters&quot;: 4,
+        &quot;signatureBytes&quot;: &quot;0004011d05081808&quot;
+      }
+    },
+    &quot;release&quot;: {
+      &quot;offset&quot;: 423,
+      &quot;label&quot;: &quot;IL_01a7&quot;,
+      &quot;opcode&quot;: &quot;call&quot;,
+      &quot;operandKind&quot;: &quot;InlineMethod&quot;,
+      &quot;operand&quot;: {
+        &quot;token&quot;: &quot;0x0a0002ea&quot;,
+        &quot;kind&quot;: &quot;member-ref&quot;,
+        &quot;type&quot;: &quot;System.Runtime.InteropServices.Marshal&quot;,
+        &quot;name&quot;: &quot;FreeHGlobal&quot;,
+        &quot;parameters&quot;: 1,
+        &quot;signatureBytes&quot;: &quot;00010118&quot;
+      }
+    },
+    &quot;catchRegion&quot;: {
+      &quot;kind&quot;: &quot;Catch&quot;,
+      &quot;catchType&quot;: &quot;VM.PlatformSDKCS.VmException&quot;,
+      &quot;TryOffset&quot;: 267,
+      &quot;TryLength&quot;: 100,
+      &quot;HandlerOffset&quot;: 367,
+      &quot;HandlerLength&quot;: 34
+    },
+    &quot;finallyRegion&quot;: {
+      &quot;kind&quot;: &quot;Finally&quot;,
+      &quot;catchType&quot;: null,
+      &quot;TryOffset&quot;: 267,
+      &quot;TryLength&quot;: 136,
+      &quot;HandlerOffset&quot;: 403,
+      &quot;HandlerLength&quot;: 35
+    },
+    &quot;note&quot;: &quot;Allocation/copy/serialization occur before the protected region. Params-backed and no-DataSource SetBinaryData paths have different exception behavior; only VmException is caught locally.&quot;
+  },
+  &quot;lookup&quot;: {
+    &quot;token&quot;: &quot;0x06000215&quot;,
+    &quot;note&quot;: &quot;Calls VmSolution.GetAllModuleByIDs, which reconstructs linked module models; not a direct dictionary-only lookup.&quot;
+  },
+  &quot;repair&quot;: {
+    &quot;token&quot;: &quot;0x06000207&quot;,
+    &quot;note&quot;: &quot;Translation reversal runs unless both first and last characters are percent signs; error logging is not an early return.&quot;
+  },
+  &quot;runtimeExecuted&quot;: false,
+  &quot;limitations&quot;: [
+    &quot;Primary byte/struct and link-list pointer ownership is not established by the wrapper CIL.&quot;,
+    &quot;ModuleParam/SDK code is existing local decompiled source; this slice does not revalidate its original binary identity.&quot;,
+    &quot;No SDK, conversion, model creation, translation or parameter write was executed.&quot;
+  ]
+}</pre><details><summary>.ctor · 0x06000205 · 18 instructions</summary><pre>IL_0000 ldarg.0 null
+IL_0001 call {&quot;token&quot;:&quot;0x0a00005a&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Object&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;200001&quot;}
+IL_0006 nop null
+IL_0007 nop null
+IL_0008 ldarg.1 null
+IL_0009 isinst {&quot;token&quot;:&quot;0x0100003f&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;VM.Core.VmModule&quot;}
+IL_000e ldnull null
+IL_000f cgt.un null
+IL_0011 stloc.0 null
+IL_0012 ldloc.0 null
+IL_0013 brfalse.s 35
+IL_0015 nop null
+IL_0016 ldarg.0 null
+IL_0017 ldarg.1 null
+IL_0018 castclass {&quot;token&quot;:&quot;0x0100003f&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;VM.Core.VmModule&quot;}
+IL_001d stfld {&quot;token&quot;:&quot;0x04000105&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VariableManager&quot;,&quot;name&quot;:&quot;DataSource&quot;,&quot;attributes&quot;:&quot;Private&quot;}
+IL_0022 nop null
+IL_0023 ret null</pre></details><details><summary>.ctor · 0x06000206 · 5 instructions</summary><pre>IL_0000 ldarg.0 null
+IL_0001 call {&quot;token&quot;:&quot;0x0a00005a&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Object&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;200001&quot;}
+IL_0006 nop null
+IL_0007 nop null
+IL_0008 ret null</pre></details><details><summary>RepairVarName · 0x06000207 · 26 instructions</summary><pre>IL_0000 nop null
+IL_0001 ldarg.1 null
+IL_0002 call {&quot;token&quot;:&quot;0x2b000017&quot;,&quot;kind&quot;:&quot;method-spec&quot;,&quot;definition&quot;:{&quot;token&quot;:&quot;0x0a0000ca&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Linq.Enumerable&quot;,&quot;name&quot;:&quot;First&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;1001011e001512808d011e00&quot;},&quot;instantiationSignatureBytes&quot;:&quot;0a0103&quot;}
+IL_0007 ldc.i4.s 37
+IL_0009 bne.un.s 26
+IL_000b ldarg.1 null
+IL_000c call {&quot;token&quot;:&quot;0x2b000059&quot;,&quot;kind&quot;:&quot;method-spec&quot;,&quot;definition&quot;:{&quot;token&quot;:&quot;0x0a000092&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Linq.Enumerable&quot;,&quot;name&quot;:&quot;Last&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;1001011e001512808d011e00&quot;},&quot;instantiationSignatureBytes&quot;:&quot;0a0103&quot;}
+IL_0011 ldc.i4.s 37
+IL_0013 ceq null
+IL_0015 ldc.i4.0 null
+IL_0016 ceq null
+IL_0018 br.s 27
+IL_001a ldc.i4.1 null
+IL_001b stloc.0 null
+IL_001c ldloc.0 null
+IL_001d brfalse.s 41
+IL_001f nop null
+IL_0020 ldarg.1 null
+IL_0021 call {&quot;token&quot;:&quot;0x0a0000cb&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;Apps.Localization.AppLocalizationService&quot;,&quot;name&quot;:&quot;UnDoTranslate&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e0e&quot;}
+IL_0026 starg.s 1
+IL_0028 nop null
+IL_0029 ldarg.1 null
+IL_002a stloc.1 null
+IL_002b br.s 45
+IL_002d ldloc.1 null
+IL_002e ret null</pre></details><details><summary>GetVmModulesByIDArray · 0x06000215 · 14 instructions</summary><pre>IL_0000 nop null
+IL_0001 newobj {&quot;token&quot;:&quot;0x0a0002c1&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;200001&quot;}
+IL_0006 stloc.0 null
+IL_0007 call {&quot;token&quot;:&quot;0x0a0000cd&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.Core.VmSolution&quot;,&quot;name&quot;:&quot;get_Instance&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;000012847d&quot;}
+IL_000c ldloc.0 null
+IL_000d ldarg.1 null
+IL_000e callvirt {&quot;token&quot;:&quot;0x0a0002c3&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;ToArray&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;20001d1300&quot;}
+IL_0013 callvirt {&quot;token&quot;:&quot;0x0a0002c4&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.Core.VmModuleSet&quot;,&quot;name&quot;:&quot;GetAllModuleByIDs&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;200201151265011280fd1d08&quot;}
+IL_0018 nop null
+IL_0019 ldloc.0 null
+IL_001a stloc.1 null
+IL_001b br.s 29
+IL_001d ldloc.1 null
+IL_001e ret null</pre></details><details><summary>GetAllVar · 0x06000223 · 55 instructions</summary><pre>IL_0000 nop null
+IL_0001 ldarg.0 null
+IL_0002 ldfld {&quot;token&quot;:&quot;0x04000105&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VariableManager&quot;,&quot;name&quot;:&quot;DataSource&quot;,&quot;attributes&quot;:&quot;Private&quot;}
+IL_0007 callvirt {&quot;token&quot;:&quot;0x0a0002c5&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.Core.VmModule&quot;,&quot;name&quot;:&quot;get_Params&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;2000128301&quot;}
+IL_000c ldstr {&quot;token&quot;:&quot;0x70001dbc&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;VarCount&quot;}
+IL_0011 callvirt {&quot;token&quot;:&quot;0x0a0002de&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VMControls.BaseInterface.IUserStringData&quot;,&quot;name&quot;:&quot;get_Item&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;20010e0e&quot;}
+IL_0016 stloc.0 null
+IL_0017 ldc.i4.0 null
+IL_0018 stloc.1 null
+IL_0019 ldloc.0 null
+IL_001a ldloca.s 1
+IL_001c call {&quot;token&quot;:&quot;0x0a00011c&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Int32&quot;,&quot;name&quot;:&quot;TryParse&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;0002020e1008&quot;}
+IL_0021 brfalse.s 41
+IL_0023 ldloc.1 null
+IL_0024 ldc.i4.0 null
+IL_0025 cgt null
+IL_0027 br.s 42
+IL_0029 ldc.i4.0 null
+IL_002a stloc.2 null
+IL_002b ldloc.2 null
+IL_002c brfalse.s 123
+IL_002e nop null
+IL_002f ldarg.0 null
+IL_0030 ldfld {&quot;token&quot;:&quot;0x04000105&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VariableManager&quot;,&quot;name&quot;:&quot;DataSource&quot;,&quot;attributes&quot;:&quot;Private&quot;}
+IL_0035 callvirt {&quot;token&quot;:&quot;0x0a0002c5&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.Core.VmModule&quot;,&quot;name&quot;:&quot;get_Params&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;2000128301&quot;}
+IL_003a ldstr {&quot;token&quot;:&quot;0x70001dce&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;GlobalValueList&quot;}
+IL_003f callvirt {&quot;token&quot;:&quot;0x0a0002df&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VMControls.BaseInterface.IUserBytesData&quot;,&quot;name&quot;:&quot;get_Item&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;20011d050e&quot;}
+IL_0044 stloc.3 null
+IL_0045 ldloc.3 null
+IL_0046 brfalse.s 96
+IL_0048 ldloc.3 null
+IL_0049 ldlen null
+IL_004a conv.i4 null
+IL_004b ldtoken {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0050 call {&quot;token&quot;:&quot;0x0a00015f&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Type&quot;,&quot;name&quot;:&quot;GetTypeFromHandle&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00011281a11185d9&quot;}
+IL_0055 call {&quot;token&quot;:&quot;0x0a0002d9&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;SizeOf&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;0001081281a1&quot;}
+IL_005a rem null
+IL_005b ldc.i4.0 null
+IL_005c ceq null
+IL_005e br.s 97
+IL_0060 ldc.i4.0 null
+IL_0061 stloc.s 4
+IL_0063 ldloc.s 4
+IL_0065 brfalse.s 122
+IL_0067 nop null
+IL_0068 ldloc.3 null
+IL_0069 call {&quot;token&quot;:&quot;0x2b00006b&quot;,&quot;kind&quot;:&quot;method-spec&quot;,&quot;definition&quot;:{&quot;token&quot;:&quot;0x0a0002e0&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;HikExternalCall.Common.ExternalCallHelper&quot;,&quot;name&quot;:&quot;BytesToStructs&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;100101151265011e001d05&quot;},&quot;instantiationSignatureBytes&quot;:&quot;0a01118694&quot;}
+IL_006e stloc.s 5
+IL_0070 ldarg.1 null
+IL_0071 ldloc.s 5
+IL_0073 callvirt {&quot;token&quot;:&quot;0x0a0002e1&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;ToArray&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;20001d1300&quot;}
+IL_0078 stind.ref null
+IL_0079 nop null
+IL_007a nop null
+IL_007b ret null</pre></details><details><summary>GetAllVar · 0x06000224 · 344 instructions</summary><pre>IL_0000 nop null
+IL_0001 ldc.i4.0 null
+IL_0002 newarr {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0007 stloc.0 null
+IL_0008 ldarg.0 null
+IL_0009 ldloca.s 0
+IL_000b call {&quot;token&quot;:&quot;0x06000223&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VariableManager&quot;,&quot;name&quot;:&quot;GetAllVar&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig&quot;,&quot;signatureBytes&quot;:&quot;200101101d118694&quot;}
+IL_0010 nop null
+IL_0011 ldc.i4.0 null
+IL_0012 stloc.1 null
+IL_0013 br 960
+IL_0018 newobj {&quot;token&quot;:&quot;0x0600107e&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,&quot;signatureBytes&quot;:&quot;200001&quot;}
+IL_001d stloc.2 null
+IL_001e ldloc.2 null
+IL_001f ldarg.0 null
+IL_0020 stfld {&quot;token&quot;:&quot;0x040007a5&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;&lt;&gt;4__this&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0025 nop null
+IL_0026 ldloc.2 null
+IL_0027 newobj {&quot;token&quot;:&quot;0x060002a0&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,&quot;signatureBytes&quot;:&quot;200001&quot;}
+IL_002c stfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0031 ldloc.0 null
+IL_0032 ldloc.1 null
+IL_0033 ldelem {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0038 stloc.3 null
+IL_0039 ldloc.2 null
+IL_003a ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_003f ldloc.3 null
+IL_0040 ldfld {&quot;token&quot;:&quot;0x04000771&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;chszValueName&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_0045 call {&quot;token&quot;:&quot;0x0a0000e6&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetString&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e1d05&quot;}
+IL_004a callvirt {&quot;token&quot;:&quot;0x0600028c&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Name&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_004f nop null
+IL_0050 ldloc.2 null
+IL_0051 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0056 ldloc.3 null
+IL_0057 ldfld {&quot;token&quot;:&quot;0x04000772&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;chszValueType&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_005c call {&quot;token&quot;:&quot;0x0a0000e6&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetString&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e1d05&quot;}
+IL_0061 callvirt {&quot;token&quot;:&quot;0x0600028e&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Type&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_0066 nop null
+IL_0067 ldloc.2 null
+IL_0068 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_006d ldloc.3 null
+IL_006e ldfld {&quot;token&quot;:&quot;0x0400076e&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;nIndex&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0073 callvirt {&quot;token&quot;:&quot;0x0600028a&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Index&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20010108&quot;}
+IL_0078 nop null
+IL_0079 ldloc.2 null
+IL_007a ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_007f ldloc.3 null
+IL_0080 ldfld {&quot;token&quot;:&quot;0x04000770&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;bCommEnable&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_0085 callvirt {&quot;token&quot;:&quot;0x0600029a&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_IsCommInit&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20010102&quot;}
+IL_008a nop null
+IL_008b ldloc.2 null
+IL_008c ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0091 ldloc.3 null
+IL_0092 ldfld {&quot;token&quot;:&quot;0x04000778&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;bCombination&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_0097 callvirt {&quot;token&quot;:&quot;0x0600029c&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_IsCombination&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20010102&quot;}
+IL_009c nop null
+IL_009d ldloc.2 null
+IL_009e ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_00a3 ldloc.3 null
+IL_00a4 ldfld {&quot;token&quot;:&quot;0x04000773&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;chszValue&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_00a9 call {&quot;token&quot;:&quot;0x0a0000e6&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetString&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e1d05&quot;}
+IL_00ae callvirt {&quot;token&quot;:&quot;0x06000292&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Value&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_00b3 nop null
+IL_00b4 ldloc.2 null
+IL_00b5 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_00ba ldloc.3 null
+IL_00bb ldfld {&quot;token&quot;:&quot;0x04000774&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;chszRemark&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_00c0 call {&quot;token&quot;:&quot;0x0a0000e6&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetString&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e1d05&quot;}
+IL_00c5 callvirt {&quot;token&quot;:&quot;0x06000290&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_RemarkInfo&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_00ca nop null
+IL_00cb ldloc.2 null
+IL_00cc ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_00d1 ldloc.3 null
+IL_00d2 ldfld {&quot;token&quot;:&quot;0x04000775&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;chsGroupInfo&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_00d7 call {&quot;token&quot;:&quot;0x0a0000e6&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetString&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e1d05&quot;}
+IL_00dc callvirt {&quot;token&quot;:&quot;0x06000298&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_GroupInfo&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_00e1 nop null
+IL_00e2 ldloc.2 null
+IL_00e3 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_00e8 ldloc.3 null
+IL_00e9 ldfld {&quot;token&quot;:&quot;0x0400076f&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;chszGuid&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_00ee call {&quot;token&quot;:&quot;0x0a0000e6&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetString&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e1d05&quot;}
+IL_00f3 callvirt {&quot;token&quot;:&quot;0x0600029f&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Guid&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_00f8 nop null
+IL_00f9 ldarg.1 null
+IL_00fa ldind.ref null
+IL_00fb ldloc.2 null
+IL_00fc ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0101 callvirt {&quot;token&quot;:&quot;0x0a0002af&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;Add&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;2001011300&quot;}
+IL_0106 nop null
+IL_0107 ldloc.0 null
+IL_0108 ldloc.1 null
+IL_0109 ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_010e ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0113 ldfld {&quot;token&quot;:&quot;0x04000768&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0118 ldc.i4.0 null
+IL_0119 cgt.un null
+IL_011b stloc.s 4
+IL_011d ldloc.s 4
+IL_011f brfalse 955
+IL_0124 nop null
+IL_0125 ldloc.2 null
+IL_0126 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_012b callvirt {&quot;token&quot;:&quot;0x0600028d&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;get_Type&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20000e&quot;}
+IL_0130 ldstr {&quot;token&quot;:&quot;0x70000845&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;int&quot;}
+IL_0135 call {&quot;token&quot;:&quot;0x0a000063&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.String&quot;,&quot;name&quot;:&quot;op_Equality&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;0002020e0e&quot;}
+IL_013a stloc.s 5
+IL_013c ldloc.s 5
+IL_013e brfalse 470
+IL_0143 nop null
+IL_0144 ldloc.0 null
+IL_0145 ldloc.1 null
+IL_0146 ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_014b ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0150 ldfld {&quot;token&quot;:&quot;0x04000768&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0155 newarr {&quot;token&quot;:&quot;0x0100015d&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Int32&quot;}
+IL_015a stloc.s 6
+IL_015c ldloc.0 null
+IL_015d ldloc.1 null
+IL_015e ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0163 ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0168 ldfld {&quot;token&quot;:&quot;0x04000768&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_016d conv.u8 null
+IL_016e ldtoken {&quot;token&quot;:&quot;0x0100015d&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Int32&quot;}
+IL_0173 call {&quot;token&quot;:&quot;0x0a00015f&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Type&quot;,&quot;name&quot;:&quot;GetTypeFromHandle&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00011281a11185d9&quot;}
+IL_0178 call {&quot;token&quot;:&quot;0x0a0002d9&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;SizeOf&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;0001081281a1&quot;}
+IL_017d conv.i8 null
+IL_017e mul null
+IL_017f conv.i4 null
+IL_0180 stloc.s 7
+IL_0182 ldloc.s 7
+IL_0184 newarr {&quot;token&quot;:&quot;0x0100019c&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Byte&quot;}
+IL_0189 stloc.s 8
+IL_018b ldloc.0 null
+IL_018c ldloc.1 null
+IL_018d ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0192 ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0197 ldfld {&quot;token&quot;:&quot;0x04000769&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;pIntValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_019c ldloc.s 8
+IL_019e ldc.i4.0 null
+IL_019f ldloc.s 7
+IL_01a1 call {&quot;token&quot;:&quot;0x0a0002e2&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;Copy&quot;,&quot;parameters&quot;:4,&quot;signatureBytes&quot;:&quot;000401181d050808&quot;}
+IL_01a6 nop null
+IL_01a7 ldloc.s 8
+IL_01a9 ldc.i4.0 null
+IL_01aa ldloc.s 6
+IL_01ac ldc.i4.0 null
+IL_01ad ldloc.s 8
+IL_01af ldlen null
+IL_01b0 conv.i4 null
+IL_01b1 call {&quot;token&quot;:&quot;0x0a0002e3&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Buffer&quot;,&quot;name&quot;:&quot;BlockCopy&quot;,&quot;parameters&quot;:5,&quot;signatureBytes&quot;:&quot;000501128161081281610808&quot;}
+IL_01b6 nop null
+IL_01b7 ldloc.2 null
+IL_01b8 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_01bd ldloc.s 6
+IL_01bf ldc.i4.0 null
+IL_01c0 ldelema {&quot;token&quot;:&quot;0x0100015d&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Int32&quot;}
+IL_01c5 call {&quot;token&quot;:&quot;0x0a00014b&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Int32&quot;,&quot;name&quot;:&quot;ToString&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;20000e&quot;}
+IL_01ca callvirt {&quot;token&quot;:&quot;0x06000292&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Value&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_01cf nop null
+IL_01d0 nop null
+IL_01d1 br 825
+IL_01d6 ldloc.2 null
+IL_01d7 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_01dc callvirt {&quot;token&quot;:&quot;0x0600028d&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;get_Type&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20000e&quot;}
+IL_01e1 ldstr {&quot;token&quot;:&quot;0x70000865&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;float&quot;}
+IL_01e6 call {&quot;token&quot;:&quot;0x0a000063&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.String&quot;,&quot;name&quot;:&quot;op_Equality&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;0002020e0e&quot;}
+IL_01eb stloc.s 9
+IL_01ed ldloc.s 9
+IL_01ef brfalse 647
+IL_01f4 nop null
+IL_01f5 ldloc.0 null
+IL_01f6 ldloc.1 null
+IL_01f7 ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_01fc ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0201 ldfld {&quot;token&quot;:&quot;0x04000768&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0206 newarr {&quot;token&quot;:&quot;0x01000173&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Single&quot;}
+IL_020b stloc.s 10
+IL_020d ldloc.0 null
+IL_020e ldloc.1 null
+IL_020f ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0214 ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0219 ldfld {&quot;token&quot;:&quot;0x04000768&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_021e conv.u8 null
+IL_021f ldtoken {&quot;token&quot;:&quot;0x01000173&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Single&quot;}
+IL_0224 call {&quot;token&quot;:&quot;0x0a00015f&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Type&quot;,&quot;name&quot;:&quot;GetTypeFromHandle&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00011281a11185d9&quot;}
+IL_0229 call {&quot;token&quot;:&quot;0x0a0002d9&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;SizeOf&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;0001081281a1&quot;}
+IL_022e conv.i8 null
+IL_022f mul null
+IL_0230 conv.i4 null
+IL_0231 stloc.s 11
+IL_0233 ldloc.s 11
+IL_0235 newarr {&quot;token&quot;:&quot;0x0100019c&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Byte&quot;}
+IL_023a stloc.s 12
+IL_023c ldloc.0 null
+IL_023d ldloc.1 null
+IL_023e ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0243 ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0248 ldfld {&quot;token&quot;:&quot;0x0400076a&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;pFloatValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_024d ldloc.s 12
+IL_024f ldc.i4.0 null
+IL_0250 ldloc.s 11
+IL_0252 call {&quot;token&quot;:&quot;0x0a0002e2&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;Copy&quot;,&quot;parameters&quot;:4,&quot;signatureBytes&quot;:&quot;000401181d050808&quot;}
+IL_0257 nop null
+IL_0258 ldloc.s 12
+IL_025a ldc.i4.0 null
+IL_025b ldloc.s 10
+IL_025d ldc.i4.0 null
+IL_025e ldloc.s 12
+IL_0260 ldlen null
+IL_0261 conv.i4 null
+IL_0262 call {&quot;token&quot;:&quot;0x0a0002e3&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Buffer&quot;,&quot;name&quot;:&quot;BlockCopy&quot;,&quot;parameters&quot;:5,&quot;signatureBytes&quot;:&quot;000501128161081281610808&quot;}
+IL_0267 nop null
+IL_0268 ldloc.2 null
+IL_0269 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_026e ldloc.s 10
+IL_0270 ldc.i4.0 null
+IL_0271 ldelema {&quot;token&quot;:&quot;0x01000173&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Single&quot;}
+IL_0276 call {&quot;token&quot;:&quot;0x0a0002d8&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Single&quot;,&quot;name&quot;:&quot;ToString&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;20000e&quot;}
+IL_027b callvirt {&quot;token&quot;:&quot;0x06000292&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Value&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_0280 nop null
+IL_0281 nop null
+IL_0282 br 825
+IL_0287 ldloc.2 null
+IL_0288 ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_028d callvirt {&quot;token&quot;:&quot;0x0600028d&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;get_Type&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20000e&quot;}
+IL_0292 ldstr {&quot;token&quot;:&quot;0x70000871&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;string&quot;}
+IL_0297 call {&quot;token&quot;:&quot;0x0a000063&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.String&quot;,&quot;name&quot;:&quot;op_Equality&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;0002020e0e&quot;}
+IL_029c stloc.s 13
+IL_029e ldloc.s 13
+IL_02a0 brfalse 825
+IL_02a5 nop null
+IL_02a6 ldloc.0 null
+IL_02a7 ldloc.1 null
+IL_02a8 ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_02ad ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_02b2 ldfld {&quot;token&quot;:&quot;0x0400076b&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;pByteValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_02b7 ldloc.0 null
+IL_02b8 ldloc.1 null
+IL_02b9 ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_02be ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_02c3 ldfld {&quot;token&quot;:&quot;0x04000768&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_02c8 call {&quot;token&quot;:&quot;0x2b00006c&quot;,&quot;kind&quot;:&quot;method-spec&quot;,&quot;definition&quot;:{&quot;token&quot;:&quot;0x0a0002b2&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;HikExternalCall.Common.ExternalCallHelper&quot;,&quot;name&quot;:&quot;IntPtr2Structures&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;1001021d1e001808&quot;},&quot;instantiationSignatureBytes&quot;:&quot;0a01118680&quot;}
+IL_02cd stloc.s 14
+IL_02cf ldloc.s 14
+IL_02d1 brfalse.s 746
+IL_02d3 ldloc.s 14
+IL_02d5 ldlen null
+IL_02d6 brfalse.s 746
+IL_02d8 ldloc.s 14
+IL_02da ldc.i4.0 null
+IL_02db ldelema {&quot;token&quot;:&quot;0x020001a0&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.ByteDataArray&quot;}
+IL_02e0 ldfld {&quot;token&quot;:&quot;0x04000754&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.ByteDataArray&quot;,&quot;name&quot;:&quot;nDataLen&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_02e5 ldc.i4.0 null
+IL_02e6 cgt.un null
+IL_02e8 br.s 747
+IL_02ea ldc.i4.0 null
+IL_02eb stloc.s 15
+IL_02ed ldloc.s 15
+IL_02ef brfalse.s 824
+IL_02f1 nop null
+IL_02f2 ldloc.s 14
+IL_02f4 ldc.i4.0 null
+IL_02f5 ldelema {&quot;token&quot;:&quot;0x020001a0&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.ByteDataArray&quot;}
+IL_02fa ldfld {&quot;token&quot;:&quot;0x04000754&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.ByteDataArray&quot;,&quot;name&quot;:&quot;nDataLen&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_02ff newarr {&quot;token&quot;:&quot;0x0100019c&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Byte&quot;}
+IL_0304 stloc.s 16
+IL_0306 ldloc.s 14
+IL_0308 ldc.i4.0 null
+IL_0309 ldelema {&quot;token&quot;:&quot;0x020001a0&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.ByteDataArray&quot;}
+IL_030e ldfld {&quot;token&quot;:&quot;0x04000753&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.ByteDataArray&quot;,&quot;name&quot;:&quot;pData&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0313 ldloc.s 16
+IL_0315 ldc.i4.0 null
+IL_0316 ldloc.s 16
+IL_0318 ldlen null
+IL_0319 conv.i4 null
+IL_031a call {&quot;token&quot;:&quot;0x0a0002e2&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;Copy&quot;,&quot;parameters&quot;:4,&quot;signatureBytes&quot;:&quot;000401181d050808&quot;}
+IL_031f nop null
+IL_0320 ldloc.s 16
+IL_0322 call {&quot;token&quot;:&quot;0x0a0000e6&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetString&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010e1d05&quot;}
+IL_0327 stloc.s 17
+IL_0329 ldloc.2 null
+IL_032a ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_032f ldloc.s 17
+IL_0331 callvirt {&quot;token&quot;:&quot;0x06000292&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_Value&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;2001010e&quot;}
+IL_0336 nop null
+IL_0337 nop null
+IL_0338 nop null
+IL_0339 ldloc.2 null
+IL_033a ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_033f callvirt {&quot;token&quot;:&quot;0x0600029b&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;get_IsCombination&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;200002&quot;}
+IL_0344 brfalse.s 867
+IL_0346 ldloc.0 null
+IL_0347 ldloc.1 null
+IL_0348 ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_034d ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0352 ldfld {&quot;token&quot;:&quot;0x0400076c&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;pIoValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0357 ldsfld {&quot;token&quot;:&quot;0x0a0002b0&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.IntPtr&quot;,&quot;name&quot;:&quot;Zero&quot;,&quot;parameters&quot;:null,&quot;signatureBytes&quot;:&quot;0618&quot;}
+IL_035c call {&quot;token&quot;:&quot;0x0a0002b1&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.IntPtr&quot;,&quot;name&quot;:&quot;op_Inequality&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;0002021818&quot;}
+IL_0361 br.s 868
+IL_0363 ldc.i4.0 null
+IL_0364 stloc.s 18
+IL_0366 ldloc.s 18
+IL_0368 brfalse.s 954
+IL_036a nop null
+IL_036b ldloc.2 null
+IL_036c ldfld {&quot;token&quot;:&quot;0x040007a4&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;varItem&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0371 newobj {&quot;token&quot;:&quot;0x0a0002ae&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;200001&quot;}
+IL_0376 callvirt {&quot;token&quot;:&quot;0x06000296&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarItem&quot;,&quot;name&quot;:&quot;set_SubIOInfos&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;200101151265011280bc&quot;}
+IL_037b nop null
+IL_037c ldloc.0 null
+IL_037d ldloc.1 null
+IL_037e ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0383 ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0388 ldfld {&quot;token&quot;:&quot;0x0400076c&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;pIoValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_038d ldloc.0 null
+IL_038e ldloc.1 null
+IL_038f ldelema {&quot;token&quot;:&quot;0x020001a5&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;}
+IL_0394 ldflda {&quot;token&quot;:&quot;0x04000779&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE&quot;,&quot;name&quot;:&quot;stVarValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_0399 ldfld {&quot;token&quot;:&quot;0x04000768&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_VARIABLE_VALUE&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_039e call {&quot;token&quot;:&quot;0x2b000069&quot;,&quot;kind&quot;:&quot;method-spec&quot;,&quot;definition&quot;:{&quot;token&quot;:&quot;0x0a0002b2&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;HikExternalCall.Common.ExternalCallHelper&quot;,&quot;name&quot;:&quot;IntPtr2Structures&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;1001021d1e001808&quot;},&quot;instantiationSignatureBytes&quot;:&quot;0a01118684&quot;}
+IL_03a3 stloc.s 19
+IL_03a5 ldloc.s 19
+IL_03a7 ldloc.2 null
+IL_03a8 ldftn {&quot;token&quot;:&quot;0x0600107f&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;.&lt;&gt;c__DisplayClass51_0&quot;,&quot;name&quot;:&quot;&lt;GetAllVar&gt;b__0&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Assembly, HideBySig&quot;,&quot;signatureBytes&quot;:&quot;200101118684&quot;}
+IL_03ae newobj {&quot;token&quot;:&quot;0x0a0002b3&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;2002011c18&quot;}
+IL_03b3 call {&quot;token&quot;:&quot;0x2b00006a&quot;,&quot;kind&quot;:&quot;method-spec&quot;,&quot;definition&quot;:{&quot;token&quot;:&quot;0x0a00028c&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Array&quot;,&quot;name&quot;:&quot;ForEach&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;100102011d1e0015128111011e00&quot;},&quot;instantiationSignatureBytes&quot;:&quot;0a01118684&quot;}
+IL_03b8 nop null
+IL_03b9 nop null
+IL_03ba nop null
+IL_03bb nop null
+IL_03bc ldloc.1 null
+IL_03bd ldc.i4.1 null
+IL_03be add null
+IL_03bf stloc.1 null
+IL_03c0 ldloc.1 null
+IL_03c1 ldloc.0 null
+IL_03c2 ldlen null
+IL_03c3 conv.i4 null
+IL_03c4 clt null
+IL_03c6 stloc.s 20
+IL_03c8 ldloc.s 20
+IL_03ca brtrue 24
+IL_03cf ret null</pre></details><details><summary>ModifyLinkModuleByParamBind · 0x0600022c · 164 instructions</summary><pre>IL_0000 nop null
+IL_0001 ldarg.1 null
+IL_0002 call {&quot;token&quot;:&quot;0x0a00008c&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.String&quot;,&quot;name&quot;:&quot;IsNullOrEmpty&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;0001020e&quot;}
+IL_0007 brtrue.s 15
+IL_0009 ldarg.2 null
+IL_000a ldnull null
+IL_000b ceq null
+IL_000d br.s 16
+IL_000f ldc.i4.1 null
+IL_0010 stloc.s 5
+IL_0012 ldloc.s 5
+IL_0014 brfalse.s 35
+IL_0016 nop null
+IL_0017 ldstr {&quot;token&quot;:&quot;0x700020ca&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;param is error&quot;}
+IL_001c call {&quot;token&quot;:&quot;0x0a000101&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;Apps.Log.LogHelper&quot;,&quot;name&quot;:&quot;Error&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;0001011c&quot;}
+IL_0021 nop null
+IL_0022 nop null
+IL_0023 ldarg.0 null
+IL_0024 ldarg.1 null
+IL_0025 call {&quot;token&quot;:&quot;0x06000207&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VariableManager&quot;,&quot;name&quot;:&quot;RepairVarName&quot;,&quot;parameters&quot;:1,&quot;attributes&quot;:&quot;Private, HideBySig&quot;,&quot;signatureBytes&quot;:&quot;20010e0e&quot;}
+IL_002a starg.s 1
+IL_002c ldloca.s 0
+IL_002e initobj {&quot;token&quot;:&quot;0x020001a2&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;}
+IL_0034 ldloca.s 0
+IL_0036 ldc.i4.5 null
+IL_0037 stfld {&quot;token&quot;:&quot;0x0400075f&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;,&quot;name&quot;:&quot;enumAction&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_003c ldloca.s 0
+IL_003e ldarg.1 null
+IL_003f ldc.i4 256
+IL_0044 call {&quot;token&quot;:&quot;0x0a000294&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetFixLenBytes&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;00021d050e08&quot;}
+IL_0049 stfld {&quot;token&quot;:&quot;0x04000760&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;,&quot;name&quot;:&quot;chszVarName&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_004e ldloca.s 0
+IL_0050 ldarg.3 null
+IL_0051 brtrue.s 90
+IL_0053 ldstr {&quot;token&quot;:&quot;0x700020e8&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;unbind&quot;}
+IL_0058 br.s 95
+IL_005a ldstr {&quot;token&quot;:&quot;0x700020f6&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;bind&quot;}
+IL_005f ldc.i4 256
+IL_0064 call {&quot;token&quot;:&quot;0x0a000294&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetFixLenBytes&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;00021d050e08&quot;}
+IL_0069 stfld {&quot;token&quot;:&quot;0x04000762&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;,&quot;name&quot;:&quot;chszChangeValue&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_006e ldsfld {&quot;token&quot;:&quot;0x0a0002b0&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.IntPtr&quot;,&quot;name&quot;:&quot;Zero&quot;,&quot;parameters&quot;:null,&quot;signatureBytes&quot;:&quot;0618&quot;}
+IL_0073 stloc.1 null
+IL_0074 newobj {&quot;token&quot;:&quot;0x0a0002f2&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;200001&quot;}
+IL_0079 stloc.2 null
+IL_007a ldloc.2 null
+IL_007b ldloca.s 6
+IL_007d initobj {&quot;token&quot;:&quot;0x020001a3&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_LINKMODULE&quot;}
+IL_0083 ldloca.s 6
+IL_0085 ldarg.2 null
+IL_0086 callvirt {&quot;token&quot;:&quot;0x0600027e&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarRunParamInfo&quot;,&quot;name&quot;:&quot;get_Name&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20000e&quot;}
+IL_008b ldc.i4 128
+IL_0090 call {&quot;token&quot;:&quot;0x0a000294&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetFixLenBytes&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;00021d050e08&quot;}
+IL_0095 stfld {&quot;token&quot;:&quot;0x04000767&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_LINKMODULE&quot;,&quot;name&quot;:&quot;chszRunParamName&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_009a ldloca.s 6
+IL_009c ldarg.2 null
+IL_009d callvirt {&quot;token&quot;:&quot;0x06000280&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarRunParamInfo&quot;,&quot;name&quot;:&quot;get_Type&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;20000e&quot;}
+IL_00a2 ldc.i4.s 16
+IL_00a4 call {&quot;token&quot;:&quot;0x0a000294&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.StringUtil&quot;,&quot;name&quot;:&quot;UTF8GetFixLenBytes&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;00021d050e08&quot;}
+IL_00a9 stfld {&quot;token&quot;:&quot;0x04000766&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_LINKMODULE&quot;,&quot;name&quot;:&quot;chszRunParamType&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_00ae ldloca.s 6
+IL_00b0 ldarg.2 null
+IL_00b1 callvirt {&quot;token&quot;:&quot;0x0600027c&quot;,&quot;kind&quot;:&quot;method-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VarRunParamInfo&quot;,&quot;name&quot;:&quot;get_nModuleID&quot;,&quot;parameters&quot;:0,&quot;attributes&quot;:&quot;Public, HideBySig, SpecialName&quot;,&quot;signatureBytes&quot;:&quot;200008&quot;}
+IL_00b6 stfld {&quot;token&quot;:&quot;0x04000765&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_LINKMODULE&quot;,&quot;name&quot;:&quot;nModuleID&quot;,&quot;attributes&quot;:&quot;Public, HasFieldMarshal&quot;}
+IL_00bb ldloc.s 6
+IL_00bd callvirt {&quot;token&quot;:&quot;0x0a0002f3&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;TypeSpecification&quot;,&quot;name&quot;:&quot;Add&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;2001011300&quot;}
+IL_00c2 nop null
+IL_00c3 ldloc.2 null
+IL_00c4 call {&quot;token&quot;:&quot;0x2b00006f&quot;,&quot;kind&quot;:&quot;method-spec&quot;,&quot;definition&quot;:{&quot;token&quot;:&quot;0x0a0002e7&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;HikExternalCall.Common.ExternalCallHelper&quot;,&quot;name&quot;:&quot;StructsToBytes&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;1001011d0515128129011e00&quot;},&quot;instantiationSignatureBytes&quot;:&quot;0a0111868c&quot;}
+IL_00c9 stloc.3 null
+IL_00ca ldloc.3 null
+IL_00cb ldlen null
+IL_00cc conv.i4 null
+IL_00cd call {&quot;token&quot;:&quot;0x0a0002e8&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;AllocHGlobal&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00011808&quot;}
+IL_00d2 stloc.1 null
+IL_00d3 ldloc.3 null
+IL_00d4 ldc.i4.0 null
+IL_00d5 ldloc.1 null
+IL_00d6 ldloc.3 null
+IL_00d7 ldlen null
+IL_00d8 conv.i4 null
+IL_00d9 call {&quot;token&quot;:&quot;0x0a0002e9&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;Copy&quot;,&quot;parameters&quot;:4,&quot;signatureBytes&quot;:&quot;0004011d05081808&quot;}
+IL_00de nop null
+IL_00df ldloca.s 0
+IL_00e1 ldloc.1 null
+IL_00e2 stfld {&quot;token&quot;:&quot;0x04000764&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;,&quot;name&quot;:&quot;pBinaryValue&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_00e7 ldloca.s 0
+IL_00e9 ldc.i4.1 null
+IL_00ea stfld {&quot;token&quot;:&quot;0x04000763&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;,&quot;name&quot;:&quot;nValueNum&quot;,&quot;attributes&quot;:&quot;Public&quot;}
+IL_00ef ldloc.0 null
+IL_00f0 box {&quot;token&quot;:&quot;0x020001a2&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;}
+IL_00f5 ldtoken {&quot;token&quot;:&quot;0x020001a2&quot;,&quot;kind&quot;:&quot;TypeDefinition&quot;,&quot;type&quot;:&quot;.IMVS_MODIFY_VAR&quot;}
+IL_00fa call {&quot;token&quot;:&quot;0x0a00015f&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Type&quot;,&quot;name&quot;:&quot;GetTypeFromHandle&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00011281a11185d9&quot;}
+IL_00ff call {&quot;token&quot;:&quot;0x0a0002d9&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;SizeOf&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;0001081281a1&quot;}
+IL_0104 call {&quot;token&quot;:&quot;0x0a0002da&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;HikExternalCall.Common.ExternalCallHelper&quot;,&quot;name&quot;:&quot;StructToBytes&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;00021d051c08&quot;}
+IL_0109 stloc.s 4
+IL_010b nop null
+IL_010c ldarg.0 null
+IL_010d ldfld {&quot;token&quot;:&quot;0x04000105&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VariableManager&quot;,&quot;name&quot;:&quot;DataSource&quot;,&quot;attributes&quot;:&quot;Private&quot;}
+IL_0112 ldnull null
+IL_0113 cgt.un null
+IL_0115 stloc.s 7
+IL_0117 ldloc.s 7
+IL_0119 brfalse.s 311
+IL_011b nop null
+IL_011c ldarg.0 null
+IL_011d ldfld {&quot;token&quot;:&quot;0x04000105&quot;,&quot;kind&quot;:&quot;field-def&quot;,&quot;type&quot;:&quot;Apps.XmlParser.Variable.VariableManager&quot;,&quot;name&quot;:&quot;DataSource&quot;,&quot;attributes&quot;:&quot;Private&quot;}
+IL_0122 callvirt {&quot;token&quot;:&quot;0x0a0002c5&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.Core.VmModule&quot;,&quot;name&quot;:&quot;get_Params&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;2000128301&quot;}
+IL_0127 ldstr {&quot;token&quot;:&quot;0x70001f14&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;ModifyVar&quot;}
+IL_012c ldloc.s 4
+IL_012e callvirt {&quot;token&quot;:&quot;0x0a0002db&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VMControls.BaseInterface.IUserBytesData&quot;,&quot;name&quot;:&quot;set_Item&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;2002010e1d05&quot;}
+IL_0133 nop null
+IL_0134 nop null
+IL_0135 br.s 364
+IL_0137 nop null
+IL_0138 call {&quot;token&quot;:&quot;0x0a000106&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.ServerSDKManager&quot;,&quot;name&quot;:&quot;get_serverSDKManager&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;00001285c5&quot;}
+IL_013d ldfld {&quot;token&quot;:&quot;0x0a000107&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.ServerSDKManager&quot;,&quot;name&quot;:&quot;mModuleManager&quot;,&quot;parameters&quot;:null,&quot;signatureBytes&quot;:&quot;0612817d&quot;}
+IL_0142 ldarg.s 4
+IL_0144 ldstr {&quot;token&quot;:&quot;0x70001f14&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;ModifyVar&quot;}
+IL_0149 ldloc.s 4
+IL_014b ldc.i4 3000
+IL_0150 callvirt {&quot;token&quot;:&quot;0x0a0002f4&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.ModuleManager&quot;,&quot;name&quot;:&quot;SetBinaryData&quot;,&quot;parameters&quot;:4,&quot;signatureBytes&quot;:&quot;200408090e1d0509&quot;}
+IL_0155 stloc.s 8
+IL_0157 ldloc.s 8
+IL_0159 ldc.i4.0 null
+IL_015a cgt.un null
+IL_015c stloc.s 9
+IL_015e ldloc.s 9
+IL_0160 brfalse.s 363
+IL_0162 nop null
+IL_0163 ldloc.s 8
+IL_0165 newobj {&quot;token&quot;:&quot;0x0a0002d5&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.VmException&quot;,&quot;name&quot;:&quot;.ctor&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;20010108&quot;}
+IL_016a throw null
+IL_016b nop null
+IL_016c nop null
+IL_016d leave.s 401
+IL_016f stloc.s 10
+IL_0171 nop null
+IL_0172 ldstr {&quot;token&quot;:&quot;0x70002100&quot;,&quot;kind&quot;:&quot;user-string&quot;,&quot;value&quot;:&quot;ModifyVar is exception:&quot;}
+IL_0177 ldloc.s 10
+IL_0179 callvirt {&quot;token&quot;:&quot;0x0a0000fe&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;VM.PlatformSDKCS.VmException&quot;,&quot;name&quot;:&quot;get_errorCode&quot;,&quot;parameters&quot;:0,&quot;signatureBytes&quot;:&quot;200008&quot;}
+IL_017e box {&quot;token&quot;:&quot;0x0100015d&quot;,&quot;kind&quot;:&quot;TypeReference&quot;,&quot;type&quot;:&quot;System.Int32&quot;}
+IL_0183 call {&quot;token&quot;:&quot;0x0a0002f5&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.String&quot;,&quot;name&quot;:&quot;Concat&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;00020e1c1c&quot;}
+IL_0188 call {&quot;token&quot;:&quot;0x0a000101&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;Apps.Log.LogHelper&quot;,&quot;name&quot;:&quot;Error&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;0001011c&quot;}
+IL_018d nop null
+IL_018e nop null
+IL_018f leave.s 401
+IL_0191 leave.s 438
+IL_0193 nop null
+IL_0194 ldloc.1 null
+IL_0195 ldsfld {&quot;token&quot;:&quot;0x0a0002b0&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.IntPtr&quot;,&quot;name&quot;:&quot;Zero&quot;,&quot;parameters&quot;:null,&quot;signatureBytes&quot;:&quot;0618&quot;}
+IL_019a call {&quot;token&quot;:&quot;0x0a0002b1&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.IntPtr&quot;,&quot;name&quot;:&quot;op_Inequality&quot;,&quot;parameters&quot;:2,&quot;signatureBytes&quot;:&quot;0002021818&quot;}
+IL_019f stloc.s 11
+IL_01a1 ldloc.s 11
+IL_01a3 brfalse.s 436
+IL_01a5 nop null
+IL_01a6 ldloc.1 null
+IL_01a7 call {&quot;token&quot;:&quot;0x0a0002ea&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.Runtime.InteropServices.Marshal&quot;,&quot;name&quot;:&quot;FreeHGlobal&quot;,&quot;parameters&quot;:1,&quot;signatureBytes&quot;:&quot;00010118&quot;}
+IL_01ac nop null
+IL_01ad ldsfld {&quot;token&quot;:&quot;0x0a0002b0&quot;,&quot;kind&quot;:&quot;member-ref&quot;,&quot;type&quot;:&quot;System.IntPtr&quot;,&quot;name&quot;:&quot;Zero&quot;,&quot;parameters&quot;:null,&quot;signatureBytes&quot;:&quot;0618&quot;}
+IL_01b2 stloc.1 null
+IL_01b3 nop null
+IL_01b4 nop null
+IL_01b5 endfinally null
+IL_01b6 ret null</pre></details><p><a href="variable-manager-cil-evidence.json">全部选中CIL/原始字节/异常区</a> · <a href="variable-manager-review.json">判断与未知</a> · <a href="variable-manager-rea-identity.json">REA定义身份</a>。浏览器呈现未验收；主框架实施41/96＝42.71%，本页不加分。</p></html><script data-document-web src="document-web-links.js"></script>

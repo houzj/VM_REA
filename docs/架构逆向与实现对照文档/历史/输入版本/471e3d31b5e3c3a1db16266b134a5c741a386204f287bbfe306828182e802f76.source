@@ -1,0 +1,115 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Region / Components 复合叶证据复核</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../framework-architecture.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="../../REGION-COMPOUND-EVIDENCE-AUDIT.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#region--components-复合叶证据复核">Region / Components 复合叶证据复核</a></p><p style="margin-left:14px"><a href="#结论和应保留的边界">结论和应保留的边界</a></p><p style="margin-left:28px"><a href="#原生数据类型与树">原生数据类型与树</a></p><p style="margin-left:14px"><a href="#components">Components</a></p><p style="margin-left:14px"><a href="#regionpolygonfixture">Region、Polygon、Fixture</a></p><p style="margin-left:28px"><a href="#rectangle--annulus">Rectangle / Annulus</a></p><p style="margin-left:28px"><a href="#polygon">Polygon</a></p><p style="margin-left:28px"><a href="#fixture">Fixture</a></p><p style="margin-left:14px"><a href="#原生模板与入口的真实可见性">原生模板与入口的真实可见性</a></p><p style="margin-left:14px"><a href="#下一批闭合建议">下一批闭合建议</a></p><p style="margin-left:14px"><a href="#后续结构设计补充">后续结构设计补充</a></p><p style="margin-left:14px"><a href="#2026-10-17-并行静态代码复审未构建">2026-10-17 并行静态代码复审（未构建）</a></p><p style="margin-left:28px"><a href="#需要修复的真实边界">需要修复的真实边界</a></p><p style="margin-left:28px"><a href="#当前检查为正确的行为">当前检查为正确的行为</a></p><p style="margin-left:28px"><a href="#测试覆盖不足">测试覆盖不足</a></p></details><h1 id="region--components-复合叶证据复核">Region / Components 复合叶证据复核</h1><p>日期：2026-10-17。范围：原始反编译 C# / XAML、本机 VM 4.4 模块 XML，以及当前 <code>CompoundOutputFields.cs</code>。本报告未运行原生 VM，不证明算法、像素边界、浮点舍入或 UI 的完整原生等价性。未修改产品程序集。</p>
+<h2 id="结论和应保留的边界">结论和应保留的边界</h2><p>当前 Components 字段名及 Rectangle / Annulus 的 Detect 输出路径有原始 XML 支持，未发现这些路径的拼写错误。但它们是<strong>独立托管数据向原生字段名称的部分投影</strong>。Region 是 ROI 定义列表，Components 是独立连通域结果列表；二者都不是已经证明与原生 ABI 同一的数据类型。原生字段的可见性、基数、分组顺序必须另行保留，不能由类型枚举推断。</p>
+<h3 id="原生数据类型与树">原生数据类型与树</h3><ul>
+<li><code>analysis/decompiled/VM.Core/VM.Core/DataType.cs</code>：存在 POINTSET、ROIBOX、ROIANNULUS、POLYGON 等；没有当前托管名 Region / Components。</li>
+<li><code>analysis/decompiled/VM.Core/VM.Core/DynamicOutput.cs:767</code> 起：ROIBOX→RECT_BOX，POINT→POINT_F，CIRCLE→CIRCLE，FIXTURE→FIXTURE，ANNULUS / ROIANNULUS→ANNULUS，POLYGON / ROIPOLYGON→POLYGON。不能把全部复合对象降为 pointset。</li>
+<li><code>analysis/decompiled/VM.Core/VM.Core/VmIO.cs:1041</code>，<code>GetAllLeafIO</code>：递归 Childs，叶节点按遍历顺序加入列表。它不是当前点分隔路径串的规范定义；当前路径串是独立可持久化寻址方案。</li>
+</ul>
+<h2 id="components">Components</h2><p>原始证据根路径：<code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Location/IMVSBlobFindModu/IMVSBlobFindModu.xml</code>。</p>
+<table>
+<thead>
+<tr>
+<th>XML 行 / 节点</th>
+<th>当前映射</th>
+<th>判断</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>104 BlobNum:int</td>
+<td>列表 Count</td>
+<td>名称、标量匹配；算法筛选语义未差分</td>
+</tr>
+<tr>
+<td>105 Area:float, IsArray=true</td>
+<td>Component.Area → double[]</td>
+<td>字段存在；当前整数面积再转 double，不是原生 float 精度复刻</td>
+</tr>
+<tr>
+<td>106 TotalArea:float</td>
+<td>对独立整数面积求和</td>
+<td>名称匹配；累计舍入/溢出/过滤语义未证实</td>
+</tr>
+<tr>
+<td>107..112 CentroidPoint / CentroidX,Y</td>
+<td>Component.CenterX,Y</td>
+<td>类型结构匹配；像素坐标约定未证实</td>
+</tr>
+<tr>
+<td>142..153 BlobRect / RectPoint / BlobRectX,Y,Width,Height</td>
+<td>MinX,MinY,Max-Min+1</td>
+<td>名称匹配；inclusive 宽高为独立实现约定，不是原生等价证据</td>
+</tr>
+<tr>
+<td>113..125 MinBoudingRect</td>
+<td>未投影</td>
+<td>正确保留未知；不可把轴对齐盒冒充旋转最小盒</td>
+</tr>
+<tr>
+<td>129..141 MaxAreaInnerRect</td>
+<td>未投影</td>
+<td>当前 Component 无对应值，不应补零</td>
+</tr>
+<tr>
+<td>208..213 ContourPoints / ContourInfo:pointset / ContourNum</td>
+<td>未投影</td>
+<td>当前 Component 无轮廓点，不可制造</td>
+</tr>
+</tbody></table>
+<p>后续可补：XML 154 起轴对齐左右上下角字段，但只能显式声明采用当前整数像素边界；Angle / Perimeter / 轴长 / 圆度等仍须实际算法产出。</p>
+<h2 id="regionpolygonfixture">Region、Polygon、Fixture</h2><h3 id="rectangle--annulus">Rectangle / Annulus</h3><p><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSRegionCopyModu/IMVSRegionCopyModu.xml:110..136</code>：</p>
+<ul>
+<li>ROI.DetectRectCenterPoint.DetectCenterX/Y、DetectWidth/Height/Angle。</li>
+<li>ROIAnnulus.DetectAnnulusCenterPoint.DetectAnnulusCenterX/Y、DetectAnnulusInnerRadius/OuterRadius/StartAngle/AngleExtend。</li>
+<li>此模块这些输出显式 <code>IsArray=false</code>；Blob XML:181..207 同名结构却 <code>IsArray=true</code>。因此当前 Region 所有叶统一数组是<strong>托管 Region 列表聚合策略</strong>，不能称原生固定基数。</li>
+<li>当前仅全 Rectangle 或全 Annulus、ImagePixels、非 Exclusion 才产生投影，避免静默丢掉混合形状或擅自转换 Fixture / Normalized；这是可解释的支持边界。必须在选择和运行错误中说明缺叶，不能显示为零。</li>
+<li>对空 Region 的 <code>All(...)</code> 结果为 true，当前会得到 Rectangle 空数组；这是独立空集合策略，原生究竟保留何种树未知。不能用其推断原生类型。</li>
+</ul>
+<h3 id="polygon">Polygon</h3><p>Blob XML:226..236：<code>BlindPolygon</code> Style=ROIPOLYGON、IsArray=true，子叶 <code>BlindPolygonPointNum:int[]</code>，以及 <code>BlindPolygonPoints.BlindPolygonPointsX/Y:float[]</code>；237 另有 <code>BlindPolygonString:string[]</code>。</p>
+<p>这是可实施的下一批部分映射：每多边形点数数组 + 按原顺序展平的 X/Y 数组，保留分段；不可只有 X/Y 而丢失每个 Polygon 的边界。当前 ROI 顶点可供投影，但 Exclusion、闭合重复末点、方向、串格式和 native 浮点约定尚未证实。BlindPolygon 本身是模块命名，不是任意 ROI Polygon 的必然名称。应按模块 schema 映射而非全局硬编码所有名称。</p>
+<h3 id="fixture">Fixture</h3><p>Blob XML:66..87 输入 <code>Position Correction Info</code> Style=FIXTURE：</p>
+<ul>
+<li><code>Fixtured Point.FixtureInitPointX/Y</code>、FixtureInitAngle、FixtureInitScaleX/Y。</li>
+<li><code>Unfixtured Point.FixtureRunPointX/Y</code>、FixtureRunAngle、FixtureRunScaleX/Y。</li>
+</ul>
+<p>当前 <code>src/VisionFramework/RoiRuntimeValues.cs:5..9</code> 的 Reference / Run 可表达这些十个数值叶。但 Transform 明确是独立仿射解释；叶映射存在不能证明变换的角度方向、坐标变换次序及采样与原生一致。</p>
+<p>Blob XML:246..267 的输出 <code>Output Position Correction Info</code> 和全部子节点 <code>Visible=false</code>。输出叶带 Output 前缀，与输入叶不相同。不能把输入字段路径直接标成原生公开输出树。</p>
+<h2 id="原生模板与入口的真实可见性">原生模板与入口的真实可见性</h2><ul>
+<li><code>analysis/decompiled/DynamicObjectConfigControl/DynamicObjectConfigControl/VmIODecorate.cs:144</code>：<code>IsShowChildButton =&gt; false</code>。</li>
+<li>同文件:228 <code>LeafIOs</code> 仅选取 <code>GetAllLeafIO()</code> 的 Name；:231..247 提供 DisplayChildrenCommand；:362..367 创建 ShowChildWin、赋 DataContext、ShowDialog。</li>
+<li><code>.../DynamicObjectConfigControl.UI/ShowChildWin.xaml:2,11..18</code>：CenterOwner，CancelVisible=Collapsed；ListBox 内容区 370×420，纵向滚动；行是只读、无边框 TextBox。它是叶名称列表，不是编辑叶值的树。</li>
+<li><code>.../DynamicObjectConfigControl/DynamicIOConfigControl.xaml:17..38</code>：行高32，列70/68/*/Auto/42，名称 LostFocus 提交，类型只读；:64..80 累积 Boolean_sub 模板；:98..112 表头；当前导出模板没有 DisplayChildrenCommand 绑定。不可凭命令存在就凭空添加“原生可见”的子字段按钮。</li>
+<li><code>.../Apps.XmlParser.ParamTab/GetInsideAndSelfInputFilterTreeOperation.cs:74..75</code>：叶过滤包含 <code>CanSubscribeA &amp;&amp; Visible</code>。不是所有可解码字段都会在源选择 UI 公开。</li>
+<li>CircleFind XML:95..103：OutputCircle、Radius、Center Point、CenterX/Y 都 Visible=false。当前 Circle 托管投影可以存在，但其公开可见性是独立界面选择，不能称这个模块原生选择 UI。</li>
+<li>VmIODecorate.cs:175..190 / :280..310：复合输出累积开关读取首个已有模式叶，写入时遍历所有叶。当前托管整对象数组与原生逐叶报告模式并非天然等同。</li>
+</ul>
+<h2 id="下一批闭合建议">下一批闭合建议</h2><ol>
+<li>先保留当前已证实路径，报告中明确“模块字段命名 + 独立聚合投影”；选择树区分公开 native 叶与独立扩展叶。</li>
+<li>模块 schema 携带 Visible / CanSubscribe / Cardinality / child 顺序，而非仅 DataKind 全局目录。不同 XML 同名类型的标量/数组与输出前缀不可抹平。</li>
+<li>Polygon 先实现点数、X/Y 的有界组合；用至少两个不同顶点数的多边形验证保存重开、复制、Group 两轮累积后的分段一致性。字符串序列化未知则不伪造。</li>
+<li>Fixture 先映射十个可表示叶并测试 Reference/Run 非恒等值，保持仿射算法差分未验证状态。</li>
+<li>原生隐藏叶不擅自加原生按钮；如需要验收调试入口，明确标为独立辅助并放在测试。</li>
+<li>原生截图和同输入输出差分仍需完成；本证据复核不能代替实际 VM 运行验收。</li>
+</ol>
+<h2 id="后续结构设计补充">后续结构设计补充</h2><p>已补充 <code>docs/REGION-NATIVE-MAPPING-NEXT.md</code>：区分通用Polygon运行结果与归一化RoiPolygon、Annulus的EndAngle与AngleExtend、Fixture原始状态和可逆变换；列出最小模型、Group原子累积分段、坐标转换边界及具体数据。设计尚未实施，不提高当前验收完成度。</p>
+<h2 id="2026-10-17-并行静态代码复审未构建">2026-10-17 并行静态代码复审（未构建）</h2><p>复审文件：<code>src/VisionFramework/CompoundOutputFields.cs</code>、<code>src/VisionEditor.Core/GroupInterfacePropagation.cs</code>、<code>tests/VisionWorkflow.CallChecks/CompoundLeafRuntimeChecks.cs</code>。以下为读取当时快照；主线后续可能修复，提交前应重新核对。</p>
+<h3 id="需要修复的真实边界">需要修复的真实边界</h3><ol>
+<li><strong>投影异常逃出节点错误隔离</strong>：<code>GraphExecutor.cs:20</code> 在模块执行 try/catch 之后直接调用 Expand。<code>PortValue.Components</code>只复制列表，不检查CenterX/Y；包含NaN/Infinity的Component会令Project中的NumberArray抛异常。结果不是单节点InvalidOutput，而是整个RunAsync异常退出。null输出字典值同样会先在Project访问Kind时NullReference。应在投影/输出校验边界受控捕获并记录节点InvalidOutput，保留运行结果可诊断性；不能仅靠真实内置算法当前输出正常来忽略插件边界。</li>
+<li><strong>Annulus叶与实际区域不一致</strong>：Project发出Shape.StartAngle/SweepAngle，但<code>RoiGeometry.Contains</code>对Annulus只检查内外径，忽略角范围。Validator也不限制Annulus的Sweep，所以可创建合法start350/sweep30的Annulus：实际为全环，叶却声称30度原生Annulus。建议仅投影当前算法真正表达的整环，或对带非默认角Shape明确报告不支持，直到原生证据和独立模型闭合；不宜顺手修改整个历史ROI算法。</li>
+</ol>
+<h3 id="当前检查为正确的行为">当前检查为正确的行为</h3><ul>
+<li>Region混合形状、Fixture/Normalized坐标、Exclusion当前不制造叶值；无结果不补零。图校验只证明字段可以引用，运行缺失后WorkflowRunContext产生Current-run source unavailable，导出失败或订阅节点失败，是可诊断路径。</li>
+<li>根Group导出改名根据接口Id建立映射，派生路径按旧/新schema同名同类型同基数匹配；不匹配删除，避免把Region叶误保留到Components。</li>
+<li>Interface、Subscriptions、Variables、connections及GroupBreak引用都参与传播；根kind/cardinality变化由后续GraphValidator约束，不应伪造类型转换。</li>
+<li>当前移除隐藏Circle/未证实Point全局投影符合证据限制。</li>
+</ul>
+<h3 id="测试覆盖不足">测试覆盖不足</h3><p><code>CompoundLeafRuntimeChecks</code>覆盖真实BMP/面积两轮累计、BlobNum、派生叶根改名/删除、保存重开，但未覆盖：</p>
+<ul>
+<li>投影异常节点隔离（NaN、null）。</li>
+<li>Region矩形→圆环→不支持/混合类型时同一schema叶的运行缺失。</li>
+<li>空Region的类型模糊：All真使其投影为空Rectangle数组，不能代表原生类型已知。</li>
+<li>Annulus非默认角Shape和实际掩膜的一致性。</li>
+<li>多层Group、下游局部变量/订阅/Break索引等各引用分支同时传播。</li>
+<li>Group根类型改变及标量/数组改变被拒绝时，文档撤销栈和原绑定保持原状。</li>
+</ul>
+<p>这些都是建议补充的实质数据边界，不是要求镜像实现的低价值断言。</p>
+<p class="meta">来源：docs/REGION-COMPOUND-EVIDENCE-AUDIT.md · SHA256 c4c64469c30b28d269e31220f6e362ea909be8033acc28fb3c58d50bf48b06e4<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

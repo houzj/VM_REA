@@ -1,0 +1,68 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 04084307b9e4 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 04084307b9e4</p><h1>原文证据 04084307b9e4</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 04084307b9e41ef2ebc0e247cbb36f21909ec7d3fe8a9f37de4815512b844e84。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>	public static byte[] GetImageBufferByFileName(string fileName, int nWidth, int nHeight, string npixelFormats)
+	{
+		int num = 16;
+		IntPtr intPtr = IntPtr.Zero;
+		IntPtr intPtr2 = IntPtr.Zero;
+		byte[] result = null;
+		try
+		{
+			byte[] array = new byte[16];
+			uint num2 = (uint)array.Length;
+			intPtr2 = MemoryHelper.OpenFileMapping(4, bInheritHandle: false, fileName);
+			if (intPtr2 == IntPtr.Zero)
+			{
+				throw new Exception();
+			}
+			intPtr = MemoryHelper.MapViewOfFile(intPtr2, 4, 0, 0, new IntPtr(num2));
+			if (intPtr == IntPtr.Zero)
+			{
+				throw new Exception();
+			}
+			Marshal.Copy(intPtr, array, 0, array.Length);
+			if (intPtr != IntPtr.Zero)
+			{
+				MemoryHelper.UnmapViewOfFile(intPtr);
+			}
+			int num3 = BitConverter.ToInt32(array, 0);
+			if (num3 &lt; 0)
+			{
+				throw new Exception();
+			}
+			if (npixelFormats == PixelFormats.Gray8.ToString())
+			{
+				if (num3 != nWidth * nHeight)
+				{
+					throw new Exception();
+				}
+			}
+			else if (num3 != nWidth * nHeight * 3)
+			{
+				throw new Exception();
+			}
+			num = BitConverter.ToInt16(array, 14);
+			num2 = (uint)(num3 + num);
+			intPtr = MemoryHelper.MapViewOfFile(intPtr2, 4, 0, 0, new IntPtr(num2));
+			if (intPtr == IntPtr.Zero)
+			{
+				throw new Exception();
+			}
+			result = ExternalCallHelper.IntPtr2Bytes(intPtr + num, num3);
+		}
+		catch (Exception)
+		{
+			result = null;
+		}
+		finally
+		{
+			if (intPtr != IntPtr.Zero)
+			{
+				MemoryHelper.UnmapViewOfFile(intPtr);
+			}
+			if (intPtr2 != IntPtr.Zero)
+			{
+				MemoryHelper.CloseHandle(intPtr2);
+			}
+		}
+		return result;
+	}
+</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../专题/image-export-entry-audit.html">结果图像保存入口与导出分支</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

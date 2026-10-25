@@ -1,0 +1,1062 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>流程画布图形与标题的呈现入口</title><style>body{max-width:1280px;margin:auto;padding:24px;background:#111d2d;color:#e4eef8;font:15px/1.7 Microsoft YaHei,sans-serif}a{color:#a2d8ff}article{background:#1a2c42;margin:16px 0;padding:18px;border:1px solid #49627c}.unknown{border-style:dashed}.notice{border-left:4px solid #e2ad6e;padding:14px;background:#25384d}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 Consolas,monospace}</style><a href="main-ui-map.html">主架构</a> · <a href="canvas-viewport.html">画布输入/路由</a> · <a href="display-type-review.html">显示类型</a> · <a href="rendering-layers.html">工具结果呈现</a><h1>流程画布图形与标题的呈现入口</h1><p class="notice">流程画布：集合/装饰器 → DiagramItem模板与标题 → 节点Canvas；连线：Connection Shape → PathGeometry折线/箭头 → 独立视觉层。工具结果图形和叠字是另一条消费者链。以下顺序为研究组织，不代表一条已观察的活实例调用链。</p><p>29个原件独立CIL体；节点模板及DiagramArea复用原BAML解码/本地字节相等记录。连接样式仍只作本地提取声明；未运行原程序或验收呈现。</p><article id="WFR01" class="source-confirmed"><h2>WFR01 · DiagramPage / ItemsPage节点集合 → 节点容器Canvas与独立连线Visual层</h2><p>source-confirmed：DiagramPage.GetContainerForItemOverride创建DiagramItem并交HostPanel=hostPanal、ConnectionPanel=_adornerLayer、ItemDiagramPage=this；ItemsPanel本地声明Canvas IsItemsHost，Canvas_Initialized保存hostPanal。DiagramItem原元数据基类ListViewItem，Connection基类Shape，均与工具结果TextShape/ShapeCanvas分属不同控件链。DiagramPage构造AddVisualChild(_adornerLayer)，VisualChildrenCount=2，GetVisualChild(0)返回Child，其它index返回_adornerLayer；Measure/Arrange另处理该层。</p><p>待追：全部ItemsSource供应、模板Bd内部视图、层命中/遮挡与实际实例未验；不称原厂画布全部绘制均已恢复。</p><details><summary>VMControls.WPF.Base.DiagramPage::GetContainerForItemOverride · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:1035–1054
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000bab&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000bab&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramPage&quot;,
+            &quot;name&quot;: &quot;GetContainerForItemOverride&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2000128105&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 45,
+          &quot;ilSha256&quot;: &quot;f42814fc6d9cbf2d6972630dc26a6893f3007f5163659fc5bef281e45bf3a39d&quot;,
+          &quot;ilBytes&quot;: &quot;0073750b000625027b080600046f7c0b00060025027bfd0500046f7e0b00060025026f800b0006000a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramPage::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:268–287
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000ba9&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ba9&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramPage&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 206,
+          &quot;ilSha256&quot;: &quot;8fb3fc6662d998d4695d1140bc0bdc470a0f87eb0c5023c5634b87b301a887ea&quot;,
+          &quot;ilBytes&quot;: &quot;02738e09000a25146f8f09000a0025176f0c03000a007dfd05000402147d0006000402147d0106000402147d0206000402287804000a7d0406000402167d0606000402147d0906000402167d0e0600040228030c00060000027efe05000428a101000a00027efe050004285c06000a000228c60b0006000202fe06aa0b0006737703000a287803000a0002027bfd050004289009000a00027e0306000472e439007073b801000a250228a50b00066fb901000a0028bb01000a260202fe06cb0b0006735900000a287900000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramPage::Canvas_Initialized · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:1964–1983
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000bb3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000bb3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramPage&quot;,
+            &quot;name&quot;: &quot;Canvas_Initialized&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c12811d&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;f3111812d0cc9dab20708dec406ca0b1d71d48d8163cbdfdd8772e51e9c0763d&quot;,
+          &quot;ilBytes&quot;: &quot;00020375b40100017d080600042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramPage::get_VisualChildrenCount · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:1901–1920
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000bb2&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000bb2&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramPage&quot;,
+            &quot;name&quot;: &quot;get_VisualChildrenCount&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200008&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;16a92d942e977696cbc21e65949a9efbf631c7733cf48fd143d2aea977d1c6c7&quot;,
+          &quot;ilBytes&quot;: &quot;00180a2b00062a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramPage::GetVisualChild · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:1735–1754
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000bb1&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000bb1&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramPage&quot;,
+            &quot;name&quot;: &quot;GetVisualChild&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200112838108&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 31,
+          &quot;ilSha256&quot;: &quot;427126bff1e8cbaf29c2cf9c6c1ef544195d1616deb92e52d94b0054062b3b0a&quot;,
+          &quot;ilBytes&quot;: &quot;000316fe010a062c0a00027b070600040b2b0a00027bfd0500040b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramPage::MeasureOverride · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:1387–1406
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000baf&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000baf&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramPage&quot;,
+            &quot;name&quot;: &quot;MeasureOverride&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011181c91181c9&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 28,
+          &quot;ilSha256&quot;: &quot;df799b4c357b55f453bcea4dffffde1d8882d495e03689dc024a36642338aca9&quot;,
+          &quot;ilBytes&quot;: &quot;000203289209000a0a027bfd050004036f9309000a00060b2b00072a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramPage::ArrangeOverride · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:1533–1552
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000bb0&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000bb0&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramPage&quot;,
+            &quot;name&quot;: &quot;ArrangeOverride&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20011181c91181c9&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 59,
+          &quot;ilSha256&quot;: &quot;61c2e704d98044f351c7522570eebce5a55583da1ec5ce8f9dd32387f9e448e0&quot;,
+          &quot;ilBytes&quot;: &quot;000203289409000a0a1201230000000000000000230000000000000000735000000a03281601000a027bfd050004076f9509000a00060c2b00082a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Canvas container and layer assignment · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml.cs:372–380
+SHA256 35fda4306245515f4dfb6dbf20e7b8479bbae56830b2f76549b63e9d456699d3
+	protected override DependencyObject GetContainerForItemOverride()
+	{
+		return new DiagramItem
+		{
+			HostPanel = hostPanal,
+			ConnectionPanel = _adornerLayer,
+			ItemDiagramPage = this
+		};
+	}</pre></details><details><summary>Visual subtree order · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml.cs:417–424
+SHA256 35fda4306245515f4dfb6dbf20e7b8479bbae56830b2f76549b63e9d456699d3
+	protected override Visual GetVisualChild(int index)
+	{
+		if (index == 0)
+		{
+			return Child;
+		}
+		return _adornerLayer;
+	}</pre></details><details><summary>Items host declaration · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramPage.xaml:52–56
+SHA256 906e1e21324ee23d6e2f15853fa54afe5c268539fff49a252020de0e94c8d4c4
+  &lt;ItemsControl.ItemsPanel&gt;
+    &lt;ItemsPanelTemplate&gt;
+      &lt;Canvas IsItemsHost=&quot;True&quot; Initialized=&quot;Canvas_Initialized&quot; /&gt;
+    &lt;/ItemsPanelTemplate&gt;
+  &lt;/ItemsControl.ItemsPanel&gt;</pre></details></article><article id="WFR02" class="source-confirmed"><h2>WFR02 · DiagramItem.DataContext / DisplayType → 装饰器与默认/专用模板选择</h2><p>source-confirmed：DataContext不是IDecorate时，依IVmProcedure/IVMGroup/其它创建对应VmProcedureDecorator/VmGroupDecorator/VmModuleDecorator。DiagramItem静态元数据设默认StyleKey；原BAML解码且与本地byte-equal的diagramitemtemplate声明默认NORMAL，DisplayType绑定装饰器；FUNCTION/TIMER选择Square，PROCESS与PROCESSADORNER选择PROCESS，GROUP与GROUPADORNER选择GROUP，NONE选择空模板。MODULE分类Convert/缓存/参数入口已在既有display-type-review及plugin-sessions逐边；此处不重新解释为全部类型同一种节点。</p><p>待追：装饰器DisplayType/TargetDisplayType实例缓存、实际资源优先级与运行模板选择未验；现有静态分类表不等完整呈现验收。</p><details><summary>VMControls.WPF.Base.DiagramItem::DiagramItem_DataContextChanged · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:7160–7179
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000b78&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000b78&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramItem&quot;,
+            &quot;name&quot;: &quot;DiagramItem_DataContextChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c118109&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 355,
+          &quot;ilSha256&quot;: &quot;1b7136a5c7dda8c1bac6c732cf766a4ee780ceee287b4a84fe22696f1cc1f899&quot;,
+          &quot;ilBytes&quot;: &quot;0002288c00000a75dc00000114fe0316fe010a063917010000000f02286d00000a75b000000114fe030b072c1e000273100a0006250f02286d00000a6f0609000600285500000a00002b4d0f02286d00000a757101000114fe030c082c1e000273bf080006250f02286d00000a6f0609000600285500000a00002b1c000273f6090006250f02286d00000a6f0609000600285500000a00000002287d0b00066f0502000a28de00002b7e18090004252d17267e16090004fe06f00f0006735209000a25801809000428e200002b6f5c09000a0d2b45096f5d09000a13040011046f8c00000a759c00000225130514fe03130611062c230011056f050900060f02286d00000afe01130711072c0b001104026f9e0a000600000000096f9f00000a2db3de0b092c07096fa000000a00dc000202288c00000a75dc0000017ddf0500040f02286d00000a75dc00000114fe0316fe01130811082c09000228790b000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramItem::.cctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:4411–4430
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000b72&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000b72&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramItem&quot;,
+            &quot;name&quot;: &quot;.cctor&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;000001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 556,
+          &quot;ilSha256&quot;: &quot;d30ce033aaf3a3b548cda32cf600d93791deff852d6e5992bbbaae2d922297c1&quot;,
+          &quot;ilBytes&quot;: &quot;724c8b0070d02f00000128fc00000ad0b600000228fc00000a1200fe152f000001068c2f00000114fe064f0b0006735401000a735701000a285601000a80ce0500047241970070d03100000128fc00000ad0b600000228fc00000a14735501000a285601000a80cf050004720d5f0070d09700000228fc00000ad0b600000228fc00000a168c97000002735801000a285601000a80d0050004725d970070d00a00001b28fc00000ad0b600000228fc00000a14735501000a285601000a80d10500047289970070d00a00001b28fc00000ad0b600000228fc00000a168ce4010001735801000a285601000a80d205000472a7970070d0e401000128fc00000ad0b600000228fc00000a168ce4010001735801000a285601000a80d305000472a0190070d0e401000128fc00000ad0b600000228fc00000a168ce4010001735801000a285601000a80d405000472be190070d0e401000128fc00000ad0b600000228fc00000a168ce4010001735801000a285601000a80d505000472cb970070d00a00001b28fc00000ad0b600000228fc00000a14735501000a285601000a80d605000472dd970070d0de00000128fc00000ad0b600000228fc00000a1414fe06620b0006735401000a735701000a285601000a80d7050004724d950070d0e401000128fc00000ad0b600000228fc00000a168ce4010001735801000a285601000a80d8050004007e7208000ad0b600000228fc00000ad0b600000228fc00000a737308000a6f7408000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldstr&quot;,</pre></details><details><summary>Source decoration admission · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramItem.xaml.cs:532–560
+SHA256 19d967cb454fa6ba9aae63a53c2b394b318ce9dd1391d7c5ec8a00a77f683ce3
+	private void DiagramItem_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+	{
+		if (!(DataContext is IDecorate))
+		{
+			if (e.NewValue is IVmProcedure)
+			{
+				DataContext = new VmProcedureDecorator
+				{
+					DecorateSource = e.NewValue
+				};
+			}
+			else if (e.NewValue is IVMGroup)
+			{
+				DataContext = new VmGroupDecorator
+				{
+					DecorateSource = e.NewValue
+				};
+			}
+			else
+			{
+				DataContext = new VmModuleDecorator
+				{
+					DecorateSource = e.NewValue
+				};
+			}
+			foreach (Connection item in from p in ConnectionPanel.Children.OfType&lt;Connection&gt;()
+				where p.TargetItem == null
+				select p)
+			{</pre></details><details><summary>Default node style and display binding · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1783–1811
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+  &lt;Style x:Key=&quot;{x:Type local:DiagramItem}&quot; TargetType=&quot;{x:Type local:DiagramItem}&quot;&gt;
+    &lt;Setter Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{Binding DisplayType}&quot; /&gt;
+    &lt;Setter Property=&quot;local:DiagramItem.IsModuleConfigCorrect&quot; Value=&quot;{Binding DecorateSource.IsReady}&quot; /&gt;
+    &lt;Setter Property=&quot;local:DiagramItem.IsLockWorkArea&quot; Value=&quot;{Binding IsLockWorkArea, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ItemsPage}}&quot; /&gt;
+    &lt;Setter Property=&quot;local:DiagramItem.IsOpenParams&quot; Value=&quot;{Binding IsOpenParams, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ItemsPage}}&quot; /&gt;
+    &lt;Setter Property=&quot;local:DiagramItem.DeleteCommand&quot; Value=&quot;{Binding DeleteItemCommand}&quot; /&gt;
+    &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource NORMAL}&quot; /&gt;
+    &lt;Setter Property=&quot;FrameworkElement.ToolTip&quot; Value=&quot;{Binding DecorateSource.Name}&quot; /&gt;
+    &lt;Style.Triggers&gt;
+      &lt;DataTrigger Value=&quot;{x:Static local:DiagramItemDisplayEnum.MODULE}&quot; Binding=&quot;{Binding DisplayType, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource diagramItemDisplayConverter}}&quot;&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.IsModuleForbidden&quot; Value=&quot;{Binding IsForbidden}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.IsModuleFailed&quot; Value=&quot;{Binding IsLoadFailed}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.RunState&quot; Value=&quot;{Binding DecorateSource.IsRunOK}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.NextItemsSource&quot; Value=&quot;{Binding Path=DecorateSource.(VMInterface:IVmModule.NextModules)}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.Position&quot; Value=&quot;{Binding Position}&quot; /&gt;
+        &lt;Setter Property=&quot;Attached:AttachedRoutedEvent.Event&quot; Value=&quot;MouseDoubleClick&quot; /&gt;
+        &lt;Setter Property=&quot;Attached:AttachedRoutedEventBase.Command&quot; Value=&quot;{Binding ConfigParamsCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:DiagramArea}}&quot; /&gt;
+        &lt;Setter Property=&quot;Attached:AttachedRoutedEventBase.CommandParameter&quot; Value=&quot;{Binding}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource NormalOperateMenu}&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.FUNCTION}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource Square}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource SquareOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.FUNCTIONADORNER}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource Square}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource SquareOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.TIMER}&quot;&gt;</pre></details><details><summary>Specific function/timer/process/group templates · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1803–1864
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.FUNCTION}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource Square}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource SquareOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.FUNCTIONADORNER}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource Square}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource SquareOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.TIMER}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource Square}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource SquareOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.TIMERADORNER}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource Square}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource SquareOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.PROCESS}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource PROCESS}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.IsModuleFailed&quot; Value=&quot;{Binding IsLoadFailed}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.Position&quot; Value=&quot;{Binding Position}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.NextItemsSource&quot; Value=&quot;{Binding Path=DecorateSource.(VMInterface:IVmModule.NextModules)}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource ProcessOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.PROCESSADORNER}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource PROCESS}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.GROUP}&quot;&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.IsModuleForbidden&quot; Value=&quot;{Binding IsForbidden}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.IsModuleFailed&quot; Value=&quot;{Binding IsLoadFailed}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.RunState&quot; Value=&quot;{Binding DecorateSource.IsRunOK}&quot; /&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource GROUP}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.Position&quot; Value=&quot;{Binding Position}&quot; /&gt;
+        &lt;Setter Property=&quot;local:DiagramItem.NextItemsSource&quot; Value=&quot;{Binding Path=DecorateSource.(VMInterface:IVmModule.NextModules)}&quot; /&gt;
+        &lt;Setter Property=&quot;Attached:AttachedRoutedEvent.Event&quot; Value=&quot;MouseDoubleClick&quot; /&gt;
+        &lt;Setter Property=&quot;Attached:AttachedRoutedEventBase.Command&quot; Value=&quot;{Binding SubSource.OpenGroupCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:DiagramArea}}&quot; /&gt;
+        &lt;Setter Property=&quot;Attached:AttachedRoutedEventBase.CommandParameter&quot; Value=&quot;{Binding}&quot; /&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{StaticResource GroupOperateMenu}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.GROUPADORNER}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource GROUP}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.GROUPADORNER}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource GROUP}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.DisplayType&quot; Value=&quot;{x:Static DataForUI:ModuleDisplayType.NONE}&quot;&gt;
+        &lt;Setter Property=&quot;Template&quot; Value=&quot;{StaticResource NONE}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;ListBoxItem.IsSelected&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter Property=&quot;Panel.ZIndex&quot; Value=&quot;10&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.IsLockWorkArea&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{x:Null}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.IsOpenParams&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{x:Null}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;DataTrigger Value=&quot;False&quot; Binding=&quot;{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}&quot;&gt;
+        &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot; Value=&quot;{x:Null}&quot; /&gt;
+      &lt;/DataTrigger&gt;
+    &lt;/Style.Triggers&gt;
+  &lt;/Style&gt;
+&lt;/ResourceDictionary&gt;</pre></details><details><summary>Original selected BAML payload and byte-equal local declaration · local-decompiled-source</summary><pre>docs/architecture-recovery/baml-selected-decode.json:62–86
+SHA256 8c14951ef5806966c971c08074ad78a4b77bad63597701cbc1525a6c98c14836
+      &quot;resourceKey&quot;: &quot;base/diagramitemtemplate.baml&quot;,
+      &quot;payloadSha256&quot;: &quot;256bcc23ec71d654e50de91f3ca29a400231937a0c148c1a7e83d41ef7125ee7&quot;,
+      &quot;payloadByteLength&quot;: 51894,
+      &quot;toolArguments&quot;: [
+        &quot;--disable-updatecheck&quot;,
+        &quot;--resource&quot;,
+        &quot;VMControls.WPF.g.resources/base/diagramitemtemplate.baml&quot;,
+        &quot;-o&quot;,
+        &quot;D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\baml-decoded\\wpf&quot;,
+        &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VMControls.WPF.dll&quot;
+      ],
+      &quot;exitCode&quot;: 0,
+      &quot;stdout&quot;: &quot;&quot;,
+      &quot;stderr&quot;: &quot;&quot;,
+      &quot;decodedPath&quot;: &quot;docs/architecture-recovery/baml-decoded/wpf/diagramitemtemplate.xaml&quot;,
+      &quot;decodedSha256&quot;: &quot;95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9&quot;,
+      &quot;decodedByteLength&quot;: 111033,
+      &quot;localXamlPath&quot;: &quot;analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml&quot;,
+      &quot;localXamlSha256&quot;: &quot;95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9&quot;,
+      &quot;byteIdenticalToLocalXaml&quot;: true,
+      &quot;bamlDecoded&quot;: true,
+      &quot;connectionIdMappingConfirmed&quot;: false,
+      &quot;runtimeActivated&quot;: false
+    },
+    {</pre></details></article><article id="WFR03" class="source-confirmed"><h2>WFR03 · NORMAL节点模板 → Path轮廓 / ID TextBlock / 名称HeadReNameTextBox</h2><p>source-confirmed：NORMAL声明110×30 PART_View，Path itemBorder使用NormalModulePathStyle，另有图标和状态Canvas、errorBorder。ID TextBlock绑定DecorateSource.ID；标题为HeadReNameTextBox，Name TwoWay且UpdateSourceTrigger=Explicit，IsReName另为TwoWay，字号12粗体；不是IText.Content/Position生成的工具结果叠字。IMAGE/IFBRANCH/FUNCTION/SHELL/COMMUNCATION等TargetDisplayType触发器换Path.Data，IFBRANCH还改高度40。</p><p>待追：HeadReNameTextBox显式提交/校验/取消调用链、字体继承及这些Path资源的全量几何不在本片闭合。</p><details><summary>Node outline, identity label and rename editor · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1125–1150
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+  &lt;ControlTemplate x:Key=&quot;NORMAL&quot; TargetType=&quot;{x:Type local:DiagramItem}&quot;&gt;
+    &lt;Grid Name=&quot;PART_View&quot; Width=&quot;110&quot; Height=&quot;30&quot;&gt;
+      &lt;Rectangle Name=&quot;Rec&quot; Fill=&quot;#00FFFFFF&quot; Margin=&quot;-10&quot; /&gt;
+      &lt;Path Name=&quot;itemBorder&quot; Margin=&quot;0.2&quot; Style=&quot;{StaticResource NormalModulePathStyle}&quot;&gt;
+        &lt;UIElement.Effect&gt;
+          &lt;DropShadowEffect Color=&quot;#FF121111&quot; ShadowDepth=&quot;3&quot; Opacity=&quot;0.45&quot; /&gt;
+        &lt;/UIElement.Effect&gt;
+      &lt;/Path&gt;
+      &lt;Canvas Name=&quot;StateFlag&quot; Width=&quot;26&quot; HorizontalAlignment=&quot;Left&quot; Clip=&quot;{Binding Data, ElementName=itemBorder}&quot; /&gt;
+      &lt;Image Name=&quot;LogoIm&quot; Stretch=&quot;None&quot; HorizontalAlignment=&quot;Left&quot; VerticalAlignment=&quot;Center&quot; Margin=&quot;4,0,0,0&quot; Source=&quot;{Binding StateImagePath}&quot; /&gt;
+      &lt;Path Name=&quot;errorBorder&quot; Visibility=&quot;Collapsed&quot; Stroke=&quot;#FF636468&quot; StrokeThickness=&quot;2&quot; Stretch=&quot;Fill&quot; Data=&quot;{Binding Data, ElementName=itemBorder}&quot; /&gt;
+      &lt;Grid Margin=&quot;26,0,0,0&quot;&gt;
+        &lt;Grid HorizontalAlignment=&quot;Center&quot; TextBlock.FontWeight=&quot;Bold&quot; TextBlock.FontSize=&quot;12&quot; TextBlock.Foreground=&quot;{Color:ColorResourceBinding Col_EditProcess_Foreground}&quot;&gt;
+          &lt;Grid.ColumnDefinitions&gt;
+            &lt;ColumnDefinition Width=&quot;Auto&quot; /&gt;
+            &lt;ColumnDefinition Width=&quot;*&quot; /&gt;
+          &lt;/Grid.ColumnDefinitions&gt;
+          &lt;TextBlock Name=&quot;Id&quot; VerticalAlignment=&quot;Center&quot; IsHitTestVisible=&quot;False&quot; Text=&quot;{Binding DecorateSource.ID}&quot; /&gt;
+          &lt;appUi:HeadReNameTextBox Name=&quot;itemName&quot; Grid.Column=&quot;1&quot; Background=&quot;#00FFFFFF&quot; FontWeight=&quot;Bold&quot; FontSize=&quot;12&quot; VerticalAlignment=&quot;Center&quot; BorderThickness=&quot;0&quot; MaxLength=&quot;{x:Static local:DiagramItem.MaxNameLenth}&quot; Foreground=&quot;{Color:ColorResourceBinding Col_EditProcess_Foreground}&quot; Text=&quot;{Binding Name, Mode=TwoWay, UpdateSourceTrigger=Explicit}&quot; IsReName=&quot;{Binding IsReName, Mode=TwoWay}&quot; /&gt;
+        &lt;/Grid&gt;
+      &lt;/Grid&gt;
+      &lt;ContentPresenter Name=&quot;leftConnector&quot; Content=&quot;{x:Null}&quot; /&gt;
+      &lt;ContentPresenter Name=&quot;rightConnector&quot; Content=&quot;{x:Null}&quot; /&gt;
+      &lt;ContentPresenter Name=&quot;topConnector&quot; Content=&quot;{x:Null}&quot; /&gt;
+      &lt;ContentPresenter Name=&quot;bottomConnector&quot; Content=&quot;{x:Null}&quot; /&gt;
+    &lt;/Grid&gt;</pre></details><details><summary>Target subtype shape choices · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1166–1181
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+      &lt;DataTrigger Value=&quot;{x:Static local:DiagramItemSubDisplayEnum.IMAGE}&quot; Binding=&quot;{Binding TargetDisplayType}&quot;&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Path.Data&quot; Value=&quot;{StaticResource ImageModulePath}&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;DataTrigger Value=&quot;{x:Static local:DiagramItemSubDisplayEnum.IFBRANCH}&quot; Binding=&quot;{Binding TargetDisplayType}&quot;&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Path.Data&quot; Value=&quot;{StaticResource IfBranchPath}&quot; /&gt;
+        &lt;Setter TargetName=&quot;PART_View&quot; Property=&quot;FrameworkElement.Height&quot; Value=&quot;40&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;DataTrigger Value=&quot;{x:Static local:DiagramItemSubDisplayEnum.FUNCTION}&quot; Binding=&quot;{Binding TargetDisplayType}&quot;&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Path.Data&quot; Value=&quot;{StaticResource FunctionModulePath}&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;DataTrigger Value=&quot;{x:Static local:DiagramItemSubDisplayEnum.SHELL}&quot; Binding=&quot;{Binding TargetDisplayType}&quot;&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Path.Data&quot; Value=&quot;{StaticResource ShellModulePath}&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;DataTrigger Value=&quot;{x:Static local:DiagramItemSubDisplayEnum.COMMUNCATION}&quot; Binding=&quot;{Binding TargetDisplayType}&quot;&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Path.Data&quot; Value=&quot;{StaticResource CommuncationDataPath}&quot; /&gt;
+      &lt;/DataTrigger&gt;</pre></details><details><summary>Original selected BAML payload and byte-equal local declaration · local-decompiled-source</summary><pre>docs/architecture-recovery/baml-selected-decode.json:62–86
+SHA256 8c14951ef5806966c971c08074ad78a4b77bad63597701cbc1525a6c98c14836
+      &quot;resourceKey&quot;: &quot;base/diagramitemtemplate.baml&quot;,
+      &quot;payloadSha256&quot;: &quot;256bcc23ec71d654e50de91f3ca29a400231937a0c148c1a7e83d41ef7125ee7&quot;,
+      &quot;payloadByteLength&quot;: 51894,
+      &quot;toolArguments&quot;: [
+        &quot;--disable-updatecheck&quot;,
+        &quot;--resource&quot;,
+        &quot;VMControls.WPF.g.resources/base/diagramitemtemplate.baml&quot;,
+        &quot;-o&quot;,
+        &quot;D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\baml-decoded\\wpf&quot;,
+        &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VMControls.WPF.dll&quot;
+      ],
+      &quot;exitCode&quot;: 0,
+      &quot;stdout&quot;: &quot;&quot;,
+      &quot;stderr&quot;: &quot;&quot;,
+      &quot;decodedPath&quot;: &quot;docs/architecture-recovery/baml-decoded/wpf/diagramitemtemplate.xaml&quot;,
+      &quot;decodedSha256&quot;: &quot;95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9&quot;,
+      &quot;decodedByteLength&quot;: 111033,
+      &quot;localXamlPath&quot;: &quot;analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml&quot;,
+      &quot;localXamlSha256&quot;: &quot;95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9&quot;,
+      &quot;byteIdenticalToLocalXaml&quot;: true,
+      &quot;bamlDecoded&quot;: true,
+      &quot;connectionIdMappingConfirmed&quot;: false,
+      &quot;runtimeActivated&quot;: false
+    },
+    {</pre></details></article><article id="WFR04" class="source-confirmed"><h2>WFR04 · NORMAL / GROUP状态触发器 → 选中边框、运行/配置/禁用状态资源</h2><p>source-confirmed：NORMAL的RunState null/true/false、IsModuleConfigCorrect/Forbidden/Failed各有不同图标/背景/边框触发；IsSelected=true单独使errorBorder可见并设主题边框色。DiagramItem全局选中触发另设ZIndex=10。GROUP模板按RunState和IsSelected组合换不同ImageBrush；不能将节点选中误称工具ROI选中或以IsFocused替代所有IsSelected。</p><p>待追：重叠触发器优先级/主题色/图像资源原像素、运行状态生产者及活界面差分未验；所选状态不是全集。</p><details><summary>Normal runtime and configuration indicators · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1182–1231
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+      &lt;Trigger Property=&quot;local:DiagramItem.RunState&quot; Value=&quot;{x:Null}&quot;&gt;
+        &lt;Setter TargetName=&quot;LogoIm&quot; Property=&quot;Image.Source&quot; Value=&quot;{Binding NormalImagePath}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.RunState&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter TargetName=&quot;StateFlag&quot; Property=&quot;Panel.Background&quot; Value=&quot;{Color:ColorResourceBinding Col_EditProcess_Modular_OK_Status}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.RunState&quot; Value=&quot;False&quot;&gt;
+        &lt;Setter TargetName=&quot;StateFlag&quot; Property=&quot;Panel.Background&quot; Value=&quot;{Color:ColorResourceBinding Col_EditProcess_Modular_NG_Status}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.IsModuleConfigCorrect&quot; Value=&quot;False&quot;&gt;
+        &lt;Setter TargetName=&quot;errorBorder&quot; Property=&quot;UIElement.Visibility&quot; Value=&quot;Visible&quot; /&gt;
+        &lt;Setter TargetName=&quot;errorBorder&quot; Property=&quot;Shape.StrokeDashArray&quot; Value=&quot;3,2&quot; /&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Shape.Fill&quot;&gt;
+          &lt;Setter.Value&gt;
+            &lt;LinearGradientBrush EndPoint=&quot;0,1&quot; StartPoint=&quot;0,0&quot;&gt;
+              &lt;GradientStop Color=&quot;#FFFAF7F5&quot; Offset=&quot;0&quot; /&gt;
+              &lt;GradientStop Color=&quot;#FFE1E5E1&quot; Offset=&quot;1&quot; /&gt;
+            &lt;/LinearGradientBrush&gt;
+          &lt;/Setter.Value&gt;
+        &lt;/Setter&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.IsModuleForbidden&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter TargetName=&quot;errorBorder&quot; Property=&quot;UIElement.Visibility&quot; Value=&quot;Visible&quot; /&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Shape.Fill&quot;&gt;
+          &lt;Setter.Value&gt;
+            &lt;LinearGradientBrush EndPoint=&quot;0,1&quot; StartPoint=&quot;0,0&quot;&gt;
+              &lt;GradientStop Color=&quot;#D3D3D3F5&quot; Offset=&quot;0&quot; /&gt;
+              &lt;GradientStop Color=&quot;#D3D3D3E1&quot; Offset=&quot;1&quot; /&gt;
+            &lt;/LinearGradientBrush&gt;
+          &lt;/Setter.Value&gt;
+        &lt;/Setter&gt;
+        &lt;Setter TargetName=&quot;LogoIm&quot; Property=&quot;Image.Source&quot; Value=&quot;{Binding StateImagePath}&quot; /&gt;
+        &lt;Setter TargetName=&quot;StateFlag&quot; Property=&quot;Panel.Background&quot; Value=&quot;{x:Null}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.IsModuleFailed&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter TargetName=&quot;errorBorder&quot; Property=&quot;UIElement.Visibility&quot; Value=&quot;Collapsed&quot; /&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Shape.Fill&quot;&gt;
+          &lt;Setter.Value&gt;
+            &lt;LinearGradientBrush EndPoint=&quot;0,1&quot; StartPoint=&quot;0,0&quot;&gt;
+              &lt;GradientStop Color=&quot;#FFFAF7F5&quot; Offset=&quot;0&quot; /&gt;
+              &lt;GradientStop Color=&quot;#FFEBE6E2&quot; Offset=&quot;1&quot; /&gt;
+            &lt;/LinearGradientBrush&gt;
+          &lt;/Setter.Value&gt;
+        &lt;/Setter&gt;
+        &lt;Setter TargetName=&quot;LogoIm&quot; Property=&quot;Image.Source&quot; Value=&quot;{Binding StateImagePath}&quot; /&gt;
+        &lt;Setter TargetName=&quot;StateFlag&quot; Property=&quot;Panel.Background&quot; Value=&quot;{Color:ColorResourceBinding Col_EditProcess_Modular_NG_Status}&quot; /&gt;
+        &lt;Setter TargetName=&quot;itemName&quot; Property=&quot;UIElement.Opacity&quot; Value=&quot;0.4&quot; /&gt;
+        &lt;Setter TargetName=&quot;Id&quot; Property=&quot;UIElement.Opacity&quot; Value=&quot;0.4&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;ListBoxItem.IsSelected&quot; Value=&quot;True&quot;&gt;</pre></details><details><summary>NORMAL selection border · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1233–1234
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+        &lt;Setter TargetName=&quot;errorBorder&quot; Property=&quot;Shape.Stroke&quot; Value=&quot;{Color:ColorResourceBinding Col_EditProcess_Modular_BorderBrush}&quot; /&gt;
+      &lt;/Trigger&gt;</pre></details><details><summary>Global selected item stacking · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1851–1851
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+        &lt;Setter Property=&quot;Panel.ZIndex&quot; Value=&quot;10&quot; /&gt;</pre></details><details><summary>Group selected-state combinations · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml:1741–1757
+SHA256 95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9
+            &lt;ImageBrush Stretch=&quot;None&quot; ImageSource=&quot;/Apps.Style;component/Resources/group_正常选中.png&quot; /&gt;
+          &lt;/Setter.Value&gt;
+        &lt;/Setter&gt;
+      &lt;/MultiTrigger&gt;
+      &lt;MultiTrigger&gt;
+        &lt;MultiTrigger.Conditions&gt;
+          &lt;Condition Property=&quot;ListBoxItem.IsSelected&quot; Value=&quot;True&quot; /&gt;
+          &lt;Condition Property=&quot;local:DiagramItem.RunState&quot; Value=&quot;False&quot; /&gt;
+        &lt;/MultiTrigger.Conditions&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Panel.Background&quot;&gt;
+          &lt;Setter.Value&gt;
+            &lt;ImageBrush Stretch=&quot;None&quot; ImageSource=&quot;/Apps.Style;component/Resources/group_异常选中.png&quot; /&gt;
+          &lt;/Setter.Value&gt;
+        &lt;/Setter&gt;
+      &lt;/MultiTrigger&gt;
+      &lt;Trigger Property=&quot;local:DiagramItem.IsModuleForbidden&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter TargetName=&quot;itemBorder&quot; Property=&quot;Panel.Background&quot;&gt;</pre></details><details><summary>Original selected BAML payload and byte-equal local declaration · local-decompiled-source</summary><pre>docs/architecture-recovery/baml-selected-decode.json:62–86
+SHA256 8c14951ef5806966c971c08074ad78a4b77bad63597701cbc1525a6c98c14836
+      &quot;resourceKey&quot;: &quot;base/diagramitemtemplate.baml&quot;,
+      &quot;payloadSha256&quot;: &quot;256bcc23ec71d654e50de91f3ca29a400231937a0c148c1a7e83d41ef7125ee7&quot;,
+      &quot;payloadByteLength&quot;: 51894,
+      &quot;toolArguments&quot;: [
+        &quot;--disable-updatecheck&quot;,
+        &quot;--resource&quot;,
+        &quot;VMControls.WPF.g.resources/base/diagramitemtemplate.baml&quot;,
+        &quot;-o&quot;,
+        &quot;D:\\MyWork\\REA逆向测试\\docs\\architecture-recovery\\baml-decoded\\wpf&quot;,
+        &quot;D:\\Program Files\\VisionMaster4.4.0\\Applications\\myLibs\\VMControls.WPF.dll&quot;
+      ],
+      &quot;exitCode&quot;: 0,
+      &quot;stdout&quot;: &quot;&quot;,
+      &quot;stderr&quot;: &quot;&quot;,
+      &quot;decodedPath&quot;: &quot;docs/architecture-recovery/baml-decoded/wpf/diagramitemtemplate.xaml&quot;,
+      &quot;decodedSha256&quot;: &quot;95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9&quot;,
+      &quot;decodedByteLength&quot;: 111033,
+      &quot;localXamlPath&quot;: &quot;analysis/decompiled/VMControls.WPF/base/diagramitemtemplate.xaml&quot;,
+      &quot;localXamlSha256&quot;: &quot;95dc48af35a601585c893a2377665781bc4a72a2d5b2ab562d82b4ba0dc5f4f9&quot;,
+      &quot;byteIdenticalToLocalXaml&quot;: true,
+      &quot;bamlDecoded&quot;: true,
+      &quot;connectionIdMappingConfirmed&quot;: false,
+      &quot;runtimeActivated&quot;: false
+    },
+    {</pre></details></article><article id="WFR05" class="source-confirmed"><h2>WFR05 · DiagramItem.AddConnections → VmConnectionDecorator → ConnectionPanel.Children</h2><p>source-confirmed：ConnectionPanel为空则返回；逐newValue项创建Connection(ItemDiagramPage)，DataContext=VmConnectionDecorator（ConnectionSource取当前IDecorate.DecorateSource，DecorateSource=data），SourceItem=this，在HostPanel中以目标DecorateSource身份查找DiagramItem，找到才赋TargetItem，随后加ConnectionPanel。目标晚出现时DataContextChanged另扫描TargetItem==null连接补目标。</p><p>待追：所有NextItemsSource变更/删除/去重/失败路径、数据绑定身份及实际拓扑未在本片闭合。</p><details><summary>VMControls.WPF.Base.DiagramItem::AddConnections · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:3499–3518
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000b6c&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000b6c&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramItem&quot;,
+            &quot;name&quot;: &quot;AddConnections&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200101128379&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 245,
+          &quot;ilSha256&quot;: &quot;806fa0c3e13495791a776e41ccda915254974be53e80a99e162f46a040c0948f&quot;,
+          &quot;ilBytes&quot;: &quot;0002287d0b000614fe030a0639e30000000000036ff102000a0b38b200000073f40f00060c08076f3d01000a7d1c0900040002287f0b000673b30a000613051105739d0900061306110602288c00000a75dc0000016f4303000a6f8e090006001106087b1c0900046f060900060011066f5500000a0011050d09026f9c0a00060002287b0b00066f0502000a28dc00002b08fe06f50f0006735109000a28dd00002b1304110414fe03130711072c0d000911046f9e0a000600002b02000002287d0b00066f0502000a096f0b02000a2600076f9f00000a3a43ffffffde15077568000001130811082c0811086fa000000a00dc002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.DiagramItem::DiagramItem_DataContextChanged · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:7160–7179
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000b78&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000b78&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.DiagramItem&quot;,
+            &quot;name&quot;: &quot;DiagramItem_DataContextChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c118109&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 355,
+          &quot;ilSha256&quot;: &quot;1b7136a5c7dda8c1bac6c732cf766a4ee780ceee287b4a84fe22696f1cc1f899&quot;,
+          &quot;ilBytes&quot;: &quot;0002288c00000a75dc00000114fe0316fe010a063917010000000f02286d00000a75b000000114fe030b072c1e000273100a0006250f02286d00000a6f0609000600285500000a00002b4d0f02286d00000a757101000114fe030c082c1e000273bf080006250f02286d00000a6f0609000600285500000a00002b1c000273f6090006250f02286d00000a6f0609000600285500000a00000002287d0b00066f0502000a28de00002b7e18090004252d17267e16090004fe06f00f0006735209000a25801809000428e200002b6f5c09000a0d2b45096f5d09000a13040011046f8c00000a759c00000225130514fe03130611062c230011056f050900060f02286d00000afe01130711072c0b001104026f9e0a000600000000096f9f00000a2db3de0b092c07096fa000000a00dc000202288c00000a75dc0000017ddf0500040f02286d00000a75dc00000114fe0316fe01130811082c09000228790b000600002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Connection visual construction and target lookup · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramItem.xaml.cs:365–389
+SHA256 19d967cb454fa6ba9aae63a53c2b394b318ce9dd1391d7c5ec8a00a77f683ce3
+	private void AddConnections(IEnumerable newValue)
+	{
+		if (ConnectionPanel == null)
+		{
+			return;
+		}
+		foreach (object data in newValue)
+		{
+			Connection connection = new Connection(ItemDiagramPage);
+			connection.DataContext = new VmConnectionDecorator
+			{
+				ConnectionSource = (DataContext as IDecorate).DecorateSource,
+				DecorateSource = data
+			};
+			Connection connection2 = connection;
+			connection2.SourceItem = this;
+			DiagramItem diagramItem = HostPanel.Children.OfType&lt;DiagramItem&gt;().FirstOrDefault((DiagramItem p) =&gt; (p.DataContext as IDecorate).DecorateSource == data);
+			if (diagramItem != null)
+			{
+				connection2.TargetItem = diagramItem;
+			}
+			ConnectionPanel.Children.Add(connection2);
+		}
+	}
+</pre></details><details><summary>Late target resolution · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/DiagramItem.xaml.cs:557–569
+SHA256 19d967cb454fa6ba9aae63a53c2b394b318ce9dd1391d7c5ec8a00a77f683ce3
+			foreach (Connection item in from p in ConnectionPanel.Children.OfType&lt;Connection&gt;()
+				where p.TargetItem == null
+				select p)
+			{
+				if (item.DataContext is VmConnectionDecorator vmConnectionDecorator &amp;&amp; vmConnectionDecorator.DecorateSource == e.NewValue)
+				{
+					item.TargetItem = this;
+				}
+			}
+		}
+		tempDataContext = DataContext as IDecorate;
+		if (!(e.NewValue is IDecorate))
+		{</pre></details></article><article id="WFR06" class="source-confirmed"><h2>WFR06 · Connection.SetPath / DefiningGeometry → 单Shape内折线和闭合箭头PathGeometry</h2><p>source-confirmed：构造将polyLineSegment加入非闭合且不填充的figureOfPolyline，将arrowSegment加入闭合figureOfArrow，两图形加入geometry。SourceIndex/TargetIndex绑定，PathPoints为TwoWay。SetPath(IList&lt;Point&gt;)用首点为起点、其余为PointCollection，取倒数第二点至末点构箭头向量，旋转计算箭头后InvalidateVisual；DefiningGeometry直接返回该geometry。该方法没有少于两点/重复末点守卫，不能凭图形能画证明输入总合法。</p><p>待追：WPF内部stroke/栅格化、零向量和非法路径实际可达性、所有连接样式仍未知；不涉及工具算法图像像素。</p><details><summary>VMControls.WPF.Base.Connection::.ctor · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:12071–12090
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000ab3&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ab3&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;.ctor&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig, SpecialName, RTSpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011282e8&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 372,
+          &quot;ilSha256&quot;: &quot;23bff5b9de2f947c8adef960fec7ab8a34a9bdaa9715080a3d94d3abe6d0c2e7&quot;,
+          &quot;ilBytes&quot;: &quot;0273bd08000a7d7b0500040273be08000a7d7c0500040273be08000a7d7d0500040273bf08000a7d7e0500040273bf08000a7d7f05000402167d8a0500040273c008000a7d8c05000402147d8d0500040228c108000a00000228c90a000600020328b10a000600027b7c0500046fc208000a027b7e0500046fc308000a00027b7c050004166fc408000a00027b7c050004166fc508000a00027b7b0500046fc608000a027b7c0500046fc708000a00027b7d0500046fc208000a027b7f0500046fc308000a00027b7d050004176fc408000a00027b7b0500046fc608000a027b7d0500046fc708000a000217280c03000a00027e8005000472288a0070281b03000a26027e8105000472408a0070281b03000a26027e8805000472128a007073b801000a25166fba01000a0028bb01000a260273f60a00067d8d050004027b8d0500047ea805000472c592007073b801000a25026fb901000a006fbb01000a260202fe06b40a000673c808000a28c908000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.Base.Connection::get_DefiningGeometry · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:14798–14817
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000abf&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000abf&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;get_DefiningGeometry&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig, SpecialName&quot;,
+            &quot;signatureBytes&quot;: &quot;200012869d&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 7,
+          &quot;ilSha256&quot;: &quot;9f3d36739e194895dc0c8015b26d46790b555e4e1f1dfa14927b276cc711c3f0&quot;,
+          &quot;ilBytes&quot;: &quot;027b7b0500042a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;ldarg.0&quot;,</pre></details><details><summary>VMControls.WPF.Base.Connection::SetPath · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:14846–14865
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000ac0&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ac0&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;SetPath&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Public, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;20010115128221011180bd&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 403,
+          &quot;ilSha256&quot;: &quot;55c17c2dd1445e6556810795f9cb703218ceab9bfd311b155d2e7e6eeac16869&quot;,
+          &quot;ilBytes&quot;: &quot;00027b7c0500040328ca00002b6fe608000a00027b7e050004031728cb00002b73e708000a6fe808000a002300000000000024400a03036f0d08000a18596fe908000a0328cc00002b283e08000a0b73f203000a0c0328cc00002b0d120128d508000a00070628ea08000a0b23000000000000204023000000000000144028eb08000a2300000000008066405a23182d4454fb2109405b130423000000000040564028ec08000a1305120128d508000a00092300000000000018400728ed08000a283f08000a13061207fe15a8010001120723000000000080564028ee08000a00027b7d05000411062300000000000014400728ed08000a110728ef08000a283f08000a6fe608000a00120723000000000080664011045928ee08000a0008027b7d0500046ff008000a11050728ed08000a110728ef08000a283f08000a6fef03000a00120723000000000000004011045a28ee08000a00080828ca00002b11050728ed08000a110728ef08000a283f08000a6fef03000a00027b7f0500040873e708000a6fe808000a000228f108000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Polyline and arrow figure initialization · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connection.xaml.cs:306–330
+SHA256 cc185a2b2b8a30013b3914d6abf8fbe02f59ff0a590660f3a292d8dcfd2f25a7
+	public Connection(DiagramPage diagramPage)
+	{
+		InitializeComponent();
+		Page = diagramPage;
+		figureOfPolyline.Segments.Add(polyLineSegment);
+		figureOfPolyline.IsClosed = false;
+		figureOfPolyline.IsFilled = false;
+		geometry.Figures.Add(figureOfPolyline);
+		figureOfArrow.Segments.Add(arrowSegment);
+		figureOfArrow.IsClosed = true;
+		geometry.Figures.Add(figureOfArrow);
+		Focusable = true;
+		SetBinding(SourceIndexProperty, &quot;SourceIndex&quot;);
+		SetBinding(TargetIndexProperty, &quot;TargetIndex&quot;);
+		SetBinding(PathPointsProperty, new Binding(&quot;PathPoints&quot;)
+		{
+			Mode = BindingMode.TwoWay
+		});
+		hoverPotDelegate = new HoverPotDelegate();
+		hoverPotDelegate.SetBinding(HoverPotDelegate.ItemsSourceProperty, new Binding(&quot;MidPoints&quot;)
+		{
+			Source = this
+		});
+		RequestBringIntoView += Connection_RequestBringIntoView;
+	}</pre></details><details><summary>Polyline and arrow geometry · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connection.xaml.cs:754–778
+SHA256 cc185a2b2b8a30013b3914d6abf8fbe02f59ff0a590660f3a292d8dcfd2f25a7
+	public void SetPath(IList&lt;Point&gt; linePoints)
+	{
+		figureOfPolyline.StartPoint = linePoints.First();
+		polyLineSegment.Points = new PointCollection(linePoints.Skip(1));
+		double num = 10.0;
+		Vector vector = linePoints[linePoints.Count - 2] - linePoints.Last();
+		List&lt;Point&gt; list = new List&lt;Point&gt;();
+		Point point = linePoints.Last();
+		vector.Normalize();
+		vector *= num;
+		double num2 = Math.Atan2(8.0, 5.0) * 180.0 / Math.PI;
+		double num3 = Math.Sqrt(89.0);
+		vector.Normalize();
+		Point point2 = point + 6.0 * vector;
+		Matrix matrix = default;
+		matrix.Rotate(90.0);
+		figureOfArrow.StartPoint = point2 + 5.0 * vector * matrix;
+		matrix.Rotate(180.0 - num2);
+		list.Add(figureOfArrow.StartPoint + num3 * vector * matrix);
+		matrix.Rotate(2.0 * num2);
+		list.Add(list.First() + num3 * vector * matrix);
+		arrowSegment.Points = new PointCollection(list);
+		InvalidateVisual();
+	}
+</pre></details></article><article id="WFR07" class="source-confirmed"><h2>WFR07 · Connection依赖属性/PathPoints → 端点变更重新路由与手工点集显示</h2><p>source-confirmed：OnPositionChanged在isInited且Start/End/SourceIndex/TargetIndex变化时令PathPoints=null；自身focused且端口索引变化时清MidPoints，再SetPath()。无参SetPath仅PathPoints为空、两索引非负且两端ActualWidth非0时调用Page.GetPath；所选体不检测height/空Page。非空PathPoints变更复制列表Passivation后SetPath，并更新焦点句柄、isInited=true。路由算法/自动关联/拖线写回已在canvas-viewport，不能把本呈现片误称执行调度。</p><p>待追：路径集合原地变化、Passivation全规则及其它端点绑定消费者未重做；已有路由证据另链。</p><details><summary>VMControls.WPF.Base.Connection::OnPositionChanged · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:8884–8903
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000aa8&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000aa8&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;OnPositionChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000201128105118109&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 160,
+          &quot;ilSha256&quot;: &quot;c2bdc22ea619489b6ceeef870b3f2bd716e72acedda30d771ac8a8d2f3cff542&quot;,
+          &quot;ilBytes&quot;: &quot;000274aa0000020a067b8a0500042c3d0f0128ba08000a7e860500042e2c0f0128ba08000a7e870500042e1e0f0128ba08000a7e800500042e100f0128ba08000a7e81050004fe012b01172b01160b072c0a0006146fab0a00060000066fbb08000a2c210f0128ba08000a7e800500042e100f0128ba08000a7e81050004fe012b01172b01160c082c0e00066fb50a00066fbc08000a0000066fa90a0006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.Connection::SetPath · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:9479–9498
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000aa9&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000aa9&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;SetPath&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 139,
+          &quot;ilSha256&quot;: &quot;02a14978333e56d1389de49e9a19c7656729ea6fb9d4b07d9337d1b9baa0b789&quot;,
+          &quot;ilBytes&quot;: &quot;000228aa0a00062c100228aa0a00066f0d08000a16fe012b01170a062c6c000228970a00061632300228990a00061632270228a00a00062300000000000000002e160228a20a0006230000000000000000fe0116fe012b01160b072c2c00020228b00a000602289b0a000602289d0a00060228970a00060228990a00066fb40b000628c00a00060000002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.Connection::PathPointsChanged · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:10003–10022
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000aac&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000aac&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;PathPointsChanged&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, Static, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;000201128105118109&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 14,
+          &quot;ilSha256&quot;: &quot;2640e5c6fb8ce3dc3a8195448a4e8b358c2eb5a1458b95143c27a7bf434e290c&quot;,
+          &quot;ilBytes&quot;: &quot;000275aa0000026faf0a0006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.Connection::OnPathPointsChanged · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:10078–10097
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000aaf&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000aaf&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;OnPathPointsChanged&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 74,
+          &quot;ilSha256&quot;: &quot;0b31c6847d575f25048bc1e268b614a61ce294785bd9c7953835a1d866af93e1&quot;,
+          &quot;ilBytes&quot;: &quot;000228aa0a00062c100228aa0a00066f0d08000a16fe022b01160a062c2b000228aa0a000628c700002b0b0728f90a000600020728c00a0006000228b80a00060002177d8a050004002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Position invalidation and route admission · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connection.xaml.cs:252–278
+SHA256 cc185a2b2b8a30013b3914d6abf8fbe02f59ff0a590660f3a292d8dcfd2f25a7
+	private static void OnPositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+	{
+		Connection connection = (Connection)d;
+		if (connection.isInited &amp;&amp; (e.Property == StartPositionProperty || e.Property == EndPositionProperty || e.Property == SourceIndexProperty || e.Property == TargetIndexProperty))
+		{
+			connection.PathPoints = null;
+		}
+		if (connection.IsFocused &amp;&amp; (e.Property == SourceIndexProperty || e.Property == TargetIndexProperty))
+		{
+			connection.MidPoints.Clear();
+		}
+		connection.SetPath();
+	}
+
+	private void SetPath()
+	{
+		if ((PathPoints == null || PathPoints.Count == 0) &amp;&amp; SourceIndex &gt;= 0 &amp;&amp; TargetIndex &gt;= 0 &amp;&amp; SourceActualWidth != 0.0 &amp;&amp; TargetActualWidth != 0.0)
+		{
+			SetPath(Page.GetPath(SourceItem, TargetItem, SourceIndex, TargetIndex));
+		}
+	}
+
+	private static void PathPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+	{
+		(d as Connection).OnPathPointsChanged();
+	}
+</pre></details><details><summary>Explicit point display · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connection.xaml.cs:279–289
+SHA256 cc185a2b2b8a30013b3914d6abf8fbe02f59ff0a590660f3a292d8dcfd2f25a7
+	private void OnPathPointsChanged()
+	{
+		if (PathPoints != null &amp;&amp; PathPoints.Count &gt; 0)
+		{
+			List&lt;Point&gt; list = PathPoints.ToList();
+			PathFinder.Passivation(list);
+			SetPath(list);
+			OnIsSelectedChanged();
+			isInited = true;
+		}
+	}</pre></details></article><article id="WFR08" class="source-confirmed"><h2>WFR08 · Connection焦点 / 本地Connection Style → 线色/粗细与可编辑中点句柄</h2><p>source-confirmed：PreviewMouseDown调用Focus、懒设hoverPotDelegate.OwnerPanel、更新句柄并Handled。OnIsSelectedChanged实际检查IsFocused：取干净线点，对长度&gt;5的线段生成中点HoverPotData；失焦清MidPoints。连接本地样式以自身/SourceItem/TargetItem的IsFocused改Stroke，默认线宽2、MouseOver设3、IsDragOver另改色；锁工作区或非admin禁用。连接焦点与节点IsSelected两机制分开。</p><p>待追：connectionstyle尚只有本地原提取XAML声明，未在此补原BAML核对/主题实例；Focus调用结果、句柄事件与权限全集未运行验证。</p><details><summary>VMControls.WPF.Base.Connection::OnPreviewMouseDown · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:13354–13373
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000ab7&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ab7&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;OnPreviewMouseDown&quot;,
+            &quot;parameters&quot;: 1,
+            &quot;attributes&quot;: &quot;Family, Virtual, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2001011281ad&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 67,
+          &quot;ilSha256&quot;: &quot;093a56c2b3569059c76e2c39e2b1180a37220e83fe7b89b20247ba4f268a81fb&quot;,
+          &quot;ilBytes&quot;: &quot;0002282303000a26027b8d0500046fed0a000614fe010a062c1900027b8d05000402288208000a75b40100016fee0a000600000228b80a00060003176f3f01000a002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.Connection::OnIsSelectedChanged · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:13639–13658
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000ab8&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ab8&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;OnIsSelectedChanged&quot;,
+            &quot;parameters&quot;: 0,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;200001&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 316,
+          &quot;ilSha256&quot;: &quot;5b301d6fa5ce4dfa34679da7917cd62df382c6396583e8e703786662f875cfcb&quot;,
+          &quot;ilBytes&quot;: &quot;000228bb08000a0a06391f0100000073f203000a0b020728c10a0006000228b50a00066fbc08000a00160c38e60000000007086ffa03000a0d070817586ffa03000a13041204284a00000a1203284a00000a591204284d00000a1203284d00000a5973bc04000a1306120628ca08000a230000000000001440fe0213051105398d0000000073ec0a000625086fe50a000600251204284d00000a1203284d00000afe016fe70a000600251204284a00000a1203284a00000a582300000000000000405b1204284d00000a1203284d00000a582300000000000000405b735000000a6fe90a0006001307110702fe06ba0a0006732102000a732202000a6feb0a0006000228b50a000611076fcb08000a0000000817580c08076ffe03000a1759fe04130811083a06ffffff002b0e000228b50a00066fbc08000a00002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>VMControls.WPF.Base.Connection::connectionUserControl_LostFocus · original-managed-cil</summary><pre>docs/architecture-recovery/workflow-rendering-entry-audit.cil.json:14734–14753
+SHA256 c47ce65f2537fb3fd5a324bc7926fcfdeb769418a7f6cfaf7dd1544dde77cbfa
+          &quot;token&quot;: &quot;0x06000ab9&quot;,
+          &quot;symbol&quot;: {
+            &quot;token&quot;: &quot;0x06000ab9&quot;,
+            &quot;kind&quot;: &quot;method-def&quot;,
+            &quot;type&quot;: &quot;VMControls.WPF.Base.Connection&quot;,
+            &quot;name&quot;: &quot;connectionUserControl_LostFocus&quot;,
+            &quot;parameters&quot;: 2,
+            &quot;attributes&quot;: &quot;Private, HideBySig&quot;,
+            &quot;signatureBytes&quot;: &quot;2002011c128115&quot;
+          },
+          &quot;status&quot;: &quot;decoded&quot;,
+          &quot;issue&quot;: null,
+          &quot;ilSize&quot;: 9,
+          &quot;ilSha256&quot;: &quot;061476e70c5968fde56562fc1424c0caacdf207499318c7084db876ce43142e2&quot;,
+          &quot;ilBytes&quot;: &quot;000228b80a0006002a&quot;,
+          &quot;instructions&quot;: [
+            {
+              &quot;offset&quot;: 0,
+              &quot;label&quot;: &quot;IL_0000&quot;,
+              &quot;opcode&quot;: &quot;nop&quot;,</pre></details><details><summary>Focus and mid-segment handles · local-decompiled-source</summary><pre>analysis/decompiled/VMControls.WPF/VMControls.WPF.Base/Connection.xaml.cs:353–383
+SHA256 cc185a2b2b8a30013b3914d6abf8fbe02f59ff0a590660f3a292d8dcfd2f25a7
+	private void OnIsSelectedChanged()
+	{
+		if (IsFocused)
+		{
+			List&lt;Point&gt; list = new List&lt;Point&gt;();
+			GetCleanLinePoint(list);
+			MidPoints.Clear();
+			for (int i = 0; i &lt; list.Count - 1; i++)
+			{
+				Point point = list[i];
+				Point point2 = list[i + 1];
+				if (new Vector(point2.X - point.X, point2.Y - point.Y).Length &gt; 5.0)
+				{
+					HoverPotData hoverPotData = new HoverPotData
+					{
+						StartIndex = i,
+						IsHorizon = (point2.Y == point.Y),
+						point = new Point((point2.X + point.X) / 2.0, (point2.Y + point.Y) / 2.0)
+					};
+					hoverPotData.MouseDownCommand = (ICommand)new DelegateCommand&lt;object&gt;((Action&lt;object&gt;)MouseDownExecute);
+					MidPoints.Add(hoverPotData);
+				}
+			}
+		}
+		else
+		{
+			MidPoints.Clear();
+		}
+	}
+
+	private void connectionUserControl_LostFocus(object sender, RoutedEventArgs e)</pre></details><details><summary>Connection focus, stroke and permission declarations · local-extracted-resource</summary><pre>analysis/decompiled/VMControls.WPF/base/connection/connectionstyle.xaml:7–42
+SHA256 55375647fa2f2231fc93aa9c4dcf9ceb70f220edeee38f2acefc7a09b59806bb
+  &lt;Style x:Key=&quot;{x:Type local:Connection}&quot; TargetType=&quot;{x:Type local:Connection}&quot;&gt;
+    &lt;Setter Property=&quot;Stroke&quot; Value=&quot;{DynamicResource Col_EditProcess_Ligature}&quot; /&gt;
+    &lt;Setter Property=&quot;Fill&quot; Value=&quot;{Binding Path=Stroke, RelativeSource={RelativeSource Mode=Self}}&quot; /&gt;
+    &lt;Setter Property=&quot;StrokeThickness&quot; Value=&quot;2&quot; /&gt;
+    &lt;Setter Property=&quot;FrameworkElement.ContextMenu&quot;&gt;
+      &lt;Setter.Value&gt;
+        &lt;controls:HikContextMenu&gt;
+          &lt;MenuItem Header=&quot;{DynamicResource Lang_Delet}&quot; Command=&quot;{Binding DeleteConnectionCommand}&quot; /&gt;
+        &lt;/controls:HikContextMenu&gt;
+      &lt;/Setter.Value&gt;
+    &lt;/Setter&gt;
+    &lt;Style.Triggers&gt;
+      &lt;Trigger Property=&quot;UIElement.IsFocused&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter Property=&quot;Stroke&quot; Value=&quot;{DynamicResource Col_EditProcess_Selected_Ligature}&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;DataTrigger Value=&quot;true&quot; Binding=&quot;{Binding SourceItem.IsFocused, RelativeSource={RelativeSource Self}}&quot;&gt;
+        &lt;Setter Property=&quot;Stroke&quot; Value=&quot;{DynamicResource Col_EditProcess_Selected_Ligature}&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;DataTrigger Value=&quot;true&quot; Binding=&quot;{Binding TargetItem.IsFocused, RelativeSource={RelativeSource Self}}&quot;&gt;
+        &lt;Setter Property=&quot;Stroke&quot; Value=&quot;{DynamicResource Col_EditProcess_Selected_Ligature}&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;DataTrigger Value=&quot;True&quot; Binding=&quot;{Binding IsLockWorkArea, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ItemsPage}}&quot;&gt;
+        &lt;Setter Property=&quot;IsEnabled&quot; Value=&quot;False&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;DataTrigger Value=&quot;False&quot; Binding=&quot;{Binding IsAdmin, Source={x:Static user:CodeManager.Instance}}&quot;&gt;
+        &lt;Setter Property=&quot;IsEnabled&quot; Value=&quot;False&quot; /&gt;
+      &lt;/DataTrigger&gt;
+      &lt;Trigger Property=&quot;UIElement.IsMouseOver&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter Property=&quot;StrokeThickness&quot; Value=&quot;3&quot; /&gt;
+      &lt;/Trigger&gt;
+      &lt;Trigger Property=&quot;local:Connection.IsDragOver&quot; Value=&quot;True&quot;&gt;
+        &lt;Setter Property=&quot;Stroke&quot; Value=&quot;{DynamicResource Col_EditProcess_Connecting_Ligature}&quot; /&gt;
+      &lt;/Trigger&gt;
+    &lt;/Style.Triggers&gt;
+  &lt;/Style&gt;
+&lt;/ResourceDictionary&gt;</pre></details></article><article id="WFC01" class="independent-implementation"><h2>WFC01 · 当前MainWindow.RenderGraph / CreateNodeCard → GraphLayer中的Border/TextBlock与Path/Polygon</h2><p>independent-implementation：当前清GraphLayer后重建；普通节点是Canvas+Border+图标+TextBlock，标题Text=index+Name、字号12粗体；选中改变BorderBrush/Thickness，Group另CreateGroupCard。连线以Path画折线、独立Polygon画箭头，另透明Path承担焦点命中，三个控件共用GraphLayer；原Connection则是同一个Shape持有两PathFigure。当前LineGeometry按点构LineSegment，箭头另算并绑定Fill到可见Path.Stroke。</p><p>待追：当前Group专用卡、字体/间距/命中/状态与原版逐项差分仍未知；注释中的原版描述不是本报告原证据。</p><details><summary>Current graph rebuild and separate wire visuals · current-source</summary><pre>src/VisionEditor/WorkflowCanvas.cs:141–162
+SHA256 123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f
+            var path=new System.Windows.Shapes.Path {Data=LineGeometry(displayedPoints),Stroke=WireStroke(wire),StrokeThickness=2,IsHitTestVisible=false};
+            wireViews[key]=(wire,path,wire.PathPoints is {Count:&gt;1}?points:CleanWirePoints(points));
+            GraphLayer.Children.Add(path);
+            var arrow=new Polygon {Points=OriginalWireArrow(displayedPoints),IsHitTestVisible=false};arrow.SetBinding(System.Windows.Shapes.Shape.FillProperty,new System.Windows.Data.Binding(&quot;Stroke&quot;){Source=path});wireArrows[key]=arrow;GraphLayer.Children.Add(arrow);
+            // Native Connection is one 2px Shape: its stroke is also the hit area.
+            // The transparent overlay preserves our split render/focus architecture,
+            // but must use the same width rather than expanding selection to 12px.
+            var hit=new System.Windows.Shapes.Path {Data=path.Data,Stroke=Brushes.Transparent,StrokeThickness=2,Focusable=true};
+            // Connection.RequestBringIntoView suppresses focus-driven scroll jumps.
+            hit.RequestBringIntoView+=(_,e)=&gt;e.Handled=true;
+            hit.LostKeyboardFocus+=(_,_)=&gt;DrawWireHandles();
+            hit.GotKeyboardFocus+=(_,_)=&gt;DrawWireHandles();
+            // Original Connection keeps a 2px visible stroke on hover/focus;
+            // only Shape_DragEnter for an insertion payload temporarily uses 10px.
+            // Connection.OnPreviewMouseDown selects for every mouse button, including right-click.
+            hit.PreviewMouseDown+=(_,e)=&gt; {selectedWire=key;selected=null;selectedNodes.Clear();boxSelectionActive=false;hit.Focus();RefreshNodeSelection();RefreshRight();e.Handled=true;};
+            var menu=new ContextMenu();var delete=new MenuItem {Header=&quot;删除&quot;,IsEnabled=!isLocked&amp;&amp;activeRun is null};delete.Click+=(_,_)=&gt;Safe(()=&gt; {doc.DisconnectExecution(wire);selectedWire=null;});menu.Items.Add(delete);hit.ContextMenu=menu;
+            wireHitPaths[key]=hit;GraphLayer.Children.Add(hit);
+        }
+        for(int i=0;i&lt;procedure.Nodes.Count;i++)
+        {
+            var node=procedure.Nodes[i];var card=CreateNodeCard(node,i,selectedNodes.Contains(node.Id));</pre></details><details><summary>Current ordinary node title and outline · current-source</summary><pre>src/VisionEditor/WorkflowCanvas.cs:177–194
+SHA256 123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f
+    Canvas CreateNodeCard(NodeDocument node,int index,bool isSelected)
+    {
+        var runtimeDescriptor=RuntimeDescriptor(node);
+        int runtimePortCount=runtimeDescriptor is {SupportsDynamicOutputs:true}?Math.Max(1,runtimeDescriptor.Outputs.Count):0;
+        var card=new Canvas {Width=130,Height=NodeVisualHeight(node)+20,Background=Brushes.Transparent,Tag=node.Id}; if(node.ModuleId==WorkflowCalls.ModuleId)return CreateGroupCard(node,isSelected,card);
+        var body=new Border {Width=NodeWidth,Height=NodeVisualHeight(node),CornerRadius=new CornerRadius(node.ModuleId==&quot;vision.image-source&quot;?15:4),Background=new LinearGradientBrush(Color.FromRgb(250,247,245),Color.FromRgb(235,230,226),90),BorderBrush=isSelected?orange:Brushes.Gray,BorderThickness=new Thickness(isSelected?2:.7),Effect=new System.Windows.Media.Effects.DropShadowEffect {BlurRadius=3,ShadowDepth=3,Opacity=.45}};
+        if(!node.Enabled)body.Background=new LinearGradientBrush(Color.FromArgb(211,211,211,245),Color.FromArgb(211,211,211,225),90);
+        var content=new StackPanel();var title=new Grid {Height=NodeHeight};title.ColumnDefinitions.Add(new ColumnDefinition {Width=new GridLength(24)});title.ColumnDefinitions.Add(new ColumnDefinition());
+        var icon=new Image {Source=ToolAsset(node.ModuleId),Width=16,Height=16,Margin=new Thickness(4,0,0,0),VerticalAlignment=VerticalAlignment.Center};title.Children.Add(icon);
+        var text=new TextBlock {Text=index+node.Name,FontSize=12,FontWeight=FontWeights.Bold,Foreground=new SolidColorBrush(Color.FromRgb(55,58,60)),VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis};Grid.SetColumn(text,1);title.Children.Add(text);content.Children.Add(title);
+        if(runtimePortCount&gt;0)
+        {
+            var outputs=runtimeDescriptor!.Outputs;
+            if(outputs.Count==0)content.Children.Add(RuntimeOutputRow(&quot;无动态输出端口&quot;,null));
+            else foreach(var output in outputs)content.Children.Add(RuntimeOutputRow(output));
+        }
+        body.Child=content;
+        Canvas.SetLeft(body,10);Canvas.SetTop(body,10);card.Children.Add(body);return card;</pre></details><details><summary>Current polyline geometry · current-source</summary><pre>src/VisionEditor/WorkflowCanvas.cs:218–222
+SHA256 123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f
+    static PathGeometry LineGeometry(IReadOnlyList&lt;RoutePoint&gt; points)
+    {
+        var geometry=new PathGeometry();if(points.Count==0)return geometry;
+        var figure=new PathFigure {StartPoint=new Point(points[0].X,points[0].Y)};foreach(var point in points.Skip(1))figure.Segments.Add(new LineSegment(new Point(point.X,point.Y),true));geometry.Figures.Add(figure);return geometry;
+    }</pre></details><details><summary>Current arrow geometry · current-source</summary><pre>src/VisionEditor/WorkflowWireEditing.cs:26–30
+SHA256 5c9dc9be71f343d4c4ae4a497d6e20468c033bf83617231744d3c8c5a43a12eb
+ static PointCollection OriginalWireArrow(IReadOnlyList&lt;RoutePoint&gt; points)
+ {
+  var end=new Point(points[^1].X,points[^1].Y);var prior=points.Take(points.Count-1).LastOrDefault(p=&gt;p!=points[^1]);var vector=new System.Windows.Vector(prior.X-end.X,prior.Y-end.Y);if(vector.Length==0)return new();vector.Normalize();
+  double angle=Math.Atan2(8,5)*180/Math.PI,length=Math.Sqrt(89);var center=end+6*vector;var matrix=new Matrix();matrix.Rotate(90);var first=center+5*vector*matrix;matrix.Rotate(180-angle);var second=first+length*vector*matrix;matrix.Rotate(2*angle);return new(){first,second,second+length*vector*matrix};
+ }</pre></details></article><article id="WFC02" class="independent-implementation"><h2>WFC02 · 当前WireStroke / RefreshNodeSelection → 当前选中身份到边色与卡片重绘</h2><p>independent-implementation：WireStroke以selectedWire或非框选且仅一个selectedNodes且含任一端点选择高亮刷；RefreshNodeSelection就地修改当前nodeCards中Border的选中边框，Group另改背景，然后更新连线颜色/选择框/句柄。当前使用字符串身份/字典和独立控件组合，不能将其与原WPF节点IsSelected/Connection.IsFocused及主题Style等同。</p><p>待追：全部键鼠输入、锁/非admin分支和原颜色资源像素未在此验收。</p><details><summary>Current wire selection brush · current-source</summary><pre>src/VisionEditor/WorkflowWireEditing.cs:25–25
+SHA256 5c9dc9be71f343d4c4ae4a497d6e20468c033bf83617231744d3c8c5a43a12eb
+ Brush WireStroke(ExecutionLinkDocument link)=&gt;selectedWire==link.FromNode+&quot;&gt;&quot;+link.ToNode||(!boxSelectionActive&amp;&amp;selectedNodes.Count==1&amp;&amp;(selectedNodes.Contains(link.FromNode)||selectedNodes.Contains(link.ToNode)))?wireSelectedBrush:wireNormalBrush;</pre></details><details><summary>Current selection repaint · current-source</summary><pre>src/VisionEditor/WorkflowCanvas.cs:250–267
+SHA256 123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f
+    void RefreshNodeSelection()
+    {
+        foreach(var pair in nodeCards)if(pair.Value.Children[0] is Border body){body.BorderBrush=selectedNodes.Contains(pair.Key)?orange:Brushes.Gray;body.BorderThickness=new Thickness(selectedNodes.Contains(pair.Key)?2:.7);var groupNode=doc.CurrentProcedure.Nodes.Single(n=&gt;n.Id==pair.Key);if(groupNode.ModuleId==WorkflowCalls.ModuleId){body.BorderThickness=new Thickness(0);body.Background=GroupBackground(groupNode,selectedNodes.Contains(pair.Key));}}
+        foreach(var entry in wireViews.Values)entry.View.Stroke=WireStroke(entry.Link);
+        DrawSelectionGroup();
+        DrawWireHandles();
+    }
+    void BeginNodeMove(Point point)
+    {
+        BeginNodeGesture(point,false);nodeOleArmed=movingNodes is {Count:&gt;0};
+    }
+    void PreviewNodeMove(Point point)
+    {
+        if(movingNodes is null||movingNodes.Count==0)return;Vector delta=point-nodePointerStart;
+        if(Math.Abs(delta.X)&lt;=3&amp;&amp;Math.Abs(delta.Y)&lt;=3&amp;&amp;movingGhosts.Count==0)return;
+        double left=movingNodes.Values.Min(p=&gt;p.X),top=movingNodes.Values.Min(p=&gt;p.Y);
+        double dx=Snap(left+delta.X)-left,dy=Snap(top+delta.Y)-top;
+        // ItemsPage.GetDropItems clamps each selected DiagramItem separately.</pre></details></article><article id="WFU01" class="unknown"><h2>WFU01 · 流程画布图形/标题与工具结果叠加 → 两条有限呈现链仍待活实例与完整差分</h2><p>unknown：本页恢复的是DiagramItem/Connection/DiagramPage画布层；工具结果Object/IText→TextShape/ShapeItemsPage另在rendering-layers。不能仅凭WPF Path、TextBlock或Geometry同名就合并生产者。原BAML模板和已核CIL仍不证明全部模板部件、绑定/事件、文字编辑保存及实际图像像素闭合。</p><p>待追：所有节点/子类型完整几何及皮肤资源；HeadReNameTextBox提交→装饰器Name→方案存储；连线全部创建/删除/关闭；实际原主窗口模板激活；当前实现操作级差分；运行模式内部本批仍暂缓。</p></article><p class="notice">主框架实施41/96＝42.71%（32包×3具名单元）；本研究页增加0。图形能显示不等于入口、保存、运行与原版像素全部闭合。</p><a href="workflow-rendering-entry-audit.json">机器清单</a></html><script data-document-web src="document-web-links.js"></script>

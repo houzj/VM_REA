@@ -1,0 +1,111 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fixture 原生字段及当前托管映射核对 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / Fixture 原生字段及当前托管映射核对</p><h1>Fixture 原生字段及当前托管映射核对</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fixture 原生字段及当前托管映射核对</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="FIXTURE-NATIVE-FIELD-AUDIT.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="FIXTURE-NATIVE-FIELD-AUDIT.html#fixture-原生字段及当前托管映射核对">Fixture 原生字段及当前托管映射核对</a></p><p style="margin-left:14px"><a href="FIXTURE-NATIVE-FIELD-AUDIT.html#证据与范围">证据与范围</a></p><p style="margin-left:14px"><a href="FIXTURE-NATIVE-FIELD-AUDIT.html#原生十叶与托管值">原生十叶与托管值</a></p><p style="margin-left:14px"><a href="FIXTURE-NATIVE-FIELD-AUDIT.html#当前实现差异与最小闭合建议">当前实现差异与最小闭合建议</a></p><p style="margin-left:14px"><a href="FIXTURE-NATIVE-FIELD-AUDIT.html#核对结论">核对结论</a></p></details><h1 id="fixture-原生字段及当前托管映射核对">Fixture 原生字段及当前托管映射核对</h1><h2 id="证据与范围">证据与范围</h2><p>本报告只核对已反编译的托管入口、安装包模块 XML、SDK 数据类和当前框架代码；未在原生 VM 中执行同状态差分，也未分析位置修正算法的原生机器码。因此字段名称和传输顺序有静态证据，角度单位、坐标变换公式、异常和数值舍入仍未证实。</p>
+<table>
+<thead>
+<tr>
+<th>证据</th>
+<th>关键位置</th>
+<th>SHA-256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Location/IMVSFixtureModu/IMVSFixtureModu.xml</code></td>
+<td>输出 <code>Position Correction Info</code> 及十叶</td>
+<td><code>577A67C5BC661A4C314C6EB1879CAED1C82789F91D33D04B256B1FBCEB585AC6</code></td>
+</tr>
+<tr>
+<td><code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/ImageProcessing/IMVSImageFixtureModu/IMVSImageFixtureModu.xml</code></td>
+<td>输入/隐藏输出 FIXTURE</td>
+<td><code>05A6E9B9B25D484A6D43521A403433597FD2A486047298EFA899DE8C31C5DCFD</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/DynamicOutput.cs</code></td>
+<td><code>GetOutputFixtureArray</code></td>
+<td><code>F995E91E30AE21C1B17E9746D5657C4AB6FC9A868F315D4DFB9031B264DDF92D</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/DynamicInput.cs</code></td>
+<td>FIXTURE 输入的十项 float 封送</td>
+<td><code>2F46BC4E116CC953DAF835C6719F429ABE3A11218DAC6201BF105626237589BD</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.Core/VM.Core/VmModule.cs</code></td>
+<td><code>GetVmIOFixtureValue</code> 按叶数组重组</td>
+<td><code>53E2F0F9032C4631B59CF0EB2A00E06D50469D94706E7E370E9CC7E1059C72CE</code></td>
+</tr>
+<tr>
+<td><code>analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/Fixture.cs</code></td>
+<td>公共数据类与缺省构造</td>
+<td><code>DD040114EAC9542C4EAEA8987DA0B0B86456A4D3116CBEAA34A4F06068BC6C45</code></td>
+</tr>
+</tbody></table>
+<p><code>IMVSFixtureModu.xml</code> 的外层 <code>Position Correction Info</code> 为 <code>Style=&quot;FIXTURE&quot; IsPrefer=&quot;true&quot;</code>，其十个数值叶均为 <code>float</code>、<code>IsForce=&quot;false&quot;</code>、<code>IsArray=&quot;false&quot;</code>。两组 POINT 子树没有显式 <code>IsArray</code> 属性；不能把这一缺省属性推断为原生跨轮累积数组。<code>IMVSImageFixtureModu.xml</code> 的同型输入无显式数组属性，输出 <code>Output Position Correction Info</code> 连同子树和十叶均标 <code>Visible=&quot;false&quot;</code>。故展示叶字段应按<strong>模块输出可见性</strong>决定，不能仅凭类型 FIXTURE 向所有模块公开。</p>
+<h2 id="原生十叶与托管值">原生十叶与托管值</h2><table>
+<thead>
+<tr>
+<th>原生层级/叶</th>
+<th>当前 <code>FixtureValue</code> 对应成员</th>
+<th>当前可作为数值叶投影？</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Fixtured Point.FixtureInitPointX</code></td>
+<td><code>Reference.X</code></td>
+<td>是，标量 Number</td>
+</tr>
+<tr>
+<td><code>Fixtured Point.FixtureInitPointY</code></td>
+<td><code>Reference.Y</code></td>
+<td>是，标量 Number</td>
+</tr>
+<tr>
+<td><code>FixtureInitAngle</code></td>
+<td><code>Reference.Angle</code></td>
+<td>是，标量 Number；单位未差分验证</td>
+</tr>
+<tr>
+<td><code>FixtureInitScaleX</code></td>
+<td><code>Reference.ScaleX</code></td>
+<td>是，标量 Number</td>
+</tr>
+<tr>
+<td><code>FixtureInitScaleY</code></td>
+<td><code>Reference.ScaleY</code></td>
+<td>是，标量 Number</td>
+</tr>
+<tr>
+<td><code>Unfixtured Point.FixtureRunPointX</code></td>
+<td><code>Run.X</code></td>
+<td>是，标量 Number</td>
+</tr>
+<tr>
+<td><code>Unfixtured Point.FixtureRunPointY</code></td>
+<td><code>Run.Y</code></td>
+<td>是，标量 Number</td>
+</tr>
+<tr>
+<td><code>FixtureRunAngle</code></td>
+<td><code>Run.Angle</code></td>
+<td>是，标量 Number；单位未差分验证</td>
+</tr>
+<tr>
+<td><code>FixtureRunScaleX</code></td>
+<td><code>Run.ScaleX</code></td>
+<td>是，标量 Number</td>
+</tr>
+<tr>
+<td><code>FixtureRunScaleY</code></td>
+<td><code>Run.ScaleY</code></td>
+<td>是，标量 Number</td>
+</tr>
+</tbody></table>
+<p>映射的方向来自 <code>DynamicInput</code> 将 <code>stInitPoint.X/Y, fInitAngle, fInitScaleX/Y, stRunPoint.X/Y, fRunAngle, fRunScaleX/Y</code> 顺次写入十个单元素 float 值；<code>VmModule.GetVmIOFixtureValue</code> 从相同层级的十组 <code>float?[]</code> 重组基准和运行信息；<code>DynamicOutput.GetOutputFixtureArray</code> 把 <code>IVmFixture[]</code> 转为 <code>List&lt;VM.PlatformSDKCS.Fixture&gt;</code>。其中空元素会被输出入口跳过，空数组与 null 的行为亦与当前托管值不同。</p>
+<p><code>IMVSFixtureModuDisplay.xml</code> 把基准点 X/Y 映射到图上 <code>BasePoint</code>，运行点 X/Y 映射到 <code>RunningPoint</code>，并显示模块状态。此证据说明两组位置点的展示用途，不证明当前 <code>FixtureValue.Transform/WarpMask</code> 的公式与原生一致。</p>
+<h2 id="当前实现差异与最小闭合建议">当前实现差异与最小闭合建议</h2><p>当前 <code>src/VisionFramework/RoiRuntimeValues.cs</code> 的 <code>FixtureValue(Reference, Run)</code> 能保存十个 double 值，<code>src/VisionFramework/PortArrays.cs</code> 支持标量及 <code>FixtureArray</code>、逐项取值和嵌套累积扁平化，<code>GroupBreak.Accumulatable</code> 包含 Fixture。已有调用检查用真实径向圆结果跨两层 Group 验证托管 Fixture 数组传输。<code>src/VisionFramework/CompoundOutputFields.cs</code> 当前<strong>没有 Fixture 叶</strong>，因此根 Fixture 可以传输和累积，但不能从已有输出订阅十个数值叶；这是本次可闭合的明确缺口。</p>
+<p>最小实现是对**有可见 FIXTURE 输出、且根值为有效 <code>FixtureValue</code>**的描述符增加上表十个可选 <code>Number</code> 标量端口，并在同一次执行结果中从根值投影对应值。对于 <code>FixtureArray</code>，十叶宜保持 <code>NumberArray</code> 并逐项投影；数组长度跟随根值，不能用上一轮缓存填洞。普通订阅、Group 输出和累积继续沿现有端口类型检查执行。输出被标记 <code>Visible=false</code> 的模块不得自动公开叶端口。实施时须验证字段选择界面、运行取值、数组展开、重命名/删除传播以及保存重开；这项仅为建议，<strong>此报告未实施产品代码，也未声称功能闭合</strong>。</p>
+<p>当前 <code>FixturePose.Validate</code> 要求 <code>ScaleX</code>、<code>ScaleY</code> 严格大于零，且默认值为 1。原生公共 <code>Fixture()</code> 构造把四个缩放值设为 0；已检查的 XML 和输入封送没有同样的正数校验。这是合同差异，尤其当原生输出缺省/零尺度时当前 <code>PortValue.Fixture</code> 会拒绝它。修复前需要明确零尺度值作为<strong>数据传输</strong>时的处理和用它做几何变换时的错误路径，不可简单宣称当前校验符合原生。托管 Number 是 double，原生叶是 float；当前数组和 Group 累积是独立实现，不能宣称原生 ABI、数组元数据、float 精度或变换公式等价。</p>
+<h2 id="核对结论">核对结论</h2><ul>
+<li><strong>已确认</strong>：FIXTURE 十叶的源名称、树层级、float 类型、所属基准/运行 pose；位置修正模块输出可见，图像修正模块同形输出不可见；托管输出入口是数组 API。</li>
+<li><strong>当前独立实现</strong>：<code>FixtureValue</code>/<code>FixtureArray</code>/Group 扁平累积和仿射变换；十叶尚未进入当前投影层。</li>
+<li><strong>待验证</strong>：输出端实际数组基数、空位/null 传播、零/负尺度、角度单位和方向、精度/舍入、原生执行器的组合叶订阅及跨轮报告行为、位置修正算法差分。</li>
+</ul>
+<p class="meta">来源：docs/FIXTURE-NATIVE-FIELD-AUDIT.md · SHA256 05006bc0fe76fca1125f5f7e8eec52ad7fd1718c6d2825960166529082e75b41<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

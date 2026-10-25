@@ -1,0 +1,83 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 589b1b846b14 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 589b1b846b14</p><h1>原文证据 589b1b846b14</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 589b1b846b147bbd65d065d85da49dabf08870e4530189ec3507593084551677。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre> async Task StartRunCore(bool allowGroup,string? procedureId=null)
+ {
+  if(activeRun is not null||!CanStartWorkflow(allowGroup,procedureId))return;
+  continuousRun=false;runningProcedureId=procedureId??doc.RootProcedureId(doc.CurrentProcedureId);var owner=new CancellationTokenSource();activeRun=owner;RefreshAll();
+  try{await RunCore(runningProcedureId,owner.Token);}finally{FinishWorkflowRun(owner);}
+ }
+ async Task&lt;bool> RunCore(string procedureId,CancellationToken token)
+ {
+  EnsureToolDebugSolution();
+  var owner=CaptureExecutionOwner();
+  var ownerScope=executionScope;
+  var workspace=new SolutionWorkspace(doc.Document,doc.BaseDirectory);
+  try
+  {
+   BeginWorkflowResults(procedureId);if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
+   if(!IsCurrentExecutionOwner(owner))return false;
+   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};
+   var progress=CreateExecutionProgress(procedureId,owner,workflowExecuteCounts.GetValueOrDefault(procedureId)); // Capture the UI dispatcher before the graph moves to a worker.
+   var session=await Task.Run(()=>new SolutionExecutor(modules).RunAsync(workspace,procedureId,progress:progress,cancellationToken:token,scope:ownerScope,control:control),token);
+   if(!IsCurrentExecutionOwner(owner))return false;
+   if(control.StopRequested)continuousRun=false;
+
+   var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);
+   // VmSolution's ModuleResult callback commits state synchronously and then
+   // publishes the same result to its double-buffer callback queue.  The
+   // managed host uses the same seam; the queue's default CacheEnabled=false
+   // preserves the existing synchronous presentation path.
+   WorkflowCallbacks.PublishModuleResult(
+    () => {
+      if(!IsCurrentExecutionOwner(owner))return;
+      if(doc.HasCurrentProcedure&amp;&amp;doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString(&quot;F2&quot;);StatusText.Text=&quot;流程完成：&quot;+session.Status+(session.OutputErrors.Count>0?&quot; · &quot;+string.Join(&quot;；&quot;,session.OutputErrors):&quot;&quot;);StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?&quot;bottombar_run.png&quot;:&quot;bottombar_abnormal.png&quot;);RefreshRight();}
+      if(workflowOverview)RenderWorkflowOverview();
+      if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();
+    },
+    () => {
+      StoreWorkflowCallResults(procedureId,session);RecordWorkflowRun(procedureId,elapsed);
+      if(!windowClosed)RecordFrameworkRunHistory(procedureId,session);
+    });
+   return session.Status==SessionStatus.Success&amp;&amp;session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.Skipped);
+  }
+  catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))StatusText.Text=&quot;运行已停止&quot;;}
+  catch(Exception e){if(IsCurrentExecutionOwner(owner))StatusText.Text=&quot;运行失败：&quot;+e.Message;}
+  return false;
+ }
+ void ClearWorkflowCallResults(string procedure){var seen=new HashSet&lt;string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);ClearToolDebugResults(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}
+ void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){ClearToolDebugResults(procedure);clearedWorkflowResultViews.Remove(procedure);workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}
+ void RestoreWorkflowResults()
+ {
+  results.Clear();if(!clearedWorkflowResultViews.Contains(doc.CurrentProcedureId)){if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;RestoreToolDebugResults(doc.CurrentProcedureId);}
+
+ }
+ async Task RunProcedure(string id){if(!doc.HasCurrentProcedure||doc.RootProcedureId(doc.CurrentProcedureId)!=id)SelectWorkflow(id);await StartRunCore(false,id);}
+ async Task RunLegacyGroupProcedure(string id){SelectWorkflow(id);await StartRunCore(true);}
+ void StartContinuous()
+ {
+  if(activeRun is not null){activeRun.Cancel();return;}
+  if(!CanStartWorkflow())return;
+  continuousRun=true;runningProcedureId=doc.RootProcedureId(doc.CurrentProcedureId);var owner=new CancellationTokenSource();activeRun=owner;RefreshAll();_=ContinuousRun(runningProcedureId,owner);
+ }
+ void StartProcedureLoop(string id){if(activeRun is not null){activeRun.Cancel();return;}if(!doc.HasCurrentProcedure||doc.RootProcedureId(doc.CurrentProcedureId)!=id)SelectWorkflow(id);StartContinuous();}
+ async Task ContinuousRun(string procedureId,CancellationTokenSource owner)
+ {
+  var stamp=CaptureExecutionOwner();
+  try{while(!owner.IsCancellationRequested&amp;&amp;continuousRun&amp;&amp;IsCurrentExecutionOwner(stamp)){bool ok=await RunCore(procedureId,owner.Token);if(!IsCurrentExecutionOwner(stamp))break;var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&amp;&amp;p.StopOnNg&amp;&amp;!owner.IsCancellationRequested){StatusText.Text=&quot;流程 NG，已停止连续运行&quot;;break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}
+  catch(OperationCanceledException){if(IsCurrentExecutionOwner(stamp))StatusText.Text=&quot;连续运行已停止&quot;;}
+  catch(Exception error){if(IsCurrentExecutionOwner(stamp))StatusText.Text=&quot;连续运行失败：&quot;+error.Message;}
+  finally{FinishWorkflowRun(owner);}
+ }
+ void FinishWorkflowRun(CancellationTokenSource owner)
+ {
+  if(ReferenceEquals(activeRun,owner)){activeRun=null;runningProcedureId=null;continuousRun=false;owner.Dispose();if(!windowClosed)RefreshAll();}
+ }
+ protected override void OnClosed(EventArgs e)
+ {
+  executionOwnerEpoch.Close();DetachExecutionScope();doc.Dispose();
+  windowClosed=true;
+  workflowCallbacks?.Close();
+  CloseToolConfiguration();
+  executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);
+ }
+}
+
+</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/global-variable-analysis.html">数据/global-variable-analysis.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

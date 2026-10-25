@@ -1,0 +1,74 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 4526d16269ce · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 4526d16269ce</p><h1>原文证据 4526d16269ce</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 4526d16269ce4cdaf79562a72a0f0440f98e746bc7f72319a7ca83ee57799ff2。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>docs/architecture-recovery/image-chain.resources/Apps.BaseData.Byte2ImageSource.decompiled.cs:707–778
+SHA256 5dc37569de5839aef86821314724afd6d17fedc85863c7337e3ec52d08cc0253
+	public unsafe static void Resize(byte* pixels, byte* bufferptr, int widthSource, int heightSource, int width, int height, Interpolation interpolation, PixelFormat pixelFormat, string strPixelFormat, int offx = 0, int offy = 0, int clipXPixel = 0, int clipYPixel = 0, int fwidth = 0, int fheight = 0)
+	{
+		bool flag = strPixelFormat != &quot;Rgb24_P3&quot;;
+		int channel = pixelFormat.BitsPerPixel / 8;
+		int strideSource = widthSource * channel;
+		int stride = (int)Math.Ceiling((double)fwidth * (double)pixelFormat.BitsPerPixel / 32.0) * 4;
+		double xs = (double)widthSource / (double)width;
+		double ys = (double)heightSource / (double)height;
+		if (interpolation != Interpolation.NearestNeighbor)
+		{
+			return;
+		}
+		int dlen = fwidth * channel;
+		offx = (int)(Math.Floor((double)offx / xs) * xs);
+		offy = (int)(Math.Floor((double)offy / ys) * ys);
+		if (flag)
+		{
+			byte* pixels_offx_channel = pixels + offx * channel + offy * strideSource;
+			if (xs == 1.0)
+			{
+				Parallel.For(0, fheight, (int y) =>
+				{
+					byte* src = pixels_offx_channel + (int)(ys * (double)y) * strideSource;
+					Memcpy(bufferptr + y * stride, src, dlen);
+				});
+				return;
+			}
+			Parallel.For(0, fheight, (int y) =>
+			{
+				byte* ptr = pixels_offx_channel + (int)(ys * (double)y) * strideSource;
+				byte* ptr2 = bufferptr + y * stride;
+				double num2 = 0.0;
+				byte* ptr3 = dlen + ptr2;
+				for (byte* ptr4 = ptr2; ptr4 &lt; ptr3; ptr4 += channel)
+				{
+					byte* ptr5 = ptr + (int)num2 * channel;
+					num2 += xs;
+					for (int i = 0; i &lt; channel; i++)
+					{
+						ptr4[i] = ptr5[i];
+					}
+				}
+			});
+			return;
+		}
+		int num = widthSource * heightSource;
+		byte* pixels_offx_channel_R = pixels + offx + offy * widthSource;
+		byte* pixels_offx_channel_G = pixels + num + offx + offy * widthSource;
+		byte* pixels_offx_channel_B = pixels + num * 2 + offx + offy * widthSource;
+		Parallel.For(0, fheight, (int y) =>
+		{
+			int num2 = (int)(ys * (double)y) * widthSource;
+			byte* ptr = pixels_offx_channel_R + num2;
+			byte* ptr2 = pixels_offx_channel_G + num2;
+			byte* ptr3 = pixels_offx_channel_B + num2;
+			byte* ptr4 = bufferptr + y * stride;
+			double num3 = 0.0;
+			byte* ptr5 = dlen + ptr4;
+			for (byte* ptr6 = ptr4; ptr6 &lt; ptr5; ptr6 += channel)
+			{
+				byte* ptr7 = ptr + (int)num3;
+				byte* ptr8 = ptr2 + (int)num3;
+				byte* ptr9 = ptr3 + (int)num3;
+				num3 += xs;
+				*ptr6 = *ptr7;
+				ptr6[1] = *ptr8;
+				ptr6[2] = *ptr9;
+			}
+		});
+	}
+
+	public ImageSource BuiltImageSource(IntPtr imageData, int dataLenth, int nWidth, int nHeight, PixelFormat npixelFormats)</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/image-pipeline.html">数据/image-pipeline.html</a></li><li><a href="../数据/image-pipeline--display.html">数据/image-pipeline--display.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

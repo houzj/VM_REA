@@ -1,0 +1,93 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平移旋转标定 TranslationCalibModu</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/TRANSLATION-CALIBRATION.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#平移旋转标定-translationcalibmodu">平移旋转标定 TranslationCalibModu</a></p><p style="margin-left:14px"><a href="#原厂身份与来源">原厂身份与来源</a></p><p style="margin-left:14px"><a href="#与-n点的实际区别">与 N点的实际区别</a></p><p style="margin-left:14px"><a href="#状态机与输出">状态机与输出</a></p><p style="margin-left:14px"><a href="#文件与界面">文件与界面</a></p><p style="margin-left:14px"><a href="#集成与验证边界">集成与验证边界</a></p></details><h1 id="平移旋转标定-translationcalibmodu">平移旋转标定 TranslationCalibModu</h1><p>本工具依据原厂模块、SDK、配置资源和自有进程受控运行实现。没有设备测试；原厂完整桌面参数面板尚未成功渲染。受控输入输出宿主与真实平台运行分别记录，不能由回放通过推导全部原生等价。</p>
+<h2 id="原厂身份与来源">原厂身份与来源</h2><ul>
+<li>安装目录：<code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/TranslationCalibModu</code>，13 个文件逐项 SHA-256、长度、XML 配置见 <a href="../../../plugins/translation-calibration-definition.json">静态清单</a>。</li>
+<li><code>TranslationCalibModu.dll</code> SHA-256：<code>a85a7ca08ea265b2cf881b4ff01bf7538a60e9edb7466478476584b08fe25183</code>，410624 字节。原生导出类仍叫 <code>CIMVSNPointCalibModu</code>，不能仅凭类名将其当成 N点模块。</li>
+<li>原厂托管控制与 SDK 辅助反编译：本工作树 <code>analysis/full-audit/calibration-dependencies/decompiled/TranslationCalibModuControl</code>、<code>TranslationCalibModuCs</code>。原始代码不纳入 Git。</li>
+<li>REA 托管静态证据：<code>ev_c9e003eb9b1b760c6e3c973ae1c3a3c9b9ae2b05bfde4b899c01820c5ab8eb2a</code>，完整原始返回保存于本工作树 <code>analysis/full-audit/translation-calibration/managed-rea-evidence.json</code>。静态元数据检查没有执行控件。</li>
+<li>独立 Ghidra 数据库及导出：本工作树 <code>analysis/full-audit/translation-calibration/ghidra-project</code>、<code>native</code>，没有打开其他任务的 N点数据库。原厂 DLL、算法和授权代码保持原样。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>原生方法</th>
+<th align="right">RVA</th>
+<th>本次依据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>构造/析构</td>
+<td align="right"><code>0x37760</code> / <code>0x37940</code></td>
+<td>实例大小、成员默认值、算法对象所有权</td>
+</tr>
+<tr>
+<td>GetAllParamList / GetParam</td>
+<td align="right"><code>0x37a60</code> / <code>0x382f0</code></td>
+<td>参数名称及受控 getter 对照</td>
+</tr>
+<tr>
+<td>GetProcessInput</td>
+<td align="right"><code>0x39540</code></td>
+<td>采点批次、数组前缀、平移和旋转边界</td>
+</tr>
+<tr>
+<td>Init</td>
+<td align="right"><code>0x3a140</code></td>
+<td>真实平台初始化边界；本宿主不假装完成</td>
+</tr>
+<tr>
+<td>MatrixInv</td>
+<td align="right"><code>0x3a310</code></td>
+<td>组合标定中的单精度逆矩阵与 <code>1e-7f</code> 阈值</td>
+</tr>
+<tr>
+<td>Process / ProcessAlg</td>
+<td align="right"><code>0x3a8c0</code> / <code>0x3b0e0</code></td>
+<td>状态机、示教、组合标定与真实求解调用</td>
+</tr>
+<tr>
+<td>ProcessOutput</td>
+<td align="right"><code>0x3c3f0</code></td>
+<td>原始输出存在性、类型与数值</td>
+</tr>
+<tr>
+<td>ResetMember / SetParam</td>
+<td align="right"><code>0x3d6d0</code> / <code>0x3d740</code></td>
+<td>清空、模式及参数写入行为</td>
+</tr>
+<tr>
+<td>WriteXmlData</td>
+<td align="right"><code>0x3e660</code></td>
+<td>模块标定文件结构及示教字段副作用</td>
+</tr>
+</tbody></table>
+<p>可重放入口：<code>tests/NativeEvidence/Invoke-OriginalTranslationProbe.ps1</code>、<code>Invoke-OriginalTranslationUiProbe.ps1</code>。生成器：<code>tests/Export-TranslationDefinitions.py</code>、<code>Export-TranslationEvidence.py</code>。所有原始运行、截图和编译输出均在本工作树分析目录。</p>
+<h2 id="与-n点的实际区别">与 N点的实际区别</h2><ol>
+<li>新增 <code>CalibType</code>：0 平移标定、1 平移旋转标定；相机 UI 只有 1 静止和 3 运动。N点的自动物理坐标网格、相对坐标、基准步长及可配置标定原点不属于本工具。</li>
+<li>图像坐标成功、物理坐标缺省时，本工具保留已有物理点值；新实例对应零。它不会像 N点工具那样生成蛇形物理网格。</li>
+<li><code>CalibType</code> 控制显示及组合求解分支。隐藏的旋转数量不会被自动清零：受控运行中在类型 0 下写入旋转数量仍参与采点与求解。</li>
+<li><code>UnionCalibEnable &amp;&amp; CalibType != 0</code> 时，先求平移矩阵，以其逆矩阵把各旋转物理位置到中间旋转位置的平移差转换为图像位移，再重建旋转输入并求解。普通分支直接提交采集的旋转点。</li>
+<li>完成输出包含 <code>IsRightCoorA</code>，其计算使用矩阵左上 2×2 行列式符号。未完成分支仍写 <code>CalibErrStatus=0</code>，不能据声明表把两者无条件同时发布。</li>
+<li>原厂 <code>TeachFlag</code> 直接作为字符串输入，本工具没有 N点的 <code>TeachFlagInput</code> 端口名。</li>
+<li>文件包含额外 <code>CameraMode</code> 字段：原厂 <code>DataType=&quot;int&quot;</code>，内容却是 <code>CameraStatic</code> / <code>CameraMove</code>。保留此原文，不擅自改为数字。</li>
+</ol>
+<p>普通数值内核复用 <code>NPointSolver</code>；组合标定补偿、状态、导出和 UI 由 <code>Translation*</code> 专属代码实现，没有复制或修改 N点状态机作为共享契约。</p>
+<h2 id="状态机与输出">状态机与输出</h2><p><a href="../../../plugins/translation-calibration-evidence.json">受控证据</a> 保存全部事件顺序、参数写入、输入数组/字符串、getter 返回、输出调用和值，以及逐个原厂 XML 原文与哈希。当前覆盖 48 个 Process / 原始成员场景和 26 次文件导出尝试；其中包括采点不完整、空数组、无绑定、计数不等、批次边界、0/1/2/3 旋转点、两种相机、组合开关、示教、重复执行、清空和输出回调失败。</p>
+<ul>
+<li>原厂原生默认：类型 0、触发获取、9 个平移点、0 个旋转点；组合、示教、自动刷新均关闭。自由度 2、权重 3；权重因子 20、距离阈值 30、样本比例 60。Algorithm XML 中刷新 True 与实际 getter False 分开记录。</li>
+<li>原厂输入 getter 在未绑定夹具中返回 <code>0xe000031c</code>，Process 原样返回且没有输出调用；成功的零长度图像数组则返回成功，发布未完成状态与空点前缀。</li>
+<li>图像 X/Y 或物理 X/Y 数量不等返回 <code>0xe0000001</code>；相等的短物理前缀被接受，其余点保留原值。</li>
+<li>单次批量只采到当前平移或旋转阶段末尾；多余输入不在同次调用顺延至下一阶段。点已满后重新计算并发布旧数据，不再读取输入。</li>
+<li>旋转数量为 0 时，两路输入角度不会被计入图像/物理角缓存。旋转阶段缺角度时保留该位置已有值。</li>
+<li>未完成时写 <code>WorldRotateAngle=0</code> 与 <code>Tilt=0</code>，缺少 <code>Rotate</code>；完成时改写 <code>Rotate</code>、<code>Tilt</code>，不写 <code>WorldRotateAngle</code>。声明与执行差别保留。</li>
+<li>清空会清计数、图像/物理点及 <code>0x163b0</code> 角缓存，并取消示教采获；<code>0x16430</code> 角缓存保留。方向与文件内部原点也不凭空复位。</li>
+<li>字符串示教匹配后采获拍照与物理姿态，不累计标定点。物理 X/Y/角度缺省的失败在输出前发生。</li>
+</ul>
+<p>原厂回调失败场景只能证明已执行的输出前缀和状态没有回滚；独立框架的结果字典不是逐端口 ModuleFrame 写入服务，该合成失败没有伪造为真实平台故障。</p>
+<h2 id="文件与界面">文件与界面</h2><p>专属 <code>TranslationFile</code> 使用原厂 <code>CalibInfo/CalibInputParam/CalibOutputParam</code>、点列表、9 个矩阵系数及姿态节点。PixelPrecisionX/Y 是矩阵<strong>列范数</strong>。旋转中心 R 均为 -999；文件不是算法 SDK <code>ExportCalibFile</code> 的结构替代品。</p>
+<p>示教节点由已采获状态决定，禁用示教后节点仍存在：SnapImage 回退图像点，其余两姿态为 -999。<code>WriteXmlData</code> 内部图像回退原点初始为 0，先用于 SnapImage，再改成 <code>(平移数-1)/2</code> 用于 SnapWorld；因此首次缺拍照坐标导出与再次导出不同。专属插件保存这一文件状态，未把 N点的用户可配置原点混入本工具。</p>
+<p>原厂 UI 证据使用原始 XML、解析器和 Control.dll，在明确合成的参数模型下记录 12 个模式快照，并成功渲染原厂五数据列点表控件。完整参数面板的原厂 BAML 类型解析抛 <code>NotImplementedException</code>，失败保留在证据中；没有把独立实现截图或合成参数默认值当成原厂桌面截图/原生结果。按 XML 恢复的独立窗口保留“基本参数 / 结果显示”两页；POINT 输入选择点组合，坐标、角度及示教字段使用只读类型化订阅选择器，结果页使用 TextDisplayGroup 编辑器。<code>TranslationCalibration.PluginChecks</code> 检查模式、字段可见性和选择器形态；完整原厂窗口像素仍未验证。</p>
+<h2 id="集成与验证边界">集成与验证边界</h2><p>沿用现有 NumberArray、Text、Calibration 载体、模块作用域状态、点表持久化和工具执行上下文，无新增共享接口。<code>CalibData</code> 是独立框架对原厂 <code>MapData</code> 参数的类型化出口，原生 Process 输出清单未把它当成已发布端口。宿主注册、目录映射、解决方案及主清单由主代理统一集成。</p>
+<p>数值内核覆盖与已知退化/强稳健权重边界跟随 N点内核报告；不能以本工具有限场景推导任意标定数据逐位等价。组合标定的严格重合旋转点已由共享内核依据原厂 SDK 对照修正。最新专属检查为 7445 项通过，构建 0 警告、0 错误，日志与文件哈希见 <a href="../../../plugins/translation-calibration-verification.json">验证索引</a>。宿主集成及主线回归由主代理继续完成。</p>
+<p>再次匹配示教会先将拍照坐标置为 <code>(-99999,0,0)</code>，随后读取物理姿态；即使缺少 Y 输入失败，之前成功示教留下的 HasTeach 仍保留。此时导出使用文件内部原点回退拍照坐标。该失败顺序已补入原厂受控场景与独立运行回放。</p>
+<p>主线集成补充：已接通WPF/WinForms注册及工具目录；真实WPF宿主267项检查通过，验证拖入默认值、数组订阅、自执行、缺物理坐标不生成N点网格和撤销。点表导入按原厂保留有效前缀，后续行失败不回滚已写入行；成功后的行集合、原始文本、坏行及短行部分 setter/UI 保留语义详见<a href="TRANSLATION-POINT-IMPORT-UI-TRACE.html">源码对照</a>。配置与 POINT 数组接线最新检查为 7453 项；独立桌面像素一致性仍需人工验收。</p>
+<p class="meta">来源：docs/plugins/TRANSLATION-CALIBRATION.md · SHA256 3d2009ee9e7e52443536a9d14cd77424fc6341bf58f6d6572241fb561e3d0aae<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

@@ -1,0 +1,44 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>联合审核第三轮根线复核</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass3-root-review.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#联合审核第三轮根线复核">联合审核第三轮根线复核</a></p><p style="margin-left:14px"><a href="#本轮改变了什么">本轮改变了什么</a></p><p style="margin-left:14px"><a href="#根线自审与证据">根线自审与证据</a></p><p style="margin-left:14px"><a href="#尚未闭合的审核门">尚未闭合的审核门</a></p></details><h1 id="联合审核第三轮根线复核">联合审核第三轮根线复核</h1><p>基线：main <code>d7a8741482df16b02ce2d24030852703daf6d715</code> 加本轮下述未提交主线修复。三条子线分别独占<a href="20261020-pass3-binary-native.html">原生二值化</a>、<a href="20261020-pass3-image-group-chain.html">owned Group 图像链</a>、<a href="20261020-pass3-ui-image-run.html">真实图像 WPF 响应性</a>的报告、探针及 ignored 审计目录。根线读代码、复核结果并串行验证；没有改动 <code>worktrees/tool-plugins</code>。</p>
+<h2 id="本轮改变了什么">本轮改变了什么</h2><ol>
+<li><strong>原厂二值化包装层边界更清楚。</strong> 原 <code>IMVSBinaryModu.dll</code> SHA-256 <code>C03BCB19EF456206E3ABF4D2A8D5279BE37C12EB5662E191F0965029CDABEB48</code> 的 12 个 <code>CIMVSImageBinaryModu</code> 函数已在隔离 Ghidra 工程导出 C/汇编/调用边，逐文件哈希见 <code>analysis/joint-audit/binary-native/output-sha256.txt</code>。<code>ProcessAlg(0x18001ec00)</code> 把 InputImage、RegionImage 交下游 <code>IImageBinaryTool</code> 并调用 Run；<code>SetParam(0x18001f9f0)</code> 将 BinaryType 透传，SauvolaAdjustCoef ×1000、SauvolaRange ×10 后按 float 向零截断成整数文本。<code>DeInit(0x18001e260)</code> 的 RCX 实参是 tool 实例。原五种模式的像素循环、RGB/Mono8/Mask 格式门仍在 <code>MVDImageBinaryCpp.dll</code> / <code>MVD_Algorithm.dll</code> 下游，<strong>没有闭合 J05/J07</strong>。不得因 XML 五枚举或包装层没有转换分支就补四个算法、筛掉 RGB 候选或宣称所有格式可执行。</li>
+<li><strong>当前 owned Group 运输经真实执行复核。</strong> <code>tests/FrameworkImageGroupChain.Checks</code> 从 <code>GraphEditorDocument</code> 建 ImageSource→Buffer→Binary→Binary，导出 Group Result 供父流程第三个 Binary 消费；五次 <code>SolutionExecutor</code> 运行覆盖成功、零容量失败后无旧输出、Undo、Redo、保存重开并新 scope 重交图。根线复跑通过。证明当前 Gray/硬阈值的 J09/J11 指定切片，<strong>不证明原厂 Group/.sol 或其他像素类型</strong>。</li>
+<li><strong>当前宿主在大帧受控路径可响应。</strong> <code>tests/WorkflowImageResponsiveness.Checks</code> 在离屏真实 <code>MainWindow</code> 上运行 4096² ImageSource→Binary，根线复跑：入口 50.70 ms 返回、总 361.02 ms、运行未完成期间 7 次 UI 心跳、Binary Success；取消为 Cancelled；运行中关闭后 owner 失效、scope 取消且无迟到 session。该路径未重现永久卡死。原版 <code>VmProcedureDecorator.RunOnceCommandExe→VmProcedure.Run(bIsWait:false)→ProcessManager.SyncExecuteOnce→IMVS_ExecuteOnce_V30</code> 仅证托管层不进 <code>PrecisionWait</code>，原生调用耗时/线程未知；用户空闲后的无响应仍缺当次 UI 栈，<strong>J12 未闭合</strong>。</li>
+<li><strong>主线修复延迟进度回调串运行。</strong> 工作线程化后，旧 <code>Progress&lt;ExecutionEvent&gt;</code> 回调可能晚于下一次 <code>BeginWorkflowResults</code> 或方案替换而写 <code>liveDynamicDescriptors</code>。<code>DynamicOutputPresentation.CreateExecutionProgress</code> 现在核 <code>ExecutionOwnerStamp</code> 和流程运行序号；<code>WorkflowExecution.RunCore</code> 在 UI 上捕获二者。它是当前宿主的并发安全修复，不冒称原厂回调拓扑。<code>WorkflowDispatcherChecks</code> 5/5 覆盖 UI 脉冲、正常完成、当前轮进度、旧轮拒绝、旧方案同 <code>main</code> ID 拒绝。</li>
+</ol>
+<h2 id="根线自审与证据">根线自审与证据</h2><table>
+<thead>
+<tr>
+<th>检查</th>
+<th>本轮结果</th>
+<th>限度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dotnet run --project tests/WorkflowDispatcherChecks/WorkflowDispatcherChecks.csproj -c Release</code></td>
+<td>5/5</td>
+<td>受控 WPF 模块，不是原厂回调</td>
+</tr>
+<tr>
+<td><code>dotnet run --project tests/ExecutionOwnerLifecycleChecks17/ExecutionOwnerLifecycleChecks17.csproj -c Release -- analysis/joint-audit/root-owner-regression</code></td>
+<td>16/16</td>
+<td>当前 host owner/关闭路径</td>
+</tr>
+<tr>
+<td><code>dotnet run --project tests/FrameworkImageGroupChain.Checks/FrameworkImageGroupChain.Checks.csproj -c Release</code></td>
+<td>五次执行及身份/重开检查通过</td>
+<td>Gray/硬阈值、本地 VMX</td>
+</tr>
+<tr>
+<td><code>dotnet run --project tests/WorkflowImageResponsiveness.Checks/WorkflowImageResponsiveness.Checks.csproj -c Release --no-build</code></td>
+<td>正常/取消/关闭三场景通过</td>
+<td>离屏 WPF，不是用户桌面验收；非原故障栈</td>
+</tr>
+</tbody></table>
+<p>原生报告 SHA-256 <code>D4F5FBADEDC6108BEAB4798A66F482F1EA19221EECFB7A182426E73B21C18CE1</code>；Group 报告 <code>64109BAF03A11C19C66060F8169F5920B1B2942634BB2447BDA227D321B2AF96</code>；WPF 报告 <code>DF4BCB6E9A8E71C0A7F0087BF0FD06C5E318A58D85DF4B8E73D49FD106BB4AFD</code>。原生中间输出、Group VMX/日志、UI 首三次失败及最终 JSON 都保留在各自 <code>analysis/joint-audit/</code> 独占目录，未把失败覆盖为通过。Group VMX 含随机 ID，复跑 SHA 会变化。</p>
+<h2 id="尚未闭合的审核门">尚未闭合的审核门</h2><ul>
+<li>J05/J07：沿 <code>MVDImageBinaryCpp.dll</code> 的 Run/SetInputImage 与算法 ID <code>0x25a</code> 进入 <code>MVD_Algorithm.dll</code>，取得五模式分派、像素边界、RGB/Mono8/RegionImage 格式校验及异常释放的原始指令；若暂不可得，做标明为<strong>运行证据</strong>的同版本 SDK 正负例矩阵。</li>
+<li>J09/J11：补原版 Group 和 <code>.sol</code> 的相同连接、失败、撤销/保存重开语义；当前探针不能跨层冒充原厂结果。</li>
+<li>J10/J12：对其余已接入工具的后台运行 UI 亲和/资源释放逐个审核；用户同构方案空闲卡顿时需受控实例的 UI 线程栈和等待链。没有栈不得宣称根因已修。</li>
+<li>完整目标仍是已映射 19 对象 × J01–J12 的逐边矩阵。本轮闭合的是若干<strong>切片</strong>，没有新的 96 个框架具名单元经全范围实施自审，所以实施总进度保持 <strong>41/96 = 42.71%</strong>；人工验收单列。</li>
+</ul>
+<p class="meta">来源：docs/joint-audit/20261020-pass3-root-review.md · SHA256 cff110ed426d3c4fd29d5295ca042c629f03215f43901ca7234fef634789deaa<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

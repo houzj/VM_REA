@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CanvasWheel / SetCanvasZoom · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>CanvasWheel / SetCanvasZoom · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-CV01"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>CanvasWheel / SetCanvasZoom → 离散缩放 → PersistContainerZoom → 图变换</h2><p>Shift 横滚可与 Ctrl 缩放同时发生；离散 scale 限 0.1..2.0；按锚点保世界坐标。非总览时写容器索引，随后应用缩放/滚动和小地图。</p><p><a href="../专题/canvas-viewport.html#edge-CV01">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/canvas-viewport.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/canvas-viewport.edges.json · SHA256 4fed170ca686179656302412fc5543a52af51554793d8d6c7bc3c26b3cd24409</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="19ebac615d2dc6e27621dfed4651d03fb3da574914cee9586ba8e3706e23bb72">{
+  &quot;id&quot;: &quot;CV01&quot;,
+  &quot;route&quot;: &quot;当前 · 缩放与鹰眼&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;CanvasWheel / SetCanvasZoom&quot;,
+  &quot;to&quot;: &quot;离散缩放 → PersistContainerZoom → 图变换&quot;,
+  &quot;behavior&quot;: &quot;Shift 横滚可与 Ctrl 缩放同时发生；离散 scale 限 0.1..2.0；按锚点保世界坐标。非总览时写容器索引，随后应用缩放/滚动和小地图。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/WorkflowCanvas.cs&quot;,
+      &quot;member&quot;: &quot;MainWindow.CanvasWheel / SetCanvasZoom / PersistContainerZoom&quot;,
+      &quot;sha256&quot;: &quot;123d53699a97c1b38953e5f7f76d545b37597481591366331a1db4044909fc1f&quot;,
+      &quot;start&quot;: 432,
+      &quot;end&quot;: 460,
+      &quot;excerpt&quot;: &quot;    void CanvasWheel(object sender,MouseWheelEventArgs e)\n    {\n        // ZoomArea.OnPreviewMouseWheel calls OnHoriScroll, then OnChangeZoom.\n        // Unmodified wheel is left to WPF ScrollViewer's native wheel policy.\n        if((Keyboard.Modifiers&amp;ModifierKeys.Shift)!=0){if(e.Delta&lt;0)CanvasScrollViewer.LineRight();else if(e.Delta>0)CanvasScrollViewer.LineLeft();e.Handled=true;}\n        if((Keyboard.Modifiers&amp;ModifierKeys.Control)!=0)\n        {\n            // ZoomArea.OnChangeZoom changes DiagramZoomIndex only for a nonzero delta.\n            MoveCanvasZoomByWheel(e.Delta,e.GetPosition(CanvasViewport));\n            // ZoomArea.OnPreviewMouseWheel does not consume Ctrl zoom; only\n            // OnHoriScroll's Shift branch marks the routed event handled.\n        }\n    }\n    void MoveCanvasZoomByWheel(int delta,Point anchor)\n    {\n        if(delta!=0)SetCanvasZoom(scale+(delta>0?.1:-.1),anchor);\n    }\n    void SetCanvasZoom(double value,Point anchor)\n    {\n        Point world=World(anchor);scale=Math.Clamp(Math.Round(value,1),.1,2);panX=anchor.X-world.X*scale;panY=anchor.Y-world.Y*scale;PersistContainerZoom();ApplyCanvasTransform();\n    }\n    void PersistContainerZoom()\n    {\n        // The solution overview and scroll offsets remain session view state.\n        // The independent solution format stores the original 20-tick index,\n        // rather than claiming to serialize native ProceZoomIndex UserData.\n        if(!workflowOverview&amp;&amp;doc.HasCurrentProcedure)\n            doc.SetContainerZoomIndex(doc.CurrentProcedureId,(int)Math.Round(scale*10)-1);\n    }&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

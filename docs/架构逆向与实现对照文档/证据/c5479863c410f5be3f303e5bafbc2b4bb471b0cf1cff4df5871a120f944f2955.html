@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 c5479863c410 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 c5479863c410</p><h1>原文证据 c5479863c410</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 c5479863c410f5be3f303e5bafbc2b4bb471b0cf1cff4df5871a120f944f2955。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">    public GraphFragment CopyNodes(IEnumerable&lt;string&gt; nodeIds) {
+        var ids=nodeIds.ToHashSet(StringComparer.Ordinal);foreach(var id in ids)_=Node(id);
+        var procedure=CurrentProcedure;
+        var nodes=procedure.Nodes.Where(n=&gt;ids.Contains(n.Id)).ToArray();
+        return new(nodes,procedure.Connections.Where(c=&gt;ids.Contains(c.FromNode)&amp;&amp;ids.Contains(c.ToNode)).ToArray(),ProcedureGraph.ExecutionEdges(procedure).Where(c=&gt;ids.Contains(c.FromNode)&amp;&amp;ids.Contains(c.ToNode)).ToArray()){OwnedProcedures=CopyOwnedBodies(nodes),SourceSolutionId=document.Id,SourceProcedureId=CurrentProcedureId,SourcePath=ProcedurePath(CurrentProcedureId)};
+    }
+    public IReadOnlyList&lt;string&gt; PasteNodes(GraphFragment fragment,double x,double y) {
+        if(!HasCurrentProcedure)throw new InvalidOperationException(&quot;请先添加流程。&quot;);Position(x,y);
+        var sourceProcedureId=fragment.SourceProcedureId;fragment=ResolveClipboardSources(fragment);
+        if(fragment.Nodes.Count==0)return [];
+        if(fragment.Nodes.Any(n=&gt;n.ModuleId==WorkflowCalls.ModuleId)&amp;&amp;!CanAddOwnedGroup)throw new InvalidOperationException(&quot;Group 最多嵌套三层。&quot;);
+        foreach(var node in fragment.Nodes)_=registry.GetDescriptor(node);
+        var ids=fragment.Nodes.ToDictionary(n=&gt;n.Id,_=&gt;Guid.NewGuid().ToString(&quot;N&quot;));
+        var names=CurrentProcedure.Nodes.Select(n=&gt;n.Name).ToHashSet(StringComparer.Ordinal);
+        string UniqueName(string name){if(names.Add(name))return name;var stem=System.Text.RegularExpressions.Regex.Replace(name,@&quot;\d+$&quot;,&quot;&quot;);int index=1;while(!names.Add(stem+index))index++;return stem+index;}
+        double left=fragment.Nodes.Min(n=&gt;n.X),top=fragment.Nodes.Min(n=&gt;n.Y);
+        double Coordinate(double value,bool first){double rounded=Math.Round((first?value:Math.Min(value,4850))/5)*5;return rounded&lt;0?5:rounded;}
+        // Native PasteItemsCommandExecute constrains later items to PageWidth-150,
+        // but the first pasted item's explicit point is only rounded and floored.
+        var nodes=fragment.Nodes.Select((n,index)=&gt;n with {Id=ids[n.Id],GroupBreak=n.GroupBreak?.Remap(ids,false),Name=UniqueName(n.Name),X=Coordinate(x+n.X-left,index==0),Y=Coordinate(y+n.Y-top,index==0),Call=n.Call?.Snapshot(),Parameters=n.Parameters.ToDictionary(p=&gt;p.Key,p=&gt;p.Value.Clone()),DisplayStyles=n.DisplayStyles is null?null:RoiDisplayStyles.Snapshot(n.DisplayStyles),Rois=n.Rois?.Select(r=&gt;r with {Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray();
+        var connections=fragment.Connections.Select(c=&gt;c with {FromNode=ids.GetValueOrDefault(c.FromNode,c.FromNode),ToNode=ids[c.ToNode]}).ToArray();
+        IReadOnlyList&lt;WirePointDocument&gt;? TranslatedPath(ExecutionLinkDocument edge){
+            if(edge.PathPoints is null||!ids.ContainsKey(edge.FromNode))return null;var source=fragment.Nodes.Single(n=&gt;n.Id==edge.FromNode);var target=fragment.Nodes.Single(n=&gt;n.Id==edge.ToNode);var copiedSource=nodes.Single(n=&gt;n.Id==ids[source.Id]);var copiedTarget=nodes.Single(n=&gt;n.Id==ids[target.Id]);
+            double dx=copiedSource.X-source.X,dy=copiedSource.Y-source.Y;if(copiedTarget.X-target.X!=dx||copiedTarget.Y-target.Y!=dy)return null;
+            var translated=edge.PathPoints.Select(p=&gt;new WirePointDocument(p.X+dx,p.Y+dy)).ToArray();return translated.Any(p=&gt;p.X&lt;0||p.Y&lt;0||p.X&gt;5000||p.Y&gt;5000)?null:translated;
+        }
+        var links=fragment.ExecutionLinks.Select(c=&gt;c with {FromNode=ids.GetValueOrDefault(c.FromNode,c.FromNode),ToNode=ids[c.ToNode],PathPoints=TranslatedPath(c)}).ToArray();
+        var subscriptions=fragment.Subscriptions.Select(s=&gt;s with{NodeId=ids[s.NodeId],Source=WorkflowSubscriptions.RemapNodes(s.Source,ids)}).ToArray();
+        var cloned=CloneClipboardGroups(fragment,nodes);nodes=cloned.Nodes;
+        var preparation=PreparePasteSubscriptions?.Invoke(new(sourceProcedureId,CurrentProcedureId,ids,fragment.Nodes,nodes,subscriptions,links));
+        if(preparation is not null){
+            subscriptions=preparation.Subscriptions.ToArray();
+            if(preparation.Nodes is { } prepared){
+                if(prepared.Count!=nodes.Length||prepared.Where((node,index)=&gt;node.Id!=nodes[index].Id||node.ModuleId!=nodes[index].ModuleId).Any())throw new InvalidDataException(&quot;Paste preparation changed node identity.&quot;);
+                nodes=prepared.ToArray();
+            }
+        }
+        Edit(d=&gt;d with{Procedures=d.Procedures.Select(p=&gt;p.Id==CurrentProcedureId?p with {Nodes=p.Nodes.Concat(nodes).ToArray(),Connections=p.Connections.Concat(connections).ToArray(),ExecutionLinks=ProcedureGraph.ExecutionEdges(p).Concat(links).ToArray(),Configuration=p.Configuration with{Subscriptions=p.Configuration.Subscriptions.Concat(subscriptions).ToArray()}}:p).Concat(cloned.Bodies).ToArray()});
+        preparation?.Committed?.Invoke();</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../工具/Logic-IMVSGroup-fbfb0e0a.html">Group · 工具对照</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

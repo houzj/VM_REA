@@ -1,0 +1,62 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D01 第八批：保存 callee、命令与异步边界</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../reverse/D01-save-callees-batch8.md">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="#d01-第八批保存-callee命令与异步边界">D01 第八批：保存 callee、命令与异步边界</a></p><p style="margin-left:14px"><a href="#身份与可复验范围">身份与可复验范围</a></p><p style="margin-left:14px"><a href="#moduleframe事件和函数参数不能把返回-0-当落盘完成">ModuleFrame：事件和函数参数，不能把返回 0 当落盘完成</a></p><p style="margin-left:14px"><a href="#sdk实际先形成文本命令再调用对象函数指针">SDK：实际先形成文本命令，再调用对象函数指针</a></p><p style="margin-left:14px"><a href="#尝试局限及退出">尝试、局限及退出</a></p></details><h1 id="d01-第八批保存-callee命令与异步边界">D01 第八批：保存 callee、命令与异步边界</h1><p>基线 <code>5e76aee</code>。按 reverse-engineer-anything 证据分层，只读原始 PE 与已有 MSVC dumpbin；沿用第七批已记录的 REA native provider 未配置阻塞，不重复安装或 setup。不执行目标、SDK，不触碰 tool-plugins，无产品改动。两指定 callee 与各一层消费者已取得，格式/reader/跨模块实际绑定仍未闭合。</p>
+<h2 id="身份与可复验范围">身份与可复验范围</h2><p>原件根 <code>D:/Program Files/VisionMaster4.4.0/Applications/</code>：</p>
+<table>
+<thead>
+<tr>
+<th>原件</th>
+<th>SHA256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PublicFile/x64/iMVS-6000PlatformSDK.dll</td>
+<td>b62d7e15588ccda6671228aebc11fec3e27aca878f0e03067e44b17d5a54a9a1</td>
+</tr>
+<tr>
+<td>ModuleProxy/x64/ModuleFrame.dll</td>
+<td>45c57bc46f72fd1f9e0b3a6f9183ff974d14590cfd05ecf4e9fa97a4ff95ae9b</td>
+</tr>
+</tbody></table>
+<p>探针 <code>tests/NativeEvidence/D01SaveCallees/InspectCallees.py</code> 从第七批探针独立派生，不修改旧探针。最终目录 <code>analysis/full-audit/batch8-20261019/D01/instructions-7cdc69808fdc483187f0b442d7b86ab4/</code>；functions.json 记录原件前后全哈希、dumpbin 身份与命令、逐段字节 SHA。normal import directory 按 OriginalFirstThunk/FirstThunk 静态解析，未模拟延迟导入或运行时 GetProcAddress。</p>
+<table>
+<thead>
+<tr>
+<th>函数 VA</th>
+<th>.pdata 范围 RVA，右端不含</th>
+<th align="right">指令行</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SDK 180665ba0</td>
+<td>665ba0–6664ce</td>
+<td align="right">459</td>
+</tr>
+<tr>
+<td>ModuleFrame 180046f10</td>
+<td>46f10–47151</td>
+<td align="right">144</td>
+</tr>
+<tr>
+<td>ModuleFrame 参数函数地址 180049410</td>
+<td>49410–4afcd</td>
+<td align="right">1430</td>
+</tr>
+<tr>
+<td>SDK 1806c00d0</td>
+<td>6c00d0–6c0178、6c0178–6c0446、6c0446–6c0461</td>
+<td align="right">198</td>
+</tr>
+</tbody></table>
+<p>前3项各1个 primary 区段。最后3段以完整 RUNTIME_FUNCTION tuple 链回 <code>(6c00d0,6c0178,b96778)</code>；不以共享 unwind RVA 归并。共2231行，6段逐字节及每条已打印 opcode 前缀核对通过；这不是另一解码器复核，也不包含语言特定 EH funclet。</p>
+<p>复验：运行 InspectCallees.py 生成新 GUID 目录，再运行 <code>Verify.py &lt;目录&gt;</code>。Verify.py 会重新核对原件全哈希、region.bin、摘要和打印前缀，输出 resolved-calls.json/verification.json。原件前后哈希均一致。</p>
+<h2 id="moduleframe事件和函数参数不能把返回-0-当落盘完成">ModuleFrame：事件和函数参数，不能把返回 0 当落盘完成</h2><p>180046f10 的 RCX 保存到 RBX，RDX 保存到 RDI。对象 +10h/+18h 为零时，分别通过 IAT VA1802040b0 调用 <strong>KERNEL32!CreateEventW</strong>，参数 <code>(NULL,1,0,NULL)</code>；两个结果写回对应字段。任一仍为零走返回 e0000002。两句 ResetEvent 分别作用于这两个字段；失败仅调用 GetLastError 后继续，不能推断异常事务。</p>
+<p>第二参数通过 180006470 复制到局部；18000da760 接受该局部与 <code>global[1802a56c4]==1</code> 的布尔值，类型/编码转换的精确语义未还原。随后 <strong>18004700e 将地址180049410置RDX</strong>，R8 指向包含原对象指针的局部，R9 为前一返回对象，调用 180070bf0，再经180070c40、1800f3be0、1800fb9d0（全局1802b2998）处理封装。正常路径1800470e7清EAX返回0。</p>
+<p>因此已证这是把函数地址与对象/参数交给封装的路径；异步执行是高度相符的解释，但<strong>没有取得封装实现，不把具体线程/队列契约当已证源码</strong>。返回0只证明此正常路径的返回值，不能证明文件已写完。</p>
+<p>向下一层取得180049410：入口 RCX/RDX 分别保存到R13/R12，并写对象+21h=1；包含 IAT <code>_wstat64i32</code>、<code>_waccess_s</code>、<code>_wmkdir</code> 路径检查，以及 CreateEventW、WaitForSingleObject 调用。1430行包含多组容器遍历、函数封装和后续处理，本批未逐个还原其字段语义或全部callee。没有从这些导入直接猜出完整 .sol 格式、临时文件策略或回滚。</p>
+<h2 id="sdk实际先形成文本命令再调用对象函数指针">SDK：实际先形成文本命令，再调用对象函数指针</h2><p>180665ba0 将入口RCX/RDX/R8保存到R13/R14/R15。R14/R15为空、R15的NUL终止字符串连终止字节长度大于20h等分支走e0000001。它不是在本段直接调用文件API。</p>
+<p>VA180666247 的静态 IAT 已解析为 <strong>MSVCR120!_snprintf_s</strong>。格式字符串 RVAac5ed0 原字节为 <code>%d-%d\t%s\t%s\t%s\t%d</code>（此处 <code>\t</code> 表示实际09字节；static-literals.json保留hex）。RCX为栈上800h容量缓冲区，RDX=800h、R8=7ffh；可确认格式实参依次为：43dh、对象+1ach的DWORD、对象+1c0h字符串存储（容量+18h决定内联/指针）、入口第二参数R14、入口第三参数R15、局部EBX布尔值。EBX与对象+c978h及前一字符串查找18005b2040的结果有关，具体标志意义未知。日志使用的原文字串 <code>CServerManager::SM_SaveSolution</code> 也被按原RVA提取；名称不是文件格式证据。</p>
+<p>VA18066626c调用1806c00d0，RCX=原对象、RDX=格式化缓冲区、R8=扫描后的长度。后者内部再次计算NUL长度，并在1806c01d9从 <strong>[对象+2398h]</strong> 取函数指针：不是虚表+48h。1806c0200调用该指针，RCX=命令地址、RDX=字节长度、R8=栈上响应缓冲区、R9=3ffh，第五栈参数=局部输出长度地址。响应/返回的后续规则包括：返回e0000012时要求输出长度非零，另分配缓冲并调用180662a70；否则沿返回码路径。正常零码分支比较响应前三字节（静态源 <code>OK\0</code>），不相符时使用 <strong>sscanf_s</strong> 和原格式 <code>%[^*]*%d</code> 取错误数，匹配数不为2保留e0000108。这里只报告比较与解析指令，不定义完整协议。</p>
+<p><strong>跨模块边界仍未连通</strong>：没有查明对象+2398h的赋值点/实际目标，不能声称SDK命令已绑定到ModuleFrame保存导出；没有证明180662a70的传输角色。最终writer API、加密/压缩、字段布局、reader、落盘事务与原厂往返依旧未知。</p>
+<h2 id="尝试局限及退出">尝试、局限及退出</h2><p>首轮 instructions-092c367112a84585aa189665d68c92d1 取得指定两callee；第二轮 instructions-622c4c063b7e4f18b004c1e30a0fe5e3 增加一层消费者和normal imports；最终轮仅增补4个精确RVA字串，3轮成功且全部保留，不叠加为覆盖数。当前探针无目标执行失败；终端长预览截断不影响磁盘原始完整文本，结论以磁盘证据为准。协调中曾误写“虚表+48”，即时更正为字段+2398h，原沟通不作为源码结论。</p>
+<p>本批有限退出条件达到：两callee范围、调用/返回、参数消费者及下一缺口已固定；不代表D01.3整项完成。D01.3保持源码partial，实现/验证不加分；96项总完成分子不因2231条指令增加。</p>
+<p>下一定向问题：SDK对象+2398h赋值与180662a70实际绑定；ModuleFrame180070bf0/1800fb9d0如何执行180049410，以及该callee实际文件序列化者。原生反编译provider与受控原厂运行条件未解除；本批不假造C++源码或原厂差分。</p>
+<p class="meta">来源：docs/reverse/D01-save-callees-batch8.md · SHA256 915efb073f1755385672015bff749f1b278255914e1aa0f956be75b8f80a1932<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

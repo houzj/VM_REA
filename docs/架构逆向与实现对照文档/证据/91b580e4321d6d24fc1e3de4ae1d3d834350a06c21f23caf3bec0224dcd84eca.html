@@ -1,0 +1,69 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 91b580e4321d · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 91b580e4321d</p><h1>原文证据 91b580e4321d</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 91b580e4321d6d24fc1e3de4ae1d3d834350a06c21f23caf3bec0224dcd84eca。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>analysis/decompiled/VM.Core/VM.Core/VmModuleSet.cs:410–476
+SHA256 f3b98c4436686b0a9babf8cde4f5f6c83814664b8f7835dfabbeb02e2a64a346
+	protected void LoadModules(uint parentCode)
+	{
+		try
+		{
+			LogHelper.Info(&quot;GetFirstLayerModuleTree获取前&quot;);
+			ImvsSdkDefine.IMVS_NODE_TREE_INFO? firstLayerModuleTree = ServerSDKManager.serverSDKManager.mProcessManager.GetFirstLayerModuleTree(ID, parentCode);
+			LogHelper.Info(&quot;GetFirstLayerModuleTree获取后&quot;);
+			VmModuleCollection&lt;VmModule&gt; vmModuleCollection = new VmModuleCollection&lt;VmModule&gt;();
+			ImvsSdkDefine.IMVS_NODE_TREE_INFO? iMVS_NODE_TREE_INFO = firstLayerModuleTree;
+			ImvsSdkDefine.IMVS_NODE_TREE_INFO valueOrDefault = iMVS_NODE_TREE_INFO.GetValueOrDefault();
+			if (!iMVS_NODE_TREE_INFO.HasValue)
+			{
+				return;
+			}
+			for (int i = 0; i &lt; valueOrDefault.nChildNodeNum; i++)
+			{
+				ImvsSdkDefine.IMVS_MODULE_INFO proInfo = valueOrDefault.astChildNodeInfo[i];
+				try
+				{
+					bool flag = _preGenerateModules.ContainsKey(proInfo.nNodeID);
+					VmModule vmModule = (flag ? _preGenerateModules[proInfo.nNodeID] : CreatModuleByInfo(proInfo));
+					if (!flag)
+					{
+						vmModule.PreAddModuleTo(this);
+					}
+					vmModuleCollection.Add(vmModule);
+				}
+				catch (Exception ex)
+				{
+					string text = proInfo.nNodeID + &quot; &quot; + Hik.Util.StringUtil.UTF8GetString(proInfo.strDisplayName) + &quot;, &quot; + ex.Message;
+					text = text + &quot;\r\n&quot; + ex.StackTrace;
+					LogHelper.Error(&quot;Create module error: &quot; + text);
+				}
+			}
+			if (_preGenerateModules.Count &gt; 0)
+			{
+				_preGenerateModules = new Dictionary&lt;uint, VmModule&gt;();
+			}
+			if (!VmSolution.IsLoading &amp;&amp; vmModuleCollection.Count &gt; 0)
+			{
+				ImvsSdkDefine.IMVS_REPORT_MODULE_STATUS_INFO_LIST? iMVS_REPORT_MODULE_STATUS_INFO_LIST = ServerSDKManager.serverSDKManager.mProcessManager.QueryModuleRunningState(vmModuleCollection.Select((VmModule p) =&gt; p.ID).ToArray());
+				ImvsSdkDefine.IMVS_REPORT_MODULE_STATUS_INFO_LIST? iMVS_REPORT_MODULE_STATUS_INFO_LIST2 = iMVS_REPORT_MODULE_STATUS_INFO_LIST;
+				ImvsSdkDefine.IMVS_REPORT_MODULE_STATUS_INFO_LIST valueOrDefault2 = iMVS_REPORT_MODULE_STATUS_INFO_LIST2.GetValueOrDefault();
+				if (iMVS_REPORT_MODULE_STATUS_INFO_LIST2.HasValue)
+				{
+					ImvsSdkDefine.IMVS_REPORT_MODULE_STATUS_INFO[] pstModuleStatuInfo = valueOrDefault2.pstModuleStatuInfo;
+					for (int num = 0; num &lt; valueOrDefault2.nNum; num++)
+					{
+						ImvsSdkDefine.IMVS_REPORT_MODULE_STATUS_INFO moduleState = pstModuleStatuInfo[num];
+						vmModuleCollection[num].SetModuleState(moduleState);
+					}
+				}
+			}
+			Modules = vmModuleCollection;
+		}
+		catch (VmException ex2)
+		{
+			string text2 = AppLocalizationService.GetLang(&quot;errCode:&quot;) + $&quot;{ex2.errorCode:X}&quot; + &quot;\r\n&quot;;
+			text2 = text2 + AppLocalizationService.GetLang(&quot;errInfo:&quot;) + ErrorCodeInfo.GetErrorInfo(ex2.errorCode);
+			LogHelper.Error(&quot;GetFirstLayerModuleTree error: &quot; + text2);
+		}
+	}
+
+	protected void LoadConnections(VmModuleCollection&lt;VmModule&gt; modules)
+	{
+		if (modules == null || modules.Count == 0)
+		{</pre></div><h2>返回引用位置</h2><ul class="site-list"><li><a href="../数据/group-data-pipeline--interfaces.html">数据/group-data-pipeline--interfaces.html</a></li></ul></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

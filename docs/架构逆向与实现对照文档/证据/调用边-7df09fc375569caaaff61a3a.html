@@ -1,0 +1,45 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GlobalTriggerConfig.CheckPassword · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>GlobalTriggerConfig.CheckPassword · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-EA09"><p class="site-notice">事实级别：source-confirmed。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>GlobalTriggerConfig.CheckPassword → 空密码放行；已给错误密码清空后仍true</h2><p>SolutionPath为空直接true；有效受保护方案但SolutionPasswd为空也true；密码检查nIsCorrect==0时提示、置isSetChange=true并清SolutionPasswd，仍返回true。仅异常路径记录并false。该bool不能命名为密码验证成功，ValueChanged在true后仍可调用Modify；底层是否拒绝空密码另待证。</p><p><a href="../专题/communication-dispatch.html#edge-EA09">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/communication-dispatch.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/communication-dispatch.edges.json · SHA256 d34ac2c9aec1484fb92e82c332d4a27a4d13c63f212939464b494ebfca7769a3</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="2cfc8127c853ea2358984c54547cc880d911e79e8fc338dd0c6db7efd4a2d78a">{
+  &quot;id&quot;: &quot;EA09&quot;,
+  &quot;route&quot;: &quot;原版 · 全局触发即时写入&quot;,
+  &quot;classification&quot;: &quot;source-confirmed&quot;,
+  &quot;classificationScope&quot;: &quot;Local decompiled source statements; selected EXE method identity and original raw CIL bytes are separately rechecked, without vendor execution.&quot;,
+  &quot;from&quot;: &quot;GlobalTriggerConfig.CheckPassword&quot;,
+  &quot;to&quot;: &quot;空密码放行；已给错误密码清空后仍true&quot;,
+  &quot;behavior&quot;: &quot;SolutionPath为空直接true；有效受保护方案但SolutionPasswd为空也true；密码检查nIsCorrect==0时提示、置isSetChange=true并清SolutionPasswd，仍返回true。仅异常路径记录并false。该bool不能命名为密码验证成功，ValueChanged在true后仍可调用Modify；底层是否拒绝空密码另待证。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs&quot;,
+      &quot;member&quot;: &quot;GlobalTriggerConfig.CheckPassword&quot;,
+      &quot;sha256&quot;: &quot;8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d&quot;,
+      &quot;start&quot;: 208,
+      &quot;end&quot;: 245,
+      &quot;excerpt&quot;: &quot;\tprivate bool CheckPassword(ComTriggerItem tiggerItem)\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (string.IsNullOrEmpty(tiggerItem.SolutionPath))\n\t\t\t{\n\t\t\t\treturn true;\n\t\t\t}\n\t\t\tuint nHasPwd = 0u;\n\t\t\tuint nValidFormat = 0u;\n\t\t\tServerSDKManager.serverSDKManager.mSolutionManager.CheckSolution(tiggerItem.SolutionPath, ref nHasPwd, ref nValidFormat);\n\t\t\tif (nValidFormat == 1 &amp;&amp; nHasPwd == 1)\n\t\t\t{\n\t\t\t\tif (string.IsNullOrEmpty(tiggerItem.SolutionPasswd))\n\t\t\t\t{\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\tint nIsCorrect = -1;\n\t\t\t\tServerSDKManager.serverSDKManager.mSolutionManager.CheckPassword(tiggerItem.SolutionPath, tiggerItem.SolutionPasswd, ref nIsCorrect);\n\t\t\t\tif (nIsCorrect == 0)\n\t\t\t\t{\n\t\t\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\&quot;方案密码错误\&quot;), MessageButtons.Normal, MessageIcons.Error);\n\t\t\t\t\tisSetChange = true;\n\t\t\t\t\ttiggerItem.SolutionPasswd = \&quot;\&quot;;\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tLogHelper.Error(\&quot;CheckPassword is error.\&quot; + ex.ToString());\n\t\t\treturn false;\n\t\t}\n\t\treturn true;\n\t}\n\n\tpublic void RemoveItem(object item)\n\t{&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;analysis/decompiled/VMControls.WPF/VMControls.WPF.GlobalUI/GlobalTriggerConfig.cs&quot;,
+      &quot;member&quot;: &quot;ValueChanged caller of CheckPassword&quot;,
+      &quot;sha256&quot;: &quot;8df3c3bb4b0b7e8f120ccc955133cba54c2fdbeb769c2be91644f454d9f5616d&quot;,
+      &quot;start&quot;: 200,
+      &quot;end&quot;: 206,
+      &quot;excerpt&quot;: &quot;\t\t\tif (sender != null &amp;&amp; sender is ComTriggerItem comTriggerItem &amp;&amp; CheckPassword(comTriggerItem))\n\t\t\t{\n\t\t\t\tSetTriggerItem(comTriggerItem, ActionType.Modify);\n\t\t\t}\n\t\t\tisSetChange = false;\n\t\t}\n\t}&quot;,
+      &quot;evidenceType&quot;: &quot;local-decompiled-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;CheckSolution有效格式/保护标志原合同、CheckPassword返回语义、数据发送时空密码载荷及native最终验证未证；未执行文件解密或改密码。&quot;
+  ],
+  &quot;nextMembers&quot;: [
+    &quot;SolutionManager.CheckSolution / CheckPassword&quot;,
+    &quot;GlobalTriggerConfig.SetTriggerBytes ChangeSolution&quot;,
+    &quot;GlobalTriggerData / Load_Solution ABI&quot;
+  ],
+  &quot;priorLinks&quot;: [],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

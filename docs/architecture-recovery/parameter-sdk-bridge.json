@@ -1,0 +1,446 @@
+{
+  "schemaVersion": 1,
+  "complete": false,
+  "facts": [
+    {
+      "id": "PS01",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "processing"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原ModuleParam.SetValueBySDK",
+      "to": "ModuleManager.SetParamValue → ServerSDKAPI → NativeMethods.IMVS_SetParamValue",
+      "behavior": "普通参数键由ModuleParam传Parent.ID/key/value并强制bThrowException:true；仅VmModuleSet且键以%开头转另一动态参数入口。ModuleManager将全局CVmObjectBase.mhandle、uint模块ID、参数名和值原样传ServerSDKAPI，后者直接调用NativeMethods.IMVS_SetParamValue。P/Invoke明确绑定.\\iMVS-6000PlatformSDK.dll、StdCall，名称和值声明UTF8Marshaler；这是应用内部IMVS_*入口，不能拼接成Public SDK的IMVS_PF_*链。native返回非0且throw开启时抛VmException；关闭throw时，即使native返回非0仍会到ParamSeted=true，故该标志不等于参数已成功生效。",
+      "representation": "handle + uint moduleID + 两个UTF8文本参数；不是字节图像或输入订阅结构。",
+      "cache": "ModuleParam走真实SDK setter；ModuleManager.ParamSeted是修改标记，不能替代底层返回码。",
+      "release": "此调用点没有证明native保存了文本副本还是只在调用内读取；原插件SetParam仍在尚未恢复的native分发之后。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleParam.cs",
+          "member": "VM.Core.ModuleParam",
+          "sha256": "af392bf2d3af006c6a16021a271d67dd8ef2017b268580841874ab6fede1da48",
+          "start": 155,
+          "end": 166,
+          "excerpt": "\tprivate void SetValueBySDK(string key, string value)\n\t{\n\t\tif (Parent is VmModuleSet && key.StartsWith(\"%\"))\n\t\t{\n\t\t\tstring[] array = key.Split(',');\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetDynamicRunParamValue(Parent.ID, array[0], value, bThrowException: true, (array.Count() > 1) ? array[1] : \"\");\n\t\t}\n\t\telse\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetParamValue(Parent.ID, key, value, bThrowException: true);\n\t\t}\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "VM.PlatformSDKCS.ModuleManager",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 721,
+          "end": 739,
+          "excerpt": "\tpublic void SetParamValue(uint nModuleId, string strParamName, string strParamValue, bool bThrowException = false)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_SetParamValue(CVmObjectBase.mhandle, nModuleId, strParamName, strParamValue);\n\t\tif (num != 0 && bThrowException)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t\tstring text = strParamName.ToLower();\n\t\tif (!(text == \"password\") && !(text == \"pwd\") && !(text == \"key\"))\n\t\t{\n\t\t\tLogHelper.Info($\"设置参数:(ID){nModuleId} (参数名){strParamName} (参数值){strParamValue}\");\n\t\t}\n\t\tParamSeted = true;\n\t}\n\n\tpublic void SetParamValueForImageSource(uint nModuleId, string strParamName, string strParamValue)\n\t{",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 348,
+          "end": 351,
+          "excerpt": "\tpublic static int IMVS_SetParamValue(IntPtr handle, uint nModuleID, string strName, string strValue)\n\t{\n\t\treturn NativeMethods.IMVS_SetParamValue(handle, nModuleID, strName, strValue);\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 164,
+          "end": 164,
+          "excerpt": "\tpublic static extern int IMVS_SetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strValue);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "P/Invoke的厂商DLL导出实现、消息传输与到ImageSourceModule.SetParam的原生调用栈尚缺，不能据同名参数声称闭合。",
+        "该P/Invoke声明之前的StdCall属性另由PS02引用覆盖；x64机器级寄存器ABI不由C#签名替代。"
+      ]
+    },
+    {
+      "id": "PS02",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原UTF8Marshaler.MarshalManagedToNative",
+      "to": "UTF8临时HGlobal副本与清理回调",
+      "behavior": "自定义marshaller对null返回IntPtr.Zero，对非string抛InvalidOperationException；string用Encoding.UTF8.GetBytes生成byte[]，AllocHGlobal(bytes.Length+1)，Marshal.Copy复制所有字节并写末尾0。CleanUpNativeData实现FreeHGlobal。NativeMethods的Set/Get参数名及Set值显式使用此marshaller；因此参数跨边界存在UTF8字节临时副本，不能描述成直接共享托管string地址。",
+      "representation": "托管UTF16 string → 托管UTF8 byte[] → native HGlobal NUL结尾副本。",
+      "cache": "marshaller实例是静态单例，但每次MarshalManagedToNative重新分配临时文本；单例不意味着字符串缓冲缓存。",
+      "release": "声明的清理回调释放HGlobal，byte[]和原string由托管GC管理；没有证据允许native在调用后保存这个临时地址。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 26,
+          "end": 45,
+          "excerpt": "\tpublic IntPtr MarshalManagedToNative(object managedObj)\n\t{\n\t\tif (managedObj == null)\n\t\t{\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\t\tif (!(managedObj is string))\n\t\t{\n\t\t\tthrow new InvalidOperationException();\n\t\t}\n\t\tbyte[] bytes = Encoding.UTF8.GetBytes(managedObj as string);\n\t\tIntPtr intPtr = Marshal.AllocHGlobal(bytes.Length + 1);\n\t\tMarshal.Copy(bytes, 0, intPtr, bytes.Length);\n\t\tMarshal.WriteByte(intPtr, bytes.Length, 0);\n\t\treturn intPtr;\n\t}\n\n\tpublic object MarshalNativeToManaged(IntPtr pNativeData)\n\t{\n\t\tif (pNativeData == IntPtr.Zero)",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 16,
+          "end": 19,
+          "excerpt": "\tpublic void CleanUpNativeData(IntPtr pNativeData)\n\t{\n\t\tMarshal.FreeHGlobal(pNativeData);\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 10,
+          "end": 10,
+          "excerpt": "\tprivate static UTF8Marshaler instance = new UTF8Marshaler();",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 161,
+          "end": 167,
+          "excerpt": "\tpublic static extern int IMVS_GetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, uint nStrValueSize, IntPtr strValue);\n\n\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\", CallingConvention = CallingConvention.StdCall)]\n\tpublic static extern int IMVS_SetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strValue);\n\n\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\", CallingConvention = CallingConvention.StdCall)]\n\tpublic static extern int IMVS_SetParamValueForImageSource(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strPath);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "本条证明marshaller分配/复制/清理函数和声明，不是实际CLR/native异常路径的动态寿命验收。",
+        "字符串内嵌NUL和native截断处理仍需接收方原体；不能把UTF8编码等同于所有文本无损生效。"
+      ]
+    },
+    {
+      "id": "PS03",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "results",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原ModuleManager.GetParamValue",
+      "to": "4096默认接收缓冲 → UTF8解码副本 → FreeHGlobal",
+      "behavior": "无尺寸重载显式调用4096尺寸重载；ServerSDKAPI分配nStrValueSize字节HGlobal，将handle/moduleID/参数名/uint尺寸/指针送NativeMethods.IMVS_GetParamValue。只在native返回0时调用UTF8Marshaler.MarshalNativeToManaged赋给ref string，非0保留调用者原字符串；随后正常控制流FreeHGlobal并返原错误码。ModuleManager收到错误且throw开启才抛VmException。解码器逐字节读取到NUL，List<byte>再ToArray并Encoding.UTF8.GetString，读回值独立于临时native块。",
+      "representation": "调用者尺寸限定的接收缓冲 → 字节列表/数组 → 托管string；默认4096是分配容量，不是缓存条目数。",
+      "cache": "所选读参数包装每次新分配；没有在这段保留native接收块作为长期缓存。",
+      "release": "正常路径在SDK返回及解码之后FreeHGlobal。没有try/finally包围分配/调用/解码；异常路径不能说已保证释放。解码循环本身没有nStrValueSize边界，依赖native成功输出NUL终止。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "VM.PlatformSDKCS.ModuleManager",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 749,
+          "end": 764,
+          "excerpt": "\tpublic void GetParamValue(uint nModuleID, string strName, int nStrValueSize, ref string strValue, bool bThrowException = false)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_GetParamValue(CVmObjectBase.mhandle, nModuleID, strName, nStrValueSize, ref strValue);\n\t\tif (num != 0 && bThrowException)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}\n\n\tpublic void GetParamValue(uint nModuleID, string strName, ref string strValue, bool bThrowException = false)\n\t{\n\t\tGetParamValue(nModuleID, strName, 4096, ref strValue, bThrowException);\n\t}\n",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 331,
+          "end": 346,
+          "excerpt": "\tpublic static int IMVS_GetParamValue(IntPtr handle, uint nModuleID, string strName, int nStrValueSize, ref string strValue)\n\t{\n\t\tIntPtr intPtr = Marshal.AllocHGlobal(nStrValueSize);\n\t\tint num = NativeMethods.IMVS_GetParamValue(handle, nModuleID, strName, (uint)nStrValueSize, intPtr);\n\t\tif (num == 0)\n\t\t{\n\t\t\tstrValue = (string)UTF8Marshaler.GetInstance(\"cookie\").MarshalNativeToManaged(intPtr);\n\t\t}\n\t\tMarshal.FreeHGlobal(intPtr);\n\t\treturn num;\n\t}\n\n\tpublic static int IMVS_GetParamValue(IntPtr handle, uint nModuleID, string strName, ref string strValue)\n\t{\n\t\treturn IMVS_GetParamValue(handle, nModuleID, strName, 4096, ref strValue);\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+          "member": "VM.PlatformSDKCS.UTF8Marshaler",
+          "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+          "start": 43,
+          "end": 65,
+          "excerpt": "\tpublic object MarshalNativeToManaged(IntPtr pNativeData)\n\t{\n\t\tif (pNativeData == IntPtr.Zero)\n\t\t{\n\t\t\treturn null;\n\t\t}\n\t\tList<byte> list = new List<byte>();\n\t\tint num = 0;\n\t\twhile (true)\n\t\t{\n\t\t\tbyte b = Marshal.ReadByte(pNativeData, num);\n\t\t\tif (b == 0)\n\t\t\t{\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tlist.Add(b);\n\t\t\tnum++;\n\t\t}\n\t\treturn Encoding.UTF8.GetString(list.ToArray(), 0, list.Count);\n\t}\n\n\tpublic static ICustomMarshaler GetInstance(string cookie)\n\t{",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 161,
+          "end": 161,
+          "excerpt": "\tpublic static extern int IMVS_GetParamValue(IntPtr handle, uint nModuleID, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = \"VM.PlatformSDKCS.UTF8Marshaler\")] string strName, uint nStrValueSize, IntPtr strValue);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "native失败是否写部分缓冲、返回0是否始终NUL终止、异常清理及各参数真实最大文本长度未取得callee证明。",
+        "不把Public SDK另一实现使用Ansi解码的规则套到本应用内部UTF8读参数桥。"
+      ]
+    },
+    {
+      "id": "PS04",
+      "classification": "source-confirmed",
+      "stages": [
+        "input",
+        "processing",
+        "retirement"
+      ],
+      "modes": [
+        "all"
+      ],
+      "from": "原VmParamSubManager.SetModuleParamBinding",
+      "to": "绑定描述结构 → 临时HGlobal → IMVS_SetModuleParamBinding",
+      "behavior": "引用订阅不走PS01的name/value setter。VmParamSubManager构建nNum=1且128槽数组：目标Owner.ID、参数类型、128字节参数名；绑定值另含变量类型、256字节常量、目标模块ID/128字节来源名、下标类型与256字节常量或下标来源。StringUtil.UTF8GetFixLenBytes先建定长数组，再复制min(UTF8字节长度,len)，超长是按字节截断，满长度不额外加NUL。ModuleManager.SetModuleParamBinding→ServerSDKAPI构造并复制描述列表，AllocHGlobal(Marshal.SizeOf(...))、StructureToPtr、PInvoke IMVS_SetModuleParamBinding(handle,ptr)，正常路径释放outer HGlobal；native错误由ModuleManager抛VmException，VmParamSubManager捕获并返回false。",
+      "representation": "订阅载荷=目标参数身份+来源/常量/索引的结构化描述；数组字段复制不代表复制来源图像数据。",
+      "cache": "SDK包装复制的是128槽绑定描述数组，本段不证明native长期保留关系的内部数据结构或运行时如何逐帧解引用。",
+      "release": "本地outer HGlobal正常返回后Free；native是否已深拷贝描述、nested marshalling的完整清理及解绑后数据最后读者均未证明。",
+      "refs": [
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/VmParamSubManager.cs",
+          "member": "VM.Core.VmParamSubManager",
+          "sha256": "42b0363c9a4ff1376fc5980865ace43fbae7d5a2fdf00156c55cefc5ccc6703e",
+          "start": 37,
+          "end": 70,
+          "excerpt": "\t\tImvsSdkDefine.IMVS_SUBSCRIBE_MODU_PARAM_INFO stBindValue = default;\n\t\tstBindValue.eVarType = subType;\n\t\tstBindValue.strConstantValue = StringUtil.UTF8GetFixLenBytes(constantValue, 256);\n\t\tstBindValue.stVariableValue.stModuleParam.nModuleId = (int)targetModuleId;\n\t\tstBindValue.stVariableValue.stModuleParam.byParamName = StringUtil.UTF8GetFixLenBytes(targetParamName, 128);\n\t\tstBindValue.stVariableValue.eIndexType = indexType;\n\t\tstBindValue.stVariableValue.strIndexConstant = StringUtil.UTF8GetFixLenBytes(indexConstantValue, 256);\n\t\tstBindValue.stVariableValue.stIndexVariable.nModuleId = (int)indexModuleId;\n\t\tstBindValue.stVariableValue.stIndexVariable.byParamName = StringUtil.UTF8GetFixLenBytes(indexParamName, 128);\n\t\tImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST moduleParamBinding = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST\n\t\t{\n\t\t\tnNum = 1u,\n\t\t\tastBindModuVarList = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO[128]\n\t\t};\n\t\tmoduleParamBinding.astBindModuVarList[0].nModuleId = Owner.ID;\n\t\tmoduleParamBinding.astBindModuVarList[0].eVarType = GetVarType(paramType);\n\t\tmoduleParamBinding.astBindModuVarList[0].strParamName = StringUtil.UTF8GetFixLenBytes(paramName, 128);\n\t\tmoduleParamBinding.astBindModuVarList[0].stBindValue = stBindValue;\n\t\ttry\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mModuleManager.SetModuleParamBinding(moduleParamBinding);\n\t\t\treturn true;\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\tLogHelper.Error(ex.errorCode + ex.errorMessage);\n\t\t}\n\t\tcatch (Exception ex2)\n\t\t{\n\t\t\tLogHelper.Error(ex2.Message);\n\t\t}\n\t\treturn false;\n\t}\n",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/StringUtil.cs",
+          "member": "VM.PlatformSDKCS.StringUtil",
+          "sha256": "a7c8631e83c9f4d515b2e51ec5d337caf4b77c569385086af44e7ddb173006e4",
+          "start": 42,
+          "end": 52,
+          "excerpt": "\tpublic static byte[] UTF8GetFixLenBytes(string str, int len)\n\t{\n\t\tif (str == null)\n\t\t{\n\t\t\treturn null;\n\t\t}\n\t\tbyte[] array = new byte[len];\n\t\tbyte[] bytes = Encoding.UTF8.GetBytes(str);\n\t\tBuffer.BlockCopy(bytes, 0, array, 0, Math.Min(bytes.Length, len));\n\t\treturn array;\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+          "member": "VM.PlatformSDKCS.ModuleManager",
+          "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+          "start": 1953,
+          "end": 1962,
+          "excerpt": "\tpublic void SetModuleParamBinding(ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST stModuleVarInfo)\n\t{\n\t\tint num = -536870657;\n\t\tnum = ServerSDKAPI.IMVS_SetModuleParamBinding(CVmObjectBase.mhandle, stModuleVarInfo);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t}",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+          "member": "VM.PlatformSDKCS.ServerSDKAPI",
+          "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+          "start": 592,
+          "end": 614,
+          "excerpt": "\tpublic static int IMVS_SetModuleParamBinding(IntPtr handle, ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST stModuleVarInfo)\n\t{\n\t\tImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST structure = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST\n\t\t{\n\t\t\tastBindModuVarList = new ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO[128],\n\t\t\tnNum = stModuleVarInfo.nNum\n\t\t};\n\t\tif (stModuleVarInfo.astBindModuVarList != null)\n\t\t{\n\t\t\tfor (int i = 0; i < stModuleVarInfo.nNum; i++)\n\t\t\t{\n\t\t\t\tstructure.astBindModuVarList[i] = stModuleVarInfo.astBindModuVarList[i];\n\t\t\t}\n\t\t}\n\t\tIntPtr intPtr = new IntPtr(0);\n\t\tintPtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(ImvsSdkDefine.IMVS_BIND_MODULE_PARAM_INFO_LIST)));\n\t\tMarshal.StructureToPtr(structure, intPtr, fDeleteOld: true);\n\t\tint result = NativeMethods.IMVS_SetModuleParamBinding(handle, intPtr);\n\t\tMarshal.FreeHGlobal(intPtr);\n\t\tintPtr = IntPtr.Zero;\n\t\treturn result;\n\t}\n",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        },
+        {
+          "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+          "member": "VM.PlatformSDKCS.NativeMethods",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 482,
+          "end": 482,
+          "excerpt": "\tpublic static extern int IMVS_SetModuleParamBinding(IntPtr handle, IntPtr pstModuParamInfo);",
+          "evidenceType": "fresh-static-managed-decompilation",
+          "binaryIdentity": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1",
+          "artifact": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "captureOperation": "static-ilspy-type-decompilation"
+        }
+      ],
+      "unknowns": [
+        "不从描述复制推断来源像素深拷贝；native关系存储、订阅值更新时序和解绑所有权需实际nativecallee。",
+        "定长UTF8在多字节边界的截断可能形成不完整编码；是否UI前置校验避免此输入，本条没有端到端证明。"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "PSU01",
+      "target": ".\\iMVS-6000PlatformSDK.dll::IMVS_SetParamValue/GetParamValue",
+      "question": "托管桥已到明确PInvoke；native导出实现到ImageSourceModule.SetParam/GetParam及错误传播尚缺。"
+    },
+    {
+      "id": "PSU02",
+      "target": "IMVS_SetModuleParamBinding nativecallee",
+      "question": "绑定描述深拷贝/存储、来源解析/运行时更新和解绑后最后读者未证。"
+    },
+    {
+      "id": "PSU03",
+      "target": "temporary marshalled buffers",
+      "question": "异常/截断/NUL终止与nested结构清理需分支级验证；正常Free不代表所有异常都释放。"
+    }
+  ],
+  "provenance": {
+    "scope": "SP02托管SDK桥的新增有限切片，未声称原生插件分发闭合",
+    "assemblies": [
+      {
+        "path": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+        "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+      },
+      {
+        "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+        "sha256": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d"
+      }
+    ],
+    "captures": [
+      {
+        "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+        "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922",
+        "byteLength": 77984,
+        "type": "VM.PlatformSDKCS.ModuleManager",
+        "assembly": {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+        },
+        "operation": "static-ilspy-type-decompilation",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.ModuleManager 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleManager.cs",
+        "exitCode": 0,
+        "targetExecuted": false
+      },
+      {
+        "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+        "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14",
+        "byteLength": 77827,
+        "type": "VM.PlatformSDKCS.ServerSDKAPI",
+        "assembly": {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+        },
+        "operation": "static-ilspy-type-decompilation",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.ServerSDKAPI 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/parameter-sdk-bridge.resources/ServerSDKAPI.cs",
+        "exitCode": 0,
+        "targetExecuted": false
+      },
+      {
+        "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+        "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+        "byteLength": 54663,
+        "type": "VM.PlatformSDKCS.NativeMethods",
+        "assembly": {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+        },
+        "operation": "static-ilspy-type-decompilation",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.NativeMethods 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/parameter-sdk-bridge.resources/NativeMethods.cs",
+        "exitCode": 0,
+        "targetExecuted": false
+      },
+      {
+        "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+        "sha256": "38915511e903e7f57d8368b82d3af75fa6abf95317067058416c08d47e1a63d0",
+        "byteLength": 1412,
+        "type": "VM.PlatformSDKCS.UTF8Marshaler",
+        "assembly": {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+        },
+        "operation": "static-ilspy-type-decompilation",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.UTF8Marshaler 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/parameter-sdk-bridge.resources/UTF8Marshaler.cs",
+        "exitCode": 0,
+        "targetExecuted": false
+      },
+      {
+        "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/VmParamSubManager.cs",
+        "sha256": "42b0363c9a4ff1376fc5980865ace43fbae7d5a2fdf00156c55cefc5ccc6703e",
+        "byteLength": 8041,
+        "type": "VM.Core.VmParamSubManager",
+        "assembly": {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+          "sha256": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d"
+        },
+        "operation": "static-ilspy-type-decompilation",
+        "command": "& .tools/ilspycmd.exe -t VM.Core.VmParamSubManager 'D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll' | Out-File -Encoding utf8 docs/architecture-recovery/parameter-sdk-bridge.resources/VmParamSubManager.cs",
+        "exitCode": 0,
+        "targetExecuted": false
+      },
+      {
+        "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleParam.cs",
+        "sha256": "af392bf2d3af006c6a16021a271d67dd8ef2017b268580841874ab6fede1da48",
+        "byteLength": 8011,
+        "type": "VM.Core.ModuleParam",
+        "assembly": {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll",
+          "sha256": "936763f6c8a1bf9fcf59f22acebca8feb09b5f3d5701ae77c82bdc81e626190d"
+        },
+        "operation": "static-ilspy-type-decompilation",
+        "command": "& .tools/ilspycmd.exe -t VM.Core.ModuleParam 'D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VM.Core.dll' | Out-File -Encoding utf8 docs/architecture-recovery/parameter-sdk-bridge.resources/ModuleParam.cs",
+        "exitCode": 0,
+        "targetExecuted": false
+      },
+      {
+        "path": "docs/architecture-recovery/parameter-sdk-bridge.resources/StringUtil.cs",
+        "sha256": "a7c8631e83c9f4d515b2e51ec5d337caf4b77c569385086af44e7ddb173006e4",
+        "byteLength": 2506,
+        "type": "VM.PlatformSDKCS.StringUtil",
+        "assembly": {
+          "path": "D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll",
+          "sha256": "34c0c90b00cb75a701685b96670b6490f61376f62eacc0ab29d240157db401c1"
+        },
+        "operation": "static-ilspy-type-decompilation",
+        "command": "& .tools/ilspycmd.exe -t VM.PlatformSDKCS.StringUtil 'D:/Program Files/VisionMaster4.4.0/Applications/PublicFile/x64/VM.PlatformSDKCS.dll' | Out-File -Encoding utf8 docs/architecture-recovery/parameter-sdk-bridge.resources/StringUtil.cs",
+        "exitCode": 0,
+        "targetExecuted": false
+      }
+    ],
+    "tool": {
+      "path": ".tools/ilspycmd.exe",
+      "sha256": "d70933d0547b2d0267f54b1138ef99daaa3048f678bd4b821ed5d00e82cf9190"
+    },
+    "staticManagedDecompilerLaunched": true,
+    "nativeCliLaunched": false,
+    "liveProcessHandle": null,
+    "originalRuntimeExecuted": false,
+    "targetAssemblyLoadedForExecution": false,
+    "deviceCalled": false,
+    "anotherWorktreeRead": false,
+    "implementationChanges": false
+  }
+}

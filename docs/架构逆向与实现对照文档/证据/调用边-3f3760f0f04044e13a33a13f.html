@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>独立VisionRunner CLI · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>独立VisionRunner CLI · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C19"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>独立VisionRunner CLI → OverlayPng.Write有限PNG输出</h2><p>已定位的PNG导出来自Runner显式输入BMP和独立圆检测；Write复制GrayImage为RGB，在图像坐标按采样圆/中心十字/边缘点写像素，边界裁剪，使用ZLib+PNG chunks输出。它不截图WPF presenter，不输出TextBlock/Path，也不证明主UI有图文叠加导出入口。</p><p><a href="../专题/rendering-layers.html#edge-C19">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/rendering-layers.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/rendering-layers.edges.json · SHA256 28101fd3e74d0ef6d0fc0f2c5059c29b49d8a7d9e0e05a0081c069f7d6bfb43b</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="0e575e22e7ee4139892b92b917f9e3e7629bd012dcbea1bd418b79b368f5d97e">{
+  &quot;id&quot;: &quot;C19&quot;,
+  &quot;route&quot;: &quot;当前 · 实际结果呈现与有限导出&quot;,
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;from&quot;: &quot;独立VisionRunner CLI&quot;,
+  &quot;to&quot;: &quot;OverlayPng.Write有限PNG输出&quot;,
+  &quot;behavior&quot;: &quot;已定位的PNG导出来自Runner显式输入BMP和独立圆检测；Write复制GrayImage为RGB，在图像坐标按采样圆/中心十字/边缘点写像素，边界裁剪，使用ZLib+PNG chunks输出。它不截图WPF presenter，不输出TextBlock/Path，也不证明主UI有图文叠加导出入口。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionRunner/Program.cs&quot;,
+      &quot;member&quot;: &quot;CLI image and export caller&quot;,
+      &quot;sha256&quot;: &quot;c46c6bb1c826ce43ccd0451299edbd71b4af6e358050d927374073d49f1ee8ce&quot;,
+      &quot;start&quot;: 14,
+      &quot;end&quot;: 21,
+      &quot;excerpt&quot;: &quot;    var image=BmpReader.Read(source); var started=System.Diagnostics.Stopwatch.StartNew();\n    var result=RadialCircleDetector.Detect(image,options); started.Stop();\n    var report=new { schema=\&quot;vision-independent.circle.v1\&quot;, imagePath, imageSha256=sha, image.Width, image.Height, options, result.Status, result.Circle, result.EdgePoints, result.OutOfBoundsSamples, elapsedMilliseconds=started.Elapsed.TotalMilliseconds,\n        compatibility=\&quot;unverified\&quot;, parameterSource=\&quot;explicit caller seed; not automatically recovered original ROI\&quot;, limitations=new[]{\&quot;Independent strongest-edge radial detector; vendor numeric equivalence unverified.\&quot;,\&quot;No vendor SDK or assemblies loaded.\&quot;,\&quot;No full .sol workflow execution, runtime scheduler, or camera integration.\&quot;,\&quot;No outlier rejection or angular coverage constraint.\&quot;} };\n    Directory.CreateDirectory(Path.GetDirectoryName(prefix)!);\n    File.WriteAllText(prefix+\&quot;.json\&quot;,JsonSerializer.Serialize(report,new JsonSerializerOptions{WriteIndented=true,Converters={new System.Text.Json.Serialization.JsonStringEnumConverter()}}));\n    OverlayPng.Write(prefix+\&quot;.png\&quot;,image,result);\n    Console.WriteLine(JsonSerializer.Serialize(new { result.Status, result.Circle, edgeCount=result.EdgePoints.Count, json=prefix+\&quot;.json\&quot;, overlay=prefix+\&quot;.png\&quot; },new JsonSerializerOptions{Converters={new System.Text.Json.Serialization.JsonStringEnumConverter()}}));&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionRunner/OverlayPng.cs&quot;,
+      &quot;member&quot;: &quot;Independent raster overlay export&quot;,
+      &quot;sha256&quot;: &quot;10fd70c065ea906ca3926f1fe997661282e23fc1e1e406bb08674e0883d3b516&quot;,
+      &quot;start&quot;: 6,
+      &quot;end&quot;: 16,
+      &quot;excerpt&quot;: &quot;    public static void Write(string path,GrayImage image,CircleDetectionResult result) {\n        int w=image.Width,h=image.Height; var rgb=new byte[checked(w*h*3)];\n        for(int i=0;i&lt;image.Pixels.Length;i++) rgb[i*3]=rgb[i*3+1]=rgb[i*3+2]=image.Pixels[i];\n        void Dot(int x,int y,byte r,byte g,byte b,int size=1) {for(int dy=-size;dy&lt;=size;dy++)for(int dx=-size;dx&lt;=size;dx++){int xx=x+dx,yy=y+dy;if((uint)xx>=(uint)w||(uint)yy>=(uint)h)continue;int at=(yy*w+xx)*3;rgb[at]=r;rgb[at+1]=g;rgb[at+2]=b;}}\n        if(result.Circle is CircleFit c) {int count=(int)Math.Ceiling(c.Radius*8)+64;for(int i=0;i&lt;count;i++){double a=i*2*Math.PI/count;Dot((int)Math.Round(c.CenterX+c.Radius*Math.Cos(a)),(int)Math.Round(c.CenterY+c.Radius*Math.Sin(a)),255,0,120);}for(int d=-8;d&lt;=8;d++){Dot((int)Math.Round(c.CenterX)+d,(int)Math.Round(c.CenterY),255,0,120);Dot((int)Math.Round(c.CenterX),(int)Math.Round(c.CenterY)+d,255,0,120);}}\n        foreach(var p in result.EdgePoints)Dot((int)Math.Round(p.X),(int)Math.Round(p.Y),0,220,80,2);\n        using var output=File.Create(path);output.Write(new byte[]{137,80,78,71,13,10,26,10});var header=new byte[13];BinaryPrimitives.WriteInt32BigEndian(header,w);BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4),h);header[8]=8;header[9]=2;Chunk(output,\&quot;IHDR\&quot;,header);\n        using var compressed=new MemoryStream();using(var zlib=new ZLibStream(compressed,CompressionLevel.Fastest,leaveOpen:true)){for(int y=0;y&lt;h;y++){zlib.WriteByte(0);zlib.Write(rgb,y*w*3,w*3);}}Chunk(output,\&quot;IDAT\&quot;,compressed.ToArray());Chunk(output,\&quot;IEND\&quot;,[]);\n    }\n    private static void Chunk(Stream output,string name,byte[] data){Span&lt;byte> field=stackalloc byte[4];BinaryPrimitives.WriteInt32BigEndian(field,data.Length);output.Write(field);var type=Encoding.ASCII.GetBytes(name);output.Write(type);output.Write(data);uint crc=0xffffffff;foreach(byte b in type.Concat(data)){crc^=b;for(int bit=0;bit&lt;8;bit++)crc=(crc&amp;1)!=0?(crc>>1)^0xedb88320:crc>>1;}BinaryPrimitives.WriteUInt32BigEndian(field,~crc);output.Write(field);}\n}&quot;,
+      &quot;evidenceType&quot;: &quot;current-independent-implementation-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;已读主WPF宿主/结果presenter未定位同层导出调用；主UI图像/几何/文字导出、渲染截图与原版导出比较仍未知。&quot;
+  ],
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Group 全功能逆向与验收清单 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / Group 全功能逆向与验收清单</p><h1>Group 全功能逆向与验收清单</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Group 全功能逆向与验收清单</title><nav><a href="../../index.html">主架构</a><a href="../main-ui-map.html">逆向核心</a><a href="index.html">关联文档目录</a><a data-source-download download href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html#group-全功能逆向与验收清单">Group 全功能逆向与验收清单</a></p><p style="margin-left:14px"><a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html#2026-10-18-点输出独立入口">2026-10-18 点输出独立入口</a></p><p style="margin-left:14px"><a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html#六个功能域">六个功能域</a></p><p style="margin-left:14px"><a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html#本轮端到端验收路径">本轮端到端验收路径</a></p><p style="margin-left:14px"><a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html#不能省略的验收边界">不能省略的验收边界</a></p><p style="margin-left:14px"><a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html#交付原则">交付原则</a></p><p style="margin-left:14px"><a href="GROUP-FULL-RECONSTRUCTION-CHECKLIST.html#尚未完成的完整范围后续持续跟踪不再拆成零散遗漏">尚未完成的完整范围（后续持续跟踪，不再拆成零散遗漏）</a></p></details><blockquote>
+<p>后续实现：双栏配置器、图形ROI与真实图像源Group接入见 <a href="GROUP-NATIVE-EDITORS.html">GROUP-NATIVE-EDITORS.md</a>。原生ROI算法工具、全部复杂模板仍未完成。下文适配器状态保留为历史阶段记录。</p>
+</blockquote>
+<blockquote>
+<p>本轮更新：类别、多关联同步、显式复杂编辑能力和首次SelfRun预检见 <a href="GROUP-ADVANCED-RUNTIME.html">GROUP-ADVANCED-RUNTIME.md</a>。原生复杂UI和工具专属集成仍未完成，不能把功能适配器当作全还原。</p>
+</blockquote>
+<blockquote>
+<p>2026-10-16更新：输入编辑、基础运行参数代理和拥有型Group独立单次/连续运行已接通，详见 <a href="GROUP-INPUT-RUNTIME-SELFRUN.html">GROUP-INPUT-RUNTIME-SELFRUN.md</a>。下面保留完整范围，不能将基础闭环当作原生全部类型和配置器完成。</p>
+</blockquote>
+<h1 id="group-全功能逆向与验收清单">Group 全功能逆向与验收清单</h1><h2 id="2026-10-18-点输出独立入口">2026-10-18 点输出独立入口</h2><p>原始 <code>analysis/decompiled/Apps.XmlUI/styles/paramusercontroldatatemplate.xaml:1161–1177</code> 的 <code>VMGroupOutputParam</code> 模板并列绑定“增加输出”和“增加点输出”两个命令；同文件 <code>PointFParam</code> 模板将点输出展开为多行子字段。<code>analysis/decompiled/Apps.XmlParser.CapabilityAudit/Apps.XmlParser.ParamTab/VMGroupOutputParam.cs</code> 确认两个独立命令名字段。当前 Group 输出页补上“增加点输出”的独立 WPF 入口，仍保留已有通用类型选择器；不能因此宣称原生点行模板或命令全等价。</p>
+<p><code>VisionEditor.GroupPointOutputChecks</code> 通过真实 WPF 按钮添加 Point 输出、绑定实际节点产出并开启累积，运行两轮得到两个有序点；公共端口变为 Point 数组，撤销/重做与保存重开后运行结果一致（6 项）。点输出 X/Y 等子字段行、编辑弹层及真实 VM 视觉差分仍开放。</p>
+<p>2026-10-18 补核同一原生 <code>DynamicIOConfigControl.xaml</code> 名称编辑模板：<code>MaxLength</code> 绑定 <code>VmIO.MaxNameLenth</code>（<code>VM.Core/VmIO.cs</code> 为 31），失焦调用 <code>VmIODecorate.TextChangedExecute</code>。Group 输出名称框现限制实际键入 31 字符。<code>VisionEditor.GroupPointOutputChecks</code> 对真实 WPF 输出框发送 40 字符文本输入，仅接受 31 字符；失焦提交后 Group 对外端口改名，两轮实际 Point 累积仍按新名称导出；撤销重做、保存重开继续运行，共 13 项通过。新建来源名的 <code>GroupParam.FixName</code> 可截到 32 字符，不能与手动编辑上限混同。原生 PointF 三分量及完整子字段模板仍开放。</p>
+<p>同一原始 <code>GroupParam.AddCommandCmdExecute</code> 对输出单一叶类型在新增后调用 <code>owner.Outputs.GetAllLeafIO().Count() &gt; 1024</code> 并回滚，也对多选组合按新增叶数预检。重建输出页的通用“增加输出”和“增加点输出”共用前置上限检查：已有 1024 个扁平输出时给出明确错误，保持旧数据。专项窗口先验证两轮 Point 累积，再填至 1024 项，实际点击添加、检查错误和首项 ID，保存重开后数目与 ID 不变，累计 15 项。前置拒绝是独立实现；复合 IO 的原生模板叶数与短暂回滚生命周期仍未闭合。</p>
+<p>后续核对 <code>analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupOutputParam.cs</code> 的 <code>DefaultStartName =&gt; &quot;out&quot;</code> 及同程序集 <code>DynamicObjectConfigControl/GroupParam.cs:293–300,367–385</code> 的 <code>GetUniqueName</code>：首个独立输出应叫 <code>out</code>，撞名后是 <code>out0</code>，同时检查输入和输出名称。原 WPF 适配器首个误叫 <code>out0</code>；已更正。真实窗口连续添加两项、删除第二项、绑定第一个实际 Point 来源、两轮累积、撤销重做和保存重开验证为 8 项。PointF 三分量合同已在 <code>CONTRACT-REQUESTS.md</code> 登记，当前 Point2 仍只属独立适配。</p>
+<p>同一原生命名逻辑也作用于 Group 输入：<code>analysis/decompiled/DynamicObjectConfigControl/Apps.XmlParser.ParamTab/GroupInputParam.cs</code> 声明起始名 <code>in</code>，<code>GroupParam.GetUniqueName</code> 在输入和输出全集中查重。当前简单输入原先从 <code>in0</code> 开始，已修正为先 <code>in</code>、撞名后 <code>in0</code>。<code>VisionEditor.GroupInputNameChecks</code> 在真实 WPF 窗口新增两项、删除第二项，将首项接到父级真实整数源和内部消费节点，运行输出 7，并完成撤销重做及保存重开（7 项）。原生输入批量选择器和全部复合类型仍开放。</p>
+<p>日期：2026-10-16。该清单一次覆盖 Group 全范围；完成两项不代表整个 Group 完成。状态分别记录源码证据、实现、真实 VM 对照，不能用测试通过替代原生验收。</p>
+<h2 id="六个功能域">六个功能域</h2><table>
+<thead>
+<tr>
+<th>域</th>
+<th>必须覆盖的行为</th>
+<th>主要证据入口</th>
+<th>当前边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>节点与内部画布</td>
+<td>原生 Group 节点模板、悬停端点、选中、双击进入、Tab Up、面包屑、三层嵌套、折叠与名称同步</td>
+<td>VMControls.WPF DiagramItem/DiagramPage；VmProcedureDecorator.OpenGroupCommandExecute；IMVSGroup/VmModuleSet</td>
+<td>主要入口已接入，完整状态视觉差分未完成</td>
+</tr>
+<tr>
+<td>输入输出</td>
+<td>新增、删除、重名校验、改名、类型、标量/数组、订阅/解除、批量、内部/外部来源、输入注入、实际下游读取</td>
+<td>GroupInputParam/GroupOutputParam/VmIODecorate；VM.Core DynamicInput/Output</td>
+<td>当前公共类型仅覆盖已有托管类型；复合类型未全覆盖</td>
+</tr>
+<tr>
+<td>循环调度</td>
+<td>启用、起止订阅、区间边界、LoopIndex 私有范围、间隔、空/反向/负范围、LoopStep、嵌套、逐轮上下文</td>
+<td>ModuleFrame CGroupNode::DoWork 0x1800a0930；GetLoopRangeFromSubRecord 0x1800a53a0</td>
+<td>默认步长范围已接入；LoopStep、原生逐轮变量生命周期仍须追踪</td>
+</tr>
+<tr>
+<td>中断</td>
+<td>启用与显隐、int/float/string、六运算、目标常量、内外部订阅、数组索引、首次内部依赖、判定时机、未绑定/无值、结束轮次</td>
+<td>IMVSGroupAlgorithmTab；IsBreakLoop 0x1800a55b0 原生汇编；IsBreakCmpValueInLoop 0x1800a6730</td>
+<td>本轮接通已有类型闭环；动态索引引用和原生全部异常码仍未覆盖</td>
+</tr>
+<tr>
+<td>输出与显示累积</td>
+<td>mode0/mode1、逐轮标量/数组展平、顺序、每次调用清空、嵌套累积、图像替换、显示特征、失败/取消部分结果、不可变快照、下游签名</td>
+<td>ProcessGroupOutputV44 0x1800a7830；ProcessIntIOEx 0x180013450；VmIODecorate；DisplayObjectDecorate；VmIO.MergeIOLoopValue</td>
+<td>本轮实现 primitive 输出、图像替换、Circle/Components显示累积及图像输出关联显示；其余复合输出/显示与回调流须独立核对，不得据此宣称全部类型完成</td>
+</tr>
+<tr>
+<td>配置及生命周期</td>
+<td>五页签、运行参数代理编辑、显示项编辑、单次/连续/停止、运行中禁改、关闭等待、复制/粘贴重映射、撤销/重做、保存/重开、锁定/过期窗口</td>
+<td>DynamicParamsTabControl/BottomCommand；Group 控制资源；VmSolution 回调</td>
+<td>本轮验证已有类型和调用链；原生每个控件模板/连续配置运行/所有设备清理未全部覆盖</td>
+</tr>
+</tbody></table>
+<h2 id="本轮端到端验收路径">本轮端到端验收路径</h2><ol>
+<li>在真实框架拥有的 Group 内部创建实际产出数据的节点，输出绑定到该节点。</li>
+<li>从 Group 窗口开启循环、选择终值、开启中断、选择私有 LoopIndex 或内部输出、选择运算并提交目标值。</li>
+<li>输出页启用累积，检查公共端口切成数组、实际下游能读取完整值；关闭累积则返回最后一轮。</li>
+<li>点击窗口运行，核对实际执行序列、中断前/后时机、输出列表值、再次运行的清空和索引隔离。</li>
+<li>改名、复制整个流程及嵌套 Group，验证引用指向复制后的内部节点，保存重开并运行。</li>
+<li>运行中停止或关闭窗口，等待模块释放后再关闭；界面截图/渲染由 tests 生成。</li>
+</ol>
+<h2 id="不能省略的验收边界">不能省略的验收边界</h2><ul>
+<li>int32 直接比较应覆盖超过 float 精确整数范围的值；float EQ 的 FLT_EPSILON 阈值与 NE 精确不等不互为反义；string 按 UTF-8 字节顺序。</li>
+<li>内部节点结果在首轮前不可用；下一轮前读取上轮已完成数据；LoopIndex 是本轮索引。初始化输入/常量与内部节点产物分开处理。</li>
+<li>普通 primitive 输出先清空再追加；累积保持顺序展平。图像替换而不是图像数组。未产出不能冒充零。</li>
+<li>取消、超时、失败不允许将历史成功值继续交给下游；部分结果如保留必须明确标为诊断数据。</li>
+<li>修改输出模式导致下游类型不兼容时必须明确处理，不能静默自动取第一项。</li>
+<li>真实 VM 差分、全部复合数据类型、动态数组索引引用、LoopStep、回调流、原生异常码、逐轮变量存活、原生控件模板仍需要独立证据。没有这些证据，不能承诺“全功能等价”。</li>
+</ul>
+<h2 id="交付原则">交付原则</h2><p>以后沿此清单继续，不再要求用户逐项发现缺口。报告同时给出已完成闭环、剩余完整范围和真实 VM 对照状态。当前清单是全范围盘点，并非全部组件已经完成逆向的声明。</p>
+<h2 id="尚未完成的完整范围后续持续跟踪不再拆成零散遗漏">尚未完成的完整范围（后续持续跟踪，不再拆成零散遗漏）</h2><ol>
+<li>输入页完整新增/删除/批量/重名/类型与所有复合输入，输入改名的跨层传播；已实现类型的增删/批量/改名/父级绑定/内部引用/整体撤销已接入；原生全部复合类型仍开放。</li>
+<li>运行参数类别/排序/多关联同步已接数据与操作；原始双栏配置器、复杂专属UI及真实工具元数据集成仍开放。拥有型Group已独立单次/连续运行；原生首次准备、缓存失效与回调仍开放。</li>
+<li>全套原生数字控件、订阅树、行模板、主题、禁用/悬停/缩放状态和真实 VM 视觉操作差分。原始开关位图与部分行样式恢复不等于全UI恢复。</li>
+<li>LoopStep、全部原生参数边界、隐藏double分支、Pixel/ROI/点集等复合I/O与关联显示的完整类型矩阵；固定索引之外的动态索引订阅。</li>
+<li>原生 NG/超时/取消/失败/空范围状态码与部分结果、每轮回调、中间输出发布；当前失败停止/诊断保留是独立政策。</li>
+<li>原生每轮模块持续实例、局部变量持续状态、嵌套作用域和设备清理；当前每轮重建模块/上下文。</li>
+<li>原生 .sol/二进制ABI兼容与真实VM逐操作/逐结果差分。当前独立JSON保存不是原生方案兼容。</li>
+</ol>
+<p>本轮源码与实现证据见 <a href="GROUP-BREAK-ACCUMULATION.html">Group中断累积说明</a>。以上未完成项不会因为专项或WPF检查通过而关闭。</p>
+<p class="meta">来源：docs/GROUP-FULL-RECONSTRUCTION-CHECKLIST.md · SHA256 2138491ed0d4d25cbd3b7a5f3cc645d11c6f5f610d7244f079e8c437883fc17a<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../index.html">首页／界面入口</a><a href="../../主题/主界面入口.html">主界面</a><a href="../../工具/index.html">工具窗口</a><a href="../../数据/index.html">数据与 Owner</a><a href="../../主题/执行与状态.html">执行与结果</a><a href="../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../公共资源/routes.js"></script><script src="../../公共资源/site.js"></script></body></html>

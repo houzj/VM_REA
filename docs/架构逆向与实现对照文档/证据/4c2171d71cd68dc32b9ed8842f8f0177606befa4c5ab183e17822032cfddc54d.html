@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 4c2171d71cd6 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 4c2171d71cd6</p><h1>原文证据 4c2171d71cd6</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 4c2171d71cd68dc32b9ed8842f8f0177606befa4c5ab183e17822032cfddc54d。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre class="site-evidence">public enum WorkflowSourceKind { LocalVariable, WorkflowInput, NodeOutput, GroupLoopIndex, IntegerConstant, TextConstant, NumberConstant, NumberArrayConstant }
+
+public sealed record WorkflowValueReference(WorkflowSourceKind Kind,string Id,string? Port=null){
+ [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+ public WorkflowArrayIndex? ArrayIndex{get;init;}
+}
+// Null on WorkflowValueReference is legacy All. Literal text is retained, not caption-derived.
+public sealed record WorkflowArrayIndex(string? LiteralText=null,WorkflowValueReference? IndexSource=null){
+ public static int ParseLiteral(string text){
+  // Exact MathHelper.IsNumber four-regex conjunction, including standalone &quot;-&quot;.
+  // Normal GetBindIndex first treats any dot as an IO path: numeric recognition
+  // alone does not prove a decimal literal is reachable from that UI operation.
+  bool Match(string pattern)=&gt;System.Text.RegularExpressions.Regex.IsMatch(text,pattern);
+  if(text is null||Match(&quot;[^0-9.-]&quot;)||Match(&quot;[0-9]*[.][0-9]*[.][0-9]*&quot;)||Match(&quot;[0-9]*[-][0-9]*[-][0-9]*&quot;)||!Match(&quot;(^([-]|[.]|[-.]|[0-9])[0-9]*[.]*[0-9]+$)|(^([-]|[0-9])[0-9]*$)&quot;))throw new FormatException(&quot;Invalid numeric index literal.&quot;);
+  int dot=text.IndexOf('.');string prefix=dot&lt;0?text:text[..dot];
+  if(prefix is &quot;&quot; or &quot;-&quot;)return 0;
+  return int.Parse(prefix,NumberStyles.AllowLeadingSign,CultureInfo.InvariantCulture);
+ }
+ public void Validate(){if((LiteralText is null)==(IndexSource is null))throw new InvalidDataException(&quot;Index requires exactly one literal or source.&quot;);try{if(LiteralText is not null)_=ParseLiteral(LiteralText);}catch(Exception error)when(error is FormatException or OverflowException){throw new InvalidDataException(&quot;Invalid index literal or unsupported int32 overflow.&quot;,error);}if(IndexSource?.ArrayIndex is not null)throw new InvalidDataException(&quot;Nested index references are unsupported.&quot;);}
+}
+public sealed record WorkflowSubscription(string NodeId,string Target,bool IsParameter,WorkflowValueReference Source);
+public static class WorkflowSubscriptions</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../数据/index.html">数据类型与数据流：从输入到最后读者</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

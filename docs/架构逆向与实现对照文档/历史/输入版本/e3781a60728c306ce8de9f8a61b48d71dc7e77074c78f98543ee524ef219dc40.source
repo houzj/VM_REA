@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Map ROI 解码前投影修复与针对回归</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../plugins/MAP-CALIBRATION-R04-MAP-ROI-IMPLEMENTATION.md">下载原始文件</a></nav><main><h1 id="map-roi-解码前投影修复与针对回归">Map ROI 解码前投影修复与针对回归</h1><p>2026-10-19，按根线授权应用专属 <code>MapCalibrationImageSolver.cs</code>。原路径crop先decode、再filter world点/offset，现为crop原像素→SourceLatticeAdapter→local float+.5取mask稳定压紧→XY float加bbox origin→SourceGrid重建（旧W/H、filtered minima）→原图RecognizeLattice。两图ROI独立走同序，Box/solver与新帧angle修复未改。</p>
+<p>源依据80e690/80bcd0：873de0返回后mask过滤复制XY/ID，保留返回grid尺寸，然后才求ID minima/dense；proposal fit/decode使用原图。根线已审并应用shared RebuildForProjectedPoints及Board两处context运输，本切片仅Map专属代码。</p>
+<p>运行与独立产物 <code>analysis/map-calibration/r04-map-roi-verification/results.json</code>：三项目均build0、run0，0警告0错误。</p>
+<table>
+<thead>
+<tr>
+<th>针对入口</th>
+<th>结果</th>
+<th>实际证明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MapCalibration.GridRoiChecks</td>
+<td>84/84精确</td>
+<td>四板型7/9/6/8各21既有crop格网；点数、原ID顺序、XY floatbits</td>
+</tr>
+<tr>
+<td>MapCalibration.RoiRuntimeChecks</td>
+<td>PASS7361</td>
+<td>原厂ROI case0..8，真实插件双ROI；原码/点数，成功case完整source/target/projection点序/ID/floatbits、矩阵/scalar/error</td>
+</tr>
+<tr>
+<td>MapCalibration.SourceRecognitionChecks</td>
+<td>4/4精确</td>
+<td>7/9型原两图各168点完整顺序/ID/XY floatbits</td>
+</tr>
+</tbody></table>
+<p>保留原预期，未用容差放宽失败；实际测试进程完整退出0，managed槽已报根线释放。运行器随后改为必选单项目，后续不会自动进入另一个构建抢槽；上述记录来自修改前一次三项目串行运行。</p>
+<p>兼容边界：ROI移除了旧crop失败后旋转/projective独立fallback，fullimage现有兼容分支保留。上述原厂fixture无回归；没有额外旋转/透视ROI兼容实验，不能把“有限原厂测试通过”写成“旧兼容域无退化”。不静默回旧先decode再mask顺序；最终A/B/SourceGrid接入将去除独立geometry先验门。当前A草稿仍未编译，不据本修复计整工具完成。人工验收独立记录，不阻挡已完成实现/自动验证的工具统计。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION-R04-MAP-ROI-IMPLEMENTATION.md · SHA256 7c7e858093cf08df1422034836f498ef4dc1536d57f141c6cd065d32c8409668<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

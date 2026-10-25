@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MainWindow.New / ConfirmPendingChanges · 调用边证据</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 08c2b9f91aa2</p><h1>MainWindow.New / ConfirmPendingChanges · 调用边证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><section id="edge-C01"><p class="site-notice">事实级别：independent-implementation。本页来自已捕获调用边模型；数组顺序不证明相邻边是同一调用、对象或线程。未进行原机运行验证。</p><h2>MainWindow.New / ConfirmPendingChanges → 确认未保存修改 → doc.NewSolution(false)</h2><p>参数窗口开启时拒绝；无改动直接允许；脏方案Yes走Save(false)，No允许，Cancel拒绝。文件菜单New调用NewSolution(false)，生成新GUID并清当前流程ID，空流程集合；文档清历史、增generation/revision、发SolutionReplaced/Changed。与原版默认流程创建分列。</p><p><a href="../专题/solution-lifecycle.html#edge-C01">返回既有关系专题（交互未验）</a> · <a href="../公共资源/原页/architecture-recovery/solution-lifecycle.edges.json">完整原模型</a></p><p>来源 公共资源/原页/architecture-recovery/solution-lifecycle.edges.json · SHA256 7944a8626b4f9828308bb58d1f46d6db6017593b9a73415f49f26bbad9517eef</p><h3>完整条目：类型、成员、来源、分支与未知</h3><pre data-edge-payload="11568f5f75276b1fc72e975745bd3f48766127303dd5c4436efb50b634737f48">{
+  &quot;id&quot;: &quot;C01&quot;,
+  &quot;route&quot;: &quot;当前独立实现&quot;,
+  &quot;from&quot;: &quot;MainWindow.New / ConfirmPendingChanges&quot;,
+  &quot;to&quot;: &quot;确认未保存修改 → doc.NewSolution(false)&quot;,
+  &quot;behavior&quot;: &quot;参数窗口开启时拒绝；无改动直接允许；脏方案Yes走Save(false)，No允许，Cancel拒绝。文件菜单New调用NewSolution(false)，生成新GUID并清当前流程ID，空流程集合；文档清历史、增generation/revision、发SolutionReplaced/Changed。与原版默认流程创建分列。&quot;,
+  &quot;refs&quot;: [
+    {
+      &quot;path&quot;: &quot;src/VisionEditor/MainWindow.xaml.cs&quot;,
+      &quot;member&quot;: &quot;New and pending-change confirmation&quot;,
+      &quot;sha256&quot;: &quot;034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a&quot;,
+      &quot;start&quot;: 173,
+      &quot;end&quot;: 174,
+      &quot;excerpt&quot;: &quot; void New(){if(ConfirmPendingChanges())doc.NewSolution(false);}\n bool ConfirmPendingChanges(){if(parameterEditorOpen){StatusText.Text=\&quot;请先关闭参数窗口\&quot;;return false;}if(!doc.IsDirty)return true;var answer=MessageBox.Show(this,\&quot;当前方案有未保存的修改。是否先保存？\&quot;,\&quot;未保存的方案\&quot;,MessageBoxButton.YesNoCancel,MessageBoxImage.Warning);if(answer==MessageBoxResult.Cancel)return false;if(answer==MessageBoxResult.No)return true;return Save(false);}&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    },
+    {
+      &quot;path&quot;: &quot;src/VisionEditor.Core/GraphEditorDocument.cs&quot;,
+      &quot;member&quot;: &quot;GraphEditorDocument.NewSolution&quot;,
+      &quot;sha256&quot;: &quot;4a44a59c96449a286eac7162e42a0b42dd012669f49e5aa810e1ce131799b558&quot;,
+      &quot;start&quot;: 54,
+      &quot;end&quot;: 59,
+      &quot;excerpt&quot;: &quot;    public void NewSolution(bool createProcedure=true) {\n        document = new(SolutionStore.CurrentVersion, Guid.NewGuid().ToString(\&quot;N\&quot;), \&quot;New solution\&quot;, createProcedure?[new(\&quot;main\&quot;, \&quot;Main\&quot;, [], [], [])]:[], []);\n        CurrentProcedureId = createProcedure?\&quot;main\&quot;:\&quot;\&quot;; BaseDirectory = Path.GetFullPath(Environment.CurrentDirectory); FilePath = null;\n        solutionGeneration++;configurationHistory=null;history.Clear(); IsDirty = true; Revision++; SolutionReplaced?.Invoke();Changed?.Invoke();\n    }\n    public void Load(string path) {&quot;,
+      &quot;evidenceType&quot;: &quot;current-source&quot;,
+      &quot;binaryIdentity&quot;: &quot;not revalidated in this slice&quot;
+    }
+  ],
+  &quot;unknowns&quot;: [
+    &quot;当前执行中菜单启用/订阅清理应从宿主消费者核查，不能由本方法推断所有入口均允许或禁止新建。&quot;
+  ],
+  &quot;classification&quot;: &quot;independent-implementation&quot;,
+  &quot;verification&quot;: {
+    &quot;method&quot;: &quot;static resource, body and call-site inspection&quot;,
+    &quot;runtimeExecuted&quot;: false,
+    &quot;nativeEquivalent&quot;: false
+  }
+}</pre></section></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

@@ -1,0 +1,150 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../" data-page-kind="evidence"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>原文证据 bff4ab3f9923 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 原文证据 bff4ab3f9923</p><h1>原文证据 bff4ab3f9923</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p>内容寻址：SHA256 bff4ab3f99237fe3e53aa8ce6e51f1a49263414d4c35751d5ce3a8df8adc95d9。此值核对本页保留的原始 HTML 块；原始源码／程序集 SHA 以调用页的来源记录为准。</p><div id="content"><pre>	private static void DrawShape(IShape shape, Mat source)
+	{
+		//IL_040d: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0429: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0455: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0471: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0567: Unknown result type (might be due to invalid IL or missing references)
+		if (shape.Opacity == 0.0 &amp;&amp; !(shape is IMultiPoint))
+		{
+			return;
+		}
+		if (shape is IMultiText)
+		{
+			IMultiText multiText = shape as IMultiText;
+			List&lt;IGrouping&lt;System.Windows.Point, IText&gt;&gt; list = (from p in multiText.Texts
+				group p by p.Position).ToList();
+			{
+				foreach (IGrouping&lt;System.Windows.Point, IText&gt; item2 in list)
+				{
+					int num = 0;
+					foreach (IText item3 in item2)
+					{
+						System.Windows.Point org = new System.Windows.Point(item3.Position.X, item3.Position.Y + (double)num);
+						num += source.DrawText(item3, org);
+					}
+				}
+				return;
+			}
+		}
+		if (shape is ICircle)
+		{
+			ICircle circle = shape as ICircle;
+			source.DrawCircle(circle);
+		}
+		else if (shape is IEllipse)
+		{
+			IEllipse ellipse = shape as IEllipse;
+			source.DrawEllipse(ellipse);
+		}
+		else if (shape is IAnnularSector)
+		{
+			IAnnularSector arc = shape as IAnnularSector;
+			source.DrawArc(arc);
+		}
+		else if (shape is ILine)
+		{
+			ILine line = shape as ILine;
+			if (line.IsThroughLine)
+			{
+				source.DrawThroughLine(line);
+			}
+			else
+			{
+				source.DrawLine(line);
+			}
+		}
+		else if (shape is IRectangle)
+		{
+			IRectangle oriRect = shape as IRectangle;
+			source.DrawRect(oriRect);
+		}
+		else if (shape is IPoint)
+		{
+			IPoint point = shape as IPoint;
+			int color = (XmlColorToInt(point.Stroke) &amp; 0xFFFFFF) | ((int)(point.Opacity * 255.0) &lt;&lt; 24);
+			source.DrawPoint((float)point.Point.X, (float)point.Point.Y, color, (int)point.StrokeThickness);
+		}
+		else if (shape is ICoordinateShape)
+		{
+			ICoordinateShape coordinateShape = shape as ICoordinateShape;
+			DrawAxis(&quot;X&quot;, source, (float)coordinateShape.CenterPoint.X, (float)coordinateShape.CenterPoint.Y, (float)coordinateShape.VectorX.X, (float)coordinateShape.VectorX.Y, coordinateShape.Stroke);
+			DrawAxis(&quot;Y&quot;, source, (float)coordinateShape.CenterPoint.X, (float)coordinateShape.CenterPoint.Y, (float)coordinateShape.VectorY.X, (float)coordinateShape.VectorY.Y, coordinateShape.Stroke);
+		}
+		else if (shape is IArrowPath)
+		{
+			IArrowPath path = shape as IArrowPath;
+			DrawArrowPath(source, path);
+		}
+		else if (shape is IAngleShape)
+		{
+			IAngleShape angle = shape as IAngleShape;
+			DrawLineAngle(source, angle);
+		}
+		else if (shape is IPolygon)
+		{
+			IPolygon polygon = shape as IPolygon;
+			DrawPolygon(source, polygon);
+		}
+		else if (shape is IPolyline)
+		{
+			IPolyline polygon2 = shape as IPolyline;
+			DrawPolyline(source, polygon2);
+		}
+		else if (shape is ICross)
+		{
+			ICross cross = shape as ICross;
+			source.DrawLine(new Point(0, (int)cross.CenterPoint.Y), new Point(source.Width, (int)cross.CenterPoint.Y), cross.Stroke, cross.StrokeThickness);
+			source.DrawLine(new Point((int)cross.CenterPoint.X, 0), new Point((int)cross.CenterPoint.X, source.Height), cross.Stroke, cross.StrokeThickness);
+		}
+		else
+		{
+			if (!(shape is IMultiPoint))
+			{
+				return;
+			}
+			IMultiPoint multiPoint = shape as IMultiPoint;
+			if (multiPoint.MicroPoints != null)
+			{
+				foreach (IMicroPoint microPoint in multiPoint.MicroPoints)
+				{
+					if (microPoint.Opacity != 0.0)
+					{
+						int nColor = (XmlColorToInt(microPoint.Stroke) &amp; 0xFFFFFF) | ((int)(microPoint.Opacity * 255.0) &lt;&lt; 24);
+						System.Drawing.Color color2 = CvGetColorFromInt(nColor);
+						source.Circle((int)microPoint.Point.X, (int)microPoint.Point.Y, 1, new Scalar((double)(int)color2.B, (double)(int)color2.G, (double)(int)color2.R), 1, (LineTypes)8, 0);
+					}
+				}
+			}
+			if (multiPoint.OutlinePoints != null)
+			{
+				List&lt;byte[]&gt; list2 = new List&lt;byte[]&gt;();
+				List&lt;int&gt; list3 = new List&lt;int&gt;();
+				List&lt;int&gt; externPoint_Buffer_NgColor = new List&lt;int&gt;();
+				List&lt;double&gt; list4 = new List&lt;double&gt;();
+				foreach (IOutlinePoint outlinePoint in multiPoint.OutlinePoints)
+				{
+					if (outlinePoint.Opacity != 0.0)
+					{
+						int item = XmlColorToInt(outlinePoint.Stroke);
+						double opacity = outlinePoint.Opacity;
+						if (outlinePoint.OutlineData != null)
+						{
+							list2.Add(outlinePoint.OutlineData);
+							list3.Add(item);
+							list4.Add(opacity);
+						}
+					}
+				}
+				DrawOutLinePoint(source, list2, list3, externPoint_Buffer_NgColor, list4);
+			}
+			if (multiPoint.Rectangles == null)
+			{
+				return;
+			}
+			foreach (IRectangle rectangle in multiPoint.Rectangles)
+			{
+				source.DrawRect(rectangle);
+			}
+		}
+	}</pre></div><h2>返回引用位置</h2><div class="site-link-grid"><a href="../专题/image-export-entry-audit.html">结果图像保存入口与导出分支</a></div></main><footer class="site-footer"><nav><a href="../index.html">首页／界面入口</a><a href="../主题/主界面入口.html">主界面</a><a href="../工具/index.html">工具窗口</a><a href="../数据/index.html">数据与 Owner</a><a href="../主题/执行与状态.html">执行与结果</a><a href="../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../公共资源/routes.js"></script><script src="../公共资源/site.js"></script></body></html>

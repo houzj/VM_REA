@@ -1,0 +1,533 @@
+{
+  "id": "workflow-run",
+  "title": "主界面运行流程",
+  "question": "运行按钮如何到节点ExecuteAsync，调度顺序由谁决定？",
+  "current": [
+    {
+      "id": "ERU01",
+      "from": "运行流程工具栏按钮",
+      "to": "Run → StartRunCore",
+      "member": "BuildChrome / Run",
+      "condition": "button action; activeRun null; CanStartWorkflow true",
+      "behavior": "运行动作调用Run/StartRun，拒绝已有运行与不合法图，并创建本轮CancellationTokenSource。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/MainWindow.xaml.cs",
+          "member": "Tool(\"toolbar_ic_topbar_综合配置_normal.png\"",
+          "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+          "start": 52,
+          "end": 52,
+          "excerpt": "  Tool(\"toolbar_toolbarSave_normal.png\",\"保存\",()=>Save(false));Tool(\"toolbar_toolbarOpen_normal.png\",\"打开方案\",Open);undoToolButton=Tool(\"toolbar_ic_topbar_undo_normal.png\",\"撤销\",UndoShell);SetToolbarStateIcon(undoToolButton,\"toolbar_ic_topbar_undo_normal.png\",\"toolbar_ic_topbar_undo_disable.png\");redoToolButton=Tool(\"toolbar_ic_topbar_redo_normal.png\",\"重做\",RedoShell);SetToolbarStateIcon(redoToolButton,\"toolbar_ic_topbar_redo_normal.png\",\"toolbar_ic_topbar_redo_disable.png\");lockToolButton=Tool(\"toolbar_ic_topbar_lock_normal.png\",\"锁定工作区\",RequestWorkAreaLock);Sep();Tool(\"toolbar_ic_topbar_camera_normal.png\",\"相机列表\",()=>RefreshCameraProvider(true));Tool(\"toolbar_ic_全局变量_normal.png\",\"全局变量（变量模型尚未接入）\",null);Tool(\"toolbar_ic_通信管理_normal.png\",\"通信管理（通信模块尚未接入）\",null);Tool(\"toolbar_ic_topbar_全局触发_normal.png\",\"全局触发（触发器尚未接入）\",null);Tool(\"toolbar_ic_script_normal.png\",\"脚本（脚本引擎尚未接入）\",null);Sep();Tool(\"toolbar_toolbarStart_normal.png\",\"运行流程\",()=>{_=Run();});continuousToolButton=Tool(\"toolbar_toolbarRunRepeat_normal.png\",\"连续运行\",StartContinuous);stopToolButton=Tool(\"toolbar_toolBarStop_normal.png\",\"停止\",()=>activeRun?.Cancel());Tool(\"toolbar_ic_topbar_综合配置_normal.png\",\"综合配置（系统配置尚未接入）\",null);",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "async Task StartRunCore(",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 20,
+          "end": 25,
+          "excerpt": " async Task StartRunCore(bool allowGroup,string? procedureId=null)\n {\n  if(activeRun is not null||!CanStartWorkflow(allowGroup,procedureId))return;\n  continuousRun=false;runningProcedureId=procedureId??doc.RootProcedureId(doc.CurrentProcedureId);var owner=new CancellationTokenSource();activeRun=owner;RefreshAll();\n  try{await RunCore(runningProcedureId,owner.Token);}finally{FinishWorkflowRun(owner);}\n }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ERU02",
+      "from": "RunCore captured workspace/owner/scope",
+      "to": "Task.Run(SolutionExecutor.RunAsync)",
+      "member": "MainWindow.RunCore",
+      "condition": "execution owner still current",
+      "behavior": "捕获UI dispatcher进度与owner，构造SolutionWorkspace并把本轮token/scope/control传给SolutionExecutor；回到UI后再次核owner。 连续运行每轮重新调用RunCore，因此每轮重新捕获owner/scope/workspace；外层ContinuousRun另保留循环stamp，二者不混同。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "var session=await Task.Run(()=>new SolutionExecutor",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 38,
+          "end": 41,
+          "excerpt": "   var session=await Task.Run(()=>new SolutionExecutor(modules).RunAsync(workspace,procedureId,progress:progress,cancellationToken:token,scope:ownerScope,control:control),token);\n   if(!IsCurrentExecutionOwner(owner))return false;\n   if(control.StopRequested)continuousRun=false;\n",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionEditor/WorkflowExecution.cs",
+          "member": "async Task ContinuousRun(string procedureId,CancellationTokenSource owner)",
+          "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+          "start": 80,
+          "end": 86,
+          "excerpt": " async Task ContinuousRun(string procedureId,CancellationTokenSource owner)\n {\n  var stamp=CaptureExecutionOwner();\n  try{while(!owner.IsCancellationRequested&&continuousRun&&IsCurrentExecutionOwner(stamp)){bool ok=await RunCore(procedureId,owner.Token);if(!IsCurrentExecutionOwner(stamp))break;var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){StatusText.Text=\"流程 NG，已停止连续运行\";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}\n  catch(OperationCanceledException){if(IsCurrentExecutionOwner(stamp))StatusText.Text=\"连续运行已停止\";}\n  catch(Exception error){if(IsCurrentExecutionOwner(stamp))StatusText.Text=\"连续运行失败：\"+error.Message;}\n  finally{FinishWorkflowRun(owner);}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ERU03",
+      "from": "SolutionExecutor.RunAsync",
+      "to": "GraphExecutor.RunAsync",
+      "member": "SolutionExecutor.RunAsync / local Execute",
+      "condition": "document/call/group structure validated; resources verified",
+      "behavior": "复制方案/节点配置快照、核子过程与资源；本地Execute按procedure WaitTime链接token，再调用GraphExecutor。Group循环是当前独立策略，未套参考ReadyQueue。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "SolutionStore.ValidateStructure(workspace.Document);",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 12,
+          "end": 18,
+          "excerpt": "        SolutionStore.ValidateStructure(workspace.Document);\n        var document=workspace.Document with{Resources=workspace.Document.Resources.ToArray(),Procedures=workspace.Document.Procedures.Select(p=>p with{Configuration=(p.GroupOwner is not null?GroupDisplayLinks.Synchronize(p.Configuration,p.Configuration):p.Configuration).Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(v=>v.Key,v=>v.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};\n        WorkflowCalls.Validate(document,procedureId);\n        var checkedProcedures=new HashSet<string>();void ValidateBreaks(string id){if(!checkedProcedures.Add(id))return;var parent=document.Procedures.Single(p=>p.Id==id);foreach(var node in parent.Nodes){if(node.GroupBreak is not null){var body=document.Procedures.SingleOrDefault(p=>p.Id==node.Call?.ProcedureId)??throw new InvalidDataException(\"Break metadata requires a Group body.\");GroupBreak.Validate(parent,node,body,registry);}if(node.Enabled&&node.Call is {} call)ValidateBreaks(call.ProcedureId);}}ValidateBreaks(procedureId);\n        var resources=document.Resources.ToArray();var catalog=new ResourceCatalog(workspace.BaseDirectory,resources);\n        foreach(var resource in resources){if(cancellationToken.IsCancellationRequested)break;using var stream=catalog.OpenVerified(resource.Id);}\n        async Task<ExecutionSessionResult> Execute(string id,IReadOnlyDictionary<string,PortValue>? arguments,CancellationToken token,int depth,int? groupLoopIndex=null){",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/SolutionExecutor.cs",
+          "member": "var session=await new GraphExecutor(registry).RunAsync",
+          "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+          "start": 47,
+          "end": 51,
+          "excerpt": "                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex,scope,control,new ResourceCatalog(workspace.BaseDirectory,workspace.Document.Resources));\n                if(wait.IsCancellationRequested&&!token.IsCancellationRequested&&session.Status==SessionStatus.Cancelled)\n                    session=session with{Status=SessionStatus.TimedOut,Nodes=session.Nodes.Select(n=>n.Status==NodeRunStatus.Cancelled?n with{Status=NodeRunStatus.TimedOut,ErrorCode=\"ProcedureWaitTimeout\",Message=\"Procedure wait time elapsed\"}:n).ToArray()};\n                return session with{GroupLoopIndex=groupLoopIndex};\n            }",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ERU04",
+      "from": "GraphExecutor validated ExecutionOrder",
+      "to": "registry.Create → module.ExecuteAsync",
+      "member": "GraphExecutor.RunAsync",
+      "condition": "each validated order node; enabled/cancellation/predecessor/subscription/type gates",
+      "behavior": "按GraphValidator给出的ExecutionOrder逐节点处理；连接/订阅解析后创建模块并await ExecuteAsync。不是从项目依赖图推得运行顺序，也不是已证的并行ReadyQueue调度。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "foreach(var id in validation.ExecutionOrder)",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 13,
+          "end": 17,
+          "excerpt": "  foreach(var id in validation.ExecutionOrder){\n   var n=p.Nodes.First(x=>x.Id==id);var d=descriptors[id];var sw=Stopwatch.StartNew();\n   void Record(NodeRunStatus s,IReadOnlyDictionary<string,PortValue>? outputs=null,string? code=null,string? message=null,uint? nativeCode=null){records[id]=new(id,s,outputs??Empty(),sw.Elapsed.TotalMilliseconds,code,message){NativeErrorCode=nativeCode};workflow.Update(id);Report(id,s,message);}\n   if(!n.Enabled){Record(NodeRunStatus.Skipped,message:\"Disabled\");continue;}if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}\n   if(executionEdges.Where(e=>e.ToNode==id).Any(e=>suppressed.Contains(e.FromNode)||(selectedSuccessors.TryGetValue(e.FromNode,out var selected)&&!selected.Contains(id))||records[e.FromNode].Status is not(NodeRunStatus.Success or NodeRunStatus.NoMatch))){Record(NodeRunStatus.Skipped,code:\"ExecutionPredecessorUnavailable\");continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "try{if(n.ModuleId==WorkflowCalls.ModuleId)",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 35,
+          "end": 35,
+          "excerpt": "   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "relationEvidence": "actual-current-source"
+    },
+    {
+      "id": "ERU05",
+      "from": "module result/exception",
+      "to": "NodeRunRecord → WorkflowRunContext.Complete",
+      "member": "GraphExecutor.RunAsync",
+      "condition": "after module cooperative return/disposal; validate status/descriptor/outputs",
+      "behavior": "finally处理模块IAsyncDisposable/IDisposable，核结果和动态输出，再保存记录、汇总Cancelled/TimedOut/Failed/Success并返回session。",
+      "classification": "independent-implementation",
+      "refs": [
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "try{if(n.ModuleId==WorkflowCalls.ModuleId)",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 35,
+          "end": 36,
+          "excerpt": "   try{if(n.ModuleId==WorkflowCalls.ModuleId){if(callProcedure is null)throw new InvalidOperationException(\"Subprogram requires solution execution context.\");var child=await callProcedure(n with{Parameters=parameters,GroupBreak=GroupBreak.Capture(n,workflow.Resolve)},new ReadOnlyDictionary<string,PortValue>(nodeInputs),linked.Token);calls[id]=child;result=new(child.Status==SessionStatus.Success?ModuleStatus.Success:ModuleStatus.Failed,child.Status==SessionStatus.Success?child.WorkflowOutputs:Empty(),child.Status==SessionStatus.Success?null:\"SubprogramFailed\",child.Status==SessionStatus.Success?null:child.Status+\": \"+string.Join(\"; \",child.OutputErrors.Concat(child.Nodes.Where(r=>r.ErrorCode is not null).Select(r=>r.NodeId+\": \"+r.ErrorCode+\" \"+r.Message))));}else{module=registry.Create(n.ModuleId,n.ModuleVersion);linked.Token.ThrowIfCancellationRequested();scope?.ForProcedure(p.Id).RememberExecutionParameters(n.ModuleId,id,control?.ParameterSeed?.Invoke(id)??n.Parameters,parameters);result=await module.ExecuteAsync(new(id,Path.GetFullPath(baseDirectory),new ReadOnlyDictionary<string,PortValue>(nodeInputs),new ReadOnlyDictionary<string,System.Text.Json.JsonElement>(parameters),n.Rois,n.RoiGroups){Scope=scope?.ForProcedure(p.Id),Control=control,ProcedureId=p.Id,Resources=resources,ExecutionSuccessors=Array.AsReadOnly(visibleSuccessors.ToArray()),ReadNumericInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredNumericRead)?numericInputRead?.Invoke(id,name,index)??numericReader?.Read(name,index):null,ReadIntegerInput=(name,index)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredIntegerRead)?integerInputRead?.Invoke(id,name,index)??numericReader?.ReadInteger(name,index):null,ReadTextInput=(name,index,capacity)=>d.Inputs.Any(port=>port.Name==name&&port.SupportsDeferredTextRead)?textInputRead?.Invoke(id,name,index,capacity)??numericReader?.ReadText(name,index,capacity):null},linked.Token);}}catch(Exception ex){error=ex;}finally{try{if(module is IAsyncDisposable a)await a.DisposeAsync();else if(module is IDisposable b)b.Dispose();}catch(Exception ex){error??=ex;}}\n   if(cancellationToken.IsCancellationRequested){Record(NodeRunStatus.Cancelled,code:\"Cancelled\");continue;}if(timeout.IsCancellationRequested){Record(NodeRunStatus.TimedOut,code:\"Timeout\",message:\"Cooperative module timeout\");continue;}if(error is not null){Record(NodeRunStatus.Failed,code:\"ModuleException\",message:error.Message);continue;}if(result is null){Record(NodeRunStatus.Failed,code:\"InvalidResult\");continue;}if(!Enum.IsDefined(result.Status)){Record(NodeRunStatus.Failed,code:\"InvalidResult\",message:\"Unknown module status\");continue;}if(result.Status==ModuleStatus.Failed&&!result.PreserveFailedOutputs){Record(NodeRunStatus.Failed,code:result.ErrorCode??\"ModuleFailed\",message:result.Message,nativeCode:result.NativeErrorCode);continue;}",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "src/VisionFramework/GraphExecutor.cs",
+          "member": "var all=validation.ExecutionOrder.Select",
+          "sha256": "6fed55fe29e547248cab05a36072e690b76eb9668609f0318b795c24d7628f9c",
+          "start": 48,
+          "end": 49,
+          "excerpt": "  var all=validation.ExecutionOrder.Select(id=>records[id]).ToArray();var status=cancellationToken.IsCancellationRequested||scope?.Stopping.IsCancellationRequested==true||all.Any(n=>n.Status==NodeRunStatus.Cancelled)?SessionStatus.Cancelled:all.Any(n=>n.Status==NodeRunStatus.TimedOut)?SessionStatus.TimedOut:all.Any(n=>n.Status==NodeRunStatus.Failed)?SessionStatus.Failed:SessionStatus.Success;\n  return workflow.Complete(new(status,Array.AsReadOnly(all)){Calls=new ReadOnlyDictionary<string,ExecutionSessionResult>(calls),NodeDescriptors=new ReadOnlyDictionary<string,ModuleDescriptor>(descriptors)});",
+          "evidenceType": "current-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "await返回前不证明native可抢占停止或全部输出像素深复制。"
+      ],
+      "relationEvidence": "actual-current-source"
+    }
+  ],
+  "original": [
+    {
+      "id": "execution-storage:G00",
+      "route": "原版 · 全局单次",
+      "classification": "source-confirmed",
+      "from": "Lang_SigRun 资源",
+      "to": "SigRun / SingleRunTemplate / GetSolution",
+      "behavior": "默认原菜单将方法名、独立模板和数据工厂明确关联：methodName=SigRun、customItemTemplateName=SingleRunTemplate、getCustomItemDataContextMethodName=GetSolution。CustomItemData空才反射调用工厂；GetSolution赋VmSolution.Instance并去重订阅RestoreDefaultDisplay，回调清数据缓存。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/menuitems.xml",
+          "member": "MenuItems Lang_SigRun declaration",
+          "sha256": "d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959",
+          "start": 354,
+          "end": 365,
+          "excerpt": "\t\t\t\t\t<name>Lang_SigRun</name>\n\t\t\t\t\t<methodName>SigRun</methodName>\n\t\t\t\t\t<toolGroupItemInfo>\n\t\t\t\t\t\t<groupName>group3</groupName>\n\t\t\t\t\t\t<priority>0</priority>\n\t\t\t\t\t</toolGroupItemInfo>\n\t\t\t\t\t<customItemTemplateName>SingleRunTemplate</customItemTemplateName>\n\t\t\t\t\t<getCustomItemDataContextMethodName>GetSolution</getCustomItemDataContextMethodName>\n\t\t\t\t\t<imageEnablePath>Resources\\ToolBar\\toolbarStart_normal.png</imageEnablePath>\n\t\t\t\t\t<imageDisablePath>Resources\\ToolBar\\toolbarStart_disable.png</imageDisablePath>\n\t\t\t\t</TitleMenueItemData>\n\t\t\t\t<!--连续执行和停止-->",
+          "evidenceType": "local-extracted-resource",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "TitleMenueItemData.CustomItemData",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 162,
+          "end": 181,
+          "excerpt": "\tpublic object CustomItemData\n\t{\n\t\tget\n\t\t{\n\t\t\tif (customItemData == null)\n\t\t\t{\n\t\t\t\tExcuteMethodByName(getCustomItemDataContextMethodName);\n\t\t\t}\n\t\t\treturn customItemData;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (customItemData != value)\n\t\t\t{\n\t\t\t\tcustomItemData = value;\n\t\t\t\tOnPropertyChanged(\"CustomItemData\");\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "TitleMenueItemData.GetSolution",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 303,
+          "end": 315,
+          "excerpt": "\tpublic void GetSolution()\n\t{\n\t\tCustomItemData = VmSolution.Instance;\n\t\tVmSolution.RestoreDefaultDisplay -= VmSolution_RestoreDefaultDisplay;\n\t\tVmSolution.RestoreDefaultDisplay += VmSolution_RestoreDefaultDisplay;\n\t}\n\n\tprivate void VmSolution_RestoreDefaultDisplay(object sender, EventArgs e)\n\t{\n\t\tCustomItemData = null;\n\t\tRunData = null;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "该默认菜单声明不代替其它模式及运行时XML类型物化证明。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "MenuItems Lang_SigRun declaration / TitleMenueItemData.CustomItemData / TitleMenueItemData.GetSolution",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "G00",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "G00",
+        "route": "原版 · 全局单次",
+        "classification": "source-confirmed",
+        "from": "Lang_SigRun 资源",
+        "to": "SigRun / SingleRunTemplate / GetSolution",
+        "behavior": "默认原菜单将方法名、独立模板和数据工厂明确关联：methodName=SigRun、customItemTemplateName=SingleRunTemplate、getCustomItemDataContextMethodName=GetSolution。CustomItemData空才反射调用工厂；GetSolution赋VmSolution.Instance并去重订阅RestoreDefaultDisplay，回调清数据缓存。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VisionMaster.Exe.Audit/menuitems.xml",
+            "member": "MenuItems Lang_SigRun declaration",
+            "sha256": "d9e9a1da6aeca60d97129cb71e07e9f074ed049c09f5a88f168608a01f6e7959",
+            "start": 354,
+            "end": 365,
+            "excerpt": "\t\t\t\t\t<name>Lang_SigRun</name>\n\t\t\t\t\t<methodName>SigRun</methodName>\n\t\t\t\t\t<toolGroupItemInfo>\n\t\t\t\t\t\t<groupName>group3</groupName>\n\t\t\t\t\t\t<priority>0</priority>\n\t\t\t\t\t</toolGroupItemInfo>\n\t\t\t\t\t<customItemTemplateName>SingleRunTemplate</customItemTemplateName>\n\t\t\t\t\t<getCustomItemDataContextMethodName>GetSolution</getCustomItemDataContextMethodName>\n\t\t\t\t\t<imageEnablePath>Resources\\ToolBar\\toolbarStart_normal.png</imageEnablePath>\n\t\t\t\t\t<imageDisablePath>Resources\\ToolBar\\toolbarStart_disable.png</imageDisablePath>\n\t\t\t\t</TitleMenueItemData>\n\t\t\t\t<!--连续执行和停止-->",
+            "evidenceType": "local-extracted-resource",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+            "member": "TitleMenueItemData.CustomItemData",
+            "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+            "start": 162,
+            "end": 181,
+            "excerpt": "\tpublic object CustomItemData\n\t{\n\t\tget\n\t\t{\n\t\t\tif (customItemData == null)\n\t\t\t{\n\t\t\t\tExcuteMethodByName(getCustomItemDataContextMethodName);\n\t\t\t}\n\t\t\treturn customItemData;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (customItemData != value)\n\t\t\t{\n\t\t\t\tcustomItemData = value;\n\t\t\t\tOnPropertyChanged(\"CustomItemData\");\n\t\t\t}\n\t\t}\n\t}\n",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+            "member": "TitleMenueItemData.GetSolution",
+            "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+            "start": 303,
+            "end": 315,
+            "excerpt": "\tpublic void GetSolution()\n\t{\n\t\tCustomItemData = VmSolution.Instance;\n\t\tVmSolution.RestoreDefaultDisplay -= VmSolution_RestoreDefaultDisplay;\n\t\tVmSolution.RestoreDefaultDisplay += VmSolution_RestoreDefaultDisplay;\n\t}\n\n\tprivate void VmSolution_RestoreDefaultDisplay(object sender, EventArgs e)\n\t{\n\t\tCustomItemData = null;\n\t\tRunData = null;\n\t}\n",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "该默认菜单声明不代替其它模式及运行时XML类型物化证明。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "execution-storage:G01",
+      "route": "原版 · 全局单次",
+      "classification": "source-confirmed",
+      "from": "TitleMenueItemData.SigRun",
+      "to": "VmSolution.Instance.Run",
+      "behavior": "CheckRun 遍历流程装饰器：启用流程非 Ready 或全部禁用时拒绝；通过后调用方案 Run。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+          "member": "TitleMenueItemData.CheckRun / SigRun",
+          "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+          "start": 1438,
+          "end": 1479,
+          "excerpt": "\tprivate static bool CheckRun()\n\t{\n\t\tIEnumerable<VmProcedureDecorator> enumerable = from p in VmSolution.Instance.Modules.OfType<VmProcedure>()\n\t\t\tselect new VmProcedureDecorator\n\t\t\t{\n\t\t\t\tDecorateSource = p\n\t\t\t};\n\t\tVmProcedureDecorator vmProcedureDecorator;\n\t\tif ((vmProcedureDecorator = enumerable.FirstOrDefault((VmProcedureDecorator p) => p.WorkState != StatusBarSymbol.Ready && p.IsEnabled)) != null)\n\t\t{\n\t\t\tstring strMsg = vmProcedureDecorator.VMProcedure.Name + \":\" + vmProcedureDecorator.WorkStateInfo;\n\t\t\tHikMessageBox.Show(strMsg, MessageIcons.Error);\n\t\t\treturn false;\n\t\t}\n\t\tif (enumerable != null && enumerable.Where((VmProcedureDecorator p) => !p.IsEnabled).Count() == enumerable.Count())\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"流程处于禁用状态\"), MessageIcons.Warning);\n\t\t\treturn false;\n\t\t}\n\t\treturn true;\n\t}\n\n\tpublic static void SigRun()\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (CheckRun())\n\t\t\t{\n\t\t\t\tVmSolution.Instance.Run();\n\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"Run Once\"), false, true);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tif (ex is VmException ex2)\n\t\t\t{\n\t\t\t\tstring strMsg = AppLocalizationService.GetLang(\"Lang_GlobalScript\") + \":\" + ErrorCodeInfo.GetErrorInfo(ex2.errorCode);\n\t\t\t\tHikMessageBox.Show(strMsg, MessageIcons.Error);\n\t\t\t}\n\t\t}\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [
+        "G00/G05/G06已补默认资源、模板和命令消费者；运行时物化/绑定仍未验证。"
+      ],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "TitleMenueItemData.CheckRun / SigRun",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "G01",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "G01",
+        "route": "原版 · 全局单次",
+        "classification": "source-confirmed",
+        "from": "TitleMenueItemData.SigRun",
+        "to": "VmSolution.Instance.Run",
+        "behavior": "CheckRun 遍历流程装饰器：启用流程非 Ready 或全部禁用时拒绝；通过后调用方案 Run。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster.AppMainWindow/TitleMenueItemData.cs",
+            "member": "TitleMenueItemData.CheckRun / SigRun",
+            "sha256": "b1c349c4808c0ce49c45e6fcca2972d370ed5a8f3e96ac51a157a680b42c9187",
+            "start": 1438,
+            "end": 1479,
+            "excerpt": "\tprivate static bool CheckRun()\n\t{\n\t\tIEnumerable<VmProcedureDecorator> enumerable = from p in VmSolution.Instance.Modules.OfType<VmProcedure>()\n\t\t\tselect new VmProcedureDecorator\n\t\t\t{\n\t\t\t\tDecorateSource = p\n\t\t\t};\n\t\tVmProcedureDecorator vmProcedureDecorator;\n\t\tif ((vmProcedureDecorator = enumerable.FirstOrDefault((VmProcedureDecorator p) => p.WorkState != StatusBarSymbol.Ready && p.IsEnabled)) != null)\n\t\t{\n\t\t\tstring strMsg = vmProcedureDecorator.VMProcedure.Name + \":\" + vmProcedureDecorator.WorkStateInfo;\n\t\t\tHikMessageBox.Show(strMsg, MessageIcons.Error);\n\t\t\treturn false;\n\t\t}\n\t\tif (enumerable != null && enumerable.Where((VmProcedureDecorator p) => !p.IsEnabled).Count() == enumerable.Count())\n\t\t{\n\t\t\tHikMessageBox.Show(AppLocalizationService.GetLang(\"流程处于禁用状态\"), MessageIcons.Warning);\n\t\t\treturn false;\n\t\t}\n\t\treturn true;\n\t}\n\n\tpublic static void SigRun()\n\t{\n\t\ttry\n\t\t{\n\t\t\tif (CheckRun())\n\t\t\t{\n\t\t\t\tVmSolution.Instance.Run();\n\t\t\t\tUILogManager.logCreate(\"信息\", AppLocalizationService.GetLang(\"Run Once\"), false, true);\n\t\t\t}\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tif (ex is VmException ex2)\n\t\t\t{\n\t\t\t\tstring strMsg = AppLocalizationService.GetLang(\"Lang_GlobalScript\") + \":\" + ErrorCodeInfo.GetErrorInfo(ex2.errorCode);\n\t\t\t\tHikMessageBox.Show(strMsg, MessageIcons.Error);\n\t\t\t}\n\t\t}\n\t}\n",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [
+          "G00/G05/G06已补默认资源、模板和命令消费者；运行时物化/绑定仍未验证。"
+        ],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "execution-storage:G02",
+      "route": "原版 · 全局单次",
+      "classification": "source-confirmed",
+      "from": "VmSolution.Run",
+      "to": "GlobalModuleManager.GlobalScriptStartRunOnce",
+      "behavior": "IsGlobalRuning 先设 true；调用全局脚本单次入口；正常及 catch 路径设 false，catch 重抛。此处不直接调用 VmProcedure.Run。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+          "member": "VmSolution.Run",
+          "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+          "start": 2236,
+          "end": 2257,
+          "excerpt": "\tpublic override void Run()\n\t{\n\t\tIsGlobalRuning = true;\n\t\tLogHelper.Info(\"全局点击Run设置IsGlobalRuning为true\");\n\t\ttry\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mGlobalModuleManager.GlobalScriptStartRunOnce();\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tIsGlobalRuning = false;\n\t\t\tthrow ex;\n\t\t}\n\t\tIsGlobalRuning = false;\n\t\tLogHelper.Info(\"全局点击Run设置IsGlobalRuning为false\");\n\t}\n\n\t/// <summary>\n\t/// CH:开启全部模块结果回调 | EN: Enable all module result callback\n\t/// </summary>\n\tpublic void EnableModulesCallback()\n\t{",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "VmSolution.Run",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "G02",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "G02",
+        "route": "原版 · 全局单次",
+        "classification": "source-confirmed",
+        "from": "VmSolution.Run",
+        "to": "GlobalModuleManager.GlobalScriptStartRunOnce",
+        "behavior": "IsGlobalRuning 先设 true；调用全局脚本单次入口；正常及 catch 路径设 false，catch 重抛。此处不直接调用 VmProcedure.Run。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+            "member": "VmSolution.Run",
+            "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+            "start": 2236,
+            "end": 2257,
+            "excerpt": "\tpublic override void Run()\n\t{\n\t\tIsGlobalRuning = true;\n\t\tLogHelper.Info(\"全局点击Run设置IsGlobalRuning为true\");\n\t\ttry\n\t\t{\n\t\t\tServerSDKManager.serverSDKManager.mGlobalModuleManager.GlobalScriptStartRunOnce();\n\t\t}\n\t\tcatch (Exception ex)\n\t\t{\n\t\t\tIsGlobalRuning = false;\n\t\t\tthrow ex;\n\t\t}\n\t\tIsGlobalRuning = false;\n\t\tLogHelper.Info(\"全局点击Run设置IsGlobalRuning为false\");\n\t}\n\n\t/// <summary>\n\t/// CH:开启全部模块结果回调 | EN: Enable all module result callback\n\t/// </summary>\n\tpublic void EnableModulesCallback()\n\t{",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "execution-storage:G03",
+      "route": "原版 · 全局单次",
+      "classification": "source-confirmed",
+      "from": "GlobalScriptStartRunOnce",
+      "to": "NativeMethods.IMVS_ExecuteOnce4GlobalScript",
+      "behavior": "传 CVmObjectBase.mhandle；非零返回码构造并抛出 VmException。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/GlobalModuleManager.cs",
+          "member": "GlobalModuleManager.GlobalScriptStartRunOnce",
+          "sha256": "ab2b834644df65e6a41bb76efc8bdc241f427c671afbd0f4d5c64237c34a6f13",
+          "start": 208,
+          "end": 218,
+          "excerpt": "\tpublic int GlobalScriptStartRunOnce()\n\t{\n\t\tint num = NativeMethods.IMVS_ExecuteOnce4GlobalScript(CVmObjectBase.mhandle);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t\treturn num;\n\t}\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "GlobalModuleManager.GlobalScriptStartRunOnce",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "G03",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "G03",
+        "route": "原版 · 全局单次",
+        "classification": "source-confirmed",
+        "from": "GlobalScriptStartRunOnce",
+        "to": "NativeMethods.IMVS_ExecuteOnce4GlobalScript",
+        "behavior": "传 CVmObjectBase.mhandle；非零返回码构造并抛出 VmException。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/GlobalModuleManager.cs",
+            "member": "GlobalModuleManager.GlobalScriptStartRunOnce",
+            "sha256": "ab2b834644df65e6a41bb76efc8bdc241f427c671afbd0f4d5c64237c34a6f13",
+            "start": 208,
+            "end": 218,
+            "excerpt": "\tpublic int GlobalScriptStartRunOnce()\n\t{\n\t\tint num = NativeMethods.IMVS_ExecuteOnce4GlobalScript(CVmObjectBase.mhandle);\n\t\tif (num != 0)\n\t\t{\n\t\t\tVmException ex = new VmException(num);\n\t\t\tthrow ex;\n\t\t}\n\t\treturn num;\n\t}\n",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          }
+        ],
+        "unknowns": [],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    },
+    {
+      "id": "execution-storage:G07",
+      "route": "原版 · 全局单次",
+      "classification": "source-confirmed",
+      "from": "NativeMethods DllImport声明",
+      "to": "x64 PE导出 IMVS_ExecuteOnce4GlobalScript",
+      "behavior": "托管声明DLL为相对路径iMVS-6000PlatformSDK.dll。选定安装PublicFile/x64原件SHA b62d7e…a54a9a1，PE表确认同名非转发导出、ordinal429、RVA0x00648df0/VA0x180648df0；入口32字节逐次重核。PE表不证明运行进程实际加载此副本或handle ABI。",
+      "refs": [
+        {
+          "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+          "member": "NativeMethods global-script PInvoke declaration",
+          "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+          "start": 137,
+          "end": 141,
+          "excerpt": "\tpublic static extern int IMVS_OpenGlobalScriptInteface(IntPtr handle);\n\n\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\")]\n\tpublic static extern int IMVS_ExecuteOnce4GlobalScript(IntPtr handle);\n",
+          "evidenceType": "local-decompiled-source",
+          "binaryIdentity": "not revalidated in this slice"
+        },
+        {
+          "path": "docs/architecture-recovery/global-run-export.json",
+          "member": "Selected x64 original PE export table",
+          "sha256": "dd9cdfb559ab7e99471353d4bfa81490a7f921a2ddb5dfd519f0c0629517eae1",
+          "start": 10,
+          "end": 18,
+          "excerpt": "      \"name\": \"IMVS_ExecuteOnce4GlobalScript\",\n      \"ordinal\": 429,\n      \"rva\": \"0x00648df0\",\n      \"virtualAddress\": \"0x180648df0\",\n      \"forwarded\": false,\n      \"forwarder\": null,\n      \"fileOffset\": 6586864,\n      \"first32Bytes\": \"40534883ec20488bd9e872c3ffff4885c0741c488b10488b02488bc8483bc274\"\n    }",
+          "evidenceType": "read-only-PE-export-table-and-bytes",
+          "binaryIdentity": "selected installed x64 file SHA-256 and entry bytes revalidated; runtime resolution unknown"
+        }
+      ],
+      "unknowns": [],
+      "verification": {
+        "method": "static resource, body and call-site inspection",
+        "runtimeExecuted": false,
+        "nativeEquivalent": false
+      },
+      "member": "NativeMethods global-script PInvoke declaration / Selected x64 original PE export table",
+      "condition": "Preserve the branch conditions in the formal behavior and original excerpts; no extra instance join.",
+      "originalKey": "G07",
+      "originalDocument": "docs/architecture-recovery/execution-storage.edges.json",
+      "originalRecord": {
+        "id": "G07",
+        "route": "原版 · 全局单次",
+        "classification": "source-confirmed",
+        "from": "NativeMethods DllImport声明",
+        "to": "x64 PE导出 IMVS_ExecuteOnce4GlobalScript",
+        "behavior": "托管声明DLL为相对路径iMVS-6000PlatformSDK.dll。选定安装PublicFile/x64原件SHA b62d7e…a54a9a1，PE表确认同名非转发导出、ordinal429、RVA0x00648df0/VA0x180648df0；入口32字节逐次重核。PE表不证明运行进程实际加载此副本或handle ABI。",
+        "refs": [
+          {
+            "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+            "member": "NativeMethods global-script PInvoke declaration",
+            "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0",
+            "start": 137,
+            "end": 141,
+            "excerpt": "\tpublic static extern int IMVS_OpenGlobalScriptInteface(IntPtr handle);\n\n\t[DllImport(\".\\\\iMVS-6000PlatformSDK.dll\")]\n\tpublic static extern int IMVS_ExecuteOnce4GlobalScript(IntPtr handle);\n",
+            "evidenceType": "local-decompiled-source",
+            "binaryIdentity": "not revalidated in this slice"
+          },
+          {
+            "path": "docs/architecture-recovery/global-run-export.json",
+            "member": "Selected x64 original PE export table",
+            "sha256": "dd9cdfb559ab7e99471353d4bfa81490a7f921a2ddb5dfd519f0c0629517eae1",
+            "start": 10,
+            "end": 18,
+            "excerpt": "      \"name\": \"IMVS_ExecuteOnce4GlobalScript\",\n      \"ordinal\": 429,\n      \"rva\": \"0x00648df0\",\n      \"virtualAddress\": \"0x180648df0\",\n      \"forwarded\": false,\n      \"forwarder\": null,\n      \"fileOffset\": 6586864,\n      \"first32Bytes\": \"40534883ec20488bd9e872c3ffff4885c0741c488b10488b02488bc8483bc274\"\n    }",
+            "evidenceType": "read-only-PE-export-table-and-bytes",
+            "binaryIdentity": "selected installed x64 file SHA-256 and entry bytes revalidated; runtime resolution unknown"
+          }
+        ],
+        "unknowns": [],
+        "verification": {
+          "method": "static resource, body and call-site inspection",
+          "runtimeExecuted": false,
+          "nativeEquivalent": false
+        }
+      },
+      "relationEvidence": "formal-edge-reuse"
+    }
+  ],
+  "unknowns": [
+    "原主工具栏SigRun通向全局脚本运行；流程Tab单次另有P01–P03，不与当前选择根流程策略混同。"
+  ],
+  "joinPolicy": "Edges are individually evidenced relationships. Array order is a reading order; no adjacent pair is automatically the same invocation/object/thread. Explicit gaps remain visible."
+}

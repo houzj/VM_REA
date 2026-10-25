@@ -1,0 +1,108 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A01：原始 UpdateLoad 的隔离托管运行证据 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / A01：原始 UpdateLoad 的隔离托管运行证据</p><h1>A01：原始 UpdateLoad 的隔离托管运行证据</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A01：原始 UpdateLoad 的隔离托管运行证据</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="A01-loader-batch1.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="A01-loader-batch1.html#a01原始-updateload-的隔离托管运行证据">A01：原始 UpdateLoad 的隔离托管运行证据</a></p><p style="margin-left:14px"><a href="A01-loader-batch1.html#身份与取证边界">身份与取证边界</a></p><p style="margin-left:14px"><a href="A01-loader-batch1.html#构造依赖和副作用的源码核对">构造、依赖和副作用的源码核对</a></p><p style="margin-left:14px"><a href="A01-loader-batch1.html#本批真实执行">本批真实执行</a></p><p style="margin-left:14px"><a href="A01-loader-batch1.html#原始-cil-锚点与限制">原始 CIL 锚点与限制</a></p></details><h1 id="a01原始-updateload-的隔离托管运行证据">A01：原始 UpdateLoad 的隔离托管运行证据</h1><p>2026-10-19；main 基线 <code>2649c3b268df351a1585c30546a0115c4fb3753e</code>。本批运行原厂未修改的 <code>VMControls.Data.ToolBoxData.UpdateLoad</code>，不以独立重写状态机代替原方法。17 个断言、10 条观察通过，执行器最终退出 0。A01 一级包仍开放：本批没有执行完整工具箱 UI、LoadData/Reload 或 Group SDK 导入。</p>
+<h2 id="身份与取证边界">身份与取证边界</h2><ul>
+<li>原文件：<code>D:/Program Files/VisionMaster4.4.0/Applications/myLibs/VMControls.Data.dll</code>。</li>
+<li>SHA256：<code>A0321EB4669C5114C791B32AF8D0CE5AC17A690210BC87319908658F7457A9F8</code>；MVID <code>8e3bf4de-1ba9-4d75-adc1-10ec9b2523f8</code>；assembly 1.0.0.0，.NET Framework 4.6.1、AnyCPU。</li>
+<li>REA 身份证据：<code>ev_bf0242bcea12b015c7793a0fae62b7d2ef8114378a17786e8fb5ac39435231e7</code>。</li>
+<li>REA 成员/CIL 证据：<code>ev_0dd9b2693de8c6d62eba0086d85c7cacb827c47fdf8e5f9d58ca3e99db6c2377</code>。原始 JSON 保留在 <code>analysis/full-audit/batch1-20261019/A01/rea-*.json</code>，不是仅保存终端摘要。</li>
+<li>反编译源码入口：<code>analysis/decompiled/VMControls.Data/VMControls.Data/ToolBoxData.cs:77</code>；本批用实际程序集执行验证其分支。Group 回调静态链沿用 <code>docs/LOADER-ROUND2-20261019.md</code>，不重复宣布为本批动态证据。</li>
+<li>探针：<code>tests/NativeEvidence/A01/LoaderStateProbe.cs</code>、<code>Run.ps1</code>；仅以反射设置探针创建对象的 group/placeholder/flattened collection 初态；调用原 <code>UpdateLoad</code>，不修改方法体或安装 XML。</li>
+</ul>
+<p>REA 静态工具不执行目标；运行结果来自独占 .NET Framework 探针进程，二者分别标识。没有打开 native 分析会话、启动平台、初始化设备、接管桌面或触碰 tool-plugins。</p>
+<h2 id="构造依赖和副作用的源码核对">构造、依赖和副作用的源码核对</h2><p>执行前按实际依赖追踪，而非假设“托管类无副作用”：</p>
+<ol>
+<li><code>ToolBoxData::.ctor</code> token <code>06000050</code> 只设置命令/布尔字段并调用 <code>Apps.Data.NotifyPropertyChangedBase::.ctor</code>；<code>.cctor</code> token <code>06000051</code> 创建同步对象和静态名称数组。</li>
+<li><code>ToolBoxItemData::.ctor</code> → <code>Apps.Data.ItemData::.ctor</code> → <code>NotifyPropertyChangedBaseNode::.ctor</code> → <code>Hik.Xml.BaseNode::.ctor</code>。后者创建 AES helper/NameList，设置 nodeName；AES 单例构造没有文件或平台调用。<code>BaseNode::.cctor</code> 建立本进程 startup/config 路径、ThicknessConverter 和同步对象。</li>
+<li>原 <code>BaseNode.loadXml(string,bool)</code> <strong>会把输入文件 Attributes 设为 Normal</strong>，且设置 <code>ActivatorWrap.IgnoreUnknown</code>，因此即使是“读 XML”也不能直接用安装原件。本探针只传自有合成 XML。</li>
+<li><code>Hik.Util.ActivatorWrap::.cctor</code> 会尝试 startup/myLibs/Librarys.Config；缺失会读取注册表回退至 SDK 路径，然后装载配置列出的程序集。执行器在独占 exe 基目录建立空 <code>myLibs/Librarys.Config</code>，使这段加载列表为空。没有替换厂商类、没有使用安装的全量装载清单。</li>
+<li><code>Apps.Log.LogHelper::.cctor</code> 会读取 HKLM 的 VisionMaster AssemblyFoldersEx 默认路径，并优先使用该目录下 <code>myLibs/Apps.BaseLog.config</code>；本机该文件确实存在。还会创建后台日志线程。仅设置探针工作目录不足以假定记录器隔离，因此本批不执行会调用 LogHelper.Info 的 LoadData/Reload，不实例化该日志服务。</li>
+</ol>
+<p>对应本地 CIL：<code>analysis/full-audit/batch1-20261019/A01/Apps.Data.il</code>、<code>VM.Xml.il</code>、<code>VM.Util.il</code>、<code>Apps.Log.il</code>、<code>VM.AppData.il</code>。通过已有 <code>dotnet-ildasm 0.12.2.0</code> 导出；它默认要求 .NET Core 3，首次启动失败，随后仅在当前命令进程设置 <code>DOTNET_ROLL_FORWARD=Major</code> 后成功，没有安装/升级运行时。未使用该工具的空 <code>-i</code> 输出作为源码证据。</p>
+<p>补充 REA 成员证据：Apps.Data <code>ev_6b090bcc7e8e2d75e7f306578daba8bb1dfa0a5f253668b95a297c0ead3e2ff6</code>；VM.AppData <code>ev_e53d49372f31754c73c98069575e4b68dc677d7ce949b658378f71898ee49d67</code>；Apps.Log <code>ev_947e7b8f95f6d81b852abe4c85089a35928a22b4f95d3749c2ac718abf1b3684</code>。这些静态调用不证明相关构造已运行。</p>
+<h2 id="本批真实执行">本批真实执行</h2><p>最终目录：<code>analysis/full-audit/batch1-20261019/A01/replay-373f6ddc25334451bc209272886d9273/</code>。</p>
+<p><code>observations.json</code> SHA256：<code>F3469AEB7BD3517FF0604160FDE9990EAD2737075F5B2B9B36FB10E347740F78</code>。</p>
+<table>
+<thead>
+<tr>
+<th>操作与输入</th>
+<th>原方法实测</th>
+<th>判定边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>探针创建普通 group，初始 1 placeholder，两个 XML priority=2/1</td>
+<td>IsInit false→true；children/flat 均为 Second、First；placeholder 移除；子项 Parent 引用同一个 group</td>
+<td>原方法首次成功装载、优先级排序和 parent 身份已观察</td>
+</tr>
+<tr>
+<td>原对象装载成功后新增第三 XML，再调用 UpdateLoad</td>
+<td>无异常，仍保留原两个条目</td>
+<td>已初始化对象没有重新扫描</td>
+</tr>
+<tr>
+<td>两目录，实测枚举最后一项 XML 损坏</td>
+<td>XmlException；IsInit=true；children 只含第一项，flat 仍为原 placeholder</td>
+<td>初始化标志前置、两集合分阶段变更已观察；不宣称目录枚举顺序普遍固定</td>
+</tr>
+<tr>
+<td>修复损坏文件，再调用同一对象</td>
+<td>无异常，但仍为部分 children 与旧 placeholder</td>
+<td>修文件不会触发同对象重试</td>
+</tr>
+<tr>
+<td>探针另建全新 group/flat 后调用</td>
+<td>两项成功装载，placeholder 消失</td>
+<td>这是探针重新创建初态，<strong>不是</strong>执行原 Reload</td>
+</tr>
+<tr>
+<td>目录不存在</td>
+<td>DirectoryNotFoundException；IsInit=true；原 children/flat 未清空</td>
+<td>目录枚举发生在 clear 之前</td>
+</tr>
+<tr>
+<td>目录有 XML，但初始 children 为空</td>
+<td>IsInit=true；children/flat 仍空，无异常</td>
+<td>空初态在取得目录后提前返回</td>
+</tr>
+<tr>
+<td>Name=Lang_Tools，目录不存在</td>
+<td>无异常；IsInit 仍 false；placeholder 保持</td>
+<td>全局类别跳过发生在目录访问及初始化写入之前</td>
+</tr>
+<tr>
+<td>null 参数、非 CollectionViewGroup 参数</td>
+<td>null 无操作；普通 object 抛 NullReferenceException</td>
+<td>未增加探针侧类型容错</td>
+</tr>
+</tbody></table>
+<p>17 个断言是上述固定场景中的字段、集合和身份检查，不是 17 个完整 UI 功能。探针使用自定义 CollectionViewGroup 子类仅提供 Name，没有构建 WPF CollectionView/Popup/Expander；实际 UI 能否进入空组仍未知。</p>
+<p>加载身份核查：CLR 对 Apps.Data、VM.Xml、Apps.Interface、VMControls.Interface、VM.Util、VM.Compress 使用本机 GAC；最终 <code>loaded-assemblies-sha256.csv</code> 记录其路径和 SHA，并与 myLibs 同名原件核对一致。VMControls.Data 原件自身也一致。Mvvm 从安装 <code>3rdLib/MVVM</code> 装入并记录 SHA <code>5685C13C79321E7D7EC4ED85E764D00C915CA54401D5CCB6314414D54F76E120</code>；不能把“版本号一样”当作字节身份核查。已加载清单没有 Apps.Log、VM.Core、VM.PlatformSDKCS 或原生 SDK；没有主动平台/设备初始化。</p>
+<p>执行命令：<code>&amp; ./tests/NativeEvidence/A01/Run.ps1</code>。编译使用系统 .NET Framework csc，只编译探针；没有跑共享 dotnet/WPF 构建。安装 myLibs 下 DLL 执行前后哈希一致，保存在 original-before/after-sha256.csv；输出另有 output-sha256.csv。此核查范围是这些 DLL，不扩大宣称整个安装目录字节未变。</p>
+<p>首次 replay <code>replay-e6a3b129c7da4a79be25011d75c692a7</code> 的原方法也通过 17 断言，但执行器对输出目录边枚举边写哈希 CSV，误将该 CSV 纳入且遇到文件占用，执行器退出 1。已保留该目录并修成先计算哈希再写 CSV；最终新目录完整执行退出 0，未隐去首次报告器故障。</p>
+<h2 id="原始-cil-锚点与限制">原始 CIL 锚点与限制</h2><table>
+<thead>
+<tr>
+<th>ToolBoxData 成员</th>
+<th>token / RVA</th>
+<th>raw CIL SHA256</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>UpdateLoad</td>
+<td>06000045 / 0x2bf8</td>
+<td>66f717294d448df43c1f18a3c1674a8cb0c815f030bc1d838c22086c072dc4d0</td>
+</tr>
+<tr>
+<td>Reload</td>
+<td>06000044 / 0x2bbc</td>
+<td>9f9b16c9bebaae66f87ebfed301a2da173790348e9792edc63f08639be853d40</td>
+</tr>
+<tr>
+<td>LoadData</td>
+<td>0600004f / 0x33d8</td>
+<td>0b037e40a929f7a0b375fec77a0418abd2664e1027f8d19d684cdbf01f749026</td>
+</tr>
+</tbody></table>
+<p>raw CIL 哈希不包含方法头、局部签名和异常段。UpdateLoad 有 foreach 枚举器释放的 finally（IL384–440，handler440–455），<strong>没有</strong>失败后重置 IsInit 或回滚集合的 finally；不能把“存在finally”解释成故障恢复。</p>
+<p>Source-confirmed：Reload 清三个缓存、通知两个属性；LoadData 普通组创建占位项，UserTools/GroupTools 首项策略。Runtime-observed：仅上表 UpdateLoad 分支。Independent-reconstruction：探针构造的最小初态、空装载清单、结果序列化与断言。Unknown：LoadData/Reload 实际对象/CollectionView 变化、原机鼠标/展开/右键事件、Group SDK 回调时序、无 Cs 与构造异常的真实宿主差异、平台导入失败恢复。</p>
+<p>main 产品仍使用独立 metadata scanner，本批不改产品、不模仿原厂失败残留、不改跨项目合同。后续 A01 子项应先把日志配置及依赖列表完全限定在自有宿主，再执行实际 LoadData/Reload；Group 回调须独占原生实例并记录 callback→AddModuleByInfo→Modules/Children→decorator 的顺序。完整 A01 尚未达到关闭门槛。</p>
+<p class="meta">来源：docs/reverse/A01-loader-batch1.md · SHA256 32f23c8523a86d704b4da4e5147c378fd4f57d137db507fa803280310654da97<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

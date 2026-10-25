@@ -1,0 +1,98 @@
+<!doctype html><html lang="zh-CN" data-site-prefix="../../../" data-page-kind="imported"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定逆向与实现清单 · 架构逆向与实现对照文档</title><link rel="stylesheet" href="../../../公共资源/样式/dd648dea6925fd031bea3d967860479085572b96839dd12d91aa10693ac57cd9.css"><link rel="stylesheet" href="../../../公共资源/site.css"></head><body><a class="site-skip" href="#main-content">跳到正文</a><header class="site-header"><nav aria-label="主导航"><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="breadcrumb">架构逆向与实现对照文档 / 映射标定逆向与实现清单</p><h1>映射标定逆向与实现清单</h1><p class="muted">原版事实、当前独立实现、拟议设计与未知分别保留。导航示意属于文档组织，不代表原程序的控件树或完整运行验证。</p><p id="route-message" role="status" hidden></p></header><main id="main-content" class="site-main"><p class="site-notice">既有专题已纳入独立目录。保留原始分支、关系图、状态分类与完整证据；动态交互的浏览器验收另列。</p><div class="source-content"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>映射标定逆向与实现清单</title><nav><a href="../../../index.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="MAP-CALIBRATION.html">下载原始文件</a></nav><main><details><summary>本页目录</summary><p style="margin-left:0px"><a href="MAP-CALIBRATION.html#映射标定逆向与实现清单">映射标定逆向与实现清单</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#原始证据与生成入口">原始证据与生成入口</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#文件行为">文件行为</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#图像数值链">图像数值链</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#图像会话示教与保存">图像会话、示教与保存</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#roi与公共契约">ROI与公共契约</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#未闭合边界">未闭合边界</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#普通配置文件叶补证">普通配置文件叶补证</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#源格点入口与严格产品回归更新">源格点入口与严格产品回归更新</a></p><p style="margin-left:14px"><a href="MAP-CALIBRATION.html#普通配置与结果显示-sourceproduct-覆盖更新2026-10-19">普通配置与结果显示 source→product 覆盖更新（2026-10-19）</a></p></details><h1 id="映射标定逆向与实现清单">映射标定逆向与实现清单</h1><p>目标为原厂 IMVSMapCalibModu（映射标定），与相机映射是不同工具。本工具已具备普通配置、文件及双图运行、示教、XML保存和双ROI实现；当前是待统一宿主复核的中间交付，不能据通过测试宣称原厂完整等价，不启动手动验收。</p>
+<table>
+<thead>
+<tr>
+<th>范围</th>
+<th>原厂依据与验证</th>
+<th>边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>源码/资源</td>
+<td>安装版11文件；REA托管身份；SDK头；CLI原生函数；36直接控件/展开43项、3页签、9输入/17输出</td>
+<td>反编译和资源本身不构成运行证明</td>
+</tr>
+<tr>
+<td>普通配置</td>
+<td>原厂真实parser在合成参数宿主上执行4阶段；本项目172项显隐/普通窗口/双ROI来源检查</td>
+<td>未采原厂桌面像素差分</td>
+</tr>
+<tr>
+<td>文件数值</td>
+<td>72官方SDK案例、700矩阵/比例float位与错误码断言</td>
+<td>固定矩阵输入，不覆盖图像识别</td>
+</tr>
+<tr>
+<td>文件读写</td>
+<td>原模块26次读取、279文件/缓存/错误码/XML字节检查</td>
+<td>二进制仅接受36字节，拒绝原厂不安全越界输入</td>
+</tr>
+<tr>
+<td>文件生命周期</td>
+<td>原模块完整Process的8步；FileSession100项、插件入口回放</td>
+<td>SDK单元错误与模块Process错误分别保留</td>
+</tr>
+<tr>
+<td>图像拟合</td>
+<td>真实SDK三权重×三模型×板型7/9，36个主拟合输入</td>
+<td>固定输入18组162/162位一致；共享检测仍有差分</td>
+</tr>
+<tr>
+<td>图像后处理</td>
+<td>主拟合实际返回值回放：组合矩阵、MapError、投影、PixelScale逐float位验证</td>
+<td>不把中间值回放当成识别/拟合等价</td>
+</tr>
+<tr>
+<td>图像保存</td>
+<td>原模块writer五状态；两单元XML+完整Process Teach XML逐字节，14项</td>
+<td>核对真实生成时间后比较完整文本；无原厂桌面文件弹层截图</td>
+</tr>
+<tr>
+<td>图像/示教运行</td>
+<td>原模块受控GetImage宿主11步；本项目真实双图168点、待配对/触发/存图检查</td>
+<td>不启动全局原厂平台、不做设备测试</td>
+</tr>
+<tr>
+<td>双ROI</td>
+<td>公共RoiGroups、独立来源会话；9例实际插件运行33项；7非空ROI与原厂PreproMask等价14584字段</td>
+<td>生产角点坐标精度仍受共享检测核影响</td>
+</tr>
+<tr>
+<td>显示/语言</td>
+<td>原Display.xml十字段文本、InputImage2预览；独立中文152/英文148原Lang键</td>
+<td>原厂桌面视觉未验收</td>
+</tr>
+</tbody></table>
+<h2 id="原始证据与生成入口">原始证据与生成入口</h2><p>原厂安装目录为 <code>D:/Program Files/VisionMaster4.4.0/Applications/Module(sp)/x64/Calibration/IMVSMapCalibModu</code>，只读。托管反编译来自 <code>D:/MyWork/REA逆向测试/analysis/full-audit/calibration-dependencies/decompiled/IMVSMapCalibModuCs</code>。REA静态证据标识及源文件/SDK哈希保存在 <code>map-calibration-evidence.json</code>。Ghidra结果明确是CLI静态结果，不冒充REA提供器。</p>
+<p>本工具生成数据位于当前worktree的 <code>analysis/map-calibration/</code>。机器证据包含实际SDK载荷、原模块IO、解析器状态、拟合float输入的base64及验证报告。原SDK、完整反编译与Ghidra数据库不入Git；本地运行检查需要这些只读原厂依赖与已有frame0/frame4图像fixture。</p>
+<p>完整专属回归入口：</p>
+<a class="site-evidence-link" data-evidence-key="efbeb0e170a80fcf26fbf05725b554092f0110a29d8a8d95893034bc141e6939" href="../../../../证据/efbeb0e170a80fcf26fbf05725b554092f0110a29d8a8d95893034bc141e6939.html#content">查看完整原文／记录 ↗ <small>efbeb0e170a8</small></a>
+<p>其依次构建并运行 SolverChecks、FileChecks、SessionChecks、ImageFitChecks、ImageFileChecks、PluginChecks、ConfigurationChecks、RoiRuntimeChecks；输出 <code>analysis/map-calibration/regression/results.json</code>。新增依赖后必须允许restore更新deps.json，不能沿用旧assets。</p>
+<h2 id="文件行为">文件行为</h2><p>文件模式组合是完整float <code>inverse(target) * source</code>，再每项除以 <code>h33 + 1.1920928955078125e-7f</code>；目标行列式用原表达式与double epsilon阈值。源零矩阵可成功，目标奇异返回10103002，不能以数学精确单位矩阵替换原厂0.999999881。</p>
+<p>ReadFileMatrix对“.xml”做大小写敏感子串查找。XML不校验根名或ParamName；必须存在CalibOutputParam/CalibFloatListParam且恰有9子项。短/空/超9项返回E0000018，但新分配矩阵的前9项/零补值已经替换缓存；路径仍保留旧值。数字前缀可接受，失败沿用上次成功值（1,abc,3→1,1,3）。缺文件或解析失败保留旧缓存。二进制原厂存在固定37字节缓冲按文件长度读取的不安全边界，本项目仅处理36字节，不通过危险载荷重放溢出。</p>
+<p>完整Process中RefreshSignal按文件0再文件1刷新；首个错误早退、不写状态、保留旧SDK结果。之后不刷新会使用前一步已部分改变的矩阵。算法失败清结果并写两个失败状态。文件模式成功仅写ModuStatus与CalibStatus，虽然SDK内部有比例，模块没有发布它们。模式切换后缺矩阵的模块SetData错误80100006与直接裸SDK缺输入错误分开。</p>
+<p>模块XML使用8位有效数字、3位指数、CRLF/4空格；裸SDK Export则是6位小数，不能混用。显式保存校验严格小写.xml。IO写失败被原厂忽略，返回成功并记住路径；产品保留这一运行行为。</p>
+<h2 id="图像数值链">图像数值链</h2><p>文件链为SDK operation0x6f→7d4f20；图像链为0x6e→7fb4a0→7d3ae0→7d3e90。图像模式分别拟合两板，不能直接拟合source像素到target像素替代。World坐标先做<code>float(integer ID) * decoded GridPitch</code>。当前HIK-I fixture按7为pitch10、按9为pitch1000，不能把这一物理尺度强加畸变工具。</p>
+<p>Map的WeightFun1/2/3全部调用7ff3c0。公共FitNativePoints保持该真实入口；畸变W1的8345e0属于另一个入口FitNativeLeastSquaresPoints，不能仅按菜单枚举跨工具调度。主拟合opts固定iteration50/1e-4，UI WeightFactor20经原厂float0.1乘法成为native2；识别器内部还有20次迭代的7ff调用，证据按opts区分。</p>
+<p>7ff3c0返回值已经做7fd4e0逆矩阵与inv33乘法，h33仍可能非精确1。Map保留两个实际返回，完整float求target逆×source，再按真实h33除法（此处不加epsilon）。PixelScale只使用另份<code>matrix * (1/(h33+epsilon))</code>的两行范数均值。MapError按首个匹配世界ID累加正反两向欧氏误差，分母2×匹配数+epsilon，误差≥1.5触发10103050。</p>
+<p>用原厂主拟合返回值验证工具后处理已逐位相同；全部主拟合入口载荷也和SDK公开像素/世界ID×pitch逐float核对。共享核恢复原厂迭代前反归一化→重新归一化后，W1/W2/W3各六组最终矩阵均54/54位一致，共162/162位、max0；该检查已改为严格逐位断言。W3已加自有进程median/prefix采样，本组12主fit的实际prefix[-1]均为0；不能把畸变workspace残留1的解释直接外推到Map。采样只改自有进程断点并恢复，不改磁盘或他任务进程。</p>
+<h2 id="图像会话示教与保存">图像会话、示教与保存</h2><p>正常构造原模块+正常SDK，替换自有进程的9个ModuleFrame输入/输出导入，完成11步Process。两图都没有新输入时E0000314且没有输出；只到一张时缓存它、写ModuStatus1/CalibStatus0；另一张到达后清两到达标记并求解。输入像素MONO8，实际数据从自有IMvdImage传入，无全局平台身份。</p>
+<p>TeachEnable且Trigger/TeachFlagInput有效字符串相等时读取PhysicalPointX/Y与WorldRotateAngle。无待配对图像时直接用缓存结果写TeachWorld并重新发布结果；不重新执行图像识别。字符串不匹配回普通新图路径。TeachTriggered是原模块成员的持续状态，不能每次Run擅自清零。</p>
+<p>图像XML除矩阵还写CreateCalibTime、MapCalib类型、MapError（原厂标签DataType=int，虽存float）、两状态、两PixelScale与PixelPrecision。PixelPrecision源函数1a950为double两列范数均值后转float，不能误取逆矩阵尺度。SnapWorldCur/Obj的X大于-999990才写；缺物理坐标的新图使用原厂-999999标记，所以完整Process Teach文件会省略两SnapWorld。Teach启用但未触发保存E0000516，尚有一图待配对E0000517。产品已用真实writer及完整Process文件核对这些差别。</p>
+<h2 id="roi与公共契约">ROI与公共契约</h2><p>RoiType_0与RoiType_1是原厂独立字节存储身份，分别关联InputImage1/2；不能只凭IsCurROI合并。产品用公共RoiGroups与RectangleRoiMaskRasterizer；不引用另一个插件的ROI类型、不造独立窗口。</p>
+<p>七组非空ROI（轴向、仅一侧、部分越界、10°旋转）由Map SDK直接ROI与原厂PreproMask输出区域图两条途径运行，14584个矩阵/点/ID/比例/误差/尺度字段完全相同。产品按mask非零bbox裁原图，保留像素，检测后按round(center)查mask，再float加回bbox原点；不刷白背景。9例插件实际运行33项错误码与三组点数全部匹配，逐点坐标精度不能据此宣称一致。</p>
+<p>原输出ROI是ROIBOX数组元数据，ProcessOutput实际只写五个flat数组的index0/1，没有Region对象写入。受控正常ctor无画框例的这五数组各两项0；产品保留真实flat值，公共Region仅独立投影有效几何，默认用Region([])，不放宽输入几何验证、不伪造全图框。该默认值的运行范围是受控宿主而非原厂桌面完整Init，原生ROI持久化ABI与POINT索引语义继续单列公共契约。</p>
+<h2 id="未闭合边界">未闭合边界</h2><ul>
+<li>编码板Opening提案、payload/锚定与旧projective/rotated fallback仍含明确独立兼容实现；已记录四型84 ROI格点以及实际18组图像运行的点/矩阵/标量已零差，不能外推所有图像或任意工作区。</li>
+<li>固定输入的共享7ff3c0三权重已通过全部18组逐位回归；此范围不证明所有工作区上下文或实际图像检测等价。</li>
+<li>原厂桌面视觉、文件/订阅弹层逐像素对照；当前parser运行与本项目普通窗口是不同证据。</li>
+<li>通用POINT索引及原生ROI字节ABI；文档几何模型是明确的托管传输，不宣称二进制ABI相同。</li>
+</ul>
+<p>这些边界未完成前不提交整体等价结论或启动手动验收。</p>
+<h2 id="普通配置文件叶补证">普通配置文件叶补证</h2><p>原厂OpenFileDialog资源使用34高文本/路径图标叶，CurValueA双向LostFocus写值；现已接公共ToolConfigurationOpenFilePathControls，不再使用初期文本按钮。SaveFileDialog原厂DisplayType=Command，现以同上下文复用公共32高Command。181项窗口检查包含真实叶布局、文件Filter、单选、取消不记历史及成功提交后记忆；原厂桌面逐像素仍单列。</p>
+<h2 id="源格点入口与严格产品回归更新">源格点入口与严格产品回归更新</h2><p>当前Map专属Detect已接 additive NImageSourceLatticeAdapter（旧独立几何+源精确格点）；旧全局FindLattice没有整体替换。完整8bcff0在24个实际SDK输入/工作区回放中所有450000工作字段及168点/ID/score均逐位一致；完整873de0在6/7/8/9四型84个ROI bbox灰图输出15862点的XY/ID/顺序全部位同。安全实现不复制跨数组读写，工作区初始值、容量边界与源域范围记录在CANDIDATE-SOURCE文档。</p>
+<p>实际插件Runtime已跑完18组并用--require-exact严格断言：源/目标/投影点XY与ID、最终162个矩阵float、X/YRatio、PixelScale1/2、MapError全部逐位相同。RoiRuntimeChecks加强为7361项，9组双ROI代码/数量/矩阵/点/误差全部通过；不再仅比较计数。原厂普通Process自动写normal-process.xml，与实际插件Runtime首组XML除独立生成时间外1790字节完全一致；Teach完整Process文件及五状态保存的原有严格测试继续保留。</p>
+<p>唯一图像差分表和机器证据现采用image-execution-source-grid；此前0.003234863坐标差是旧入口历史。没有把上述fixture结果视作全部原厂GUI/算法域等价，尚未启动手动验收。</p>
+<h2 id="普通配置与结果显示-sourceproduct-覆盖更新2026-10-19">普通配置与结果显示 source→product 覆盖更新（2026-10-19）</h2><p>完整逐项映射见 <a href="MAP-CALIBRATION-UI-COVERAGE.html">MAP-CALIBRATION-UI-COVERAGE.md</a>。原厂 AlgorithmTab 和 Display 资源与产品资源 SHA256 完全相同，MapCalibParam/MapCalibResult 的公开字段也已对应检查。新发现模块XML强制输出 <code>ModuRunTime</code>，但产品之前只在Descriptor列端口、各结果缺字段；现将其设为required并由Map运行入口统一写毫秒值。PluginChecks 54项、ConfigurationChecks 184项、Map Release构建均通过。由于原厂结果类没有同名属性且当前Map trace未采具体时间值，运行时间只确认原厂必需输出契约，不宣称计时起止点逐位相同。</p>
+<p>显示资源有一个未解引用：<code>Coordinate System</code> 对象引用的 <code>CalibOriPoint*</code> 不在原厂模块输出XML或公开 <code>MapCalibResult</code> 中。资源自身确与原厂一致，当前予以保留；原厂桌面是否实际展示或运行时是否另有动态输出，需按UI覆盖矩阵取得窗口/输出字段证据。其他dynamic image-source候选、订阅弹层及结果图元的原厂桌面像素差仍未闭合。</p>
+<p class="meta">来源：docs/plugins/MAP-CALIBRATION.md · SHA256 791da22b770cfb2062890c123413669b6c6eaf8c993cdf44f3f2ac8d090199a4<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></div></main><footer class="site-footer"><nav><a href="../../../index.html">首页／界面入口</a><a href="../../../主题/主界面入口.html">主界面</a><a href="../../../工具/index.html">工具窗口</a><a href="../../../数据/index.html">数据与 Owner</a><a href="../../../主题/执行与状态.html">执行与结果</a><a href="../../../清单/交付与兼容.html">范围／兼容</a></nav><p class="site-progress">文档分页不增加产品实施完成数。框架当前进度以权威台账为准；本批实施增量 0。原文内进度数字属于捕获版本。</p></footer><script src="../../../公共资源/routes.js"></script><script src="../../../公共资源/site.js"></script></body></html>

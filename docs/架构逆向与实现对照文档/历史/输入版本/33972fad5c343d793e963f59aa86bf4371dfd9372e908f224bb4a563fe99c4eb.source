@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第十三轮：标定工具箱拖放到 SDK 创建的原始共同调用链</title><style>body{margin:0;background:#101a29;color:#e7edf7;font:16px/1.8 "Microsoft YaHei",sans-serif}main{max-width:1150px;margin:auto;padding:24px}a{color:#9fd5ff}nav{position:sticky;top:0;background:#172638;padding:12px;z-index:2;display:flex;gap:22px;flex-wrap:wrap}pre{overflow:auto;background:#09131f;padding:16px}code{font:13px/1.7 Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}td,th{border:1px solid #45617e;padding:8px 12px}blockquote{border-left:4px solid #e7b667;margin:18px 0;padding:1px 16px;background:#203249}h1,h2,h3,h4{scroll-margin-top:85px}img{max-width:100%}.meta{font-size:12px;color:#a9bfd3;overflow-wrap:anywhere}summary{cursor:pointer}</style><nav><a href="../../../framework-architecture.html">主架构</a><a href="../../main-ui-map.html">逆向核心</a><a href="../index.html">关联文档目录</a><a data-source-download download href="../../../joint-audit/20261020-pass13-calibration-create-call-chain.md">下载原始文件</a></nav><main><h1 id="第十三轮标定工具箱拖放到-sdk-创建的原始共同调用链">第十三轮：标定工具箱拖放到 SDK 创建的原始共同调用链</h1><p>本报告只关闭十项标定工具共用的<strong>原始代码路径</strong>，不把静态路径当成十次原厂实际拖放或动态实例 ID。与<a href="20261020-pass6-calibration-catalog-host.html">第六轮当前宿主实测</a>合用；无产品改动、无 <code>tool-plugins</code> 改动。</p>
+<table>
+<thead>
+<tr>
+<th>顺序</th>
+<th>原始成员与源证</th>
+<th>已确认的数据/条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目录装入</td>
+<td><code>VMControls.Data.ToolBoxData.UpdateLoad/LoadData</code></td>
+<td>子目录名写 <code>ToolBoxItemData.Info</code>，目录全路径写 <code>DirPath</code>，随后读取 <code>ToolItemInfo.xml</code>。<code>Info</code> 不是 XML <code>&lt;name&gt;</code> 的别名。</td>
+</tr>
+<tr>
+<td>手势</td>
+<td><code>VMControls.WPF.Base.ToolItemGrid.ToolItemGrid_PreviewMouseMove</code></td>
+<td>用当前 <code>DataContext</code> 作 <code>VmModuleDecorator.DecorateSource</code>，封入 <code>DiagramItem</code> 列表并发起 <code>DragDrop.DoDragDrop</code>。</td>
+</tr>
+<tr>
+<td>放置</td>
+<td><code>VMControls.WPF.Base.ItemsPage.OnDrop → GetDropItems → DoDropItems</code>、<code>DiagramPage.xaml</code> 的 <code>OnDropItems</code> 绑定</td>
+<td>携带 decorator 与位置；文件拖放、无 Point、非可见热区等分支先返回。</td>
+</tr>
+<tr>
+<td>实例化</td>
+<td><code>VMControls.WPF.DataForUI.DecoratorBase.DropItemsCommandExecute → ToolBoxItemData.AddNewItem</code></td>
+<td>先检查运行态；非自定义 Group 的普通工具按 <code>Info</code> 取 <code>{Info}Cs.dll</code>，可加载 <code>Librarys.Config</code> 和 <code>{Info}Control.dll</code>；选第一个实现 <code>IVmModule</code> 的类型，用父模块集参数构造。SDK/构造异常另有捕获。</td>
+</tr>
+<tr>
+<td>SDK 请求</td>
+<td><code>VM.Core.VmModule..ctor(object,string) → CreateToModuleSet</code></td>
+<td>父为 <code>VmProcedure</code>、<code>IMVSGroup</code>、<code>VmSolution</code> 时分别设置节点类型/父 ID；将 <code>typeName ?? GetType().Name</code> 写入 <code>IMVS_SYNC_ADD_ONE_MODULE_INFO.strModuleDllName</code>，等待值 5000，调用 <code>SyncAddOneModule</code>，返回 <code>IMVS_MODULE_INFO</code> 再 <code>Init</code>/加到父集合。随后 <code>AllModules.AddOrUpdate(ID, this)</code> 和 <code>InvokeModuleAddedEvent</code>。原实例数值 <code>ID</code> 来自 SDK 返回结构，不可由目录推断。</td>
+</tr>
+</tbody></table>
+<p><strong>标定板三种名字已用 CIL 消歧。</strong> 安装目录和 DLL 为 <code>IMVSCalibBoardCalibModu</code>，<code>ToolItemInfo.xml</code> 的 <code>&lt;name&gt;</code> 却是 <code>CalibBoardCalib</code>。REA 对安装版 <code>IMVSCalibBoardCalibModuCs.dll</code>（SHA-256 <code>FF1408B85625819490EFEB51E9E6D2714C7DB003E5329AA65CC6B55A8CE8BA58</code>，MVID <code>41886863-165b-46de-83f0-ab60c218d812</code>，evidence <code>ev_7eccd132b38875c6a84e8c7578581fa97cdf759ee36a41206cb5f045cc250166</code>）确认类型 <code>IMVSCalibBoardCalibModuCs.IMVSCalibBoardCalibModuTool</code> 的 <code>object</code> 构造函数 token <code>0x06000002</code>。原 CIL <code>IL_0002 ldstr &quot;IMVSCalibBoardCalibModu&quot; → IL_0007 call VmModule..ctor(object,string)</code>，而不是将 XML <code>&lt;name&gt;</code> 送入基类；原 CIL SHA-256 <code>96F740EFEE5C7AA9F24BF7A3BE8FEBC573C156C862CFEC61DFD9CFB43F0A4D84</code>，完整可复读 IL 导出 <code>analysis/joint-audit/pass13-cal-create/board-cs-ctor.il</code>，SHA-256 <code>284757E6D679097FD369AD0B1998AB13B909CD000BB9D309CAF01F688C2E45F4</code>。原 <code>ToolItemInfo.xml</code> SHA-256 <code>F8ECFC757CA9AF9EAC94474BE24B406D34D427FAD42D5D50F7CB273214CF49E3</code>。因此该异名<strong>不是</strong>“拖放时 SDK 请求 CalibBoardCalib”的证据；按已证普通构造链，标定板请求的是 <code>IMVSCalibBoardCalibModu</code>。若存在 <code>customInstanceFullName</code> 或代理路径，须另核该实际分支，不能外推。</p>
+<p>原反编译文本 SHA-256：<code>ToolBoxData.cs</code> <code>C1B11D2C3BEBCE66A11769EB0E209455CB1E5D0C4EFA7C4A6DAD5992EB9CF45B</code>；<code>ToolBoxItemData.cs</code> <code>378A1319599C725EAFB5EEAE0D105AEDB58C8CE0B77F131BC9B480D15ABBC409</code>；<code>ToolItemGrid.cs</code> <code>304BE361EFFDD7C42D3FB34BF4EFE65967D042F73DC44924054ECE8712D940D7</code>；<code>ItemsPage.cs</code> <code>BC3A7A487A75BE202162BBE4BA6D6202B9B0E6EE9B618A9DB9373A299091491B</code>；<code>DecoratorBase.cs</code> <code>25C71C878E2EA21678DB2FBF1E69FEEF0D2892F9356CAE443F747F79D0A83299</code>；<code>VmModule.cs</code> <code>53E2F0F9032C4631B59CF0EB2A00E06D50469D94706E7E370E9CC7E1059C72CE</code>。这些是离线源码/CIL，可复核调用边；尚未观察原安装版十项逐一拖入后的 SDK 请求结构、动态 ID、失败/撤销事件顺序。</p>
+<p><strong>与当前实现的关系：</strong> 本地当前用 <code>tool-catalog.json</code> 的 <code>Id/ModuleId</code>、registry factory 和 <code>GraphEditorDocument.AddNode</code> 建节点；第六轮真实 WPF 宿主十项均创建成功。但目前 N图像与相机映射的 <code>ModuleId</code> 仍仅在已有未提交工作区映射，不能称 <code>HEAD</code> 的十项入口已交付。原 <code>SyncAddOneModule</code> 与本地 AddNode 是两套机制；本报告补的是原创建链的代码级依据，不强求相同数值 ID，也不将原厂动态实例缺失错误算成工具算法缺失。</p>
+<p class="meta">来源：docs/joint-audit/20261020-pass13-calibration-create-call-chain.md · SHA256 aec0750d6b4427a9ee63b8acadf064a3583d710aae46d07f31b453748b447184<br>本页只转换阅读格式，结论与历史进度保留原文。</p></main></html>

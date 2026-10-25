@@ -1,0 +1,363 @@
+{
+  "scope": "finite documentation analysis; no implementation or runtime parity claim",
+  "implementationProgress": "42/96 = 43.75%; documentation credit=0",
+  "refs": [
+    {
+      "id": "GV01",
+      "program": "原版 VM",
+      "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+      "member": "VmSolution.LoadGlobleModules",
+      "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+      "start": 2079,
+      "end": 2126,
+      "excerpt": "\tinternal void LoadGlobleModules(VmModuleCollection<VmModule> moduleList, bool coverGlobalmodu = false)\n\t{\n\t\ttry\n\t\t{\n\t\t\tImvsSdkDefine.IMVS_MODULE_INFO_LIST? allGlobalModule = ServerSDKManager.serverSDKManager.mGlobalModuleManager.GetAllGlobalModule();\n\t\t\tImvsSdkDefine.IMVS_MODULE_INFO_LIST? iMVS_MODULE_INFO_LIST = allGlobalModule;\n\t\t\tImvsSdkDefine.IMVS_MODULE_INFO_LIST valueOrDefault = iMVS_MODULE_INFO_LIST.GetValueOrDefault();\n\t\t\tif (!iMVS_MODULE_INFO_LIST.HasValue)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tfor (int i = 0; i < valueOrDefault.nNum; i++)\n\t\t\t{\n\t\t\t\tImvsSdkDefine.IMVS_MODULE_INFO proInfo = valueOrDefault.astModuleInfo[i];\n\t\t\t\tif (moduleList.Count((VmModule p) => p.ID == proInfo.nNodeID) > 0)\n\t\t\t\t{\n\t\t\t\t\tif (coverGlobalmodu)\n\t\t\t\t\t{\n\t\t\t\t\t\tmoduleList.FirstOrDefault((VmModule p) => p.ID == proInfo.nNodeID)?.ReloadModule();\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tVmModule vmModule = VmModuleSet.CreatModuleByInfo(proInfo);\n\t\t\t\t\tvmModule.PreAddModuleTo(this);\n\t\t\t\t\tmoduleList.Add(vmModule);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tcatch (VmException ex)\n\t\t{\n\t\t\tif (ex.errorCode != -536869120)\n\t\t\t{\n\t\t\t\tthrow ex;\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void DisplayProgress(string message)\n\t{\n\t\tOnSolutionLoadBeginCallBack?.Invoke(SolObj, new ObjectEventArgs\n\t\t{\n\t\t\tParam = message\n\t\t});\n\t}\n\n\tprivate void CloseProgress()\n\t{",
+      "evidenceType": "local-decompiled-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV02",
+      "program": "原版 VM",
+      "path": "analysis/decompiled/VM.Core/VM.Core/VmModule.cs",
+      "member": "VmModule.GetSubscribleModules",
+      "sha256": "53e2f0f9032c4631b59cf0eb2a00e06d50469d94706e7e370e9cc7e1059c72ce",
+      "start": 3843,
+      "end": 3907,
+      "excerpt": "\tpublic IEnumerable<VmModule> GetSubscribleModules(bool isOutput)\n\t{\n\t\tIEnumerable<VmModule> enumerable = null;\n\t\tif (isOutput)\n\t\t{\n\t\t\tenumerable = ((!(this is VmModuleSet)) ? new object[1] { Parent }.Concat((Parent as VmModuleSet).Modules).OfType<VmModule>() : (this as VmModuleSet).Modules);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tenumerable = new object[1] { Parent }.Concat((Parent as VmModuleSet).Modules).OfType<VmModule>();\n\t\t\tif (this is IMVSGroup { IsEnableLoop: not false } iMVSGroup)\n\t\t\t{\n\t\t\t\tenumerable = enumerable.Concat(iMVSGroup.Modules);\n\t\t\t}\n\t\t}\n\t\treturn enumerable.Concat(VmSolution.Instance.Modules.Where((VmModule p) => p.ID == 13000));\n\t}\n\n\t/// <summary>\n\t/// 获取所有userdata\n\t/// </summary>\n\t/// <returns></returns>\n\tpublic object GetAllUserData()\n\t{\n\t\treturn ServerSDKManager.serverSDKManager.mModuleManager.GetUIParamValueByObject(ID)?.Clone();\n\t}\n\n\t/// <summary>\n\t/// 获取模型\n\t/// </summary>\n\t/// <returns></returns>\n\tpublic virtual byte[] GetModel()\n\t{\n\t\treturn null;\n\t}\n\n\t/// <summary>\n\t/// 导入模型\n\t/// </summary>\n\t/// <param name=\"model\"></param>\n\tpublic virtual void ImportModel(object model)\n\t{\n\t}\n\n\t/// <summary>\n\t/// 导入流程或Group时做特殊处理\n\t/// </summary>\n\tpublic virtual void ImportProcess()\n\t{\n\t}\n\n\t/// <summary>\n\t/// 获取订阅模块列表\n\t/// </summary>\n\t/// <returns></returns>\n\tpublic List<VmModule> GetRelatedModules()\n\t{\n\t\tList<VmModule> list = new List<VmModule>();\n\t\tforeach (VmIO input in Inputs)\n\t\t{\n\t\t\tVmModule vmModule = input.RelateIO?.Root;\n\t\t\tif (vmModule != null && !list.Contains(vmModule))\n\t\t\t{\n\t\t\t\tlist.Add(vmModule);\n\t\t\t}",
+      "evidenceType": "local-decompiled-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV03",
+      "program": "原版 VM",
+      "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+      "member": "VmSolution.GloalScriptContinusRunEnable",
+      "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+      "start": 384,
+      "end": 429,
+      "excerpt": "\tpublic bool GloalScriptContinusRunEnable\n\t{\n\t\tget\n\t\t{\n\t\t\treturn gloalScriptContinusRunEnable;\n\t\t}\n\t\tset\n\t\t{\n\t\t\tif (gloalScriptContinusRunEnable == value)\n\t\t\t{\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (value)\n\t\t\t{\n\t\t\t\tServerSDKManager.serverSDKManager.mGlobalModuleManager.GlobalScriptStartContinueRun();\n\t\t\t\tforeach (VmProcedure item in Modules.OfType<VmProcedure>())\n\t\t\t\t{\n\t\t\t\t\tif (dictProcessIDStopStatus.ContainsKey(item.ID))\n\t\t\t\t\t{\n\t\t\t\t\t\tdictProcessIDStopStatus[item.ID] = 0u;\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t{\n\t\t\t\t\t\tdictProcessIDStopStatus.Add(item.ID, 0u);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tServerSDKManager.serverSDKManager.mGlobalModuleManager.GlobalScriptStopRun();\n\t\t\t\tdictProcessIDStopStatus.Clear();\n\t\t\t}\n\t\t\tgloalScriptContinusRunEnable = value;\n\t\t\tModules.OfType<VmProcedure>().ToList().ForEach((VmProcedure x) =>\n\t\t\t{\n\t\t\t\tx.IsGlobalRuning = value;\n\t\t\t});\n\t\t\tOnPropertyChanged(\"IsRunning\");\n\t\t\tOnPropertyChanged(\"ContinuousRunEnable\");\n\t\t\tOnPropertyChanged(\"GloalScriptContinusRunEnable\");\n\t\t}\n\t}\n\n\t/// <summary>\n\t/// 方案路径\n\t/// </summary>",
+      "evidenceType": "local-decompiled-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV04",
+      "program": "原版 VM",
+      "path": "analysis/decompiled/VM.Core/VM.Core/VmSolution.cs",
+      "member": "VmSolution.Dispose(bool)",
+      "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+      "start": 2466,
+      "end": 2487,
+      "excerpt": "\tpublic void Dispose(bool isTakeOver)\n\t{\n\t\tLogHelper.Info(\"DestoryHandle.\");\n\t\tServerSDKManager.serverSDKManager.mVmInterfaceManager.DestoryHandle(isTakeOver ? 1 : 0);\n\t}\n\n\t/// <summary>\n\t/// CH:设置默认打开方案 | EN: Set Default Open Solution\n\t/// <param name=\"solInfo\">CH: 方案信息 | EN:Solution Info</param>\n\t/// </summary>\n\tpublic void SetAutoLoadSolution(ImvsSdkDefine.IMVS_AUTO_LOAD_SOLUTION_INFO solInfo)\n\t{\n\t\tsolInfo.strPassWord = Hik.Util.StringUtil.UTF8GetFixLenBytes(SolutionPassword, 32);\n\t\tsolInfo.strSolutionPath = Hik.Util.StringUtil.UTF8GetFixLenBytes(SolutionPath, 780);\n\t\tServerSDKManager.serverSDKManager.mVmInterfaceManager.SetAutoLoadSolution(solInfo);\n\t}\n\n\t/// <summary>\n\t/// CH:方案是否含有密码 | EN: Soution has password\n\t/// </summary>\n\t/// <param name=\"path\">CH:方案路径 | EN:solution path</param>\n\t/// <returns> 有密码，返回true;无密码,返回false</returns>",
+      "evidenceType": "local-decompiled-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV05",
+      "program": "REA 当前独立实现",
+      "path": "src/VisionEditor/MainWindow.xaml.cs",
+      "member": "MainWindow global variable toolbar",
+      "sha256": "034c0dae3e04a9b592031d87e1c1349c23b14091b04564c295267a97fcaa1b4a",
+      "start": 52,
+      "end": 55,
+      "excerpt": "  Tool(\"toolbar_toolbarSave_normal.png\",\"保存\",()=>Save(false));Tool(\"toolbar_toolbarOpen_normal.png\",\"打开方案\",Open);undoToolButton=Tool(\"toolbar_ic_topbar_undo_normal.png\",\"撤销\",UndoShell);SetToolbarStateIcon(undoToolButton,\"toolbar_ic_topbar_undo_normal.png\",\"toolbar_ic_topbar_undo_disable.png\");redoToolButton=Tool(\"toolbar_ic_topbar_redo_normal.png\",\"重做\",RedoShell);SetToolbarStateIcon(redoToolButton,\"toolbar_ic_topbar_redo_normal.png\",\"toolbar_ic_topbar_redo_disable.png\");lockToolButton=Tool(\"toolbar_ic_topbar_lock_normal.png\",\"锁定工作区\",RequestWorkAreaLock);Sep();Tool(\"toolbar_ic_topbar_camera_normal.png\",\"相机列表\",()=>RefreshCameraProvider(true));Tool(\"toolbar_ic_全局变量_normal.png\",\"全局变量（变量模型尚未接入）\",null);Tool(\"toolbar_ic_通信管理_normal.png\",\"通信管理（通信模块尚未接入）\",null);Tool(\"toolbar_ic_topbar_全局触发_normal.png\",\"全局触发（触发器尚未接入）\",null);Tool(\"toolbar_ic_script_normal.png\",\"脚本（脚本引擎尚未接入）\",null);Sep();Tool(\"toolbar_toolbarStart_normal.png\",\"运行流程\",()=>{_=Run();});continuousToolButton=Tool(\"toolbar_toolbarRunRepeat_normal.png\",\"连续运行\",StartContinuous);stopToolButton=Tool(\"toolbar_toolBarStop_normal.png\",\"停止\",()=>activeRun?.Cancel());Tool(\"toolbar_ic_topbar_综合配置_normal.png\",\"综合配置（系统配置尚未接入）\",null);\n  BuildRail();}\n void ToggleToolboxClick(object sender,RoutedEventArgs e)=>ToggleToolbox();\n void ToggleToolbox(){if(windowClosed||parameterEditorOpen||isLocked||workflowOverview)return;toolboxExpanded=!toolboxExpanded;toolPopup?.SetCurrentValue(Popup.IsOpenProperty,false);if(ToolRail.Parent is Grid host&&host.ColumnDefinitions.Count>0)host.ColumnDefinitions[0].Width=new GridLength(toolboxExpanded?230:53);ToggleToolboxButton.Tag=toolboxExpanded?\"expanded\":\"folded\";ToggleToolboxButton.ToolTip=toolboxExpanded?\"折叠工具箱\":\"展开工具箱\";BuildRail();}",
+      "evidenceType": "current-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV06",
+      "program": "REA 当前独立实现",
+      "path": "src/VisionFramework/WorkflowRunContext.cs",
+      "member": "WorkflowRunContext",
+      "sha256": "d00f29701f640028040e0f2c3d1ac11246ffb500945246c3424e435741241247",
+      "start": 4,
+      "end": 46,
+      "excerpt": "internal sealed class WorkflowRunContext\n{\n readonly ProcedureDocument procedure; readonly int? groupLoopIndex;\n readonly Dictionary<string,PortValue> arguments;\n readonly Dictionary<string,PortValue> variables=new(StringComparer.Ordinal);\n readonly Dictionary<string,NodeRunRecord> records;\n public WorkflowRunContext(ProcedureDocument procedure,IReadOnlyDictionary<string,PortValue>? inputs,Dictionary<string,NodeRunRecord> records,int? groupLoopIndex=null)\n {\n  this.procedure=procedure;this.records=records;this.groupLoopIndex=groupLoopIndex;arguments=inputs?.ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal)??new(StringComparer.Ordinal);\n  foreach(var pair in arguments){var spec=procedure.Configuration.Inputs.SingleOrDefault(i=>i.Name==pair.Key)??throw new InvalidDataException(\"Unknown workflow input: \"+pair.Key);if(pair.Value is null||pair.Value.Kind!=spec.Kind||pair.Value.Cardinality!=spec.Cardinality)throw new InvalidDataException(\"Workflow input type mismatch: \"+pair.Key);}\n\n  foreach(var b in procedure.Configuration.Subscriptions.Where(b=>b.Source.Kind==WorkflowSourceKind.WorkflowInput)){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==b.Source.Id);if(!arguments.ContainsKey(spec.Name)&&spec.NodeId is null)throw new InvalidDataException(\"Missing workflow input: \"+spec.Name);}\n  foreach(var v in procedure.Configuration.Variables)if(v.SourceNode is null)variables[v.Id]=WorkflowSubscriptions.Initial(v);\n }\n PortValue Node(string node,string port)=>records.TryGetValue(node,out var r)&&r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch&&r.Outputs.TryGetValue(port,out var value)?value:throw new InvalidDataException(\"Current-run source unavailable: \"+node+\".\"+port);\n // Only an executed successful producer with absent data may become a primitive\n // missing-data result. Preserve the existing failure of unavailable predecessors.\n public bool CanDeferNumericRead(WorkflowValueReference source)=>source.Kind==WorkflowSourceKind.NodeOutput&&records.TryGetValue(source.Id,out var record)&&record.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch;\n public PortValue Resolve(WorkflowValueReference source){if(source.ArrayIndex is not null)throw new InvalidDataException(\"Indexed input requires an opted-in primitive reader.\");return source.Kind switch\n {\n  WorkflowSourceKind.GroupLoopIndex=>groupLoopIndex is {} index?PortValue.Integer(index):throw new InvalidDataException(\"Group LoopIndex requires an owned invocation context.\"),\n  WorkflowSourceKind.IntegerConstant=>PortValue.Integer(int.Parse(source.Id,System.Globalization.CultureInfo.InvariantCulture)),\n  WorkflowSourceKind.NumberConstant=>PortValue.Number(WorkflowSubscriptions.ReadNumberConstant(source.Id)),\n  WorkflowSourceKind.NumberArrayConstant=>PortValue.Numbers(WorkflowSubscriptions.ReadNumberArrayConstant(source.Id)),\n  WorkflowSourceKind.TextConstant=>PortValue.Text(WorkflowSubscriptions.ReadTextConstant(source.Id)),\n\n  WorkflowSourceKind.NodeOutput=>Node(source.Id,source.Port!),\n  WorkflowSourceKind.LocalVariable=>variables.TryGetValue(source.Id,out var value)?value:throw new InvalidDataException(\"Current-run variable unavailable: \"+source.Id),\n  WorkflowSourceKind.WorkflowInput=>Input(source.Id),\n  _=>throw new InvalidDataException(\"Unknown source kind.\")\n };}\n PortValue Input(string id){var spec=procedure.Configuration.Inputs.Single(i=>i.Id==id);return arguments.TryGetValue(spec.Name,out var value)?value:spec.NodeId is not null?Node(spec.NodeId,spec.Port!):throw new InvalidDataException(\"Missing workflow input: \"+spec.Name);}\n public void Update(string node){foreach(var v in procedure.Configuration.Variables.Where(v=>v.SourceNode==node)){variables.Remove(v.Id);try{variables[v.Id]=Node(node,v.SourcePort!);}catch(InvalidDataException){}}}\n public ExecutionSessionResult Complete(ExecutionSessionResult session)\n {\n  var output=new Dictionary<string,PortValue>(StringComparer.Ordinal);var errors=new List<string>();\n  foreach(var spec in procedure.Configuration.Outputs){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound workflow output: \"+spec.Name);var value=Node(spec.NodeId,spec.Port!);if(value.Kind!=spec.Kind&&!(spec.Kind==DataKind.Image&&DataKinds.IsImage(value.Kind)))throw new InvalidDataException(\"type mismatch\");output.Add(spec.Name,value);}catch(InvalidDataException e){errors.Add(spec.Name+\": \"+e.Message);}}\n  var displays=new Dictionary<string,IReadOnlyList<PortValue>>(StringComparer.Ordinal);var displayErrors=new List<string>();foreach(var spec in procedure.Configuration.Displays){try{if(spec.NodeId is null)throw new InvalidDataException(\"Unbound display: \"+spec.Name);displays.Add(spec.Name,Array.AsReadOnly(new[]{Node(spec.NodeId,spec.Port!)}));}catch(InvalidDataException e){displayErrors.Add(e.Message);}}\n  return session with{WorkflowDisplays=new ReadOnlyDictionary<string,IReadOnlyList<PortValue>>(displays),DisplayErrors=displayErrors.AsReadOnly(),Status=errors.Count>0&&session.Status==SessionStatus.Success?SessionStatus.Failed:session.Status,WorkflowInputs=new ReadOnlyDictionary<string,PortValue>(new Dictionary<string,PortValue>(arguments,StringComparer.Ordinal)),WorkflowOutputs=new ReadOnlyDictionary<string,PortValue>(output),LocalVariables=new ReadOnlyDictionary<string,PortValue>(variables.ToDictionary(v=>procedure.Configuration.Variables.Single(i=>i.Id==v.Key).Name,v=>v.Value,StringComparer.Ordinal)),OutputErrors=errors.AsReadOnly()};\n\n }\n}\n",
+      "evidenceType": "current-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV07",
+      "program": "REA 当前独立实现",
+      "path": "src/VisionFramework/SolutionExecutor.cs",
+      "member": "SolutionExecutor.CallAsync",
+      "sha256": "a49ba2ac2b924d8c5fa16941f138a78f92a6d81e47180753fd95b2d54349fc3b",
+      "start": 4,
+      "end": 23,
+      "excerpt": "    public Task<ExecutionSessionResult> CallAsync(SolutionWorkspace workspace,string procedureId,ExecutionSessionResult caller,IReadOnlyDictionary<string,string> inputToOutput,CancellationToken cancellationToken=default){\n        if(caller.Status!=SessionStatus.Success)throw new InvalidDataException(\"Cannot call from unsuccessful workflow.\");\n        var inputs=new Dictionary<string,PortValue>(StringComparer.Ordinal);\n        foreach(var map in inputToOutput)inputs.Add(map.Key,caller.WorkflowOutputs.TryGetValue(map.Value,out var value)?value:throw new InvalidDataException(\"Caller output unavailable: \"+map.Value));\n        return RunAsync(workspace,procedureId,cancellationToken:cancellationToken,inputs:inputs);\n    }\n    // Initial policy: all declared resources must be available and match their optional hash.\n    public async Task<ExecutionSessionResult> RunAsync(SolutionWorkspace workspace,string procedureId,IProgress<ExecutionEvent>? progress=null,CancellationToken cancellationToken=default,IReadOnlyDictionary<string,PortValue>? inputs=null,ModuleExecutionScope? scope=null,ModuleRunControl? control=null){\n        SolutionStore.ValidateStructure(workspace.Document);\n        var document=workspace.Document with{Resources=workspace.Document.Resources.ToArray(),Procedures=workspace.Document.Procedures.Select(p=>p with{Configuration=(p.GroupOwner is not null?GroupDisplayLinks.Synchronize(p.Configuration,p.Configuration):p.Configuration).Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(v=>v.Key,v=>v.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};\n        WorkflowCalls.Validate(document,procedureId);\n        var checkedProcedures=new HashSet<string>();void ValidateBreaks(string id){if(!checkedProcedures.Add(id))return;var parent=document.Procedures.Single(p=>p.Id==id);foreach(var node in parent.Nodes){if(node.GroupBreak is not null){var body=document.Procedures.SingleOrDefault(p=>p.Id==node.Call?.ProcedureId)??throw new InvalidDataException(\"Break metadata requires a Group body.\");GroupBreak.Validate(parent,node,body,registry);}if(node.Enabled&&node.Call is {} call)ValidateBreaks(call.ProcedureId);}}ValidateBreaks(procedureId);\n        var resources=document.Resources.ToArray();var catalog=new ResourceCatalog(workspace.BaseDirectory,resources);\n        foreach(var resource in resources){if(cancellationToken.IsCancellationRequested)break;using var stream=catalog.OpenVerified(resource.Id);}\n        async Task<ExecutionSessionResult> Execute(string id,IReadOnlyDictionary<string,PortValue>? arguments,CancellationToken token,int depth,int? groupLoopIndex=null){\n            if(depth>32)throw new InvalidDataException(\"Independent subprogram depth limit is 32.\");\n            var procedure=document.Procedures.SingleOrDefault(p=>p.Id==id)??throw new InvalidDataException(\"Unknown procedure: \"+id);\n            using var wait=new CancellationTokenSource();\n            if(procedure.WaitTimeMs>0)wait.CancelAfter(procedure.WaitTimeMs);\n            using var linked=CancellationTokenSource.CreateLinkedTokenSource(token,wait.Token);",
+      "evidenceType": "current-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV08",
+      "program": "REA 当前独立实现",
+      "path": "src/VisionEditor/WorkflowExecution.cs",
+      "member": "StartRunCore / RunCore / ContinuousRun",
+      "sha256": "62dfe19e6836de7c116f3c89a6c17521d64b252d14dd137116987aadc9a666d4",
+      "start": 20,
+      "end": 102,
+      "excerpt": " async Task StartRunCore(bool allowGroup,string? procedureId=null)\n {\n  if(activeRun is not null||!CanStartWorkflow(allowGroup,procedureId))return;\n  continuousRun=false;runningProcedureId=procedureId??doc.RootProcedureId(doc.CurrentProcedureId);var owner=new CancellationTokenSource();activeRun=owner;RefreshAll();\n  try{await RunCore(runningProcedureId,owner.Token);}finally{FinishWorkflowRun(owner);}\n }\n async Task<bool> RunCore(string procedureId,CancellationToken token)\n {\n  EnsureToolDebugSolution();\n  var owner=CaptureExecutionOwner();\n  var ownerScope=executionScope;\n  var workspace=new SolutionWorkspace(doc.Document,doc.BaseDirectory);\n  try\n  {\n   BeginWorkflowResults(procedureId);if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();\n   if(!IsCurrentExecutionOwner(owner))return false;\n   var control=new ModuleRunControl{Mode=continuousRun?ExecutionMode.Continuous:ExecutionMode.SelfRun};\n   var progress=CreateExecutionProgress(procedureId,owner,workflowExecuteCounts.GetValueOrDefault(procedureId)); // Capture the UI dispatcher before the graph moves to a worker.\n   var session=await Task.Run(()=>new SolutionExecutor(modules).RunAsync(workspace,procedureId,progress:progress,cancellationToken:token,scope:ownerScope,control:control),token);\n   if(!IsCurrentExecutionOwner(owner))return false;\n   if(control.StopRequested)continuousRun=false;\n\n   var elapsed=session.Nodes.Sum(r=>r.ElapsedMilliseconds);\n   // VmSolution's ModuleResult callback commits state synchronously and then\n   // publishes the same result to its double-buffer callback queue.  The\n   // managed host uses the same seam; the queue's default CacheEnabled=false\n   // preserves the existing synchronous presentation path.\n   WorkflowCallbacks.PublishModuleResult(\n    () => {\n      if(!IsCurrentExecutionOwner(owner))return;\n      if(doc.HasCurrentProcedure&&doc.RootProcedureId(doc.CurrentProcedureId)==procedureId){RestoreWorkflowResults();ProcessTimeText.Text=elapsed.ToString(\"F2\");StatusText.Text=\"流程完成：\"+session.Status+(session.OutputErrors.Count>0?\" · \"+string.Join(\"；\",session.OutputErrors):\"\");StatusIcon.Source=Asset(session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.NoMatch or NodeRunStatus.Skipped)?\"bottombar_run.png\":\"bottombar_abnormal.png\");RefreshRight();}\n      if(workflowOverview)RenderWorkflowOverview();\n      if(configurationProcedureId==procedureId)workflowConfigurationWindow?.RefreshResults();\n    },\n    () => {\n      StoreWorkflowCallResults(procedureId,session);RecordWorkflowRun(procedureId,elapsed);\n      if(!windowClosed)RecordFrameworkRunHistory(procedureId,session);\n    });\n   return session.Status==SessionStatus.Success&&session.Nodes.All(r=>r.Status is NodeRunStatus.Success or NodeRunStatus.Skipped);\n  }\n  catch(OperationCanceledException){if(IsCurrentExecutionOwner(owner))StatusText.Text=\"运行已停止\";}\n  catch(Exception e){if(IsCurrentExecutionOwner(owner))StatusText.Text=\"运行失败：\"+e.Message;}\n  return false;\n }\n void ClearWorkflowCallResults(string procedure){var seen=new HashSet<string>();void Clear(string id){if(!seen.Add(id))return;workflowSessions.Remove(id);ClearToolDebugResults(id);var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==id);if(p is not null)foreach(var n in p.Nodes.Where(n=>n.Call is not null))Clear(n.Call!.ProcedureId);}Clear(procedure);}\n void StoreWorkflowCallResults(string procedure,ExecutionSessionResult session){ClearToolDebugResults(procedure);clearedWorkflowResultViews.Remove(procedure);workflowSessions[procedure]=session;var p=doc.Document.Procedures.Single(x=>x.Id==procedure);foreach(var pair in session.Calls){var target=p.Nodes.Single(n=>n.Id==pair.Key).Call!.ProcedureId;StoreWorkflowCallResults(target,pair.Value);}}\n void RestoreWorkflowResults()\n {\n  results.Clear();if(!clearedWorkflowResultViews.Contains(doc.CurrentProcedureId)){if(workflowSessions.TryGetValue(doc.CurrentProcedureId,out var session))foreach(var result in session.Nodes)results[result.NodeId]=result;RestoreToolDebugResults(doc.CurrentProcedureId);}\n\n }\n async Task RunProcedure(string id){if(!doc.HasCurrentProcedure||doc.RootProcedureId(doc.CurrentProcedureId)!=id)SelectWorkflow(id);await StartRunCore(false,id);}\n async Task RunLegacyGroupProcedure(string id){SelectWorkflow(id);await StartRunCore(true);}\n void StartContinuous()\n {\n  if(activeRun is not null){activeRun.Cancel();return;}\n  if(!CanStartWorkflow())return;\n  continuousRun=true;runningProcedureId=doc.RootProcedureId(doc.CurrentProcedureId);var owner=new CancellationTokenSource();activeRun=owner;RefreshAll();_=ContinuousRun(runningProcedureId,owner);\n }\n void StartProcedureLoop(string id){if(activeRun is not null){activeRun.Cancel();return;}if(!doc.HasCurrentProcedure||doc.RootProcedureId(doc.CurrentProcedureId)!=id)SelectWorkflow(id);StartContinuous();}\n async Task ContinuousRun(string procedureId,CancellationTokenSource owner)\n {\n  var stamp=CaptureExecutionOwner();\n  try{while(!owner.IsCancellationRequested&&continuousRun&&IsCurrentExecutionOwner(stamp)){bool ok=await RunCore(procedureId,owner.Token);if(!IsCurrentExecutionOwner(stamp))break;var p=doc.Document.Procedures.FirstOrDefault(p=>p.Id==procedureId);if(p is null)break;if(!ok&&p.StopOnNg&&!owner.IsCancellationRequested){StatusText.Text=\"流程 NG，已停止连续运行\";break;}if(!owner.IsCancellationRequested){if(p.ContinuousRunIntervalMs>0)await Task.Delay(p.ContinuousRunIntervalMs,owner.Token);else await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);}}}\n  catch(OperationCanceledException){if(IsCurrentExecutionOwner(stamp))StatusText.Text=\"连续运行已停止\";}\n  catch(Exception error){if(IsCurrentExecutionOwner(stamp))StatusText.Text=\"连续运行失败：\"+error.Message;}\n  finally{FinishWorkflowRun(owner);}\n }\n void FinishWorkflowRun(CancellationTokenSource owner)\n {\n  if(ReferenceEquals(activeRun,owner)){activeRun=null;runningProcedureId=null;continuousRun=false;owner.Dispose();if(!windowClosed)RefreshAll();}\n }\n protected override void OnClosed(EventArgs e)\n {\n  executionOwnerEpoch.Close();DetachExecutionScope();doc.Dispose();\n  windowClosed=true;\n  workflowCallbacks?.Close();\n  CloseToolConfiguration();\n  executionScope.Dispose();ResetEditingGesture();canvasDragData.Clear();ReleaseToolDragData();activeRun?.Cancel();if(workflowListPopup is not null)workflowListPopup.IsOpen=false;if(toolPopup is not null)toolPopup.IsOpen=false;base.OnClosed(e);\n }\n}\n\n",
+      "evidenceType": "current-source",
+      "binaryIdentity": "not revalidated in this slice"
+    },
+    {
+      "id": "GV09",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/e46b941605407be5-WorkflowExecutionManager.cs.source.txt",
+      "member": "WorkflowExecutionManager.RunSolutionAsync",
+      "sha256": "e46b941605407be55cd60fd66d9749bb0d8f595d513f82a718b5ac026a9274ae",
+      "start": 421,
+      "end": 502,
+      "excerpt": "        public async Task RunSolutionAsync(\n            IEnumerable<WorkflowTabViewModel> workflows,\n            Solution solution,\n            CancellationToken cancellationToken = default)\n        {\n            if (workflows == null)\n                throw new ArgumentNullException(nameof(workflows));\n            if (solution == null)\n                throw new ArgumentNullException(nameof(solution));\n\n            using var solutionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);\n            lock (_lock)\n            {\n                if (_transitionBlocked || _solutionRunCts != null ||\n                    (_communicationOperation && !_communicationOwner.Value))\n                    throw new InvalidOperationException(\"已有方案执行、通讯操作或切换操作。\");\n                _solutionRunCts = solutionCancellation;\n            }\n            try\n            {\n            cancellationToken = solutionCancellation.Token;\n            var tabs = workflows.Where(tab => tab != null).ToList();\n            if (!_communicationOwner.Value)\n                await InvokeOnUIAsync(() => CommitPendingEditors(null));\n            var tabsById = tabs.ToDictionary(tab => tab.RootWorkflowId, StringComparer.Ordinal);\n            var plan = SolutionExecutionDependencyGraph.Compile(solution);\n            var runtimeGlobals = solution.GlobalVariables.Where(variable => variable.ProducerBinding == null && string.IsNullOrEmpty(variable.RebindingReason) && string.IsNullOrEmpty(variable.BindingValidationPending))\n                .ToDictionary(variable => variable.Name, variable => variable.Value, StringComparer.Ordinal);\n            var workflowPredecessors = BuildWorkflowPredecessors(plan, tabsById.Keys);\n            var completed = new HashSet<string>(StringComparer.Ordinal);\n            var failed = new HashSet<string>(StringComparer.Ordinal);\n            var pending = new HashSet<string>(tabsById.Keys, StringComparer.Ordinal);\n\n            while (pending.Count > 0)\n            {\n                cancellationToken.ThrowIfCancellationRequested();\n                var ready = pending\n                    .Where(id => workflowPredecessors[id].All(predecessor =>\n                        completed.Contains(predecessor) || failed.Contains(predecessor)))\n                    .OrderBy(id => tabs.FindIndex(tab => tab.RootWorkflowId == id))\n                    .ToList();\n                if (ready.Count == 0)\n                    throw new InvalidOperationException(\"存在未完成的跨流程依赖，无法继续解决方案运行。\");\n\n                // WorkflowExecutionEngine 当前根会话互斥；此处按已推导的顺序提交。\n                var workflowId = ready[0];\n                var tab = tabsById[workflowId];\n                // A failed workflow may still have successful producers. Let the next workflow\n                // execute its independent nodes; missing producer values fail only their consumers.\n\n                if (!TryAcquireExecution(workflowId))\n                    throw new InvalidOperationException($\"流程 {tab.Name} 已在运行，不能加入本次解决方案运行。\");\n\n                try\n                {\n                    tab.IsRunning = true;\n                    OnWorkflowExecutionStarted(workflowId);\n                    var executionResult = await ExecuteSingleTriggeredAsync(tab, cancellationToken, runtimeGlobals);\n                    ApplyProducedGlobalValues(solution, workflowId, executionResult, runtimeGlobals);\n                    if (executionResult.Success)\n                    {\n                        completed.Add(workflowId);\n                        OnWorkflowExecutionCompleted(workflowId);\n                    }\n                    else\n                    {\n                        failed.Add(workflowId);\n                        OnWorkflowExecutionError(workflowId, string.Join(\"; \", executionResult.Errors));\n                    }\n                }\n                finally\n                {\n                    tab.IsRunning = false;\n                    pending.Remove(workflowId);\n                    ReleaseExecution(workflowId);\n                }\n            }\n            }\n            finally { lock (_lock) _solutionRunCts = null; }\n        }\n\n        /// <summary>",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/UI/Services/Workflow/WorkflowExecutionManager.cs"
+    },
+    {
+      "id": "GV10",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/e46b941605407be5-WorkflowExecutionManager.cs.source.txt",
+      "member": "BuildWorkflowPredecessors / ApplyProducedGlobalValues",
+      "sha256": "e46b941605407be55cd60fd66d9749bb0d8f595d513f82a718b5ac026a9274ae",
+      "start": 1026,
+      "end": 1101,
+      "excerpt": "        private static Dictionary<string, HashSet<string>> BuildWorkflowPredecessors(\n            SolutionExecutionDependencyGraph plan,\n            IEnumerable<string> workflowIds)\n        {\n            var knownIds = new HashSet<string>(workflowIds, StringComparer.Ordinal);\n            var predecessors = knownIds.ToDictionary(\n                id => id,\n                _ => new HashSet<string>(StringComparer.Ordinal),\n                StringComparer.Ordinal);\n\n            foreach (var dependency in plan.Dependencies.Where(item => item.Kind == SolutionDependencyKind.GlobalVariable))\n            {\n                var sourceWorkflowId = GetWorkflowId(dependency.SourceScopedNodeId);\n                var targetWorkflowId = GetWorkflowId(dependency.TargetScopedNodeId);\n                if (!string.Equals(sourceWorkflowId, targetWorkflowId, StringComparison.Ordinal) &&\n                    knownIds.Contains(sourceWorkflowId) && knownIds.Contains(targetWorkflowId))\n                {\n                    predecessors[targetWorkflowId].Add(sourceWorkflowId);\n                }\n            }\n\n            return predecessors;\n        }\n\n        private static string GetWorkflowId(string scopedNodeId)\n        {\n            var separatorIndex = scopedNodeId.IndexOf('/');\n            return separatorIndex > 0 ? scopedNodeId[..separatorIndex] : scopedNodeId;\n        }\n\n        /// <summary>\n        /// 把生产节点的结果写入当前解决方案运行的变量快照。这里刻意不修改 Solution.GlobalVariables.Value，\n        /// 防止一次运行把设计期初值污染到方案文件；下一消费者流程只读取 runtimeGlobals。\n        /// </summary>\n        private void ApplyProducedGlobalValues(\n            Solution solution,\n            string workflowId,\n            ExecutionResult executionResult,\n            IDictionary<string, object?> runtimeGlobals)\n        {\n            foreach (var variable in solution.GlobalVariables.Where(variable =>\n                         string.Equals(variable.ProducerBinding?.WorkflowId, workflowId, StringComparison.Ordinal)))\n            {\n                var producer = variable.ProducerBinding!;\n                runtimeGlobals.Remove(variable.Name);\n                if (!string.IsNullOrEmpty(variable.RebindingReason) || !string.IsNullOrEmpty(variable.BindingValidationPending)) continue;\n                if (!executionResult.NodeResults.TryGetValue(producer.NodeId, out var nodeResult) ||\n                    !nodeResult.Success || nodeResult.Result?.IsSuccess != true)\n                {\n                    continue;\n                }\n\n                try\n                {\n                    runtimeGlobals[variable.Name] = OutputVariableResolver.Resolve(\n                        nodeResult.Result, producer.ResultName, producer.NodeId);\n                }\n                catch (Exception ex)\n                {\n                    InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this,\n                        new WorkflowExecutionProgressEventArgs(workflowId, $\"变量 {variable.Name} 本轮不可用：{ex.Message}\")));\n                }\n            }\n        }\n\n        /// <summary>\n        /// 创建测试用的Mat — 已废弃，工作流不再提供默认输入图像\n        /// </summary>\n        // 已删除：工作流不再提供默认输入图像，缺少输入图像的节点将直接报错\n\n        /// <summary>\n        /// 递归遍历工作流（含子工作流），从每个 ImageLoad 节点的 InputSource\n        /// 读取当前选中的图像路径，生成本轮参数覆盖快照。\n        /// </summary>\n        /// <remarks>\n        /// 使用 WorkflowNodeBase 基类而非 SunEyeVision.UI.Shared.WorkflowNode，确保子程序工作流中的节点",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/UI/Services/Workflow/WorkflowExecutionManager.cs"
+    },
+    {
+      "id": "GV11",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/e46b941605407be5-WorkflowExecutionManager.cs.source.txt",
+      "member": "StartAllContinuousRun / StopAllContinuousRun / TryAcquireExecution",
+      "sha256": "e46b941605407be55cd60fd66d9749bb0d8f595d513f82a718b5ac026a9274ae",
+      "start": 505,
+      "end": 568,
+      "excerpt": "        public void StartAllContinuousRun(IEnumerable<WorkflowTabViewModel> workflows)\n        {\n            if (workflows == null)\n                throw new ArgumentNullException(nameof(workflows));\n\n            foreach (var workflow in workflows)\n            {\n                StartContinuousRun(workflow);\n            }\n        }\n\n        /// <summary>\n        /// 停止所有工作流的连续执行\n        /// </summary>\n        public void StopAllContinuousRun()\n        {\n            lock (_lock)\n            {\n                foreach (var cts in _cancellationTokens.Values)\n                {\n                    cts.Cancel();\n                }\n            }\n        }\n\n        /// <summary>\n        /// 判断指定工作流是否正在运行\n        /// </summary>\n        public bool IsRunning(string workflowId)\n        {\n            lock (_lock)\n            {\n                return _activeWorkflowIds.Contains(workflowId);\n            }\n        }\n\n        /// <summary>\n        /// 判断是否有任何工作流正在运行\n        /// </summary>\n        public bool IsAnyRunning()\n        {\n            lock (_lock)\n            {\n                return _activeWorkflowIds.Count > 0 || _solutionRunCts != null || _communicationOperation;\n            }\n        }\n\n        private bool TryAcquireExecution(string workflowId)\n        {\n            lock (_lock)\n            {\n                if (_transitionBlocked) return false;\n                if (_communicationOperation && !_communicationOwner.Value) return false;\n                return _activeWorkflowIds.Add(workflowId);\n            }\n        }\n\n        /// <summary>Non-waiting application lease shared with manual and continuous workflow execution.</summary>\n        public async Task<bool> RunCommunicationOperationAsync(Func<CancellationToken, Task> operation, CancellationToken token,\n            IReadOnlyList<CommunicationParameterAssignment>? assignments = null,\n            SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationReceiveService? receiveInputs = null)\n        {\n            using var runCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);\n            lock (_lock)",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/UI/Services/Workflow/WorkflowExecutionManager.cs"
+    },
+    {
+      "id": "GV12",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/e46b941605407be5-WorkflowExecutionManager.cs.source.txt",
+      "member": "ExecuteWorkflowInternal",
+      "sha256": "e46b941605407be55cd60fd66d9749bb0d8f595d513f82a718b5ac026a9274ae",
+      "start": 665,
+      "end": 836,
+      "excerpt": "        private async Task<ExecutionResult> ExecuteWorkflowInternal(\n            WorkflowTabViewModel workflow,\n            CancellationToken cancellationToken,\n            IDictionary<string, object?>? globalVariablesOverride = null,\n            CameraFrame? cameraFrame = null,\n            string? cameraNodeId = null,\n            Dictionary<string, long>? sequenceNumbers = null)\n        {\n            var snapshot = GetOrCreateExecutionSnapshot(workflow.RootWorkflowId, workflow.Name);\n            if (!_communicationOwner.Value)\n                await InvokeOnUIAsync(() => CommitPendingEditors(workflow.RootWorkflowId));\n            await InvokeOnUIAsync(() =>\n            {\n                BeginRunPresentation(workflow.RootWorkflowId, workflow.Name, snapshot);\n                ExecutionSnapshotUpdated?.Invoke(this, snapshot);\n            });\n            // 在开始时先发送一条开始日志\n            InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, \"[EXEC] ====== 开始执行工作流 ======\")));\n\n            try\n            {\n                // 获取输入图像（可能为 null，工作流引擎会处理）\n                var inputImage = cameraFrame is null ? await _inputProvider.GetInputImageAsync() : null;\n                cancellationToken.ThrowIfCancellationRequested();\n                var receiveInputs = _communicationInputs.Value ?? SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.CommunicationService.Receives;\n                if (globalVariablesOverride != null)\n                    receiveInputs = new SunEyeVision.Plugin.SDK.Models.Communication.RuntimeVariableReceiveService(receiveInputs, globalVariablesOverride);\n\n                InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, \"[EXEC] 正在创建日志器...\")));\n                // 使用全局日志器（自动转发到UILogWriter）\n                var logger = VisionLogger.Instance.ForSource(workflow.Name);\n\n                InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, \"[EXEC] 正在创建执行引擎...\")));\n                // ★ Phase 1: 使用共享的 _workflowEngine（子程序工作流已注册在其中），不再创建新引擎\n                var pluginManager = new PluginManager(logger);\n                var executionEngine = new WorkflowExecutionEngine(_workflowEngine, pluginManager, logger);\n\n                // ★ 从引擎获取根工作流（始终读取 RootWorkflowId 对应的节点）\n                var rootEngineWorkflow = _workflowEngine.GetWorkflow(workflow.RootWorkflowId);\n                if (rootEngineWorkflow == null)\n                {\n                    logger.LogError($\"根工作流未找到: {workflow.RootWorkflowId}\");\n                    var missingResult = ExecutionResult.CreateFailure($\"根工作流未找到: {workflow.RootWorkflowId}\");\n                    await InvokeOnUIAsync(() =>\n                    {\n                        snapshot.Complete(missingResult, _ => \"工作流\");\n                        ExecutionSnapshotUpdated?.Invoke(this, snapshot);\n                    });\n                    return missingResult;\n                }\n\n                var definitionConsistencyError = ValidateDefinitionConsistency(\n                    workflow,\n                    rootEngineWorkflow);\n                if (definitionConsistencyError != null)\n                {\n                    logger.LogError(definitionConsistencyError);\n                    var consistencyResult = ExecutionResult.CreateFailure(definitionConsistencyError);\n                    await InvokeOnUIAsync(() =>\n                    {\n                        snapshot.Complete(consistencyResult, _ => \"工作流\");\n                        ExecutionSnapshotUpdated?.Invoke(this, snapshot);\n                    });\n                    return consistencyResult;\n                }\n\n                // ★ 订阅节点状态事件：引擎状态 → 画布节点（解决状态断点）\n                //   引擎在 Running/Completed/Failed/Skipped 时发事件，此处映射到 UI 节点 Status。\n                //   找不到节点记日志跳过（Fail-Forward），不中断流程。\n                executionEngine.NodeStatusChanged += (_, e) =>\n                {\n                    var node = FindNodeRecursive(rootEngineWorkflow, e.NodeId);\n                    var snapshotNodeName = GetSnapshotNodeName(rootEngineWorkflow, e.NodeId);\n                    var statusText = e.Status switch\n                    {\n                        NodeStatus.Running => \"运行中\",\n                        NodeStatus.Completed => \"成功\",\n                        NodeStatus.Failed => \"失败\",\n                        NodeStatus.Skipped => \"跳过\",\n                        _ => \"等待中\"\n                    };\n                    if (node is SunEyeVision.UI.Shared.WorkflowNode uiNode)\n                    {\n                        InvokeOnUI(() =>\n                        {\n                            uiNode.Status = statusText;\n                            snapshot.UpdateNodeStatus(e.NodeId, snapshotNodeName, statusText);\n                            ExecutionSnapshotUpdated?.Invoke(this, snapshot);\n                        });\n                    }\n                    else\n                    {\n                        logger.LogWarning($\"节点状态事件找不到画布节点: {e.NodeId}\");\n                        InvokeOnUI(() =>\n                        {\n                            snapshot.UpdateNodeStatus(e.NodeId, snapshotNodeName, statusText);\n                            ExecutionSnapshotUpdated?.Invoke(this, snapshot);\n                        });\n                    }\n                };\n\n                // 引擎在每个节点结束时立即发布结果；快照窗口因而能在流程运行中更新耗时，\n                // 而不必等整个流程结束再回填一张静态表。\n                executionEngine.NodeExecutionFinished += (node, nodeResult) =>\n                {\n                    InvokeOnUI(() =>\n                    {\n                        snapshot.UpdateNodeResult(node.Id, GetSnapshotNodeName(rootEngineWorkflow, node.Id), nodeResult);\n                        ExecutionSnapshotUpdated?.Invoke(this, snapshot);\n                    });\n                };\n\n                // 每轮先复制参数，再覆盖本轮已发布的输入快照，避免 UI 后续切图影响本轮。\n                var runtimeParameters = new Dictionary<string, object>(_runtimeParameters);\n                var inputSnapshot = _runtimeInputSnapshots.GetSnapshot(workflow.RootWorkflowId);\n                if (inputSnapshot != null)\n                {\n                    runtimeParameters[\"CurrentImagePath\"] = inputSnapshot.ImagePath;\n                    runtimeParameters[\"CurrentImageIndex\"] = inputSnapshot.ImageIndex;\n                    runtimeParameters[\"CurrentImageVersion\"] = inputSnapshot.Version;\n                }\n\n                foreach (var param in runtimeParameters)\n                {\n                    logger.LogInfo($\"运行时参数: {param.Key} = {param.Value}\");\n                }\n\n                // 从各节点 InputSource 提取本轮路径快照。路径只覆盖深拷贝后的执行参数，\n                // 不再写回方案节点的 Parameters.FilePath，避免切图或执行污染设计数据。\n                var nodeParameterOverrides = CreateImageLoadParameterOverrides(\n                    rootEngineWorkflow,\n                    logger,\n                    new HashSet<string>());\n                if (sequenceNumbers is not null)\n                {\n                    foreach (var pair in nodeParameterOverrides)\n                    {\n                        var configured = (long)pair.Value[\"SequenceNumber\"]!;\n                        if (!sequenceNumbers.TryGetValue(pair.Key, out var current))\n                            sequenceNumbers[pair.Key] = current = configured;\n                        ((Dictionary<string, object?>)pair.Value)[\"SequenceNumber\"] = current;\n                    }\n                }\n                var hasCameraSource = nodeParameterOverrides.Values.Any(values =>\n                    values.TryGetValue(\"SourceKind\", out var kind)\n                    && kind is SunEyeVision.Plugin.SDK.Vision.Contracts.ImageSourceKind.Camera);\n                var bindingOverrides = new Dictionary<string, IReadOnlyDictionary<string, object?>>();\n                foreach (var group in (_communicationAssignments.Value ?? Array.Empty<CommunicationParameterAssignment>()).GroupBy(a => a.NodeId))\n                {\n                    var values = group.ToDictionary(a => a.Property, a => (object?)a.Value);\n                    bindingOverrides[group.Key] = values;\n                    if (!nodeParameterOverrides.TryGetValue(group.Key, out var existing)) existing = new Dictionary<string, object?>();\n                    var merged = new Dictionary<string, object?>(existing);\n                    foreach (var value in values) merged[value.Key] = value.Value;\n                    nodeParameterOverrides[group.Key] = merged;\n                }\n\n                // ★ 引擎内部统一完成节点类型转换，主/子工作流共享同一逻辑\n                logger.LogInfo($\"开始执行工作流: {rootEngineWorkflow.Name}\");\n                InvokeOnUI(() => WorkflowExecutionProgress?.Invoke(this, new WorkflowExecutionProgressEventArgs(workflow.RootWorkflowId, \"[EXEC] 开始执行工作流...\")));\n\n                var runRequest = new WorkflowRunRequest(\n                    workflow.RootWorkflowId,\n                    inputImage as IVisionImage,\n                    globalVariablesOverride ?? _globalVariables,\n                    runtimeParameters,\n                    nodeParameterOverrides: nodeParameterOverrides,\n                    nodeBindingOverrides: bindingOverrides,\n                    communicationInputs: receiveInputs,\n                    communicationOutputs: SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.CommunicationService.Sends,\n                    cameraCaptureService: hasCameraSource\n                        ? SunEyeVision.UI.Features.WorkflowUI.Canvas.Adapters.ServiceInitializer.CameraRuntime.Runtime",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/UI/Services/Workflow/WorkflowExecutionManager.cs"
+    },
+    {
+      "id": "GV13",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/9f97a64dd147f5fc-WorkflowRunRequest.cs.source.txt",
+      "member": "WorkflowRunRequest",
+      "sha256": "9f97a64dd147f5fcd5fefebde422ad390df0aa8fec6f722cf8c105d8143b4ec2",
+      "start": 11,
+      "end": 61,
+      "excerpt": "public sealed class WorkflowRunRequest\n{\n    public WorkflowRunRequest(\n        string workflowId,\n        IVisionImage? inputImage = null,\n        IDictionary<string, object?>? globalVariables = null,\n        IDictionary<string, object>? runtimeParameters = null,\n        IDictionary<string, object>? contextVariables = null,\n        IDictionary<string, IReadOnlyDictionary<string, object?>>? nodeParameterOverrides = null,\n        ICameraCaptureService? cameraCaptureService = null,\n        IReadOnlyDictionary<string, CameraFrame>? cameraFrames = null,\n        IDictionary<string, IReadOnlyDictionary<string, object?>>? nodeBindingOverrides = null,\n        SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationReceiveService? communicationInputs = null,\n        SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationSendService? communicationOutputs = null)\n    {\n        if (string.IsNullOrWhiteSpace(workflowId))\n            throw new ArgumentException(\"工作流 ID 不能为空。\", nameof(workflowId));\n\n        WorkflowId = workflowId;\n        CommunicationInputs = communicationInputs;\n        CommunicationOutputs = communicationOutputs;\n        InputImage = inputImage;\n        GlobalVariables = new Dictionary<string, object?>(globalVariables ?? new Dictionary<string, object?>());\n        RuntimeParameters = new Dictionary<string, object>(runtimeParameters ?? new Dictionary<string, object>());\n        ContextVariables = new Dictionary<string, object>(contextVariables ?? new Dictionary<string, object>());\n        NodeParameterOverrides = (nodeParameterOverrides ?? new Dictionary<string, IReadOnlyDictionary<string, object?>>())\n            .ToDictionary(\n                pair => pair.Key,\n                pair => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>(pair.Value));\n        CameraCaptureService = cameraCaptureService;\n        NodeBindingOverrides = (nodeBindingOverrides ?? new Dictionary<string, IReadOnlyDictionary<string, object?>>())\n            .ToDictionary(p => p.Key, p => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>(p.Value));\n        CameraFrames = new Dictionary<string, CameraFrame>(cameraFrames ?? new Dictionary<string, CameraFrame>());\n    }\n\n    public string WorkflowId { get; }\n    public SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationReceiveService? CommunicationInputs { get; }\n    public SunEyeVision.Plugin.SDK.Models.Communication.ICommunicationSendService? CommunicationOutputs { get; }\n    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, object?>> NodeBindingOverrides { get; }\n    public IVisionImage? InputImage { get; }\n    public IReadOnlyDictionary<string, object?> GlobalVariables { get; }\n    public IReadOnlyDictionary<string, object> RuntimeParameters { get; }\n    public IReadOnlyDictionary<string, object> ContextVariables { get; }\n\n    /// <summary>仅应用到深拷贝后的执行参数，绝不写回方案节点参数。</summary>\n    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, object?>> NodeParameterOverrides { get; }\n    public ICameraCaptureService? CameraCaptureService { get; }\n    /// <summary>以节点 ID 寻址的本轮相机帧。宿主在执行完成后释放帧。</summary>\n    public IReadOnlyDictionary<string, CameraFrame> CameraFrames { get; }\n}\n",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowRunRequest.cs"
+    },
+    {
+      "id": "GV14",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/1868385cc3e8c6b2-SolutionExecutionDependencyGraph.cs.source.txt",
+      "member": "SolutionExecutionDependencyGraph global dependencies",
+      "sha256": "1868385cc3e8c6b27806b3dd7051ab1d07f3483593f27feb430da121e209e99f",
+      "start": 111,
+      "end": 187,
+      "excerpt": "        foreach (var variable in solution.GlobalVariables ?? Enumerable.Empty<GlobalVariable>())\n        {\n            // Invalid producer bindings remain unavailable at execution time; unrelated graphs still compile.\n            if (!string.IsNullOrEmpty(variable.RebindingReason) || !string.IsNullOrEmpty(variable.BindingValidationPending))\n                continue;\n            if (variable.ProducerBinding == null)\n                continue;\n\n            var producer = ResolveNode(variable.ProducerBinding.WorkflowId, variable.ProducerBinding.NodeId,\n                $\"全局变量 {variable.Name} 的输入来源\");\n            if (producer == null) continue;\n\n            foreach (var consumer in variable.ConsumerBindings ?? Enumerable.Empty<ConsumerBinding>())\n            {\n                var target = ResolveNode(consumer.WorkflowId, consumer.NodeId,\n                    $\"全局变量 {variable.Name} 的目标输出\");\n                if (target == null) continue;\n                AddDependency(producer, target, SolutionDependencyKind.GlobalVariable,\n                    variable.Name, consumer.ParameterName);\n            }\n            foreach (var workflow in workflows)\n                foreach (var node in workflow.Nodes)\n                    foreach (var input in BindingRelationCatalog.Describe(node).Where(i => i.Active))\n                        if (SunEyeVision.Plugin.SDK.Execution.Parameters.BindingInputCatalog.TryReference(input.Read(), workflow.Nodes.Select(n => n.Id), input.ReferenceOnly, out var id, out var path) &&\n                            (id == \"__VariableId__\" && path == variable.Id || id == \"__GlobalVars__\" && SunEyeVision.Plugin.SDK.Execution.Parameters.PropertyPathParser.ExtractPropertyName(path) == variable.Name))\n                            AddDependency(producer, GetScopedNodeId(workflow.Id, node.Id), SolutionDependencyKind.GlobalVariable, variable.Name, input.Key);\n        }\n\n        var graph = new SolutionExecutionDependencyGraph(predecessors, dependencies);\n        graph.GetTopologicalLayers(nodeLookup.Keys);\n        return graph;\n\n        string? ResolveNode(string workflowId, string nodeId, string role)\n        {\n            if (string.IsNullOrWhiteSpace(nodeId))\n                return null;\n\n            if (!string.IsNullOrWhiteSpace(workflowId))\n            {\n                var scoped = GetScopedNodeId(workflowId, nodeId);\n                if (!nodeLookup.ContainsKey(scoped))\n                    return null;\n                return scoped;\n            }\n\n            // 兼容旧方案：旧 ConsumerBinding 未保存工作流 ID。节点 ID 全局唯一时可安全迁移；\n            // 若不唯一则拒绝猜测，提示用户重新保存该绑定。\n            if (!workflowByNodeId.TryGetValue(nodeId, out var owners) || owners.Count == 0)\n                return null;\n            if (owners.Count != 1)\n                return null;\n            return GetScopedNodeId(owners[0].Id, nodeId);\n        }\n\n        void AddDependency(string source, string target, SolutionDependencyKind kind, string? variableName, string? parameterName)\n        {\n            if (string.Equals(source, target, StringComparison.Ordinal))\n                throw new InvalidOperationException($\"解决方案依赖不能指向自身：{source}。\");\n            if (predecessors[target].Add(source))\n                dependencies.Add(new SolutionExecutionDependency(source, target, kind, variableName, parameterName));\n        }\n    }\n}\n\npublic enum SolutionDependencyKind\n{\n    Internal,\n    GlobalVariable\n}\n\npublic sealed record SolutionExecutionDependency(\n    string SourceScopedNodeId,\n    string TargetScopedNodeId,\n    SolutionDependencyKind Kind,\n    string? GlobalVariableName,\n    string? ParameterName);\n",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/SolutionExecutionDependencyGraph.cs"
+    },
+    {
+      "id": "GV15",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/d6d47d991cf0b100-WorkflowExecutionDependencyGraph.cs.source.txt",
+      "member": "WorkflowExecutionDependencyGraph local dependencies",
+      "sha256": "d6d47d991cf0b100a98976509c28f1d7b888a55f98ef8882cc9df27058f60f62",
+      "start": 113,
+      "end": 148,
+      "excerpt": "                if (sourceId is \"__GlobalVars__\" or \"__VariableId__\")\n                {\n                    var variable = variables?.FirstOrDefault(v => sourceId == \"__VariableId__\" ? v.Id == path : v.Name == PropertyPathParser.ExtractPropertyName(path));\n                    if (variable is { HasProducer: true } && knownNodes.Contains(variable.ProducerNodeId) &&\n                        (string.IsNullOrEmpty(variable.ProducerWorkflowId) || variable.ProducerWorkflowId == (sourceWorkflowId ?? workflow.Id)))\n                        AddDependency(variable.ProducerNodeId, node.Id, WorkflowDependencyKind.ParameterBinding, input.Key);\n                    continue;\n                }\n                if (sourceId == \"__SubroutineInputs__\") continue;\n                if (BindingRelationCatalog.SourceWorkflowId(node, input, sourceWorkflowId ?? workflow.Id) != (sourceWorkflowId ?? workflow.Id))\n                    throw new InvalidOperationException(\"节点绑定跨出工作流作用域，请使用全局变量。\");\n                AddDependency(sourceId, node.Id, WorkflowDependencyKind.ParameterBinding, input.Key);\n            }\n            if (node.Parameters is SunEyeVision.Plugin.SDK.Models.Communication.IReceiveVariableInputProvider receive)\n                foreach (var id in receive.GetReceiveVariableIds())\n                {\n                    var variable = variables?.FirstOrDefault(v => v.Id == id && v.HasProducer);\n                    if (variable != null && knownNodes.Contains(variable.ProducerNodeId)\n                        && (string.IsNullOrEmpty(variable.ProducerWorkflowId) || variable.ProducerWorkflowId == (sourceWorkflowId ?? workflow.Id)))\n                        AddDependency(variable.ProducerNodeId, node.Id, WorkflowDependencyKind.ParameterBinding, \"ReceiveVariable\");\n                }\n        }\n\n        var graph = new WorkflowExecutionDependencyGraph(predecessors, dependencies)\n        { InputIssues = inputIssues ?? new Dictionary<string, IReadOnlyList<ExecutionInputIssue>>() };\n        graph.GetTopologicalLayers(nodeIds);\n        return graph;\n    }\n}\n\npublic enum WorkflowDependencyKind\n{\n    Connection,\n    ParameterBinding\n}\n",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowExecutionDependencyGraph.cs"
+    },
+    {
+      "id": "GV16",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/57178a1086bd8a06-GlobalVariable.cs.source.txt",
+      "member": "GlobalVariable.Value",
+      "sha256": "57178a1086bd8a066af3c53d59230f8ef8413673db55d1a1249b802fabb3748b",
+      "start": 155,
+      "end": 173,
+      "excerpt": "    public object? Value\n    {\n        get { lock (ValueGate) return _value; }\n        set\n        {\n            lock (ValueGate) { if (Equals(_value, value)) return; _value = value; }\n            OnPropertyChanged(nameof(Value));\n        }\n    }\n\n    /// <summary>\n    /// 变量类型（词汇表由 SdkTypeVocabulary 定义）\n    /// </summary>\n    public string Type\n    {\n        get => _type;\n        set => SetProperty(ref _type, value, \"变量类型\");\n    }\n",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/GlobalVariable.cs"
+    },
+    {
+      "id": "GV17",
+      "program": "自研 SunEyeVision_V2（只读源码快照）",
+      "path": "docs/architecture-recovery/global-variable-analysis.resources/57178a1086bd8a06-GlobalVariable.cs.source.txt",
+      "member": "GlobalVariableManager",
+      "sha256": "57178a1086bd8a066af3c53d59230f8ef8413673db55d1a1249b802fabb3748b",
+      "start": 411,
+      "end": 501,
+      "excerpt": "public class GlobalVariableManager\n{\n    private readonly Dictionary<string, GlobalVariable> _variables = new();\n\n    /// <summary>\n    /// 获取所有变量\n    /// </summary>\n    public List<GlobalVariable> GetAll()\n    {\n        return _variables.Values.ToList();\n    }\n\n    /// <summary>\n    /// 获取变量\n    /// </summary>\n    public GlobalVariable? Get(string name)\n    {\n        return _variables.TryGetValue(name, out var variable) ? variable : null;\n    }\n\n    /// <summary>\n    /// 添加变量\n    /// </summary>\n    public void Add(GlobalVariable variable)\n    {\n        if (string.IsNullOrWhiteSpace(variable.Name))\n            throw new ArgumentException(\"变量名称不能为空\");\n\n        _variables[variable.Name] = variable;\n    }\n\n    /// <summary>\n    /// 移除变量\n    /// </summary>\n    public bool Remove(string name)\n    {\n        return _variables.Remove(name);\n    }\n\n    /// <summary>\n    /// 更新变量\n    /// </summary>\n    public bool Update(GlobalVariable variable)\n    {\n        if (string.IsNullOrWhiteSpace(variable.Name))\n            return false;\n\n        if (!_variables.ContainsKey(variable.Name))\n            return false;\n\n        _variables[variable.Name] = variable;\n        return true;\n    }\n\n    /// <summary>\n    /// 设置变量值\n    /// </summary>\n    public void SetValue(string name, object? value)\n    {\n        if (!_variables.TryGetValue(name, out var variable))\n            return;\n\n        variable.Value = value;\n        variable.ModifiedTime = DateTime.Now;\n    }\n\n    /// <summary>\n    /// 获取变量值\n    /// </summary>\n    public object? GetValue(string name)\n    {\n        return _variables.TryGetValue(name, out var variable) ? variable.Value : null;\n    }\n\n    /// <summary>\n    /// 检查变量是否存在\n    /// </summary>\n    public bool Contains(string name)\n    {\n        return _variables.ContainsKey(name);\n    }\n\n    /// <summary>\n    /// 清空所有变量\n    /// </summary>\n    public void Clear()\n    {\n        _variables.Clear();\n    }\n}\n",
+      "evidenceType": "captured-external-project-source",
+      "binaryIdentity": "source only; no binary or runtime equivalence claimed",
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/GlobalVariable.cs"
+    }
+  ],
+  "sections": [
+    [
+      "先用一个例子看清难点",
+      "流程 A 测量出宽度 X，流程 B 根据 X 判断。关键不是“B 能否找到 X”，而是“B 找到的是 A 哪一轮的 X”。如果 A 本轮失败，B 继续读上轮的 X，类型和界面都可能正常，业务结果却已错配。以下例子用于解释，不是原版运行实测。"
+    ],
+    [
+      "谁持有：定义、运行值、结果应当分开",
+      "变量定义保存 Id、类型、初值以及生产者／消费者关系；本轮运行值保存本次实际取到的内容；节点结果仍由执行结果对象保留。SunEye 的方案批次在 RunSolutionAsync 中建立 runtimeGlobals，ApplyProducedGlobalValues 刻意不修改 Solution.GlobalVariables.Value。WorkflowRunRequest 再复制字典容器交给本轮执行。容器复制不等于对象、数组或图像像素全部深复制。另外 GlobalVariable.Value 已有 ValueGate 锁；GlobalVariableManager 也有按名称增删读写。它们不单独构成跨流程运行值发布和批次一致性协议，不能说自研项目没有全局变量管理器。证据 GV09、GV10、GV13、GV16、GV17。"
+    ],
+    [
+      "流程内：先让生产节点执行，再读取本轮结果",
+      "REA 的 WorkflowRunContext 持有本轮 records 和局部变量表。Update 先删除该变量旧条目，再尝试取已运行生产节点的输出；失败不保留该条目。跨流程 CallAsync 明确把调用方 WorkflowOutputs 映射为被调用方输入。SunEye 的局部依赖图会为同流程内的全局变量生产者建立节点前置关系；这证明执行顺序约束，不单独证明所有参数解析器会用当前节点输出刷新变量。后者仍需逐入口验证。证据 GV06、GV07、GV15。"
+    ],
+    [
+      "跨流程方案批次：A 完成 → 发布成功输出 → B 再取值",
+      "SunEye RunSolutionAsync 编译方案依赖，从无生产绑定且绑定有效的变量初值建立 runtimeGlobals；BuildWorkflowPredecessors 只收集所选流程之间的全局变量依赖。循环每次选一个就绪流程并 await，再发布它的生产结果。发布时先 Remove 旧值，只有对应节点成功、结果 IsSuccess 且输出解析成功才重新赋值。整流程失败仍可能发布其中成功生产节点的值，后继流程也可继续运行独立节点；不能描述为“一处失败全部停止”。证据 GV09、GV10、GV14。"
+    ],
+    [
+      "全部连续运行：不能直接套用上面的批次语义",
+      "SunEye StartAllContinuousRun 逐个调用 StartContinuousRun；其默认执行入口经 ExecuteWorkflowInternal 使用 _globalVariables，而不是自动共享 RunSolutionAsync 的 runtimeGlobals 和发布顺序。TryAcquireExecution 按 workflowId 防重复，不足以证明所有工作流全局串行。本次已引用路径尚未建立独立持续流程之间的同批版本读取／发布屏障；这是一项具体契约缺口，不能据此推断全项目不存在其它更新路径。证据 GV11、GV12。"
+    ],
+    [
+      "后台和停止：取消请求、执行退出、禁止写回是三个时刻",
+      "REA RunCore 在 Task.Run 中执行，返回时检查 IsCurrentExecutionOwner 后才呈现；连续入口逐轮 await，Stop 请求取消。它证明界面后台执行及所有者准入，不代表独立后台服务或任意 native 调用立即可中断。SunEye StopAllContinuousRun 的引用方法发出 Cancel；单凭此方法不能证明全部任务已经退出、全部图像释放或所有延迟结果被拒绝。原版还存在 GlobalScriptStartContinueRun / GlobalScriptStopRun 与 Dispose(isTakeOver)→DestoryHandle 分支，接管与托管后台线程不是同一概念。证据 GV03、GV04、GV08、GV11。"
+    ]
+  ],
+  "policies": [
+    [
+      "同批配对",
+      "A、B 必须处理同一件产品",
+      "以 BatchId / FrameId 等明确关联；B 等待本批生产者完成，缺值或失败明确不可用。"
+    ],
+    [
+      "最新有效值",
+      "监控温度、运行设定等允许读最新值",
+      "读带版本、来源、时间和有效状态的快照；明确超时以及是否允许沿用旧值。"
+    ],
+    [
+      "每条都要处理",
+      "触发、检测事件、逐帧任务",
+      "使用有界队列，明确顺序、背压与丢弃策略；单个“最新值”槽无法保存所有事件。"
+    ]
+  ],
+  "proposal": [
+    [
+      "变量身份",
+      "用稳定 VariableId 寻址；名称用于显示。定义中指定类型、单一生产者或明确的多写者仲裁。"
+    ],
+    [
+      "发布记录",
+      "建议保存 SolutionEpoch、RunId、BatchId、Version、Producer、Status、Payload；版本只是方案建议，未声称现代码已有。"
+    ],
+    [
+      "一次读取",
+      "消费者按所选策略捕获一致快照；同批依赖在调度层建立，不能只给共享字典加锁。"
+    ],
+    [
+      "一次提交",
+      "先在私有结果中构造完整值，再短时校验并发布；执行算法、等待相机或 await 时不持共享提交锁。多字段必须原子快照或事务提交。"
+    ],
+    [
+      "取消与迟到",
+      "停止／切方案先撤销旧发布资格，再取消并等待清理；发布时校验 epoch、run 和取消状态，拒绝旧任务迟到结果。"
+    ],
+    [
+      "缓存和释放",
+      "明确运行表、结果记录、消费者快照和显示各自的持有关系。图像选择不可变共享句柄＋租约或明确复制；替换字典条目仅移除一个引用，最后读者结束才能回收底层资源。跨轮缓存另设容量和淘汰规则。"
+    ]
+  ],
+  "unknowns": [
+    "原版 SDK 原生变量读写的原子性、可见时刻、跨流程并行一致性和取消后发布规则，不能由托管订阅候选列表推导。",
+    "SunEye 普通 __GlobalVars__ 参数的请求快照→合成节点结果→参数解析链已补证；具体工具同轮值探针，以及专用接收变量各入口仍按 GEX10、GEX11、GU05 分列。",
+    "SunEye 独立连续流程的跨轮版本、配对、超时、循环依赖及停止后迟到发布规则，当前引用路径不足以确认。",
+    "字典中可变对象／图像的全部持有者、深复制和最终释放，必须按具体载荷补证，不能以 IReadOnlyDictionary 名称证明。"
+  ],
+  "externalSnapshot": {
+    "capturedUtc": "2026-10-21T15:58:32.091Z",
+    "program": "SunEyeVision_V2",
+    "readOnlyReference": true,
+    "files": [
+      {
+        "relative": "src/UI/Services/Workflow/WorkflowExecutionManager.cs",
+        "originalPath": "D:/MyWork/SunEyeVision_V2/src/UI/Services/Workflow/WorkflowExecutionManager.cs",
+        "sha256": "e46b941605407be55cd60fd66d9749bb0d8f595d513f82a718b5ac026a9274ae",
+        "snapshot": "docs/architecture-recovery/global-variable-analysis.resources/e46b941605407be5-WorkflowExecutionManager.cs.source.txt"
+      },
+      {
+        "relative": "src/Workflow/WorkflowRunRequest.cs",
+        "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowRunRequest.cs",
+        "sha256": "9f97a64dd147f5fcd5fefebde422ad390df0aa8fec6f722cf8c105d8143b4ec2",
+        "snapshot": "docs/architecture-recovery/global-variable-analysis.resources/9f97a64dd147f5fc-WorkflowRunRequest.cs.source.txt"
+      },
+      {
+        "relative": "src/Workflow/SolutionExecutionDependencyGraph.cs",
+        "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/SolutionExecutionDependencyGraph.cs",
+        "sha256": "1868385cc3e8c6b27806b3dd7051ab1d07f3483593f27feb430da121e209e99f",
+        "snapshot": "docs/architecture-recovery/global-variable-analysis.resources/1868385cc3e8c6b2-SolutionExecutionDependencyGraph.cs.source.txt"
+      },
+      {
+        "relative": "src/Workflow/WorkflowExecutionDependencyGraph.cs",
+        "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowExecutionDependencyGraph.cs",
+        "sha256": "d6d47d991cf0b100a98976509c28f1d7b888a55f98ef8882cc9df27058f60f62",
+        "snapshot": "docs/architecture-recovery/global-variable-analysis.resources/d6d47d991cf0b100-WorkflowExecutionDependencyGraph.cs.source.txt"
+      },
+      {
+        "relative": "src/Workflow/WorkflowExecutionEngine.cs",
+        "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowExecutionEngine.cs",
+        "sha256": "4afdc12717c26f142cdc325d4ebac68a4d32f7cf31f1e5d137552c32419b07db",
+        "snapshot": "docs/architecture-recovery/global-variable-analysis.resources/4afdc12717c26f14-WorkflowExecutionEngine.cs.source.txt"
+      },
+      {
+        "relative": "src/Workflow/GlobalVariable.cs",
+        "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/GlobalVariable.cs",
+        "sha256": "57178a1086bd8a066af3c53d59230f8ef8413673db55d1a1249b802fabb3748b",
+        "snapshot": "docs/architecture-recovery/global-variable-analysis.resources/57178a1086bd8a06-GlobalVariable.cs.source.txt"
+      }
+    ]
+  },
+  "externalDriftAdvisory": [
+    {
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/UI/Services/Workflow/WorkflowExecutionManager.cs",
+      "changed": false
+    },
+    {
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowRunRequest.cs",
+      "changed": false
+    },
+    {
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/SolutionExecutionDependencyGraph.cs",
+      "changed": false
+    },
+    {
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowExecutionDependencyGraph.cs",
+      "changed": false
+    },
+    {
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/WorkflowExecutionEngine.cs",
+      "changed": false
+    },
+    {
+      "originalPath": "D:/MyWork/SunEyeVision_V2/src/Workflow/GlobalVariable.cs",
+      "changed": false
+    }
+  ]
+}
