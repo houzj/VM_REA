@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "scope": "C03 original Blob ProcessAlg ROI/mask and ProcessOutput contract",
+  "evidenceType": "source-confirmed static decompilation",
+  "sources": [
+    {
+      "path": "analysis/full-audit/b08-blob-low-20261030/output/0x18001fec0-18001fec0.c",
+      "sha256": "01b5ce4534b8192c4029e8015dfb07fbb0a458d5a48144b2e523a6e4e05173a5",
+      "function": "CIMVSBlobFindModu::ProcessAlg"
+    },
+    {
+      "path": "analysis/full-audit/b08-geometry-output-20261031/0x180020310-180020310.c",
+      "sha256": "c0414759ef6df644890a8e022eec6942aba76c4a9e682b50e0264e2e3ea4d4ea",
+      "function": "CIMVSBlobFindModu::ProcessOutput"
+    }
+  ],
+  "processAlg": {
+    "sourceConfirmed": [
+      "Caches the SDK Blob tool at this+0x15eb8 and sets the input image from module input +0x10.",
+      "Clears or resets the SDK region/assistant state before selecting the execution region.",
+      "When module mode this+0x28 equals 1, passes module input +0x118 directly as the SDK ROI/region object.",
+      "Otherwise uses GenerateMaskImage on the base input ROI/mask lists; on success passes the generated region image/object from input +0x118 and adds every enabled mask node from this+0x20.",
+      "Calls the SDK run method, then reads GetResult; null result throws 0xe0000315.",
+      "Writes result count, module status and measured algorithm time into the module output buffer."
+    ]
+  },
+  "processOutput": {
+    "sourceConfirmed": [
+      "Writes ModuStatus before reading the result and propagates nonzero output-writer errors.",
+      "Reads the SDK result again and writes BlobNum and TotalArea first.",
+      "Conditionally writes BinaryImage and BlobImage through the two module flags, then writes BlobStatus and per-blob arrays.",
+      "Per-blob output includes Perimeter, BlobRectX/Y/Width/Height, derived up-left and bottom-right coordinates, CenterX/Y, BoxWidth/Height, Angle, BlobAngle, AxisRatio, CentroidX/Y, Circularity and Rectangularity.",
+      "Each output field is written through the module output writer; a later field error can leave earlier fields already committed."
+    ]
+  },
+  "differentialImplication": [
+    "The direct SDK C++ result 47/973202 is only a baseline for the SDK call with the same visible threshold values.",
+    "The wrapper has an additional ROI/region-image/mask path before Run, so VM 45/971486 cannot be attributed to SDK threshold math until the input +0x118 region object and enabled mask nodes are captured.",
+    "ProcessOutput copies and derives fields after the result exists; it cannot change BlobNum or TotalArea before the SDK result is produced."
+  ],
+  "unknowns": [
+    "Exact vtable slot names for the decompiled region/reset calls remain ABI-sensitive; source confirms call order and arguments but not a stable symbolic slot mapping.",
+    "Native construction and pixel contents of the generated region image are still uncaptured."
+  ]
+}

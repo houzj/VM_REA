@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "scope": "C03 minimal ROI/Mask runtime differential probes",
+  "evidenceType": "derived probe plan from source-confirmed ProcessAlg and runtime artifacts",
+  "inputs": [
+    {
+      "id": "P0",
+      "setup": "direct SDK SetInputImage only, no ROI, no masks",
+      "expected": "47/973202 baseline already confirmed",
+      "evidence": "native-sdk-run/original-sdk-direct-cpp-runtime-evidence.json"
+    },
+    {
+      "id": "P1",
+      "setup": "direct SDK SetROI full-image rectangle 0,0,1280,960, no masks",
+      "expected": "compare count/area and raw binary buffer against P0",
+      "reason": "separates explicit full ROI from null/full-image path"
+    },
+    {
+      "id": "P2",
+      "setup": "direct SDK full-image ROI plus one empty or out-of-frame mask polygon",
+      "expected": "compare count/area and buffer delta",
+      "reason": "tests mask lifecycle without changing visible content"
+    },
+    {
+      "id": "P3",
+      "setup": "wrapper VM run with InputROI and InputMask explicitly absent versus explicitly full-image",
+      "expected": "capture result page and module runtime export",
+      "reason": "tests whether GenerateMaskImage is entered for the current screenshot workflow"
+    },
+    {
+      "id": "P4",
+      "setup": "wrapper VM run with one enabled blind polygon covering a known large blob",
+      "expected": "BlobNum/TotalArea decrease and OutputMask metadata change",
+      "reason": "confirms wrapper mask node reaches SDK AddMask path"
+    }
+  ],
+  "sourceContracts": [
+    "analysis/full-audit/batch1-20261107/C03/original-blob-processalg-roi-output-contract.json",
+    "analysis/full-audit/batch1-20261107/C03/original-blob-processalg-call-chain-contract.json",
+    "analysis/full-audit/batch1-20261107/C03/original-blob-moduleio-roi-mask-resource-contract.json"
+  ],
+  "executionOrder": [
+    "P0",
+    "P1",
+    "P2",
+    "P3",
+    "P4"
+  ],
+  "stopRule": "Stop after first probe that changes BlobNum or TotalArea. Preserve raw image bytes and parameter snapshot, then attribute the differential before adding another probe.",
+  "unknowns": [
+    "No runtime capture currently proves whether the screenshot workflow has an explicit InputMask or blind polygon enabled.",
+    "Native GenerateMaskImage output bytes remain uncaptured."
+  ]
+}
