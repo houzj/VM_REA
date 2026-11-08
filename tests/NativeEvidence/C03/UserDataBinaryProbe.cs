@@ -26,7 +26,7 @@ internal static class Native
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
     internal static extern int IMVS_GetBinaryData(nint handle, uint moduleId, ref OriginalBinaryDataInfo info, uint receiveWaitTime);
 
-    [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
+    [DllImport("iMVS-6000PlatformSDK.dll", EntryPoint = "IMVS_PF_GetAllProcessList_U", CallingConvention = CallingConvention.StdCall)]
     internal static extern int IMVS_PF_GetAllProcessList(nint handle, nint processList);
 
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
@@ -80,6 +80,34 @@ internal static class Native
 
         internal static OriginalBinaryDataInfo Create(string name, uint size, nint data)
             => new() { Name = NameBytes(name), AllocatedSize = size, Data = data, Reserved = new uint[4] };
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct PfProcessInfo
+    {
+        internal uint ProcessId;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)] internal byte[] Name;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] internal uint[] Reserved;
+
+        internal static PfProcessInfo Empty() => new()
+        {
+            Name = new byte[64],
+            Reserved = new uint[4]
+        };
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct PfProcessInfoList
+    {
+        internal uint Count;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1000)] internal PfProcessInfo[] Items;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] internal uint[] Reserved;
+
+        internal static PfProcessInfoList Empty() => new()
+        {
+            Items = Enumerable.Range(0, 1000).Select(_ => PfProcessInfo.Empty()).ToArray(),
+            Reserved = new uint[4]
+        };
     }
 
     private static byte[] NameBytes(string name)
@@ -209,9 +237,28 @@ internal static class Program
             Span<byte> zero = stackalloc byte[256];
             for (var offset = 0; offset < 4 + maxProcesses * entrySize + 16; offset += zero.Length)
                 Marshal.Copy(zero[..Math.Min(zero.Length, 4 + maxProcesses * entrySize + 16 - offset)].ToArray(), 0, pointer + offset, Math.Min(zero.Length, 4 + maxProcesses * entrySize + 16 - offset));
-            var code = useBasicHandle
-                ? Native.IMVS_GetAllProcessList(handle, pointer)
-                : Native.IMVS_PF_GetAllProcessList(handle, pointer);
+            if (!useBasicHandle)
+            {
+                var list = Native.PfProcessInfoList.Empty();
+                var managedPointer = Marshal.AllocHGlobal(Marshal.SizeOf<Native.PfProcessInfoList>());
+                try
+                {
+                    Marshal.StructureToPtr(list, managedPointer, false);
+                    var pfCode = Native.IMVS_PF_GetAllProcessList(handle, managedPointer);
+                    var returned = Marshal.PtrToStructure<Native.PfProcessInfoList>(managedPointer);
+                    var pfItems = new List<object>();
+                    var pfCount = pfCode == 0 ? Math.Min((int)returned.Count, 1000) : 0;
+                    for (var i = 0; i < pfCount; i++)
+                    {
+                        var item = returned.Items[i];
+                        pfItems.Add(new { ModuleId = item.ProcessId, Name = Encoding.UTF8.GetString(item.Name).TrimEnd('\0') });
+                    }
+                    return new { Code = pfCode, Error = Native.Error(pfCode), Count = pfCount, Items = pfItems, StructSize = Marshal.SizeOf<Native.PfProcessInfoList>() };
+                }
+                finally { Marshal.FreeHGlobal(managedPointer); }
+            }
+
+            var code = Native.IMVS_GetAllProcessList(handle, pointer);
             var count = code == 0 ? Math.Min(Marshal.ReadInt32(pointer), maxProcesses) : 0;
             var processes = new List<object>();
             for (var i = 0; i < count; i++)
