@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
   const char* paramFile = argc > 3 ? argv[3] : nullptr;
   const bool explicitFullRoi = argc > 4 && std::strcmp(argv[4], "full-roi") == 0;
   const bool outsideMask = argc > 4 && std::strcmp(argv[4], "outside-mask") == 0;
+  const bool insideMask = argc > 4 && std::strcmp(argv[4], "inside-mask") == 0;
   void* global = nullptr;
   VisionDesigner::BlobFind::IBlobFindTool* tool = nullptr;
   VisionDesigner::IMvdImage* image = nullptr;
@@ -47,6 +48,16 @@ int main(int argc, char** argv) {
       mask->AddVertex(-100.0f, -200.0f);
       mask->AddVertex(-100.0f, -100.0f);
       mask->AddVertex(-200.0f, -100.0f);
+      tool->AddMask(mask);
+    }
+    if (insideMask) {
+      int rc = CreatePolygonInstance(&mask);
+      std::printf("insideMaskCreate=%d\n", rc);
+      if (rc != 0 || !mask) return 8;
+      mask->AddVertex(600.0f, 300.0f);
+      mask->AddVertex(680.0f, 300.0f);
+      mask->AddVertex(680.0f, 460.0f);
+      mask->AddVertex(600.0f, 460.0f);
       tool->AddMask(mask);
     }
     const char* pairs[][2]={{"ThresholdType","2"},{"LowThreshold","100"},{"HightThreshold","150"},{"Polarity","0"},{"connectivity","8"},{"MinArea","10"},{"MaxArea","9999999"},{"FindNum","100"}};
