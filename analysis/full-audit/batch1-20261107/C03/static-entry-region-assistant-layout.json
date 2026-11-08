@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "scope": "C03 SDK region assistant and PreproMask AddROI path",
+  "evidenceType": "stored ProcessAlg decompilation correlated with original SDK header",
+  "sources": [
+    {
+      "path": "analysis/full-audit/b08-blob-low-20261030/output/0x18001fec0-18001fec0.c",
+      "sha256": "01b5ce4534b8192c4029e8015dfb07fbb0a458d5a48144b2e523a6e4e05173a5"
+    },
+    {
+      "path": "D:\\Program Files\\VisionMaster4.4.0\\MVDAlgorithmSDK\\Includes\\Common\\VisionDesigner\\MVDCore.h",
+      "sha256": "2703f48028e8b57d1a2639c0171155d3cfa397b4d448f87b6263ce4da4bdb6fc"
+    }
+  ],
+  "observed": {
+    "sdkToolVtableOffset": "0xA0",
+    "returnedInterface": "candidate IMVDRegionImageAssistant from BlobFindCpp.h ordering",
+    "clearCallOffset": "0x30",
+    "clearCallObservation": "called with assistant only before mask loop",
+    "addCallOffset": "0x08",
+    "addCallObservation": "called with local_78 mask/ROI object for each enabled node"
+  },
+  "headerOrdering": {
+    "class": "IMVDRegionImageAssistant",
+    "methods": [
+      "AddROI(IMvdShape*)",
+      "GetNumOfROIs()",
+      "GetROIAt(unsigned int)",
+      "UpdateROIAt(unsigned int, IMvdShape*)",
+      "RemoveROIAt(unsigned int)",
+      "ClearROIs()"
+    ],
+    "alignmentInference": "Observed +0x08 Add and +0x30 Clear are consistent with one destructor slot followed by the six declared methods."
+  },
+  "preproMask": {
+    "moduleField": "this+0x20",
+    "countMethod": "+0x30",
+    "nodeMethod": "+0x38",
+    "nodeReturn": "local_78 shape/object plus enabled byte",
+    "addGate": "only enabled byte == 1 reaches SDK assistant add call"
+  },
+  "confidence": "derived ABI correlation, not complete symbolic decompilation",
+  "unknowns": [
+    "Whether local_78 is an IMvdShape pointer or another wrapper object requires native type tracing.",
+    "The generated region image and coordinate transformation remain unresolved."
+  ]
+}
