@@ -9,3 +9,5 @@
 补充验证使用 IMVS_PF_CreateHandle 与 IMVS_PF_GetAllProcessList。该路径与 IMVS_CreateHandle/IMVS_GetAllProcessList 均返回相同的 IMVS_EC_MODULE_PROCEDURE_NOT_FOUND，因此结论不依赖句柄族或过程查询函数选择。对照结果见 untime-userdata-active-handle-entrypoint-comparison-20261109.json。
 
 探针 ABI 已按托管 SDK 校正。PF 入口为 IMVS_PF_GetAllProcessList_U，IMVS_PF_PROCESS_INFO_LIST 的源确认大小为 84020 字节，条目大小为 84 字节。校正后 PF 与普通句柄仍返回同一错误。
+
+同一时间点可见 VisionMaster 与 vServerApp 进程，但沙盒网络表中没有 5556 监听端口，两个进程窗口句柄为 0。该环境边界解释了 SDK 句柄可创建而过程注册表不可查询的现象，但不能替代用户交互桌面上的宿主验收。
