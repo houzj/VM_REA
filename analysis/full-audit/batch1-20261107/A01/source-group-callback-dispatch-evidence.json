@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "source-confirmed-group-callback-dispatch-and-model-landing",
+  "sources": [
+    {
+      "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\VM.PlatformSDKCS.Audit\\VM.PlatformSDKCS\\CVmObjectBase.cs",
+      "sha256": "59e713604fa8af86fea0c4711cf16e8be6c1b3e6bcb7670cc39475437f60a8db"
+    },
+    {
+      "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\VM.PlatformSDKCS.Audit\\VM.PlatformSDKCS\\ModuleManager.cs",
+      "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922"
+    },
+    {
+      "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\VM.Core\\VM.Core\\TempVmSolution.cs",
+      "sha256": "2683dd70dc4aa88fa2d263e9117bdc00b1153deeda52e03417dfa7ee42859721"
+    },
+    {
+      "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\VM.Core\\VM.Core\\VmSolution.cs",
+      "sha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e"
+    },
+    {
+      "path": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\VM.PlatformSDKCS.Audit\\VM.PlatformSDKCS\\ImvsSdkDefine.cs",
+      "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717"
+    }
+  ],
+  "platformEventDispatch": [
+    {
+      "eventId": 792,
+      "type": "IMVS_IMPORT_GROUP_BEGIN_INFO",
+      "handler": "OnGroupImportBeginCallBack"
+    },
+    {
+      "eventId": 793,
+      "type": "IMVS_IMPORT_GROUP_END_INFO",
+      "handler": "OnGroupImportEndCallBack"
+    },
+    {
+      "eventId": 800,
+      "type": "IMVS_IMPORT_GROUP_PROGRESS_INFO",
+      "handler": "OnGroupImportProcessCallBack"
+    },
+    {
+      "eventId": 801,
+      "type": "IMVS_GROUP_NEW_MODULEID_NAME_INFO_LIST",
+      "handler": "OnGroupImportGuidCallBack"
+    },
+    {
+      "eventId": 802,
+      "type": "IMVS_GROUP_IMPORT_INTERFACE_FILE_INFO",
+      "handler": "OnGroupImportInterfaceFileCallBack"
+    },
+    {
+      "eventId": 824,
+      "type": "IMVS_IMPORT_GROUP_GET_UIDATA_INFO",
+      "handler": "OnGroupImportUiDataCallBack"
+    }
+  ],
+  "moduleManagerRegistration": [
+    "ModuleManager constructor subscribes CVmObjectBase group begin/process/end/GUID/interface/UI events",
+    "TempVmSolution subscribes ModuleManager begin/process/UI/end events to VmSolution handlers"
+  ],
+  "endPayload": {
+    "fields": [
+      "nProcessId",
+      "nClientType",
+      "strGroupPath[780]",
+      "nErrorCode",
+      "nGroupNewId",
+      "strGroupNewName[256]",
+      "nReserved[4]"
+    ],
+    "sourceHandler": "VmSolution.MModuleManager_OnImportGroupEndCallBack",
+    "order": [
+      "construct EndEventArgs from nClientType/nErrorCode",
+      "invoke public OnGroupImportEndCallBack",
+      "only when nErrorCode==0 create IMVS_MODULE_INFO from nGroupNewId/nProcessId/strGroupNewName and fixed IMVSGroup",
+      "AddModuleByInfo",
+      "set Parent and NotifyReadyStateToParent",
+      "set mbImportGroupEndFlag=true"
+    ]
+  },
+  "uiData": {
+    "fields": [
+      "nGroupId",
+      "strGroupName[256]",
+      "nReserved[4]"
+    ],
+    "handler": "stores nGroupId and decoded strGroupName in VmSolution static fields"
+  },
+  "limitations": [
+    "The dispatch and model order are source-confirmed; callback thread and native message production remain runtime-unknown.",
+    "GUID/interface-file callback payloads are dispatched but not consumed by the shown VmSolution handlers."
+  ]
+}
