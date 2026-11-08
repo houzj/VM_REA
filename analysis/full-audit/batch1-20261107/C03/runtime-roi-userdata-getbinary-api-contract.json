@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "scope": "VM named binary UserData getter API contract",
+  "evidenceType": "source-confirmed managed declarations and decompiled wrapper logic",
+  "sources": [
+    {
+      "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ServerSDKAPI.cs",
+      "sha256": "f022d4b4e87d4a076dcf42a79b131a0460ddf673d07603b5ba8d6aca35ef4b14"
+    },
+    {
+      "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/NativeMethods.cs",
+      "sha256": "6a60f612fb385987ff96d6973844a256402f097d1eb371e7ad462c44e57127d0"
+    },
+    {
+      "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ImvsSdkDefine.cs",
+      "sha256": "b0641283e9e7ef4afac7270d43508f37fbba8d56d47bb49f49c332407fede717"
+    },
+    {
+      "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/ModuleManager.cs",
+      "sha256": "783a45b1518f713223eca2b5e59291be973552c3e08fef0ea0d4bfccc2fbd922"
+    },
+    {
+      "path": "analysis/decompiled/VM.PlatformSDKCS.Audit/VM.PlatformSDKCS/CModuleParamBase.cs",
+      "sha256": "72850297e3b3f01d35b9c161de5bc9bf6108379f1f3289167fb6cf11a2894935"
+    },
+    {
+      "path": "analysis/full-audit/group-native-audit/enable-native.json",
+      "sha256": "e7c5c743287840e9ee43c2fbd5ab0908cc2f75eb04a9daa427af088a292713c1"
+    }
+  ],
+  "api": {
+    "length": "IMVS_GetBinaryLength(handle,moduleId,IMVS_GET_BINARY_LENGTH_INFO,wait)",
+    "data": "IMVS_GetBinaryData(handle,moduleId,IMVS_GET_BINARY_DATA_INFO,wait)",
+    "dataEx": "IMVS_GetBinaryDataEx(handle,moduleId,IMVS_GET_BINARY_DATA_INFO,wait)",
+    "structFields": [
+      "strName[256] UTF-8 fixed bytes",
+      "nBinaryDataMallocSize",
+      "pBinaryData",
+      "nBinaryLength",
+      "nReserved[4]"
+    ]
+  },
+  "wrapperBehavior": [
+    "CModuleParamBase.GetBinaryData first requests length, sets nDataLen, checks caller capacity, then pins caller buffer and calls the binary getter.",
+    "ModuleManager allocates a byte array or unmanaged buffer exactly at nBinaryLength, sets name and both size/length fields, then invokes the SDK getter and copies/returns bytes.",
+    "The native enable/getter body returns stored DynamicInData or DynamicOutData length and copies bytes, returning E0000012 when capacity is insufficient."
+  ],
+  "minimumProbe": [
+    "Open one active VM handle and module ID.",
+    "Call IMVS_GetBinaryLength for DrawImageSize, RoiType and ExternRoiType.",
+    "Allocate exactly returned length and call IMVS_GetBinaryDataEx with UTF-8 name and nBinaryDataMallocSize/nBinaryLength equal to length.",
+    "Persist only name, module ID, returned length, byte SHA-256 and bounded hex preview."
+  ],
+  "limitations": [
+    "No current captured handle/module session is available to execute this probe.",
+    "The API contract identifies the route but does not reveal payload bytes by itself.",
+    "The stored native getter evidence covers DynamicInData/DynamicOutData directly. DrawImageSize/RoiType/ExternRoiType storage bodies remain unresolved."
+  ]
+}
