@@ -111,9 +111,14 @@ internal sealed record BinaryObservation(
 internal static class Program
 {
     private static readonly string[] Names = ["DrawImageSize", "RoiType", "ExternRoiType", "DynamicInData", "DynamicOutData"];
+    private const string RuntimeSdkPath = @"D:\Program Files\VisionMaster4.4.0\Applications\PublicFile\x64\iMVS-6000PlatformSDK.dll";
 
     private static int Main(string[] args)
     {
+        NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, static (name, _, _) =>
+            name.Equals("iMVS-6000PlatformSDK.dll", StringComparison.OrdinalIgnoreCase)
+                ? NativeLibrary.Load(RuntimeSdkPath)
+                : IntPtr.Zero);
         var outputPath = args.FirstOrDefault(static arg => arg.StartsWith("--output=", StringComparison.Ordinal))?[9..];
         var useBasicHandle = args.Any(static arg => arg.Equals("--basic", StringComparison.Ordinal));
         var idArgs = args.Where(static arg => !arg.StartsWith("--output=", StringComparison.Ordinal) && !arg.Equals("--basic", StringComparison.Ordinal)).ToArray();
@@ -123,6 +128,8 @@ internal static class Program
         var result = new Dictionary<string, object?>
         {
             ["scope"] = "read-only platform SDK UserData binary probe",
+            ["runtimeSdkPath"] = RuntimeSdkPath,
+            ["runtimeSdkSha256"] = File.Exists(RuntimeSdkPath) ? Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(RuntimeSdkPath))) : "",
             ["moduleIds"] = moduleIds,
             ["names"] = Names
         };
@@ -195,8 +202,7 @@ internal static class Program
     {
         const int maxProcesses = 1000;
         const int nameLength = 64;
-        const int reservedWords = 4;
-        const int entrySize = 4 + nameLength + reservedWords * 4;
+        const int entrySize = 4 + nameLength + 4 + 256 + 4 + 16 + 16;
         var pointer = Marshal.AllocHGlobal(4 + maxProcesses * entrySize + 16);
         try
         {
