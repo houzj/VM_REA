@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "scope": "C03 GenerateMaskImage candidate ABI observations",
+  "evidenceType": "observed x86-64 entry bytes plus stored ProcessAlg call site",
+  "artifact": {
+    "path": "D:\\Program Files\\VisionMaster4.4.0\\Applications\\Module(sp)\\x64\\Location\\IMVSBlobFindModu\\IMVSBlobFindModu.dll",
+    "sha256": "4de695d8c3051045c9010739686f94c32d66a36ee486207fe749fb183fff4c9a",
+    "entry": "0x180009C80",
+    "functionBounds": "0x180009C80..0x18000A49E",
+    "pdataUnwind": "0x34658"
+  },
+  "prologue": {
+    "bytes": "48 8B C4 4C 89 48 20 48 89 50 10 48 89 48 08 53 56 57 41 54 41 55 41 56 41 57",
+    "observations": [
+      "RCX, RDX and R9 are spilled into the home/stack area before nonvolatile saves.",
+      "R14 receives R9, R13 receives R8, R15 receives RDX, RSI receives RCX.",
+      "The observed mapping is consistent with RCX=this, RDX=module input, R8=ROI/mask collection, R9=additional region state from the ProcessAlg call site.",
+      "The call site also supplies a fifth stack argument represented by the decompiler as stack flags."
+    ]
+  },
+  "earlyBranch": {
+    "instructionOffset": "0x48",
+    "bytes": "48 8D 79 20 4C 39 27 75 75",
+    "meaning": "Loads this+0x20 and tests the first field against zero before entering the first helper call",
+    "confidence": "derived from instruction bytes",
+    "unknown": "Exact object type and helper target require import-table or instruction-level symbol resolution"
+  },
+  "callSite": {
+    "source": "analysis/full-audit/b08-blob-low-20261030/output/0x18001fec0-18001fec0.c",
+    "sha256": "01b5ce4534b8192c4029e8015dfb07fbb0a458d5a48144b2e523a6e4e05173a5",
+    "text": "ProcessAlg calls vtable +0x48 with (this,param_1,param_1+0x20,param_1+0x38,stack flags)",
+    "failure": "nonzero helper return is logged as GenerateMaskImage failure and returned"
+  },
+  "unknowns": [
+    "R8/R9 pointee layouts and the fifth stack argument are not fully resolved.",
+    "The helper call target at the first indirect call is not symbolically identified in the current artifact set.",
+    "Generated region image rasterization remains unresolved."
+  ]
+}
