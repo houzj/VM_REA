@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "authority": "shipped-artifact",
+  "confidence": "source-confirmed",
+  "sources": [
+    "analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS.SyncPlatformSDKCS/ImvsSdkPFSync.cs: case 119",
+    "analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS.SyncPlatformSDKCS/GroupResult.cs"
+  ],
+  "entry": {
+    "asyncCleanup": "callback invoked, then mGroup.Results.Clear()",
+    "async": "GroupResult shell retains stGroup native pointers for callback path",
+    "moduleType": 119,
+    "sync": "GroupResult(instance) deep-copies nResultNum records and type-specific int/float/string/image/chunk buffers",
+    "nativeRead": "Marshal.PtrToStructure(stResModuInfo.pData, IMVS_PF_GROUP_MODU_INFO)",
+    "cache": "modules.moduleTool.mGroup.Results keyed by basic module ID, add or replace",
+    "destructor": "frees type-specific copied buffers and group result array for sync-owned result",
+    "copyRules": [
+      "ParamType 1 copies int array by nValueNum",
+      "ParamType 2 copies float array by nValueNum",
+      "ParamType 3 copies string value structs",
+      "ParamType 4 copies image descriptors and each data buffer",
+      "ParamType 5 copies chunk descriptors and each data buffer"
+    ]
+  },
+  "unknowns": [
+    "Native producer and callback thread are not captured in current environment",
+    "Exact ParamType mapping to local DataKind/PortValue remains open",
+    "Live Group result values and byte payloads remain uncaptured"
+  ]
+}
