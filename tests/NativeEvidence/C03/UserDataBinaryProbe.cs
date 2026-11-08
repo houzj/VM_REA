@@ -21,13 +21,16 @@ internal static class Native
     internal static extern nint IMVS_PF_GetErrorMsg(uint code);
 
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
-    internal static extern int IMVS_PF_GetBinaryDataLength(nint handle, ref BinaryLengthInfo info);
+    internal static extern int IMVS_GetBinaryLength(nint handle, uint moduleId, ref OriginalBinaryLengthInfo info, uint receiveWaitTime);
 
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
-    internal static extern int IMVS_PF_GetBinaryData(nint handle, ref BinaryDataInfo info);
+    internal static extern int IMVS_GetBinaryData(nint handle, uint moduleId, ref OriginalBinaryDataInfo info, uint receiveWaitTime);
 
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
     internal static extern int IMVS_PF_GetAllProcessList(nint handle, nint processList);
+
+    [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
+    internal static extern int IMVS_GetAllProcessList(nint handle, nint processList);
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct BasicInfo
@@ -55,54 +58,35 @@ internal static class Native
                 UserName = new byte[16], Password = new byte[32], VendorName = new byte[16], Reserved = new uint[2] };
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    internal struct BinaryLengthInfo
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct OriginalBinaryLengthInfo
     {
-        internal uint ModuleId;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 128)] internal byte[] Name;
-        internal uint ReceiveWaitTime;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)] internal byte[] Name;
         internal uint DataLength;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] internal uint[] Reserved;
 
-        internal static BinaryLengthInfo Create(uint moduleId, string name, uint wait)
-        {
-            var value = new BinaryLengthInfo
-            {
-                ModuleId = moduleId,
-                Name = new byte[128],
-                ReceiveWaitTime = wait,
-                Reserved = new uint[4]
-            };
-            Encoding.ASCII.GetBytes(name + "\0").CopyTo(value.Name, 0);
-            return value;
-        }
+        internal static OriginalBinaryLengthInfo Create(string name)
+            => new() { Name = NameBytes(name), Reserved = new uint[4] };
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    internal struct BinaryDataInfo
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct OriginalBinaryDataInfo
     {
-        internal uint ModuleId;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 128)] internal byte[] Name;
-        internal uint ReceiveWaitTime;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)] internal byte[] Name;
         internal uint AllocatedSize;
         internal nint Data;
         internal uint DataLength;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] internal uint[] Reserved;
 
-        internal static BinaryDataInfo Create(uint moduleId, string name, uint wait, uint size, nint data)
-        {
-            var value = new BinaryDataInfo
-            {
-                ModuleId = moduleId,
-                Name = new byte[128],
-                ReceiveWaitTime = wait,
-                AllocatedSize = size,
-                Data = data,
-                Reserved = new uint[4]
-            };
-            Encoding.ASCII.GetBytes(name + "\0").CopyTo(value.Name, 0);
-            return value;
-        }
+        internal static OriginalBinaryDataInfo Create(string name, uint size, nint data)
+            => new() { Name = NameBytes(name), AllocatedSize = size, Data = data, Reserved = new uint[4] };
+    }
+
+    private static byte[] NameBytes(string name)
+    {
+        var bytes = new byte[256];
+        Encoding.UTF8.GetBytes(name).CopyTo(bytes, 0);
+        return bytes;
     }
 
     internal static string Error(int code)
@@ -161,8 +145,8 @@ internal static class Program
             foreach (var moduleId in moduleIds)
             foreach (var name in Names)
             {
-                var lengthInfo = Native.BinaryLengthInfo.Create(moduleId, name, 1000);
-                var lengthCode = Native.IMVS_PF_GetBinaryDataLength(handle, ref lengthInfo);
+                var lengthInfo = Native.OriginalBinaryLengthInfo.Create(name);
+                var lengthCode = Native.IMVS_GetBinaryLength(handle, moduleId, ref lengthInfo, 1000);
                 if (lengthCode != 0 || lengthInfo.DataLength == 0)
                 {
                     observations.Add(new(moduleId, name, lengthCode, Native.Error(lengthCode), lengthInfo.DataLength, 0, "", 0, "", ""));
@@ -172,8 +156,8 @@ internal static class Program
                 var memory = Marshal.AllocHGlobal(capacity);
                 try
                 {
-                    var dataInfo = Native.BinaryDataInfo.Create(moduleId, name, 1000, lengthInfo.DataLength, memory);
-                    var dataCode = Native.IMVS_PF_GetBinaryData(handle, ref dataInfo);
+                    var dataInfo = Native.OriginalBinaryDataInfo.Create(name, lengthInfo.DataLength, memory);
+                    var dataCode = Native.IMVS_GetBinaryData(handle, moduleId, ref dataInfo, 1000);
                     var bytes = dataCode == 0 && dataInfo.DataLength <= capacity
                         ? new byte[dataInfo.DataLength]
                         : Array.Empty<byte>();
@@ -219,7 +203,7 @@ internal static class Program
             Span<byte> zero = stackalloc byte[256];
             for (var offset = 0; offset < 4 + maxProcesses * entrySize + 16; offset += zero.Length)
                 Marshal.Copy(zero[..Math.Min(zero.Length, 4 + maxProcesses * entrySize + 16 - offset)].ToArray(), 0, pointer + offset, Math.Min(zero.Length, 4 + maxProcesses * entrySize + 16 - offset));
-            var code = Native.IMVS_PF_GetAllProcessList(handle, pointer);
+            var code = Native.IMVS_GetAllProcessList(handle, pointer);
             var count = code == 0 ? Math.Min(Marshal.ReadInt32(pointer), maxProcesses) : 0;
             var processes = new List<object>();
             for (var i = 0; i < count; i++)
