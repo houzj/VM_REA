@@ -9,7 +9,13 @@ internal static class Native
     internal static extern int IMVS_PF_CreateHandle(out nint handle, string? serverPath);
 
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
+    internal static extern int IMVS_CreateHandle(out nint handle, ref BasicInfo info);
+
+    [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
     internal static extern int IMVS_PF_DestroyHandle(nint handle);
+
+    [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
+    internal static extern int IMVS_DestroyHandle(nint handle, uint takeoverType);
 
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
     internal static extern nint IMVS_PF_GetErrorMsg(uint code);
@@ -22,6 +28,32 @@ internal static class Native
 
     [DllImport("iMVS-6000PlatformSDK.dll", CallingConvention = CallingConvention.StdCall)]
     internal static extern int IMVS_PF_GetAllProcessList(nint handle, nint processList);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct BasicInfo
+    {
+        internal uint Ip;
+        internal ushort Port;
+        internal uint SdkIp;
+        internal ushort SdkPort;
+        internal uint NetAdapterIp;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)] internal byte[] UserName;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)] internal byte[] Password;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)] internal byte[] VendorName;
+        internal uint MacLow;
+        internal ushort MacHigh;
+        internal uint ClientType;
+        internal uint ServerType;
+        internal uint HandleType;
+        internal uint ServerRepIp;
+        internal ushort ServerRepPort;
+        internal uint ServerProcessId;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)] internal uint[] Reserved;
+
+        internal static BasicInfo Local()
+            => new() { Ip = 0x7F000001, Port = 5556, ClientType = 0, HandleType = 0,
+                UserName = new byte[16], Password = new byte[32], VendorName = new byte[16], Reserved = new uint[2] };
+    }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     internal struct BinaryLengthInfo
@@ -99,7 +131,8 @@ internal static class Program
     private static int Main(string[] args)
     {
         var outputPath = args.FirstOrDefault(static arg => arg.StartsWith("--output=", StringComparison.Ordinal))?[9..];
-        var idArgs = args.Where(static arg => !arg.StartsWith("--output=", StringComparison.Ordinal)).ToArray();
+        var useBasicHandle = args.Any(static arg => arg.Equals("--basic", StringComparison.Ordinal));
+        var idArgs = args.Where(static arg => !arg.StartsWith("--output=", StringComparison.Ordinal) && !arg.Equals("--basic", StringComparison.Ordinal)).ToArray();
         var moduleIds = idArgs.Length == 0
             ? Enumerable.Range(21000, 21).Select(Convert.ToUInt32).ToArray()
             : idArgs.Select(uint.Parse).Distinct().ToArray();
@@ -110,9 +143,13 @@ internal static class Program
             ["names"] = Names
         };
         var observations = new List<BinaryObservation>();
-        var create = Native.IMVS_PF_CreateHandle(out var handle, null);
+        var basic = Native.BasicInfo.Local();
+        var create = useBasicHandle
+            ? Native.IMVS_CreateHandle(out var handle, ref basic)
+            : Native.IMVS_PF_CreateHandle(out handle, null);
         result["createCode"] = create;
         result["createError"] = Native.Error(create);
+        result["handleKind"] = useBasicHandle ? "IMVS_CreateHandle(ServerSetting=127.0.0.1:5556)" : "IMVS_PF_CreateHandle";
         if (create != 0 || handle == 0)
         {
             Emit(result, outputPath);
@@ -152,7 +189,7 @@ internal static class Program
         }
         finally
         {
-            result["destroyCode"] = Native.IMVS_PF_DestroyHandle(handle);
+            result["destroyCode"] = useBasicHandle ? Native.IMVS_DestroyHandle(handle, 0) : Native.IMVS_PF_DestroyHandle(handle);
             result["destroyError"] = Native.Error((int)result["destroyCode"]!);
         }
         Emit(result, outputPath);
