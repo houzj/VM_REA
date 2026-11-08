@@ -203,3 +203,9 @@ REA 的 PE 资源解析还确认该 DLL 只有一个完整的 RT_MANIFEST 资源
 ## 2026-11-08 逆向效率改造
 
 把原先临时执行的 PE 段定位、vtable 读取和 RVA 换算固化为 `tests/NativeEvidence/C03/Extract-BlobVtableDispatch.ps1`。后续更换原厂 DLL 或 vtable 地址时可以批量重跑并自动产出同一格式证据，避免重复手工偏移计算。当前 C03 的深挖顺序固定为：先批量抽取导出/vtable/调用点，再只对影响 `ProcessAlg` 前 ROI/Mask 数据流的入口做函数体恢复，最后才做一次 VM/SDK 运行差分。
+
+## 2026-11-08 并行证据汇合
+
+S 静态线确认 `0x180009C80` 的 `.pdata` 函数边界为 `[0x9C80,0xA49F)`，长度 `0xC1F`，unwind RVA 为 `0x34658`。ProcessAlg 的 `vtable+0x48` 调用该入口，非零返回进入 GenerateMaskImage 失败路径。
+
+R 运行时线形成了五个最小探针，顺序为直接 SDK 基线、显式全图 ROI、空或越界 Mask、VM 缺省与显式全图 ROI/Mask、启用 BlindPolygon。探针计划见 `analysis/full-audit/batch1-20261107/C03/runtime-roi-next-probes.json`。两条线均未创建分支或 worktree。
