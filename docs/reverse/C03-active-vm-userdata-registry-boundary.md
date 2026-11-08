@@ -1,0 +1,7 @@
+# C03 活动 VM UserData 注册表边界
+
+本轮在 VisionMaster 与 vServerApp 进程仍存在时，使用原厂 SDK `IMVS_CreateHandle` 连接 `127.0.0.1:5556`。句柄创建和销毁均返回 `IMVS_EC_OK`，但 `IMVS_GetAllProcessList` 返回 `IMVS_EC_MODULE_PROCEDURE_NOT_FOUND` 且数量为 0。
+
+随后对模块 ID 21000–21020 和 `DrawImageSize`、`RoiType`、`ExternRoiType`、`DynamicInData`、`DynamicOutData` 五个命名二进制字段执行 `IMVS_GetBinaryLength`。105 次全部返回 `IMVS_EC_MODULE_NOT_FOUND`，没有长度、哈希或缓冲区可读取。
+
+这证明当前沙盒中的活动进程不能作为 SDK 注册过程查询源。它保留了探针 ABI 和错误码证据，但不能证明原厂 VM 没有结果缓冲区，也不能替代桌面端注册流程。
