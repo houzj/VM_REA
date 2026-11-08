@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "scope": "VM UserData named binary payload transfer path",
+  "evidenceType": "controlled runtime logs plus source decompilation",
+  "sources": [
+    {
+      "path": "analysis/full-audit/image-source-runtime/run-2249967d6d124ccdb22e060f0e8c0c3c/log/SDK/PlatformSDK.log",
+      "sha256": "3c5f463c7dbeb37fb093b4c23b061420726b7d971e2406251c803bcdad47c418"
+    },
+    {
+      "path": "analysis/full-audit/image-source-runtime/run-2249967d6d124ccdb22e060f0e8c0c3c/log/Server/Server.log",
+      "sha256": "cd84e017f816aa70a2a8013a036a4837d996fc99604192791e97133573b045bc"
+    },
+    {
+      "path": "analysis/full-audit/group-native-audit/load-group-native.c",
+      "sha256": "862d185100abed5f11796c8697aa7073f23d0c86d8da82b6ba22850a00edc715"
+    }
+  ],
+  "observations": [
+    {
+      "name": "DynamicInData",
+      "recvBufLen": 647,
+      "runtime": "image-source workflow"
+    },
+    {
+      "name": "DynamicOutData",
+      "recvBufLen": 2179,
+      "runtime": "image-source workflow"
+    },
+    {
+      "name": "Blob import DynamicInData",
+      "recvBufLen": 0,
+      "runtime": "A01 Group import log"
+    },
+    {
+      "name": "Blob import DynamicOutData",
+      "recvBufLen": 0,
+      "runtime": "A01 Group import log"
+    }
+  ],
+  "sourceBehavior": "CGroupNode::LoadModuleData reads the serialized length, allocates owned storage only when length>0, and copies exactly that many bytes. The native getter path returns the stored length and copies into the caller buffer, returning E0000012 when capacity is insufficient.",
+  "implication": "The empty Blob import values are a state of that specific Group export. The same VM binary-data path supports nonempty payloads, so local reconstruction must retain length and bytes independently of module scalar parameters.",
+  "unknowns": [
+    "No captured log exposes the actual 647 or 2179 payload bytes.",
+    "The image-source payload format is not a Blob ROI/Mask payload and must not be reused as a Blob schema."
+  ]
+}
