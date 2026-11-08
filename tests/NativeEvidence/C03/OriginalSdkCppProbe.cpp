@@ -14,6 +14,7 @@ int main(int argc, char** argv) {
   const char* outDir = argc > 2 ? argv[2] : "analysis/full-audit/batch1-20261107/C03/native-sdk-run";
   const char* paramFile = argc > 3 ? argv[3] : nullptr;
   const bool explicitFullRoi = argc > 4 && std::strcmp(argv[4], "full-roi") == 0;
+  const bool outsideMask = argc > 4 && std::strcmp(argv[4], "outside-mask") == 0;
   void* global = nullptr;
   VisionDesigner::BlobFind::IBlobFindTool* tool = nullptr;
   VisionDesigner::IMvdImage* image = nullptr;
@@ -37,6 +38,17 @@ int main(int argc, char** argv) {
       if (rc != 0 || !roi) return 6;
       tool->SetROI(roi);
     }
+    VisionDesigner::IMvdPolygonF* mask = nullptr;
+    if (outsideMask) {
+      int rc = CreatePolygonInstance(&mask);
+      std::printf("outsideMaskCreate=%d\n", rc);
+      if (rc != 0 || !mask) return 7;
+      mask->AddVertex(-200.0f, -200.0f);
+      mask->AddVertex(-100.0f, -200.0f);
+      mask->AddVertex(-100.0f, -100.0f);
+      mask->AddVertex(-200.0f, -100.0f);
+      tool->AddMask(mask);
+    }
     const char* pairs[][2]={{"ThresholdType","2"},{"LowThreshold","100"},{"HightThreshold","150"},{"Polarity","0"},{"connectivity","8"},{"MinArea","10"},{"MaxArea","9999999"},{"FindNum","100"}};
     for(auto& p:pairs) tool->SetRunParam(p[0],p[1]);
     if(paramFile){ std::ifstream pf(paramFile); std::string line; while(std::getline(pf,line)){ auto eq=line.find("="); if(eq==std::string::npos) continue; auto key=line.substr(0,eq); auto value=line.substr(eq+1); if(!key.empty()){ try { tool->SetRunParam(key.c_str(),value.c_str()); } catch(...) { std::printf("paramException %s=%s\n",key.c_str(),value.c_str()); } } } }
@@ -55,6 +67,7 @@ int main(int argc, char** argv) {
     if(bl){ std::printf("blobImage=%u x %u fmt=%d\n",bl->GetWidth(),bl->GetHeight(),(int)bl->GetPixelFormat()); auto* d=bl->GetImageData(); std::ofstream f(std::string(outDir)+"/blob.bin",std::ios::binary); f.write((const char*)d->stDataChannel[0].pData,d->stDataChannel[0].nLen); std::printf("blobDataSize=%u blobRowStep=%u\n",d->stDataChannel[0].nLen,d->stDataChannel[0].nRowStep); } else std::printf("blobImage=null\n");
     DestroyImageInstance(image); image=nullptr;
     if (roi) DestroyRectangleInstance(roi);
+    if (mask) DestroyPolygonInstance(mask);
     DestroyBlobFindToolInstance(tool); tool=nullptr;
     if(global) DestroyGlobalInitToolInstance(global);
     return 0;
