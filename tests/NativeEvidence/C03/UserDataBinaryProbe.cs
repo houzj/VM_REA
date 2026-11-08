@@ -148,7 +148,7 @@ internal static class Program
         }
         try
         {
-            result["processes"] = ReadProcesses(handle);
+            result["processes"] = ReadProcesses(handle, useBasicHandle);
             foreach (var moduleId in moduleIds)
             foreach (var name in Names)
             {
@@ -198,7 +198,7 @@ internal static class Program
         Console.WriteLine(json);
     }
 
-    private static object ReadProcesses(nint handle)
+    private static object ReadProcesses(nint handle, bool useBasicHandle)
     {
         const int maxProcesses = 1000;
         const int nameLength = 64;
@@ -209,7 +209,9 @@ internal static class Program
             Span<byte> zero = stackalloc byte[256];
             for (var offset = 0; offset < 4 + maxProcesses * entrySize + 16; offset += zero.Length)
                 Marshal.Copy(zero[..Math.Min(zero.Length, 4 + maxProcesses * entrySize + 16 - offset)].ToArray(), 0, pointer + offset, Math.Min(zero.Length, 4 + maxProcesses * entrySize + 16 - offset));
-            var code = Native.IMVS_GetAllProcessList(handle, pointer);
+            var code = useBasicHandle
+                ? Native.IMVS_GetAllProcessList(handle, pointer)
+                : Native.IMVS_PF_GetAllProcessList(handle, pointer);
             var count = code == 0 ? Math.Min(Marshal.ReadInt32(pointer), maxProcesses) : 0;
             var processes = new List<object>();
             for (var i = 0; i < count; i++)
