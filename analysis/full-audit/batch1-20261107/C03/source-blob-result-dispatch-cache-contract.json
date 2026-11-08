@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "authority": "shipped-artifact",
+  "confidence": "source-confirmed",
+  "sources": [
+    "analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS.SyncPlatformSDKCS/ImvsSdkPFSync.cs: case 7",
+    "analysis/decompiled/iMVS-6000PlatformSDKCS.PublicAudit/iMVS_6000PlatformSDKCS.SyncPlatformSDKCS/BlobFindResult.cs"
+  ],
+  "entry": {
+    "cache": "modules.moduleTool.mBlobFind.Results keyed by nModuleID, add or replace",
+    "nativeRead": "Marshal.PtrToStructure(stResModuInfo.pData, IMVS_PF_BLOBFIND_MODU_INFO)",
+    "resultModuleType": 7,
+    "syncPath": "AsynGetModuleResults == null => BlobFindResult(native struct) deep-copies pointed buffers",
+    "ownership": "sync result owns deep copies, async callback path exposes native struct and clears cache after callback",
+    "asyncPath": "AsynGetModuleResults != null => BlobFindResult shell retains native pointers until callback",
+    "asyncCleanup": "callback invoked, then mBlobFind.Results.Clear()",
+    "basicCopy": "CopyBasicModuInfo(ref stResModuInfo, ref blobFindResult.stBasicModuInfo)"
+  },
+  "unknowns": [
+    "Native stResModuInfo lifetime and callback thread are not proven by this source slice",
+    "A live original VM result is still required for pointer counts, bytes, and element values"
+  ]
+}
