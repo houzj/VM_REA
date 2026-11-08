@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "source-confirmed-group-import-call-chain",
+  "sourcePath": "D:\\MyWork\\REA逆向测试\\analysis\\decompiled\\VM.Core\\VM.Core\\VmSolution.cs",
+  "sourceSha256": "c141e2c53913b233b768782d6757fae5997ecaf638b35db2ddf98f5ef951a13e",
+  "independentGroup": {
+    "member": "internalImportIndependentGroup(string path,string password)",
+    "steps": [
+      "TempVmSolution.Init()",
+      "mCollectionManager.ImportIndependentGroup(100000u,path,password,0u)",
+      "force strModuleName to IMVSGroup",
+      "VmModuleSet.CreatModuleByInfo(proInfo) as IMVSGroup",
+      "set Parent=VirtualPro",
+      "set ModuleFilePath and ModuleFilePassword",
+      "append to VirtualPro.Modules",
+      "catch Exception and rethrow GetVmException(ex)"
+    ]
+  },
+  "nestedGroup": {
+    "member": "internalImportGroup(IVmModuleSet moduleSet,string path,string password,uint nIdAllocateWay,bool isFromCopy)",
+    "guards": [
+      "TempVmSolution.Init()",
+      "return null when mbImportGroupEndFlag is false",
+      "return null when moduleSet is not VmModule or disposed"
+    ],
+    "versionGate": [
+      "IMVS_GetGroVersion(handle,path,\"\",ref versionInfo)",
+      "reject version below V4.0.0",
+      "when older than current language version require CompatibleTool.exe/config and run hidden VMGroup conversion before ImportGroup"
+    ],
+    "importSequence": [
+      "register RootOperation unless isFromCopy",
+      "set instance.importGroupModuleSet=moduleSet",
+      "call mCollectionManager.ImportGroup(rootId,groupId,path,password,nIdAllocateWay) for nested Group or ImportGroup(moduleSet.ID,0,path,password,nIdAllocateWay) otherwise",
+      "set mbImportGroupEndFlag=false",
+      "SyncWaitor.Wait(ref mbImportGroupEndFlag)",
+      "clear importGroupModuleSet",
+      "consume instance.importedGroupModule",
+      "set imported Group Parent and file path/password",
+      "conditionally register ModuleUnRedoOperation",
+      "clear importedGroupModule and return"
+    ],
+    "failure": [
+      "VmException formats error code/info, shows Lang_ImportGroupFail and logs path",
+      "empty path logs and returns null"
+    ]
+  },
+  "managedBoundary": {
+    "publicEntrypoints": [
+      "VmSolution.LoadIndependentGroup -> internalImportIndependentGroup",
+      "VmSolution.LoadGroup -> internalImportGroup",
+      "IMVSGroupTool.LoadIndependentGroup -> VmSolution.LoadIndependentGroup"
+    ],
+    "runtimeUnknowns": [
+      "server callback populating importedGroupModule",
+      "callback thread and exact mbImportGroupEndFlag timing",
+      "native ImportGroup payload decoding"
+    ]
+  }
+}
