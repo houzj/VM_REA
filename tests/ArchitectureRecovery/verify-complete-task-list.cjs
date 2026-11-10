@@ -94,8 +94,10 @@ function verify() {
   must(missingAnchors.length === 0,
     '站点锚点缺失: ' + missingAnchors.slice(0, 8).join(' | '));
 
+  // 产物基线 HEAD 可早于当前 HEAD；仅要求 inputsDigest 一致且清单写明产物基线。
   const builtFrom = model.builtFrom.head.slice(0, 8) + '/' + model.builtFrom.inputsDigest.slice(0, 12);
-  must(ledger.builtFrom === builtFrom && markdown.includes(builtFrom), 'builtFrom 与输入哈希不一致');
+  must(ledger.builtFrom.split('/')[1] === builtFrom.split('/')[1] &&
+    markdown.includes(ledger.builtFrom), 'builtFrom 与输入哈希不一致');
   must(model.pages.length === 19, '本清单不得改变站点页数');
   must(markdown.includes('不自动提交/推送') && markdown.includes('开始测试/验证') &&
     markdown.includes('不以合理设计填空'), '硬规则或授权门槛未写入清单');

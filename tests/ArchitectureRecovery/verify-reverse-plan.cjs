@@ -495,11 +495,19 @@ function verify() {
     pages.get('04-vertical-slice.html').includes(String(model.slice.directSdk.count)), '切片页缺少两侧数值差分');
 
   // 7. 确定性：同一模型重跑一次，逐字节比对磁盘产物。
+  // 产物记录生成时基线 HEAD；提交后当前 HEAD 前进，比对时把当前 HEAD 归一化到产物基线，
+  // 其余内容仍逐字节严格比对（祖先关系已在第 5 节校验）。
+  const artifactHead = data.builtFrom.head;
+  const liveHead = model.builtFrom.head;
+  const normalizeHead = text => text
+    .split(liveHead).join(artifactHead)
+    .split(liveHead.slice(0, 8)).join(artifactHead.slice(0, 8));
   const rebuilt = build.renderAll(model);
   check(rebuilt.files.length === EXPECTED_FILES.length, '重跑产物数量不一致');
   for (const file of rebuilt.files) {
     check(fs.existsSync(path.join(out, file.relative)), '重跑产物在磁盘缺失: ' + file.relative);
-    check(read(file.relative) === file.content, '重跑产物字节不一致: ' + file.relative);
+    check(normalizeHead(read(file.relative)) === normalizeHead(file.content),
+      '重跑产物字节不一致: ' + file.relative);
   }
   verifyInputs(model);
 
