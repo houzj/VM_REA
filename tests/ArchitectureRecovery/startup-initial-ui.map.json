@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "note": "启动链路 + 整屏空载初始态主界面的源码级取证台账。与第 18 页「运行态」17 控件清单并列，状态面不同，不混为一套口径、不产生第二套完成度。",
+  "evidenceBoundary": "source-confirmed 仅指原厂反编译源码、XAML/CIL 台账与窗口布局边；runtime-confirmed 只引用既有运行报告，不新增运行证据；independent-implementation 指自研 managed 壳；unknown 一律不臆造。截图只作控件范围识别与差异信号，不作实现规格。本轮不做原厂同状态差分与自研操作级复跑，未改产品代码。",
+  "stateScope": "空载初始态（程序刚启动、未加载任何方案、流程画布空白、图像显示区棋盘格空、历史结果表为空）",
+  "screenshotScope": "顶部菜单与工具栏、左侧竖排工具箱、流程1 Tab 与空白流程画布、右侧流程图像/模块结果双 Tab 与棋盘格空显示区、右上缩放适配图标与左右翻页箭头、下方历史结果/帮助 Tab 与执行序号/时间/模块数据空表、右下角带橙色视口框的导航缩略图浮动面板、底部状态栏",
+  "groups": [
+    { "id": "startup", "name": "启动链路", "description": "进程入口 → 单实例 → 预加载 → 主窗口构造 → 首屏就绪" },
+    { "id": "shell", "name": "壳与全局控件", "description": "标题栏、顶部菜单工具栏、底部状态栏、分栏" },
+    { "id": "left", "name": "左侧工具箱与流程画布", "description": "竖排分类图标、流程 Tab、空白画布、导航缩略图" },
+    { "id": "right", "name": "右侧显示与结果区", "description": "流程图像/模块结果 Tab、棋盘格显示区、历史结果/帮助与空数据表" }
+  ],
+  "acceptanceLevels": [
+    { "id": "L1", "label": "源码级闭环", "rule": "六段链 CL1–CL6、资源/CIL、绑定、状态读写、事件/回调逐项有可复核证据", "state": "not_started" },
+    { "id": "L2", "label": "原厂同状态差分", "rule": "与原厂空载初始态同状态差分通过；本轮未选，保持未执行", "state": "not_started" },
+    { "id": "L3", "label": "自研操作级复跑", "rule": "当前构建产物操作级复跑；本轮未选，保持未执行", "state": "not_started" }
+  ],
+  "sixSegmentStages": [
+    { "id": "CL1", "name": "入口" },
+    { "id": "CL2", "name": "绑定/命令" },
+    { "id": "CL3", "name": "状态读写" },
+    { "id": "CL4", "name": "事件/回调" },
+    { "id": "CL5", "name": "持久化或执行效果" },
+    { "id": "CL6", "name": "异常/清理" }
+  ],
+  "startupSteps": [
+    {
+      "id": "ST-01", "name": "进程入口与工作目录", "group": "startup", "phase": "process-entry",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs"],
+      "sourceMembers": ["VisionMaster.Program.Main(string[] args) @61", "Directory.SetCurrentDirectory @63", "ConfigurationHelper.GetConfig(\"IsMultiApp\") @64"],
+      "relatedWorkPackageIds": ["A02", "A08"], "relatedGateIds": ["E0", "E3"],
+      "firstAction": "核对 Main 入口、工作目录设置与多实例配置读取的实际分支条件",
+      "unknowns": ["IsMultiApp 配置默认值与部署差异未取证"],
+      "evidenceHint": "source-confirmed"
+    },
+    {
+      "id": "ST-02", "name": "单实例管理器初始化", "group": "startup", "phase": "single-instance",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs", "docs/architecture-recovery/startup-order-cil-evidence.json"],
+      "sourceMembers": ["VisionMaster.Program.GetSingleInstanceManagerSetup() @87", "SingleInstanceManager.Initialize(...) @70", "((App)Application.Current).ProcessCommandLineArgs(args) @93", "ApplicationDispatcherInvoker @95"],
+      "relatedWorkPackageIds": ["A02", "A08"], "relatedGateIds": ["E0", "E3", "E4"],
+      "firstAction": "核对单实例 setup 字段、命名管道/窗口消息转发与二次启动参数路由",
+      "unknowns": ["单实例跨进程通信实体与失败回退未取证", "docs/reverse/ 的 A 线证据中单实例 0 命中"],
+      "evidenceHint": "source-confirmed / partial"
+    },
+    {
+      "id": "ST-03", "name": "应用启动与预加载并行", "group": "startup", "phase": "app-startup",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs", "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs", "docs/architecture-recovery/menu-startup-cil-evidence.json"],
+      "sourceMembers": ["VisionMaster.Program.StartApp(string[]) @76", "RefreshRegistry() @80", "new App(Arguments) @83", "app.Run() @84", "VisionMaster.App.OnStartup(StartupEventArgs) @92", "WelcomeDialog @108", "Program.BeforeStartPart() @126（子线程）", "new PreLoadPage() @149", "mWaitEventBefore.WaitOne() @157"],
+      "relatedWorkPackageIds": ["A01", "A02", "A05"], "relatedGateIds": ["E2", "E3", "E5"],
+      "firstAction": "核对 OnStartup 中子线程预加载与两个 WaitEvent 的同步顺序",
+      "unknowns": ["WelcomeDialog 的显示条件与本地化资源未取证", "预加载页与首屏切换时序仅静态可见"],
+      "evidenceHint": "source-confirmed"
+    },
+    {
+      "id": "ST-04", "name": "启动前准备（加密/CPU/区域/权限/方案）", "group": "startup", "phase": "before-start",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs"],
+      "sourceMembers": ["VisionMaster.Program.BeforeStartPart() @111", "SoftEncrypt() @114", "InitColor() @115", "EncryptAPI.TrialVersionInit @116", "CPUConfig() @118", "CultureInfo.DefaultThreadCurrentCulture @120", "AccessManagerHelper.LoadAccessInfo @121", "VmSolution.GetSolutionTakeState @128", "VmSolution.StartNewInstance @131", "Ioc.Set<IApplicationOperation>(new ApplicationOperation()) @133"],
+      "relatedWorkPackageIds": ["A02", "A05", "A07"], "relatedGateIds": ["E1", "E3", "E5"],
+      "firstAction": "逐项核对启动前准备的顺序依赖与失败分支（授权、加密、方案接管）",
+      "unknowns": ["授权/加密的 native 依赖与失败降级未取证"],
+      "evidenceHint": "source-confirmed"
+    },
+    {
+      "id": "ST-05", "name": "主窗口数据构造与预加载", "group": "startup", "phase": "main-window-data",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs", "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs"],
+      "sourceMembers": ["VisionMaster.Program.BeforeStartMian() @136（原厂拼写）", "VisionMaster.Program.InitMainWindow() @159", "MainData = new MainWindowData() @161", "MainData.PreLoad() @162", "ServerManager.Instance.InitServer(TitleMenueItemData.GetToolFunctionSources) @164", "VisionMaster.MainWindowData.PreLoad() @984"],
+      "relatedWorkPackageIds": ["A01", "A02", "A05"], "relatedGateIds": ["E1", "E3", "E5"],
+      "firstAction": "核对 MainWindowData 构造、PreLoad 与工具源服务注册的依赖顺序",
+      "unknowns": ["ServerManager.InitServer 的进程外服务启动条件未取证"],
+      "evidenceHint": "source-confirmed"
+    },
+    {
+      "id": "ST-06", "name": "启动后加载与引导分支", "group": "startup", "phase": "after-start",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs", "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs"],
+      "sourceMembers": ["VisionMaster.Program.AppAfterStart() @179", "ProjectManager.GetInstance().LoadSolution(...) @196", "Auto_load_case @200", "GuideHelper.IsGuideWindowShow() @206", "SystemConfigManager.IsAutoLoad() @206", "WecPage(out GuideWindow win) @210", "ToolBoxData.ChangePriorityByInfo() @218", "SoftWareData.SetAutoLaunchAccess() @219", "MainData.IsNormalMode @220", "ImageViewBox.IsDirectDownSampling @225", "VmSolution.IsCallBackCacheEnable @226"],
+      "relatedWorkPackageIds": ["A01", "A05", "A07"], "relatedGateIds": ["E1", "E4", "E5"],
+      "firstAction": "核对空载初始态下自动加载/引导页/工具优先级三条分支的取值",
+      "unknowns": ["空载初始态具体走哪条分支未运行确证", "引导页 WecPage 的显示条件与资源未取证"],
+      "evidenceHint": "source-confirmed / runtime-unknown"
+    },
+    {
+      "id": "ST-07", "name": "主窗口显示与状态恢复", "group": "startup", "phase": "show-window",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs", "analysis/decompiled/VisionMasterMain/VisionMasterMain/MainWindow.xaml.cs", "docs/architecture-recovery/window-layout.edges.json", "docs/architecture-recovery/base-window-cil-evidence.json"],
+      "sourceMembers": ["VisionMaster.App.ShowMainWindow() @354", "new MainWindow() @358", "DataContext = Program.MainData @359", "SetBinding(IsShowProgressMaskProperty / MaskMessageProperty) @360-361", "MainWindow_Closing @362", "Show() @363", "Program.ConfigZoomIndex() @364", "Program.MainData.RecoverMainWindowState(...) @365", "VisionMasterMain.MainWindow.MainWindow() @86", "OnIsShowProgressMaskChanged @51"],
+      "relatedWorkPackageIds": ["A02", "A03", "A08"], "relatedGateIds": ["E0", "E2", "E4", "E7"],
+      "firstAction": "核对主窗口构造、DataContext 绑定、进度遮罩与窗口状态恢复的六段链",
+      "unknowns": ["RecoverMainWindowState 的持久化键与多屏/DPI 恢复矩阵未闭（U01）"],
+      "evidenceHint": "source-confirmed"
+    },
+    {
+      "id": "ST-08", "name": "缩放/语言/配色与标题绑定", "group": "startup", "phase": "post-show",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs", "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs"],
+      "sourceMembers": ["VisionMaster.Program.ConfigZoomIndex() @238", "MainData.ConfigZoomIndex = double.Parse(ConfigurationHelper.GetConfig(\"ZoomIndex\")) @240", "VisionMaster.Program.InitLang() @272", "VisionMaster.Program.InitColor() @284", "VisionMaster.Program.UpdateTitleBinding() @668", "IsMaximizedForVM / IsFullScreenForVM @216-228", "Ioc.Set(typeof(IUnRedoService), typeto) @214"],
+      "relatedWorkPackageIds": ["A02", "A05"], "relatedGateIds": ["E1", "E2", "E6"],
+      "firstAction": "区分「有定义但无调用点」的方法与真实启动链路节点，避免把定义当执行",
+      "unknowns": ["InitLang @272 / AwakeServerAsProcess @528 / AppBeforStart @142 在可见 Main→首屏链路中无调用点", "InitMq / StartServerApp 同样未进入该链路", "ZoomIndex 默认值与本地化资源未取证"],
+      "evidenceHint": "source-confirmed / definition-only"
+    },
+    {
+      "id": "ST-09", "name": "双入口与伴随进程", "group": "startup", "phase": "entry-variants",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs", "analysis/decompiled/vServerApp.Audit/ServerBackgroundApp/Program.cs"],
+      "sourceMembers": ["VisionMaster.App.Main() @560-564（第二个 [STAThread] 与 app.Run() @563）", "VisionMaster.App.ProcessCommandLineArgs @529", "ServerBackgroundApp.Program.Main() @12", "Application.Run(new VisionMasterServerForm()) @22", "RunningInstance() @31"],
+      "relatedWorkPackageIds": ["A07", "A08"], "relatedGateIds": ["E0", "E3", "E7"],
+      "firstAction": "核对 Program.Main 与 App.Main 两个入口的编译期选择与 vServerApp 唤醒条件",
+      "unknowns": ["实际部署使用哪个入口未取证", "AwakeServerAsProcess @528 的调用点未取证"],
+      "evidenceHint": "source-confirmed / entry-ambiguity"
+    },
+    {
+      "id": "ST-10", "name": "首屏就绪（空载初始态）", "group": "startup", "phase": "first-frame-ready",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/App.cs", "src/VisionEditor/MainWindow.xaml", "src/VisionEditor/Program.cs"],
+      "sourceMembers": ["VisionMaster.App.ShowFrontendUI() @231", "VisionEditor.Program.Main() @4", "new System.Windows.Application { ShutdownMode = OnMainWindowClose }", "app.Run(new MainWindow())"],
+      "relatedWorkPackageIds": ["A02", "A06", "A08"], "relatedGateIds": ["E5", "E6", "E7"],
+      "firstAction": "以截图空载态为范围信号，逐控件核对首屏可见性默认值与空数据绑定",
+      "unknowns": ["原厂首屏就绪的运行时标志未捕获", "本轮未做原厂/自研同状态差分与自研复跑"],
+      "evidenceHint": "source-confirmed / screenshot-scope-only"
+    },
+    {
+      "id": "ST-11", "name": "定义存在但未进入可见链路的方法", "group": "startup", "phase": "unlinked-definitions",
+      "originalEvidencePaths": ["analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/Program.cs"],
+      "sourceMembers": ["VisionMaster.Program.AppBeforStart() @142（原厂拼写 Befor）", "VisionMaster.Program.ReInitData() @168", "VisionMaster.Program.InitLang() @272", "VisionMaster.Program.WecPage() @243 / WecPage(out GuideWindow) @257", "VisionMaster.Program.IsCancelClose() @295", "VisionMaster.Program.SoftEncrypt() @389", "VisionMaster.Program.StartAuthActivation() @472", "VisionMaster.Program.AwakeServerAsProcess() @528", "VisionMaster.Program.InitMq() @624", "VisionMaster.Program.StartServerApp() @600", "VisionMaster.Program.CheckSecondaryDevelopmentProcessStarted() @657"],
+      "relatedWorkPackageIds": ["A02", "A05", "A08"], "relatedGateIds": ["E3", "E6", "E7"],
+      "firstAction": "逐项搜索全仓调用点，区分定义/反射调用/事件订阅，未找到即保留 unknown",
+      "unknowns": ["上述方法在 Main→首屏可见链路中无直接调用点", "反射或后期绑定的间接调用未取证"],
+      "evidenceHint": "source-confirmed-definition / invocation-unknown"
+    }
+  ],
+  "controls": [
+    {
+      "id": "UI-S01", "name": "顶部菜单栏与全局工具栏", "group": "shell",
+      "originalEvidencePaths": ["docs/architecture-recovery/global-toolbar.edges.json", "docs/architecture-recovery/global-toolbar-entry-inventory.json", "docs/architecture-recovery/entry-inventory.json", "docs/reverse/A05-full-menu-map-batch17.md", "docs/reverse/A05-input-registration-batch31.md"],
+      "sourceMembers": ["VisionEditor.MainWindow.ToolBar", "ToolBarScroll", "MenuHost", "ShellHeader", "ToolBarPreviewMouseWheel()（MainWindow.ShellToolbarScroll.cs）", "VisionMaster.MainWindowData.MenuSource @103 / MenuToolSource @105"],
+      "layoutEdgeIds": ["W01", "W02", "W03", "K01", "K06", "C01", "C03"],
+      "relatedWorkPackageIds": ["A05", "A08"], "relatedGateIds": ["E0", "E1", "E2", "E4"],
+      "screenshotState": "顶部搜索/用户图标、流程1 标题、下拉箭头与一排灰化工具图标可见，未选中任何工具",
+      "firstAction": "核对 53 个菜单命名声明 / 15 个工具栏声明在空载态的可用性与灰化规则",
+      "unknowns": ["灰化规则的完整命令 CanExecute 矩阵未闭合（closedEntryChains=0）", "E4 声明到 handler 的双向对账未闭"],
+      "evidenceHint": "source-confirmed"
+    },
+    {
+      "id": "UI-S02", "name": "标题栏与系统窗口状态", "group": "shell",
+      "originalEvidencePaths": ["docs/architecture-recovery/window-layout.edges.json", "docs/architecture-recovery/base-window-cil-evidence.json", "src/VisionEditor/WindowWorkArea.cs", "src/VisionEditor/MainWindow.ShellWindowState.cs"],
+      "sourceMembers": ["VisionMasterMain.MainWindow : BaseWindow, IComponentConnector", "BaseWindow.OnApplyTemplate → Header 事件 / DragMove", "VisionEditor.MainWindow.OnSourceInitialized() / WorkAreaHook()", "ShellWindowStateChanged() / UpdateMaximizeButton()"],
+      "layoutEdgeIds": ["W01", "W04", "W05", "W06", "W07", "W08", "W09", "C01", "C02", "U01"],
+      "relatedWorkPackageIds": ["A02", "A08"], "relatedGateIds": ["E0", "E2", "E6", "E7"],
+      "screenshotState": "无边框深色标题栏，右上最小化/最大化/关闭按钮与窗口图标",
+      "firstAction": "核对 W05–W09 的窗口消息/DPI/多屏换算与自研 WorkAreaHook 的对应边界",
+      "unknowns": ["原件 CIL、多屏、DPI、桌面矩阵仍未闭（U01）", "原厂/自研标题栏行为差异未做同状态差分"],
+      "evidenceHint": "source-confirmed / independent-implementation / unknown"
+    },
+    {
+      "id": "UI-S03", "name": "左侧竖排工具箱分类图标", "group": "left",
+      "originalEvidencePaths": ["docs/architecture-recovery/toolbox-drag.edges.json", "docs/architecture-recovery/toolbox-drag-cil-evidence.json", "docs/reverse/A01-loader-batch1.md", "docs/reverse/A01-LOADER-EXECUTION-TARGET.md", "docs/reverse/A-loader-failure-matrix-batch19.md"],
+      "sourceMembers": ["VisionEditor.MainWindow.ToolRail / Rail / ToggleToolboxButton / ToolboxFoldImage", "ToggleToolbox() / ToggleToolboxClick()（MainWindow.xaml.cs:54-55）", "ToolBoxData.ChangePriorityByInfo()（Program.cs:218）"],
+      "layoutEdgeIds": ["K06", "C03"],
+      "relatedWorkPackageIds": ["A01", "A07"], "relatedGateIds": ["E0", "E1", "E3", "E4"],
+      "screenshotState": "约 12 个竖排分类图标可见，无展开的工具项面板，未加载任何工具",
+      "firstAction": "核对分类图标的装载来源、缺插件体验与空载态下的启用状态",
+      "unknowns": ["图标资源与分类优先级的原厂映射未完全取证", "E1 资源声明全集仅 partial"],
+      "evidenceHint": "source-confirmed / partial"
+    },
+    {
+      "id": "UI-S04", "name": "流程1 Tab 与空白流程画布", "group": "left",
+      "originalEvidencePaths": ["docs/architecture-recovery/canvas-viewport.edges.json", "docs/reverse/A03-tabs-batch2.md", "docs/reverse/A03-binding-batch4.md", "docs/reverse/A-canvas-implementation-batch10.md", "src/VisionEditor/MainWindow.xaml", "src/VisionEditor/WorkflowTabs.cs"],
+      "sourceMembers": ["VisionEditor.MainWindow.ProcedureTabs / ProcedureTabScroll / EmptyWorkflowPanel / CanvasHost / CanvasViewport / GraphSurface", "WorkflowSelectionChanged() / SelectWorkflow()（WorkflowTabs.cs）", "RenderGraph() / ApplyCanvasTransform() / ViewRect()（WorkflowCanvas.cs，MainWindow partial）"],
+      "layoutEdgeIds": ["K05", "K06", "C03"],
+      "relatedWorkPackageIds": ["A03", "A04", "A08"], "relatedGateIds": ["E2", "E3", "E5", "E6"],
+      "screenshotState": "单个「流程1」Tab，深灰网格空白画布，无节点、无连线",
+      "firstAction": "核对空方案的节点集合、网格绘制与 Tab 绑定默认值",
+      "unknowns": ["原厂空画布的网格间距/坐标系常量未取证", "A03 仍 blocked"],
+      "evidenceHint": "source-confirmed / independent-implementation"
+    },
+    {
+      "id": "UI-S05", "name": "右下角导航缩略图浮动面板与橙色视口框", "group": "left",
+      "originalEvidencePaths": ["docs/architecture-recovery/canvas-viewport.edges.json", "docs/architecture-recovery/documents/MF02-OVERVIEW-VIEWPORT-HANDOFF.html", "docs/architecture-recovery/documents/MF02-MINIMAP-EDGE-DRAG.html", "docs/architecture-recovery/documents/MF02-MINIMAP-ROUTED-EVENTS.html", "src/VisionEditor/MainWindow.xaml", "src/VisionEditor/WorkflowCanvas.cs", "src/VisionEditor/WorkflowOverviewDrag.cs", "src/VisionEditor/GraphCanvas.cs", "src/VisionEditor.Core/GraphEditorDocument.Viewport.cs"],
+      "sourceMembers": ["VisionEditor.MainWindow.MiniMapPanel / MiniMapCanvas / MiniMapPreview / MiniMapViewport / MiniMapToggle（XAML 命名控件）", "UpdateMiniMap() / NavigateMiniMap() / MiniMapDown() / BeginMiniMapDrag() / MoveMiniMapDrag() / MiniMapMove() / MiniMapUp() / MiniMapWheel() / MiniMapToggleClick() / SetEyeIcon()（WorkflowCanvas.cs 内 MainWindow partial）", "OverviewDragPayload / ValidOverviewDrag() / CreateOverviewDragData() / AttachOverviewDrag() / HandleOverviewDrag()（WorkflowOverviewDrag.cs）", "VisionEditor.GraphCanvas.DrawMinimap() / NavigateMinimap() / GetViewport() / SetViewport()", "GraphEditorDocument.SetContainerZoomIndex()（GraphEditorDocument.Viewport.cs:8）", "方案字段 CanvasZoomIndex / OverviewX / OverviewY"],
+      "layoutEdgeIds": ["K06", "C03", "U02"],
+      "relatedWorkPackageIds": ["A03", "A04", "A08"], "relatedGateIds": ["E2", "E4", "E5", "E7"],
+      "screenshotState": "右下角灰色浮动面板，左上角橙色空心视口框，右下角调整柄；对应空白画布的当前视口",
+      "firstAction": "核对橙色视口框的几何来源、拖动/滚轮/路由事件与画布视口的双向同步",
+      "unknowns": ["原厂 minimap 的橙色视口框颜色/边框/命中测试常量未取证", "WorkflowOverview.cs / WorkflowOverviewDrag.cs / WorkflowCanvas.cs 内无同名类型，均为 MainWindow partial，台账不得把文件名当类型名", "U02 锁状态传播未闭"],
+      "evidenceHint": "source-confirmed / independent-implementation / naming-trap"
+    },
+    {
+      "id": "UI-S06", "name": "右侧流程图像 / 模块结果双 Tab 与棋盘格空显示区", "group": "right",
+      "originalEvidencePaths": ["src/VisionEditor/MainWindow.xaml", "src/VisionEditor/ToolDisplays.cs", "src/VisionEditor/DynamicOutputPresentation.cs", "docs/reverse/A06-gate-batch27.md", "docs/reverse/A06-frontend-gate-batch24.md"],
+      "sourceMembers": ["VisionEditor.MainWindow.DisplayTabs / ImagePreviewPane / Preview / EmptyImage / ModuleResultsGrid / ImageSelector", "InitializeToolDisplays() / RefreshToolDisplay()（ToolDisplays.cs）", "RuntimeDescriptor() / ModuleResultRows()（DynamicOutputPresentation.cs）", "ImageViewBox.IsDirectDownSampling（Program.cs:225）"],
+      "layoutEdgeIds": ["C03"],
+      "relatedWorkPackageIds": ["A06", "A04"], "relatedGateIds": ["E1", "E2", "E4", "E5"],
+      "screenshotState": "两 Tab 可见，棋盘格透明背景空显示区，右上 4 个缩放/适配图标与左右翻页箭头可见但无图像",
+      "firstAction": "核对无图像时棋盘格绘制、缩放图标可用性与模块结果空绑定",
+      "unknowns": ["原厂棋盘格笔刷与缩放图标资源未取证", "A06 仍 evidence"],
+      "evidenceHint": "source-confirmed / independent-implementation"
+    },
+    {
+      "id": "UI-S07", "name": "下方历史结果 / 帮助 Tab 与三列空数据表", "group": "right",
+      "originalEvidencePaths": ["docs/architecture-recovery/history-results-entry-audit.json", "docs/architecture-recovery/history-results-entry-audit.cil.json", "docs/architecture-recovery/history-replay.edges.json", "docs/reverse/C-result-history-implementation-batch15.md", "src/VisionEditor/MainWindow.xaml", "src/VisionEditor/MainWindow.FrameworkResultHistory.cs", "src/VisionEditor.Core/FrameworkRunHistory.cs"],
+      "sourceMembers": ["VisionEditor.MainWindow.HistoryGrid / BottomTabs", "InitializeFrameworkResultHistory() / RecordFrameworkRunHistory() / RefreshFrameworkResultTiming()", "FrameworkRunHistory.Append() / Clear() / Entries / MaximumRecords", "FrameworkResultTiming.From() / ProcessText / ModuleText / AlgorithmText / Unavailable"],
+      "layoutEdgeIds": ["C05", "U02"],
+      "relatedWorkPackageIds": ["A08", "A06"], "relatedGateIds": ["E1", "E3", "E5", "E6"],
+      "screenshotState": "历史结果/帮助 两 Tab，执行序号 / 时间 / 模块数据 三列表头，表体为空",
+      "firstAction": "核对空数据表列定义、绑定与运行序号/计时列的初始占位值",
+      "unknowns": ["A 线证据中「历史结果」0 命中，需引用 C 线与 architecture-recovery 台账", "原厂表头本地化与列宽未取证"],
+      "evidenceHint": "source-confirmed / evidence-gap"
+    },
+    {
+      "id": "UI-S08", "name": "底部状态栏（等待添加模块 / 耗时 / 缩放 / 版本）", "group": "shell",
+      "originalEvidencePaths": ["docs/architecture-recovery/statusbar-entries.edges.json", "docs/architecture-recovery/statusbar-entries-cil-evidence.json", "docs/architecture-recovery/statusbar-entries-review.json", "src/VisionEditor/MainWindow.xaml", "src/VisionEditor/MainWindow.ShellStatus.cs", "src/VisionEditor/MainWindow.FrameworkResultHistory.cs"],
+      "sourceMembers": ["VisionEditor.MainWindow.WindowStatusBar / StatusIcon / StatusText / ShowTimeButton / ProcessTimeText / ModuleTimeText / AlgorithmTimeText / ZoomSlider / ZoomIcon / ResetCanvasZoomButton / ZoomValue", "RefreshShellConfigurationStatus() / ResetCanvasZoomClick() / ShowTimeClick() / CloseTimeDialog() / CloseTimeOnProcedureChange()（MainWindow.ShellStatus.cs）", "RefreshFrameworkResultTiming()（MainWindow.FrameworkResultHistory.cs）"],
+      "layoutEdgeIds": ["K01", "C03", "U01"],
+      "relatedWorkPackageIds": ["A02", "A08", "A06"], "relatedGateIds": ["E1", "E3", "E5", "E7"],
+      "screenshotState": "左下「等待添加模块」、流程 0.00ms、100% 缩放、v4.4.0 Build20250506、右下红色圆形状态图标",
+      "firstAction": "核对空载态状态文本、三段耗时占位与 100% 缩放的默认值/持久化键",
+      "unknowns": ["原厂版本号注入点与红色状态图标语义未取证", "状态栏多屏/DPI 矩阵未闭（U01）"],
+      "evidenceHint": "source-confirmed / independent-implementation"
+    },
+    {
+      "id": "UI-S09", "name": "左右分栏与工作区布局", "group": "shell",
+      "originalEvidencePaths": ["docs/architecture-recovery/window-layout.edges.json", "src/VisionEditor/MainWindow.xaml", "src/VisionEditor/MainWindow.ShellSplitter.cs"],
+      "sourceMembers": ["VisionEditor.MainWindow.WorkareaGrid / LeftWorkareaColumn / RightWorkareaColumn / WorkareaSplitter", "WorkareaSplitterDragStarted()（MainWindow.ShellSplitter.cs）"],
+      "layoutEdgeIds": ["W08", "W09", "K05", "C02", "U01"],
+      "relatedWorkPackageIds": ["A02", "A06"], "relatedGateIds": ["E2", "E6", "E7"],
+      "screenshotState": "左侧流程画布与右侧显示/结果区约各占一半，垂直分隔条在中间",
+      "firstAction": "核对分栏初始比例、拖动持久化与最小化宽度约束",
+      "unknowns": ["原厂分栏初始比例常量未取证"],
+      "evidenceHint": "source-confirmed / independent-implementation"
+    },
+    {
+      "id": "UI-S10", "name": "工作区锁定与缺插件/空方案提示", "group": "shell",
+      "originalEvidencePaths": ["docs/architecture-recovery/window-layout.edges.json", "docs/reverse/A-loader-failure-matrix-batch19.md", "docs/reverse/A07-managed-loader-partial-batch16.md", "analysis/decompiled/VisionMaster.Exe.Audit/VisionMaster/MainWindowData.cs"],
+      "sourceMembers": ["VisionMaster.MainWindowData.IsWorkAreaLocking @127 / IsNotifyLock @162 / LockProcess() @925 / VmSolution_LoadEnd() @736", "K04 setter → IUnRedoService → LockProcess → PropertyChanged"],
+      "layoutEdgeIds": ["K01", "K02", "K03", "K04", "K05", "K06", "K07", "U02"],
+      "relatedWorkPackageIds": ["A01", "A05", "A08"], "relatedGateIds": ["E0", "E3", "E5", "E7"],
+      "screenshotState": "空载初始态未显示锁定提示，工具箱可见但未加载工具",
+      "firstAction": "核对模块数阈值触发的自动锁/延迟提示/解锁（K07）在空方案下是否触发",
+      "unknowns": ["锁状态传播到所有命令/手势/参数/持久化的全量消费者未闭（U02）", "缺插件提示在空载态的触发条件未运行确证"],
+      "evidenceHint": "source-confirmed / unknown"
+    }
+  ]
+}

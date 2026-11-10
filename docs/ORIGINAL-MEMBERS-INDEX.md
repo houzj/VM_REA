@@ -1,6 +1,6 @@
 # 原厂 25 个唯一程序集源码级成员清单（索引）
 
-机器台账：`tests/ArchitectureRecovery/original-members.map.json` · builtFrom `ef7b1cc9/cb822df8db70`
+机器台账：`tests/ArchitectureRecovery/original-members.map.json` · builtFrom `7d65a1e1/dfd5fd922c28`
 
 按 `canonicalTree` 归并 28 棵反编译树，3 个重复 pass 不累加；只扫描排除 `bin/obj/.git/.a01group/.pending/TestResults` 后的 `.cs`。
 

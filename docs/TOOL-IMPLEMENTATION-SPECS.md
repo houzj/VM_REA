@@ -1,6 +1,6 @@
 # 162 个目录工具实现规格（索引）
 
-机器台账：`tests/ArchitectureRecovery/tool-implementation-specs.map.json` · builtFrom `ef7b1cc9/cb822df8db70`
+机器台账：`tests/ArchitectureRecovery/tool-implementation-specs.map.json` · builtFrom `7d65a1e1/dfd5fd922c28`
 
 **全部为待逆向实现目标**：161 个未建立、1 个 partial；不按自研工程映射、不声称等价。
 

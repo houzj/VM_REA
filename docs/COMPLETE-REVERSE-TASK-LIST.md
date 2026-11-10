@@ -6,7 +6,7 @@
 - 独立校验：`node tests/ArchitectureRecovery/verify-complete-task-list.cjs`
 - 机器台账：`tests/ArchitectureRecovery/complete-task-list.map.json`
 - 站点入口：`docs/reverse-plan/index.html`（19 页，本清单不新增页面）
-- builtFrom：`ef7b1cc9/cb822df8db70`（HEAD + 输入 SHA-256，与站点同源）
+- builtFrom：`7d65a1e1/dfd5fd922c28`（HEAD + 输入 SHA-256，与站点同源）
 
 ## §0 口径总览与硬规则
 
@@ -57,8 +57,8 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
   - 成员：台账未登记（unknown），需源码级取证后填入
   - 命令〔待执行〕：`dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore`
   - 报告：`analysis/full-audit/batch1-20261107/C01/runtime-report.json`、`analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`
-- [ ] **P0-03** 继续 B1 静态取证（不改算法、不跑测试） · 状态 `open` · 来源 `incremental-landing.map.json` · 证据 1 项 · 退出 逐项核对纵切链路准确类型与成员；输出名清单与方案文件字节级比对 · 前置/阻塞 B0 未闭不得进入实施类动作
-  - 证据：`docs/reverse/C03-incremental-batch0-b1.md`
+- [ ] **P0-03** 继续 B1 静态取证（不改算法、不跑测试） · 状态 `open` · 来源 `incremental-landing.map.json / C03-INCREMENTAL-B1-CONTRACTS-001` · 证据 3 项 · 退出 逐项核对纵切链路准确类型与成员；输出名清单与方案文件字节级比对 · 前置/阻塞 B0 未闭不得进入实施类动作
+  - 证据：`docs/reverse/C03-incremental-batch0-b1.md`、`docs/reverse/C03-incremental-b1-static.md`、`docs/reverse/C03-incremental-b1-contracts.md`
   - 成员：台账未登记（unknown），需源码级取证后填入
 - [ ] **P0-04** 补 B0 根因证据（需可查询原厂过程或 provider 修复） · 状态 `blocked` · 来源 `c03-next-evidence-gate.json` · 证据 2 项 · 退出 捕获非空 InputROI/InputMask 或生成区域对象、45 元素向量与图像缓冲 · 前置/阻塞 用户环境/授权：原厂可查询过程或 REA provider
   - 证据：`analysis/full-audit/batch1-20261107/C03/c03-next-evidence-gate.json`、`analysis/full-audit/batch1-20261107/C03/rea-native-provider-diagnostic.json`
@@ -96,13 +96,13 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
 - [ ] **INC-B1-2** B1 · Blob 模块调用链与结果向量 · 状态 `blocked` · 来源 `incremental-landing.map.json` · 证据 5 项 · 退出 六段链中绑定/命令、状态读写、事件/回调逐段标注；ProcessOutput 与 LimitJudge 结果边界原样保留；不把 47/973202 写成 45/971486 的解释结论 · 前置/阻塞 B0 · 锚点 `17-incremental-landing.html#inc-step-B1-2`
   - 证据：`src/VisionCore/Algorithms.cs`、`src/VisionModules/BuiltinModules.cs`、`src/VisionWorkflow/OfflineCircle.cs`、`analysis/full-audit/batch1-20261107/C01/image-source-blob-vertical-slice.vmx.json`、`analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json`
   - 成员：`ProcessOutput`、`LimitJudge`、`Algorithms.ConnectedComponents8`、`Algorithms.FitCircle`、`BuiltinModules.RegisterAll`、`BuiltinModules.Adapter.ExecuteAsync`、`OfflineCircleExecutor.Run`
-  - 报告：`analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json`、`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json`
-  - unknown：本地侧 Blob 结果向量与 SDK result vtable +0x08/+0x28 的字段映射未逐项闭合；45 元素向量未捕获；9 个 Components.* 复合输出名的投影方式待源码级取证
+  - 报告：`analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json`、`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json`、`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-contracts.json`
+  - unknown：本地侧 Blob 结果向量与 SDK result vtable +0x08/+0x28 的字段映射未逐项闭合；45 元素向量未捕获；9 个 Components.* 复合名的 managed 投影规则已定位（C03-INCREMENTAL-B1-CONTRACTS-001）；原厂 native 字段 ABI 仍未取证
 - [ ] **INC-B1-3** B1 · 显示与 overlay 输出 · 状态 `blocked` · 来源 `incremental-landing.map.json` · 证据 4 项 · 退出 登记显示画布、overlay 输出文件与执行器入口；输出名清单与保存/重载状态可复核；不以本地显示一致推断原厂 parity · 前置/阻塞 B0 · 锚点 `17-incremental-landing.html#inc-step-B1-3`
   - 证据：`src/VisionWorkbench/ImageCanvas.cs`、`src/VisionRunner/OverlayPng.cs`、`src/VisionFramework/GraphExecutor.cs`、`analysis/full-audit/batch1-20261107/C01/image-source-group-vertical-slice.vmx.json`
   - 成员：`ImageCanvas.SetImage`、`ImageCanvas.SetOverlay`、`OverlayPng.Write`、`GraphExecutor.RunAsync`
-  - 报告：`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json`
-  - unknown：Group 输出名 width（小写）整串未命中，大小写契约待核对；三份 vmx 的 Procedures/Resources 差异已登记，行为含义未取证
+  - 报告：`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json`、`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-contracts.json`
+  - unknown：Group 输出名 image/width 已定位到方案 Configuration.Outputs（C03-INCREMENTAL-B1-CONTRACTS-001）；其与源码端口名的契约边界仍待原厂差分；三份 vmx 的 Procedures/Resources 差异已登记，行为含义未取证
 - [ ] **INC-B1-4** B1 · 纵切闭环复跑登记（待执行） · 状态 `blocked` · 来源 `incremental-landing.map.json` · 证据 2 项 · 退出 命令登记但本阶段不执行；复跑后记录退出码、新报告哈希、会话状态与输出名清单；S0.1/S0.2 状态随复跑结果更新，不提前关闭 · 前置/阻塞 B0 · 锚点 `17-incremental-landing.html#inc-step-B1-4`
   - 证据：`tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj`、`analysis/full-audit/batch1-20261107/C01/runtime-report.json`
   - 成员：台账未登记（unknown），需源码级取证后填入
@@ -306,168 +306,168 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
 
 共 162 项，勾选框全部未预填；状态字段来自机器台账。
 
-- [ ] **TOOL-1** CalculatorModule · 变量计算 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-1`
-- [ ] **TOOL-2** CoordinateTransform · 坐标转换 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-2`
-- [ ] **TOOL-3** IMVSCalibTransformModu · 标定转换 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-3`
-- [ ] **TOOL-4** IMVSLineAlignModu · 线对位 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-4`
-- [ ] **TOOL-5** IMVSMultiPointAlignModu · 点集对位 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-5`
-- [ ] **TOOL-6** IMVSRotateCalculateModu · 旋转计算 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-6`
-- [ ] **TOOL-7** IMVSScaleTransformModu · 单位转换 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-7`
-- [ ] **TOOL-8** IMVSSinglePointAlignModu · 单点对位 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-8`
-- [ ] **TOOL-9** SinglePointGrabModu · 单点抓取 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-9`
-- [ ] **TOOL-10** SinglePointMapAlignModu · 单点映射对位 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-10`
-- [ ] **TOOL-11** SinglePointRectifyModu · 单点纠偏 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-11`
-- [ ] **TOOL-12** CoordinateModule · 坐标系 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-12`
-- [ ] **TOOL-13** IMVSCalibBoardCalibModu · 标定板标定 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-13`
-- [ ] **TOOL-14** IMVSCameraMapModu · 相机映射 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-14`
-- [ ] **TOOL-15** IMVSImageCalibModu · 畸变标定 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-15`
-- [ ] **TOOL-16** IMVSMapCalibModu · 映射标定 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-16`
-- [ ] **TOOL-17** IMVSNImageCalibModu · N图像标定 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-17`
-- [ ] **TOOL-18** IMVSNPointCalibModu · N点标定 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-18`
-- [ ] **TOOL-19** ReadCalibFileModu · 标定加载 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-19`
-- [ ] **TOOL-20** RotateCalibModu · 旋转标定 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-20`
-- [ ] **TOOL-21** TranslationCalibModu · 平移旋转标定 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-21`
-- [ ] **TOOL-22** ImageAcquisitionModule · 多图采集 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-22`
-- [ ] **TOOL-23** ImageBufferModule · 缓存图像 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-23`
-- [ ] **TOOL-24** ImageSourceModule · 图像源 · 状态 `partial` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-24`
-- [ ] **TOOL-25** LightModule · 光源 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-25`
-- [ ] **TOOL-26** SaveImage · 输出图像 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-26`
-- [ ] **TOOL-27** IMVSColorExtractModu · 颜色抽取 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-27`
-- [ ] **TOOL-28** IMVSColorImageGenerationModu · 彩图生成 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-28`
-- [ ] **TOOL-29** IMVSColorMeasureModu · 颜色测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-29`
-- [ ] **TOOL-30** IMVSColorRecognitionModu · 颜色识别 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-30`
-- [ ] **TOOL-31** IMVSColorSegmentModu · 颜色分割 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-31`
-- [ ] **TOOL-32** IMVSColorTransformModu · 颜色转换 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-32`
-- [ ] **TOOL-33** CameraIOModule · 相机IO通信 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-33`
-- [ ] **TOOL-34** DataAnalysisModule · 协议解析 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-34`
-- [ ] **TOOL-35** DataAssembleModule · 协议组装 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-35`
-- [ ] **TOOL-36** ReadDatasModule · 接收数据 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-36`
-- [ ] **TOOL-37** SendDatasModule · 发送数据 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-37`
-- [ ] **TOOL-38** IMVSCircleEdgeInspModu · 圆弧边缘缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-38`
-- [ ] **TOOL-39** IMVSCircleEdgePairInspModu · 圆弧对缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-39`
-- [ ] **TOOL-40** IMVSEdgeFlawInspModu · 边缘模型缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-40`
-- [ ] **TOOL-41** IMVSEdgeInspGroupModu · 边缘组合缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-41`
-- [ ] **TOOL-42** IMVSEdgePairFlawInspModu · 边缘对模型缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-42`
-- [ ] **TOOL-43** IMVSEdgePairInspGroupModu · 边缘对组合缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-43`
-- [ ] **TOOL-44** IMVSEdgePairPosTrendAnalyModu · 边缘对位置趋势分析 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-44`
-- [ ] **TOOL-45** IMVSEdgePosTrendAnalyModu · 边缘位置趋势分析 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-45`
-- [ ] **TOOL-46** IMVSInspectModu · 异常检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-46`
-- [ ] **TOOL-47** IMVSLineEdgeInspModu · 直线边缘缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-47`
-- [ ] **TOOL-48** IMVSLineEdgePairInspModu · 直线对缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-48`
-- [ ] **TOOL-49** IMVSMarkInspModu · IMVSMarkInspModu · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-49`
-- [ ] **TOOL-50** IMVSMarkInspModuVA · 字符缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-50`
-- [ ] **TOOL-51** IMVSSurfaceDefectFilterModu · 表面缺陷滤波 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-51`
-- [ ] **TOOL-52** CommDeviceModule · CommDeviceModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-52`
-- [ ] **TOOL-53** CommManagerModule · CommManagerModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-53`
-- [ ] **TOOL-54** DataQueueModule · DataQueueModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-54`
-- [ ] **TOOL-55** DynamicParamCameraModule · DynamicParamCameraModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-55`
-- [ ] **TOOL-56** GlobalCameraModule · GlobalCameraModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-56`
-- [ ] **TOOL-57** GlobalTriggerModule · GlobalTriggerModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-57`
-- [ ] **TOOL-58** GlobalVariableModule · GlobalVariableModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-58`
-- [ ] **TOOL-59** ImageCollectDalsaModu · ImageCollectDalsaModu · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-59`
-- [ ] **TOOL-60** ImageCollectHikModu · ImageCollectHikModu · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-60`
-- [ ] **TOOL-61** ImageCollectIKModu · ImageCollectIKModu · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-61`
-- [ ] **TOOL-62** ImageCollectModu · ImageCollectModu · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-62`
-- [ ] **TOOL-63** LightControl · LightControl · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-63`
-- [ ] **TOOL-64** LocalVariableModule · LocalVariableModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-64`
-- [ ] **TOOL-65** ProcedureComm · ProcedureComm · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-65`
-- [ ] **TOOL-66** ProcedureModule · ProcedureModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-66`
-- [ ] **TOOL-67** SCGlobalCameraModule · SCGlobalCameraModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-67`
-- [ ] **TOOL-68** SolutionModule · SolutionModule · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-68`
-- [ ] **TOOL-69** GeometryCreate · 几何创建 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-69`
-- [ ] **TOOL-70** IMVSCircleFitModu · 圆拟合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-70`
-- [ ] **TOOL-71** IMVSEllipseFitModu · 椭圆拟合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-71`
-- [ ] **TOOL-72** IMVSLineFitModu · 直线拟合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-72`
-- [ ] **TOOL-73** IMVSAffineTransformModu · 仿射变换 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-73`
-- [ ] **TOOL-74** IMVSBinaryModu · 图像二值化 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-74`
-- [ ] **TOOL-75** IMVSFrameMeanModu · 帧平均 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-75`
-- [ ] **TOOL-76** IMVSGeometricTransformModu · 几何变换 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-76`
-- [ ] **TOOL-77** IMVSImageCombineProcessModu · 图像组合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-77`
-- [ ] **TOOL-78** IMVSImageCorrectCalibModu · 畸变校正 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-78`
-- [ ] **TOOL-79** IMVSImageCorrectManualModu · 图像矫正 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-79`
-- [ ] **TOOL-80** IMVSImageEnhanceModu · 图像增强 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-80`
-- [ ] **TOOL-81** IMVSImageFilterModu · 图像滤波 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-81`
-- [ ] **TOOL-82** IMVSImageFixtureModu · 图像修正 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-82`
-- [ ] **TOOL-83** IMVSImageMathModu · 图像运算 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-83`
-- [ ] **TOOL-84** IMVSImageMorphModu · 形态学处理 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-84`
-- [ ] **TOOL-85** IMVSImageNormlizeModu · 图像归一化 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-85`
-- [ ] **TOOL-86** IMVSImageResizeModu · 图像缩放 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-86`
-- [ ] **TOOL-87** IMVSImageSharpnessModu · 清晰度评估 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-87`
-- [ ] **TOOL-88** IMVSImgStitchCalibModu · 图像拼接 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-88`
-- [ ] **TOOL-89** IMVSInverseAffineTransformModu · 逆仿射变换 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-89`
-- [ ] **TOOL-90** IMVSMultiImageFusionModu · 多图融合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-90`
-- [ ] **TOOL-91** IMVSPolarUnwarpModu · 圆环展开 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-91`
-- [ ] **TOOL-92** IMVSRegionCopyModu · 拷贝填充 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-92`
-- [ ] **TOOL-93** IMVSShadeCorrectModu · 阴影校正 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-93`
-- [ ] **TOOL-94** IMVSAngleBisectorFindModu · 角平分线查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-94`
-- [ ] **TOOL-95** IMVSBlobFindLabelsModu · Blob标签分析 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-95`
-- [ ] **TOOL-96** IMVSBlobFindModu · Blob分析 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-96`
-- [ ] **TOOL-97** IMVSCaliperCornerModu · 边缘交点 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-97`
-- [ ] **TOOL-98** IMVSCaliperEdgeModu · 边缘查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-98`
-- [ ] **TOOL-99** IMVSCaliperModu · 卡尺工具 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-99`
-- [ ] **TOOL-100** IMVSCircleFindModu · 圆查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-100`
-- [ ] **TOOL-101** IMVSContourMatchModu · 轮廓匹配 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-101`
-- [ ] **TOOL-102** IMVSEllipseFindModu · 椭圆查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-102`
-- [ ] **TOOL-103** IMVSFastFeatureMatchModu · 快速匹配 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-103`
-- [ ] **TOOL-104** IMVSFixtureModu · 位置修正 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-104`
-- [ ] **TOOL-105** IMVSGluePathConductModu · 路径提取 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-105`
-- [ ] **TOOL-106** IMVSGrayMatchModu · IMVSGrayMatchModu · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-106`
-- [ ] **TOOL-107** IMVSGrayMatchModuVA · 灰度匹配 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-107`
-- [ ] **TOOL-108** IMVSHPFeatureMatchModu · 高精度匹配 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-108`
-- [ ] **TOOL-109** IMVSLineFindGroupModu · 直线查找组合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-109`
-- [ ] **TOOL-110** IMVSLineFindModu · 直线查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-110`
-- [ ] **TOOL-111** IMVSMarkFindModu · 图形定位 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-111`
-- [ ] **TOOL-112** IMVSMatrixCircleFindModu · 阵列圆查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-112`
-- [ ] **TOOL-113** IMVSMedianLineFindModu · 中线查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-113`
-- [ ] **TOOL-114** IMVSMultiLineFindModu · 多直线查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-114`
-- [ ] **TOOL-115** IMVSPairLineModu · 平行线查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-115`
-- [ ] **TOOL-116** IMVSParallelCalculateModu · 平行线计算 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-116`
-- [ ] **TOOL-117** IMVSPeakFindModu · 顶点检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-117`
-- [ ] **TOOL-118** IMVSQuadrangleFindModu · 四边形查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-118`
-- [ ] **TOOL-119** IMVSRectFindModu · 矩形检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-119`
-- [ ] **TOOL-120** IMVSTargetTrackModu · 目标跟踪 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-120`
-- [ ] **TOOL-121** IMVSVerticalLineFindModu · 垂线查找 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-121`
-- [ ] **TOOL-122** AndModule · 逻辑 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-122`
-- [ ] **TOOL-123** BranchModule_STD · 分支模块 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-123`
-- [ ] **TOOL-124** BranchStringCpmL · 分支字符 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-124`
-- [ ] **TOOL-125** DataClassificationModule · 数据分类 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-125`
-- [ ] **TOOL-126** DataFilterModule · 数据筛选 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-126`
-- [ ] **TOOL-127** DataRecordModule · 数据记录 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-127`
-- [ ] **TOOL-128** DataSetModule · 数据集合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-128`
-- [ ] **TOOL-129** DataSortModule · 数据排序 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-129`
-- [ ] **TOOL-130** FormatModule · 格式化 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-130`
-- [ ] **TOOL-131** GraphicsSetModule · 图形收集 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-131`
-- [ ] **TOOL-132** IfBranchModule · 条件分支 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-132`
-- [ ] **TOOL-133** IfModule · 条件检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-133`
-- [ ] **TOOL-134** IMVSGroup · Group · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-134`
-- [ ] **TOOL-135** PointSetMODU_STD · 点集 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-135`
-- [ ] **TOOL-136** PyShellModule · Python脚本 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-136`
-- [ ] **TOOL-137** SaveTextModule · 文本保存 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-137`
-- [ ] **TOOL-138** ShellModule · 脚本 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-138`
-- [ ] **TOOL-139** StringCompareModule · 字符比较 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-139`
-- [ ] **TOOL-140** TimeStatisticModule · 耗时统计 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-140`
-- [ ] **TOOL-141** TriggerModule · 触发模块 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-141`
-- [ ] **TOOL-142** IMVSC2CMeasureModu · 圆圆测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-142`
-- [ ] **TOOL-143** IMVSEdgeWidthFindModu · 间距检测 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-143`
-- [ ] **TOOL-144** IMVSHistToolModu · 直方图工具 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-144`
-- [ ] **TOOL-145** IMVSIntensityMeasureModu · 亮度测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-145`
-- [ ] **TOOL-146** IMVSL2CMeasureModu · 线圆测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-146`
-- [ ] **TOOL-147** IMVSL2LMeasureModu · 线线测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-147`
-- [ ] **TOOL-148** IMVSP2CMeasureModu · 点圆测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-148`
-- [ ] **TOOL-149** IMVSP2LMeasureModu · 点线测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-149`
-- [ ] **TOOL-150** IMVSP2PMeasureModu · 点点测量 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-150`
-- [ ] **TOOL-151** IMVSPixelCountModu · 像素统计 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-151`
-- [ ] **TOOL-152** IMVSPixelCountModuVA · 像素统计 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-152`
-- [ ] **TOOL-153** IMVS2dBcrModu · 二维码识别 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-153`
-- [ ] **TOOL-154** IMVSBcrModu · 条码识别 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-154`
-- [ ] **TOOL-155** IMVSMachineLearningClassifierModu · ML分类 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-155`
-- [ ] **TOOL-156** IMVSOcrModu · 字符识别 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-156`
-- [ ] **TOOL-157** IMVS2dArrayCorrectModu · 二维阵列 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-157`
-- [ ] **TOOL-158** IMVSBoxFilterModule · Box过滤 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-158`
-- [ ] **TOOL-159** IMVSBoxMergeModu · Box融合 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-159`
-- [ ] **TOOL-160** IMVSBoxOverlapCalculationModu · Box重叠率计算 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-160`
-- [ ] **TOOL-161** IMVSDivideImageModu · 划片拆分 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-161`
-- [ ] **TOOL-162** IMVSMultiLabelFilterModu · 多标签筛选 · 状态 `not_started` · 来源 `plugins/inventory.json` · 证据 1 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-162`
+- [ ] **TOOL-1** CalculatorModule · 变量计算 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-1`
+- [ ] **TOOL-2** CoordinateTransform · 坐标转换 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-2`
+- [ ] **TOOL-3** IMVSCalibTransformModu · 标定转换 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-3`
+- [ ] **TOOL-4** IMVSLineAlignModu · 线对位 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-4`
+- [ ] **TOOL-5** IMVSMultiPointAlignModu · 点集对位 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-5`
+- [ ] **TOOL-6** IMVSRotateCalculateModu · 旋转计算 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-6`
+- [ ] **TOOL-7** IMVSScaleTransformModu · 单位转换 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-7`
+- [ ] **TOOL-8** IMVSSinglePointAlignModu · 单点对位 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-8`
+- [ ] **TOOL-9** SinglePointGrabModu · 单点抓取 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-9`
+- [ ] **TOOL-10** SinglePointMapAlignModu · 单点映射对位 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-10`
+- [ ] **TOOL-11** SinglePointRectifyModu · 单点纠偏 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-11`
+- [ ] **TOOL-12** CoordinateModule · 坐标系 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-12`
+- [ ] **TOOL-13** IMVSCalibBoardCalibModu · 标定板标定 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-13`
+- [ ] **TOOL-14** IMVSCameraMapModu · 相机映射 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-14`
+- [ ] **TOOL-15** IMVSImageCalibModu · 畸变标定 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-15`
+- [ ] **TOOL-16** IMVSMapCalibModu · 映射标定 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-16`
+- [ ] **TOOL-17** IMVSNImageCalibModu · N图像标定 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-17`
+- [ ] **TOOL-18** IMVSNPointCalibModu · N点标定 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-18`
+- [ ] **TOOL-19** ReadCalibFileModu · 标定加载 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-19`
+- [ ] **TOOL-20** RotateCalibModu · 旋转标定 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-20`
+- [ ] **TOOL-21** TranslationCalibModu · 平移旋转标定 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-21`
+- [ ] **TOOL-22** ImageAcquisitionModule · 多图采集 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-22`
+- [ ] **TOOL-23** ImageBufferModule · 缓存图像 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-23`
+- [ ] **TOOL-24** ImageSourceModule · 图像源 · 状态 `partial` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-24`
+- [ ] **TOOL-25** LightModule · 光源 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-25`
+- [ ] **TOOL-26** SaveImage · 输出图像 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-26`
+- [ ] **TOOL-27** IMVSColorExtractModu · 颜色抽取 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-27`
+- [ ] **TOOL-28** IMVSColorImageGenerationModu · 彩图生成 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-28`
+- [ ] **TOOL-29** IMVSColorMeasureModu · 颜色测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-29`
+- [ ] **TOOL-30** IMVSColorRecognitionModu · 颜色识别 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-30`
+- [ ] **TOOL-31** IMVSColorSegmentModu · 颜色分割 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-31`
+- [ ] **TOOL-32** IMVSColorTransformModu · 颜色转换 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-32`
+- [ ] **TOOL-33** CameraIOModule · 相机IO通信 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-33`
+- [ ] **TOOL-34** DataAnalysisModule · 协议解析 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-34`
+- [ ] **TOOL-35** DataAssembleModule · 协议组装 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-35`
+- [ ] **TOOL-36** ReadDatasModule · 接收数据 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-36`
+- [ ] **TOOL-37** SendDatasModule · 发送数据 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-37`
+- [ ] **TOOL-38** IMVSCircleEdgeInspModu · 圆弧边缘缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-38`
+- [ ] **TOOL-39** IMVSCircleEdgePairInspModu · 圆弧对缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-39`
+- [ ] **TOOL-40** IMVSEdgeFlawInspModu · 边缘模型缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-40`
+- [ ] **TOOL-41** IMVSEdgeInspGroupModu · 边缘组合缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-41`
+- [ ] **TOOL-42** IMVSEdgePairFlawInspModu · 边缘对模型缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-42`
+- [ ] **TOOL-43** IMVSEdgePairInspGroupModu · 边缘对组合缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-43`
+- [ ] **TOOL-44** IMVSEdgePairPosTrendAnalyModu · 边缘对位置趋势分析 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-44`
+- [ ] **TOOL-45** IMVSEdgePosTrendAnalyModu · 边缘位置趋势分析 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-45`
+- [ ] **TOOL-46** IMVSInspectModu · 异常检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-46`
+- [ ] **TOOL-47** IMVSLineEdgeInspModu · 直线边缘缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-47`
+- [ ] **TOOL-48** IMVSLineEdgePairInspModu · 直线对缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-48`
+- [ ] **TOOL-49** IMVSMarkInspModu · IMVSMarkInspModu · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-49`
+- [ ] **TOOL-50** IMVSMarkInspModuVA · 字符缺陷检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-50`
+- [ ] **TOOL-51** IMVSSurfaceDefectFilterModu · 表面缺陷滤波 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-51`
+- [ ] **TOOL-52** CommDeviceModule · CommDeviceModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-52`
+- [ ] **TOOL-53** CommManagerModule · CommManagerModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-53`
+- [ ] **TOOL-54** DataQueueModule · DataQueueModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-54`
+- [ ] **TOOL-55** DynamicParamCameraModule · DynamicParamCameraModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-55`
+- [ ] **TOOL-56** GlobalCameraModule · GlobalCameraModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-56`
+- [ ] **TOOL-57** GlobalTriggerModule · GlobalTriggerModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-57`
+- [ ] **TOOL-58** GlobalVariableModule · GlobalVariableModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-58`
+- [ ] **TOOL-59** ImageCollectDalsaModu · ImageCollectDalsaModu · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-59`
+- [ ] **TOOL-60** ImageCollectHikModu · ImageCollectHikModu · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-60`
+- [ ] **TOOL-61** ImageCollectIKModu · ImageCollectIKModu · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-61`
+- [ ] **TOOL-62** ImageCollectModu · ImageCollectModu · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-62`
+- [ ] **TOOL-63** LightControl · LightControl · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-63`
+- [ ] **TOOL-64** LocalVariableModule · LocalVariableModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-64`
+- [ ] **TOOL-65** ProcedureComm · ProcedureComm · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-65`
+- [ ] **TOOL-66** ProcedureModule · ProcedureModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-66`
+- [ ] **TOOL-67** SCGlobalCameraModule · SCGlobalCameraModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-67`
+- [ ] **TOOL-68** SolutionModule · SolutionModule · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-68`
+- [ ] **TOOL-69** GeometryCreate · 几何创建 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-69`
+- [ ] **TOOL-70** IMVSCircleFitModu · 圆拟合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-70`
+- [ ] **TOOL-71** IMVSEllipseFitModu · 椭圆拟合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-71`
+- [ ] **TOOL-72** IMVSLineFitModu · 直线拟合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-72`
+- [ ] **TOOL-73** IMVSAffineTransformModu · 仿射变换 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-73`
+- [ ] **TOOL-74** IMVSBinaryModu · 图像二值化 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-74`
+- [ ] **TOOL-75** IMVSFrameMeanModu · 帧平均 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-75`
+- [ ] **TOOL-76** IMVSGeometricTransformModu · 几何变换 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-76`
+- [ ] **TOOL-77** IMVSImageCombineProcessModu · 图像组合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-77`
+- [ ] **TOOL-78** IMVSImageCorrectCalibModu · 畸变校正 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-78`
+- [ ] **TOOL-79** IMVSImageCorrectManualModu · 图像矫正 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-79`
+- [ ] **TOOL-80** IMVSImageEnhanceModu · 图像增强 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-80`
+- [ ] **TOOL-81** IMVSImageFilterModu · 图像滤波 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-81`
+- [ ] **TOOL-82** IMVSImageFixtureModu · 图像修正 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-82`
+- [ ] **TOOL-83** IMVSImageMathModu · 图像运算 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-83`
+- [ ] **TOOL-84** IMVSImageMorphModu · 形态学处理 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-84`
+- [ ] **TOOL-85** IMVSImageNormlizeModu · 图像归一化 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-85`
+- [ ] **TOOL-86** IMVSImageResizeModu · 图像缩放 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-86`
+- [ ] **TOOL-87** IMVSImageSharpnessModu · 清晰度评估 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-87`
+- [ ] **TOOL-88** IMVSImgStitchCalibModu · 图像拼接 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-88`
+- [ ] **TOOL-89** IMVSInverseAffineTransformModu · 逆仿射变换 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-89`
+- [ ] **TOOL-90** IMVSMultiImageFusionModu · 多图融合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-90`
+- [ ] **TOOL-91** IMVSPolarUnwarpModu · 圆环展开 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-91`
+- [ ] **TOOL-92** IMVSRegionCopyModu · 拷贝填充 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-92`
+- [ ] **TOOL-93** IMVSShadeCorrectModu · 阴影校正 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-93`
+- [ ] **TOOL-94** IMVSAngleBisectorFindModu · 角平分线查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-94`
+- [ ] **TOOL-95** IMVSBlobFindLabelsModu · Blob标签分析 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-95`
+- [ ] **TOOL-96** IMVSBlobFindModu · Blob分析 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-96`
+- [ ] **TOOL-97** IMVSCaliperCornerModu · 边缘交点 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-97`
+- [ ] **TOOL-98** IMVSCaliperEdgeModu · 边缘查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-98`
+- [ ] **TOOL-99** IMVSCaliperModu · 卡尺工具 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-99`
+- [ ] **TOOL-100** IMVSCircleFindModu · 圆查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-100`
+- [ ] **TOOL-101** IMVSContourMatchModu · 轮廓匹配 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-101`
+- [ ] **TOOL-102** IMVSEllipseFindModu · 椭圆查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-102`
+- [ ] **TOOL-103** IMVSFastFeatureMatchModu · 快速匹配 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-103`
+- [ ] **TOOL-104** IMVSFixtureModu · 位置修正 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-104`
+- [ ] **TOOL-105** IMVSGluePathConductModu · 路径提取 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-105`
+- [ ] **TOOL-106** IMVSGrayMatchModu · IMVSGrayMatchModu · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-106`
+- [ ] **TOOL-107** IMVSGrayMatchModuVA · 灰度匹配 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-107`
+- [ ] **TOOL-108** IMVSHPFeatureMatchModu · 高精度匹配 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-108`
+- [ ] **TOOL-109** IMVSLineFindGroupModu · 直线查找组合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-109`
+- [ ] **TOOL-110** IMVSLineFindModu · 直线查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-110`
+- [ ] **TOOL-111** IMVSMarkFindModu · 图形定位 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-111`
+- [ ] **TOOL-112** IMVSMatrixCircleFindModu · 阵列圆查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-112`
+- [ ] **TOOL-113** IMVSMedianLineFindModu · 中线查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-113`
+- [ ] **TOOL-114** IMVSMultiLineFindModu · 多直线查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-114`
+- [ ] **TOOL-115** IMVSPairLineModu · 平行线查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-115`
+- [ ] **TOOL-116** IMVSParallelCalculateModu · 平行线计算 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-116`
+- [ ] **TOOL-117** IMVSPeakFindModu · 顶点检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-117`
+- [ ] **TOOL-118** IMVSQuadrangleFindModu · 四边形查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-118`
+- [ ] **TOOL-119** IMVSRectFindModu · 矩形检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-119`
+- [ ] **TOOL-120** IMVSTargetTrackModu · 目标跟踪 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-120`
+- [ ] **TOOL-121** IMVSVerticalLineFindModu · 垂线查找 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-121`
+- [ ] **TOOL-122** AndModule · 逻辑 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-122`
+- [ ] **TOOL-123** BranchModule_STD · 分支模块 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-123`
+- [ ] **TOOL-124** BranchStringCpmL · 分支字符 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-124`
+- [ ] **TOOL-125** DataClassificationModule · 数据分类 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-125`
+- [ ] **TOOL-126** DataFilterModule · 数据筛选 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-126`
+- [ ] **TOOL-127** DataRecordModule · 数据记录 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-127`
+- [ ] **TOOL-128** DataSetModule · 数据集合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-128`
+- [ ] **TOOL-129** DataSortModule · 数据排序 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-129`
+- [ ] **TOOL-130** FormatModule · 格式化 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-130`
+- [ ] **TOOL-131** GraphicsSetModule · 图形收集 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-131`
+- [ ] **TOOL-132** IfBranchModule · 条件分支 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-132`
+- [ ] **TOOL-133** IfModule · 条件检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-133`
+- [ ] **TOOL-134** IMVSGroup · Group · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-134`
+- [ ] **TOOL-135** PointSetMODU_STD · 点集 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-135`
+- [ ] **TOOL-136** PyShellModule · Python脚本 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-136`
+- [ ] **TOOL-137** SaveTextModule · 文本保存 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-137`
+- [ ] **TOOL-138** ShellModule · 脚本 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-138`
+- [ ] **TOOL-139** StringCompareModule · 字符比较 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-139`
+- [ ] **TOOL-140** TimeStatisticModule · 耗时统计 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-140`
+- [ ] **TOOL-141** TriggerModule · 触发模块 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-141`
+- [ ] **TOOL-142** IMVSC2CMeasureModu · 圆圆测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-142`
+- [ ] **TOOL-143** IMVSEdgeWidthFindModu · 间距检测 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-143`
+- [ ] **TOOL-144** IMVSHistToolModu · 直方图工具 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-144`
+- [ ] **TOOL-145** IMVSIntensityMeasureModu · 亮度测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-145`
+- [ ] **TOOL-146** IMVSL2CMeasureModu · 线圆测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-146`
+- [ ] **TOOL-147** IMVSL2LMeasureModu · 线线测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-147`
+- [ ] **TOOL-148** IMVSP2CMeasureModu · 点圆测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-148`
+- [ ] **TOOL-149** IMVSP2LMeasureModu · 点线测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-149`
+- [ ] **TOOL-150** IMVSP2PMeasureModu · 点点测量 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-150`
+- [ ] **TOOL-151** IMVSPixelCountModu · 像素统计 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-151`
+- [ ] **TOOL-152** IMVSPixelCountModuVA · 像素统计 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-152`
+- [ ] **TOOL-153** IMVS2dBcrModu · 二维码识别 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-153`
+- [ ] **TOOL-154** IMVSBcrModu · 条码识别 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-154`
+- [ ] **TOOL-155** IMVSMachineLearningClassifierModu · ML分类 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-155`
+- [ ] **TOOL-156** IMVSOcrModu · 字符识别 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-156`
+- [ ] **TOOL-157** IMVS2dArrayCorrectModu · 二维阵列 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-157`
+- [ ] **TOOL-158** IMVSBoxFilterModule · Box过滤 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-158`
+- [ ] **TOOL-159** IMVSBoxMergeModu · Box融合 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-159`
+- [ ] **TOOL-160** IMVSBoxOverlapCalculationModu · Box重叠率计算 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-160`
+- [ ] **TOOL-161** IMVSDivideImageModu · 划片拆分 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-161`
+- [ ] **TOOL-162** IMVSMultiLabelFilterModu · 多标签筛选 · 状态 `not_started` · 来源 `plugins/inventory.json / tool-implementation-specs.map.json` · 证据 2 项 · 退出 身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合；不把测试通过写成 parity · 锚点 `13-tool-cards.html#toolcard-162`
 
 ## §7 入口闭合链（8 门 × 6 段 = 48 节点）
 
@@ -530,31 +530,31 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
 
 共 124 项，勾选框全部未预填；状态字段来自机器台账。
 
-- [ ] **ASM-1** 原厂程序集 VisionMaster.exe 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-1`
-- [ ] **ASM-2** 原厂程序集 Apps.XmlParser 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-2`
-- [ ] **ASM-3** 原厂程序集 VMControls.WPF 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-3`
-- [ ] **ASM-4** 原厂程序集 vServerApp 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-4`
-- [ ] **ASM-5** 原厂程序集 VM.Core 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-5`
-- [ ] **ASM-6** 原厂程序集 VMControls.Data 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-6`
-- [ ] **ASM-7** 原厂程序集 VM.PlatformSDKCS 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-7`
-- [ ] **ASM-8** 原厂程序集 iMVS-6000PlatformSDKCS 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-8`
-- [ ] **ASM-9** 原厂程序集 VM.Controls 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-9`
-- [ ] **ASM-10** 原厂程序集 VMBaseControls 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-10`
-- [ ] **ASM-11** 原厂程序集 DynamicObjectConfigControl 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-11`
-- [ ] **ASM-12** 原厂程序集 Apps.XmlUI 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-12`
-- [ ] **ASM-13** 原厂程序集 ExtensionParamUserControl 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-13`
-- [ ] **ASM-14** 原厂程序集 VM.PcUI 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-14`
-- [ ] **ASM-15** 原厂程序集 Apps.Style 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-15`
-- [ ] **ASM-16** 原厂程序集 Apps.ColorFun 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-16`
-- [ ] **ASM-17** 原厂程序集 Apps.PcUI.ImageSource 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-17`
-- [ ] **ASM-18** 原厂程序集 CompatibleTool 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-18`
-- [ ] **ASM-19** 原厂程序集 VM.ExternalCall 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-19`
-- [ ] **ASM-20** 原厂程序集 ImageSourceModuleControl 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-20`
-- [ ] **ASM-21** 原厂程序集 IMVSGroup 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-21`
-- [ ] **ASM-22** 原厂程序集 IfModule 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-22`
-- [ ] **ASM-23** 原厂程序集 IfBranchModule 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-23`
-- [ ] **ASM-24** 原厂程序集 BranchModule_STD 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-24`
-- [ ] **ASM-25** 原厂程序集 BranchStringCpmL 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled` · 证据 1 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-25`
+- [ ] **ASM-1** 原厂程序集 VisionMaster.exe 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-1`
+- [ ] **ASM-2** 原厂程序集 Apps.XmlParser 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-2`
+- [ ] **ASM-3** 原厂程序集 VMControls.WPF 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-3`
+- [ ] **ASM-4** 原厂程序集 vServerApp 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-4`
+- [ ] **ASM-5** 原厂程序集 VM.Core 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-5`
+- [ ] **ASM-6** 原厂程序集 VMControls.Data 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-6`
+- [ ] **ASM-7** 原厂程序集 VM.PlatformSDKCS 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-7`
+- [ ] **ASM-8** 原厂程序集 iMVS-6000PlatformSDKCS 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-8`
+- [ ] **ASM-9** 原厂程序集 VM.Controls 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-9`
+- [ ] **ASM-10** 原厂程序集 VMBaseControls 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-10`
+- [ ] **ASM-11** 原厂程序集 DynamicObjectConfigControl 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-11`
+- [ ] **ASM-12** 原厂程序集 Apps.XmlUI 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-12`
+- [ ] **ASM-13** 原厂程序集 ExtensionParamUserControl 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-13`
+- [ ] **ASM-14** 原厂程序集 VM.PcUI 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-14`
+- [ ] **ASM-15** 原厂程序集 Apps.Style 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-15`
+- [ ] **ASM-16** 原厂程序集 Apps.ColorFun 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-16`
+- [ ] **ASM-17** 原厂程序集 Apps.PcUI.ImageSource 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-17`
+- [ ] **ASM-18** 原厂程序集 CompatibleTool 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-18`
+- [ ] **ASM-19** 原厂程序集 VM.ExternalCall 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-19`
+- [ ] **ASM-20** 原厂程序集 ImageSourceModuleControl 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-20`
+- [ ] **ASM-21** 原厂程序集 IMVSGroup 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-21`
+- [ ] **ASM-22** 原厂程序集 IfModule 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-22`
+- [ ] **ASM-23** 原厂程序集 IfBranchModule 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-23`
+- [ ] **ASM-24** 原厂程序集 BranchModule_STD 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-24`
+- [ ] **ASM-25** 原厂程序集 BranchStringCpmL 源码级核对 · 状态 `not_started` · 来源 `architecture-baseline.json / analysis/decompiled / original-members.map.json` · 证据 2 项 · 退出 准确类型/成员/绑定/调用链与资源逐项对账 · 锚点 `15-target-source-tree.html#original-25`
 - [ ] **PROJ-FrontendDesignMigration** 自研工程 FrontendDesignMigration 现状核对 · 状态 `current-source` · 来源 `architecture-baseline.json → currentProjects` · 证据 1 项 · 退出 与原厂对应层职责逐项差分 · 锚点 `15-target-source-tree.html#tree-diagrams`
 - [ ] **PROJ-SolutionInspector** 自研工程 SolutionInspector 现状核对 · 状态 `current-source` · 来源 `architecture-baseline.json → currentProjects` · 证据 1 项 · 退出 与原厂对应层职责逐项差分 · 锚点 `15-target-source-tree.html#tree-diagrams`
 - [ ] **PROJ-VisionCore** 自研工程 VisionCore 现状核对 · 状态 `current-source` · 来源 `architecture-baseline.json → currentProjects` · 证据 1 项 · 退出 与原厂对应层职责逐项差分 · 锚点 `15-target-source-tree.html#tree-diagrams`
@@ -715,9 +715,10 @@ S0–S9 阶段、G1–G8 阶段门、E0–E7 入口门、证据四态、验收�
 
 - `dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore` 〔S0 复跑批次已执行：exitCode=0〕
 
-## 附录 B 全部报告路径（7 项）
+## 附录 B 全部报告路径（8 项）
 
 - `analysis/full-audit/batch1-20261107/C01/runtime-report.json`
+- `analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-contracts.json`
 - `analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json`
 - `analysis/full-audit/batch1-20261107/C03/c03-incremental-batch0-b1.json`
 - `analysis/full-audit/batch1-20261107/C03/c03-next-evidence-gate.json`
@@ -725,7 +726,7 @@ S0–S9 阶段、G1–G8 阶段门、E0–E7 入口门、证据四态、验收�
 - `analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-review.json`
 - `analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`
 
-## 附录 C 全部证据路径（316 项，去重）
+## 附录 C 全部证据路径（320 项，去重）
 
 - `D:\Program Files\VisionMaster4.4.0\Applications\Module(sp)\x64\Calculation\CalculatorModule`
 - `D:\Program Files\VisionMaster4.4.0\Applications\Module(sp)\x64\Calculation\CoordinateTransform`
@@ -997,6 +998,8 @@ S0–S9 阶段、G1–G8 阶段门、E0–E7 入口门、证据四态、验收�
 - `docs/reverse/C01-undo-batch1.md`
 - `docs/reverse/C02-callbacks-batch4.md`
 - `docs/reverse/C02-config-write-batch3.md`
+- `docs/reverse/C03-incremental-b1-contracts.md`
+- `docs/reverse/C03-incremental-b1-static.md`
 - `docs/reverse/C03-incremental-batch0-b1.md`
 - `docs/reverse/C03-phase1-evidence-review.md`
 - `docs/reverse/D-container-evidence-batch11.md`
@@ -1042,6 +1045,8 @@ S0–S9 阶段、G1–G8 阶段门、E0–E7 入口门、证据四态、验收�
 - `src/VisionWorkbench/ImageCanvas.cs`
 - `src/VisionWorkflow`
 - `src/VisionWorkflow/OfflineCircle.cs`
+- `tests/ArchitectureRecovery/original-members.map.json`
+- `tests/ArchitectureRecovery/tool-implementation-specs.map.json`
 - `tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj`
 
 ## 附录 D 站点锚点（524 项）
@@ -1051,3 +1056,19 @@ S0–S9 阶段、G1–G8 阶段门、E0–E7 入口门、证据四态、验收�
 ## 附录 E 完成度口径
 
 本清单的任务数、阶段门数或测试数**不得**冒充完成度。权威口径仍为 `docs/SOURCE-LEVEL-REVERSE-PROGRESS.json` 的 10/10 = 100%（仅标定授权范围，人工验收单列）；S0 本地切片闭环达成，但 C03 原厂运行时根因仍开放、差分 `45/971486` 对 `47/973202` 未解释。
+
+## 附录 F 规格台账与证据卡索引
+
+- `tests/ArchitectureRecovery/original-members.map.json` / `docs/ORIGINAL-MEMBERS-INDEX.md`：25 唯一程序集按 canonical 归并 28 棵反编译树，2614 `.cs`、3719 类型声明、10128 方法签名；与基线去重口径差异原样登记。
+- `tests/ArchitectureRecovery/tool-implementation-specs.map.json` / `docs/TOOL-IMPLEMENTATION-SPECS.md`：162 工具六项规格、14 分类、2015 个带哈希证据文件、160 high + 2 mid；native 函数体全部标 `not-recovered`。
+- `analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`：S0 复跑、12 张标定样本与 11 个通过回归 / 2 个外部数据阻塞回归。
+- `analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-contracts.json` / `docs/reverse/C03-incremental-b1-contracts.md`：9 个 `Components.*` 投影 leaf 与 Group `image/width` 方案输出名闭合；边界为 managed projection，不是原厂 ABI。
+
+## 附录 G 启动链路与整屏空载初始态工作面
+
+与第 18 页「运行态」17 控件清单**并列、状态面不同**（本附录为程序刚启动、未加载方案的空载初始态），不产生第二套完成度、不改动本节清单的 544 项任务数。
+
+- 台账 `tests/ArchitectureRecovery/startup-initial-ui.map.json` 与派生层 `plan-startup-initial-ui.cjs`：11 个启动步骤 / 10 个初始态控件，126 个六段链节点全 `unknown`、三级验收零预填。
+- 可派工清单 `docs/STARTUP-INITIAL-UI-TASK-LIST.md`：启动链路时间线（原厂方法名与行号）、控件分区、六段链状态、unknown 与解除条件、21 张任务卡。
+- 证据结论 `docs/reverse/C03-startup-initial-ui-evidence.md` 与证据卡 `analysis/full-audit/batch1-20261107/C03/c03-startup-initial-ui-20261110.json`（51 条去重证据路径、带 SHA-256）。
+- 边界：源码级证据闭环，不改 `src/`、不跑方案测试、未做原厂同状态差分与自研复跑；截图只作控件范围识别。E0–E7 门与 W/K/C/U 布局边映射见清单 §5，8 条未关联边如实登记。

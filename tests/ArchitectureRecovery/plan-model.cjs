@@ -8,6 +8,7 @@ const { buildWbs } = require('./plan-wbs.cjs');
 const { buildTargetTree } = require('./plan-target-tree.cjs');
 const { buildUiLanding } = require('./plan-ui-landing.cjs');
 const { buildIncremental } = require('./plan-incremental.cjs');
+const { buildStartupUi } = require('./plan-startup-initial-ui.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const out = path.join(root, 'docs/reverse-plan');
@@ -33,7 +34,8 @@ const SUPPORTING = [
   'tests/ArchitectureRecovery/target-source-tree.map.json',
   'tests/ArchitectureRecovery/project-purpose.map.json',
   'tests/ArchitectureRecovery/ui-control-landing.map.json',
-  'tests/ArchitectureRecovery/incremental-landing.map.json'
+  'tests/ArchitectureRecovery/incremental-landing.map.json',
+  'tests/ArchitectureRecovery/startup-initial-ui.map.json'
 ];
 
 function must(condition, message) {
@@ -99,7 +101,7 @@ function parseGapTable(markdown) {
 
 function buildModel() {
   must(INPUTS.length === 9, '机器台账输入应为 9 个，实际 ' + INPUTS.length);
-  must(SUPPORTING.length === 7, '补充源应为 7 个，实际 ' + SUPPORTING.length);
+  must(SUPPORTING.length === 8, '补充源应为 8 个，实际 ' + SUPPORTING.length);
 
   const inputs = INPUTS.map(describe);
   const supporting = SUPPORTING.map(describe);
@@ -124,6 +126,7 @@ function buildModel() {
   const purposeMap = readJson(SUPPORTING[4]);
   const uiLandingMap = readJson(SUPPORTING[5]);
   const incrementalMap = readJson(SUPPORTING[6]);
+  const startupUiMap = readJson(SUPPORTING[7]);
 
   // ---- 分母与内部计数一致性（计数不符一律中止，不产出降级页面） ----
   must(baseline.totals.original.assemblies === 25, '原厂唯一程序集应为 25');
@@ -221,6 +224,11 @@ function buildModel() {
     incrementalMap.batches.reduce((n, batch) => n + batch.steps.length, 0) === 13 &&
     incrementalMap.batches[0].id === 'B0' && incrementalMap.batches[0].status === 'open',
     '渐进落地台账应为 4 批次 13 步且 B0 开放');
+  must(startupUiMap.schemaVersion === 1 && startupUiMap.startupSteps.length === 11 &&
+    startupUiMap.controls.length === 10 && startupUiMap.groups.length === 4 &&
+    startupUiMap.acceptanceLevels.every(item => item.state === 'not_started') &&
+    startupUiMap.stateScope.indexOf('空载初始态') === 0,
+    '启动态台账结构或状态面不符');
   must(editorial.stages.length === 10, 'S0–S9 阶段应为 10 项');
   must(editorial.architectureVerdict.differences.length === 3, '架构机制差异应为 3 项');
   must(editorial.pageNotes && ['p0Intro', 'p1Intro', 'p23Intro', 'threeProgress', 'sliceFirst'].every(k => editorial.pageNotes[k]),
@@ -256,6 +264,13 @@ function buildModel() {
     b1Static.commandsExecuted === 0 && b1Static.productChanges === 0 &&
     b1Static.batchStatusUnchanged === 'B0 open / B1-B3 blocked',
     '第二批静态取证回写字段缺失或状态不符');
+  const b1Contracts = b1Static.b1Contracts;
+  must(b1Contracts && b1Contracts.cardId === 'C03-INCREMENTAL-B1-CONTRACTS-001' &&
+    b1Contracts.evidenceCard && b1Contracts.humanReview &&
+    b1Contracts.gapsClosed.length === 2 &&
+    b1Static.outputNameComparison.closedBy === b1Contracts.cardId &&
+    b1Static.outputNameComparison.boundary.includes('not original native ABI'),
+    '第三批输出名契约回写字段缺失或边界不符');
 
   // ---- 三套进度口径（并列展示，冲突不擅自统一） ----
   const legacyProgress = reversePlan.activeBatch.progress;
@@ -545,6 +560,7 @@ function buildModel() {
   model.targetTree = buildTargetTree(model, targetTreeMap, root);
   model.uiLanding = buildUiLanding(model, uiLandingMap, root);
   model.incremental = buildIncremental(model, incrementalMap, root);
+  model.startupInitialUi = buildStartupUi(model, startupUiMap, root);
   return model;
 }
 

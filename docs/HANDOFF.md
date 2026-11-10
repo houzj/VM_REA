@@ -1,3 +1,29 @@
+## 2026-11-10 启动链路 + 整屏空载初始态主界面完整逆向（源码级证据闭环）
+
+用户要求「把启动和主界面先完整逆向」，主界面以截图所示**程序刚启动、未加载任何方案的空载初始态**为准。两问确认：范围 = 启动链路 + 整屏空载初始态；深度 = 源码级证据闭环 + 可派工台账，**不改 `src/`**、不做原厂同状态差分与自研复跑。
+
+新工作面与第 18 页「运行态」17 控件清单**并列、状态面不同**，不产生第二套完成度：
+
+- 台账 `tests/ArchitectureRecovery/startup-initial-ui.map.json` 纳入 `SUPPORTING` 第 8 项并锁 SHA；派生层 `plan-startup-initial-ui.cjs` 校验 51 条证据路径、A 线工作包、E0–E7 门与 30 条 W/K/C/U 布局边引用闭合。**11 个启动步骤 + 10 个初始态控件**，126 个六段链节点全 `unknown`、三级验收零预填、21 个空勾选框。
+- 主交付 `docs/STARTUP-INITIAL-UI-TASK-LIST.md`：启动链路时间线（原厂方法名与行号）、整屏控件分区、六段链状态表、E0–E7 与布局边映射、unknown 与解除条件、可派工任务卡。证据结论 `docs/reverse/C03-startup-initial-ui-evidence.md`、证据卡 `c03-startup-initial-ui-20261110.json`（`C03-STARTUP-INITIAL-UI-20261110`，52 条 SHA-256 引用）。
+- 关键取证发现：启动链路跨 `Program.cs` 与 `App.cs`（`Main`@61 → `SingleInstanceManager.Initialize`@70 → `App.OnStartup`@92 → 子线程 `BeforeStartPart` → `InitMainWindow`@159 → `AppAfterStart`@179 → `ShowMainWindow`@354 → `Show()`@363 → `ConfigZoomIndex`@364）；存在 `Program.Main` 与 `App.Main`@560 双入口；`BeforeStartMian`/`AppBeforStart` 按原厂拼写保留；`AppBeforStart`/`InitLang`/`AwakeServerAsProcess`/`InitMq`/`StartServerApp` 有定义但无可见调用点，单列「定义存在/调用未知」。
+- 核证纠正了三处易错点：`WorkflowOverview.cs`/`WorkflowOverviewDrag.cs`/`WorkflowCanvas.cs` 内**无同名类型**，均为 `MainWindow` 的 partial 分部；`window-layout.edges.json` 只有 W/K/C/U 五个 subsystem、无画布/显示区/结果区/状态栏/导航缩略图边，30 条中仅 22 条与空载首屏相关，**8 条未关联边如实登记、不凑数**；A 线证据中「单实例 / 历史结果」0 命中，改用 `architecture-recovery` 台账与 C 线文档。
+- 接入：`plan-data.json` 增 `startupInitialUi` 摘要、第 19 页一条短 notice、544 项清单增附录 G；任务数仍 544、零预填、19 页不变。`SUPPORTING` 变更后五批证据卡共 **113 条引用哈希全匹配**（链式更新第一批 → 第二批 → 第三批）。
+
+验收：`verify-startup-initial-ui.cjs` 全绿、`verify-reverse-plan.cjs`/`verify-complete-task-list.cjs` `deterministic=true`、`ImplementationSpecs.Checks` 199 项通过；站点 `pages=19, files=22, bytes=2,094,068 (<2MB), anchors=92, externalRefs=0, builtFrom=7d65a1e1/dfd5fd922c28`。未改 `src/`、未跑方案测试、未提交未推送；C03 差分 `45/971486` 对 `47/973202` 与 `B0 open / B1–B3 blocked` 不变。
+
+## 2026-11-10 继续推进：补齐回归 + B1 输出名契约闭合 + 规格台账接入清单
+
+用户说「继续」，按上一轮承诺一次推进三件无需新授权的事。
+
+**回归补齐**：上一轮 8 个未执行回归中，4 个已有 assets 直接跑、4 个单独 `dotnet restore` 后跑；最终 **11 个回归 exitCode=0**（新增 CalibrationBoard.EnclosingChecks 90、ResetChecks 19、ContourMatch.ResultChecks 24、ExecutionViewChecks11、CoordinateModule.CandidateChecks 74、Fixture.PluginChecks 43）。环境修复均为非产品改动：4 个工程补 `project.assets.json`、创建 `analysis/calibration-board` 报告输出目录、`ExecutionViewChecks11` 重新 build 恢复程序集解析。**2 个因原厂外部数据前置不可执行，不记为通过、不伪造**：`DistortionCalibration.PluginChecks` 需设备采集的 `fixture.bmp`；`GrayMatch.ScoreArithmeticChecks` 需 native scalar arithmetic oracle JSON。结果回写 `c03-s0-rerun-matrix-20261110.json` 的 `regressions` 与 `docs/reverse/C03-S0-RERUN-MATRIX.md`；契约校验升级为 **199 项通过**。
+
+**B1 输出名契约闭合**：第二批遗留的两个缺口都有确定答案。`src/VisionFramework/CompoundOutputFields.cs` 的 `ComponentNumbers`(7) + `Leaves(Components)` 的 `BlobNum`/`TotalArea`(2) 共 9 个 leaf，由 `Describe()` 用 `port.Name + "." + leaf.Path` 动态拼接；与 C01 报告 9 个 `Components.*` 复合名**集合完全相等、双向无差集**，其余 4 个为顶层 `BlobNum/Components/Count/TotalArea`。Group 小写 `image/width` 来自 `image-source-group-vertical-slice.vmx.json` 的 `Procedures[Group].Configuration.Outputs`（`width` → 端口 `Width`），是方案配置值而非源码常量。证据卡 `c03-incremental-b1-contracts.json`（`C03-INCREMENTAL-B1-CONTRACTS-001`，8 条引用）与人读 `docs/reverse/C03-incremental-b1-contracts.md`。**边界**：该文件头明确 `managed projection, not native ABI`，所以闭合的是自研 managed 投影规则与本地方案契约，不是原厂 native 字段 ABI、不是 parity；C03 根因仍开放，`B0 open / B1–B3 blocked` 不因输出名闭合而解除。
+
+**规格台账接入**：`docs/COMPLETE-REVERSE-TASK-LIST.md` 的 §6（162 工具）与 §8（25 程序集）逐项挂上 `tool-implementation-specs.map.json` / `original-members.map.json`，新增附录 F 索引四份台账与证据卡；任务数仍 **544**、零预填不变。`plan-data.json` 增 `memberSpecs`/`toolSpecs`/`batch3*` 摘要字段，第 19 页加短 notice 回写第三批结果；体积 `2,090,555 B`（余 6,597 B，未超 2 MB）。状态台账 `incrementalLanding.b1Static` 的输出名口径更新为 13/13 与 2/2 accounted，并新增 `b1Contracts` 回写。
+
+四批证据卡共 **61 条引用哈希全匹配**（状态台账与渐进台账变更后做了链式更新：第一批 → 第二批 → 第三批）。双校验 `deterministic=true, builtFrom=7d65a1e1/2a8465961c56`；未改 `src/` 产品算法、未跑新方案测试、未提交未推送。
+
 ## 2026-11-10 大步推进：S0 复跑闭环 + 25 程序集成员清单 + 162 工具实现规格
 
 用户指出「小碎步」，一次授权「全放开、批量落地」（跑 C01/回归、按证据改 `src/`、提交固定基线）。本批一次做完：

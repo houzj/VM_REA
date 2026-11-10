@@ -4,7 +4,7 @@
 
 ## 复跑与保护
 
-命令 `dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore`，dotnet 10.0.401，HEAD `ef7b1cc9`，**exitCode=0、18 项 PASS**。
+命令 `dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore`，dotnet 10.0.401，HEAD `7d65a1e1`，**exitCode=0、18 项 PASS**。
 每次复跑用子进程级 `VM_C01_IMAGE` 指定输入；历史 4 个证据文件先备份再恢复，基线 SHA-256 保持 `ce543016…`。
 
 ## 同输入复跑
@@ -51,7 +51,12 @@ S0 是纵向切片闭环，**不等于 C03 原厂运行时根因闭合**。`B0` 
 
 ## 回归与边界
 
-5 个回归 exitCode=0（C01、BranchModule、Canvas、FrameworkImageBufferChain、DocumentHistoryHostChecks16）；8 个工程因 `--no-restore` 缺 `project.assets.json` 未执行（批量 restore 被用户取消），**不记为通过**。
+**11 个回归 exitCode=0**：C01（18）、BranchModule（1）、Canvas（13）、FrameworkImageBufferChain（8）、DocumentHistoryHostChecks16（13）、CalibrationBoard.EnclosingChecks（90）、CalibrationBoard.ResetChecks（19）、ContourMatch.ResultChecks（24）、ExecutionViewChecks11、CoordinateModule.CandidateChecks（74）、Fixture.PluginChecks（43）。预期失败路径中的 `Failed/…` 是断言用例，不计为 FAIL。
+
+环境修复（均为非产品改动）：4 个工程单独 `dotnet restore` 补齐 `project.assets.json`；创建 `analysis/calibration-board` 报告输出目录；`ExecutionViewChecks11` 重新 `dotnet build` 后程序集加载恢复。
+
+**2 个回归因原厂外部数据前置不可执行，不记为通过、不伪造**：`DistortionCalibration.PluginChecks` 需设备采集的 `fixture.bmp`；`GrayMatch.ScoreArithmeticChecks` 需 native scalar arithmetic oracle JSON。两者均在本机缺失，登记为外部证据依赖。
+
 REA native provider 仍不可用；本批未配置引擎、未新取 native 函数体、未改 `src/` 产品代码、未提交。
 
 证据引用 24 条，全部带 SHA-256 与字节数，见证据卡 `evidence[]`。

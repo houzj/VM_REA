@@ -1734,8 +1734,13 @@ function renderIncrementalLanding(m) {
       '产品改动 ' + m.incrementalLanding.productChanges.length + ' 项。', 'cyan') +
     V.noticeHtml('第二批静态取证：证据卡 <code>' + E(m.incrementalLanding.b1Static.cardId) +
       '</code> 已定位 ' + m.incrementalLanding.b1Static.sourceFiles + ' 个源码文件的准确成员，' +
-      '输出名对照 9/9（ImageSource）· 4/13（Blob，9 个 Components.* 未闭）· 1/2（Group），' +
+      '输出名对照 9/9（ImageSource）· 4/13（Blob）· 1/2（Group），' +
       m.incrementalLanding.b1Static.solutionFiles + ' 份 vmx 已锁定 SHA-256。<b>B1 仍 blocked</b>。', 'cyan') +
+    V.noticeHtml('第三批契约闭合：证据卡 <code>' + E(m.incrementalLanding.b1Static.b1Contracts.cardId) +
+      '</code> 定位 9 个 <code>Components.*</code> 由 <code>CompoundOutputFields.cs</code> 动态投影生成，' +
+      'Group <code>image/width</code> 来自方案 <code>Configuration.Outputs</code>；输出名 13/13 与 2/2 均可解释。' +
+      '<b>managed projection，非原厂 ABI</b>；C03 根因仍开放、B1 仍 blocked。', 'cyan') +
+    V.notice('本批补跑：11 个回归 exitCode=0；2 个需原厂外部数据（设备采集 BMP / native scalar oracle）不可执行，不记为通过、不伪造。规格台账：`ORIGINAL-MEMBERS-INDEX.md`（25 程序集 / 2614 .cs）与 `TOOL-IMPLEMENTATION-SPECS.md`（162 工具 / 2015 证据文件），已挂入 544 项清单。', 'done') +
     V.noticeHtml('S0 复跑（用户授权「开始测试/验证」）：<code>dotnet run --project tests/VMVerticalSlice.C01/… --no-restore</code> ' +
       '<b>exitCode=0、18 PASS</b>；用 <code>D:\\MyWork\\图片库\\标定\\1.jpg</code> 同输入复跑得 47/973202，' +
       '报告 SHA-256 与历史逐字节相同；12 张标定样本全部 sessionStatus=0、13 个输出名、重开计数一致。' +
@@ -1830,7 +1835,7 @@ function renderIncrementalLanding(m) {
         { label: '执行', cell: r => r.commands.length ? V.chip('done', '已执行 exit 0') : V.chip('unknown', '无命令') }
       ], rows: inc.steps
     }) +
-    V.notice('C01 复跑由用户明确授权「开始测试/验证」执行：exitCode=0、18 PASS，同输入报告 SHA-256 与历史相同，12 张标定样本矩阵见证据卡 C03-S0-RERUN-MATRIX-20261110。8 个回归工程因缺少 project.assets.json 未执行（批量 restore 被用户取消），不记为通过。', 'cyan'));
+    V.notice('C01 复跑由用户明确授权「开始测试/验证」执行：exitCode=0、18 PASS，同输入报告 SHA-256 与历史相同，12 张标定样本矩阵见证据卡 C03-S0-RERUN-MATRIX-20261110。后续补齐 8 个回归后共 11 个 exitCode=0；2 个需原厂外部数据不可执行，不记为通过、不伪造。', 'cyan'));
 
   p.sec('inc-links', '05', '与既有视图互链',
     V.ulRaw([
@@ -1841,7 +1846,12 @@ function renderIncrementalLanding(m) {
       '<a href="' + V.hrefFor('11-work-packages') + '">WBS 工作包</a>',
       '<a href="' + V.hrefFor('00-master-plan') + '">权威总纲</a>'
     ]) +
-    V.notice('本页不改动既有 WBS 32 工作包 / 96 单元卡 / 162 工具卡 / 48 链节点口径，也不改动 17 控件清单；批次状态是渐进执行顺序，不产生第二套完成度。', 'cyan'));
+    V.notice('本页不改动既有 WBS 32 工作包 / 96 单元卡 / 162 工具卡 / 48 链节点口径，也不改动 17 控件清单；批次状态是渐进执行顺序，不产生第二套完成度。', 'cyan') +
+    V.noticeHtml('启动态工作面：<code>docs/STARTUP-INITIAL-UI-TASK-LIST.md</code> 与 ' +
+      '<code>C03-STARTUP-INITIAL-UI-20261110</code>，' +
+      m.startupInitialUi.counts.startupSteps + ' 启动步骤 / ' + m.startupInitialUi.counts.controls +
+      ' 空载初始态控件、' + m.startupInitialUi.counts.sixSegmentUnknown +
+      ' 个六段链节点全 unknown、三级验收零预填。与第 18 页「运行态」清单并列，不改产品代码、不跑差分复跑。', 'done'));
   return p.finish();
 }
 
@@ -1877,6 +1887,12 @@ function renderAll(model) {
   model.fileTree = FT.buildFileTree(model, path.join(root, 'src'), model.purposeMap);
   model.toolLayer = TL.buildToolLayer(model);
   model.originalTree = OT.buildOriginalTree(model, root);
+  const memberSpecLedger = JSON.parse(fs.readFileSync(path.join(root,
+    'tests/ArchitectureRecovery/original-members.map.json'), 'utf8'));
+  const toolSpecLedger = JSON.parse(fs.readFileSync(path.join(root,
+    'tests/ArchitectureRecovery/tool-implementation-specs.map.json'), 'utf8'));
+  must(memberSpecLedger.totals.assemblies === 25 && toolSpecLedger.counts.tools === 162,
+    '规格台账摘要计数不符');
   const files = [];
   const searchIndex = [];
   const pageAnchors = {};
@@ -2091,7 +2107,34 @@ function renderAll(model) {
       batch2HumanReview: model.incrementalLanding.b1Static.humanReview,
       batch2SourceFiles: model.incrementalLanding.b1Static.sourceFiles,
       batch2SolutionFiles: model.incrementalLanding.b1Static.solutionFiles,
-      batch2OutputComparison: model.incrementalLanding.b1Static.outputNameComparison
+      batch2OutputComparison: model.incrementalLanding.b1Static.outputNameComparison,
+      batch3CardId: model.incrementalLanding.b1Static.b1Contracts.cardId,
+      batch3EvidenceCard: model.incrementalLanding.b1Static.b1Contracts.evidenceCard,
+      batch3GapsClosed: model.incrementalLanding.b1Static.b1Contracts.gapsClosed
+    },
+    memberSpecs: {
+      assemblies: memberSpecLedger.totals.assemblies,
+      canonicalCsFiles: memberSpecLedger.totals.canonicalCsFiles,
+      declaredTypes: memberSpecLedger.totals.declaredTypes,
+      methodSignatures: memberSpecLedger.totals.methodSignatures,
+      ledger: 'tests/ArchitectureRecovery/original-members.map.json',
+      index: 'docs/ORIGINAL-MEMBERS-INDEX.md'
+    },
+    toolSpecs: {
+      tools: toolSpecLedger.counts.tools,
+      categories: toolSpecLedger.counts.categories,
+      evidenceFiles: toolSpecLedger.counts.totalEvidenceFiles,
+      ledger: 'tests/ArchitectureRecovery/tool-implementation-specs.map.json',
+      index: 'docs/TOOL-IMPLEMENTATION-SPECS.md'
+    },
+    startupInitialUi: {
+      stateScope: '空载初始态',
+      steps: model.startupInitialUi.counts.startupSteps,
+      controls: model.startupInitialUi.counts.controls,
+      sixSegmentUnknown: model.startupInitialUi.counts.sixSegmentUnknown,
+      acceptanceDone: model.startupInitialUi.counts.acceptanceDone,
+      list: 'docs/STARTUP-INITIAL-UI-TASK-LIST.md',
+      evidenceCard: 'analysis/full-audit/batch1-20261107/C03/c03-startup-initial-ui-20261110.json'
     },
     exceptions: [],
     counts: {
@@ -2432,6 +2475,45 @@ function assertSite(model, site) {
     planData.counts.unitCards === 96 && planData.counts.toolCards === 162 &&
     planData.counts.chainNodes === 48, 'plan-data.json 分母不符');
   must(planData.exceptions.length === 0, '本计划尚未登记阶段并行例外');
+  must(planData.incremental.batch3CardId === 'C03-INCREMENTAL-B1-CONTRACTS-001' &&
+    planData.incremental.batch3GapsClosed.length === 2 &&
+    fs.existsSync(path.join(root, planData.incremental.batch3EvidenceCard)),
+    'plan-data.json 第三批契约摘要不符');
+  must(planData.memberSpecs.assemblies === 25 &&
+    planData.memberSpecs.canonicalCsFiles === 2614 &&
+    planData.toolSpecs.tools === 162 && planData.toolSpecs.evidenceFiles === 2015 &&
+    fs.existsSync(path.join(root, planData.memberSpecs.ledger)) &&
+    fs.existsSync(path.join(root, planData.toolSpecs.ledger)),
+    'plan-data.json 规格台账摘要或路径不符');
+  const inc19 = byFile.get('17-incremental-landing.html');
+  must(inc19 && inc19.includes('C03-INCREMENTAL-B1-CONTRACTS-001') &&
+    inc19.includes('ORIGINAL-MEMBERS-INDEX.md') && inc19.includes('TOOL-IMPLEMENTATION-SPECS.md'),
+    '第 19 页未回写第三批契约与规格索引');
+
+  // ---- 启动态工作面：台账、三份交付、零预填、19 页不变 ----
+  const su = model.startupInitialUi;
+  must(su && su.counts.startupSteps === 11 && su.counts.controls === 10 &&
+    su.counts.sixSegmentUnknown === 126 && su.counts.acceptanceDone === 0 &&
+    su.counts.gateCoverage === 8 && su.counts.layoutEdgesTotal === 30,
+    '启动态派生计数不符');
+  for (const relative of [
+    'tests/ArchitectureRecovery/startup-initial-ui.map.json',
+    'docs/STARTUP-INITIAL-UI-TASK-LIST.md',
+    'docs/reverse/C03-startup-initial-ui-evidence.md',
+    'analysis/full-audit/batch1-20261107/C03/c03-startup-initial-ui-20261110.json'
+  ]) {
+    must(fs.existsSync(path.join(root, relative)), '缺少启动态交付: ' + relative);
+  }
+  must(inc19.includes('C03-STARTUP-INITIAL-UI-20261110') &&
+    inc19.includes('STARTUP-INITIAL-UI-TASK-LIST.md'),
+    '第 19 页缺少启动态 notice');
+  must(planData.startupInitialUi && planData.startupInitialUi.steps === 11 &&
+    planData.startupInitialUi.controls === 10 &&
+    planData.startupInitialUi.acceptanceDone === 0 &&
+    planData.startupInitialUi.stateScope === '空载初始态',
+    'plan-data.json 启动态摘要不符');
+  must(planData.counts.pages === 19 && planData.supporting.length === 8,
+    '启动态工作面不得改变页数或补充源数量');
   verifyInputs(model);
 
   // 确定性：同一模型重跑一次，逐字节比对。

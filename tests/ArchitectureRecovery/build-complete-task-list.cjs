@@ -112,8 +112,12 @@ function buildCompleteList(model) {
     anchor: anchor('17-incremental-landing.html', 'inc-commands')
   });
   add('P0-03', '1', '继续 B1 静态取证（不改算法、不跑测试）', {
-    state: 'open', sourceRef: 'incremental-landing.map.json',
-    evidencePaths: ['docs/reverse/C03-incremental-batch0-b1.md'],
+    state: 'open', sourceRef: 'incremental-landing.map.json / C03-INCREMENTAL-B1-CONTRACTS-001',
+    evidencePaths: [
+      'docs/reverse/C03-incremental-batch0-b1.md',
+      'docs/reverse/C03-incremental-b1-static.md',
+      'docs/reverse/C03-incremental-b1-contracts.md'
+    ],
     exitCriteria: ['逐项核对纵切链路准确类型与成员', '输出名清单与方案文件字节级比对'],
     blockers: ['B0 未闭不得进入实施类动作']
   });
@@ -186,11 +190,11 @@ function buildCompleteList(model) {
     return add('TOOL-' + (i + 1), '6', card.key + ' · ' + card.displayName, {
       state: tool && String(tool.implementationStatus || '').indexOf('partial-independent') === 0
         ? 'partial' : 'not_started',
-      sourceRef: 'plugins/inventory.json',
-      evidencePaths: [card.sourcePath],
+      sourceRef: 'plugins/inventory.json / tool-implementation-specs.map.json',
+      evidencePaths: [card.sourcePath, 'tests/ArchitectureRecovery/tool-implementation-specs.map.json'],
       exitCriteria: ['身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合', '不把测试通过写成 parity'],
       note: '分类 ' + card.category + ' · 批次 ' + card.batch + ' · 证据态 ' + card.evidenceState +
-        ' · owner ' + (card.owner || '—'),
+        ' · owner ' + (card.owner || '—') + ' · 规格台账 `TOOL-IMPLEMENTATION-SPECS.md`（2015 证据文件 / 160 high + 2 mid）',
       anchor: anchor('13-tool-cards.html', 'toolcard-' + (i + 1))
     });
   });
@@ -214,11 +218,13 @@ function buildCompleteList(model) {
   const structTasks = [];
   model.assemblies.forEach((assembly, i) => {
     structTasks.push(add('ASM-' + (i + 1), '8', '原厂程序集 ' + assembly.id + ' 源码级核对', {
-      state: 'not_started', sourceRef: 'architecture-baseline.json / analysis/decompiled',
-      evidencePaths: ['analysis/decompiled/' + assembly.canonicalTree],
+      state: 'not_started', sourceRef: 'architecture-baseline.json / analysis/decompiled / original-members.map.json',
+      evidencePaths: ['analysis/decompiled/' + assembly.canonicalTree,
+        'tests/ArchitectureRecovery/original-members.map.json'],
       exitCriteria: ['准确类型/成员/绑定/调用链与资源逐项对账'],
       note: assembly.lines + ' 行 / ' + assembly.types + ' 类型 / ' + assembly.methods + ' 方法' +
-        (assembly.duplicatePasses ? ' · 重复反编译 pass 已归并' : ''),
+        (assembly.duplicatePasses ? ' · 重复反编译 pass 已归并' : '') +
+        ' · 成员台账 `ORIGINAL-MEMBERS-INDEX.md`（2614 canonical .cs / 3719 类型 / 10128 方法签名）',
       anchor: anchor('15-target-source-tree.html', 'original-' + (i + 1))
     }));
   });
@@ -419,6 +425,25 @@ function buildCompleteList(model) {
   sections.push('任务项内联锚点指向 `docs/reverse-plan/` 对应页面；校验器逐项核对 id 存在。', '');
   sections.push('## 附录 E 完成度口径', '');
   sections.push('本清单的任务数、阶段门数或测试数**不得**冒充完成度。权威口径仍为 `docs/SOURCE-LEVEL-REVERSE-PROGRESS.json` 的 10/10 = 100%（仅标定授权范围，人工验收单列）；S0 本地切片闭环达成，但 C03 原厂运行时根因仍开放、差分 `45/971486` 对 `47/973202` 未解释。', '');
+  sections.push('## 附录 F 规格台账与证据卡索引', '');
+  sections.push('- `tests/ArchitectureRecovery/original-members.map.json` / `docs/ORIGINAL-MEMBERS-INDEX.md`：25 唯一程序集按 canonical 归并 28 棵反编译树，2614 `.cs`、3719 类型声明、10128 方法签名；与基线去重口径差异原样登记。');
+  sections.push('- `tests/ArchitectureRecovery/tool-implementation-specs.map.json` / `docs/TOOL-IMPLEMENTATION-SPECS.md`：162 工具六项规格、14 分类、2015 个带哈希证据文件、160 high + 2 mid；native 函数体全部标 `not-recovered`。');
+  sections.push('- `analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`：S0 复跑、12 张标定样本与 11 个通过回归 / 2 个外部数据阻塞回归。');
+  sections.push('- `analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-contracts.json` / `docs/reverse/C03-incremental-b1-contracts.md`：9 个 `Components.*` 投影 leaf 与 Group `image/width` 方案输出名闭合；边界为 managed projection，不是原厂 ABI。');
+  sections.push('');
+  sections.push('## 附录 G 启动链路与整屏空载初始态工作面', '');
+  sections.push('与第 18 页「运行态」17 控件清单**并列、状态面不同**（本附录为程序刚启动、未加载方案的空载初始态），不产生第二套完成度、不改动本节清单的 544 项任务数。');
+  sections.push('');
+  sections.push('- 台账 `tests/ArchitectureRecovery/startup-initial-ui.map.json` 与派生层 `plan-startup-initial-ui.cjs`：' +
+    model.startupInitialUi.counts.startupSteps + ' 个启动步骤 / ' + model.startupInitialUi.counts.controls +
+    ' 个初始态控件，' + model.startupInitialUi.counts.sixSegmentUnknown +
+    ' 个六段链节点全 `unknown`、三级验收零预填。');
+  sections.push('- 可派工清单 `docs/STARTUP-INITIAL-UI-TASK-LIST.md`：启动链路时间线（原厂方法名与行号）、控件分区、六段链状态、unknown 与解除条件、21 张任务卡。');
+  sections.push('- 证据结论 `docs/reverse/C03-startup-initial-ui-evidence.md` 与证据卡 `analysis/full-audit/batch1-20261107/C03/c03-startup-initial-ui-20261110.json`（' +
+    model.startupInitialUi.counts.evidencePaths + ' 条去重证据路径、带 SHA-256）。');
+  sections.push('- 边界：源码级证据闭环，不改 `src/`、不跑方案测试、未做原厂同状态差分与自研复跑；截图只作控件范围识别。E0–E7 门与 W/K/C/U 布局边映射见清单 §5，' +
+    model.startupInitialUi.counts.unlinkedLayoutEdges + ' 条未关联边如实登记。');
+  sections.push('');
 
   const markdown = sections.join('\n');
   const ledger = {

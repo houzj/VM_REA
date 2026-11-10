@@ -110,6 +110,28 @@ function verify() {
     b1Static.batchStatusUnchanged === 'B0 open / B1-B3 blocked' &&
     b1Static.commandsExecuted === 0 && b1Static.productChanges === 0,
     '第二批静态取证未回写或批次状态被误改');
+  const b1Contracts = model.incrementalLanding.b1Static.b1Contracts;
+  must(b1Contracts && b1Contracts.cardId === 'C03-INCREMENTAL-B1-CONTRACTS-001' &&
+    fs.existsSync(path.join(root, b1Contracts.evidenceCard)) &&
+    b1Static.outputNameComparison.closedBy === b1Contracts.cardId,
+    '第三批契约未回写或输出名口径未更新');
+  must(markdown.includes('## 附录 F 规格台账与证据卡索引') &&
+    markdown.includes('tool-implementation-specs.map.json') &&
+    markdown.includes('original-members.map.json') &&
+    fs.existsSync(path.join(root, 'tests/ArchitectureRecovery/tool-implementation-specs.map.json')) &&
+    fs.existsSync(path.join(root, 'tests/ArchitectureRecovery/original-members.map.json')),
+    '完整清单未接入两份规格台账索引');
+  const startupUi = model.startupInitialUi;
+  must(startupUi && startupUi.counts.startupSteps === 11 && startupUi.counts.controls === 10 &&
+    startupUi.counts.acceptanceDone === 0,
+    '启动态派生结果缺失或零预填被破坏');
+  must(markdown.includes('## 附录 G 启动链路与整屏空载初始态工作面') &&
+    markdown.includes('STARTUP-INITIAL-UI-TASK-LIST.md') &&
+    markdown.includes('c03-startup-initial-ui-20261110.json') &&
+    fs.existsSync(path.join(root, 'docs/STARTUP-INITIAL-UI-TASK-LIST.md')) &&
+    fs.existsSync(path.join(root, 'docs/reverse/C03-startup-initial-ui-evidence.md')),
+    '完整清单未接入启动态工作面附录 G');
+  must(ledger.counts.tasks === 544, '启动态附录不得改变 544 项任务数');
   const b1Tasks = ledger.tasks.filter(item => item.id.startsWith('INC-B1-'));
   must(b1Tasks.length === 4 && b1Tasks.slice(0, 3).every(item => item.sourceMembers.length > 0),
     'B1-1/B1-2/B1-3 的准确成员未补齐到完整清单');

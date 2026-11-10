@@ -361,6 +361,29 @@ function verify() {
   check(inc.batches[1].status === 'blocked' && inc.batches[1].steps[0].sourceMembers.length > 0,
     'B1 应仍 blocked 且准确成员已补齐');
 
+  // 4k. 第三批 B1 输出名契约：两个缺口闭合、边界明确、批次仍阻塞。
+  const b3 = model.incrementalLanding.b1Static.b1Contracts;
+  check(b3 && b3.cardId === 'C03-INCREMENTAL-B1-CONTRACTS-001' &&
+    fs.existsSync(path.join(root, b3.evidenceCard)) &&
+    fs.existsSync(path.join(root, b3.humanReview)) &&
+    b3.gapsClosed.length === 2 &&
+    b1.outputNameComparison.closedBy === b3.cardId,
+    '第三批契约证据卡或闭合状态不符');
+  const contractsCard = JSON.parse(fs.readFileSync(path.join(root, b3.evidenceCard), 'utf8'));
+  check(contractsCard.compositeOutputContract.exactMatch === true &&
+    contractsCard.compositeOutputContract.leafPaths.length === 9 &&
+    contractsCard.compositeOutputContract.reportedCompositeNames.length === 9 &&
+    contractsCard.compositeOutputContract.missingFromBuilt.length === 0 &&
+    contractsCard.compositeOutputContract.extraBuilt.length === 0 &&
+    contractsCard.groupWidthContract.port === 'Width',
+    '9 个复合输出名或 Group width 契约核对不符');
+  check(b1.outputNameComparison.boundary.includes('not original native ABI'),
+    '契约边界必须明确排除原厂 ABI 与 parity');
+  check(incHtml.includes(b3.cardId) && incHtml.includes('managed projection，非原厂 ABI'),
+    '第 19 页未回写第三批契约结果');
+  check(inc.batches[1].status === 'blocked',
+    '输出名契约闭合不得解除 B1 阻塞');
+
   // 5. plan-data.json：计数、输入哈希、builtFrom 与当前工作树一致。
   const data = JSON.parse(read('plan-data.json'));
   check(data.schemaVersion === 1, 'plan-data.json schemaVersion 不符');
@@ -435,8 +458,58 @@ function verify() {
     data.counts.pages === 19 &&
     data.incremental.batch0CardId === batch0.cardId &&
     data.incremental.batch2CardId === b1.cardId && data.incremental.batch2SourceFiles === 8 &&
+    data.incremental.batch3CardId === b3.cardId &&
     data.incremental.commandsExecuted === 1 && data.incremental.productChanges === 0,
     'plan-data.json 渐进路线摘要不符');
+  check(data.memberSpecs && data.memberSpecs.assemblies === 25 &&
+    data.memberSpecs.canonicalCsFiles === 2614 &&
+    data.toolSpecs && data.toolSpecs.tools === 162 &&
+    data.toolSpecs.evidenceFiles === 2015 &&
+    fs.existsSync(path.join(root, data.memberSpecs.ledger)) &&
+    fs.existsSync(path.join(root, data.toolSpecs.ledger)),
+    'plan-data.json 规格台账摘要不符');
+
+  // 5d. 启动链路 + 整屏空载初始态工作面。
+  const su = model.startupInitialUi;
+  check(su && su.counts.startupSteps === 11 && su.counts.controls === 10 &&
+    su.counts.sixSegmentUnknown === 126 && su.counts.acceptanceDone === 0 &&
+    su.counts.layoutEdgesTotal === 30 && su.counts.unlinkedLayoutEdges === 8,
+    '启动态派生计数不符');
+  for (const relative of [
+    'tests/ArchitectureRecovery/startup-initial-ui.map.json',
+    'docs/STARTUP-INITIAL-UI-TASK-LIST.md',
+    'docs/reverse/C03-startup-initial-ui-evidence.md',
+    'analysis/full-audit/batch1-20261107/C03/c03-startup-initial-ui-20261110.json'
+  ]) {
+    check(fs.existsSync(path.join(root, relative)), '缺少启动态交付: ' + relative);
+  }
+  const suCard = JSON.parse(fs.readFileSync(path.join(root,
+    'analysis/full-audit/batch1-20261107/C03/c03-startup-initial-ui-20261110.json'), 'utf8'));
+  check(suCard.cardId === 'C03-STARTUP-INITIAL-UI-20261110' &&
+    suCard.commands.length === 0 && suCard.productChanges.length === 0 &&
+    suCard.counts.acceptanceDone === 0 && suCard.evidence.length >= 50,
+    '启动态证据卡或零执行/零改动边界不符');
+  const suList = fs.readFileSync(path.join(root, 'docs/STARTUP-INITIAL-UI-TASK-LIST.md'), 'utf8');
+  check(!suList.includes('- [x]') && (suList.match(/^- \[ \] /gm) || []).length === 21,
+    '启动态清单应含 21 个空勾选框');
+  check(incHtml.includes('C03-STARTUP-INITIAL-UI-20261110') &&
+    incHtml.includes('STARTUP-INITIAL-UI-TASK-LIST.md'),
+    '第 19 页缺少启动态 notice');
+  check(data.startupInitialUi && data.startupInitialUi.steps === 11 &&
+    data.startupInitialUi.controls === 10 &&
+    data.startupInitialUi.acceptanceDone === 0 &&
+    data.startupInitialUi.stateScope === '空载初始态' &&
+    data.supporting.length === 8 && data.counts.pages === 19,
+    'plan-data.json 启动态摘要或补充源/页数不符');
+  const statusLedger = JSON.parse(fs.readFileSync(path.join(root,
+    'docs/VM-LOCAL-RESTORATION-STATUS.json'), 'utf8'));
+  const statusStartup = statusLedger.incrementalLanding &&
+    statusLedger.incrementalLanding.startupInitialUi;
+  check(statusStartup && statusStartup.cardId === suCard.cardId &&
+    statusStartup.startupSteps === 11 && statusStartup.controls === 10 &&
+    statusStartup.commandsExecuted === 0 && statusStartup.productChanges === 0 &&
+    statusStartup.batchStatusUnchanged === 'B0 open / B1-B3 blocked',
+    '状态台账未回写启动态摘要或批次状态被误改');
 
   // 5c. 完整任务清单：与同一工作树同源，且不改变站点页数。
   const listMd = path.join(root, 'docs', 'COMPLETE-REVERSE-TASK-LIST.md');

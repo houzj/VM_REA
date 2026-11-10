@@ -207,7 +207,7 @@ function build() {
       'C03 根因：非空 InputROI/InputMask 或生成区域对象、45 元素结果向量、BinaryImage/BlobImage 缓冲、Run 前像素字节仍未捕获',
       '差分 45/971486 对 47/973202 仍开放，B0 保持 open、B1–B3 保持 blocked',
       '样本 3 计数为 45，与原厂 45 相同但面积 986444 ≠ 971486；属数值巧合，不构成差分解释',
-      '8 个回归工程因 --no-restore 缺 project.assets.json 未执行（用户取消批量 restore），不记为通过',
+      '2 个回归需原厂外部数据（设备采集 BMP / native scalar oracle JSON）不可执行，不记为通过、不伪造数据',
       'REA native provider 仍不可用；未配置引擎、未新取 native 函数体'
     ],
     regressions: {
@@ -216,13 +216,22 @@ function build() {
         { project: 'BranchModule.PluginChecks', exitCode: 0, summary: '1 PASS' },
         { project: 'CanvasImplementationChecks', exitCode: 0, summary: '13 PASS' },
         { project: 'FrameworkImageBufferChain.Checks', exitCode: 0, summary: '8 graph cases passed（含预期失败路径）' },
-        { project: 'DocumentHistoryHostChecks16', exitCode: 0, summary: '13 PASS（含预期失败路径）' }
+        { project: 'DocumentHistoryHostChecks16', exitCode: 0, summary: '13 PASS（含预期失败路径）' },
+        { project: 'CalibrationBoard.EnclosingChecks', exitCode: 0, summary: '90 PASS（创建报告输出目录后）' },
+        { project: 'CalibrationBoard.ResetChecks', exitCode: 0, summary: '19 PASS' },
+        { project: 'ContourMatch.ResultChecks', exitCode: 0, summary: '24 PASS' },
+        { project: 'ExecutionViewChecks11', exitCode: 0, summary: 'PASS（重新构建后程序集加载恢复）' },
+        { project: 'CoordinateModule.CandidateChecks', exitCode: 0, summary: '74 PASS' },
+        { project: 'Fixture.PluginChecks', exitCode: 0, summary: '43 PASS' }
       ],
-      notExecutedMissingAssets: [
-        'CalibrationBoard.EnclosingChecks', 'CalibrationBoard.ResetChecks',
-        'ContourMatch.ResultChecks', 'CoordinateModule.CandidateChecks',
-        'DistortionCalibration.PluginChecks', 'Fixture.PluginChecks',
-        'GrayMatch.ScoreArithmeticChecks', 'ExecutionViewChecks11'
+      environmentRepairs: [
+        { repair: 'dotnet restore 4 个工程', projects: ['CoordinateModule.CandidateChecks', 'DistortionCalibration.PluginChecks', 'Fixture.PluginChecks', 'GrayMatch.ScoreArithmeticChecks'], reason: '--no-restore 缺 obj/project.assets.json（NETSDK1004）' },
+        { repair: '创建 analysis/calibration-board 输出目录', projects: ['CalibrationBoard.EnclosingChecks'], reason: '报告写入时 DirectoryNotFoundException，非产品缺陷' },
+        { repair: 'dotnet build 后重跑', projects: ['ExecutionViewChecks11'], reason: 'VisionPlugins.CameraMapping 程序集首次加载失败，重新构建后解析恢复' }
+      ],
+      notExecutedExternalFixture: [
+        { project: 'DistortionCalibration.PluginChecks', required: 'analysis/distortion-calibration/trace-coded-boards/fixture.bmp', reason: '需原厂无设备 SDK 采集的 8-bit BMP，本机不存在；不伪造' },
+        { project: 'GrayMatch.ScoreArithmeticChecks', required: 'native scalar arithmetic oracle JSON（命令行参数）', reason: '需原厂 PE 常量/方差/score 位级 oracle，本机无该资产；不伪造' }
       ]
     },
     commands: [{ command: COMMAND, state: 'executed', exitCode: 0 }],
@@ -271,7 +280,12 @@ function build() {
     '',
     '## 回归与边界',
     '',
-    '5 个回归 exitCode=0（C01、BranchModule、Canvas、FrameworkImageBufferChain、DocumentHistoryHostChecks16）；8 个工程因 `--no-restore` 缺 `project.assets.json` 未执行（批量 restore 被用户取消），**不记为通过**。',
+    '**11 个回归 exitCode=0**：C01（18）、BranchModule（1）、Canvas（13）、FrameworkImageBufferChain（8）、DocumentHistoryHostChecks16（13）、CalibrationBoard.EnclosingChecks（90）、CalibrationBoard.ResetChecks（19）、ContourMatch.ResultChecks（24）、ExecutionViewChecks11、CoordinateModule.CandidateChecks（74）、Fixture.PluginChecks（43）。预期失败路径中的 `Failed/…` 是断言用例，不计为 FAIL。',
+    '',
+    '环境修复（均为非产品改动）：4 个工程单独 `dotnet restore` 补齐 `project.assets.json`；创建 `analysis/calibration-board` 报告输出目录；`ExecutionViewChecks11` 重新 `dotnet build` 后程序集加载恢复。',
+    '',
+    '**2 个回归因原厂外部数据前置不可执行，不记为通过、不伪造**：`DistortionCalibration.PluginChecks` 需设备采集的 `fixture.bmp`；`GrayMatch.ScoreArithmeticChecks` 需 native scalar arithmetic oracle JSON。两者均在本机缺失，登记为外部证据依赖。',
+    '',
     'REA native provider 仍不可用；本批未配置引擎、未新取 native 函数体、未改 `src/` 产品代码、未提交。',
     '',
     '证据引用 ' + evidence.length + ' 条，全部带 SHA-256 与字节数，见证据卡 `evidence[]`。'

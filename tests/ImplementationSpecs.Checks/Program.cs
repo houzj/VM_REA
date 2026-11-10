@@ -101,8 +101,14 @@ internal static class Program
             var joined = string.Join("|", boundaries.EnumerateArray().Select(x => x.GetString()));
             Check(joined.Contains("45/971486") && joined.Contains("986444"),
                 "coincidental 45 count explicitly disclaimed");
-            Check(matrix.GetProperty("regressions").GetProperty("notExecutedMissingAssets").GetArrayLength() == 8,
-                "8 skipped regressions registered, not counted as passed");
+            var regressions = matrix.GetProperty("regressions");
+            Check(regressions.GetProperty("executed").GetArrayLength() == 11,
+                "11 executed regressions registered");
+            Check(regressions.GetProperty("environmentRepairs").GetArrayLength() == 3,
+                "3 environment repairs registered");
+            Check(regressions.GetProperty("notExecutedExternalFixture").GetArrayLength() == 2,
+                "2 external-fixture-blocked regressions registered, not counted as passed");
+            Check(joined.Contains("原厂外部数据"), "external-fixture boundary must be explicit");
 
             Console.WriteLine("ImplementationSpecs.Checks: " + _checks + " checks passed.");
             return 0;
