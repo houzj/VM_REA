@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const cp = require('child_process');
 const lib = require('./plan-model.cjs');
 const startup = require('./plan-startup-initial-ui.cjs');
 const gen = require('./build-startup-initial-ui.cjs');
@@ -29,19 +30,32 @@ function verify() {
   const cardText = fs.readFileSync(gen.OUT_CARD, 'utf8');
   const card = JSON.parse(cardText);
 
-  must(markdown === expected.markdown, '可派工清单不是确定性产物');
-  must(review === expected.review, '人读证据结论不是确定性产物');
-  must(cardText === expected.card, '机器证据卡不是确定性产物');
+  // 产物记录生成时基线 HEAD；提交后当前 HEAD 前进，逐字比对时把当前 HEAD 归一化到产物基线，
+  // 并单独验证产物基线是当前 HEAD 的祖先（或相等），避免自指循环。
+  const artifactBuiltFrom = card.builtFrom;
+  const currentBuiltFrom = model.builtFrom.head.slice(0, 8) + '/' + model.builtFrom.inputsDigest.slice(0, 12);
+  const artifactHead = artifactBuiltFrom.split('/')[0];
+  const currentHead = model.builtFrom.head;
+  let headAncestor = currentHead.startsWith(artifactHead) || artifactHead === currentHead.slice(0, 8);
+  if (!headAncestor) {
+    const probe = cp.spawnSync('git', ['merge-base', '--is-ancestor', artifactHead, 'HEAD'],
+      { cwd: root, encoding: 'utf8' });
+    headAncestor = probe.status === 0;
+  }
+  must(headAncestor, '启动态产物 builtFrom.head 应为当前 HEAD 或其祖先（生成基线）');
+  must(artifactBuiltFrom.split('/')[1] === currentBuiltFrom.split('/')[1],
+    '启动态产物 inputsDigest 与当前输入不符');
+  const normalize = text => text.split(currentBuiltFrom).join(artifactBuiltFrom);
+  must(markdown === normalize(expected.markdown), '可派工清单不是确定性产物');
+  must(review === normalize(expected.review), '人读证据结论不是确定性产物');
+  must(cardText === normalize(expected.card), '机器证据卡不是确定性产物');
   must(!markdown.includes('- [x]'), '清单不得预填任何勾选框');
   must((markdown.match(/^- \[ \] /gm) || []).length === derived.steps.length + derived.controls.length,
     '可勾选任务数应为 ' + (derived.steps.length + derived.controls.length));
   must(markdown.includes('§0 状态面与边界') && markdown.includes('§8 与既有产物的关系'),
     '清单章节不完整');
-
-  // builtFrom 与站点同源；产物基线 HEAD 允许早于当前 HEAD。
-  const builtFrom = model.builtFrom.head.slice(0, 8) + '/' + model.builtFrom.inputsDigest.slice(0, 12);
-  must(card.builtFrom === builtFrom && markdown.includes(builtFrom),
-    'builtFrom 与当前模型输入摘要不一致');
+  must(markdown.includes(artifactBuiltFrom) && review.includes(artifactBuiltFrom),
+    '交付物未写明产物生成基线');
 
   // 全部证据引用真实存在且哈希/字节数匹配。
   let badEvidence = 0;
@@ -95,7 +109,8 @@ function verify() {
     layoutEdgesUnlinked: derived.counts.unlinkedLayoutEdges,
     prefilledCheckboxes: 0,
     deterministic: true,
-    builtFrom
+    builtFrom: artifactBuiltFrom,
+    currentBuiltFrom
   };
 }
 
