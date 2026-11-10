@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "note": "自研目标架构源码树的判断性映射。工程清单、行数、依赖边、层归属、工作包与阶段全部由 plan-model / plan-wbs 从机器台账派生；本文件只登记目标态目录编排及其依据。planned 节点是独立编排，不是原厂源码确认结论，也不创建任何实际目录或文件。",
+  "policy": {
+    "granularity": "project + directory",
+    "noDiskCreation": true,
+    "excludedDirectories": ["bin", "obj", ".a01group", ".pending", "TestResults", "artifacts", "tmp"],
+    "statusLegend": {
+      "exists": "当前自研源码树中已存在（current-source）",
+      "planned": "目标态待建，仅登记（independent-implementation-planned）",
+      "unknown": "是否应建/如何建证据不足，仅登记缺口（unknown）"
+    },
+    "evidenceTypes": {
+      "current-source": "路径在磁盘上真实存在，且不属于排除目录",
+      "independent-implementation-planned": "按 8 层职责与工作包/阶段编排的目标目录，不是原厂结论",
+      "unknown": "原厂证据或运行边界不足，登记为 REA/台账补证目标"
+    },
+    "plannedUnknowns": [
+      "目录名与内部职责为计划编排，需先取得原厂对应类型/成员/资源证据才可实施",
+      "当前未创建任何实际目录或文件，仅在本台账与站点登记",
+      "与原厂容器/运行时机制的等价性未验证，不得声称 parity"
+    ],
+    "boundary": "本树不覆盖具体 .cs 文件名（用户确认粒度为工程 + 目录级）；不修改 src/，不改另一工作树，不把用户反馈当作实现规格。"
+  },
+  "layers": [
+    {
+      "id": "L1-shell",
+      "target": "自研外壳、入口与服务拓扑目标态",
+      "existingDirectories": [
+        { "path": "src/VisionEditor/Styles", "note": "现有样式资源目录，磁盘实证存在" }
+      ],
+      "planned": [
+        { "path": "src/VisionEditor/Shell", "rationale": "主窗口状态、DPI、工作区锁与四模式菜单入口的宿主目录，对应原厂 VisionMaster.exe 外壳职责", "workPackageIds": ["A02", "A05", "A08"], "stageIds": ["S7"] },
+        { "path": "src/VisionEditor/Commands", "rationale": "菜单/工具栏命令与绑定入口的闭合链落点，对应 E0–E7 入口门", "workPackageIds": ["A05", "A08"], "stageIds": ["S7"] },
+        { "path": "src/VisionEditor/EntryPoints", "rationale": "运行界面、帮助、最近文件、授权与加密等入口逐载体清点落点", "workPackageIds": ["A05", "A08"], "stageIds": ["S7"] }
+      ],
+      "unknown": [
+        { "path": "src/VisionEditor/ServiceHost", "rationale": "原厂为 VisionMaster.exe + vServerApp 双进程；自研单进程是否需要独立服务宿主未取证", "workPackageIds": ["A05", "A08"], "stageIds": ["S1", "S7"] }
+      ]
+    },
+    {
+      "id": "L2-model",
+      "target": "自研方案/流程/模块文档模型与动态 IO 目标态",
+      "existingDirectories": [],
+      "planned": [
+        { "path": "src/VisionFramework/Identity", "rationale": "数值 ModuleId/GUID 与节点文档原生身份字段，对应 P0-MODEL-IDENTITY", "workPackageIds": ["B01", "B02", "B04"], "stageIds": ["S2"] },
+        { "path": "src/VisionFramework/DynamicIO", "rationale": "动态端口描述映射与下游订阅迁移，保持既有 JSON 兼容", "workPackageIds": ["B01", "B04", "C03"], "stageIds": ["S2"] },
+        { "path": "src/VisionEditor.Core/Document", "rationale": "Solution/Procedure/Node 所有权、撤销与保存重开契约", "workPackageIds": ["B01", "B02", "C01"], "stageIds": ["S2"] }
+      ],
+      "unknown": [
+        { "path": "src/VisionFramework/GlobalVariables", "rationale": "全局变量域在现有台账中记为缺失，触发与消费边界尚未取证", "workPackageIds": ["B04", "C08"], "stageIds": ["S8"] }
+      ]
+    },
+    {
+      "id": "L3-runtime-sdk",
+      "target": "自研执行运行时与平台 SDK 目标态",
+      "existingDirectories": [],
+      "planned": [
+        { "path": "src/VisionFramework/ExecutionBackend", "rationale": "IExecutionBackend（in-process / sdk-rpc）抽象，替代逐节点顺序 await", "workPackageIds": ["C02", "C05", "C08"], "stageIds": ["S1"] },
+        { "path": "src/VisionFramework/PlatformEvents", "rationale": "平台事件码、回调注册与事件→结果映射", "workPackageIds": ["C02", "C05", "C08"], "stageIds": ["S1", "S8"] },
+        { "path": "src/VisionFramework/ResultCache", "rationale": "模块结果缓存、自运行与连续执行语义、失败保持状态", "workPackageIds": ["C05", "C08", "C06"], "stageIds": ["S1"] }
+      ],
+      "unknown": [
+        { "path": "src/VisionFramework/DeviceServices", "rationale": "iMVS-6000 平台服务（相机/通信/设备）按 S8 只读盘点，真实设备操作不纳入本阶段，是否落地为代码未定", "workPackageIds": ["C06", "C08"], "stageIds": ["S8"] }
+      ]
+    },
+    {
+      "id": "L4-canvas-controls",
+      "target": "自研画布、连接与通用控件目标态（不重写控件树）",
+      "existingDirectories": [
+        { "path": "src/VisionEditor.Core/VmRouting", "note": "现有路由相关子目录，磁盘实证存在" }
+      ],
+      "planned": [
+        { "path": "src/VisionEditor/Canvas", "rationale": "命中、视口、缩放与节点卡片交互，保持自绘 Canvas 实现", "workPackageIds": ["A03", "A04"], "stageIds": ["S6"] },
+        { "path": "src/VisionEditor/Connections", "rationale": "连线预览、端口命中与订阅建立，按原厂 Connector.HitTesting 行为补齐", "workPackageIds": ["A03", "A04", "B06"], "stageIds": ["S6"] },
+        { "path": "src/VisionUi/Adorners", "rationale": "装饰器与边界交互的逐项行为级对照落点", "workPackageIds": ["A04", "B06"], "stageIds": ["S6"] }
+      ],
+      "unknown": []
+    },
+    {
+      "id": "L5-config",
+      "target": "自研公共配置框架覆盖目标态",
+      "existingDirectories": [
+        { "path": "src/VisionPluginContracts/Resources", "note": "现有配置资源目录，磁盘实证存在" }
+      ],
+      "planned": [
+        { "path": "src/VisionPluginContracts/Configuration", "rationale": "NameValueItem / ParamGroup 公共配置模型与状态机，按原厂声明逐键对账", "workPackageIds": ["A06", "B01", "B06"], "stageIds": ["S4"] },
+        { "path": "src/VisionPluginContracts/Templates", "rationale": "模板目录与配置宿主调度，避免每个工具自建配置窗口", "workPackageIds": ["A06", "B06"], "stageIds": ["S4"] },
+        { "path": "src/VisionPluginContracts/ParameterEditors", "rationale": "参数/ROI/显示交互的专用控件适配与会话生命周期", "workPackageIds": ["B01", "B06"], "stageIds": ["S4"] }
+      ],
+      "unknown": [
+        { "path": "src/VisionPluginContracts/ExtensionParamUserControl", "rationale": "基线第 7 节遗漏面：扩展参数控件族未纳入 L5 覆盖清单", "workPackageIds": ["A06"], "stageIds": ["S4"] }
+      ]
+    },
+    {
+      "id": "L6-display",
+      "target": "自研显示对象与绘制层目标态",
+      "existingDirectories": [
+        { "path": "src/VisionUi/SourceAssets", "note": "现有显示资源目录，磁盘实证存在" }
+      ],
+      "planned": [
+        { "path": "src/VisionUi/DisplayObjects", "rationale": "图形/文本/区域/掩膜显示对象族，按 ToolDisplay 契约接入", "workPackageIds": ["B04", "B06"], "stageIds": ["S5"] },
+        { "path": "src/VisionUi/Painters", "rationale": "调色板与绘制器，主题资源键逐项对账", "workPackageIds": ["B04", "B06"], "stageIds": ["S5"] },
+        { "path": "src/VisionUi/Themes", "rationale": "Apps.Style 样式/模板资产按 key 对账的落点", "workPackageIds": ["B04", "B06"], "stageIds": ["S5"] }
+      ],
+      "unknown": []
+    },
+    {
+      "id": "L7-migration-hosts",
+      "target": "自研方案容器、迁移与工具宿主目标态",
+      "existingDirectories": [
+        { "path": "src/VisionPlugins.ImageSource/ThirdParty", "note": "现有第三方依赖目录，磁盘实证存在" },
+        { "path": "src/VisionPlugins.ImageSource/runtimes", "note": "现有运行时目录，磁盘实证存在" }
+      ],
+      "planned": [
+        { "path": "src/VisionIO/Containers", "rationale": ".sol 外层与 ModuleFrame 帧边界的只读导入适配", "workPackageIds": ["D01", "D03", "D04"], "stageIds": ["S3"] },
+        { "path": "src/VisionIO/Migration", "rationale": "旧版本方案迁移与跨版本兼容，对应 CompatibleTool 遗漏面", "workPackageIds": ["D04", "D07"], "stageIds": ["S3"] },
+        { "path": "src/VisionFramework/ExternalCall", "rationale": "外部调用/集成扩展点，对应 VM.ExternalCall 遗漏面", "workPackageIds": ["D07"], "stageIds": ["S3", "S8"] }
+      ],
+      "unknown": [
+        { "path": "src/VisionIO/NativeSolutionWriter", "rationale": "S3 退出条件明确只读导入、写入能力不提前声明；是否需要写入器未知", "workPackageIds": ["D01", "D03"], "stageIds": ["S3"] }
+      ]
+    },
+    {
+      "id": "L8-tool-plugins",
+      "target": "自研目录工具插件目标态（全量分批）",
+      "existingDirectories": [
+        { "path": "src/VisionPlugins.Calibration/Resources", "note": "标定工具资源目录，磁盘实证存在" },
+        { "path": "src/VisionPlugins.ImageSource/Resources", "note": "图像源工具资源目录，磁盘实证存在" },
+        { "path": "src/VisionPlugins.Fixture/Resources", "note": "位置修正工具资源目录，磁盘实证存在" }
+      ],
+      "planned": [
+        { "path": "src/VisionPlugins.Shared/Algorithm", "rationale": "工具专属算法与后台代码的公共归属约定，避免每个插件复制框架", "workPackageIds": ["A07", "B08"], "stageIds": ["S9"] },
+        { "path": "src/VisionPlugins.Shared/Configuration", "rationale": "工具专属参数/资源/编辑内容的统一接收路径，对应 162 工具任务卡", "workPackageIds": ["A07", "B06"], "stageIds": ["S9"] },
+        { "path": "src/VisionPlugins.Shared/Evidence", "rationale": "逐工具证据卡、运行对比与差分记录的统一落点", "workPackageIds": ["B08", "D08"], "stageIds": ["S9"] }
+      ],
+      "unknown": [
+        { "path": "src/VisionPlugins.Shared/NativeBridge", "rationale": "native DLL 未反编译的工具语义与 ABI 边界仍为 unknown，是否建桥接层未定", "workPackageIds": ["B08", "D08"], "stageIds": ["S9"] }
+      ]
+    }
+  ]
+}

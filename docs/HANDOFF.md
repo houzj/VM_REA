@@ -1,3 +1,139 @@
+## 2026-11-10 大步推进：S0 复跑闭环 + 25 程序集成员清单 + 162 工具实现规格
+
+用户指出「小碎步」，一次授权「全放开、批量落地」（跑 C01/回归、按证据改 `src/`、提交固定基线）。本批一次做完：
+
+**S0 复跑闭环**（用户明确授权「开始测试/验证」）：
+- `dotnet run --project tests/VMVerticalSlice.C01/… --no-restore`，dotnet 10.0.401，**exitCode=0、18 PASS**；历史 4 个证据文件先备份再恢复，基线 SHA-256 保持 `ce543016…`。
+- 用 `D:\MyWork\图片库\标定\1.jpg` 同输入复跑得 **47/973202**，报告 SHA-256 与历史**逐字节相同**；13 个 Blob 输出名、Group `image/width` 重开输出名一致。默认样本图（不同输入）得 83/867080，登记为不同输入、不用于 S0 判定。
+- 用户提供 `D:\MyWork\图片库\标定` 12 张图标，**12 张全部复跑成功**：各样本 `sessionStatus=0`、13 个输出名、`reloadedCount == count`。样本 3 计数 45 与原厂 45 相同但面积 986444 ≠ 971486，明确登记为巧合、不作差分解释。
+- 方案文件：前 2 份与历史字节一致；Group 方案差异定位为 4 处随机 `ProcedureId`/`NodeId` 引用，流程结构一致。
+- 证据卡 `analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`（`C03-S0-RERUN-MATRIX-20261110`，24 条带哈希引用）与人读 `docs/reverse/C03-S0-RERUN-MATRIX.md`。
+- **S0.1/S0.2 升级为 `satisfied-on-current-build`，S0 判定改为 `S0-closed-on-local-slice; C03-root-cause-still-open`**；差分 `45/971486` 对 `47/973202` 仍开放，B0 保持 open、B1–B3 保持 blocked，产品算法未改。
+- 回归：5 个 exitCode=0（C01、BranchModule、Canvas、FrameworkImageBufferChain、DocumentHistoryHostChecks16）；8 个因 `--no-restore` 缺 `project.assets.json` 未执行（批量 restore 被用户取消），如实登记、不记为通过。
+
+**批量台账资产**：
+- `tests/ArchitectureRecovery/original-members.map.json` + `docs/ORIGINAL-MEMBERS-INDEX.md`：25 个唯一程序集归并 28 棵反编译树（3 个重复 pass 不累加），**canonical `.cs` 2614 与基线去重数完全一致**，提取 3719 个类型声明 / 10128 个方法签名；与基线 3503 类型 / 10195 方法的正则口径差异原样登记。
+- `tests/ArchitectureRecovery/tool-implementation-specs.map.json` + `docs/TOOL-IMPLEMENTATION-SPECS.md`：162 工具六项规格（身份 / 资源哈希 / 参数 IO / native 边界 / 实现状态 / unknown），14 分类、2015 个证据文件、证据分级 160 high + 2 mid、161 未建立 + 1 partial；native 函数体全部标 `not-recovered`。
+- `tests/ImplementationSpecs.Checks/`：可运行契约校验回归，**196 项检查通过**，断言 S0 复算、25 程序集、162 工具锚点与 unknown、12 样本矩阵与开放边界。
+
+**诚实边界**：授权不能消除「native 函数体未取证」这一事实约束，本批**未在 `src/` 编造工具实现**，落地的是可复验的规格资产与校验工程；C03 根因算法未动、REA provider 未配置、未取 native 函数体。校验器改为「产物基线 HEAD 是当前 HEAD 的祖先」判定，避免提交后的自指失配。
+
+验收：`pages=19, files=22, bytes=2,088,430, tasks=544, deterministic=true, builtFrom=ef7b1cc9/cb822df8db70`；三类证据卡共 53 条引用哈希全匹配。只提交本批相关的计划/台账/证据/生成器与校验工程，不夹带 349 行中的历史在制改动；不 push。
+
+## 2026-11-10 开始实施：第二批 B1 静态取证（B0 仍 open / B1 仍 blocked）
+
+用户说「开始实施」。按硬约束，本批一次做完无需额外授权的静态取证：
+
+- 定位 8 个纵切源码文件的准确类型与主要方法签名（`ImageSourcePlugin` / `ImageAcquisitionPlugin` / `Algorithms` / `BuiltinModules` / `OfflineCircleExecutor` / `ImageCanvas` / `OverlayPng` / `GraphExecutor`），共 20 个类型/记录。
+- C01 输出名对照（430 个本地 `.cs` 全量检索）：`first` 9/9 命中；`blob` 4/13 命中，9 个 `Components.*` 复合名未作为整串出现（投影方式标 unknown）；`group` 1/2 命中，小写 `width` 待核对。`group.failureOutputs` 为空、重开输出名一致。
+- 3 份 vmx 方案文件字节级身份：2196 / 3233 / 4640 B，SHA-256 已锁定，Procedure 数 1 / 1 / 2，Resources 均 0；只登记静态差异，不推断行为。
+- 产出 `analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json`（`C03-INCREMENTAL-B1-STATIC-001`，16 条引用全匹配）与人读 `docs/reverse/C03-incremental-b1-static.md`；补齐 `incremental-landing.map.json` 的 B1-1/2/3 `sourceMembers` 与完整清单对应任务项；回写 `incrementalLanding.b1Static` 与第 19 页 notice。两批证据卡共 29 条引用在链式回写后重新核对，全部匹配。
+
+**边界**：未跑 C01、未改 `src/` 产品代码、未提交、未配置 REA provider；命令 0 条执行、产品改动 0；`B0 open / B1–B3 blocked` 不变，差分 `45/971486` 对 `47/973202` 仍开放、5 项运行时缺口保留。输出名一致与方案可比对不等于原厂 parity。
+
+验收：`pages=19, files=22, bytes=2,087,502, tasks=544, anchorsChecked=524, prefilledCheckboxes=0, externalRefs=0, deterministic=true, builtFrom=ef7b1cc9/7c544af7857a`。
+
+## 2026-11-10 完整逆向任务清单（一次列全，不再分批）
+
+用户指出反复分批推进「有点遭不住」，要求根据文档一次给出完整任务清单。按此交付：
+
+- `docs/COMPLETE-REVERSE-TASK-LIST.md`：10 节 + 5 附录、**544 项**逐项可勾选任务，覆盖 P0 前置 10 项（开放差分、5 项 unknown、四条授权方向）、渐进 4 批次 13 步、主界面 17 控件、WBS 32 工作包、96 单元卡、162 目录工具、48 链节点、124 结构项（25 原厂程序集 + 29 自研工程 + 62 依赖边 + 8 层）、37 治理项（S0–S9 / G1–G8 / E0–E7 / 证据四态 / 验收层级 / 4 份旧计划）、5 条规则；附录含全部命令、报告路径、315 条去重证据路径与锚点说明。
+- 机器台账 `tests/ArchitectureRecovery/complete-task-list.map.json`；确定性生成器 `build-complete-task-list.cjs` 与独立校验器 `verify-complete-task-list.cjs`（逐字比对、覆盖、路径、524 个站点锚点、零预填、命令授权、builtFrom）。
+- 每条任务写明状态、来源、证据、退出判据、前置/阻塞与站点锚点；勾选框全部 `[ ]`，29 项 `done` 是三层台账既有状态而非本清单验收。四条方向授权门槛逐条写明：复跑 C01 需用户明确说「开始测试/验证」、提交需明确说「提交」、B0 根因需可查询原厂过程或 provider 修复、B1 静态取证可直接做（不改算法、不跑测试）。
+
+`verify-reverse-plan.cjs` 新增 5c 断言确认清单与站点同源。实测清单 196,275 B / 台账 463,847 B，`builtFrom=ef7b1cc9/64eb20c3da3c`；站点仍 `pages=19, files=22, bytes=2,085,863`（未新增页面、未触碰 2MB 上限），`deterministic=true`。未提交未推送、未改 `src/`、未跑方案测试。
+
+## 2026-11-10 渐进落地路线与任务列表（第 19 页）+ 第一批 B0/B1 静态取证
+
+用户要求「制定可执行的落地计划和任务列表，还是渐进的推动本地逆向」，三问确认：计划 + 立即执行第一批、按最小纵切 `ImageSource→Blob→显示`、任务卡细到文件/成员/命令/报告路径。
+
+新增 [渐进落地路线与任务列表](reverse-plan/17-incremental-landing.html)：4 批次 / 13 步 —— `B0 S0/C03 前置补证` → `B1 最小纵切` → `B2 主界面 17 控件横扩` → `B3 162 工具分批`；每步写明证据文件、准确成员、复跑命令、报告路径、退出判据与 unknown，10 步带前置阻塞，13 步零预填。台账 `tests/ArchitectureRecovery/incremental-landing.map.json` 纳入 `SUPPORTING` 第 7 项并锁 SHA，派生层 `plan-incremental.cjs` 校验路径/命令/依赖闭合且只允许台账登记过的真实命令。
+
+第一批已执行（按 `reverse-engineer-anything` 流程，仅静态取证）：产出 `analysis/full-audit/batch1-20261107/C03/c03-incremental-batch0-b1.json`（`C03-INCREMENTAL-B0B1-001`：6 问题 / 8 发现 / 13 条 SHA-256 引用全匹配）与人读 `docs/reverse/C03-incremental-batch0-b1.md`；回写 `docs/VM-LOCAL-RESTORATION-STATUS.json` 的 `incrementalLanding` 与站点 B0 章节。结论：**B0 仍 open、B1 仍 blocked**，差分 `45/971486` 对 `47/973202` 开放、5 项 unknown、`S0-not-fully-closed`、产品改动 0、命令 0 条已执行；REA provider 不可用未修复，不自动跑方案测试（需用户明确说「开始测试/验证」）。
+
+验收：`pages=19, files=22, bytes=2,085,863, anchors=92, incrementalBatches=4, incrementalSteps=13, incrementalDone=0, batch0Card=C03-INCREMENTAL-B0B1-001, externalRefs=0, deterministic=true, builtFrom=ef7b1cc9/64eb20c3da3c`。为控制 2MB 体积，`plan-tool-layer.cjs` 的 `data-tool-layer-path` 改为相对 `分类/工具名`（完整路径仍在台账）。未提交未推送、未改 `src/`、不自动进入测试环节。
+
+## 2026-11-10 主界面控件落地计划与任务清单（第 18 页）
+
+用户确认「证据已完善、目标已明确」，开始制定落地计划；顺序为 **S0/C03 补证（P0 前置）→ 主界面四类共享控件完整逆向 → 162 工具分批落地**；验收为「源码级闭环 + 原厂同状态差分 + 自研操作级复跑」；交付为新增落地页 + 机器台账。
+
+新增 [主界面控件落地清单](reverse-plan/16-ui-control-landing.html)：17 个控件按 4 类分组（工具箱+工具加载 4 / 图像显示+模块结果 5 / 流程画布+配置面板 4 / 结果区+壳控件 4），逐项登记原厂证据路径、准确类型与成员、关联 A 线工作包与 E0–E7 门、六段链状态、三级验收、第一动作、未知项与退出判据。台账 `tests/ArchitectureRecovery/ui-control-landing.map.json` 纳入 `SUPPORTING` 第 6 项并锁定 SHA；派生层 `plan-ui-landing.cjs` 校验工作包/门禁/证据路径引用闭合，强制 S0 前置未闭时全部 `blocked`、验收零预填。
+
+诚实边界：S0/C03 差分 `45/971486` 对 `47/973202` 仍开放、5 项 unknown、产品改动 0、REA native provider 不可用；17 个控件全部 `blocked`、102 个六段链节点标 unknown、三级验收 0 项已完成。既有 WBS `32/96/162/48` 口径未改，原厂截图只作差异信号与控件范围识别。
+
+验收：`pages=18, files=21, bytes=2,035,071, anchors=87, uiLandingControls=17, uiLandingGroups=4, uiLandingBlocked=17, externalRefs=0, deterministic=true, builtFrom=ef7b1cc9/1d0f63c5bcce`。未新增产品代码、未提交未推送、未自动进入测试环节。
+
+## 2026-11-10 目标源码树口径纠正为「原厂目标 / 自研现状」
+
+用户指出页面叫「目标源码树」但内容是本地项目源码数。按确认口径改为：
+
+- [15-target-source-tree.html](reverse-plan/15-target-source-tree.html) 标题与导航改为「原厂目标 / 自研现状源码树」；**文件名与既有锚点不变**。
+- **原厂目标源码树**：25 个唯一程序集，由 `analysis/decompiled` 的 28 棵反编译树按 `canonicalTree` 归并（3 个重复 pass 不累加）；每程序集显示 `.cs/.xaml` 数、行数 / 类型数、层归属、fanIn 与 `├──/└──` 树线。完整去重口径为 2614 `.cs` / 435,666 行 / 3,503 类型 / 10,195 方法。长清单按目录截断并显式标注剩余数量（树中展开 681 / 扫描 2993 个源码文件）。
+- **原厂工具目录树**：162 个 `Module(sp)` 工具按 14 分类折叠，每工具目录节点列出 XML / DLL / 资源证据文件名与 SHA-256 前 8 位、kind / size；节点只来自 `docs/plugins/inventory.json` 台账证据，**不实时扫描原厂安装目录**；161 未建立 + 1 partial 状态与 `13-tool-cards.html` 任务卡链接保留，仍标注「全部待逆向实现」。
+- **自研现状**：本地 `src/` 15 个框架工程 + 根文件（263 文件 / 19 目录）的真实文件树与工程用途说明保留；页面显式写明原厂反编译静态证据与本地磁盘现状**不等价**，数字只来自机器台账。
+
+实现：新增 `tests/ArchitectureRecovery/plan-original-tree.cjs`，改造 `plan-tool-layer.cjs` 为目录树，更新 `reverse-plan-editorial.json` 页面文案、`plan-page.css/js`（原厂树 / 工具目录树样式与过滤）、`build-reverse-plan.cjs` 与 `verify-reverse-plan.cjs`（25/28/3、162 SHA、双口径标题、截断标注、确定性断言）。
+
+验收：`pages=17, files=20, bytes=1,948,280, anchors=82, originalAssemblies=25, originalTreePasses=28, toolDirShas=162, toolLayerTools=162, fileTreeProjects=16, fileTreeFiles=263, fileTreeDirs=19, externalRefs=0, deterministic=true, builtFrom=ef7b1cc9/68ed164973a4`。未新增页面、未改页数、未改 `src/`、未提交未推送、不自动进入测试环节。
+
+## 2026-11-10 架构图 + 真实源码文件结构树
+
+用户先指出目标架构与源码数只有表格、要求图视化；随后指出把工程/目录按层分组的横条不是树图，要真实的源码文件结构树。按最终确认范围在现有两页改图，**不新增页面、页数仍为 17**：
+
+- [02-architecture.html](reverse-plan/02-architecture.html) 新增「架构分层图（一目了然）」：8 层原厂 / 自研并列（原厂程序集数、行数 / 类型 / fanIn；自研工程、当前行数、状态、行覆盖），下方泳道按 `ProjectReference` 聚合画层间依赖箭头。
+- [15-target-source-tree.html](reverse-plan/15-target-source-tree.html) 改为「框架层源码树 + 162 工具逆向清单」：框架层 15 个工程 + `src` 根文件可折叠，`├──/└──` 等宽树线，263 个代码文件、19 个目录，每个工程 summary 行标注设计用途（`project-purpose.map.json`，编辑性说明、不是原厂结论）；工具层不再以 14 个自研工程计数，改为 **162 个目录工具全量待逆向实现清单**，按 14 个原厂分类折叠，逐工具列出标识、中文名、原厂源路径、状态与 `13-tool-cards.html` 任务卡入口（161 未建立 + 1 partial BMP/MONO8），不做工具→自研工程映射。
+- 同一页的「待建 / 未知目标目录登记」用表格单列 30 个计划编排目录，不混入真实文件树；「工程依赖图与依赖边」保留 29 节点 + 62 边 SVG，悬停 / 键盘聚焦节点高亮关联边。
+
+实现：`tests/ArchitectureRecovery/plan-file-tree.cjs` 默认只扫描框架层（`includeToolProjects=false`），生成确定性 tree 文本并派生 263 文件 / 19 目录，不再写死旧全量；新增 `plan-tool-layer.cjs` 按 `model.categories` 生成 162 工具折叠清单与 `13-tool-cards.html` 任务卡锚点，断言 162 / 14 分类 / 161 未建立 + 1 partial；`project-purpose.map.json` 保留 29 条（15 条框架用于页面，14 条工具工程不再渲染），仍纳入 `SUPPORTING` 第 5 项并锁定 SHA；`plan-diagrams.cjs` 保留架构图与依赖图两张纯函数 SVG；`plan-page.css` 增加树线、图与工具层清单样式，`plan-page.js` 增加按工程/用途过滤与工具层 162 条过滤、展开 / 收起；`assertSite` 与 `verify-reverse-plan.cjs` 新增 16 条目 / 263 文件 / 19 目录、16 条非空用途、162 工具 / 14 分类 / 161+1、工具层无自研工程树、树线字符与待建不落盘断言。
+
+验收：`pages=17, files=20, bytes=1,817,938, anchors=82, diagrams=2, diagramNodes=29, diagramEdges=62, fileTreeProjects=16, fileTreeFiles=263, fileTreeDirs=19, toolLayerTools=162, toolLayerCategories=14, toolLayerNotEstablished=161, toolLayerPartial=1, externalRefs=0, deterministic=true, builtFrom=ef7b1cc9/6a24fe5c9e4f`。未新增页面、未改 `src/`、未创建待建目录、未提交未推送、不自动进入测试环节。
+
+## 2026-11-10 新增「自研目标架构源码树」页（17 页站点）
+
+用户指出 [11-work-packages.html](reverse-plan/11-work-packages.html) 只有原厂/当前对比，缺自研目标架构源码树。按用户确认的三项口径补齐：目标态蓝图（8 层 → 工程 + 关键子目录，逐节点标注已存在 / 待建 / 未知并挂到 32 工作包与阶段）、独立页 + 工作包页互链、工程 + 目录级且待建只登记。
+
+新增 [自研目标架构源码树](reverse-plan/15-target-source-tree.html)，并在 11 页新增「自研目标架构源码树（入口）」章节与互链。数据源：`tests/ArchitectureRecovery/target-source-tree.map.json`（判断性映射，纳入 SUPPORTING 第 4 项并锁定 SHA）与 `plan-target-tree.cjs`（纯派生）。实测 68 节点：29 工程 + 39 目录，已存在 38 / 待建 24 / 未知 6，62 条 `ProjectReference` 依赖边；18 个工程未纳入 8 层映射，显式标为「未归层（归层待补证）」，不臆造归属。
+
+证据纪律：已存在节点以磁盘实证 + `currentProjects` 台账为准；待建节点标 `independent-implementation-planned` 并附边界说明；未知节点标 `unknown`。待建与未知路径由生成器与独立校验双重断言「磁盘上不存在」，即**不创建任何实际目录或文件**、不改 `src/`。目标蓝图是独立编排，不是原厂源码确认结论，不声称 parity。
+
+站点扩为 17 页 / 20 文件 / 1.78 MB；`build-reverse-plan.cjs` 与 `verify-reverse-plan.cjs` 已升级断言，`builtFrom=ef7b1cc9/a03dd729296c`，819 条搜索索引，无外链、逐字节确定性一致。未提交、未推送，共同基线 SHA 仍未固定；不自动进入测试环节。
+
+## 2026-11-10 第一阶段正式逆向落地启动：S0/C03 证据闭环（根因未闭）
+
+按已确认的 16 页完整逆向总计划，第一阶段只收口 S0 纵向切片：复核 C03 原厂 Blob `45/971486` 与直接 SDK / 本地 `47/973202` 的既有证据链，不改产品算法、不新取原生函数体、不请求用户截图。产物：`analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-review.json`（11 条发现、6 个问题、9 项已排除假设，引用 SHA-256 全核对）、`c03-phase1-s0-gate-check.json`（三退出条件逐条登记）、`c03-phase1-evidence-card.json`（六段链证据卡 `C03-PHASE1-001`）、人读 `docs/reverse/C03-phase1-evidence-review.md`；范围冻结在 `docs/VM-LOCAL-RESTORATION-PLAN.md` 末节。
+
+结论：本地链路与直接原厂 SDK 在同一 `1.jpg` 上一致，差分不在本地图/会话/保存重载管道；默认 ROI 选择器与两字节载荷解析后，也不再归因于显式用户 ROI 或外部掩膜。剩余边界是 wrapper 侧 FullScreen `[1,0]` 到 `param_1+0x20/+0x38` 的转换与 SDK Run 前确切输入图像/边缘字节；「单范围直传」与「GenerateMaskImage 生成掩膜」两条分支无法由现有证据选定，登记为 unknown。证据门 `c03-next-evidence-gate.json` 明确「未捕获区域对象/像素缓冲/native 结果数组前不改产品算法」，故本阶段产品代码改动 0，差分保持开放，不以本地/SDK 一致冒充 parity。
+
+S0 退出条件：S0.1/S0.2 只有历史运行报告、本阶段未在当前构建产物复跑（`partially-evidenced-historical-report`），S0.3 已满足；总判定 `S0-not-fully-closed`。人工主机验收单列，不阻塞也不计入完成度。
+
+基线：`HEAD ef7b1cc9…`，工作树 322 条未提交/未跟踪状态行，未提交、未推送，共同基线 SHA 未固定（需用户明确说「提交」才处理）。REA native provider 在当前主机不可用，本阶段不修复；不修改 `tool-plugins` 工作树、不静默合入、不终止其它任务进程。按约定不自动进入测试环节，等用户明确说「开始测试/验证」。
+
+## 2026-11-10 完整逆向总计划：16 页可执行执行视图
+
+新增[权威总纲](reverse-plan/00-master-plan.html)与 5 页执行视图：[WBS 工作包](reverse-plan/11-work-packages.html)、[框架单元任务卡](reverse-plan/12-unit-cards.html)、[目录工具任务卡](reverse-plan/13-tool-cards.html)、[入口闭合链](reverse-plan/14-entry-chains.html)；[索引页](reverse-plan/index.html)与既有 11 页 URL、锚点全部保留。总纲页与 `plan-data.json` 的 `wbs` 摘要构成唯一执行口径，统计数字与既有结论仍只来自 9 个机器台账 + 3 个补充源。
+
+计划粒度：32 个可派工工作包（依赖全部可解析、接力顺序无环）、96 张框架单元任务卡、162 张目录工具任务卡、E0–E7 共 48 个六段闭合链节点；每张卡列出取证目标、原厂证据路径、动作、产出、操作级验证、未知项与退出判据。任务卡中的计划动作显式标注为「独立编排」，不与证据四态混用；台账中 18 处空字段一律登记 unknown，不以合理设计填空。
+
+4 份既有计划（`FRAMEWORK-REVERSE-MASTER-PLAN.md`、`SOURCE-LEVEL-REVERSE-PLAN.md`、`VM-LOCAL-RESTORATION-PLAN.md`、`NEXT-BATCH-PLUGIN-REVERSE-PLAN.md`）保留为历史，在总纲页与治理页逐份登记「被取代 / 原则仍有效 / 仅历史」，不改写其既有结论数字。`42/96=43.75%` 与 `41/96=42.71%` 仍并列展示；`PositionCorrection` 批次身份差异、原厂 `45/971486` 对直接 SDK `47/973202` 数值差分原样保留。
+
+复算与校验：`node tests/ArchitectureRecovery/build-reverse-plan.cjs` 生成，`node tests/ArchitectureRecovery/verify-reverse-plan.cjs` 独立复跑；实测 16 页 / 19 文件 / 1.60 MB，搜索索引 735 条，无外链、逐字节确定性一致。人工主机验收仍单列；未自动提交或推送，另一工作树未改动。
+
+## 2026-11-10 完整逆向计划固化为离线多页 HTML 站点
+
+新增 [完整逆向计划索引](reverse-plan/index.html)：`docs/reverse-plan/` 下 11 页 + 索引页 + `plan-data.json` + 共享样式/脚本，中文、离线可读、无外链、无 CDN。执行口径固定为「先打通 `ImageSource→Blob→Group→结果回写→保存/重载` 纵向切片（S0），再按 P0→P3 全面铺开（S1–S9）」，全量纳入 162 个目录工具、14 个原厂分类、96 个框架具名单元。
+
+页面并列展示三套进度口径：框架 `42/96=43.75%`（历史汇总仍写 `41/96=42.71%`，冲突显式登记、不擅自统一）、标定 `10/10` 与下一批 `3/11`、行为闭环 C03 在制；`PositionCorrection` 的批次身份差异原样登记，不猜测映射。所有数字与既有结论由 `tests/ArchitectureRecovery/plan-model.cjs` 从 9 个机器台账 + 3 个补充源装配，编辑性文案在 `tests/ArchitectureRecovery/reverse-plan-editorial.json`，页脚记录逐项 SHA-256；`builtFrom` = HEAD + 输入哈希，站点不写 wall-clock。
+
+复算与校验：`node tests/ArchitectureRecovery/build-reverse-plan.cjs` 生成，`node tests/ArchitectureRecovery/verify-reverse-plan.cjs` 独立复跑链接/锚点/96 单元/162 工具/外链/哈希/确定性断言。人工主机验收仍单列；本次未自动提交或推送，另一工作树未改动。
+
+## 2026-11-10 架构与源码量基线冻结：逆向优先级改由数据驱动
+
+新增可复算基线：[架构基线与源码量清单](ARCHITECTURE-BASELINE.md) + 机器账本 `docs/architecture-baseline.json`，计数由 `tests/ArchitectureRecovery/SourceInventory`（Roslyn 仅语法）与 `tests/ArchitectureRecovery/Build-ArchitectureBaseline.ps1` 生成，映射判断在 `tests/ArchitectureRecovery/architecture-baseline.map.json`。
+
+口径与结果：原厂 28 个反编译树收敛为 **25 个唯一程序集**（VisionMaster.exe / Apps.XmlParser / VMControls.WPF 各有两次 pass，只取较大一次，不累加），去重后 **2,614 .cs / 435,666 行 / 3,503 类型**；当前 29 工程 **430 .cs / 33,324 行 / 955 类型**（行数比约 13.1:1）。分层规模与当前对应：L3 运行时/SDK 125,325 行（当前 1,525 行，**机制缺失**）、L4 画布控件 115,925（12,144）、L5 配置 87,906（4,847）、L6 显示 59,063（8,162）、L2 模型 26,491（3,701）、L1 外壳 9,696（6,653）、L7 迁移 7,440（3,483）、L8 工具样本 3,820（5,595）。
+
+据此冻结优先级：P0 执行后端（提交-回调 vs await）→ P0 文档身份/动态 IO → P0 方案容器与原生帧 → P1 配置框架覆盖 → P1 显示绘制 → P2 画布控件（不重写）→ P2 外壳入口 → P3 平台服务/设备 → P3 工具插件。另登记 8 项**台账未覆盖遗漏**（iMVS-6000 SDK 92,225 行、vServerApp、CompatibleTool、VM.ExternalCall、ExtensionParamUserControl、Apps.Style、VMControls.WPF.Release 第二 pass、162 目录其余工具）。本基线不改框架 42/96=43.75%、插件 10/10 与 3/11、C03 在制的既有计数；人工验收仍单列。
+
 ## 2026-10-20 main 标定联合审核第十七轮：原始调用图与方法失效复核
 
 当前目标仍限标定十工具 UI/后台/算法及框架必要交接。原 ReadCalib `FilePath` 已从控件追到 `ModuleParam→IMVS_SetParamValue` 和原生 `SetParam→LoadFile`，`VmModule.Outputs` 懒读另证；已加载输出通知/Group 自动迁移的 SDK 中间 caller 待定点反编译，不能据缺口提前结项。真实 owned Group 13/13 加根线独立复跑证文件改名后旧订阅不迁移，warm 坐标系可用旧矩阵令 Group Success、cold 则失败，显式重绑的 Undo/Redo/重开通过，FCR-037 登记。标定板真实主窗删除/撤销/方案替换 scoped 回收 6/6，原版 SDK CloseOneModule 同构仍未测。证据和哈希见 [第十七轮根线复核](joint-audit/20261020-pass17-root-review.md)，已有反编译仍发生偏差的责任与方法修正见[插件项目候选交接](joint-audit/CALIBRATION-PLUGIN-REVERSE-LESSONS-HANDOFF.md)。没有产品修复、未推送、`tool-plugins` 不动；框架实施仍 **41/96=42.71%**，历史插件实施自审 10/10 与本次联合审核分列，人工验收不计。

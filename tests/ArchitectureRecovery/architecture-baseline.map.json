@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "note": "架构基线映射表：程序集归层、重复反编译归并、当前工程映射、优先级。计数由 Build-ArchitectureBaseline.ps1 从 source-inventory.json 计算，本文件只保存判断性内容。",
+  "assemblyViews": {
+    "VisionMaster.exe": { "canonical": "VisionMasterMain", "trees": ["VisionMasterMain", "VisionMaster.Exe.Audit"], "duplicatePasses": true },
+    "Apps.XmlParser": { "canonical": "Apps.XmlParser.CapabilityAudit", "trees": ["Apps.XmlParser.CapabilityAudit", "Apps.XmlParser"], "duplicatePasses": true },
+    "VMControls.WPF": { "canonical": "VMControls.WPF", "trees": ["VMControls.WPF", "VMControls.WPF.Release"], "duplicatePasses": true },
+    "vServerApp": { "canonical": "vServerApp.Audit", "trees": ["vServerApp.Audit"], "duplicatePasses": false },
+    "VM.Core": { "canonical": "VM.Core", "trees": ["VM.Core"], "duplicatePasses": false },
+    "VMControls.Data": { "canonical": "VMControls.Data", "trees": ["VMControls.Data"], "duplicatePasses": false },
+    "VM.PlatformSDKCS": { "canonical": "VM.PlatformSDKCS.Audit", "trees": ["VM.PlatformSDKCS.Audit"], "duplicatePasses": false },
+    "iMVS-6000PlatformSDKCS": { "canonical": "iMVS-6000PlatformSDKCS.PublicAudit", "trees": ["iMVS-6000PlatformSDKCS.PublicAudit"], "duplicatePasses": false },
+    "VM.Controls": { "canonical": "VM.Controls", "trees": ["VM.Controls"], "duplicatePasses": false },
+    "VMBaseControls": { "canonical": "VMBaseControls", "trees": ["VMBaseControls"], "duplicatePasses": false },
+    "DynamicObjectConfigControl": { "canonical": "DynamicObjectConfigControl", "trees": ["DynamicObjectConfigControl"], "duplicatePasses": false },
+    "Apps.XmlUI": { "canonical": "Apps.XmlUI", "trees": ["Apps.XmlUI"], "duplicatePasses": false },
+    "ExtensionParamUserControl": { "canonical": "ExtensionParamUserControl.CapabilityAudit", "trees": ["ExtensionParamUserControl.CapabilityAudit"], "duplicatePasses": false },
+    "VM.PcUI": { "canonical": "VM.PcUI", "trees": ["VM.PcUI"], "duplicatePasses": false },
+    "Apps.Style": { "canonical": "Apps.Style", "trees": ["Apps.Style"], "duplicatePasses": false },
+    "Apps.ColorFun": { "canonical": "Apps.ColorFun", "trees": ["Apps.ColorFun"], "duplicatePasses": false },
+    "Apps.PcUI.ImageSource": { "canonical": "Apps.PcUI.ImageSourceAudit", "trees": ["Apps.PcUI.ImageSourceAudit"], "duplicatePasses": false },
+    "CompatibleTool": { "canonical": "CompatibleTool.Audit", "trees": ["CompatibleTool.Audit"], "duplicatePasses": false },
+    "VM.ExternalCall": { "canonical": "VM.ExternalCall.Audit", "trees": ["VM.ExternalCall.Audit"], "duplicatePasses": false },
+    "ImageSourceModuleControl": { "canonical": "ImageSourceModuleControl", "trees": ["ImageSourceModuleControl"], "duplicatePasses": false },
+    "IMVSGroup": { "canonical": "IMVSGroup.WorkflowAudit", "trees": ["IMVSGroup.WorkflowAudit"], "duplicatePasses": false },
+    "IfModule": { "canonical": "IfModule.WorkflowAudit", "trees": ["IfModule.WorkflowAudit"], "duplicatePasses": false },
+    "IfBranchModule": { "canonical": "IfBranchModule.WorkflowAudit", "trees": ["IfBranchModule.WorkflowAudit"], "duplicatePasses": false },
+    "BranchModule_STD": { "canonical": "BranchModule_STD.WorkflowAudit", "trees": ["BranchModule_STD.WorkflowAudit"], "duplicatePasses": false },
+    "BranchStringCpmL": { "canonical": "BranchStringCpmL.WorkflowAudit", "trees": ["BranchStringCpmL.WorkflowAudit"], "duplicatePasses": false }
+  },
+  "layers": [
+    {
+      "id": "L1-shell",
+      "name": "外壳、入口与服务拓扑",
+      "assemblies": ["VisionMaster.exe", "vServerApp"],
+      "currentProjects": ["VisionEditor"],
+      "status": "partial",
+      "gap": "单进程替代 VisionMaster.exe + vServerApp 双进程；菜单四模式/加密入口/服务 RPC 未还原",
+      "units": "A02、A05、A08"
+    },
+    {
+      "id": "L2-model",
+      "name": "方案/流程/模块文档模型与动态 IO",
+      "assemblies": ["VM.Core", "VMControls.Data"],
+      "currentProjects": ["VisionFramework", "VisionEditor.Core"],
+      "status": "partial",
+      "gap": "字符串 Id 与静态端口替代数值 ModuleId/GUID 与 SDK 动态 IO；全局变量域缺失",
+      "units": "B01、B02、B04、C01、C03"
+    },
+    {
+      "id": "L3-runtime-sdk",
+      "name": "执行运行时与平台 SDK",
+      "assemblies": ["VM.PlatformSDKCS", "iMVS-6000PlatformSDKCS"],
+      "currentProjects": ["VisionFramework"],
+      "status": "absent",
+      "gap": "托管顺序 await 替代 SDK 提交/回调状态机；iMVS-6000 平台服务（相机/通信/设备）几乎未动",
+      "units": "C02、C05、C06、C08"
+    },
+    {
+      "id": "L4-canvas-controls",
+      "name": "画布、连接与通用控件",
+      "assemblies": ["VMControls.WPF", "VM.Controls", "VMBaseControls"],
+      "currentProjects": ["VisionEditor", "VisionUi", "VisionEditor.Core"],
+      "status": "partial",
+      "gap": "ListView/DiagramItem/Adorner 控件树被自绘 Canvas 取代；几何与交互按源码对齐但控件级不等价",
+      "units": "A03、A04、B06"
+    },
+    {
+      "id": "L5-config",
+      "name": "配置框架与 XML 参数模型",
+      "assemblies": ["DynamicObjectConfigControl", "Apps.XmlParser", "Apps.XmlUI", "ExtensionParamUserControl"],
+      "currentProjects": ["VisionPluginContracts"],
+      "status": "partial",
+      "gap": "并列配置模型/公共宿主已建，但页签-分组-展示键-模板目录覆盖不全，部分工具仍用旧窗口工厂",
+      "units": "A06、B01、B06"
+    },
+    {
+      "id": "L6-display",
+      "name": "显示对象、绘制与主题",
+      "assemblies": ["VM.PcUI", "Apps.Style", "Apps.ColorFun", "Apps.PcUI.ImageSource"],
+      "currentProjects": ["VisionUi", "VisionPluginContracts"],
+      "status": "partial",
+      "gap": "显示对象族/调色板/绘制器只覆盖已用到的图像与几何子集",
+      "units": "B04、B06"
+    },
+    {
+      "id": "L7-migration-hosts",
+      "name": "版本迁移、外部调用与工具宿主",
+      "assemblies": ["CompatibleTool", "VM.ExternalCall", "ImageSourceModuleControl"],
+      "currentProjects": ["VisionPlugins.ImageSource", "SolutionInspector"],
+      "status": "partial",
+      "gap": "无 CompatibleTool 迁移器；外部调用通道未实现；图像源宿主仅覆盖自有插件",
+      "units": "D04、D07"
+    },
+    {
+      "id": "L8-tool-plugins",
+      "name": "工具插件样本",
+      "assemblies": ["IMVSGroup", "IfModule", "IfBranchModule", "BranchModule_STD", "BranchStringCpmL"],
+      "currentProjects": ["VisionPlugins.IfModule", "VisionPlugins.BranchModule", "VisionPlugins.BranchString", "VisionPlugins.Calibration"],
+      "status": "partial",
+      "gap": "样本树 5 个；11 工具批次已闭 3，其余在制；162 目录其余未纳入",
+      "units": "插件线"
+    }
+  ],
+  "currentProjects": [
+    { "name": "VisionEditor", "layer": "L1-shell/L4-canvas", "role": "WPF 宿主：壳、画布、配置宿主、运行入口" },
+    { "name": "VisionEditor.Core", "layer": "L2-model/L4-canvas", "role": "图文档、历史、路由、插件 UI 定义" },
+    { "name": "VisionFramework", "layer": "L2-model/L3-runtime", "role": "契约、执行器、校验、持久化、Group/变量" },
+    { "name": "VisionPluginContracts", "layer": "L5-config/L6-display", "role": "配置模型/模板/宿主、显示契约" },
+    { "name": "VisionUi", "layer": "L4-canvas/L6-display", "role": "主题与控件资源" },
+    { "name": "VisionData", "layer": "独立算法层", "role": "不可变图像/几何/结果值" },
+    { "name": "VisionCore", "layer": "独立算法层", "role": "独立算法实现" },
+    { "name": "VisionIO", "layer": "独立算法层", "role": "BMP 读取" },
+    { "name": "VisionModules", "layer": "独立算法层", "role": "内置模块适配" },
+    { "name": "VisionEditor + VisionPlugins.*", "layer": "L8-tool-plugins", "role": "工具插件实现" },
+    { "name": "VisionWorkbench/VisionWorkflow/VisionRunner/VisionGraphRunner", "layer": "实验入口", "role": "早期验证入口，不属主图编辑器" },
+    { "name": "SolutionInspector", "layer": "工具", "role": "原 .sol 只读格式调查" }
+  ],
+  "priorities": [
+    {
+      "rank": 1,
+      "id": "P0-EXECUTION-BACKEND",
+      "item": "执行后端抽象（SDK/服务提交-回调 vs 托管 await）",
+      "layers": ["L3-runtime-sdk", "L1-shell"],
+      "fanInComponents": ["VM.PlatformSDKCS", "vServerApp", "iMVS-6000PlatformSDKCS"],
+      "why": "原厂执行是『命令提交 + 平台事件回调 + 结果缓存』；当前逐节点 await。影响所有工具的状态、错误码、自运行与连续执行语义，是最上游的机制偏差。",
+      "blocks": ["C02.2", "C05.3", "C06", "C08.3", "所有工具结果语义"],
+      "firstAction": "落 IExecutionBackend（in-process / sdk-rpc）+ 事件→结果映射，不改工具实现"
+    },
+    {
+      "rank": 2,
+      "id": "P0-MODEL-IDENTITY",
+      "item": "文档/模块身份与动态 IO",
+      "layers": ["L2-model"],
+      "fanInComponents": ["VM.Core", "VMControls.Data"],
+      "why": "数值 ModuleId/GUID/动态端口是原厂连接、订阅、结果缓存与保存的键；当前用字符串 Id 与静态端口，跨版本与动态输出必然偏离。",
+      "blocks": ["B01.2", "B02.3", "B04.3", "C01.3", "C03.2"],
+      "firstAction": "为 NodeDocument 增加原生身份字段与动态 IO 描述映射，保持既有 JSON 兼容"
+    },
+    {
+      "rank": 3,
+      "id": "P0-SOLUTION-CONTAINER",
+      "item": "方案容器与原生帧（.sol / ModuleFrame）",
+      "layers": ["L2-model", "L7-migration-hosts"],
+      "fanInComponents": ["VM.Core", "CompatibleTool"],
+      "why": "当前 .vmx.json 与原厂容器互不兼容，导致导入/导出、加密、版本迁移、跨版本方案全部无法闭环。",
+      "blocks": ["D01", "D03", "D04", "D05", "跨版本验收"],
+      "firstAction": "先做只读 NativeSolutionAdapter（.sol 外层 + ModuleFrame 帧边界），再谈写入"
+    },
+    {
+      "rank": 4,
+      "id": "P1-CONFIG-FRAMEWORK",
+      "item": "配置框架覆盖（页签/分组/展示键/模板目录）",
+      "layers": ["L5-config"],
+      "fanInComponents": ["Apps.XmlParser", "DynamicObjectConfigControl", "Apps.XmlUI"],
+      "why": "原厂配置源码 87,906 行/607 类型，当前 VisionPluginContracts 4,847 行/180 类型，是最大的『结构已对、覆盖不足』缺口；直接影响所有工具的配置窗一致性。",
+      "blocks": ["A06", "B01.1", "B06.1", "B06.2"],
+      "firstAction": "按原厂 NameValueItem/ParamGroup/模板键逐族补目录并加缺口清单"
+    },
+    {
+      "rank": 5,
+      "id": "P1-DISPLAY-PAINT",
+      "item": "显示对象与绘制层",
+      "layers": ["L6-display"],
+      "fanInComponents": ["VM.PcUI", "Apps.Style", "Apps.ColorFun"],
+      "why": "显示对象族（图形/文本/区域/掩膜）与主题绘制决定所有工具结果的可观察输出，当前只覆盖用到的子集。",
+      "blocks": ["B04.2", "B06.3", "各工具显示验收"],
+      "firstAction": "以 ToolDisplay* 契约为边界，按原 VM.PcUI 类型族补齐缺失绘制与样式"
+    },
+    {
+      "rank": 6,
+      "id": "P2-CANVAS-CONTROLS",
+      "item": "画布控件树与装饰器（ListView/DiagramItem/Adorner）",
+      "layers": ["L4-canvas-controls"],
+      "fanInComponents": ["VM.Controls", "VMControls.WPF", "VMBaseControls"],
+      "why": "fanIn 最高（VM.Controls 230），但当前自绘 Canvas 已按源码对齐几何与交互；整树替换代价大、收益低。",
+      "blocks": ["A03.x", "A04.x 的控件级等价（非行为级）"],
+      "firstAction": "不重写；继续按源码补齐缺失的命中/装饰器/边界行为"
+    },
+    {
+      "rank": 7,
+      "id": "P2-SHELL-ENTRIES",
+      "item": "外壳入口（四模式菜单/工具栏/加密/授权）",
+      "layers": ["L1-shell"],
+      "fanInComponents": ["VisionMaster.exe"],
+      "why": "入口完整性是防止『分析链因入口遗漏而缺失』的必要核查项；静态声明 214 条、已定位 222/222 方法，但执行效果链未闭合。",
+      "blocks": ["A05.1", "A05.3", "A08.2", "A08.3"],
+      "firstAction": "按 entry-inventory 逐载体闭合『入口→命令→状态→持久化/执行』"
+    },
+    {
+      "rank": 8,
+      "id": "P3-DEVICE-SERVICES",
+      "item": "平台服务与设备（相机/通信/全局触发/脚本）",
+      "layers": ["L3-runtime-sdk"],
+      "fanInComponents": ["iMVS-6000PlatformSDKCS"],
+      "why": "92,225 行/1,389 类型是单一最大程序集，目前 C06 三单元全部 not_started，是当前最大的未取证面。",
+      "blocks": ["C06.1", "C06.2", "C06.3", "真实设备验收"],
+      "firstAction": "先做只读盘点（服务发现/连接/回调），不做设备操作"
+    },
+    {
+      "rank": 9,
+      "id": "P3-TOOL-PLUGINS",
+      "item": "工具插件（11 批次 + 162 目录）",
+      "layers": ["L8-tool-plugins"],
+      "fanInComponents": ["IMVSGroup", "IfModule", "IfBranchModule", "BranchModule_STD", "BranchStringCpmL"],
+      "why": "工具面依赖前 6 项机制；按整工具计分（当前 3/11，标定 10/10 已闭）。",
+      "blocks": ["IfModule", "IfBranchModule", "IMVSContourMatchModu", "IMVSGrayMatchModuVA", "8 个待接"],
+      "firstAction": "保持现有批次节奏，不回填已完成工具"
+    }
+  ]
+}

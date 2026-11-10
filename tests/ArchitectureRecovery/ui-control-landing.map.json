@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "note": "主界面共享控件层落地清单：按用户截图与既有 A 线证据登记的四类控件。每条关联既有 WBS 工作包与 E0–E7 门，不改动 32/96/162/48 口径。控件状态是「完整逆向」这一新验收标准的状态，不等于既有 WBS 三层状态。",
+  "evidenceBoundary": "结构化证据（原厂源码树、工具目录、架构基线、WBS）已齐；C03 数值差分 45/971486 对 47/973202 仍开放、S0-not-fully-closed、5 项 unknown、REA native provider 不可用。原厂截图只作差异信号与控件范围识别，不作实现规格。",
+  "p0Prerequisites": [
+    {
+      "id": "BLK-S0-C03",
+      "title": "先闭 S0/C03 原厂 Blob 数值差分",
+      "status": "open",
+      "differential": {
+        "originalVm": { "blobCount": 45, "totalArea": 971486 },
+        "directSdkAndLocal": { "blobCount": 47, "totalArea": 973202 },
+        "delta": { "blobCount": 2, "totalArea": 1716 }
+      },
+      "unknowns": 5,
+      "productChanges": 0,
+      "s0GateStatus": "S0-not-fully-closed",
+      "reaProvider": "unavailable-on-current-host; ghidra not_configured, hopper unsupported_host, ida not_configured",
+      "releaseCondition": "取得区域对象、像素缓冲与 native 结果数组，并复跑 S0.1/S0.2；未取得前不改产品算法、不批量实施控件",
+      "evidencePaths": [
+        "docs/VM-LOCAL-RESTORATION-STATUS.json",
+        "analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json",
+        "analysis/full-audit/batch1-20261107/C03/c03-phase1-s0-gate-check.json"
+      ]
+    }
+  ],
+  "acceptanceLevels": [
+    { "id": "sourceClosure", "label": "源码级闭环", "rule": "六段链（入口/绑定命令/状态读写/事件回调/持久化或执行效果/异常清理）+ 资源/CIL + 准确类型与成员全部有证据" },
+    { "id": "originalDifferential", "label": "原厂同状态差分", "rule": "与截图中原厂同状态、同输入的操作级差分通过；截图只作差异信号，不作规格" },
+    { "id": "localReRun", "label": "自研操作级复跑", "rule": "在当前构建产物复跑并记录退出码、报告哈希与差分；人工主机验收单列" }
+  ],
+  "groups": [
+    { "id": "toolbox-loader", "name": "工具箱 + 工具加载", "description": "左侧竖排分类图标、工具目录、发现注册与缺插件体验", "workPackageIds": ["A01", "A07"], "gateIds": ["E0", "E1", "E4", "E5"] },
+    { "id": "image-result", "name": "图像显示 + 模块结果", "description": "图像/模块结果 Tab、ROI 与显示叠层、图像源列表、运行全部与结果绑定", "workPackageIds": ["A06", "B04", "B06"], "gateIds": ["E1", "E2", "E4", "E5"] },
+    { "id": "canvas-config", "name": "流程画布 + 配置面板", "description": "流程 Tab/Group、节点连线视口、工具参数配置页与公共配置模型", "workPackageIds": ["A03", "A04", "A05", "B01", "B06"], "gateIds": ["E1", "E2", "E4", "E5"] },
+    { "id": "result-shell", "name": "结果区 + 壳控件", "description": "历史结果/帮助、运行序号/时间/模块数据表格、顶部菜单工具栏与底部状态栏", "workPackageIds": ["A05", "A06", "A08"], "gateIds": ["E1", "E2", "E3", "E4", "E5", "E7"] }
+  ],
+  "controls": [
+    {
+      "id": "UI-C01", "name": "左侧竖排工具箱分类图标", "group": "toolbox-loader",
+      "originalEvidencePaths": ["docs/reverse/A01-loader-batch1.md", "docs/reverse/A01-palette-lifecycle-implementation-batch15.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A01", "A07"], "relatedGateIds": ["E1", "E2", "E4"],
+      "firstAction": "逐图标定位 XAML 资源键、分类映射与启用条件的准确成员",
+      "unknowns": ["分类图标到原厂 14 类目录的绑定成员未取证", "禁用态与运行模式切换未取证"],
+      "evidenceHint": "截图左侧 13 个竖排图标；工具箱分类资源声明需从 XAML 入口清单对账"
+    },
+    {
+      "id": "UI-C02", "name": "工具目录与工具项列表", "group": "toolbox-loader",
+      "originalEvidencePaths": ["docs/reverse/A01-loader-batch1.md", "docs/architecture-recovery/xaml-entry-inventory.json"],
+      "sourceMembers": ["ToolBoxData.UpdateLoad", "IMVSGroup.LoadAssemblies"],
+      "relatedWorkPackageIds": ["A01", "A07"], "relatedGateIds": ["E1", "E4", "E5"],
+      "firstAction": "追 UpdateLoad/LoadAssemblies 的调用链、参数与失败分支，登记工具目录 XML 与 DLL 身份",
+      "unknowns": ["动态发现是否闭合未取证", "工具项排序与分类展开规则未取证"],
+      "evidenceHint": "既有证据已提供 ToolBoxData.UpdateLoad / IMVSGroup.LoadAssemblies 审计线索"
+    },
+    {
+      "id": "UI-C03", "name": "工具发现 / 注册与装载", "group": "toolbox-loader",
+      "originalEvidencePaths": ["docs/reverse/A07-managed-loader-partial-batch16.md", "docs/reverse/A01-loader-batch1.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A07", "A01"], "relatedGateIds": ["E0", "E4", "E5"],
+      "firstAction": "固定原件身份（路径/SHA-256/MVID）与程序集装载生命周期",
+      "unknowns": ["重复启动、版本冲突、已有方案打开时的注册行为未取证"],
+      "evidenceHint": "A07 通用发现接入仍为 self_review"
+    },
+    {
+      "id": "UI-C04", "name": "缺插件 / 加载失败体验", "group": "toolbox-loader",
+      "originalEvidencePaths": ["docs/reverse/A-loader-failure-matrix-batch19.md", "docs/reverse/A07-managed-loader-partial-batch16.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A01", "A07"], "relatedGateIds": ["E3", "E5"],
+      "firstAction": "登记失败码、提示载体、取消与释放路径，补齐异常/清理段",
+      "unknowns": ["错误码与释放调用未取得运行时证据"],
+      "evidenceHint": "A-loader-failure-matrix-batch19 已有失败矩阵底稿"
+    },
+    {
+      "id": "UI-C05", "name": "图像 / 模块结果 Tab 切换", "group": "image-result",
+      "originalEvidencePaths": ["docs/reverse/A06-frontend-gate-batch24.md", "docs/reverse/A03-tabs-batch2.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "A03"], "relatedGateIds": ["E1", "E2", "E4"],
+      "firstAction": "定位 Tab 资源声明、SelectionChanged handler 与两侧面板可见性状态写入",
+      "unknowns": ["选中态持久化与切换时的结果缓存生命周期未取证"],
+      "evidenceHint": "截图右侧「图像 / 模块结果」双 Tab"
+    },
+    {
+      "id": "UI-C06", "name": "图像显示画布（缩放/平移/ROI 与显示叠层）", "group": "image-result",
+      "originalEvidencePaths": ["docs/reverse/A-container-zoom-implementation-batch12.md", "docs/reverse/A03-zoom-history-batch3.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "B04", "B06"], "relatedGateIds": ["E2", "E4", "E5"],
+      "firstAction": "按显示对象族逐项对账绘制器、几何变换、ROI 叠层与鼠标命中链",
+      "unknowns": ["原厂显示对象类型与叠层次序未逐键对账", "FullScreen/坐标变换边界未取证"],
+      "evidenceHint": "截图右侧圆形检测结果图像；显示对象与 ROI 属 L6/公共框架"
+    },
+    {
+      "id": "UI-C07", "name": "图像源缩略图列表与自动切换", "group": "image-result",
+      "originalEvidencePaths": ["docs/reverse/A06-frontend-gate-batch24.md", "docs/reverse/A-runtime-editor-batch18.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "B01"], "relatedGateIds": ["E2", "E4", "E5"],
+      "firstAction": "追「图像源 (1/1)」计数、缩略图集合绑定与自动切换复选框状态机",
+      "unknowns": ["集合基数与循环位置状态未取证", "自动切换触发时序未取证"],
+      "evidenceHint": "截图「图像源 (1/1)」与「自动切换」复选框"
+    },
+    {
+      "id": "UI-C08", "name": "运行全部 / 翻页 / 布局按钮", "group": "image-result",
+      "originalEvidencePaths": ["docs/reverse/A06-frontend-gate-batch24.md", "docs/reverse/A05-entry-reconciliation-batch17.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "C02"], "relatedGateIds": ["E2", "E4", "E5"],
+      "firstAction": "逐按钮定位命令绑定、执行调度与失败保持状态",
+      "unknowns": ["运行全部与连续执行/停止的调度关系未取证", "错误码未取证"],
+      "evidenceHint": "截图「运行全部」下拉、前后翻页与布局按钮"
+    },
+    {
+      "id": "UI-C09", "name": "模块结果数据绑定", "group": "image-result",
+      "originalEvidencePaths": ["docs/reverse/A06-close-dependency-batch13.md", "docs/reverse/A-runtime-editor-batch18.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "B04"], "relatedGateIds": ["E4", "E5"],
+      "firstAction": "追结果缓存、事件回调到模块结果面板的数据流与字段映射",
+      "unknowns": ["结果对象字段与缓存生命周期未取证", "失败结果与空结果展示未取证"],
+      "evidenceHint": "模块结果 Tab 的字段来源需与 C03 结果数组补证联动"
+    },
+    {
+      "id": "UI-C10", "name": "流程 Tab 与 Group 导航", "group": "canvas-config",
+      "originalEvidencePaths": ["docs/reverse/A03-tabs-batch2.md", "docs/reverse/A03-closure-source-review-batch12.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A03", "A01"], "relatedGateIds": ["E1", "E2", "E4"],
+      "firstAction": "定位「流程1 >」面包屑、Tab 新建/切换/重命名与 Group 进入退出的准确成员",
+      "unknowns": ["Group 身份、所有权与复制语义未闭合", "A03 当前为 blocked"],
+      "evidenceHint": "截图左上「流程1 >」与流程 Tab"
+    },
+    {
+      "id": "UI-C11", "name": "节点卡片 / 连线 / 视口", "group": "canvas-config",
+      "originalEvidencePaths": ["docs/reverse/A03-canvas-replacement-fix.md", "docs/reverse/A-canvas-implementation-batch10.md", "docs/architecture-recovery/xaml-connector-evidence.json"],
+      "sourceMembers": ["DiagramItem", "Connector.HitTesting"],
+      "relatedWorkPackageIds": ["A04", "A03"], "relatedGateIds": ["E2", "E4", "E5"],
+      "firstAction": "核对命中、视口、端口悬停与连线预览的源码级行为，并做原厂同状态差分",
+      "unknowns": ["原厂 ItemsPage(ListView)+DiagramItem+Adorner 控件树与自绘 Canvas 的差异边界未逐项闭合"],
+      "evidenceHint": "截图左下节点框与网格画布；MF-02 hover 交互已有本地实现与回归"
+    },
+    {
+      "id": "UI-C12", "name": "工具参数配置页与公共配置模型", "group": "canvas-config",
+      "originalEvidencePaths": ["docs/reverse/A06-frontend-gate-batch24.md", "docs/architecture-recovery/xaml-handler-map.json"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "B01", "B06"], "relatedGateIds": ["E1", "E4", "E5"],
+      "firstAction": "按原厂配置声明逐键对账参数模型、模板分派、编辑器生命周期与订阅",
+      "unknowns": ["共享配置框架覆盖不足（基线 P1-4 约 5.5% 行覆盖）", "工具专属参数页与公共模板边界未取证"],
+      "evidenceHint": "截图未展开配置页，但它是工具层落地的前置公共框架"
+    },
+    {
+      "id": "UI-C13", "name": "画布手势 / 右键菜单 / 路由", "group": "canvas-config",
+      "originalEvidencePaths": ["docs/reverse/A05-input-registration-batch31.md", "docs/reverse/A03-binding-batch4.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A04", "A05"], "relatedGateIds": ["E2", "E3", "E4"],
+      "firstAction": "登记输入注册、路由事件、命令映射与反射 resolver 的成员级路径",
+      "unknowns": ["隐藏命名声明 16 项与后台触发入口未闭合", "手势冲突与取消路径未取证"],
+      "evidenceHint": "入口台账 hiddenNamedDeclarations=16、E3 后台与反向入口 open"
+    },
+    {
+      "id": "UI-C14", "name": "历史结果 / 帮助 Tab", "group": "result-shell",
+      "originalEvidencePaths": ["docs/reverse/A06-frontend-gate-batch24.md", "docs/reverse/A05-full-menu-map-batch17.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "A08"], "relatedGateIds": ["E1", "E2", "E4"],
+      "firstAction": "定位 Tab 资源声明、历史结果集合绑定与帮助内容载体",
+      "unknowns": ["历史记录上限、清理与失败记录展示未取证"],
+      "evidenceHint": "截图下方「历史结果 / 帮助」双 Tab"
+    },
+    {
+      "id": "UI-C15", "name": "运行序号 / 时间 / 模块数据表格", "group": "result-shell",
+      "originalEvidencePaths": ["docs/reverse/A06-close-dependency-batch13.md", "docs/architecture-recovery/window-layout.edges.json"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A06", "A08"], "relatedGateIds": ["E4", "E5", "E6"],
+      "firstAction": "追表格列定义、数据绑定、排序与运行序号生成规则，并做入口与模型双向对账",
+      "unknowns": ["列集合与模块数据字段映射未取证", "运行序号递增与清空时机未取证"],
+      "evidenceHint": "截图「运行序号 / 时间 / 模块数据」表头"
+    },
+    {
+      "id": "UI-C16", "name": "顶部菜单与工具栏图标", "group": "result-shell",
+      "originalEvidencePaths": ["docs/reverse/A05-full-menu-map-batch17.md", "docs/reverse/A05-entry-reconciliation-batch17.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A05", "A08"], "relatedGateIds": ["E1", "E2", "E3", "E4"],
+      "firstAction": "把 53 个菜单命名声明、15 个工具栏声明逐项追到 handler 与启用条件",
+      "unknowns": ["closedEntryChains=0", "隐藏命名声明 16 项与四模式菜单语义未闭合"],
+      "evidenceHint": "截图顶部「文件/设置/工具/系统/帮助」与 12 个工具栏图标"
+    },
+    {
+      "id": "UI-C17", "name": "底部状态栏（耗时 / 缩放 / 版本）", "group": "result-shell",
+      "originalEvidencePaths": ["docs/reverse/A08-shell-input-batch30.md", "docs/reverse/A-shell-implementation-batch11.md"],
+      "sourceMembers": [], "relatedWorkPackageIds": ["A08", "A02"], "relatedGateIds": ["E2", "E4", "E5", "E7"],
+      "firstAction": "追流程/模块/算法三段耗时、缩放比例与版本号的写入点与刷新事件",
+      "unknowns": ["计时起点与单位、DPI 缩放显示规则未取证", "状态栏与执行会话的生命周期未取证"],
+      "evidenceHint": "截图底部「流程—ms / 模块—ms / 算法—ms / 100% / V4.4.0 Build20250506」"
+    }
+  ]
+}

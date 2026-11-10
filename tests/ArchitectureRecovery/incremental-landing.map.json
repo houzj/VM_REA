@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "note": "渐进落地路线：以最小纵切 ImageSource→Blob→显示 为渐进单位，批次 0 为 S0/C03 前置补证。每步只登记既有证据路径、既有真实命令与退出判据；未取证处标 unknown，状态由派生层统一置 not_started，不预填 done。",
+  "evidenceBoundary": "S0/C03 差分 45/971486 对 47/973202 仍开放、S0-not-fully-closed、5 项 unknown、产品改动 0、REA native provider 不可用。C01 历史报告 18/18 passed 是既有运行证据，不是本轮复跑；复跑命令只登记待执行，不自动跑方案测试。",
+  "allowedCommands": [
+    "dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore"
+  ],
+  "batches": [
+    {
+      "id": "B0",
+      "title": "S0/C03 前置补证",
+      "scope": "把开放差分、5 项 unknown 与 S0.1/S0.2 未重跑的事实固定成可复核证据卡；未闭不得进入 B1 实施类动作",
+      "prerequisites": [],
+      "status": "open",
+      "steps": [
+        {
+          "id": "B0-1",
+          "title": "复核差分两侧与 5 项 unknown",
+          "evidencePaths": [
+            "docs/VM-LOCAL-RESTORATION-STATUS.json",
+            "analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json",
+            "analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-review.json",
+            "analysis/full-audit/batch1-20261107/C01/runtime-report.json"
+          ],
+          "sourceMembers": ["mBlobFind.Results", "IMVS_PF_BLOBFIND_MODU_INFO", "BlobFindResult()"],
+          "commands": [],
+          "reportPaths": [
+            "analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-review.json",
+            "analysis/full-audit/batch1-20261107/C03/c03-incremental-batch0-b1.json"
+          ],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["45/971486 与 47/973202 原样并列，不抹平", "5 项 unknown 逐项登记解除条件", "每个结论标注证据类型"],
+          "unknowns": ["wrapper 侧 FullScreen 转换", "SDK Run 前确切输入图像/边缘字节", "45 元素结果向量与 BinaryImage/BlobImage 原始缓冲区"]
+        },
+        {
+          "id": "B0-2",
+          "title": "登记 REA 补证边界与解除条件",
+          "evidencePaths": [
+            "analysis/full-audit/batch1-20261107/C03/rea-native-provider-diagnostic.json",
+            "analysis/full-audit/batch1-20261107/C03/c03-next-evidence-gate.json",
+            "docs/reverse/C03-phase1-evidence-review.md"
+          ],
+          "sourceMembers": [],
+          "commands": [],
+          "reportPaths": ["analysis/full-audit/batch1-20261107/C03/c03-next-evidence-gate.json"],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["provider 不可用原样登记，不在本阶段修复", "证据门「未捕获区域对象/像素缓冲/native 结果数组前不改产品算法」原样保留"],
+          "unknowns": ["ghidra / ida 未配置、hopper 不支持当前主机"]
+        },
+        {
+          "id": "B0-3",
+          "title": "登记 S0.1/S0.2 未重跑与复跑命令",
+          "evidencePaths": [
+            "analysis/full-audit/batch1-20261107/C03/c03-phase1-s0-gate-check.json",
+            "analysis/full-audit/batch1-20261107/C01/runtime-report.json",
+            "tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj"
+          ],
+          "sourceMembers": [],
+          "commands": ["dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore"],
+          "reportPaths": ["analysis/full-audit/batch1-20261107/C01/runtime-report.json"],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["历史报告不得冒充本轮复跑", "命令只登记待执行，需用户明确说开始测试/验证才运行", "退出码与新报告哈希在复跑后补登记"],
+          "unknowns": ["本轮是否复跑需用户另行授权"]
+        }
+      ]
+    },
+    {
+      "id": "B1",
+      "title": "最小纵切：ImageSource→Blob→显示",
+      "scope": "先打通一条可运行链路，按输入字节、Blob 调用链、显示输出、闭环复跑四步推进；B0 未闭时只做静态取证，不改产品算法",
+      "prerequisites": ["B0"],
+      "status": "blocked",
+      "steps": [
+        {
+          "id": "B1-1",
+          "title": "图像源入口与输入字节",
+          "evidencePaths": [
+            "src/VisionPlugins.ImageSource/ImageSourcePlugin.cs",
+            "src/VisionPlugins.ImageSource/ImageAcquisitionPlugin.cs",
+            "analysis/full-audit/batch1-20261107/C01/runtime-report.json",
+            "analysis/full-audit/batch1-20261107/C01/image-source-vertical-slice.vmx.json",
+            "docs/reverse/C01-framework-image-source-vertical-slice.md"
+          ],
+          "sourceMembers": [
+            "ImageSourcePlugin.CreateRuntime", "ImageSourcePlugin.GetImages", "ImageSourcePlugin.ExecuteAsync",
+            "ImageAcquisitionPlugin.PrepareSave", "ImageAcquisitionPlugin.ExecuteAsync"
+          ],
+          "commands": [],
+          "reportPaths": [
+            "analysis/full-audit/batch1-20261107/C01/runtime-report.json",
+            "analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json"
+          ],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["登记图像源入口文件、准确类型与输入字节证据路径", "输入文件与哈希可复核", "与 C01 现有报告字段对齐"],
+          "unknowns": ["原厂 Run 前输入像素字节未捕获"]
+        },
+        {
+          "id": "B1-2",
+          "title": "Blob 模块调用链与结果向量",
+          "evidencePaths": [
+            "src/VisionCore/Algorithms.cs",
+            "src/VisionModules/BuiltinModules.cs",
+            "src/VisionWorkflow/OfflineCircle.cs",
+            "analysis/full-audit/batch1-20261107/C01/image-source-blob-vertical-slice.vmx.json",
+            "analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json"
+          ],
+          "sourceMembers": [
+            "ProcessOutput", "LimitJudge", "Algorithms.ConnectedComponents8", "Algorithms.FitCircle",
+            "BuiltinModules.RegisterAll", "BuiltinModules.Adapter.ExecuteAsync", "OfflineCircleExecutor.Run"
+          ],
+          "commands": [],
+          "reportPaths": [
+            "analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json",
+            "analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json"
+          ],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["六段链中绑定/命令、状态读写、事件/回调逐段标注", "ProcessOutput 与 LimitJudge 结果边界原样保留", "不把 47/973202 写成 45/971486 的解释结论"],
+          "unknowns": [
+            "本地侧 Blob 结果向量与 SDK result vtable +0x08/+0x28 的字段映射未逐项闭合",
+            "45 元素向量未捕获",
+            "9 个 Components.* 复合输出名的投影方式待源码级取证"
+          ]
+        },
+        {
+          "id": "B1-3",
+          "title": "显示与 overlay 输出",
+          "evidencePaths": [
+            "src/VisionWorkbench/ImageCanvas.cs",
+            "src/VisionRunner/OverlayPng.cs",
+            "src/VisionFramework/GraphExecutor.cs",
+            "analysis/full-audit/batch1-20261107/C01/image-source-group-vertical-slice.vmx.json"
+          ],
+          "sourceMembers": [
+            "ImageCanvas.SetImage", "ImageCanvas.SetOverlay", "OverlayPng.Write", "GraphExecutor.RunAsync"
+          ],
+          "commands": [],
+          "reportPaths": ["analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json"],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["登记显示画布、overlay 输出文件与执行器入口", "输出名清单与保存/重载状态可复核", "不以本地显示一致推断原厂 parity"],
+          "unknowns": [
+            "Group 输出名 width（小写）整串未命中，大小写契约待核对",
+            "三份 vmx 的 Procedures/Resources 差异已登记，行为含义未取证"
+          ]
+        },
+        {
+          "id": "B1-4",
+          "title": "纵切闭环复跑登记（待执行）",
+          "evidencePaths": [
+            "tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj",
+            "analysis/full-audit/batch1-20261107/C01/runtime-report.json"
+          ],
+          "sourceMembers": [],
+          "commands": ["dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore"],
+          "reportPaths": ["analysis/full-audit/batch1-20261107/C01/runtime-report.json"],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["命令登记但本阶段不执行", "复跑后记录退出码、新报告哈希、会话状态与输出名清单", "S0.1/S0.2 状态随复跑结果更新，不提前关闭"],
+          "unknowns": ["本轮是否复跑需用户明确说开始测试/验证"]
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "title": "横向扩主界面共享控件（4 类）",
+      "scope": "纵切闭环后，按 16-ui-control-landing.html 的 17 控件四类分批做源码级闭环 + 原厂差分 + 自研复跑",
+      "prerequisites": ["B0", "B1"],
+      "status": "blocked",
+      "steps": [
+        {
+          "id": "B2-1",
+          "title": "工具箱 + 工具加载（4 控件）",
+          "evidencePaths": ["docs/reverse/A01-loader-batch1.md", "docs/reverse/A07-managed-loader-partial-batch16.md"],
+          "sourceMembers": ["ToolBoxData.UpdateLoad", "IMVSGroup.LoadAssemblies"],
+          "commands": [],
+          "reportPaths": [],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["4 控件逐项完成三级验收", "未闭合段标 unknown 并给出补证目标"],
+          "unknowns": ["动态发现与失败分支未取证"]
+        },
+        {
+          "id": "B2-2",
+          "title": "图像显示 + 模块结果（5 控件）",
+          "evidencePaths": ["docs/reverse/A06-frontend-gate-batch24.md", "docs/reverse/A-container-zoom-implementation-batch12.md"],
+          "sourceMembers": [],
+          "commands": [],
+          "reportPaths": [],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["5 控件逐项完成三级验收", "显示对象与 ROI 叠层逐项对账"],
+          "unknowns": ["原厂显示对象类型与叠层次序未逐键对账"]
+        },
+        {
+          "id": "B2-3",
+          "title": "流程画布 + 配置面板（4 控件）",
+          "evidencePaths": ["docs/reverse/A03-tabs-batch2.md", "docs/reverse/A03-canvas-replacement-fix.md"],
+          "sourceMembers": ["DiagramItem", "Connector.HitTesting"],
+          "commands": [],
+          "reportPaths": [],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["4 控件逐项完成三级验收", "节点/连线/视口与原厂同状态差分通过"],
+          "unknowns": ["原厂 ItemsPage(ListView)+DiagramItem+Adorner 控件树差异边界未闭合"]
+        },
+        {
+          "id": "B2-4",
+          "title": "结果区 + 壳控件（4 控件）",
+          "evidencePaths": ["docs/reverse/A05-full-menu-map-batch17.md", "docs/reverse/A08-shell-input-batch30.md"],
+          "sourceMembers": [],
+          "commands": [],
+          "reportPaths": [],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["4 控件逐项完成三级验收", "E0–E7 八门逐门闭合"],
+          "unknowns": ["closedEntryChains 当前为 0"]
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "title": "162 目录工具分批落地",
+      "scope": "共享机制稳定后按 14 个原厂分类逐批做工具级源码级逆向，全部仍是待逆向实现目标",
+      "prerequisites": ["B0", "B1", "B2"],
+      "status": "blocked",
+      "steps": [
+        {
+          "id": "B3-1",
+          "title": "按 14 分类排批次与阻塞项",
+          "evidencePaths": ["docs/plugins/inventory.json"],
+          "sourceMembers": [],
+          "commands": [],
+          "reportPaths": [],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["162 工具全部登记批次与任务卡入口", "161 未建立 + 1 partial 状态原样保留"],
+          "unknowns": ["共享框架未稳定前不启动工具实现"]
+        },
+        {
+          "id": "B3-2",
+          "title": "逐工具源码级取证与实现",
+          "evidencePaths": ["docs/plugins/inventory.json"],
+          "sourceMembers": [],
+          "commands": [],
+          "reportPaths": [],
+          "expectedOutputPaths": [],
+          "exitCriteria": ["每工具身份/资源哈希/参数 IO/Process native/运行对比/unknown 六项闭合", "不把测试通过写成 parity"],
+          "unknowns": ["逐工具 native 函数体受当前 REA provider 限制"]
+        }
+      ]
+    }
+  ]
+}

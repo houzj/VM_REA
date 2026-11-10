@@ -1,0 +1,2255 @@
+{
+    "schemaVersion":  1,
+    "auditDate":  "2026-11-10",
+    "generatedUtc":  "2026-11-10T01:12:08.2889791Z",
+    "sourceInventory":  "analysis/full-audit/source-inventory/source-inventory.json",
+    "mappingTable":  "tests/ArchitectureRecovery/architecture-baseline.map.json",
+    "regenerate":  "dotnet run --project tests/ArchitectureRecovery/SourceInventory -c Release -- \u003croot\u003e; powershell -ExecutionPolicy Bypass -File tests/ArchitectureRecovery/Build-ArchitectureBaseline.ps1",
+    "method":  {
+                   "original":  "shipped decompiled source under analysis/decompiled (28 trees, 25 unique assemblies)",
+                   "current":  "current independent implementation under src (csproj-bearing projects)",
+                   "excluded":  [
+                                    "bin",
+                                    "obj",
+                                    ".a01group",
+                                    ".pending",
+                                    "TestResults",
+                                    "generated *.g.cs / AssemblyInfo.cs"
+                                ],
+                   "parse":  "Roslyn syntax-only type/member counts; no semantics, no execution",
+                   "fanIn":  "file-level using-directive edges mapped to owning tree, merged per assembly; proxy for coupling, not runtime calls",
+                   "duplicatePasses":  "VisionMaster.exe, Apps.XmlParser and VMControls.WPF each have two decompilation passes; counts use the larger pass only"
+               },
+    "totals":  {
+                   "original":  {
+                                    "assemblies":  25,
+                                    "trees":  28,
+                                    "rawCs":  2705,
+                                    "rawLines":  470162,
+                                    "uniqueCs":  2614,
+                                    "uniqueLines":  435666,
+                                    "uniqueTypes":  3503,
+                                    "uniqueMethods":  10195
+                                },
+                   "current":  {
+                                   "projects":  29,
+                                   "cs":  430,
+                                   "lines":  33324,
+                                   "types":  955
+                               }
+               },
+    "layers":  [
+                   {
+                       "id":  "L1-shell",
+                       "name":  "外壳、入口与服务拓扑",
+                       "status":  "partial",
+                       "gap":  "单进程替代 VisionMaster.exe + vServerApp 双进程；菜单四模式/加密入口/服务 RPC 未还原",
+                       "units":  "A02、A05、A08",
+                       "assemblies":  [
+                                          "VisionMaster.exe",
+                                          "vServerApp"
+                                      ],
+                       "original":  {
+                                        "lines":  9696,
+                                        "types":  58,
+                                        "methods":  262,
+                                        "fanIn":  7
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionEditor",
+                                           "lines":  6653,
+                                           "types":  126,
+                                           "methods":  653
+                                       }
+                                   ],
+                       "currentLines":  6653
+                   },
+                   {
+                       "id":  "L2-model",
+                       "name":  "方案/流程/模块文档模型与动态 IO",
+                       "status":  "partial",
+                       "gap":  "字符串 Id 与静态端口替代数值 ModuleId/GUID 与 SDK 动态 IO；全局变量域缺失",
+                       "units":  "B01、B02、B04、C01、C03",
+                       "assemblies":  [
+                                          "VM.Core",
+                                          "VMControls.Data"
+                                      ],
+                       "original":  {
+                                        "lines":  26491,
+                                        "types":  145,
+                                        "methods":  774,
+                                        "fanIn":  216
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionFramework",
+                                           "lines":  1525,
+                                           "types":  129,
+                                           "methods":  231
+                                       },
+                                       {
+                                           "project":  "VisionEditor.Core",
+                                           "lines":  2176,
+                                           "types":  51,
+                                           "methods":  187
+                                       }
+                                   ],
+                       "currentLines":  3701
+                   },
+                   {
+                       "id":  "L3-runtime-sdk",
+                       "name":  "执行运行时与平台 SDK",
+                       "status":  "absent",
+                       "gap":  "托管顺序 await 替代 SDK 提交/回调状态机；iMVS-6000 平台服务（相机/通信/设备）几乎未动",
+                       "units":  "C02、C05、C06、C08",
+                       "assemblies":  [
+                                          "VM.PlatformSDKCS",
+                                          "iMVS-6000PlatformSDKCS"
+                                      ],
+                       "original":  {
+                                        "lines":  125325,
+                                        "types":  1726,
+                                        "methods":  1828,
+                                        "fanIn":  176
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionFramework",
+                                           "lines":  1525,
+                                           "types":  129,
+                                           "methods":  231
+                                       }
+                                   ],
+                       "currentLines":  1525
+                   },
+                   {
+                       "id":  "L4-canvas-controls",
+                       "name":  "画布、连接与通用控件",
+                       "status":  "partial",
+                       "gap":  "ListView/DiagramItem/Adorner 控件树被自绘 Canvas 取代；几何与交互按源码对齐但控件级不等价",
+                       "units":  "A03、A04、B06",
+                       "assemblies":  [
+                                          "VMControls.WPF",
+                                          "VM.Controls",
+                                          "VMBaseControls"
+                                      ],
+                       "original":  {
+                                        "lines":  115925,
+                                        "types":  655,
+                                        "methods":  3350,
+                                        "fanIn":  248
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionEditor",
+                                           "lines":  6653,
+                                           "types":  126,
+                                           "methods":  653
+                                       },
+                                       {
+                                           "project":  "VisionUi",
+                                           "lines":  3315,
+                                           "types":  20,
+                                           "methods":  96
+                                       },
+                                       {
+                                           "project":  "VisionEditor.Core",
+                                           "lines":  2176,
+                                           "types":  51,
+                                           "methods":  187
+                                       }
+                                   ],
+                       "currentLines":  12144
+                   },
+                   {
+                       "id":  "L5-config",
+                       "name":  "配置框架与 XML 参数模型",
+                       "status":  "partial",
+                       "gap":  "并列配置模型/公共宿主已建，但页签-分组-展示键-模板目录覆盖不全，部分工具仍用旧窗口工厂",
+                       "units":  "A06、B01、B06",
+                       "assemblies":  [
+                                          "DynamicObjectConfigControl",
+                                          "Apps.XmlParser",
+                                          "Apps.XmlUI",
+                                          "ExtensionParamUserControl"
+                                      ],
+                       "original":  {
+                                        "lines":  87906,
+                                        "types":  607,
+                                        "methods":  2300,
+                                        "fanIn":  210
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionPluginContracts",
+                                           "lines":  4847,
+                                           "types":  180,
+                                           "methods":  318
+                                       }
+                                   ],
+                       "currentLines":  4847
+                   },
+                   {
+                       "id":  "L6-display",
+                       "name":  "显示对象、绘制与主题",
+                       "status":  "partial",
+                       "gap":  "显示对象族/调色板/绘制器只覆盖已用到的图像与几何子集",
+                       "units":  "B04、B06",
+                       "assemblies":  [
+                                          "VM.PcUI",
+                                          "Apps.Style",
+                                          "Apps.ColorFun",
+                                          "Apps.PcUI.ImageSource"
+                                      ],
+                       "original":  {
+                                        "lines":  59063,
+                                        "types":  194,
+                                        "methods":  1356,
+                                        "fanIn":  68
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionUi",
+                                           "lines":  3315,
+                                           "types":  20,
+                                           "methods":  96
+                                       },
+                                       {
+                                           "project":  "VisionPluginContracts",
+                                           "lines":  4847,
+                                           "types":  180,
+                                           "methods":  318
+                                       }
+                                   ],
+                       "currentLines":  8162
+                   },
+                   {
+                       "id":  "L7-migration-hosts",
+                       "name":  "版本迁移、外部调用与工具宿主",
+                       "status":  "partial",
+                       "gap":  "无 CompatibleTool 迁移器；外部调用通道未实现；图像源宿主仅覆盖自有插件",
+                       "units":  "D04、D07",
+                       "assemblies":  [
+                                          "CompatibleTool",
+                                          "VM.ExternalCall",
+                                          "ImageSourceModuleControl"
+                                      ],
+                       "original":  {
+                                        "lines":  7440,
+                                        "types":  96,
+                                        "methods":  235,
+                                        "fanIn":  30
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionPlugins.ImageSource",
+                                           "lines":  3259,
+                                           "types":  40,
+                                           "methods":  169
+                                       },
+                                       {
+                                           "project":  "SolutionInspector",
+                                           "lines":  224,
+                                           "types":  3,
+                                           "methods":  5
+                                       }
+                                   ],
+                       "currentLines":  3483
+                   },
+                   {
+                       "id":  "L8-tool-plugins",
+                       "name":  "工具插件样本",
+                       "status":  "partial",
+                       "gap":  "样本树 5 个；11 工具批次已闭 3，其余在制；162 目录其余未纳入",
+                       "units":  "插件线",
+                       "assemblies":  [
+                                          "IMVSGroup",
+                                          "IfModule",
+                                          "IfBranchModule",
+                                          "BranchModule_STD",
+                                          "BranchStringCpmL"
+                                      ],
+                       "original":  {
+                                        "lines":  3820,
+                                        "types":  22,
+                                        "methods":  90,
+                                        "fanIn":  5
+                                    },
+                       "current":  [
+                                       {
+                                           "project":  "VisionPlugins.IfModule",
+                                           "lines":  245,
+                                           "types":  11,
+                                           "methods":  11
+                                       },
+                                       {
+                                           "project":  "VisionPlugins.BranchModule",
+                                           "lines":  312,
+                                           "types":  20,
+                                           "methods":  35
+                                       },
+                                       {
+                                           "project":  "VisionPlugins.BranchString",
+                                           "lines":  140,
+                                           "types":  13,
+                                           "methods":  33
+                                       },
+                                       {
+                                           "project":  "VisionPlugins.Calibration",
+                                           "lines":  4898,
+                                           "types":  158,
+                                           "methods":  407
+                                       }
+                                   ],
+                       "currentLines":  5595
+                   }
+               ],
+    "assemblies":  [
+                       {
+                           "id":  "VisionMaster.exe",
+                           "canonicalTree":  "VisionMasterMain",
+                           "duplicatePasses":  true,
+                           "trees":  [
+                                         {
+                                             "tree":  "VisionMasterMain",
+                                             "cs":  43,
+                                             "xaml":  26,
+                                             "lines":  8714,
+                                             "types":  44,
+                                             "methods":  218
+                                         },
+                                         {
+                                             "tree":  "VisionMaster.Exe.Audit",
+                                             "cs":  35,
+                                             "xaml":  3,
+                                             "lines":  21009,
+                                             "types":  42,
+                                             "methods":  373
+                                         }
+                                     ],
+                           "cs":  43,
+                           "xaml":  26,
+                           "lines":  8714,
+                           "types":  44,
+                           "methods":  218,
+                           "properties":  83,
+                           "fields":  102,
+                           "fanIn":  7,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "Apps.XmlParser",
+                           "canonicalTree":  "Apps.XmlParser.CapabilityAudit",
+                           "duplicatePasses":  true,
+                           "trees":  [
+                                         {
+                                             "tree":  "Apps.XmlParser.CapabilityAudit",
+                                             "cs":  365,
+                                             "xaml":  0,
+                                             "lines":  50181,
+                                             "types":  385,
+                                             "methods":  1559
+                                         },
+                                         {
+                                             "tree":  "Apps.XmlParser",
+                                             "cs":  3,
+                                             "xaml":  0,
+                                             "lines":  5187,
+                                             "types":  3,
+                                             "methods":  210
+                                         }
+                                     ],
+                           "cs":  365,
+                           "xaml":  0,
+                           "lines":  50181,
+                           "types":  385,
+                           "methods":  1559,
+                           "properties":  1214,
+                           "fields":  1446,
+                           "fanIn":  185,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VMControls.WPF",
+                           "canonicalTree":  "VMControls.WPF",
+                           "duplicatePasses":  true,
+                           "trees":  [
+                                         {
+                                             "tree":  "VMControls.WPF",
+                                             "cs":  215,
+                                             "xaml":  57,
+                                             "lines":  57343,
+                                             "types":  220,
+                                             "methods":  1314
+                                         },
+                                         {
+                                             "tree":  "VMControls.WPF.Release",
+                                             "cs":  53,
+                                             "xaml":  46,
+                                             "lines":  8300,
+                                             "types":  52,
+                                             "methods":  174
+                                         }
+                                     ],
+                           "cs":  215,
+                           "xaml":  57,
+                           "lines":  57343,
+                           "types":  220,
+                           "methods":  1314,
+                           "properties":  935,
+                           "fields":  1266,
+                           "fanIn":  13,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "vServerApp",
+                           "canonicalTree":  "vServerApp.Audit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "vServerApp.Audit",
+                                             "cs":  12,
+                                             "xaml":  0,
+                                             "lines":  982,
+                                             "types":  14,
+                                             "methods":  44
+                                         }
+                                     ],
+                           "cs":  12,
+                           "xaml":  0,
+                           "lines":  982,
+                           "types":  14,
+                           "methods":  44,
+                           "properties":  9,
+                           "fields":  61,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VM.Core",
+                           "canonicalTree":  "VM.Core",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "VM.Core",
+                                             "cs":  114,
+                                             "xaml":  0,
+                                             "lines":  25317,
+                                             "types":  138,
+                                             "methods":  734
+                                         }
+                                     ],
+                           "cs":  114,
+                           "xaml":  0,
+                           "lines":  25317,
+                           "types":  138,
+                           "methods":  734,
+                           "properties":  547,
+                           "fields":  399,
+                           "fanIn":  208,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VMControls.Data",
+                           "canonicalTree":  "VMControls.Data",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "VMControls.Data",
+                                             "cs":  8,
+                                             "xaml":  0,
+                                             "lines":  1174,
+                                             "types":  7,
+                                             "methods":  40
+                                         }
+                                     ],
+                           "cs":  8,
+                           "xaml":  0,
+                           "lines":  1174,
+                           "types":  7,
+                           "methods":  40,
+                           "properties":  42,
+                           "fields":  47,
+                           "fanIn":  8,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VM.PlatformSDKCS",
+                           "canonicalTree":  "VM.PlatformSDKCS.Audit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "VM.PlatformSDKCS.Audit",
+                                             "cs":  158,
+                                             "xaml":  0,
+                                             "lines":  33100,
+                                             "types":  337,
+                                             "methods":  986
+                                         }
+                                     ],
+                           "cs":  158,
+                           "xaml":  0,
+                           "lines":  33100,
+                           "types":  337,
+                           "methods":  986,
+                           "properties":  139,
+                           "fields":  1545,
+                           "fanIn":  176,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "iMVS-6000PlatformSDKCS",
+                           "canonicalTree":  "iMVS-6000PlatformSDKCS.PublicAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "iMVS-6000PlatformSDKCS.PublicAudit",
+                                             "cs":  751,
+                                             "xaml":  0,
+                                             "lines":  92225,
+                                             "types":  1389,
+                                             "methods":  842
+                                         }
+                                     ],
+                           "cs":  751,
+                           "xaml":  0,
+                           "lines":  92225,
+                           "types":  1389,
+                           "methods":  842,
+                           "properties":  3683,
+                           "fields":  4489,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VM.Controls",
+                           "canonicalTree":  "VM.Controls",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "VM.Controls",
+                                             "cs":  289,
+                                             "xaml":  56,
+                                             "lines":  35902,
+                                             "types":  301,
+                                             "methods":  1393
+                                         }
+                                     ],
+                           "cs":  289,
+                           "xaml":  56,
+                           "lines":  35902,
+                           "types":  301,
+                           "methods":  1393,
+                           "properties":  546,
+                           "fields":  1124,
+                           "fanIn":  230,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VMBaseControls",
+                           "canonicalTree":  "VMBaseControls",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "VMBaseControls",
+                                             "cs":  133,
+                                             "xaml":  85,
+                                             "lines":  22680,
+                                             "types":  134,
+                                             "methods":  643
+                                         }
+                                     ],
+                           "cs":  133,
+                           "xaml":  85,
+                           "lines":  22680,
+                           "types":  134,
+                           "methods":  643,
+                           "properties":  481,
+                           "fields":  709,
+                           "fanIn":  5,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "DynamicObjectConfigControl",
+                           "canonicalTree":  "DynamicObjectConfigControl",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "DynamicObjectConfigControl",
+                                             "cs":  89,
+                                             "xaml":  21,
+                                             "lines":  14316,
+                                             "types":  87,
+                                             "methods":  330
+                                         }
+                                     ],
+                           "cs":  89,
+                           "xaml":  21,
+                           "lines":  14316,
+                           "types":  87,
+                           "methods":  330,
+                           "properties":  331,
+                           "fields":  257,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "Apps.XmlUI",
+                           "canonicalTree":  "Apps.XmlUI",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "Apps.XmlUI",
+                                             "cs":  130,
+                                             "xaml":  67,
+                                             "lines":  23220,
+                                             "types":  132,
+                                             "methods":  407
+                                         }
+                                     ],
+                           "cs":  130,
+                           "xaml":  67,
+                           "lines":  23220,
+                           "types":  132,
+                           "methods":  407,
+                           "properties":  241,
+                           "fields":  306,
+                           "fanIn":  25,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "ExtensionParamUserControl",
+                           "canonicalTree":  "ExtensionParamUserControl.CapabilityAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "ExtensionParamUserControl.CapabilityAudit",
+                                             "cs":  4,
+                                             "xaml":  3,
+                                             "lines":  189,
+                                             "types":  3,
+                                             "methods":  4
+                                         }
+                                     ],
+                           "cs":  4,
+                           "xaml":  3,
+                           "lines":  189,
+                           "types":  3,
+                           "methods":  4,
+                           "properties":  2,
+                           "fields":  3,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VM.PcUI",
+                           "canonicalTree":  "VM.PcUI",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "VM.PcUI",
+                                             "cs":  162,
+                                             "xaml":  61,
+                                             "lines":  44652,
+                                             "types":  169,
+                                             "methods":  1288
+                                         }
+                                     ],
+                           "cs":  162,
+                           "xaml":  61,
+                           "lines":  44652,
+                           "types":  169,
+                           "methods":  1288,
+                           "properties":  936,
+                           "fields":  1183,
+                           "fanIn":  30,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "Apps.Style",
+                           "canonicalTree":  "Apps.Style",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "Apps.Style",
+                                             "cs":  1,
+                                             "xaml":  27,
+                                             "lines":  10610,
+                                             "types":  0,
+                                             "methods":  0
+                                         }
+                                     ],
+                           "cs":  1,
+                           "xaml":  27,
+                           "lines":  10610,
+                           "types":  0,
+                           "methods":  0,
+                           "properties":  0,
+                           "fields":  0,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "Apps.ColorFun",
+                           "canonicalTree":  "Apps.ColorFun",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "Apps.ColorFun",
+                                             "cs":  3,
+                                             "xaml":  4,
+                                             "lines":  1378,
+                                             "types":  3,
+                                             "methods":  3
+                                         }
+                                     ],
+                           "cs":  3,
+                           "xaml":  4,
+                           "lines":  1378,
+                           "types":  3,
+                           "methods":  3,
+                           "properties":  2,
+                           "fields":  2,
+                           "fanIn":  15,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "Apps.PcUI.ImageSource",
+                           "canonicalTree":  "Apps.PcUI.ImageSourceAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "Apps.PcUI.ImageSourceAudit",
+                                             "cs":  21,
+                                             "xaml":  12,
+                                             "lines":  2423,
+                                             "types":  22,
+                                             "methods":  65
+                                         }
+                                     ],
+                           "cs":  21,
+                           "xaml":  12,
+                           "lines":  2423,
+                           "types":  22,
+                           "methods":  65,
+                           "properties":  62,
+                           "fields":  61,
+                           "fanIn":  23,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "CompatibleTool",
+                           "canonicalTree":  "CompatibleTool.Audit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "CompatibleTool.Audit",
+                                             "cs":  35,
+                                             "xaml":  0,
+                                             "lines":  4418,
+                                             "types":  38,
+                                             "methods":  129
+                                         }
+                                     ],
+                           "cs":  35,
+                           "xaml":  0,
+                           "lines":  4418,
+                           "types":  38,
+                           "methods":  129,
+                           "properties":  57,
+                           "fields":  42,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "VM.ExternalCall",
+                           "canonicalTree":  "VM.ExternalCall.Audit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "VM.ExternalCall.Audit",
+                                             "cs":  52,
+                                             "xaml":  0,
+                                             "lines":  2083,
+                                             "types":  51,
+                                             "methods":  87
+                                         }
+                                     ],
+                           "cs":  52,
+                           "xaml":  0,
+                           "lines":  2083,
+                           "types":  51,
+                           "methods":  87,
+                           "properties":  0,
+                           "fields":  229,
+                           "fanIn":  30,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "ImageSourceModuleControl",
+                           "canonicalTree":  "ImageSourceModuleControl",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "ImageSourceModuleControl",
+                                             "cs":  7,
+                                             "xaml":  3,
+                                             "lines":  939,
+                                             "types":  7,
+                                             "methods":  19
+                                         }
+                                     ],
+                           "cs":  7,
+                           "xaml":  3,
+                           "lines":  939,
+                           "types":  7,
+                           "methods":  19,
+                           "properties":  19,
+                           "fields":  16,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "IMVSGroup",
+                           "canonicalTree":  "IMVSGroup.WorkflowAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "IMVSGroup.WorkflowAudit",
+                                             "cs":  4,
+                                             "xaml":  0,
+                                             "lines":  2278,
+                                             "types":  5,
+                                             "methods":  54
+                                         }
+                                     ],
+                           "cs":  4,
+                           "xaml":  0,
+                           "lines":  2278,
+                           "types":  5,
+                           "methods":  54,
+                           "properties":  9,
+                           "fields":  11,
+                           "fanIn":  5,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "IfModule",
+                           "canonicalTree":  "IfModule.WorkflowAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "IfModule.WorkflowAudit",
+                                             "cs":  5,
+                                             "xaml":  0,
+                                             "lines":  416,
+                                             "types":  5,
+                                             "methods":  5
+                                         }
+                                     ],
+                           "cs":  5,
+                           "xaml":  0,
+                           "lines":  416,
+                           "types":  5,
+                           "methods":  5,
+                           "properties":  14,
+                           "fields":  6,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "IfBranchModule",
+                           "canonicalTree":  "IfBranchModule.WorkflowAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "IfBranchModule.WorkflowAudit",
+                                             "cs":  4,
+                                             "xaml":  0,
+                                             "lines":  444,
+                                             "types":  4,
+                                             "methods":  17
+                                         }
+                                     ],
+                           "cs":  4,
+                           "xaml":  0,
+                           "lines":  444,
+                           "types":  4,
+                           "methods":  17,
+                           "properties":  7,
+                           "fields":  9,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "BranchModule_STD",
+                           "canonicalTree":  "BranchModule_STD.WorkflowAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "BranchModule_STD.WorkflowAudit",
+                                             "cs":  4,
+                                             "xaml":  0,
+                                             "lines":  270,
+                                             "types":  4,
+                                             "methods":  5
+                                         }
+                                     ],
+                           "cs":  4,
+                           "xaml":  0,
+                           "lines":  270,
+                           "types":  4,
+                           "methods":  5,
+                           "properties":  8,
+                           "fields":  4,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       },
+                       {
+                           "id":  "BranchStringCpmL",
+                           "canonicalTree":  "BranchStringCpmL.WorkflowAudit",
+                           "duplicatePasses":  false,
+                           "trees":  [
+                                         {
+                                             "tree":  "BranchStringCpmL.WorkflowAudit",
+                                             "cs":  5,
+                                             "xaml":  0,
+                                             "lines":  412,
+                                             "types":  4,
+                                             "methods":  9
+                                         }
+                                     ],
+                           "cs":  5,
+                           "xaml":  0,
+                           "lines":  412,
+                           "types":  4,
+                           "methods":  9,
+                           "properties":  12,
+                           "fields":  7,
+                           "fanIn":  0,
+                           "countBasis":  "max single decompilation pass (lower bound; duplicate passes overlap and are not summed)"
+                       }
+                   ],
+    "currentProjects":  [
+                            {
+                                "Name":  "FrontendDesignMigration",
+                                "CsFiles":  2,
+                                "XamlFiles":  0,
+                                "Lines":  278,
+                                "Types":  1,
+                                "Methods":  10,
+                                "Properties":  0,
+                                "Fields":  1
+                            },
+                            {
+                                "Name":  "SolutionInspector",
+                                "CsFiles":  4,
+                                "XamlFiles":  0,
+                                "Lines":  224,
+                                "Types":  3,
+                                "Methods":  5,
+                                "Properties":  0,
+                                "Fields":  0
+                            },
+                            {
+                                "Name":  "VisionCore",
+                                "CsFiles":  3,
+                                "XamlFiles":  0,
+                                "Lines":  236,
+                                "Types":  8,
+                                "Methods":  8,
+                                "Properties":  0,
+                                "Fields":  0
+                            },
+                            {
+                                "Name":  "VisionData",
+                                "CsFiles":  4,
+                                "XamlFiles":  0,
+                                "Lines":  104,
+                                "Types":  10,
+                                "Methods":  3,
+                                "Properties":  20,
+                                "Fields":  3
+                            },
+                            {
+                                "Name":  "VisionEditor",
+                                "CsFiles":  77,
+                                "XamlFiles":  17,
+                                "Lines":  6653,
+                                "Types":  126,
+                                "Methods":  653,
+                                "Properties":  89,
+                                "Fields":  357
+                            },
+                            {
+                                "Name":  "VisionEditor.Core",
+                                "CsFiles":  24,
+                                "XamlFiles":  0,
+                                "Lines":  2176,
+                                "Types":  51,
+                                "Methods":  187,
+                                "Properties":  73,
+                                "Fields":  63
+                            },
+                            {
+                                "Name":  "VisionFramework",
+                                "CsFiles":  36,
+                                "XamlFiles":  0,
+                                "Lines":  1525,
+                                "Types":  129,
+                                "Methods":  231,
+                                "Properties":  130,
+                                "Fields":  65
+                            },
+                            {
+                                "Name":  "VisionGraphRunner",
+                                "CsFiles":  1,
+                                "XamlFiles":  0,
+                                "Lines":  41,
+                                "Types":  0,
+                                "Methods":  0,
+                                "Properties":  0,
+                                "Fields":  0
+                            },
+                            {
+                                "Name":  "VisionIO",
+                                "CsFiles":  1,
+                                "XamlFiles":  0,
+                                "Lines":  83,
+                                "Types":  1,
+                                "Methods":  7,
+                                "Properties":  0,
+                                "Fields":  2
+                            },
+                            {
+                                "Name":  "VisionModules",
+                                "CsFiles":  1,
+                                "XamlFiles":  0,
+                                "Lines":  138,
+                                "Types":  2,
+                                "Methods":  5,
+                                "Properties":  2,
+                                "Fields":  1
+                            },
+                            {
+                                "Name":  "VisionPluginContracts",
+                                "CsFiles":  45,
+                                "XamlFiles":  3,
+                                "Lines":  4847,
+                                "Types":  180,
+                                "Methods":  318,
+                                "Properties":  196,
+                                "Fields":  148
+                            },
+                            {
+                                "Name":  "VisionPlugins.BranchModule",
+                                "CsFiles":  9,
+                                "XamlFiles":  0,
+                                "Lines":  312,
+                                "Types":  20,
+                                "Methods":  35,
+                                "Properties":  12,
+                                "Fields":  10
+                            },
+                            {
+                                "Name":  "VisionPlugins.BranchString",
+                                "CsFiles":  7,
+                                "XamlFiles":  0,
+                                "Lines":  140,
+                                "Types":  13,
+                                "Methods":  33,
+                                "Properties":  8,
+                                "Fields":  11
+                            },
+                            {
+                                "Name":  "VisionPlugins.Calibration",
+                                "CsFiles":  80,
+                                "XamlFiles":  1,
+                                "Lines":  4898,
+                                "Types":  158,
+                                "Methods":  407,
+                                "Properties":  112,
+                                "Fields":  194
+                            },
+                            {
+                                "Name":  "VisionPlugins.CalibrationBoard",
+                                "CsFiles":  18,
+                                "XamlFiles":  0,
+                                "Lines":  1140,
+                                "Types":  39,
+                                "Methods":  73,
+                                "Properties":  7,
+                                "Fields":  8
+                            },
+                            {
+                                "Name":  "VisionPlugins.CameraMapping",
+                                "CsFiles":  8,
+                                "XamlFiles":  0,
+                                "Lines":  393,
+                                "Types":  15,
+                                "Methods":  37,
+                                "Properties":  8,
+                                "Fields":  10
+                            },
+                            {
+                                "Name":  "VisionPlugins.ContourMatch",
+                                "CsFiles":  13,
+                                "XamlFiles":  0,
+                                "Lines":  699,
+                                "Types":  29,
+                                "Methods":  42,
+                                "Properties":  9,
+                                "Fields":  7
+                            },
+                            {
+                                "Name":  "VisionPlugins.CoordinateModule",
+                                "CsFiles":  3,
+                                "XamlFiles":  0,
+                                "Lines":  256,
+                                "Types":  7,
+                                "Methods":  18,
+                                "Properties":  12,
+                                "Fields":  10
+                            },
+                            {
+                                "Name":  "VisionPlugins.DistortionCalibration",
+                                "CsFiles":  17,
+                                "XamlFiles":  0,
+                                "Lines":  881,
+                                "Types":  27,
+                                "Methods":  58,
+                                "Properties":  24,
+                                "Fields":  22
+                            },
+                            {
+                                "Name":  "VisionPlugins.Fixture",
+                                "CsFiles":  5,
+                                "XamlFiles":  0,
+                                "Lines":  167,
+                                "Types":  11,
+                                "Methods":  23,
+                                "Properties":  5,
+                                "Fields":  16
+                            },
+                            {
+                                "Name":  "VisionPlugins.GrayMatch",
+                                "CsFiles":  7,
+                                "XamlFiles":  0,
+                                "Lines":  490,
+                                "Types":  16,
+                                "Methods":  26,
+                                "Properties":  1,
+                                "Fields":  8
+                            },
+                            {
+                                "Name":  "VisionPlugins.IfModule",
+                                "CsFiles":  5,
+                                "XamlFiles":  0,
+                                "Lines":  245,
+                                "Types":  11,
+                                "Methods":  11,
+                                "Properties":  5,
+                                "Fields":  6
+                            },
+                            {
+                                "Name":  "VisionPlugins.ImageBinary",
+                                "CsFiles":  5,
+                                "XamlFiles":  1,
+                                "Lines":  168,
+                                "Types":  7,
+                                "Methods":  38,
+                                "Properties":  7,
+                                "Fields":  29
+                            },
+                            {
+                                "Name":  "VisionPlugins.ImageSource",
+                                "CsFiles":  25,
+                                "XamlFiles":  10,
+                                "Lines":  3259,
+                                "Types":  40,
+                                "Methods":  169,
+                                "Properties":  45,
+                                "Fields":  110
+                            },
+                            {
+                                "Name":  "VisionPlugins.MapCalibration",
+                                "CsFiles":  11,
+                                "XamlFiles":  0,
+                                "Lines":  464,
+                                "Types":  23,
+                                "Methods":  48,
+                                "Properties":  11,
+                                "Fields":  16
+                            },
+                            {
+                                "Name":  "VisionRunner",
+                                "CsFiles":  2,
+                                "XamlFiles":  0,
+                                "Lines":  41,
+                                "Types":  1,
+                                "Methods":  2,
+                                "Properties":  0,
+                                "Fields":  0
+                            },
+                            {
+                                "Name":  "VisionUi",
+                                "CsFiles":  13,
+                                "XamlFiles":  9,
+                                "Lines":  3315,
+                                "Types":  20,
+                                "Methods":  96,
+                                "Properties":  21,
+                                "Fields":  86
+                            },
+                            {
+                                "Name":  "VisionWorkbench",
+                                "CsFiles":  3,
+                                "XamlFiles":  0,
+                                "Lines":  89,
+                                "Types":  3,
+                                "Methods":  28,
+                                "Properties":  1,
+                                "Fields":  21
+                            },
+                            {
+                                "Name":  "VisionWorkflow",
+                                "CsFiles":  1,
+                                "XamlFiles":  0,
+                                "Lines":  62,
+                                "Types":  4,
+                                "Methods":  5,
+                                "Properties":  0,
+                                "Fields":  2
+                            }
+                        ],
+    "currentEdges":  [
+                         {
+                             "From":  "VisionCore",
+                             "To":  "VisionData",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionEditor.Core",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionModules",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.BranchModule",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.BranchString",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.Calibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.CalibrationBoard",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.CameraMapping",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.CoordinateModule",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.DistortionCalibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.Fixture",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.ImageBinary",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.ImageSource",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionPlugins.MapCalibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor",
+                             "To":  "VisionUi",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionEditor.Core",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionFramework",
+                             "To":  "VisionData",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionGraphRunner",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionGraphRunner",
+                             "To":  "VisionModules",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionIO",
+                             "To":  "VisionData",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionModules",
+                             "To":  "VisionCore",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionModules",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionModules",
+                             "To":  "VisionIO",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPluginContracts",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPluginContracts",
+                             "To":  "VisionUi",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.BranchModule",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.BranchModule",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.BranchString",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.BranchString",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.Calibration",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.Calibration",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.Calibration",
+                             "To":  "VisionPlugins.ImageSource",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.Calibration",
+                             "To":  "VisionUi",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CalibrationBoard",
+                             "To":  "VisionCore",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CalibrationBoard",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CalibrationBoard",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CalibrationBoard",
+                             "To":  "VisionPlugins.Calibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CameraMapping",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CameraMapping",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CameraMapping",
+                             "To":  "VisionUi",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.ContourMatch",
+                             "To":  "VisionPlugins.Calibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.CoordinateModule",
+                             "To":  "VisionPlugins.Calibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.DistortionCalibration",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.DistortionCalibration",
+                             "To":  "VisionPlugins.Calibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.DistortionCalibration",
+                             "To":  "VisionPlugins.CalibrationBoard",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.Fixture",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.Fixture",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.IfModule",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.IfModule",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.ImageBinary",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.ImageBinary",
+                             "To":  "VisionUi",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.ImageSource",
+                             "To":  "VisionIO",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.ImageSource",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.MapCalibration",
+                             "To":  "VisionCore",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.MapCalibration",
+                             "To":  "VisionPluginContracts",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionPlugins.MapCalibration",
+                             "To":  "VisionPlugins.Calibration",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionRunner",
+                             "To":  "VisionCore",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionRunner",
+                             "To":  "VisionIO",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionUi",
+                             "To":  "VisionFramework",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionWorkbench",
+                             "To":  "VisionWorkflow",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionWorkflow",
+                             "To":  "VisionCore",
+                             "Files":  1
+                         },
+                         {
+                             "From":  "VisionWorkflow",
+                             "To":  "VisionIO",
+                             "Files":  1
+                         }
+                     ],
+    "originalEdges":  [
+                          {
+                              "From":  "Apps.XmlParser.CapabilityAudit",
+                              "To":  "VM.Core",
+                              "Files":  84
+                          },
+                          {
+                              "From":  "Apps.XmlParser.CapabilityAudit",
+                              "To":  "VM.Controls",
+                              "Files":  68
+                          },
+                          {
+                              "From":  "Apps.XmlParser.CapabilityAudit",
+                              "To":  "Apps.XmlParser",
+                              "Files":  65
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "VM.Controls",
+                              "Files":  55
+                          },
+                          {
+                              "From":  "Apps.XmlParser.CapabilityAudit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  46
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "VM.Core",
+                              "Files":  46
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "VM.Core",
+                              "Files":  38
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "Apps.XmlParser",
+                              "Files":  37
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "Apps.XmlParser",
+                              "Files":  34
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  32
+                          },
+                          {
+                              "From":  "VisionMasterMain",
+                              "To":  "VM.Controls",
+                              "Files":  21
+                          },
+                          {
+                              "From":  "VM.Core",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  20
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "VM.Controls",
+                              "Files":  18
+                          },
+                          {
+                              "From":  "Apps.XmlUI",
+                              "To":  "VM.Controls",
+                              "Files":  17
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "VM.Controls",
+                              "Files":  17
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "Apps.XmlUI",
+                              "Files":  15
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "VM.PcUI",
+                              "Files":  15
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  14
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  12
+                          },
+                          {
+                              "From":  "Apps.XmlParser.CapabilityAudit",
+                              "To":  "VM.PcUI",
+                              "Files":  11
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "Apps.XmlParser.CapabilityAudit",
+                              "Files":  11
+                          },
+                          {
+                              "From":  "VMControls.WPF.Release",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  11
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  10
+                          },
+                          {
+                              "From":  "VMControls.WPF.Release",
+                              "To":  "Apps.ColorFun",
+                              "Files":  10
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "VM.Core",
+                              "Files":  10
+                          },
+                          {
+                              "From":  "VM.PlatformSDKCS.Audit",
+                              "To":  "VM.ExternalCall.Audit",
+                              "Files":  9
+                          },
+                          {
+                              "From":  "Apps.XmlUI",
+                              "To":  "Apps.XmlParser",
+                              "Files":  8
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "VM.Core",
+                              "Files":  8
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "Apps.XmlParser.CapabilityAudit",
+                              "Files":  7
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "Apps.PcUI.ImageSourceAudit",
+                              "Files":  7
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "VM.ExternalCall.Audit",
+                              "Files":  7
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "Apps.XmlUI",
+                              "Files":  7
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "VisionMasterMain",
+                              "Files":  7
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "Apps.XmlParser",
+                              "Files":  7
+                          },
+                          {
+                              "From":  "Apps.XmlUI",
+                              "To":  "VM.Core",
+                              "Files":  6
+                          },
+                          {
+                              "From":  "Apps.XmlUI",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  6
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "Apps.PcUI.ImageSourceAudit",
+                              "Files":  6
+                          },
+                          {
+                              "From":  "VM.PcUI",
+                              "To":  "VM.Controls",
+                              "Files":  6
+                          },
+                          {
+                              "From":  "VMBaseControls",
+                              "To":  "VM.Controls",
+                              "Files":  6
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "VMControls.Data",
+                              "Files":  6
+                          },
+                          {
+                              "From":  "Apps.XmlUI",
+                              "To":  "Apps.PcUI.ImageSourceAudit",
+                              "Files":  5
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "IMVSGroup.WorkflowAudit",
+                              "Files":  5
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "VMControls.WPF",
+                              "Files":  5
+                          },
+                          {
+                              "From":  "VM.Core",
+                              "To":  "VM.ExternalCall.Audit",
+                              "Files":  5
+                          },
+                          {
+                              "From":  "VM.PcUI",
+                              "To":  "Apps.XmlParser",
+                              "Files":  5
+                          },
+                          {
+                              "From":  "VMControls.WPF.Release",
+                              "To":  "VM.Core",
+                              "Files":  5
+                          },
+                          {
+                              "From":  "BranchStringCpmL.WorkflowAudit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  4
+                          },
+                          {
+                              "From":  "IfModule.WorkflowAudit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  4
+                          },
+                          {
+                              "From":  "VM.Core",
+                              "To":  "VM.Controls",
+                              "Files":  4
+                          },
+                          {
+                              "From":  "VisionMasterMain",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  4
+                          },
+                          {
+                              "From":  "Apps.PcUI.ImageSourceAudit",
+                              "To":  "VM.Controls",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "Apps.XmlUI",
+                              "To":  "Apps.XmlParser.CapabilityAudit",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "BranchModule_STD.WorkflowAudit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "VM.ExternalCall.Audit",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "VM.ExternalCall.Audit",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "IMVSGroup.WorkflowAudit",
+                              "To":  "VM.Core",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "IMVSGroup.WorkflowAudit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "IfBranchModule.WorkflowAudit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "VM.ExternalCall.Audit",
+                              "To":  "VM.Controls",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "VMControls.Data",
+                              "To":  "VM.Controls",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "VMBaseControls",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "VMControls.WPF",
+                              "Files":  3
+                          },
+                          {
+                              "From":  "Apps.XmlParser",
+                              "To":  "Apps.XmlParser.CapabilityAudit",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "Apps.XmlParser",
+                              "To":  "VM.Core",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "Apps.XmlParser",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "Apps.XmlParser.CapabilityAudit",
+                              "To":  "VM.ExternalCall.Audit",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "Apps.XmlParser",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "ImageSourceModuleControl",
+                              "To":  "VMControls.WPF",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "ImageSourceModuleControl",
+                              "To":  "Apps.XmlParser",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VM.PcUI",
+                              "To":  "Apps.PcUI.ImageSourceAudit",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VM.PlatformSDKCS.Audit",
+                              "To":  "VM.Controls",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VMControls.WPF.Release",
+                              "To":  "VM.Controls",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VMControls.WPF.Release",
+                              "To":  "VMControls.WPF",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "VMControls.Data",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "Apps.ColorFun",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "Apps.PcUI.ImageSourceAudit",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "VisionMasterMain",
+                              "To":  "VM.Core",
+                              "Files":  2
+                          },
+                          {
+                              "From":  "Apps.ColorFun",
+                              "To":  "VM.Controls",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "Apps.PcUI.ImageSourceAudit",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "Apps.XmlParser",
+                              "To":  "VM.Controls",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "Apps.XmlParser.CapabilityAudit",
+                              "To":  "Apps.ColorFun",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "Apps.XmlUI",
+                              "To":  "VMBaseControls",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "BranchModule_STD.WorkflowAudit",
+                              "To":  "VM.Controls",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "BranchModule_STD.WorkflowAudit",
+                              "To":  "VM.Core",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "BranchStringCpmL.WorkflowAudit",
+                              "To":  "VM.Controls",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "BranchStringCpmL.WorkflowAudit",
+                              "To":  "VM.Core",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "Apps.XmlParser.CapabilityAudit",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "Apps.XmlUI",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "CompatibleTool.Audit",
+                              "To":  "VM.PcUI",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "DynamicObjectConfigControl",
+                              "To":  "Apps.XmlUI",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "IfBranchModule.WorkflowAudit",
+                              "To":  "VM.Controls",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "IfBranchModule.WorkflowAudit",
+                              "To":  "VM.Core",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "IfModule.WorkflowAudit",
+                              "To":  "VM.Core",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "ImageSourceModuleControl",
+                              "To":  "VM.PlatformSDKCS.Audit",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VM.Controls",
+                              "To":  "Apps.ColorFun",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VM.PcUI",
+                              "To":  "VM.ExternalCall.Audit",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VMBaseControls",
+                              "To":  "VM.PcUI",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VMControls.Data",
+                              "To":  "Apps.XmlParser",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VMControls.Data",
+                              "To":  "VM.PcUI",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VMControls.WPF",
+                              "To":  "Apps.ColorFun",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VisionMaster.Exe.Audit",
+                              "To":  "VMBaseControls",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VisionMasterMain",
+                              "To":  "Apps.PcUI.ImageSourceAudit",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VisionMasterMain",
+                              "To":  "VM.PcUI",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VisionMasterMain",
+                              "To":  "VMControls.WPF",
+                              "Files":  1
+                          },
+                          {
+                              "From":  "VisionMasterMain",
+                              "To":  "Apps.XmlUI",
+                              "Files":  1
+                          }
+                      ],
+    "priorities":  [
+                       {
+                           "rank":  1,
+                           "id":  "P0-EXECUTION-BACKEND",
+                           "item":  "执行后端抽象（SDK/服务提交-回调 vs 托管 await）",
+                           "layers":  [
+                                          "L3-runtime-sdk",
+                                          "L1-shell"
+                                      ],
+                           "fanInComponents":  [
+                                                   "VM.PlatformSDKCS",
+                                                   "vServerApp",
+                                                   "iMVS-6000PlatformSDKCS"
+                                               ],
+                           "why":  "原厂执行是『命令提交 + 平台事件回调 + 结果缓存』；当前逐节点 await。影响所有工具的状态、错误码、自运行与连续执行语义，是最上游的机制偏差。",
+                           "blocks":  [
+                                          "C02.2",
+                                          "C05.3",
+                                          "C06",
+                                          "C08.3",
+                                          "所有工具结果语义"
+                                      ],
+                           "firstAction":  "落 IExecutionBackend（in-process / sdk-rpc）+ 事件→结果映射，不改工具实现"
+                       },
+                       {
+                           "rank":  2,
+                           "id":  "P0-MODEL-IDENTITY",
+                           "item":  "文档/模块身份与动态 IO",
+                           "layers":  [
+                                          "L2-model"
+                                      ],
+                           "fanInComponents":  [
+                                                   "VM.Core",
+                                                   "VMControls.Data"
+                                               ],
+                           "why":  "数值 ModuleId/GUID/动态端口是原厂连接、订阅、结果缓存与保存的键；当前用字符串 Id 与静态端口，跨版本与动态输出必然偏离。",
+                           "blocks":  [
+                                          "B01.2",
+                                          "B02.3",
+                                          "B04.3",
+                                          "C01.3",
+                                          "C03.2"
+                                      ],
+                           "firstAction":  "为 NodeDocument 增加原生身份字段与动态 IO 描述映射，保持既有 JSON 兼容"
+                       },
+                       {
+                           "rank":  3,
+                           "id":  "P0-SOLUTION-CONTAINER",
+                           "item":  "方案容器与原生帧（.sol / ModuleFrame）",
+                           "layers":  [
+                                          "L2-model",
+                                          "L7-migration-hosts"
+                                      ],
+                           "fanInComponents":  [
+                                                   "VM.Core",
+                                                   "CompatibleTool"
+                                               ],
+                           "why":  "当前 .vmx.json 与原厂容器互不兼容，导致导入/导出、加密、版本迁移、跨版本方案全部无法闭环。",
+                           "blocks":  [
+                                          "D01",
+                                          "D03",
+                                          "D04",
+                                          "D05",
+                                          "跨版本验收"
+                                      ],
+                           "firstAction":  "先做只读 NativeSolutionAdapter（.sol 外层 + ModuleFrame 帧边界），再谈写入"
+                       },
+                       {
+                           "rank":  4,
+                           "id":  "P1-CONFIG-FRAMEWORK",
+                           "item":  "配置框架覆盖（页签/分组/展示键/模板目录）",
+                           "layers":  [
+                                          "L5-config"
+                                      ],
+                           "fanInComponents":  [
+                                                   "Apps.XmlParser",
+                                                   "DynamicObjectConfigControl",
+                                                   "Apps.XmlUI"
+                                               ],
+                           "why":  "原厂配置源码 87,906 行/607 类型，当前 VisionPluginContracts 4,847 行/180 类型，是最大的『结构已对、覆盖不足』缺口；直接影响所有工具的配置窗一致性。",
+                           "blocks":  [
+                                          "A06",
+                                          "B01.1",
+                                          "B06.1",
+                                          "B06.2"
+                                      ],
+                           "firstAction":  "按原厂 NameValueItem/ParamGroup/模板键逐族补目录并加缺口清单"
+                       },
+                       {
+                           "rank":  5,
+                           "id":  "P1-DISPLAY-PAINT",
+                           "item":  "显示对象与绘制层",
+                           "layers":  [
+                                          "L6-display"
+                                      ],
+                           "fanInComponents":  [
+                                                   "VM.PcUI",
+                                                   "Apps.Style",
+                                                   "Apps.ColorFun"
+                                               ],
+                           "why":  "显示对象族（图形/文本/区域/掩膜）与主题绘制决定所有工具结果的可观察输出，当前只覆盖用到的子集。",
+                           "blocks":  [
+                                          "B04.2",
+                                          "B06.3",
+                                          "各工具显示验收"
+                                      ],
+                           "firstAction":  "以 ToolDisplay* 契约为边界，按原 VM.PcUI 类型族补齐缺失绘制与样式"
+                       },
+                       {
+                           "rank":  6,
+                           "id":  "P2-CANVAS-CONTROLS",
+                           "item":  "画布控件树与装饰器（ListView/DiagramItem/Adorner）",
+                           "layers":  [
+                                          "L4-canvas-controls"
+                                      ],
+                           "fanInComponents":  [
+                                                   "VM.Controls",
+                                                   "VMControls.WPF",
+                                                   "VMBaseControls"
+                                               ],
+                           "why":  "fanIn 最高（VM.Controls 230），但当前自绘 Canvas 已按源码对齐几何与交互；整树替换代价大、收益低。",
+                           "blocks":  [
+                                          "A03.x",
+                                          "A04.x 的控件级等价（非行为级）"
+                                      ],
+                           "firstAction":  "不重写；继续按源码补齐缺失的命中/装饰器/边界行为"
+                       },
+                       {
+                           "rank":  7,
+                           "id":  "P2-SHELL-ENTRIES",
+                           "item":  "外壳入口（四模式菜单/工具栏/加密/授权）",
+                           "layers":  [
+                                          "L1-shell"
+                                      ],
+                           "fanInComponents":  [
+                                                   "VisionMaster.exe"
+                                               ],
+                           "why":  "入口完整性是防止『分析链因入口遗漏而缺失』的必要核查项；静态声明 214 条、已定位 222/222 方法，但执行效果链未闭合。",
+                           "blocks":  [
+                                          "A05.1",
+                                          "A05.3",
+                                          "A08.2",
+                                          "A08.3"
+                                      ],
+                           "firstAction":  "按 entry-inventory 逐载体闭合『入口→命令→状态→持久化/执行』"
+                       },
+                       {
+                           "rank":  8,
+                           "id":  "P3-DEVICE-SERVICES",
+                           "item":  "平台服务与设备（相机/通信/全局触发/脚本）",
+                           "layers":  [
+                                          "L3-runtime-sdk"
+                                      ],
+                           "fanInComponents":  [
+                                                   "iMVS-6000PlatformSDKCS"
+                                               ],
+                           "why":  "92,225 行/1,389 类型是单一最大程序集，目前 C06 三单元全部 not_started，是当前最大的未取证面。",
+                           "blocks":  [
+                                          "C06.1",
+                                          "C06.2",
+                                          "C06.3",
+                                          "真实设备验收"
+                                      ],
+                           "firstAction":  "先做只读盘点（服务发现/连接/回调），不做设备操作"
+                       },
+                       {
+                           "rank":  9,
+                           "id":  "P3-TOOL-PLUGINS",
+                           "item":  "工具插件（11 批次 + 162 目录）",
+                           "layers":  [
+                                          "L8-tool-plugins"
+                                      ],
+                           "fanInComponents":  [
+                                                   "IMVSGroup",
+                                                   "IfModule",
+                                                   "IfBranchModule",
+                                                   "BranchModule_STD",
+                                                   "BranchStringCpmL"
+                                               ],
+                           "why":  "工具面依赖前 6 项机制；按整工具计分（当前 3/11，标定 10/10 已闭）。",
+                           "blocks":  [
+                                          "IfModule",
+                                          "IfBranchModule",
+                                          "IMVSContourMatchModu",
+                                          "IMVSGrayMatchModuVA",
+                                          "8 个待接"
+                                      ],
+                           "firstAction":  "保持现有批次节奏，不回填已完成工具"
+                       }
+                   ]
+}
