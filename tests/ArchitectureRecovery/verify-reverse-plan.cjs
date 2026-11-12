@@ -346,6 +346,30 @@ function verify() {
     '第一批证据卡或零执行/零改动状态不符');
   check(incHtml.includes(batch0.cardId) && incHtml.includes('第一批已执行'),
     '渐进路线页未回写第一批静态取证结果');
+  const { c01, c02, c03, numericRanges } = model.currentDelivery;
+  check(c03.hostStatus === 'pending' &&
+    incHtml.includes(c01.checks + ' 项图像源 / Group 无界面复跑通过') &&
+    incHtml.includes('vision.blob@1.0.0') &&
+    incHtml.includes(c02.suites + ' 套 / ' + c02.checks + ' 项无界面 Release 回归通过') &&
+    incHtml.includes(c03.sdkRuns + ' 次直接 SDK 运行匹配') &&
+    incHtml.includes('历史方案 test1108.sol 当前缺失') &&
+    incHtml.includes(numericRanges.suites + ' 套 / ' + numericRanges.checks + ' 项共享配置回归通过') &&
+    incHtml.includes('不能作为整个框架目标的停工条件'),
+    '当前交付应区分托管回归、直接 SDK 复跑和未完成的原厂宿主取证');
+  for (const item of [c01, c02, c03, numericRanges]) {
+    check(fs.existsSync(path.join(root, item.report)), '交付报告缺失: ' + item.report);
+    // Raw run outputs are kept locally and are not required to build the plan from a clean checkout.
+    if (fs.existsSync(path.join(root, item.artifact))) {
+      check(shaOf(item.artifact) === item.sha256.toLowerCase(), '交付产物哈希不符: ' + item.artifact);
+      const report = JSON.parse(fs.readFileSync(path.join(root, item.artifact), 'utf8').replace(/^\uFEFF/, ''));
+      const matches = item === c01
+        ? report.checks.length === c01.checks && report.blob.status === 'blocked'
+        : item !== c03
+          ? report.passedSuites === item.suites && report.passedChecks === item.checks
+          : report.runs.length === c03.sdkRuns && report.failures.length === 0;
+      check(matches, '交付统计与运行结果不符: ' + item.artifact);
+    }
+  }
 
   // 4j. 第二批 B1 静态取证：证据卡、成员补齐与批次仍阻塞。
   const b1 = model.incrementalLanding.b1Static;
@@ -560,8 +584,9 @@ function verify() {
   }
 
   // 6. 口径冲突与身份差异在页面上显式可见。
-  check(pages.get('index.html').includes('42/96 = 43.75%') && pages.get('index.html').includes('41/96 = 42.71%'),
-    '索引页未并列展示 41/96 与 42/96');
+  const currentImplementation = model.progress.framework.current;
+  check(pages.get('index.html').includes(currentImplementation.done + '/' + currentImplementation.total + ' = ' + currentImplementation.percent + '%') &&
+    pages.get('index.html').includes('自研实施与自审'), '索引页未显示当前自研实施进度');
   check(pages.get('10-governance.html').includes(model.conflict), '治理页未登记口径冲突');
   check(pages.get('08-tools-162.html').includes('PositionCorrection'), '162 工具页未登记批次身份差异');
   check(pages.get('04-vertical-slice.html').includes(String(model.slice.originalVm.count)) &&

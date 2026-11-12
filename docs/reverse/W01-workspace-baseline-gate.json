@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "feature": "W01-workspace-baseline",
+  "contract": "docs/reverse/W01-workspace-baseline-contract-20261111.md",
+  "evidencePolicy": "source-only: decompiled XAML, code-behind, theme and language dictionaries; screenshots are not contract evidence",
+  "status": "contract-frozen",
+  "evidence": [
+    {"id": "W01-MVR", "source": "analysis/decompiled/VMControls.WPF/VMControls.WPF/MainViewControl.xaml(.cs)", "classification": "source-confirmed"},
+    {"id": "W01-PC", "source": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ProcedureConfigControl.xaml(.cs)", "classification": "source-confirmed"},
+    {"id": "W01-MRV", "source": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ModuleResultView.xaml(.cs)", "classification": "source-confirmed"},
+    {"id": "W01-TB", "source": "analysis/decompiled/VMControls.WPF/VMControls.WPF/ToolBox.xaml(.cs)", "classification": "source-confirmed"},
+    {"id": "W01-LV", "source": "analysis/decompiled/VMControls.WPF/VMControls.WPF/LogView.xaml(.cs)", "classification": "source-confirmed"},
+    {"id": "W01-RB", "source": "analysis/decompiled/VMControls.WPF/VMControls.WPF/RunButtonControl.xaml", "classification": "source-confirmed"},
+    {"id": "W01-REL", "source": "analysis/decompiled/VMControls.WPF.Release/VmMainViewConfigControl.xaml(.cs)", "classification": "source-confirmed"},
+    {"id": "W01-COLOR", "source": "analysis/decompiled/Apps.ColorFun/colorstyle1.xaml", "classification": "source-confirmed"},
+    {"id": "W01-LANG", "source": "analysis/decompiled/VisionMaster.Exe.Audit/resources/zh-cn.xaml", "classification": "source-confirmed"},
+    {"id": "W01-BAML", "source": "analysis/control-appearance-baml-fullinstall-20261027/decode-report.json", "classification": "source-confirmed"}
+  ],
+  "frozenItems": [
+    {"id": "region-geometry", "rule": "workarea 3 columns: * | Auto(5px splitter) | 1.0000001*(MinWidth=400)", "source": "W01-MVR"},
+    {"id": "left-toolbox", "rule": "ToolBox in col0; folded 51x48 / hover popup 235 / expanded 230-250 / tile 68x90 / switch 22 / UnFoldSwitch defaults false", "source": "W01-TB"},
+    {"id": "canvas-tabs", "rule": "DiagramArea is ContentTemplate of TabControl; SelectedItem TwoWay -> DecoratorSelectedItem", "source": "W01-PC"},
+    {"id": "run-buttons", "rule": "RunButtonControl has 2 buttons; stop is ContinuousRunEnable two-state of the second, injected into selected tab", "source": "W01-RB"},
+    {"id": "selection-forward", "rule": "DecoratorSelectedItem -> SelectedItem/SelectedModule/SelectedPro mutual exclusion -> ModuleResultView.ModuleSource", "source": "W01-PC"},
+    {"id": "right-upper", "rule": "ResultTab 2 tabs: image / module result", "source": "W01-MRV"},
+    {"id": "right-lower", "rule": "InfoTab 5 tabs: CommonParam+DataQueue collapsed, CurResult conditional on datalist, History, Help(width 90)", "source": "W01-MRV"},
+    {"id": "current-result-columns", "rule": "Columns from datalist feature Colume, first column Number/序号, rebuild on count or header mismatch", "source": "W01-MRV"},
+    {"id": "history-columns", "rule": "Fixed 3 columns RowIndex/AddTime/Content with MinWidth 30/150/200 and Clear/Save context menu", "source": "W01-MRV"},
+    {"id": "help-source", "rule": "moduleHelp binds m_CurrentInfo.HelperContent", "source": "W01-MRV"},
+    {"id": "source-change-cleanup", "rule": "Dispose old decorator, ClearDataStore, clear columns/histogram, rebuild ModuleDisplayDecorator", "source": "W01-MRV"},
+    {"id": "bottom-log", "rule": "LogView 180 high + 28 high log bar; IsLogFold defaults true; filter 1=all 2=warning 3=error 4=info", "source": "W01-LV"},
+    {"id": "progress-mask", "rule": "IsShowProgressMask -> AddMask/RemoveMask with ProgressMask.Message binding", "source": "W01-MVR"}
+  ],
+  "toolBaseline": {
+    "requiredCapabilities": 6,
+    "items": ["discovery-metadata", "node-appearance", "params-display-list-colume", "execution-run-once-continuous-stop", "result-projection-current-history-image-help", "lifecycle-dispose-and-clear"],
+    "referenceTool": "Blob",
+    "acceptance": "A second tool must complete the full chain without host code changes"
+  },
+  "runtimeUnconfirmed": [
+    "SDK callback timing and buffer transport",
+    "real camera/device output",
+    "native engine result parity",
+    "canvas gesture and wire rendering details (diagramarea/connection/zoomarea code-behind not yet frozen)"
+  ],
+  "knownDeviations": [
+    "run buttons are global toolbar buttons instead of tab-injected two-state control",
+    "result/history/help tabs are in a full-width bottom area instead of right lower InfoTab",
+    "result grid has fixed columns instead of Colume-driven columns",
+    "no equivalent source-change cleanup chain",
+    "toolbox dual-state constants not aligned"
+  ]
+}

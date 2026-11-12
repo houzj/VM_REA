@@ -36,6 +36,7 @@ static class Program {
   Check((await service.RunOnceAsync()).Rejection==ConfigurationRunRejection.Closed,"Closed configuration cannot dispatch");
   await using var broken=new ToolConfigurationExecution(()=>throw new InvalidOperationException("controlled execution failure"),()=>false,()=>true,()=>false);
   await broken.RunOnceAsync();Check(broken.LastError?.Message=="controlled execution failure"&&broken.LastResult is null&&!broken.IsRunning,"Execution exceptions are captured with no stale result or unhandled dialog");
+  checks+=await ConfigurationExecutionLifecycleChecks.RunAsync();
   Console.WriteLine($"{checks} configuration execution checks passed; source scheduling gates, no devices.");
  }
 }

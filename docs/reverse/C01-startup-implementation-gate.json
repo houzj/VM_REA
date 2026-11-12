@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 2,
+  "feature": "C01-startup-chain",
+  "designDocument": "docs/reverse/C01-startup-chain-design-review-20261111.md",
+  "behaviorContract": "docs/reverse/C01-startup-chain-behavior-contract-20261111.md",
+  "reconciliationMatrix": "docs/reverse/C01-shell-host-reconciliation-matrix-20261111.md",
+  "implementationReport": "docs/reverse/C01-startup-lifecycle-regression-20261111.md",
+  "implementation": {
+    "mode": "unified-source-confirmed-shell-rewrite",
+    "batchPolicy": "contract-freeze-then-reconciliation-matrix-then-single-rewrite",
+    "status": "source-confirmed-shell-rewritten",
+    "userRule": "先完整逆向分析，再统一对照实现；不发布零散补丁",
+    "previousMode": "source-confirmed-shell-batch (superseded 2026-11-11)"
+  },
+  "evidence": [
+    {
+      "id": "E01-entry",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/VisionMaster/Program.cs",
+      "members": ["VisionMaster.Program.Main", "Program.StartApp", "Program.GetSingleInstanceManagerSetup", "Program.RefreshRegistry"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E02-before-start",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/VisionMaster/Program.cs",
+      "members": ["Program.BeforeStartPart", "Program.BeforeStartMian", "Program.CPUConfig", "Program.SoftEncrypt", "Program.InitMainWindow"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E03-main-data",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/VisionMaster/MainWindowData.cs",
+      "members": ["MainWindowData.PreLoad", "MainWindowData.RecoverMainWindowState", "MainWindowData.IsShowProgressMask", "MainWindowData.MaskMessage", "MainWindowData.ConfigZoomIndex"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E04-auto-load",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/VisionMaster/Program.cs",
+      "members": ["Program.AppAfterStart", "SystemConfigManager.IsAutoLoad", "SoftWareData.IsAutoLoadLast", "Program.IsSdkMode", "Program.ProcessCommandLineArgs"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E05-solution-entry",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/VisionMaster/Program.cs",
+      "members": ["ProjectManager.LoadSolution (call site only)"],
+      "classification": "source-confirmed-call-site"
+    },
+    {
+      "id": "E06-welcome",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/Main/VisionMasterMain/WelcomeDialog.xaml",
+      "members": ["VisionMasterMain.WelcomeDialog", "WelcomePage.GIF", "WindowsFormsHost.PictureBox"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E07-guide-gate",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/Main/VisionMaster.AppMainWindow/GuideHelper.cs",
+      "members": ["GuideHelper.IsGuideWindowShow", "GuideHelper.SetGuideWindowOn", "GuideHelper.SetGuideWindowOff"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E08-guide-window",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/Main/VisionMaster.AppMainWindow/GuideWindow.xaml",
+      "members": ["GuideWindow", "GuideButton", "ToolBoxType", "GuideButton_OnClick", "DoNotShow_OnChecked"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E09-host-main-window",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/Main/VisionMasterMain/MainWindow.xaml.cs",
+      "members": ["VisionMasterMain.MainWindow.IsShowProgressMaskProperty", "MainWindow.MaskMessageProperty", "MainWindow.AddMask", "MainWindow.SeMenuFocus"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E10-app-lifecycle",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/VisionMaster/App.cs",
+      "members": ["App.OnStartup", "App.ShowMainWindow", "App.MainWindow_Closing", "App.DoneException", "App.ProcessCommandLineArgs"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E11-close-policy",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/VisionMaster/Program.cs",
+      "members": ["Program.IsCancelClose", "Program.IsThirdSoftwareRun", "Program.SaveSolTip"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E12-app-config",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/ExeEntry/app.config",
+      "members": ["ShowEnable", "ApplicationName", "IsMultiApp", "FrontendFirst", "RunningMode", "ZoomIndex", "IsRunBackground", "IsMaximizedForVM", "IsFullScreenForVM", "IsStartTimerGC", "ToolBoxType", "Demo"],
+      "classification": "configuration-confirmed"
+    },
+    {
+      "id": "E13-runtime-smoke",
+      "source": "artifacts/codebuddy-verify (local run 2026-11-11)",
+      "members": ["standard Release launch with command-line solution", "standard Release launch through guide window"],
+      "classification": "local-runtime-observation"
+    },
+    {
+      "id": "E14-guide-xaml-geometry",
+      "source": "D:/MyWork/SunEyeVision_V2-param-window-datatree/docs/07-工具逆向/decompiled/HostShell/Main/VisionMaster.AppMainWindow/GuideWindow.xaml",
+      "members": ["GuideWindow", "BaseWindow.TitleBar", "GuideButton", "GuideButton_OnClick", "DoNotShow_OnChecked", "ListView.RecentlySolutions", "areaGuideLine"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E15-guide-theme-colors",
+      "source": "analysis/decompiled/Apps.ColorFun/colorstyle1.xaml; analysis/decompiled/Apps.ColorFun/colorstyle.xaml",
+      "members": ["Col_Theme", "Col_Window_TopFill", "Col_GuideWindow_Background", "Col_GuideWindow_Title_Background", "Col_GuideWindow_Background_Line", "Col_GuideWindow_CenterLine", "Col_GuideWindow_RightLine", "Col_GuideWindow_Spliter", "Col_GuideWindow_Bottom_Background", "Col_GuideWindow_ListView_Foreground", "Col_GuideWindow_ListView_Selected_Foreground", "NormalTextBlockColor", "GuideTextBlockFg", "ToggleButtonFg", "ButtonForground", "TextBlockFg"],
+      "classification": "source-confirmed"
+    },
+    {
+      "id": "E16-guide-visual-parity",
+      "source": "analysis/full-audit/guide-visual-parity-20261111/guide-live-desktop.png; guide-render-1to1.png",
+      "members": ["standard Release guide window capture", "in-process RenderTargetBitmap at 1:1"],
+      "classification": "local-runtime-observation"
+    }
+  ],
+  "plannedChanges": [
+    {"id": "working-directory", "classification": "source-confirmed", "action": "implemented", "evidence": ["E01-entry"]},
+    {"id": "single-instance", "classification": "independent-implementation", "action": "implemented", "evidence": ["E01-entry", "E04-auto-load"]},
+    {"id": "initialization-barrier", "classification": "source-confirmed", "action": "implemented", "evidence": ["E02-before-start", "E10-app-lifecycle"]},
+    {"id": "license-and-dongle-provider", "classification": "skeleton-only", "action": "deferred-by-user-request", "evidence": ["E02-before-start"]},
+    {"id": "main-data-preload-and-show", "classification": "source-confirmed", "action": "implemented", "evidence": ["E03-main-data", "E10-app-lifecycle"]},
+    {"id": "auto-load-and-cli-precedence", "classification": "source-confirmed-partial", "action": "implemented-partial", "evidence": ["E04-auto-load", "E05-solution-entry"]},
+    {"id": "solution-container-and-scene-payload", "classification": "runtime-unconfirmed", "action": "deferred", "evidence": ["E05-solution-entry"]},
+    {"id": "welcome-resource-and-thread", "classification": "source-confirmed", "action": "implemented", "evidence": ["E06-welcome", "E10-app-lifecycle"]},
+    {"id": "guide-window-cards-and-actions", "classification": "source-confirmed", "action": "implemented", "evidence": ["E07-guide-gate", "E08-guide-window"]},
+    {"id": "guide-show-single-switch", "classification": "source-confirmed", "action": "implemented", "evidence": ["E07-guide-gate", "E12-app-config"]},
+    {"id": "host-progress-mask-and-title", "classification": "source-confirmed", "action": "implemented", "evidence": ["E09-host-main-window", "E10-app-lifecycle"]},
+    {"id": "close-policy-and-exit", "classification": "source-confirmed", "action": "implemented-with-save-check-skeleton", "evidence": ["E10-app-lifecycle", "E11-close-policy"]},
+    {"id": "scene-start-from-solution", "classification": "runtime-unconfirmed", "action": "deferred", "evidence": ["E05-solution-entry"]},
+    {"id": "guide-visual-parity", "classification": "source-confirmed", "action": "implemented", "evidence": ["E14-guide-xaml-geometry", "E15-guide-theme-colors", "E16-guide-visual-parity"]}
+  ],
+  "verification": {
+    "isolatedBuild": "dotnet build src/VisionEditor/VisionEditor.csproj -c Release -p:OutDir=artifacts/codebuddy-verify/VisionEditor/ -p:UseSharedCompilation=false -p:BuildInParallel=false -> 0 warnings, 0 errors",
+    "startupShellChecks": "tests/VisionEditor.StartupShellChecks -> exit 0, 36 assertions, 'WelcomeDialog, GuideWindow, host data and close-chain contracts passed.'",
+    "commandLineSmoke": "standard Release + example solution -> main window shown (VisionMaster), alive after 6s, no startup-error.log",
+    "guidePathSmoke": "standard Release without arguments -> welcome -> guide 800x546 -> guide closed -> main window 1366x768, alive after 6s, no startup-error.log"
+  },
+  "requiredVerification": [
+    "source evidence re-read",
+    "full startup differential matrix reviewed",
+    "Release build",
+    "VisionEditor.StartupShellChecks",
+    "headless startup entry matrix",
+    "solution persistence and scene carrier roundtrip",
+    "manual host comparison by user"
+  ],
+  "openItems": [
+    {"id": "U01", "item": "VM.Utility.SingleInstance.SingleInstanceManager member bodies", "state": "original binaries absent from this machine; forwarding is an independent implementation"},
+    {"id": "U03", "item": "ProjectManager.LoadSolution internals", "state": "call site only"},
+    {"id": "U04", "item": "AppFileExtension.Solution constant", "state": "explicit unsupported prompt kept"},
+    {"id": "U05", "item": "AccessManagerHelper permission file format", "state": "skeleton only"},
+    {"id": "U06", "item": "EncryptAPI family", "state": "IAuthGate placeholder only"},
+    {"id": "U07", "item": "SoftWareData.SolutionSaveCheck", "state": "ShellLifecycle.SolutionSaveCheck slot not wired"},
+    {"id": "U08", "item": "TitleMenueItemData menu XML expansion", "state": "menu remains independent implementation"},
+    {"id": "U09", "item": "VmMainViewConfigControl internals", "state": "zoom remains independent implementation"},
+    {"id": "F1", "item": "ShellChecks recent-menu count expects no startup-loaded solution", "state": "pre-existing, not fixed in this batch"},
+    {"id": "F2", "item": "ShellChecks File-New assertion expects no current procedure while MainWindow.New creates one", "state": "pre-existing, not fixed in this batch"},
+    {"id": "D1", "item": "BaseWindow custom chrome", "state": "independent equivalent: WindowStyle=None + decorative 1px frame + DragMove"},
+    {"id": "D2", "item": "VM.Controls.IconMenuItem", "state": "independent equivalent GuideIconMenuItem, ShowMask not implemented"},
+    {"id": "D3", "item": "WinCloseBtnStyle", "state": "style source not recovered; 32x32 hover-red button implemented from the reference capture"},
+    {"id": "D4", "item": "LastTimeStr formatting", "state": "independent '今天 / N天前'"},
+    {"id": "D5", "item": "LongTextConvert truncation", "state": "independent width-based TextTrimming instead of 138-character truncation"},
+    {"id": "D6", "item": "Rounded-corner clipping of content", "state": "content layer clips rectangular only; decorative frame is rounded"},
+    {"id": "D7", "item": "Demo solution path", "state": "mapped to repository examples/"},
+    {"id": "D8", "item": "Local and online help entries", "state": "not wired"}
+  ],
+  "visualParity": {
+    "report": "docs/reverse/C01-guide-window-visual-parity-20261111.md",
+    "geometrySource": "E14-guide-xaml-geometry",
+    "colorsSource": "E15-guide-theme-colors",
+    "acceptance": "E16-guide-visual-parity"
+  }
+}

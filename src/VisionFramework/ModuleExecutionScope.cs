@@ -31,9 +31,43 @@ public sealed partial class ModuleExecutionScope:IDisposable {
  public event Action<string>? RunRequested;
  public event Action<string>? RefreshRequested;
  public T State<T>(string module,string node,Func<T> create)where T:class {
-  var root=Root;lock(root.gate){ObjectDisposedException.ThrowIf(root.closing,this);var key=(ProcedureId,module,node);if(!root.states.TryGetValue(key,out var value))root.states.Add(key,value=create());return (T)value;}
+  var root=Root;
+  IDisposable? initialization=null;
+  try
+  {
+   lock(root.gate)
+   {
+    ObjectDisposedException.ThrowIf(root.closing,this);
+    var key=(ProcedureId,module,node);
+    if(root.states.TryGetValue(key,out var value))return (T)value;
+
+    // A factory may close the owner. Keep cleanup pending until the new state is registered.
+    initialization=root.Enter();
+    var created=create();
+    root.states.Add(key,created);
+    ObjectDisposedException.ThrowIf(root.closing,this);
+    return created;
+   }
+  }
+  finally { initialization?.Dispose(); }
  }
- public void RegisterService<T>(T service,bool owned=true)where T:class{if(owner is not null){owner.RegisterService(service,owned);return;}ArgumentNullException.ThrowIfNull(service);lock(gate){ObjectDisposedException.ThrowIf(closing,this);if(services.TryGetValue(typeof(T),out var previous)&&!ReferenceEquals(previous,service)&&ownedServices.Remove(previous)&&previous is IDisposable disposable)disposable.Dispose();services[typeof(T)]=service;if(owned)ownedServices.Add(service);}}
+ public void RegisterService<T>(T service,bool owned=true)where T:class {
+  if(owner is not null){owner.RegisterService(service,owned);return;}
+  ArgumentNullException.ThrowIfNull(service);
+  IDisposable? retired=null;
+  lock(gate)
+  {
+   ObjectDisposedException.ThrowIf(closing,this);
+   services.TryGetValue(typeof(T),out var previous);
+   // Publish ownership before invoking user cleanup, which may close this scope or throw.
+   services[typeof(T)]=service;
+   if(owned)ownedServices.Add(service);
+   if(previous is not null&&!ReferenceEquals(previous,service)
+      &&!services.Values.Any(value=>ReferenceEquals(value,previous))
+      &&ownedServices.Remove(previous))retired=previous as IDisposable;
+  }
+  retired?.Dispose();
+ }
  public T? Service<T>()where T:class{if(owner is not null)return owner.Service<T>();lock(gate)return services.TryGetValue(typeof(T),out var value)?(T)value:null;}
  public void RequestRun(string node){var root=Root;if(root.closing)return;root.ProcedureRunRequested?.Invoke(new(root.Id,ProcedureId,node));if(ProcedureId.Length==0)root.RunRequested?.Invoke(node);}
  public void RequestRefresh(string node){var root=Root;if(root.closing)return;root.ProcedureRefreshRequested?.Invoke(new(root.Id,ProcedureId,node));if(ProcedureId.Length==0)root.RefreshRequested?.Invoke(node);}

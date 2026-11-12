@@ -73,4 +73,19 @@ public partial class MainWindow
         RecentSolutionStore.Update(doc.FilePath!);
         RefreshRecentSolutionsMenu();
     }
+
+    /// <summary>
+    /// 二次实例转发方案，对应原厂 <c>App.ProcessCommandLineArgs</c> 的
+    /// <c>LoadSolution(..., isFromAppArgs: true)</c> 语义（契约 S11）。
+    /// </summary>
+    internal void OpenForwardedSolution(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
+        if (activeRun is not null) { StatusText.Text = "当前流程运行中，已忽略转发的方案"; return; }
+        if (!ConfirmPendingChanges()) return;
+        doc.Load(path);
+        RecentSolutionStore.Update(doc.FilePath!);
+        RefreshRecentSolutionsMenu();
+        StatusText.Text = "已从第二个实例打开方案：" + Path.GetFileName(path);
+    }
 }

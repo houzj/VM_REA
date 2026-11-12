@@ -64,7 +64,9 @@ try{
   var c=closing.Control;c.PauseExecuteIndex=1;var task=closing.Run();await c.ExecuteEntered.Task.WaitAsync(TimeSpan.FromSeconds(15));int callbacks=c.Refreshes.Count;
   closing.Scope.Dispose();Check(c.StatesDisposed==0&&c.Live==1,"Scope close preserves owned node state while nested execution lease is active");
   closing.Scope.ForProcedure(closing.Body).RequestRefresh(closing.Node);Check(c.Refreshes.Count==callbacks,"Closed scope suppresses new old-owner refresh requests");
-  c.ExecuteRelease.TrySetResult();Check((await Settle(task)).Status==SessionStatus.Cancelled&&c.Created==2&&c.Disposed==2,"Scope close cancels later rounds after current instance cleanup");
+  c.ExecuteRelease.TrySetResult();var stopped=await Settle(task);
+  Check(stopped.Status==SessionStatus.Cancelled&&c.Created==2&&c.Disposed==2,"Scope close cancels later rounds after current instance cleanup");
+  Check(stopped.Nodes.Single().Status==NodeRunStatus.Cancelled&&stopped.Nodes.Single().Outputs.Count==0,"Nested Group reports owner stop without publishing the cancelled call outputs");
   Check(c.StatesDisposed==1,"Final nested lease releases persistent node state exactly once");
  }
  using(var first=Graph.Build(1,true,0,2,1))using(var second=Graph.Build(1,true,0,2,1)){

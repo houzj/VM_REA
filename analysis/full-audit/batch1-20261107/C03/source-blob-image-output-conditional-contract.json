@@ -5,9 +5,10 @@
   "entry": {
     "precondition": "SDK GetResult must be non-null after ROI/mask setup and Run",
     "order": ["ModuStatus", "BlobNum", "TotalArea", "BinaryImage conditional branch", "BlobImage conditional branch", "BlobStatus and per-Blob vectors"],
-    "conditional": "BinaryImage and BlobImage are module-owned output flags evaluated after SDK result production",
+    "conditional": "SetParam writes BolbImageEnable to this+0x15EAD and BinaryImageEnable to this+0x15EAE, then immediately calls the corresponding SDK basic-parameter setter. ProcessOutput checks the same fields before publishing the SDK result images.",
     "writer": "each field passes through output writer and later error may leave earlier fields committed",
-    "boundary": "image flags cannot explain BlobNum/TotalArea mismatch because they execute after result retrieval",
-    "unknowns": ["native image descriptor slots and raw bytes", "exact flag-to-output-name mapping in live runtime", "pixel provenance of region-generated image"]
+    "boundary": "The publication branches run after BlobNum and TotalArea. The flags also enter the SDK before Run. In the fixed direct-SDK sample, all four flag combinations preserve the result vector, including the count and area difference between default and explicit full-frame ROI.",
+    "unknowns": ["actual output flag bytes and published buffers in the historical host run", "pixel provenance of region-generated image"],
+    "runtimeEvidence": "sdk-region-matrix-4dd306f7d33a447dba8e0793ad073807/summary.json"
   }
 }

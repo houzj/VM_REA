@@ -151,7 +151,8 @@ public partial class MainWindow
 
     UniformGrid CreateToolGrid(CatalogGroup group)
     {
-        var grid=new UniformGrid { Columns=3, Margin=new Thickness(5,2,5,0) };
+        // 原厂展开态 ItemsPanel 为 Width=250 的 WrapPanel，三列磁贴（68×3）与其等价。
+        var grid=new UniformGrid { Columns=3, MaxWidth=250, Margin=new Thickness(5,2,5,0) };
         foreach(var tool in group.Items)grid.Children.Add(CreateCatalogTile(tool));
         return grid;
     }

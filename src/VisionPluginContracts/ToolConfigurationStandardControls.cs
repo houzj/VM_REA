@@ -42,7 +42,8 @@ public static class ToolConfigurationStandardControls
         registry.Register("Boolean",c=>Boolean(c,text));
         registry.Register("Integer",c=>Numeric(c,text,false,subscriptions));
         registry.Register("Float",c=>Numeric(c,text,true,subscriptions));
-        registry.Register("IntegerBettween",c=>IntegerRange(c,text,subscriptions));
+        registry.Register("IntegerBettween",c=>NumericRange(c,text,false,subscriptions));
+        registry.Register("FloatBettween",c=>NumericRange(c,text,true,subscriptions));
         registry.Register("Enumeration",c=>Enumeration(c,text));
         registry.Register("RadioSelecter",c=>Radios(c,text,language));
         registry.Register("RadioSelecter3",c=>Radios(c,text,language,5));
@@ -71,21 +72,21 @@ public static class ToolConfigurationStandardControls
         c.OnRefresh(()=>{updating=true;toggle.IsChecked=bool.TryParse(c.Node.Value,out var b)&&b;toggle.IsEnabled=Writable(c);updating=false;});return row;
     }
     static bool Writable(ToolConfigurationControlContext c)=>c.Node.Enabled&&((c.Node.Get("AccessMode")??"").Contains('W',StringComparison.OrdinalIgnoreCase)||(c.Node.Get("AccessMode")??"").Contains('O',StringComparison.OrdinalIgnoreCase));
-    static FrameworkElement IntegerRange(ToolConfigurationControlContext c,Func<string,string> text,IToolConfigurationSubscriptionService? subscriptions)
+    static FrameworkElement NumericRange(ToolConfigurationControlContext c,Func<string,string> text,bool floating,IToolConfigurationSubscriptionService? subscriptions)
     {
-        // ParamUserControlDataTemplate.IntegerBettween_Sub owns two actual Integer members.
+        // Original IntegerBettween_Sub / FloatBettween_sub bind their first two declared members.
         // Keep each member's operations and subscription identity; never write the composite name.
-        var members=c.Element.Children.FirstOrDefault(x=>x.Tag=="Integers")?.Children.Where(x=>x.Tag=="Integer").Take(2).ToArray()??[];
-        if(members.Length!=2)throw new NotSupportedException("IntegerBettween requires two source Integer members.");
-        var left=c.CreateChild(members[0]);var right=c.CreateChild(members[1]);
+        var members=c.State.GetNumericRangeChildren(c.Node).Take(2).ToArray();
+        if(members.Length!=2)throw new NotSupportedException(c.Element.Tag+" requires two source numeric members.");
+        var left=c.CreateChild(members[0].Element);var right=c.CreateChild(members[1].Element);
         var editor=new Grid();editor.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});editor.ColumnDefinitions.Add(new(){Width=new GridLength(20)});editor.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});
-        var l=Numeric(left,text,false,subscriptions,false,()=>double.NegativeInfinity,()=>Number(right.Node.Value,255));
-        var r=Numeric(right,text,false,subscriptions,false,()=>Number(left.Node.Value,0),()=>double.PositiveInfinity);
+        var l=Numeric(left,text,floating,subscriptions,false,()=>double.NegativeInfinity,()=>Number(right.Node.Value,255),c.Node);
+        var r=Numeric(right,text,floating,subscriptions,false,()=>Number(left.Node.Value,0),()=>double.PositiveInfinity,c.Node);
         editor.Children.Add(l);Grid.SetColumn(r,2);editor.Children.Add(r);
         var dash=new TextBlock{Text="—",Foreground=new SolidColorBrush(Color.FromRgb(206,204,203)),VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center};Grid.SetColumn(dash,1);editor.Children.Add(dash);
         return Row(c,editor,text);
     }
-    static FrameworkElement Numeric(ToolConfigurationControlContext c,Func<string,string> text,bool floating,IToolConfigurationSubscriptionService? subscriptions,bool labelled=true,Func<double>? lower=null,Func<double>? upper=null)
+    static FrameworkElement Numeric(ToolConfigurationControlContext c,Func<string,string> text,bool floating,IToolConfigurationSubscriptionService? subscriptions,bool labelled=true,Func<double>? lower=null,Func<double>? upper=null,ConfigurationNodeState? range=null)
     {
         var spinner=new ConfigurationNumericSpinner(floating){Tag=c.Node};
         spinner.ValueCommitted+=value=>{c.State.CommitUser(c.Node,value);spinner.SetText(c.Node.Value);};
@@ -97,8 +98,9 @@ public static class ToolConfigurationStandardControls
         var warning=new TextBlock{Text="未支持控件: ButtonSelecter_sub",Foreground=Brushes.DarkRed,VerticalAlignment=VerticalAlignment.Center,
             Tag=new ConfigurationControlLimitation("UnsupportedSubscription","ButtonSelecter_sub","Subscribed numeric leaf requires the shared subscription selector."),Visibility=Visibility.Collapsed};
         c.OnRefresh(()=>{
-            spinner.Minimum=Math.Max(Number(c.Node.Get("MinValue"),0),lower?.Invoke()??double.NegativeInfinity);spinner.Maximum=Math.Min(Number(c.Node.Get("MaxValue"),0),upper?.Invoke()??double.PositiveInfinity);
-            spinner.Increment=Number(c.Node.Get("IncValue"),1);spinner.DecimalDigits=(int)Number(c.Node.Get("DecimalDigits"),2);
+            spinner.Minimum=Math.Max(Number(c.Node.Get("MinValue"),0),Math.Max(lower?.Invoke()??double.NegativeInfinity,range is null?double.NegativeInfinity:Number(range.Get("MinValue"),0)));
+            spinner.Maximum=Math.Min(Number(c.Node.Get("MaxValue"),0),Math.Min(upper?.Invoke()??double.PositiveInfinity,range is null?double.PositiveInfinity:Number(range.Get("MaxValue"),0)));
+            spinner.Increment=Number((range??c.Node).Get("IncValue"),1);spinner.DecimalDigits=(int)Number((range??c.Node).Get("DecimalDigits"),2);
             spinner.NeedSlider=!floating||!bool.TryParse(c.Node.Get("NeedSlider"),out var need)||need;
             spinner.SetText(c.Node.Value);spinner.IsReadOnly=!Writable(c);
             bool subscribed=bool.TryParse(c.Node.Get("IsSub"),out var sub)&&sub;
@@ -106,7 +108,7 @@ public static class ToolConfigurationStandardControls
             spinner.Visibility=subscribed?Visibility.Collapsed:Visibility.Visible;
             if(selector!=null)selector.Visibility=subscribed?Visibility.Visible:Visibility.Collapsed;
             warning.Visibility=subscribed&&selector==null?Visibility.Visible:Visibility.Collapsed;
-            mode.IsChecked=subscribed;mode.Visibility=c.Node.SubscribeVisible?Visibility.Visible:Visibility.Collapsed;
+            mode.IsChecked=subscribed;mode.Visibility=(range??c.Node).SubscribeVisible?Visibility.Visible:Visibility.Collapsed;
             mode.IsEnabled=Writable(c)&&subscriptions!=null;mode.ToolTip=subscriptions==null?"未支持: 订阅服务未提供":subscribed?"切换编辑":"切换订阅";
         });
         mode.Click+=(_,_)=>{if(selector!=null)selector.SetMode(mode.IsChecked==true);mode.IsChecked=bool.TryParse(c.Node.Get("IsSub"),out var current)&&current;};

@@ -101,4 +101,89 @@
 | `analysis/full-audit/reverse-c02-20261022/server-run-callback-binding/output/180631510.asm.txt` | `8A9C2BC60ADA4879BC5B6352374A30F4F0FBC85D8A8C598A47826B0EF98FF643` |
 | `analysis/full-audit/reverse-c02-20261022/server-run-callback-binding/output/1806315f0.asm.txt` | `1BE4F4D9AAD15260D05A56790FFD5436869973EF9408700B0BEABD31EAC4E168` |
 
-下一步沿 `0x1805c43d0` 产生的列表元素与 `0x1805ce0e8` 所在上游完整函数追执行调度入口及异常返回；另须定位 `0x180631510` 的间接调用者/服务端 `+0x7fc48` 回调绑定方，再到 `0x7fe` 接收方。还需校验 `0x1805e5c10/0x1805e5de0` 的配置容器变更及失败时状态。不能从字段已进入 `RunTimeout`、发送侧 `OK` 或 `0x1806203a0` 的零返回推断执行超时语义。之后才可决定 main 有无证据充分的最小实施修复。该取证需要独立命令/状态探针，不使用另一任务的 SDK/桌面实例。
+## 2026-11-10 补证：区分流程导入与执行期超时
+
+对同 SHA 的归档 `PlatformManager.dll` 只读核验。RVA `0x5ce0e8` 对应的 `.pdata` 范围是 `[0x5ce0e8, 0x5ce2b1)`，展开记录 `0x810b80` 的 `UNW_FLAG_CHAININFO` 指向 `[0x5cddb0, 0x5cde55)`，展开记录 `0x80f210`。因此将此前伪代码的 `0x1805ce0e8` 归入 VA `0x1805cddb0` 的父函数，调用者按父入口检索。
+
+| 调用点与范围 | 原 PE / 指令所见 |
+|---|---|
+| `0x1805ad1ca → 0x1805ce460` | 返回值保存到 ESI 并检查。失败路径引用 `ParseXmlData fail.`（RVA `0x7ccb90`）和 `CFileProcuderHandler::AsnycImportFile`（RVA `0x7ced98`，保留原件拼写）。 |
+| `0x1805ce7e5 → 0x1805ce2c0` | 返回值保存到 R14D，随后进入资源清理。 |
+| `0x1805ce399 → 0x1805cddb0` | 调用后测试 EAX，非零跳至 `0x1805ce417` 保存错误。目标入口先验证 RDX，然后查找 `ExportProcedureInfo`（RVA `0x7d3858`）。错误路径引用 `CFileXml::GetExportProcedureInfo`（RVA `0x7d3a98`）。 |
+| `0x1805ce254` 所在区域 | 比较键 `RunTimeout`（RVA `0x7d2150`）。未匹配时 `0x1805ce271` 清零目标记录 `[R14+0x10]`。 |
+
+这些调用边将该读路径定位到导入 XML 的流程记录解析。它可作为 D03 原生容器取证的引用。C02.2 的执行期计时消费者仍待定位，后续继续追 `0x1805c43d0` 产生的列表元素如何进入执行调度，以及服务端 `+0x7fc48` 的回调绑定和 `0x7fe` 消费方。同 PE 直接 E8 扫描对 `0x180631510` 无命中，间接调用仍保留未知。
+
+原件 SHA-256 沿用本页身份。调用边通过 `FindServerDirectCallers.cjs` 以父入口扫描并逐条对照 `dumpbin /disasm`。本轮未加载原 DLL 或启动界面。指令摘录 SHA-256 为 `DA40DA973DE5399BA58FB27C91BE02CC9D591DE17B06569EAD9750828901DDB1`。[本轮指令证据](../../analysis/full-audit/batch1-20261107/C02/run-timeout-import-caller.asm.txt)
+
+## 2026-11-10 补证：导出进度回调与配置记录的消费者
+
+此前第 12–14 条称为“运行前记录”的一条路径，现已通过原件字符串、调用点和托管事件确认属于流程导出。以下 VA 对应前文相同 SHA 的归档 PlatformManager 与 SDK。
+
+| 调用边 | 已核实的身份与数据流 |
+|---|---|
+| `0x1805AA6F0 → 0x1805EEC10 → 0x1805CD170` | 原函数引用 `CFileProcuderHandler::AsnycExportFile`（RVA `0x7CEA80`，保留原件拼写）、`GetProcedureExportInfo fail.`、`ProcedureInfo.xml`。它在 `0x1805AB371` 取流程记录，在 `0x1805AB4D1–0x1805AB54B` 按 `%d-%d` 发送消息 `0x7FE`、进度 `0x28`，之后把记录交给 XML 构造路径。此前所见 `RunTimeout` 写入是该流程导出的配置序列化。 |
+| 发送槽与注册 | `PF_M_SetMsgCallback` 导出 RVA `0x6A0130` 在 `0x1806A0164` 将静态对象 `0x1808F6AF0` 作为 receiver，`0x1806A017B` 尾跳至 `0x180631510`。这解释了先前仅搜索 E8 未找到注册调用。导出进度路径在 `0x1805AB544` 把同一对象传给 `0x1806203A0`。归档 SDK 解析 `PF_M_SetMsgCallback` 到 `+0x2380`，在 `0x180661EA0` 经 `0x1806626C0` 注册 `0x1806BD600` 和 SDK 对象上下文。 |
+| SDK 解析与托管事件 | SDK `0x1806BD600` 将消息送至 `0x1806BE000`。其 `0x7FE` 分支在 `0x1806BEE10` 调 `CServerManager::ParseExportProcessProgressInfo`（`0x1806D3070`，日志名 RVA `0xAD9568`）。解析器转换进度，构造事件 `0x327`（807）及 20 字节载荷，通过可用的回调槽发出。`CVmObjectBase.cs:1067` 解包为 `IMVS_EXPORT_PROCESS_PROGRESS_INFO`，经 `ProcessManager.cs:161` 转发，`VmSolution.cs:4525` 发布 `nProgress`。 |
+| `0x1805DDA30` 的两个已核实读方 | `0x1805B86CA` 位于 `CFileSolutionHandler::AsnycExportFile`，创建流程列表，后经 `0x1805B893B → 0x1805C6220 → 0x1805C5F40 → 0x1805C7EA0` 进入方案 XML 构造。另一处 `0x180622F41` 位于 `CiMVSWorkJob::ControlGetAllProcedure`，遍历列表，以 `%d?%s` / `;%d?%s` 返回流程 ID 和名称。该响应未输出列表中的等待值。 |
+| 方案 XML 读取 | `CFileXml::ParseSolutionXmlByData_V3x`（`0x1805C59D0`）在 `0x1805C5D8C` 调 `0x1805C5750`，再由 `0x1805C58D7` 进入 `CFileXml::GetProceduresInfo`（`0x1805C43D0`）。这里读取 `ProceduresInfo` 内的 `RunTimeout` 并构造配置列表。 |
+
+已核实的这些路径归于流程导出、方案保存和载入、流程列表查询。它们没有提供执行期计时或中断的证据。C02.2 仍需在普通单次和连续执行的调度入口核对字段是否跨到 ModuleFrame，以及何时读取、如何关联当前轮与终态。上述进度回调的注册和消费是静态条件链，未观察本机实际注册或投递。
+
+复核时可用 `FindServerDirectCallers.cjs <归档 PlatformManager.dll> 1805c5750,1805c5f40,1805c59d0,1805c6220` 搜索直接调用，再用 `dumpbin /disasm` 复核。平台与 SDK 指令摘录 SHA-256 分别为 `3C6784FB2D27359EECF49593272F4454A351819806207C20EBA77D34DD78C63E`、`663F81C394D25FA503535547338B6576089E11355EF98435AC86D8B745CB45B3`。[平台调用与注册指令](../../analysis/full-audit/batch1-20261107/C02/run-timeout-file-boundaries-20261110.asm.txt) · [SDK 解析指令](../../analysis/full-audit/batch1-20261107/C02/export-progress-sdk-20261110.asm.txt) · [服务端进度发送](../../analysis/full-audit/reverse-c02-20261022/server-wait-read-callers/output/1805aa6f0.asm.txt)
+
+## 2026-11-10 补证：等待配置到原生模块调度
+
+配置字段号 8 除了写入 PlatformManager 记录，还会写入 ModuleFrame 的流程记录。已找到该字段的执行期比较及可达的节点超时分支。以下地址为归档原件的 VA。
+
+| 环节 | 数据流与实际行为 |
+|---|---|
+| 平台转发 | `0x18061A46A` 把流程 ID、字段号和值字符串送入 `0x1805E5C10`。后者保留 EDX/R8D/R9，在 `0x1805E5C93` 调 `CModuleJson::BuildSetProcRunGap`（`0x180675DC0`），再于 `0x1805E5CF2` 发送给代理。构造器用命令 `0xBDD`，字段号 8 路径在 `0x1806761D9` 转换值，于 `0x180676277` 写 JSON `waitTime`，并以 `runFlag=8` 标记更新项。代理成功返回后，外层再更新本地流程记录。 |
+| 代理和流程记录 | 归档代理 `0xBDD` 分支读取 `procedureId/interval/runFlag/stopWhenNG/waitTime`，在 `0x18004FF82` 经 thunk `0x180024500` 传入 ID 与参数结构。API 表 `+0x130` 由 `0x1800220DE` 绑定，目标为 `ModuleFrame!VM_M_SetProcedureRunningParam`（`0x18013C640`）。记录查找命中且参数 `+0x08` 的位 8 置位时，helper `0x1800455F0` 在 `0x180045710–0x180045713` 将参数 `+0x0C` 写到流程记录 `+0x170`。间隔是独立字段 `+0x78`。 |
+| 计时起点和比较 | `DD330` 每轮进入主体后，在 `0x1800DD82C` 把性能计数器换算的毫秒起点写到流程记录 `+0x178`，随后进入执行派发。 `0x1800E0CF0` 在阈值为 0 时返回 false。否则通过 `QueryPerformanceFrequency/Counter` 和 double 常量 1000（RVA `0x23A7B0`）计算当前毫秒数减起点，对 `+0x170` 执行严格大于比较。 |
+| 超时发生时 | `CWorkFlow::ScheduleHelper`（`0x1800FFD00`）对记录类型值 3 或 5，且成功取得所属流程记录时，于 `0x1800FFF9C` 调用比较。超出阈值则写待调度模块状态 `+0x84=3`、错误 `+0x7C=0xE0000009`，跳过该次通常的模块执行虚调用。日志字符串明确记载 “Module… is not run” 及所属流程和等待毫秒数（RVA `0x22F8B0`）。后续 `0x1801001CE–0x1801001E8` 将该模块错误交给结果处理 helper。 |
+
+因此，已核实的是**到达指定节点调度边界时按本轮耗时拒绝执行该节点**。仍需取得同一轮的模块结果、流程终态与回调，确认活跃算法是否在别处被中断，以及不同记录类型、Group 和连续轮次如何传播该错误。现有自研 `WaitTimeMs` 使用协作取消令牌，行为差异已记录，原厂终态证据未齐前保留现有合同。
+
+原件取自 `analysis/full-audit/b08-native-20261030/`。PlatformManager、ModuleProxy、ModuleFrame 的 SHA-256 分别为 `06D86F51BEBFEBA357D1B79297E20A3B0A70580A40AF7B77C8ABDD6C38CA0624`、`76F09A40184B2B5F99B7173EDDE23A716D339E3C64955696D6927495EFDF68A9`、`45C57BC46F72FD1F9E0B3A6F9183FF974D14590CFD05ECF4E9FA97A4FF95AE9B`。复核用 `dumpbin /exports /imports /pdata /disasm` 分别查看导出、计时 API、函数范围和调用点。平台构造、代理转发、ModuleFrame 写入、调度比较四份指令摘录的 SHA-256 依次为 `60945C93CAF34E979D2E57ED2EC8523339D875662A7CA7628510326ED7C91D40`、`5B0D8FB84063108C3AFC15D64FF25205A807D38DCB9BD41DEE66ADDC566BF70A`、`B34BB5F3F2600A78A3899F3C910DCEB8BDBD7A57EE8DEB9899945F822C83CCE2`、`BCA22D8A4D913D1BE2F2C44CF4474EBD5773F6CAAAA3B176E06118DCB8401512`。[平台构造](../../analysis/full-audit/batch1-20261107/C02/wait-param-builder-platform.asm.txt) · [代理转发](../../analysis/full-audit/batch1-20261107/C02/wait-param-proxy.asm.txt) · [流程记录写入](../../analysis/full-audit/batch1-20261107/C02/wait-param-setter-moduleframe.asm.txt) · [调度比较](../../analysis/full-audit/batch1-20261107/C02/wait-deadline-dispatch-moduleframe.asm.txt)
+### 超时模块结果与流程收尾
+
+超时分支在 `0x1800FFF79` 保留调度局部结果 3，在 `0x1800FFFAD/0x1800FFFBA` 写模块字段 `+0x84=3`、`+0x7C=0xE0000009`。同一 `ScheduleHelper` 在 `0x18010018C–0x1801001E8` 把局部结果 3 映射为 1，以模块 `+0x2C` 为键、`+0x7C` 为错误调用 `0x1800CB8F0`。命中结果记录时，该函数在 `0x1800CB920/0x1800CB929` 写 `record+0x70=1`、`record+0x88=0xE0000009`。原托管 SDK 的 `ImvsSdkDefine.cs:12926` 将该数值声明为 `IMVS_EC_WAIT_TIMEOUT`。
+
+后续若 `CC230` 取到同一上下文和键下未被覆盖的记录，状态 1 转为原生输出状态 2，错误复制到输出 `+0x58`。在输出对象被打包且命中注册的 SDK 模块结果回调时，`6CAFD0/6C0470` 可将两字段传到 `CVmObjectBase.cs:840` 的类型 23，托管 `IMVS_MODULE_RESULT_INFO_LIST_EX` 因而携带 `nStatus=2` 与 `nErrorCode=0xE0000009`。这一段复用已核实的结果读取和打包合同，实际记录身份和回调送达仍需同轮采集。[模块结果记录及回调字段](../../analysis/vm-framework-architecture-20261030/parallel-ifbranch-empty-state-record-write-20261031.md)
+
+| 流程收尾字段 | 已核对的来源与传递 |
+|---|---|
+| `DD330` 流程记录 `+0x12C` | 收尾默认写 1。若流程 `+0x128` 已置位则写 3，否则仅当该轮命中 `StopWhenNG` 的 `DE780` 分支才写 2。`DE780` 读的是指定模块 `ModuStatus` 输出的首个整数，并检查是否不等于 1。已知 `VM_M_StopOwnerProcedure → 0x180129710` 可写 `+0x128`。节点超时分支所写 `+0x7C` 是模块对象字段，现有路径未建立它会写流程记录的 `+0x128` 或该输出整数。 |
+| 停止动作的回调字段 | `DD330` 把 `+0x12C` 交给 `DE180(record,3,0,action)`，事件 6 的数据 `+0x10` 保存此动作。代理 `0x1800637F0` 在 `0x180063A0A` 构造 `0xBD5`，在 `0x180063CA3–0x180063CB9` 将事件数据 `+0x10` 写入 JSON `body.stopAction`。平台 `SPReportProcessStatus` 路径解析该键，在 `0x1805E5314–0x1805E5344` 把它作为 `%d-%d-%llu-%d` 的最后一项，消息码为 `0x7DA`。SDK `0x1806BE700 → 0x1806C8220` 解析消息体 `%u-%I64u-%u`，在停止索引条件通过后调用 `0x1806BBF00`，其中通用回调使用类型 `0x304`（772）。托管的 `IMVS_STATUS_PROCESS_STOP_INFO.nStopAction` 消费该路径的动作。 |
+| 全部流程结束通知 | 归档事件 18 的代理分支自行构造 `0xC47`，该路径的 `head.errorCode` 初始化为 0，来源独立于上述模块结果。`ProcessManager` 还通过工作状态事件 14 更新流程正常标志和等待槽，这条链的 `nIsExecuteNormal` 取值仍须追同轮生产者。 |
+
+因此可核验两种独立输出：模块结果携带等待超时码，流程停止动作由收尾条件产生。当前缺少原厂同一轮实例证明，尤其是超时模块的 `ModuStatus`、工作状态事件 14 的实际值、后续模块状态及已在执行的算法。自研的 `ProcedureWaitTimeout` 暂按现有协作取消合同测试。
+
+本节沿用上述原件 SHA。新增四份指令摘录的 SHA-256 依次为 `88D97939028F88475DA1CC1572559A604B728176EF6166FD65507A6FD071CDE4`、`AC4E1F539102952C32055A6A58DB74CCA501894C98F2793C7F9C491353830491`、`40D31CAFD741176638F833C6C0EFA9CFCD02AC97D492678F9487CC138A7CA3DE`、`A4ED240C8B46E7CDF77D9C17245F732630A41E9CBEF117BA2EBCD5AC15475C86`。按地址用 `dumpbin /disasm` 复核，按 PE 节表读取 `stopAction`（代理 RVA `0x154400`、平台 RVA `0x7E7D80`）和两端格式串。 [模块结果与收尾](../../analysis/full-audit/batch1-20261107/C02/timeout-result-moduleframe-20261110.asm.txt) · [代理](../../analysis/full-audit/batch1-20261107/C02/stop-action-proxy-20261110.asm.txt) · [平台](../../analysis/full-audit/batch1-20261107/C02/stop-action-platform-20261110.asm.txt) · [SDK](../../analysis/full-audit/batch1-20261107/C02/stop-action-sdk-20261110.asm.txt) · [全部流程结束证据](../../analysis/vm-framework-architecture-20261030/module-error-procedure-finish-event-separation-20261102.md)
+
+### 工作状态的正常标志
+
+| 环节 | 已核实的来源与行为 |
+|---|---|
+| 每轮初始化 | `DD330` 在 `0x1800DD7C5` 调用 `0x1800E22F0`。该准备路径在 `0x1800E25AA–0x1800E25CB` 将流程标志置 1。普通 ID 的地址为 `0x1802BC5BC - 4 * id`，特殊 ID `100000` 使用 `0x1802B19E0`。 |
+| 实际执行的模块返回 | 已查实的模块执行函数 `0x1800B8740` 在 `0x1800B8D20–0x1800B8D4F` 将原始返回码为零的谓词与所属流程标志做按位与。正常返回非零会清零，零只保留现值。所属流程 ID 取模块记录 `+0x28`。 |
+| 调度器拒绝执行 | 前文 `0x1800FFF9C` 的阈值检查为真时，跳过 `0x180100062` 的模块执行虚调用，直接记录模块等待超时。因此不会经这次模块执行进入 `B8740` 的清零指令。若该轮初始化为 1，且同一流程没有其他路径改写标志，超时模块错误与正常标志 1 可以并存。这是有条件的静态结论。 |
+| 完成通知字段 | `DE180` 在 `0x1800DE219–0x1800DE23F` 按同一 ID 寻址，把标志写到事件数据 `+0x14`。代理事件 6 的完成分支在 `0x180038575` 取该值，放入长文本格式的第六个数值项。SDK `0x1806CAFD0` 的匹配长格式分支在 `0x1806CEDAB` 解析该项，于 `0x1806CEE4C` 写到 52 字节工作状态载荷 `+0x24`，与 `IMVS_MODULE_WORK_STAUS.nIsExecuteNormal` 偏移一致。注册和长格式传递成立时，通用回调以类型 14 转发。 |
+
+另有一条短格式 `0x7D3`，归档 SDK 的 `ParseWorkStateInfo`（`0x1806C2E20`）只读取两个或三个数值。在已核实的通用回调分支中，它清零包含 `+0x24` 的载荷区域。这解释了为何需在原厂同轮记录中同时固定消息入口、流程 ID 和执行计数。只读 `ProcessManager` 的槽值，无法区分消息分支或其他写入。
+
+本节未观察现场回调或确认长格式的实际投递实例。ModuleFrame、代理和 SDK 指令摘录 SHA-256 分别为 `E71FE17B73B7CFE58476D6BB1622CCD26DC07D954AB85CFCE76F80637069FCA9`、`64B21AB97BD5544F6B7BC0B9A9BE47BEAB5A4909BEBEF0C443EDAE9879D970EE`、`464112B47320689B3DE04D341477AF122A2671E9B21EF99DCEAE34C14C4CBA51`。按 VA 复核指令，按 PE 节表读取代理格式串 RVA `0x14A780`、SDK 长格式 RVA `0xAD8190` 及短格式 RVA `0xAD5398`。 [ModuleFrame 标志读写](../../analysis/full-audit/batch1-20261107/C02/execute-normal-frame-20261110.asm.txt) · [代理格式化](../../analysis/full-audit/batch1-20261107/C02/execute-normal-proxy-20261110.asm.txt) · [SDK 工作状态解析](../../analysis/full-audit/batch1-20261107/C02/execute-normal-sdk-20261110.asm.txt)
+
+### 2026-11-11 补证：任务派发与 StopWhenNG 的取值
+
+| 调用段 | 同一归档 ModuleFrame 的静态证据 |
+|---|---|
+| 直接派发 | `0x1800FFB0E`、`0x180100913`、`0x180100968` 都直接调用 `ScheduleHelper (0x1800FFD00)`。 |
+| 间接派发 | `0x1800FFB46/0x1800FFC0D` 调用 `0x180101240`，后者把 `ScheduleHelper` 地址写入任务描述。随后 `0x1801012A0` 将其复制到带 vtable 的对象 `+0x08`。表 RVA `0x22FB60` 的 `+0x10` 是 `0x1801015A0`，它传入任务保存的数据并调用 `0x180101860`。后者在 `0x1801018BE` 通过保存的任务函数指针进入同一个 `ScheduleHelper`。 |
+| 超时跳过后的结果写入 | 在已反汇编的代码中，比较 helper `0x1800E0CF0` 的直接调用只见于 `0x1800FFF9C`。超时路径不进入 `0x180100062` 的模块虚调用，仍进入公共的结果记录路径。在状态与错误写入 `0x1800CB8F0` 之后，`0x18010020E → 0x1800CB970` 对命中的结果记录写 `+0x74`。其值是 `1 + ([RSP+0x68] != 0)`，单独来自调度局部字段。 |
+| StopWhenNG | 只有流程开关 `+0x114` 已开启时，`DD330` 才在 `0x1800DDA99` 调 `DE780`。读取配置模块的 `ModuStatus` 成功时，`0x1800DEA43–0x1800DEA4D` 取首个整数并清错误寄存器。随后 `0x1800DEB0B–0x1800DEB14` 先要求读取成功，再比较整数与 1。读取错误跳到列表下一项，遍历到末尾返回 false。因此缺少可读输出本身不会触发该分支。 |
+
+直接与间接路径的等待阈值判断都在待调度模块的执行入口。所查路径能证明跳过该次调用，仍需同轮运行确认已在途的算法如何结束、后继模块是否也命中阈值，以及 `StopWhenNG` 读到的输出是否为当轮写入。现有自研协作取消与原厂调度跳过分列。
+
+复验沿用归档 ModuleFrame SHA-256 `45C57BC46F72FD1F9E0B3A6F9183FF974D14590CFD05ECF4E9FA97A4FF95AE9B`。用 `dumpbin /disasm:bytes` 检索目标及核对分支，按 PE 节表读取任务 vtable。摘录 SHA-256 为 `F211CB4DA77D41DE8E6F2E730E763ADAF90ED32FBC31C1AA5FCF5DF4147A01C6`。[派发、结果和停止判定指令](../../analysis/full-audit/batch1-20261107/C02/wait-dispatch-entry-moduleframe-20261111.asm.txt)

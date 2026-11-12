@@ -60,7 +60,7 @@ try
  Check(window.WindowState==WindowState.Normal,"Window starts normal");
  var helpMenu=menu.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"帮助"));
  var onlineHelp=helpMenu.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"帮助文档（在线）"));
- var undoToolButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"撤销"));
+ var undoToolButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"撤消"));
  var redoToolButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"重做"));
  var historyDocument=(GraphEditorDocument)typeof(MainWindow).GetField("doc",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
  bool IconIs(Button button,string suffix)=>button.Content is Image image&&image.Source?.ToString()?.EndsWith(suffix,StringComparison.OrdinalIgnoreCase)==true;
@@ -108,7 +108,7 @@ try
  var fileMenu=(MenuItem)menu.Items[0];fileMenu.IsSubmenuOpen=true;Pump();
  Check(ReferenceEquals(FocusManager.GetFocusedElement(procedureTabs),fileMenu),"Opening a main menu records the menu as the procedure focus element");
  fileMenu.IsSubmenuOpen=false;Pump();
- var stopTool=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"停止"));
+ var stopTool=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"停止执行"));
  stopTool.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,stopTool));Pump();
  Check(ReferenceEquals(FocusManager.GetFocusedElement(procedureTabs),stopTool),"Clicking a toolbar command records the button as the procedure focus element");
  var maximize=Find<Button>("MaximizeButton");
@@ -160,7 +160,7 @@ try
  var statusImage=new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth),(int)Math.Ceiling(window.ActualHeight),96,96,PixelFormats.Pbgra32);
  statusImage.Render(window);var statusPng=new PngBitmapEncoder();statusPng.Frames.Add(BitmapFrame.Create(statusImage));
  Directory.CreateDirectory("analysis/full-audit");using(var file=File.Create("analysis/full-audit/shell-zoom-reset.png"))statusPng.Save(file);
- var lockButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"锁定工作区"));
+ var lockButton=toolbar.Children.OfType<Button>().Single(b=>Equals(b.ToolTip,"锁定"));
  bool firstPrompt=false;
  window.Dispatcher.BeginInvoke(new Action(()=>
  {
@@ -172,7 +172,7 @@ try
   ((Button)dialog.FindName("CancelLock")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
  }),DispatcherPriority.Background);
  lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
- Check(firstPrompt&&lockButton.ToolTip?.ToString()=="锁定工作区","First toolbar lock shows native-style confirmation and No keeps work area editable");
+ Check(firstPrompt&&lockButton.ToolTip?.ToString()=="锁定","First toolbar lock shows native-style confirmation and No keeps work area editable");
  bool secondPrompt=false;
  window.Dispatcher.BeginInvoke(new Action(()=>
  {
@@ -181,12 +181,12 @@ try
   ((Button)dialog.FindName("ConfirmLock")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
  }),DispatcherPriority.Background);
  lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
- Check(secondPrompt&&lockButton.ToolTip?.ToString()=="解锁工作区"&&!Find<Button>("AddProcedureButton").IsEnabled,"Yes locks actual editor commands and updates toolbar state");
+ Check(secondPrompt&&lockButton.ToolTip?.ToString()=="解除锁定"&&!Find<Button>("AddProcedureButton").IsEnabled,"Yes locks actual editor commands and updates toolbar state");
  Check(File.ReadAllText(lockPreferencePath).Contains("\"IsNotifyLock\":true"),"Do-not-show preference is persisted separately from the solution");
  lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
- Check(lockButton.ToolTip?.ToString()=="锁定工作区"&&Find<Button>("AddProcedureButton").IsEnabled,"Unlock is immediate and restores actual editor commands");
+ Check(lockButton.ToolTip?.ToString()=="锁定"&&Find<Button>("AddProcedureButton").IsEnabled,"Unlock is immediate and restores actual editor commands");
  lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
- Check(lockButton.ToolTip?.ToString()=="解锁工作区"&&window.OwnedWindows.OfType<ShellLockPrompt>().Count()==0,"Saved do-not-show preference bypasses the next confirmation");
+ Check(lockButton.ToolTip?.ToString()=="解除锁定"&&window.OwnedWindows.OfType<ShellLockPrompt>().Count()==0,"Saved do-not-show preference bypasses the next confirmation");
  lockButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent,lockButton));Pump();
  var run=(Task)typeof(MainWindow).GetMethod("Run",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,null)!;
  var deadline=DateTime.UtcNow.AddSeconds(15);
@@ -214,11 +214,11 @@ try
  var recentFirst=Path.GetFullPath("analysis/full-audit/shell-recent-first.vmx.json");
  var recentSecond=Path.GetFullPath("analysis/full-audit/shell-recent-second.vmx.json");
  document.Save(recentFirst);
- var saveMenu=((MenuItem)menu.Items[0]).Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"保存"));
+ var saveMenu=((MenuItem)menu.Items[0]).Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"保存方案"));
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
  document.Save(recentSecond);
  saveMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveMenu));Pump();
- var fileRoot=(MenuItem)menu.Items[0];var recentMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"最近打开"));
+ var fileRoot=(MenuItem)menu.Items[0];var recentMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"最近打开方案"));
  var menuSource=PresentationSource.FromVisual(window)??throw new Exception("Menu host has no presentation source");
  void SendMenuKey(UIElement target,Key key)
  {
@@ -330,7 +330,7 @@ try
  solutionPicker.NextPath=null;
  openMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,openMenu));Pump();
  Check(solutionPicker.LastInitialDirectory==Path.GetDirectoryName(recentSecond)&&document.FilePath==recentSecond,"Next Open starts in the remembered directory; cancelling retains the solution");
- var saveAsMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"另存为"));
+ var saveAsMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"方案另存为"));
  var recentCount=recentMenu.Items.Count;
  saveAsMenu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,saveAsMenu));Pump();
  Check(document.FilePath==recentSecond&&!File.Exists(saveDirectoryPath)&&recentMenu.Items.Count==recentCount&&savePicker.LastInitialDirectory==string.Empty,"Cancelling Save As retains document, directory preference and recent history");
@@ -354,8 +354,9 @@ try
  using(var savedJson=JsonDocument.Parse(File.ReadAllText(saveAsPath)))
   Check(savePicker.Calls==pickerCalls&&!document.IsDirty&&savedJson.RootElement.GetProperty("Procedures").EnumerateArray().Any(p=>p.GetProperty("Name").GetString()=="工具栏保存复验"),"Toolbar Save writes changes to the existing path without reopening Save As");
  var exitMenu=fileRoot.Items.OfType<MenuItem>().Single(item=>Equals(item.Header,"退出"));
- Check(string.Join(",",fileRoot.Items.OfType<MenuItem>().Select(item=>item.Header))=="新建方案,打开方案,最近打开,打开示例,保存,另存为,退出","File menu follows the source order for implemented native commands");
- Check(fileRoot.Items[fileRoot.Items.IndexOf(sampleMenu)-1] is Separator&&fileRoot.Items[fileRoot.Items.IndexOf(saveMenu)-1] is Separator,"Source separator flags appear before sample and save commands");
+ Check(string.Join(",",fileRoot.Items.OfType<MenuItem>().Select(item=>item.Header))=="新建方案,打开方案,最近打开方案,打开示例,保存方案,方案另存为,导出算子代码,导入流程,退出","File menu follows the source order for implemented native commands");
+ // menuitems.xml 的 isShowSeparator 表示"该项之后跟分隔线"，因此分隔线出现在打开示例与保存方案之后。
+ Check(fileRoot.Items[fileRoot.Items.IndexOf(sampleMenu)+1] is Separator&&fileRoot.Items[fileRoot.Items.IndexOf(saveMenu)+1] is Separator,"Source separator flags appear after sample and save commands");
  Check(fileRoot.Items[fileRoot.Items.IndexOf(exitMenu)-1] is Separator,"File menu separates its native Exit command from solution commands");
  fileRoot.IsSubmenuOpen=true;Pump();
  if(!controlEventsOnly)Check(exitMenu.IsVisible&&exitMenu.ActualWidth>0&&exitMenu.ActualHeight>0,"File Exit appears as a laid-out WPF menu item in the opened menu");

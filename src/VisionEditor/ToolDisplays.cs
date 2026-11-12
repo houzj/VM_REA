@@ -46,7 +46,9 @@ public partial class MainWindow {
   PreviewImageName.Visibility=overlay?Visibility.Collapsed:Visibility.Visible;
   if(overlay)EmptyImage.Visibility=Visibility.Collapsed;
   ImagePreviewPane.Visibility=DisplayTabs.SelectedIndex==0?Visibility.Visible:Visibility.Collapsed;
-  ModuleResultsGrid.Visibility=DisplayTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;
+  // 模块结果页用树形呈现；旧的三列表格仅保留控件但不参与显示。
+  ModuleResultsGrid.Visibility=Visibility.Collapsed;
+  ModuleResultTree.Visibility=DisplayTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;
   toolDisplayRecord.Visibility=provider is not null&&DisplayTabs.SelectedIndex==2?Visibility.Visible:Visibility.Collapsed;
   toolDisplayList.Visibility=provider is not null&&DisplayTabs.SelectedIndex==3?Visibility.Visible:Visibility.Collapsed;
   toolDisplayImage.LayoutTransform=new ScaleTransform(previewScale,previewScale);

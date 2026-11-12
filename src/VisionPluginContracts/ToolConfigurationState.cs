@@ -46,7 +46,7 @@ public sealed class ConfigurationNodeState {
   Choices=Array.AsReadOnly((element.Children.FirstOrDefault(x=>x.Tag=="EnumEntrys")?.Children??[]).Select(e=>new ConfigurationChoice(e.Children.FirstOrDefault(c=>c.Tag=="DisplayName")?.Text??"",NormalizeEntryValue(e.Children.FirstOrDefault(c=>c.Tag=="Value")?.Text??"0"))).ToArray());
   if(!values.ContainsKey("CurValue")) values["CurValue"]=element.Tag switch {
    "Boolean" or "Expand"=>"False", "Integer" or "Float" or "RadioSelecter" or "Enumeration"=>"0", _=>"" };
-  if(IsInteger32)foreach(var field in new[]{"CurValue","DefaultValue","MinValue","MaxValue","IncValue"})values[field]=ParseInt32(values.GetValueOrDefault(field,field=="IncValue"?"1":"0"));
+  if(HasInt32Metadata)foreach(var field in new[]{"CurValue","DefaultValue","MinValue","MaxValue","IncValue"})values[field]=ParseInt32(values.GetValueOrDefault(field,field=="IncValue"?"1":"0"));
   else if(Enum32Types.Contains(element.Tag)||Radio32Types.Contains(element.Tag))foreach(var field in new[]{"CurValue","DefaultValue"})values[field]=ParseInt32(values.GetValueOrDefault(field,"0"));
  }
  static string NormalizeEntryValue(string value)=>ParseInt32(value);
@@ -56,8 +56,9 @@ public sealed class ConfigurationNodeState {
   return (int.TryParse(hex?value[2..]:value,hex?NumberStyles.HexNumber:NumberStyles.Integer,CultureInfo.InvariantCulture,out var number)?number:0).ToString(CultureInfo.InvariantCulture);
  }
  public bool IsInteger32=>Integer32Types.Contains(Element.Tag);
+ bool HasInt32Metadata=>IsInteger32||Element.Tag=="IntegerBettween";
  internal string NormalizeTypedProperty(string property,string value)=>
-  IsInteger32&&property is "CurValue" or "DefaultValue" or "MinValue" or "MaxValue" or "IncValue" ||
+  HasInt32Metadata&&property is "CurValue" or "DefaultValue" or "MinValue" or "MaxValue" or "IncValue" ||
   (Enum32Types.Contains(Element.Tag)||Radio32Types.Contains(Element.Tag))&&property is "CurValue" or "DefaultValue"?ParseInt32(value):value;
  public ConfigurationSubscriptionBinding? SubscriptionBinding {get;internal set;}
  public ConfigurationSubscriptionTreeResult? SubscriptionTree {get;internal set;}
@@ -90,7 +91,7 @@ public sealed class ConfigurationNodeState {
 }
 
 /// <summary>Evidence-scoped XML rules engine. It never invokes arbitrary CLR methods from XML.</summary>
-public sealed class ToolConfigurationState {
+public sealed partial class ToolConfigurationState {
  // PointPair declares these fields as ButtonSelecter instances in Apps.XmlParser.ParamTab.PointPair.
  // XML field tags are local member names, not globally named configuration controls.
  static readonly HashSet<string> PointPairSelectors=new(StringComparer.Ordinal){"ObjectPoint","TargetPoint","ObjectPointX","TargetPointX","ObjectPointY","TargetPointY","ObjectPointAngle","TargetPointAngle"};
@@ -123,7 +124,7 @@ public sealed class ToolConfigurationState {
   foreach(var node in Nodes)committedValues[node]=node.Value;
  }
  void Walk(ConfigurationElement e) {
-  if(e.Tag is "Category" or "CategoryNoHead" or "Tab" || e.Parent?.Tag is "Items" or "BottomExcuteButtons" or "BottomExcuteButtonsLeft" or "ExternParamsList" || IsPointPairSelector(e) || e.Tag=="Integer"&&e.Parent?.Tag=="Integers"&&e.Parent.Parent?.Tag=="IntegerBettween")
+  if(e.Tag is "Category" or "CategoryNoHead" or "Tab" || e.Parent?.Tag is "Items" or "BottomExcuteButtons" or "BottomExcuteButtonsLeft" or "ExternParamsList" || IsPointPairSelector(e) || IsNumericRangeMember(e))
    byElement[e]=new(this,e);
   foreach(var c in e.Children)Walk(c);
  }
@@ -157,7 +158,7 @@ public sealed class ToolConfigurationState {
   retainedFailedWrites.Clear();initializing=true; depth++;
   try {
    foreach(var n in Nodes) {
-    if((n.Get("AccessMode")??"").Contains('R',StringComparison.OrdinalIgnoreCase)&&n.Element.Tag is not "Tab" and not "Category") {
+    if((n.Get("AccessMode")??"").Contains('R',StringComparison.OrdinalIgnoreCase)&&n.Element.Tag is not "Tab" and not "Category"&&!IsNumericRange(n.Element)) {
      var read=Dispatch(new(ConfigurationOperationKind.ReadParameter,"ReadParameter",n,null,[],ConfigurationChangeKind.Initialization));
      if(read.Handled&&read.Value!=null)Change(n,"CurValue",read.Value,ConfigurationChangeKind.Initialization);
     }
@@ -181,12 +182,19 @@ public sealed class ToolConfigurationState {
  /// <summary>Explicit authoritative readback, corresponding to GetParamUnit. Unlike an arbitrary
  /// programmatic presentation change, this updates the rollback baseline after a successful read.</summary>
  public bool RefreshParameter(ConfigurationNodeState node) {
+  if(IsNumericRange(node.Element)) {
+   var children=GetNumericRangeChildren(node);
+   if(children.Count<2){Diagnose("InvalidNumericRange","ReadParameter",node,"Two declared numeric members are required.");return false;}
+   foreach(var child in children.Take(2))if(!RefreshParameter(child))return false;
+   return true;
+  }
   var result=Dispatch(new(ConfigurationOperationKind.ReadParameter,"ReadParameter",node,null,[],ConfigurationChangeKind.Programmatic));
   if(!result.Handled||result.Error is not null||result.Value is null)return false;
   Change(node,"CurValue",result.Value,ConfigurationChangeKind.Programmatic);committedValues[node]=node.Value;retainedFailedWrites.Remove(node);return true;
  }
  public void CommitUser(string name,string value,bool forceWrite=false)=>CommitUser(Find(name)??throw new KeyNotFoundException(name),value,forceWrite);
  public void CommitUser(ConfigurationNodeState node,string value,bool forceWrite=false) {
+  if(IsNumericRange(node.Element)){Diagnose("CompositeParameter","CommitUser",node,"Commit the declared numeric member, not its container.");return;}
   if(!node.Enabled){Diagnose("DisabledCommit","CommitUser",node,"Parameter is disabled.");return;}
   if(node.Element.Tag=="Expand"){Change(node,"CurValue",value,ConfigurationChangeKind.UserCommit);committedValues[node]=node.Value;return;}
   var declaredAccess=node.Get("AccessMode")??"";
@@ -264,6 +272,9 @@ public sealed class ToolConfigurationState {
   if(!n.Assign(property,value))return;
   depth++;
   try {
+   // ValueBettween.CustomVisibleA forwards the changed flag to every declared child.
+   if(property=="CustomVisible"&&IsNumericRange(n.Element))
+    foreach(var child in GetNumericRangeChildren(n))Change(child,property,value,kind);
    if(property=="CustomVisible" && !n.CustomVisible && n.IsDeleteSubscribe && !string.IsNullOrEmpty(n.Get("Subscription"))) {
     var cleared=Dispatch(new(ConfigurationOperationKind.ClearParameterBinding,"ClearParameterBinding",n,null,[],kind){SubscriptionBinding=n.SubscriptionBinding});
     if(cleared.Handled&&cleared.Error==null) {
@@ -282,6 +293,8 @@ public sealed class ToolConfigurationState {
    foreach(var setter in Section(item.Element,"Triggers").SelectMany(t=>Section(t,"Setters"))) {
     var target=Target(item,setter);if(target==null)continue;
     if(target.IsInteger32||target.Element.Tag is "Float" or "Boolean" or "String")Change(target,"IsDeleteSubscribe",expanded.ToString(),kind);
+    else if(IsNumericRange(target.Element))
+     foreach(var child in GetNumericRangeChildren(target))Change(child,"IsDeleteSubscribe",expanded.ToString(),kind);
     else if(target.Element.Children.Any(x=>x.Tag is "Integers" or "Floats" or "SubChildren"))Diagnose("UnsupportedExpansion",target.Element.Tag,source,"ISubChild subscription children require explicit model support.");
     pending.Push(target);
    }

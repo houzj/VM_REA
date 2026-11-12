@@ -208,6 +208,8 @@ Shared VisionUi now owns source-guided ROI templates, native button resources an
 
 ## FCR-018：Group 运行参数选择后的工具装饰器（请求，未实现）
 
+2026-11-11 main 公共框架增量：普通 `IntegerBettween` / `FloatBettween` 的子项装配、双端标准控件、独立参数/订阅身份、高级显隐、默认值恢复及真实工具配置保存重开已落地并自审，包含已随包的标定板/畸变标定及仓库中的轮廓匹配 provider。配置与执行生命周期共 22 套、4116 项检查通过。该交付复用当前公共配置模型，不修改工具专属算法或另一工作树；原生 Group `%` 代理、多目标装饰器和专用变体仍单列，不能据此称 FCR-018 整体完成。[证据与复跑](reverse/B06-numeric-range-configuration-20261111.md)。
+
 - 生产者：插件项目的工具配置框架及各工具 `IGroupRunParam` 对应的专属/通用装饰器工厂；框架 Group 类别树产生当前选中参数及其节点身份。
 - 消费者：Group 双栏配置窗口右侧的参数配置区；运行参数映射、同步与执行仍由现有框架数据链负责。
 - Payload：至少包含所属流程/Group/节点实例身份、参数名、对应描述符、只读当前参数和订阅快照、可空专属装饰器能力，以及原子 Apply/Cancel 回调。具体接口需双线审查，不能把原生 `IDecorate` 假定为现有 WPF 接口。

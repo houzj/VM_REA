@@ -93,7 +93,226 @@ using(var lifetime=new ModuleExecutionScope()){
  using var other=new ModuleExecutionScope();Check(other.Id!=lifetime.Id&&other.ForProcedure("second").State("scoped-counter","same",()=>new List<int>()).Count==0,"New solution lifetime isolates identical flow/node IDs");
  lifetime.Dispose();bool expired=false;try{lifetime.ForProcedure("first").State("scoped-counter","same",()=>new List<int>());}catch(ObjectDisposedException){expired=true;}Check(expired,"Borrowed views reject writes after solution close");
 }
+foreach (var withExecutionLease in new[] { false, true })
+{
+    using var owner = new ModuleExecutionScope();
+    var scope = owner.ForProcedure("state-initialization");
+    int releasedState = 0;
+    bool rejected = false;
+    using (withExecutionLease ? owner.Enter() : null)
+    {
+        try
+        {
+            scope.State("module", "node", () =>
+            {
+                owner.Dispose();
+                return new ScopedResource(() => releasedState++);
+            });
+        }
+        catch (ObjectDisposedException) { rejected = true; }
+        Check(rejected && releasedState == (withExecutionLease ? 0 : 1),
+            "A state factory that closes its owner cannot hand state back to the caller");
+    }
+    owner.Dispose();
+    Check(releasedState == 1, "A state created during reentrant close is released exactly once");
+}
+var lifecycleDescriptor=Desc("owner-lifecycle",source:true);
+{
+    using var owner = new ModuleExecutionScope();
+    int previousReleased = 0, replacementReleased = 0;
+    owner.RegisterService<IDisposable>(new ScopedResource(() =>
+    {
+        previousReleased++;
+        owner.Dispose();
+    }));
+    owner.RegisterService<IDisposable>(new ScopedResource(() => replacementReleased++));
+    Check(previousReleased == 1 && replacementReleased == 1 && owner.Service<IDisposable>() is null,
+        "Service replacement remains owned when disposing the previous service closes the scope");
+}
+{
+    using var owner = new ModuleExecutionScope();
+    int previousReleased = 0, replacementReleased = 0;
+    owner.RegisterService<IDisposable>(new ScopedResource(() =>
+    {
+        previousReleased++;
+        throw new InvalidOperationException("previous service cleanup");
+    }));
+    var replacement = new ScopedResource(() => replacementReleased++);
+    bool failed = false;
+    try { owner.RegisterService<IDisposable>(replacement); }
+    catch (InvalidOperationException error) when (error.Message == "previous service cleanup") { failed = true; }
+    Check(failed && ReferenceEquals(owner.Service<IDisposable>(), replacement),
+        "Failed previous-service cleanup propagates after publishing the replacement");
+    owner.Dispose();
+    Check(previousReleased == 1 && replacementReleased == 1,
+        "Failed replacement cleanup does not lose resource ownership or retry the old service");
+}
+{
+    using var owner = new ModuleExecutionScope();
+    int previousReleased = 0, replacementReleased = 0;
+    var previous = new ScopedResource(() => previousReleased++);
+    owner.RegisterService<IDisposable>(previous);
+    owner.RegisterService(previous);
+    owner.RegisterService<IDisposable>(new ScopedResource(() => replacementReleased++));
+    Check(previousReleased == 0 && ReferenceEquals(owner.Service<ScopedResource>(), previous),
+        "Replacing one service registration keeps an aliased service alive");
+    owner.Dispose();
+    Check(previousReleased == 1 && replacementReleased == 1, "Aliased services are released exactly once");
+}
+var lifecycleRegistry=new ModuleRegistry();
+var started=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+var cancellationObserved=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+var release=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+int created=0, released=0;
+lifecycleRegistry.Register(lifecycleDescriptor,()=>
+{
+ created++;
+ return new TestModule(lifecycleDescriptor,async (_,token)=>
+ {
+  using var observation=token.Register(()=>cancellationObserved.TrySetResult());
+  started.TrySetResult();
+  await release.Task;
+  return new(ModuleStatus.Success,new Dictionary<string,PortValue>{{"out",PortValue.Number(3)}});
+ },()=>released++);
+});
+var lifecycleProcedure=P(Node("active",lifecycleDescriptor.Id),Node("next",lifecycleDescriptor.Id));
+var lifecycleEngine=new GraphExecutor(lifecycleRegistry);
+using(var owner=new ModuleExecutionScope())
+{
+ var stoppedBeforeFactory=await lifecycleEngine.RunAsync(lifecycleProcedure,".",progress:new MutateProgress(owner.Dispose),scope:owner);
+ Check(created==0&&stoppedBeforeFactory.Status==SessionStatus.Cancelled&&stoppedBeforeFactory.Nodes.All(n=>n.Status==NodeRunStatus.Cancelled),"Scope closed in Running observer starts no factory or successor");
+}
+using(var owner=new ModuleExecutionScope())
+{
+ var procedure=lifecycleProcedure with{WaitTimeMs=500};
+ var workspace=new SolutionWorkspace(new(SolutionStore.CurrentVersion,"lifecycle","lifecycle",[procedure],[]),Path.GetFullPath("."));
+ var running=new SolutionExecutor(lifecycleRegistry).RunAsync(workspace,procedure.Id,scope:owner);
+ try
+ {
+  await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+  await cancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(10));
+  owner.Dispose();
+  Check(!running.IsCompleted&&created==1&&released==0,"Owner close after deadline still waits for runtime cleanup");
+ }
+ finally{release.TrySetResult();}
+ var stopped=await running.WaitAsync(TimeSpan.FromSeconds(10));
+ Check(stopped.Status==SessionStatus.Cancelled&&stopped.Nodes.All(n=>n.Status==NodeRunStatus.Cancelled&&n.Outputs.Count==0),"Owner stop wins over procedure timeout and suppresses late outputs");
+ Check(created==1&&released==1,"Only the started runtime is disposed and no successor starts");
+}
+var dynamicResult = Desc("dynamic-result", source: true) with { SupportsDynamicOutputs = true };
+var runtimeDescriptor = dynamicResult with { Outputs = [new("out", DataKind.Number), new("extra", DataKind.Number)] };
+registry.Register(dynamicResult, () => new TestModule(dynamicResult, (_, _) => ValueTask.FromResult(
+    new ModuleResult(ModuleStatus.Success, new Dictionary<string, PortValue>
+    {
+        ["out"] = PortValue.Number(2),
+        ["extra"] = PortValue.Number(3)
+    }) { UpdatedDescriptor = runtimeDescriptor }), () => disposed++));
+var dynamicFlow = P(Node("dynamic", dynamicResult.Id)) with
+{
+    Configuration = new() { Outputs = [new("result", "result", DataKind.Number, "dynamic", "out")] }
+};
+var completedDynamic = await engine.RunAsync(dynamicFlow, ".");
+Check(completedDynamic.Status == SessionStatus.Success &&
+      completedDynamic.WorkflowOutputs["result"].As<double>() == 2 &&
+      completedDynamic.NodeDescriptors["dynamic"].Outputs.Any(p => p.Name == "extra"),
+      "Successful dynamic result publishes its descriptor and output");
+using (var owner = new ModuleExecutionScope())
+{
+    var events = new List<ExecutionEvent>();
+    var stopped = await engine.RunAsync(dynamicFlow, ".", new ActionProgress(e =>
+    {
+        events.Add(e);
+        if (e.UpdatedDescriptor is not null) owner.Dispose();
+    }), scope: owner);
+    Check(stopped.Status == SessionStatus.Cancelled && stopped.Nodes.Single().Status == NodeRunStatus.Cancelled &&
+          stopped.Nodes.Single().Outputs.Count == 0 && stopped.WorkflowOutputs.Count == 0,
+          "Owner stop in dynamic descriptor notification suppresses pending outputs");
+    Check(events.Count(e => e.UpdatedDescriptor is not null) == 1 &&
+          events.Last().Status == NodeRunStatus.Cancelled &&
+          !stopped.NodeDescriptors["dynamic"].Outputs.Any(p => p.Name == "extra"),
+          "Cancelled dynamic node reports cancellation and retains its original descriptor");
+}
+using (var owner = new ModuleExecutionScope())
+using (var cancel = new CancellationTokenSource())
+{
+    int entered = 0, cleaned = 0;
+    var module = Desc("cancel-in-parameter-seed", source: true) with
+    {
+        Parameters = [new("value", ParameterKind.Integer, true)]
+    };
+    registry.Register(module, () => new TestModule(module, (_, _) =>
+    {
+        entered++;
+        return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,
+            new Dictionary<string, PortValue> { ["out"] = PortValue.Number(1) }));
+    }, () => cleaned++));
+    var seed = new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(1) };
+    ProcedureDocument WithValue(int value) => P(Node("seed", module.Id) with
+    {
+        Parameters = new() { ["value"] = JsonSerializer.SerializeToElement(value) }
+    });
+    await engine.RunAsync(WithValue(3), ".", scope: owner,
+        control: new ModuleRunControl { ParameterSeed = _ => seed });
+    var control = new ModuleRunControl { ParameterSeed = _ => { cancel.Cancel(); return seed; } };
+    var stopped = await engine.RunAsync(WithValue(7), ".",
+        cancellationToken: cancel.Token, scope: owner, control: control);
+    Check(stopped.Status == SessionStatus.Cancelled && entered == 1 && cleaned == 2,
+          "Cancellation during parameter preparation skips module entry and disposes the instance");
+    var effective = owner.ForProcedure("p").ReadEffectiveParameters(module.Id, "seed", seed);
+    Check(effective?["value"].GetInt32() == 3,
+          "A cancelled parameter preparation cannot overwrite the last execution parameters");
+}
+{
+    var resourceRegistry = new ModuleRegistry();
+    WorkflowCalls.Register(resourceRegistry);
+    var reader = Desc("resource-reader", source: true);
+    resourceRegistry.Register(reader, () => new TestModule(reader, (context, _) =>
+    {
+        using var stream = context.Resources!.OpenVerified("payload");
+        return ValueTask.FromResult(new ModuleResult(ModuleStatus.Success,
+            new Dictionary<string, PortValue> { ["out"] = PortValue.Number(stream.ReadByte()) }));
+    }, () => { }));
+    ResourceDocument Embedded(byte value)
+    {
+        byte[] bytes = [value];
+        return new("payload", "payload.bin", Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)))
+        {
+            EmbeddedBase64 = Convert.ToBase64String(bytes)
+        };
+    }
+    ResourceDocument[] declarations = [Embedded(3)];
+    var child = new ProcedureDocument("resource-child", "resource-child", [Node("child-reader", reader.Id)], [], []);
+    var call = Node("call", WorkflowCalls.ModuleId) with
+    {
+        ModuleVersion = WorkflowCalls.Version,
+        Call = WorkflowCalls.From(child)
+    };
+    var parent = new ProcedureDocument("resource-parent", "resource-parent",
+        [Node("parent-reader", reader.Id), call], [], [new("parent-reader", "call")]);
+    var workspace = new SolutionWorkspace(new(SolutionStore.CurrentVersion, "resources", "resources",
+        [parent, child], declarations), ".");
+    var executor = new SolutionExecutor(resourceRegistry);
+    var run = await executor.RunAsync(workspace, parent.Id, new ActionProgress(e =>
+    {
+        if (e.NodeId == "parent-reader" && e.Status == NodeRunStatus.Running)
+            declarations[0] = Embedded(7);
+    }));
+    Check(run.Status == SessionStatus.Success &&
+          run.Nodes.Single(n => n.NodeId == "parent-reader").Outputs["out"].As<double>() == 3 &&
+          run.Calls["call"].Nodes.Single().Outputs["out"].As<double>() == 3,
+          "Parent and child read the same preflight resource snapshot");
+    var next = await executor.RunAsync(workspace, parent.Id);
+    Check(next.Status == SessionStatus.Success &&
+          next.Nodes.Single(n => n.NodeId == "parent-reader").Outputs["out"].As<double>() == 7 &&
+          next.Calls["call"].Nodes.Single().Outputs["out"].As<double>() == 7,
+          "A new execution validates and uses the updated resource declarations");
+}
 Console.WriteLine($"{count} execution checks passed.");
+sealed class ActionProgress(Action<ExecutionEvent> report) : IProgress<ExecutionEvent>
+{
+    public void Report(ExecutionEvent value) => report(value);
+}
 sealed class MutateProgress(Action mutate):IProgress<ExecutionEvent>{bool done;public void Report(ExecutionEvent value){if(!done){done=true;mutate();}}}
 sealed class ThrowProgress:IProgress<ExecutionEvent>{public void Report(ExecutionEvent value)=>throw new Exception("observer");}
+sealed class ScopedResource(Action release) : IDisposable { public void Dispose() => release(); }
 sealed class TestModule(ModuleDescriptor descriptor,Func<ModuleExecutionContext,CancellationToken,ValueTask<ModuleResult>> run,Action dispose):IModule,IAsyncDisposable {public ModuleDescriptor Descriptor=>descriptor;public ValueTask<ModuleResult> ExecuteAsync(ModuleExecutionContext context,CancellationToken cancellationToken)=>run(context,cancellationToken);public ValueTask DisposeAsync(){dispose();return ValueTask.CompletedTask;}}

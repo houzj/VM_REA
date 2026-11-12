@@ -29,6 +29,49 @@ int looping=0,maxParallel=0,concurrent=0;using var loopCancel=new CancellationTo
  var run=repeating.RunContinuousAsync(()=>values,r=>{if(++looping==3)loopCancel.Cancel();},loopCancel.Token);try{await run;}catch(OperationCanceledException){}Check(looping==3&&maxParallel==1&&repeating.State==ToolDebugState.Idle,"continuous execution waits for each result and cancels without overlapping rounds");}
 var failedRounds=0;await using(var failedSession=new ToolDebugSession((v,t)=>Task.FromResult(single with{Status=NodeRunStatus.Failed,Outputs=new Dictionary<string,PortValue>()}),0)){await failedSession.RunContinuousAsync(()=>values,_=>failedRounds++);Check(failedRounds==1&&!failedSession.IsBusy,"independent safety policy stops continuous run on failed record");}
 var closeStarted=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);var closingSession=new ToolDebugSession(async(v,t)=>{closeStarted.TrySetResult();try{await Task.Delay(Timeout.Infinite,t);return single;}finally{Interlocked.Increment(ref disposed);}},0);var closingRun=closingSession.RunOnceAsync(values);await closeStarted.Task;await closingSession.DisposeAsync();try{await closingRun;}catch(OperationCanceledException){}Check(disposed==1&&closingSession.State==ToolDebugState.Disposed&&!closingSession.IsBusy,"dispose cancels and waits for execution finally cleanup");await Reject(()=>closingSession.RunOnceAsync(values),"closed session cannot restart");await closingSession.DisposeAsync();Check(disposed==1,"dispose is idempotent");
+var faultStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+var faultObserved = new TaskCompletionSource<ToolDebugState>(TaskCreationOptions.RunContinuationsAsynchronously);
+var allowFaultCleanup = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+int faultCleanups = 0;
+ToolDebugSession? faultSession = null;
+faultSession = new ToolDebugSession(async (_, token) =>
+{
+    using var registration = token.Register(() =>
+    {
+        var state = Task.Run(() => faultSession!.State).WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+        faultObserved.TrySetResult(state);
+        throw new InvalidOperationException("debug cancellation callback");
+    });
+    faultStarted.TrySetResult();
+    try { await Task.Delay(Timeout.Infinite, token); return single; }
+    finally { await allowFaultCleanup.Task; Interlocked.Increment(ref faultCleanups); }
+});
+var faultRun = faultSession.RunOnceAsync(values);
+await faultStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+var faultStop = faultSession.StopAsync();
+var faultClose = faultSession.DisposeAsync().AsTask();
+try
+{
+    Check(await faultObserved.Task.WaitAsync(TimeSpan.FromSeconds(5)) == ToolDebugState.Stopping,
+        "Cancellation callbacks may read debug state from another thread");
+    Check(!faultStop.IsCompleted && !faultClose.IsCompleted && faultSession.IsBusy && faultCleanups == 0,
+        "Stop and close still await cleanup after a cancellation callback faults");
+}
+finally { allowFaultCleanup.TrySetResult(); }
+foreach (var waiter in new[] { faultStop, faultClose })
+{
+    var observedFault = false;
+    try { await waiter.WaitAsync(TimeSpan.FromSeconds(5)); }
+    catch (AggregateException error) when (error.InnerExceptions.Any(e => e.Message == "debug cancellation callback"))
+    {
+        observedFault = true;
+    }
+    Check(observedFault, "Stop or close reports the callback error after draining");
+}
+try { await faultRun; } catch (OperationCanceledException) { }
+Check(faultCleanups == 1 && faultSession.State == ToolDebugState.Disposed && !faultSession.IsBusy,
+    "Concurrent stop and close drain exactly once and leave a disposed session");
+await faultSession.DisposeAsync();
 var slow=new ModuleDescriptor("test.slow","1","slow",[],[],[]);int runtimeDisposed=0;registry.Register(slow,()=>new Slow(slow,()=>runtimeDisposed++));var timedProcedure=new ProcedureDocument("timeout","timeout",[N("slow",slow.Id) with{TimeoutMs=10}],[],[]);var timed=await debug.RunAsync(timedProcedure,"slow",".",new Dictionary<string,JsonElement>());Check(timed.Status==NodeRunStatus.TimedOut&&runtimeDisposed==1,"single-module timeout awaits module disposal");
 var waitProcedure=new ProcedureDocument("wait","wait",[N("slow",slow.Id)],[],[]){WaitTimeMs=20};
 var waitSolution=new SolutionDocument(SolutionStore.CurrentVersion,"wait-solution","wait-solution",[waitProcedure],[]);

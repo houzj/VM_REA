@@ -165,7 +165,17 @@ function buildModel() {
     tally[unit.implementation] = (tally[unit.implementation] || 0) + 1;
     return tally;
   }, {});
-  must(implementationTally.done === audit.summary.layers.implementation.done, '逐单元实施 done 计数与汇总字段不符');
+  const implementation = audit.summary.layers.implementation;
+  must(Object.entries(implementation.statuses).every(([state, count]) => (implementationTally[state] || 0) === count) &&
+    sum(Object.values(implementation.statuses).map(count => ({ count })), 'count') === frameworkUnits.length,
+    '逐单元实施状态与分布汇总不符');
+  const implementationDone = implementationTally.done || 0;
+  const implementationPercent = Math.round(implementationDone * 10000 / frameworkUnits.length) / 100;
+  must(implementation.done === implementationDone && audit.summary.overallDone === implementationDone &&
+    implementation.total === frameworkUnits.length && implementation.percent === implementationPercent &&
+    audit.summary.overallCompletionPercent === implementationPercent &&
+    implementation.remaining === frameworkUnits.length - implementationDone &&
+    audit.summary.overallRemaining === implementation.remaining, '逐单元实施计数与进度汇总不符');
 
   must(coverage.summary.plugin_count === 162, '原厂插件目录应为 162 个');
   must(coverage.plugins.length === 162, '覆盖审计插件清单应为 162 项');
@@ -328,9 +338,6 @@ function buildModel() {
       nextAction: vmStatus.nextAction
     }
   };
-  must(progress.framework.current.done === 42 && progress.framework.legacy.done === 41,
-    '41/96 与 42/96 的汇总字段冲突不再成立，需重新登记口径');
-
   // ---- 纵向切片：数值全部来自运行报告与 VM 状态台账 ----
   const blob = sliceRuntime.blob;
   must(blob && Number.isFinite(blob.count) && Number.isFinite(blob.totalArea), 'C01 运行报告缺少 Blob 数值');
@@ -538,6 +545,7 @@ function buildModel() {
     slice,
     phase1Landing: vmStatus.phase1Landing,
     incrementalLanding: vmStatus.incrementalLanding,
+    currentDelivery: vmStatus.currentDelivery,
     progress,
     conflict: editorial.governance.conflictNote,
     evidenceStates: editorial.evidenceStates,

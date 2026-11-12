@@ -95,10 +95,9 @@ function buildCompleteList(model) {
       blockers: ['P0-01']
     });
   });
-  add('P0-02', '1', '复跑 C01 纵切（已在 S0 复跑批次执行）', {
+  add('P0-02', '1', 'C01 纵切归档复跑（构建 7d65a1e1）', {
     state: 'executed', sourceRef: 'c01Evidence.command / C03-S0-RERUN-MATRIX-20261110',
     evidencePaths: [
-      'tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj',
       'analysis/full-audit/batch1-20261107/C01/runtime-report.json',
       'analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json'
     ],
@@ -107,8 +106,8 @@ function buildCompleteList(model) {
       'analysis/full-audit/batch1-20261107/C01/runtime-report.json',
       'analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json'
     ],
-    exitCriteria: ['exitCode=0 / 18 PASS 已记录', '同输入报告 SHA-256 与历史相同', 'S0.1/S0.2 升级为当前构建产物已验证', 'C03 根因保持开放'],
-    blockers: [],
+    exitCriteria: ['归档 exitCode=0 / 18 PASS 已记录', '同输入报告 SHA-256 与历史相同', 'C03 根因保持开放'],
+    blockers: ['当前克隆需恢复历史复跑工程后才能再次执行此命令'],
     anchor: anchor('17-incremental-landing.html', 'inc-commands')
   });
   add('P0-03', '1', '继续 B1 静态取证（不改算法、不跑测试）', {

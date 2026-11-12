@@ -6,7 +6,7 @@
 - 独立校验：`node tests/ArchitectureRecovery/verify-complete-task-list.cjs`
 - 机器台账：`tests/ArchitectureRecovery/complete-task-list.map.json`
 - 站点入口：`docs/reverse-plan/index.html`（19 页，本清单不新增页面）
-- builtFrom：`7d65a1e1/dfd5fd922c28`（HEAD + 输入 SHA-256，与站点同源）
+- builtFrom：`f5051d10/22fd4959ab1b`（HEAD + 输入 SHA-256，与站点同源）
 
 ## §0 口径总览与硬规则
 
@@ -52,8 +52,8 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
 - [ ] **P0-U5** 解除 unknown：原厂异常/取消/释放路径的运行时证据 · 状态 `unknown` · 来源 `c03-phase1-evidence-card.json` · 证据 1 项 · 退出 取得对应源码/运行证据并登记证据类型 · 前置/阻塞 P0-01
   - 证据：`analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-card.json`
   - 成员：台账未登记（unknown），需源码级取证后填入
-- [ ] **P0-02** 复跑 C01 纵切（已在 S0 复跑批次执行） · 状态 `executed` · 来源 `c01Evidence.command / C03-S0-RERUN-MATRIX-20261110` · 证据 3 项 · 退出 exitCode=0 / 18 PASS 已记录；同输入报告 SHA-256 与历史相同；S0.1/S0.2 升级为当前构建产物已验证；C03 根因保持开放 · 锚点 `17-incremental-landing.html#inc-commands`
-  - 证据：`tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj`、`analysis/full-audit/batch1-20261107/C01/runtime-report.json`、`analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`
+- [ ] **P0-02** C01 纵切归档复跑（构建 7d65a1e1） · 状态 `executed` · 来源 `c01Evidence.command / C03-S0-RERUN-MATRIX-20261110` · 证据 2 项 · 退出 归档 exitCode=0 / 18 PASS 已记录；同输入报告 SHA-256 与历史相同；C03 根因保持开放 · 前置/阻塞 当前克隆需恢复历史复跑工程后才能再次执行此命令 · 锚点 `17-incremental-landing.html#inc-commands`
+  - 证据：`analysis/full-audit/batch1-20261107/C01/runtime-report.json`、`analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`
   - 成员：台账未登记（unknown），需源码级取证后填入
   - 命令〔待执行〕：`dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore`
   - 报告：`analysis/full-audit/batch1-20261107/C01/runtime-report.json`、`analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`
@@ -82,12 +82,12 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
   - 成员：台账未登记（unknown），需源码级取证后填入
   - 报告：`analysis/full-audit/batch1-20261107/C03/c03-next-evidence-gate.json`
   - unknown：ghidra / ida 未配置、hopper 不支持当前主机
-- [ ] **INC-B0-3** B0 · 登记 S0.1/S0.2 未重跑与复跑命令 · 状态 `not_started` · 来源 `incremental-landing.map.json` · 证据 3 项 · 退出 历史报告不得冒充本轮复跑；命令只登记待执行，需用户明确说开始测试/验证才运行；退出码与新报告哈希在复跑后补登记 · 锚点 `17-incremental-landing.html#inc-step-B0-3`
-  - 证据：`analysis/full-audit/batch1-20261107/C03/c03-phase1-s0-gate-check.json`、`analysis/full-audit/batch1-20261107/C01/runtime-report.json`、`tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj`
+- [ ] **INC-B0-3** B0 · 登记 S0.1/S0.2 未重跑与复跑命令 · 状态 `not_started` · 来源 `incremental-landing.map.json` · 证据 2 项 · 退出 历史报告不得冒充本轮复跑；命令只登记待执行，需用户明确说开始测试/验证才运行；退出码与新报告哈希在复跑后补登记 · 锚点 `17-incremental-landing.html#inc-step-B0-3`
+  - 证据：`analysis/full-audit/batch1-20261107/C03/c03-phase1-s0-gate-check.json`、`analysis/full-audit/batch1-20261107/C01/runtime-report.json`
   - 成员：台账未登记（unknown），需源码级取证后填入
   - 命令〔待执行〕：`dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore`
   - 报告：`analysis/full-audit/batch1-20261107/C01/runtime-report.json`
-  - unknown：本轮是否复跑需用户另行授权
+  - unknown：当前克隆缺少复跑项目 tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj，恢复项目与同一输入前无法复跑；上列为历史命令；本轮是否复跑需用户另行授权
 - [ ] **INC-B1-1** B1 · 图像源入口与输入字节 · 状态 `blocked` · 来源 `incremental-landing.map.json` · 证据 5 项 · 退出 登记图像源入口文件、准确类型与输入字节证据路径；输入文件与哈希可复核；与 C01 现有报告字段对齐 · 前置/阻塞 B0 · 锚点 `17-incremental-landing.html#inc-step-B1-1`
   - 证据：`src/VisionPlugins.ImageSource/ImageSourcePlugin.cs`、`src/VisionPlugins.ImageSource/ImageAcquisitionPlugin.cs`、`analysis/full-audit/batch1-20261107/C01/runtime-report.json`、`analysis/full-audit/batch1-20261107/C01/image-source-vertical-slice.vmx.json`、`docs/reverse/C01-framework-image-source-vertical-slice.md`
   - 成员：`ImageSourcePlugin.CreateRuntime`、`ImageSourcePlugin.GetImages`、`ImageSourcePlugin.ExecuteAsync`、`ImageAcquisitionPlugin.PrepareSave`、`ImageAcquisitionPlugin.ExecuteAsync`
@@ -103,8 +103,8 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
   - 成员：`ImageCanvas.SetImage`、`ImageCanvas.SetOverlay`、`OverlayPng.Write`、`GraphExecutor.RunAsync`
   - 报告：`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-static.json`、`analysis/full-audit/batch1-20261107/C03/c03-incremental-b1-contracts.json`
   - unknown：Group 输出名 image/width 已定位到方案 Configuration.Outputs（C03-INCREMENTAL-B1-CONTRACTS-001）；其与源码端口名的契约边界仍待原厂差分；三份 vmx 的 Procedures/Resources 差异已登记，行为含义未取证
-- [ ] **INC-B1-4** B1 · 纵切闭环复跑登记（待执行） · 状态 `blocked` · 来源 `incremental-landing.map.json` · 证据 2 项 · 退出 命令登记但本阶段不执行；复跑后记录退出码、新报告哈希、会话状态与输出名清单；S0.1/S0.2 状态随复跑结果更新，不提前关闭 · 前置/阻塞 B0 · 锚点 `17-incremental-landing.html#inc-step-B1-4`
-  - 证据：`tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj`、`analysis/full-audit/batch1-20261107/C01/runtime-report.json`
+- [ ] **INC-B1-4** B1 · 纵切闭环复跑登记（待执行） · 状态 `blocked` · 来源 `incremental-landing.map.json` · 证据 1 项 · 退出 命令登记但本阶段不执行；复跑后记录退出码、新报告哈希、会话状态与输出名清单；S0.1/S0.2 状态随复跑结果更新，不提前关闭 · 前置/阻塞 B0 · 锚点 `17-incremental-landing.html#inc-step-B1-4`
+  - 证据：`analysis/full-audit/batch1-20261107/C01/runtime-report.json`
   - 成员：台账未登记（unknown），需源码级取证后填入
   - 命令〔待执行〕：`dotnet run --project tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj --no-restore`
   - 报告：`analysis/full-audit/batch1-20261107/C01/runtime-report.json`
@@ -165,7 +165,7 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
 共 32 项，勾选框全部未预填；状态字段来自机器台账。
 
 - [ ] **WP-A01** A01 · 工具加载与Group导入时序 · 状态 `implementation` · 来源 `framework-reverse-plan.json / framework-progress-audit.json` · 退出 事件顺序逐点匹配源码；缺Cs与构造失败分列；主宿主接入前合同明确 · 锚点 `11-work-packages.html#wp-A01`
-- [ ] **WP-A02** A02 · 主窗口状态与DPI · 状态 `self_review` · 来源 `framework-reverse-plan.json / framework-progress-audit.json` · 退出 原资源和几何公式可定位；实际桌面矩阵与独立策略分列 · 前置/阻塞 A01 · 锚点 `11-work-packages.html#wp-A02`
+- [ ] **WP-A02** A02 · 主窗口状态与DPI · 状态 `implementation` · 来源 `framework-reverse-plan.json / framework-progress-audit.json` · 退出 原资源和几何公式可定位；实际桌面矩阵与独立策略分列 · 前置/阻塞 A01 · 锚点 `11-work-packages.html#wp-A02`
 - [ ] **WP-A03** A03 · 流程Tab与Group导航 · 状态 `blocked` · 来源 `framework-reverse-plan.json / framework-progress-audit.json` · 退出 身份/集合/导航链闭合；所有操作保持正确所属流程；导出入口另列 · 锚点 `11-work-packages.html#wp-A03`
 - [ ] **WP-A04** A04 · 节点手势、路由和视口 · 状态 `done` · 来源 `framework-reverse-plan.json / framework-progress-audit.json` · 退出 每分支有公式与状态证据；桌面输入和宿主事件分别验收；极端坐标无静默偏差 · 前置/阻塞 A03 · 锚点 `11-work-packages.html#wp-A04`
 - [ ] **WP-A05** A05 · 菜单、工具栏及全局入口清点 · 状态 `implementation` · 来源 `framework-reverse-plan.json / framework-progress-audit.json` · 退出 每个入口有任务归属和覆盖状态，不能用仅打开窗口结项；新增服务按父任务拆子项 · 前置/阻塞 A02 · 锚点 `11-work-packages.html#wp-A05`
@@ -208,7 +208,7 @@ B0 未闭前不得进入后续批次的实施类动作。历史 `18/18 passed` �
 - [ ] **UNIT-3** A01.3 · 原Group导入回调到模型落地 · 状态 `blocked` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 前置/阻塞 ORIGINAL-INSTANCE · 锚点 `12-unit-cards.html#unitcard-3`
 - [ ] **UNIT-4** A02.1 · 标题拖动、最大化与恢复的命令状态 · 状态 `done` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 锚点 `12-unit-cards.html#unitcard-4`
 - [ ] **UNIT-5** A02.2 · 工作区锁定、确认及解锁 · 状态 `done` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 锚点 `12-unit-cards.html#unitcard-5`
-- [ ] **UNIT-6** A02.3 · 真实桌面100/150/200%DPI与窗口边界矩阵 · 状态 `self_review` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 前置/阻塞 ACCEPTANCE-PREREQUISITES · 锚点 `12-unit-cards.html#unitcard-6`
+- [ ] **UNIT-6** A02.3 · 真实桌面100/150/200%DPI与窗口边界矩阵 · 状态 `implementation` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 前置/阻塞 ACCEPTANCE-PREREQUISITES · 锚点 `12-unit-cards.html#unitcard-6`
 - [ ] **UNIT-7** A03.1 · 流程增删复制切换和Tab归属 · 状态 `done` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 锚点 `12-unit-cards.html#unitcard-7`
 - [ ] **UNIT-8** A03.2 · 嵌套Group进入/返回和显示模型归属 · 状态 `done` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 锚点 `12-unit-cards.html#unitcard-8`
 - [ ] **UNIT-9** A03.3 · 每显示容器缩放持久化及非活动Tab历史 · 状态 `self_review` · 来源 `framework-progress-audit.json` · 证据 3 项 · 退出 源码/实施/验证三层状态逐层闭合 · 前置/阻塞 ORIGINAL-INSTANCE · 锚点 `12-unit-cards.html#unitcard-9`
@@ -726,7 +726,7 @@ S0–S9 阶段、G1–G8 阶段门、E0–E7 入口门、证据四态、验收�
 - `analysis/full-audit/batch1-20261107/C03/c03-phase1-evidence-review.json`
 - `analysis/full-audit/batch1-20261107/C03/c03-s0-rerun-matrix-20261110.json`
 
-## 附录 C 全部证据路径（320 项，去重）
+## 附录 C 全部证据路径（319 项，去重）
 
 - `D:\Program Files\VisionMaster4.4.0\Applications\Module(sp)\x64\Calculation\CalculatorModule`
 - `D:\Program Files\VisionMaster4.4.0\Applications\Module(sp)\x64\Calculation\CoordinateTransform`
@@ -1047,7 +1047,6 @@ S0–S9 阶段、G1–G8 阶段门、E0–E7 入口门、证据四态、验收�
 - `src/VisionWorkflow/OfflineCircle.cs`
 - `tests/ArchitectureRecovery/original-members.map.json`
 - `tests/ArchitectureRecovery/tool-implementation-specs.map.json`
-- `tests/VMVerticalSlice.C01/VMVerticalSlice.C01.csproj`
 
 ## 附录 D 站点锚点（524 项）
 

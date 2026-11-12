@@ -2,15 +2,21 @@
   "schemaVersion": 1,
   "scope": "C03 next evidence gate",
   "sourceConfirmed": [
-    "GenerateMaskImage candidate receives this, module input, PreproMask/ROI collection and auxiliary state through the observed x64 ABI call site",
+    "GenerateMaskImage receives this, input, positive and negative region collections, and a fifth byte. The OutputMaskImage publisher passes 1 at RVA 0x14AD6 and ProcessAlg passes 0 at its separate call site.",
+    "The earlier host preparation writes detection geometry via ModuleFrame and optionally publishes OutMask. OutputMaskImage=False written to the instance bypasses this publication path. The recorded default export is separate from the historical test1108.sol run.",
     "enabled PreproMask nodes are added to the region assistant before SDK Run",
     "ProcessOutput writes BinaryImage and BlobImage only after SDK GetResult"
   ],
   "runtimeRequired": [
-    "capture non-empty InputROI/InputMask or generated region object from a registered original process",
-    "capture the 45-element result vector and BinaryImage/BlobImage buffers",
-    "compare generated-region coordinates and output flags against local C01/C03 execution"
+    "capture the actual image dimensions, pixel format, stride and buffer hash, ROI payload, rectangle scaling dimensions, and both region collections from a registered original process",
+    "capture the setter taken by ProcessAlg before Run. If the generator runs, record its call site, fifth byte and input +0x110/+0x118/+0x120 at entry and return",
+    "capture the complete SDK GetResult vector, output flags, and BinaryImage/BlobImage buffers before comparing to the direct SDK runs",
+    "repeat each side independently twice with matching inputs and record any failure codes"
   ],
-  "currentEnvironment": "VisionMaster/vServerApp process objects exist in sandbox but no TCP 5556 listener or SDK process registry is available",
-  "implementationDecision": "no product algorithm change until region object, pixel buffers and native result arrays are captured"
+  "currentEnvironment": "The historical test1108.sol is unavailable on this machine. Installed host dependencies differ from the archived version. Original host runtime was not attempted in this batch. A newly saved solution is a separate current-version baseline.",
+  "implementationDecision": "no product algorithm change until the first reproducible host-vs-SDK difference is observed and attributed",
+  "staticEvidence": {
+    "path": "host-pre-run-mask-20261110.asm.txt",
+    "sha256": "587c408a581af44b7d2c6c7543b148025d63a448f09ffa7567220c7fe3d4e1bd"
+  }
 }

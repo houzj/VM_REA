@@ -9,12 +9,14 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
     }
     // Initial policy: all declared resources must be available and match their optional hash.
     public async Task<ExecutionSessionResult> RunAsync(SolutionWorkspace workspace,string procedureId,IProgress<ExecutionEvent>? progress=null,CancellationToken cancellationToken=default,IReadOnlyDictionary<string,PortValue>? inputs=null,ModuleExecutionScope? scope=null,ModuleRunControl? control=null){
+        using var scopeLease=scope?.Enter();
+        var scopeStopping=scope?.Stopping??CancellationToken.None;
         SolutionStore.ValidateStructure(workspace.Document);
         var document=workspace.Document with{Resources=workspace.Document.Resources.ToArray(),Procedures=workspace.Document.Procedures.Select(p=>p with{Configuration=(p.GroupOwner is not null?GroupDisplayLinks.Synchronize(p.Configuration,p.Configuration):p.Configuration).Snapshot(),Connections=p.Connections.ToArray(),ExecutionLinks=p.ExecutionLinks?.ToArray(),Nodes=p.Nodes.Select(n=>n with{Call=n.Call?.Snapshot(),GroupBreak=n.GroupBreak?.Snapshot(),Parameters=n.Parameters.ToDictionary(v=>v.Key,v=>v.Value.Clone()),Rois=n.Rois?.Select(r=>r with{Vertices=r.Vertices?.ToArray()}).ToArray(),RoiGroups=RoiData.SnapshotGroups(n.RoiGroups)}).ToArray()}).ToArray()};
         WorkflowCalls.Validate(document,procedureId);
         var checkedProcedures=new HashSet<string>();void ValidateBreaks(string id){if(!checkedProcedures.Add(id))return;var parent=document.Procedures.Single(p=>p.Id==id);foreach(var node in parent.Nodes){if(node.GroupBreak is not null){var body=document.Procedures.SingleOrDefault(p=>p.Id==node.Call?.ProcedureId)??throw new InvalidDataException("Break metadata requires a Group body.");GroupBreak.Validate(parent,node,body,registry);}if(node.Enabled&&node.Call is {} call)ValidateBreaks(call.ProcedureId);}}ValidateBreaks(procedureId);
-        var resources=document.Resources.ToArray();var catalog=new ResourceCatalog(workspace.BaseDirectory,resources);
-        foreach(var resource in resources){if(cancellationToken.IsCancellationRequested)break;using var stream=catalog.OpenVerified(resource.Id);}
+        var catalog=new ResourceCatalog(workspace.BaseDirectory,document.Resources);
+        foreach(var resource in document.Resources){if(cancellationToken.IsCancellationRequested||scopeStopping.IsCancellationRequested)break;using var stream=catalog.OpenVerified(resource.Id);}
         async Task<ExecutionSessionResult> Execute(string id,IReadOnlyDictionary<string,PortValue>? arguments,CancellationToken token,int depth,int? groupLoopIndex=null){
             if(depth>32)throw new InvalidDataException("Independent subprogram depth limit is 32.");
             var procedure=document.Procedures.SingleOrDefault(p=>p.Id==id)??throw new InvalidDataException("Unknown procedure: "+id);
@@ -44,14 +46,18 @@ public sealed class SolutionExecutor(ModuleRegistry registry){
             }
             try
             {
-                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex,scope,control,new ResourceCatalog(workspace.BaseDirectory,workspace.Document.Resources));
-                if(wait.IsCancellationRequested&&!token.IsCancellationRequested&&session.Status==SessionStatus.Cancelled)
+                var session=await new GraphExecutor(registry).RunAsync(procedure,workspace.BaseDirectory,depth==0?progress:null,runToken,arguments,Call,groupLoopIndex,scope,control,catalog);
+                if(wait.IsCancellationRequested&&!token.IsCancellationRequested&&!scopeStopping.IsCancellationRequested&&session.Status==SessionStatus.Cancelled)
                     session=session with{Status=SessionStatus.TimedOut,Nodes=session.Nodes.Select(n=>n.Status==NodeRunStatus.Cancelled?n with{Status=NodeRunStatus.TimedOut,ErrorCode="ProcedureWaitTimeout",Message="Procedure wait time elapsed"}:n).ToArray()};
                 return session with{GroupLoopIndex=groupLoopIndex};
             }
-            catch(OperationCanceledException) when(wait.IsCancellationRequested&&!token.IsCancellationRequested)
+            catch(OperationCanceledException) when(wait.IsCancellationRequested&&!token.IsCancellationRequested&&!scopeStopping.IsCancellationRequested)
             {
                 return new ExecutionSessionResult(SessionStatus.TimedOut,[]){GroupLoopIndex=groupLoopIndex};
+            }
+            catch(ObjectDisposedException error) when(scopeStopping.IsCancellationRequested&&error.ObjectName==typeof(ModuleExecutionScope).FullName)
+            {
+                return new ExecutionSessionResult(SessionStatus.Cancelled,[]){GroupLoopIndex=groupLoopIndex};
             }
 
         }

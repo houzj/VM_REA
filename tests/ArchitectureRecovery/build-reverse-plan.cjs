@@ -95,8 +95,7 @@ function renderIndex(m) {
   ]));
 
   const progressRows = [
-    { name: '框架 · 逐项台账', value: fw.current.done + '/' + fw.current.total + ' = ' + V.pct(fw.current.percent), source: fw.current.source, boundary: 'implementation 层；三层独立等权计数' },
-    { name: '框架 · 历史汇总', value: fw.legacy.done + '/' + fw.legacy.total + ' = ' + V.pct(fw.legacy.percent), source: fw.legacy.source, boundary: '与上一行差异只在汇总字段，96 个单元状态未变' },
+    { name: '框架 · 自研实施与自审', value: fw.current.done + '/' + fw.current.total + ' = ' + V.pct(fw.current.percent), source: fw.current.source, boundary: '按自研交付计数。各功能与原厂 VM 的行为差分及适用边界见任务卡。' },
     { name: '插件 · 标定十工具', value: pl.calibration.done + '/' + pl.calibration.total + ' = ' + V.pct(pl.calibration.percent), source: pl.calibration.source, boundary: '整工具源码级重建 + 自审；人工验收 ' + E(pl.calibration.manualAcceptance), },
     { name: '插件 · 下一批', value: pl.nextBatch.done + '/' + pl.nextBatch.total + ' = ' + V.pct(pl.nextBatch.percent), source: pl.nextBatch.source, boundary: '已完成 ' + E(pl.nextBatch.completedTools.join('、')) },
     { name: '行为闭环 · A01 有界', value: cl.closedStages + '/' + cl.totalStages + ' = ' + V.pct(cl.completionPercent), source: cl.source, boundary: E(cl.scope) + '；当前目标 ' + E(cl.objective) + '（' + E(cl.status) + '）' }
@@ -105,6 +104,8 @@ function renderIndex(m) {
   const executionPages = m.pages.filter(item => executionSlugs.includes(item.slug));
   p.sec('master', '00', '权威总计划与执行视图',
     V.notice(m.pageNotes.masterAuthority, 'cyan') +
+    V.noticeHtml('当前批次已交付 C02 无界面回归与 C03 直接 SDK 对照。原厂同轮结果仍待取证。<a href="' +
+      V.hrefFor('17-incremental-landing', 'inc-b0') + '">查看交付与原厂取证门槛</a>。', 'cyan') +
     V.table({
       caption: '完整逆向计划新增执行视图；既有页面 URL 与锚点保持不变',
       columns: [
@@ -133,10 +134,10 @@ function renderIndex(m) {
       rows: progressRows
     }));
 
-  p.sec('conflict', '02', '口径冲突登记：41/96 与 42/96',
+  p.sec('conflict', '02', '框架实施进度校正',
     V.notice(m.conflict) +
     V.table({
-      caption: '两个汇总字段并列展示，不擅自二选一',
+      caption: '当前实施口径与历史汇总',
       columns: [
         { label: '来源', cell: r => E(r.name) },
         { label: '分子 / 分母', sort: 'text', cell: r => V.mono(r.value) },
@@ -158,7 +159,8 @@ function renderIndex(m) {
       { k: '产出', v: E(s0.deliverable) },
       { k: '退出条件', v: V.ol(s0.exitCriteria.map(E)) },
       { k: '禁止并行', v: V.ul(s0.forbiddenParallel.map(E)) },
-      { k: '当前目标', v: E(cl.objective) + ' · ' + E(cl.status) + ' · ' + V.pathHtml(cl.source) }
+      { k: '当前目标', v: E(cl.objective) + ' · ' + E(cl.status) + ' · ' + V.pathHtml(cl.source) },
+      { k: '首批任务', v: '<a href="../reverse/C03-phase1-evidence-review.md">C03 同输入运行差分取证</a>' }
     ]) +
     '<p>链路与差分见 <a href="' + V.hrefFor('04-vertical-slice') + '">纵向切片定义</a>；S0–S9 全表见 <a href="' + V.hrefFor('03-roadmap') + '">阶段路线图</a>。</p>');
 
@@ -870,7 +872,7 @@ function renderGates(m) {
       rows: layerRows
     }) +
     V.noticeHtml('三层全 done = ' + E(m.progress.framework.allThreeDone) + '/96 = ' + V.pct(m.progress.framework.allThreePercent) +
-      '；41/96 与 42/96 的汇总字段冲突见 <a href="' + V.hrefFor('10-governance', 'conflict') + '">治理页</a>。', 'cyan'));
+      '；三层交集只描述台账状态。实施进度校正见 <a href="' + V.hrefFor('10-governance', 'conflict') + '">治理页</a>。', 'cyan'));
   return p.finish();
 }
 
@@ -905,18 +907,18 @@ function renderGovernance(m) {
     V.ul(m.governance.prohibitions.map(E)) +
     V.notice('本站点生成与校验不自动提交、不自动推送、不修改另一工作树。', 'unknown'));
 
-  p.sec('conflict', '04', '口径冲突登记：41/96 与 42/96',
+  p.sec('conflict', '04', '框架实施进度校正',
     V.notice(m.conflict) +
     V.table({
-      caption: '两个汇总字段并列，等待用户决定统一口径',
+      caption: '当前实施口径与历史汇总',
       columns: [
         { label: '口径', cell: r => '<b>' + E(r.name) + '</b>' },
         { label: '数值', cell: r => V.mono(r.value) },
         { label: '来源', cell: r => V.pathHtml(r.source) }
       ],
       rows: [
-        { name: '逐项重算（42）', value: fw.current.done + '/' + fw.current.total + ' = ' + V.pct(fw.current.percent), source: fw.current.source },
-        { name: '历史汇总（41）', value: fw.legacy.done + '/' + fw.legacy.total + ' = ' + V.pct(fw.legacy.percent), source: fw.legacy.source }
+        { name: '当前逐项台账', value: fw.current.done + '/' + fw.current.total + ' = ' + V.pct(fw.current.percent), source: fw.current.source },
+        { name: '历史计划汇总', value: fw.legacy.done + '/' + fw.legacy.total + ' = ' + V.pct(fw.legacy.percent), source: fw.legacy.source }
       ]
     }) +
     V.evidence('summaryReconciliation', '<p>' + E(fw.current.reconciliation) + '</p>') +
@@ -1204,8 +1206,7 @@ function renderUnitCards(m) {
     { num: w.counts.unitCards, label: '框架单元任务卡', hint: '32 包 × 3 单元', tone: 'amber' },
     { num: packages.length, label: '工作包', hint: '按包折叠分组' },
     { num: stateCount, label: '计划状态种类', hint: '由三层状态派生' },
-    { num: m.progress.framework.current.done, label: '实施 done', hint: '来自逐项台账（42/96）' },
-    { num: m.progress.framework.legacy.done, label: '历史汇总 done', hint: '41/96，冲突并列登记', tone: 'unknown' }
+    { num: m.progress.framework.current.done, label: '自研实施与自审', hint: '来自逐项台账' }
   ]));
 
   p.sec('uc-template', '01', '任务卡通用模板（全部单元共用）',
@@ -1725,9 +1726,25 @@ function renderIncrementalLanding(m) {
       rowId: r => 'inc-batch-' + r.id
     }));
 
-  p.sec('inc-b0', '02', 'B0：S0/C03 前置补证（第一批）',
-    V.notice('B0 是本轮唯一无前置的批次。' + b0.steps.length +
-      ' 步为静态取证与证据卡：复核差分两侧、5 项 unknown、REA 补证边界；C01 已在当前构建产物复跑（见下方 S0 复算）。原厂运行时根因仍未取得，不改产品算法。', 'unknown') +
+  const delivery = m.currentDelivery;
+  p.sec('inc-b0', '02', 'B0：S0/C03 前置补证与当前交付',
+    V.table({
+      caption: '当前交付与原厂取证边界',
+      columns: [
+        { label: '工作包', cell: r => V.code(r.id) },
+        { label: '已复跑', cell: r => E(r.result) },
+        { label: '剩余验证与边界', cell: r => E(r.open) },
+        { label: '复核报告', cell: r => V.pathHtml(r.report) }
+      ],
+      rows: [
+        { ...delivery.c01, id: 'C01', result: delivery.c01.checks + ' 项图像源 / Group 无界面复跑通过' },
+        { ...delivery.c02, id: 'C02', result: delivery.c02.suites + ' 套 / ' + delivery.c02.checks + ' 项无界面 Release 回归通过' },
+        { ...delivery.c03, id: 'C03', result: delivery.c03.sdkRuns + ' 次直接 SDK 运行匹配' },
+        { ...delivery.numericRanges, id: '公共成对数值配置', result: delivery.numericRanges.suites + ' 套 / ' + delivery.numericRanges.checks + ' 项共享配置回归通过（新增专项 ' + delivery.numericRanges.newChecks + ' 项）' }
+      ]
+    }) +
+    V.notice('C03 的原方案缺失只限制对应历史差分，不能作为整个框架目标的停工条件。已有源码证据且不依赖原方案的公共框架任务继续整块实施与无界面回归。B0 的 ' + b0.steps.length +
+      ' 步保留早期静态取证与证据卡。C01 当前图像源和 Group 复跑已另行交付，Blob 注册缺口和 C03 原厂根因仍开放。', 'unknown') +
     V.noticeHtml('第一批已执行（仅静态取证）：证据卡 <code>' + E(m.incrementalLanding.cardId) +
       '</code> → ' + V.pathHtml(m.incrementalLanding.evidenceCard) + '；人读 ' +
       V.pathHtml(m.incrementalLanding.humanReview) + '。B0 仍 <b>open</b>、B1 仍 <b>blocked</b>；' +
@@ -1741,7 +1758,7 @@ function renderIncrementalLanding(m) {
       'Group <code>image/width</code> 来自方案 <code>Configuration.Outputs</code>；输出名 13/13 与 2/2 均可解释。' +
       '<b>managed projection，非原厂 ABI</b>；C03 根因仍开放、B1 仍 blocked。', 'cyan') +
     V.notice('本批补跑：11 个回归 exitCode=0；2 个需原厂外部数据（设备采集 BMP / native scalar oracle）不可执行，不记为通过、不伪造。规格台账：`ORIGINAL-MEMBERS-INDEX.md`（25 程序集 / 2614 .cs）与 `TOOL-IMPLEMENTATION-SPECS.md`（162 工具 / 2015 证据文件），已挂入 544 项清单。', 'done') +
-    V.noticeHtml('S0 复跑（用户授权「开始测试/验证」）：<code>dotnet run --project tests/VMVerticalSlice.C01/… --no-restore</code> ' +
+    V.noticeHtml('S0 归档复跑（构建 <code>7d65a1e1</code>）：<code>dotnet run --project tests/VMVerticalSlice.C01/… --no-restore</code> ' +
       '<b>exitCode=0、18 PASS</b>；用 <code>D:\\MyWork\\图片库\\标定\\1.jpg</code> 同输入复跑得 47/973202，' +
       '报告 SHA-256 与历史逐字节相同；12 张标定样本全部 sessionStatus=0、13 个输出名、重开计数一致。' +
       '证据卡 <code>C03-S0-RERUN-MATRIX-20261110</code>。<b>S0 本地切片闭环达成，C03 原厂根因仍开放</b>；' +
@@ -1757,7 +1774,7 @@ function renderIncrementalLanding(m) {
         { k: '直接 SDK / 本地', v: 'BlobCount 47 / TotalArea 973202' },
         { k: '差分', v: '+2 计数 / +1716 面积' },
         { k: 'S0', v: m.phase1Landing.s0GateStatus },
-        { k: 'S0.1/S0.2', v: '当前构建产物已复跑（exitCode=0、12 样本重开一致）' },
+        { k: 'S0.1/S0.2', v: '归档构建 7d65a1e1 复跑（exitCode=0、12 样本重开一致）' },
         { k: 'unknown', v: m.phase1Landing.unknowns + ' 项' },
         { k: '产品改动', v: String(m.phase1Landing.productChanges.length) },
         { k: '解除条件', v: '仍需原厂运行时区域对象、像素缓冲与 native 结果数组以闭 C03 根因' }
@@ -2092,6 +2109,7 @@ function renderAll(model) {
       acceptanceLevelIds: model.uiLanding.acceptanceLevels.map(item => item.id)
     },
     incremental: {
+      currentDelivery: model.currentDelivery,
       counts: model.incremental.counts,
       batchIds: model.incremental.batches.map(batch => batch.id),
       stepIds: model.incremental.steps.map(step => step.id),
@@ -2175,7 +2193,8 @@ function renderAll(model) {
       incrementalDone: model.incremental.counts.done
     }
   };
-  files.push({ relative: 'plan-data.json', content: JSON.stringify(planData, null, 2) + '\n' });
+  // This is the site's machine-readable payload; omit indentation to keep the 2 MiB site budget.
+  files.push({ relative: 'plan-data.json', content: JSON.stringify(planData) + '\n' });
   files.push({ relative: ASSET_SOURCES[0].to, content: css });
   files.push({ relative: ASSET_SOURCES[1].to, content: planJs });
   return { files, searchIndex, pageAnchors, planData };

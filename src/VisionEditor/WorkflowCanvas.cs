@@ -26,6 +26,10 @@ using Panel=System.Windows.Controls.Panel;
 namespace VisionEditor;
 public partial class MainWindow
 {
+    // 节点本体尺寸取自原厂节点模板：base/diagramitemtemplate.xaml:1126
+    //   <Grid Name="PART_View" Width="110" Height="30">
+    // DiagramConstInfo 的 ItemWidth=120/ItemHeight=40 是栅格单元（含间距），不是本体；
+    // ItemRectWidth=130/ItemRectHeight=50 是选中外框。此前按 120×40 实现属误读，已回退。
     const double NodeWidth=110,NodeHeight=30;
     readonly HashSet<string> selectedNodes=new(StringComparer.Ordinal);
     readonly Dictionary<string,Canvas> nodeCards=new();
@@ -174,6 +178,24 @@ public partial class MainWindow
         DrawSelectionGroup();DrawWireHandles();ApplyCanvasTransform();
     }
 
+    /// <summary>
+    /// 节点状态角标底色。原厂 StateFlag 由运行时状态驱动；具体色值未取到，
+    /// 这里按「未执行/运行中/成功/NG/失败」五态取高对比近似值（独立实现）。
+    /// </summary>
+    System.Windows.Media.Brush NodeStateBrush(NodeDocument node)
+    {
+        if(!results.TryGetValue(node.Id,out var record))
+            return new SolidColorBrush(Color.FromRgb(0xD9,0xD9,0xD9));
+        return new SolidColorBrush(record.Status switch
+        {
+            NodeRunStatus.Success=>Color.FromRgb(0x3F,0xAE,0x4A),
+            NodeRunStatus.NoMatch=>Color.FromRgb(0xE0,0xA0,0x30),
+            NodeRunStatus.Running=>Color.FromRgb(0x6E,0x9A,0xD1),
+            NodeRunStatus.Failed or NodeRunStatus.TimedOut or NodeRunStatus.Cancelled=>Color.FromRgb(0xD0,0x45,0x3E),
+            _=>Color.FromRgb(0xBF,0xBF,0xBF)
+        });
+    }
+
     Canvas CreateNodeCard(NodeDocument node,int index,bool isSelected)
     {
         var runtimeDescriptor=RuntimeDescriptor(node);
@@ -181,9 +203,13 @@ public partial class MainWindow
         var card=new Canvas {Width=130,Height=NodeVisualHeight(node)+20,Background=Brushes.Transparent,Tag=node.Id}; if(node.ModuleId==WorkflowCalls.ModuleId)return CreateGroupCard(node,isSelected,card);
         var body=new Border {Width=NodeWidth,Height=NodeVisualHeight(node),CornerRadius=new CornerRadius(node.ModuleId=="vision.image-source"?15:4),Background=new LinearGradientBrush(Color.FromRgb(250,247,245),Color.FromRgb(235,230,226),90),BorderBrush=isSelected?orange:Brushes.Gray,BorderThickness=new Thickness(isSelected?2:.7),Effect=new System.Windows.Media.Effects.DropShadowEffect {BlurRadius=3,ShadowDepth=3,Opacity=.45}};
         if(!node.Enabled)body.Background=new LinearGradientBrush(Color.FromArgb(211,211,211,245),Color.FromArgb(211,211,211,225),90);
-        var content=new StackPanel();var title=new Grid {Height=NodeHeight};title.ColumnDefinitions.Add(new ColumnDefinition {Width=new GridLength(24)});title.ColumnDefinitions.Add(new ColumnDefinition());
-        var icon=new Image {Source=ToolAsset(node.ModuleId),Width=16,Height=16,Margin=new Thickness(4,0,0,0),VerticalAlignment=VerticalAlignment.Center};title.Children.Add(icon);
-        var text=new TextBlock {Text=index+node.Name,FontSize=12,FontWeight=FontWeights.Bold,Foreground=new SolidColorBrush(Color.FromRgb(55,58,60)),VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis};Grid.SetColumn(text,1);title.Children.Add(text);content.Children.Add(title);
+        // 原厂节点模板 base/diagramitemtemplate.xaml:1126：
+        //   左侧 StateFlag 宽 26 承载执行状态色与工具图标，右侧 Grid Margin=26,0,0,0 放 编号 + 名称。
+        var content=new StackPanel();var title=new Grid {Height=NodeHeight};title.ColumnDefinitions.Add(new ColumnDefinition {Width=new GridLength(26)});title.ColumnDefinitions.Add(new ColumnDefinition());
+        var stateFlag=new Border {Width=26,CornerRadius=new CornerRadius(3,0,0,3),Background=NodeStateBrush(node),ClipToBounds=true};
+        var icon=new Image {Source=ToolAsset(node.ModuleId),Width=16,Height=16,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center};
+        stateFlag.Child=icon;title.Children.Add(stateFlag);
+        var text=new TextBlock {Text=index+" "+node.Name,FontSize=12,FontWeight=FontWeights.Bold,Foreground=new SolidColorBrush(Color.FromRgb(55,58,60)),VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis,Margin=new Thickness(2,0,2,0)};Grid.SetColumn(text,1);title.Children.Add(text);content.Children.Add(title);
         if(runtimePortCount>0)
         {
             var outputs=runtimeDescriptor!.Outputs;
