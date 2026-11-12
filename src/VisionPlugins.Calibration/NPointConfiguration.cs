@@ -79,7 +79,7 @@ public sealed partial class NPointPlugin:IToolConfigurationProvider,IToolDisplay
    }
    return adapter.Dispatch(request);
   });
-  state=new(definition,dispatch){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,"N点标定");state.RegisterRule("HidePhysicInfoOperation",new NPointPhysicalVisibilityRule());
+  state=new(definition,dispatch){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,"N点标定",keepAttemptedValueOnValidationError:true);state.RegisterRule("HidePhysicInfoOperation",new NPointPhysicalVisibilityRule());
   var controls=new ToolConfigurationControlRegistry();ToolConfigurationStandardControls.Register(controls,text,()=>new(execution.IsContinuous,Host().ProcedureBusy,Host().RunEnabled),language,context.ConfigurationSubscriptions);ToolConfigurationSubscriptionControls.Register(controls,context.ConfigurationSubscriptions,text,language);
   var objects=new ToolDisplayConfigurationObjectService(()=>ToolDisplayService.Read(values,DisplayDefinition),settings=>{var next=new Dictionary<string,JsonElement>(values){[ToolDisplayService.SettingsParameter]=ToolDisplayService.Serialize(settings)};Apply(next);return true;},Refresh);
   ToolConfigurationObjectControls.Register(controls,objects,text,colorPicker:(initial,selected)=>{

@@ -25,7 +25,7 @@ namespace VisionEditor;
 public partial class MainWindow
 {
     sealed record CatalogTool(string Id,string Name,double Priority,string DisplayType,string? Icon,string? ModuleId,ManagedToolPluginReference? Implementation=null);
-    sealed record CatalogGroup(string Id,string Name,double Priority,string? Icon,string? HoverIcon,CatalogTool[] Items);
+    sealed record CatalogGroup(string Id,string Name,double Priority,string? Icon,string? HoverIcon,CatalogTool[] Items,string? PriorityStrategyInfo=null);
     sealed record CatalogFile(int Schema,CatalogGroup[] Groups);
     CatalogGroup[]? toolGroups;
     string toolCatalogPath=Path.Combine(AppContext.BaseDirectory,"tool-catalog.json");
@@ -39,9 +39,13 @@ public partial class MainWindow
     CatalogGroup[] ReadToolGroupHeaders()
     {
         using var json=JsonDocument.Parse(File.ReadAllText(toolCatalogPath));
+        var toolboxType=StartupSettings.ToolBoxType;
         return json.RootElement.GetProperty("Groups").EnumerateArray().Select(g=>new CatalogGroup(
             g.GetProperty("Id").GetString()!,g.GetProperty("Name").GetString()!,g.GetProperty("Priority").GetDouble(),
-            g.TryGetProperty("Icon",out var icon)?icon.GetString():null,g.TryGetProperty("HoverIcon",out var hover)?hover.GetString():null,[])).OrderBy(g=>g.Priority).ToArray();
+            g.TryGetProperty("Icon",out var icon)?icon.GetString():null,g.TryGetProperty("HoverIcon",out var hover)?hover.GetString():null,[],
+            g.TryGetProperty("PriorityStrategyInfo",out var strategy)?strategy.GetString():null))
+            .Select(g=>ToolboxPriorityStrategy.Resolve(g.PriorityStrategyInfo,toolboxType) is { } priority ? g with { Priority=priority } : g)
+            .OrderBy(g=>g.Priority).ToArray();
     }
     IEnumerable<CatalogTool> ReadCategoryTools(string id)
     {

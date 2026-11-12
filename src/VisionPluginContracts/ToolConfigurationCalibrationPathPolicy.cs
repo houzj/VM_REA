@@ -12,12 +12,12 @@ public static class ToolConfigurationCalibrationPathPolicy {
   return fields.Length==2&&path.EndsWith(fields[0],StringComparison.CurrentCulture)?null:(localize??ConfigurationLocalization.ForLanguage("Chinese").Get)("Lang_FileSaveFail");
  }
  public static void Attach(ToolConfigurationState state,ToolEditorContext context,Func<System.Windows.Window?> owner,
-  Func<string,string> localize,string caption,Action<string>? presentError=null){
+  Func<string,string> localize,string caption,Action<string>? presentError=null,bool keepAttemptedValueOnValidationError=false){
   bool validationRejected=false;
   void Notify(string message,bool error){if(error&&presentError is not null)presentError(message);else (context.ConfigurationNotifications??new WpfConfigurationNotificationService()).Notify(owner(),new(error?ConfigurationNotificationKind.Error:ConfigurationNotificationKind.Success,message,caption,context.Mode));}
   state.ParameterWriteValidator=request=>{
    validationRejected=false;
-   var result=ValidateSourceWrite(request,localize);
+   var result=ValidateSourceWrite(request,localize,keepAttemptedValueOnValidationError:keepAttemptedValueOnValidationError);
    if(result?.Error is {} error){
     validationRejected=true;Notify(error,true);
    }
@@ -34,10 +34,13 @@ public static class ToolConfigurationCalibrationPathPolicy {
   return filter.Length>=2&&filter[0]=='%'&&filter[^1]=='%'?filter[1..^1]:filter;
  }
  public static ConfigurationOperationResult? ValidateSourceWrite(ConfigurationOperationRequest request,
-  Func<string,string>? localize=null,Func<string,bool>? directoryExists=null){
+  Func<string,string>? localize=null,Func<string,bool>? directoryExists=null,bool keepAttemptedValueOnValidationError=false){
   if(request.Kind!=ConfigurationOperationKind.WriteParameter||request.Source.Element.Tag!="OpenFileForCalibDialog")return null;
   var fields=SourceFilter(request.Source,localize).Split('|');
-  ConfigurationOperationResult Reject(string error)=>new(true,Error:error){KeepAttemptedValueOnError=true};
+  // The source control keeps the rejected candidate visible and the calibration
+  // providers retain it as the rejected node value while withholding backend
+  // writes. Providers that use a native rollback contract can opt out.
+  ConfigurationOperationResult Reject(string error)=>new(true,Error:error){KeepAttemptedValueOnError=keepAttemptedValueOnValidationError};
   if(fields.Length<=1)return Reject("Unsupported calibration file filter declaration.");
   string value=request.Value??"";
   var patterns=fields[1].Split(';');bool matches=false;

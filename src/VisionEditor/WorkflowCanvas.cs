@@ -255,7 +255,17 @@ public partial class MainWindow
         var hit=new Border {Width=area.Width,Height=area.Height,Background=Brushes.Transparent,Child=layer,Visibility=Visibility.Collapsed,Cursor=Cursors.Cross,Tag=(node.Id,index)};
         SetPortHit(hit,false);Canvas.SetLeft(hit,area.X);Canvas.SetTop(hit,area.Y);Panel.SetZIndex(hit,20);executionPorts[(node.Id,index)]=hit;
         hit.MouseEnter+=(_,_)=> {hit.Visibility=isLocked?Visibility.Collapsed:Visibility.Visible;SetPortHit(hit,true);};
-        hit.MouseLeave+=(_,_)=> {SetPortHit(hit,connectionTarget==(node.Id,index));if(pendingConnection is null&&!nodeCards[node.Id].IsMouseOver)hit.Visibility=Visibility.Collapsed;};
+        // A graph rerender clears the node-card index before WPF can deliver
+        // MouseLeave to an old port element.  The original element is already
+        // detached at that point; treating it as non-hovered preserves the
+        // close/reload lifecycle instead of throwing KeyNotFoundException
+        // from the input route and terminating startup.
+        hit.MouseLeave+=(_,_)=>
+        {
+            SetPortHit(hit,connectionTarget==(node.Id,index));
+            var cardIsHovered=nodeCards.TryGetValue(node.Id,out var card)&&card.IsMouseOver;
+            if(pendingConnection is null&&!cardIsHovered)hit.Visibility=Visibility.Collapsed;
+        };
         hit.MouseLeftButtonDown+=(_,e)=> {BeginConnection(node.Id,index);e.Handled=true;};
         return hit;
     }

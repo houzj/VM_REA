@@ -31,18 +31,32 @@ public sealed record ModuleRunEntry(
         }
     }
 
-    static string Format(PortValue value) => value.Kind switch
+    static string Format(PortValue value)
     {
+        if (value.Cardinality == ValueCardinality.Array)
+        {
+            if (value.Kind == DataKind.NumberArray)
+                return "[" + string.Join(", ", value.As<IReadOnlyList<double>>().Select(number => number.ToString("F3", CultureInfo.InvariantCulture))) + "]";
+            if (value.Kind == DataKind.Point)
+                return "[" + string.Join("; ", value.As<IReadOnlyList<VisionCore.Point2>>().Select(point => point.X.ToString("F3", CultureInfo.InvariantCulture) + "," + point.Y.ToString("F3", CultureInfo.InvariantCulture))) + "]";
+            if (value.Value is System.Collections.IEnumerable enumerable)
+                return "[" + string.Join(", ", enumerable.Cast<object>().Select(item => Convert.ToString(item, CultureInfo.InvariantCulture))) + "]";
+        }
+        return value.Kind switch
+        {
         DataKind.GrayImage => value.As<GrayImage>().Width + "x" + value.As<GrayImage>().Height,
         DataKind.Components => value.As<IReadOnlyList<VisionCore.Component>>().Count.ToString(CultureInfo.InvariantCulture) + " 个",
-        DataKind.Number => value.As<double>().ToString("F3", CultureInfo.InvariantCulture),
-        DataKind.Integer => value.As<long>().ToString(CultureInfo.InvariantCulture),
+        DataKind.Number => Convert.ToDouble(value.Value, CultureInfo.InvariantCulture).ToString("F3", CultureInfo.InvariantCulture),
+        DataKind.Integer => Convert.ToInt64(value.Value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
         DataKind.Boolean => value.As<bool>() ? "True" : "False",
         DataKind.Text => value.As<string>(),
+        DataKind.Point when value.Cardinality == ValueCardinality.Array =>
+            "[" + string.Join("; ", value.As<IReadOnlyList<VisionCore.Point2>>().Select(point => point.X.ToString("F3", CultureInfo.InvariantCulture) + "," + point.Y.ToString("F3", CultureInfo.InvariantCulture))) + "]",
         DataKind.Point => value.As<VisionCore.Point2>().X.ToString("F3", CultureInfo.InvariantCulture) + "," + value.As<VisionCore.Point2>().Y.ToString("F3", CultureInfo.InvariantCulture),
         DataKind.Circle => value.As<VisionCore.CircleFit>().Radius.ToString("F3", CultureInfo.InvariantCulture),
-        _ => value.Cardinality == ValueCardinality.Array ? "[" + value.Kind + "]" : Convert.ToString(value.Value, CultureInfo.InvariantCulture) ?? string.Empty
-    };
+        _ => Convert.ToString(value.Value, CultureInfo.InvariantCulture) ?? string.Empty
+        };
+    }
 }
 
 /// <summary>

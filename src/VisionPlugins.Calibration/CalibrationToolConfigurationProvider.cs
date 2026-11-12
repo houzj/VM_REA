@@ -186,7 +186,7 @@ internal sealed class CalibrationToolConfigurationProvider(
         });
 
         state = new(definition, dispatcher) { ExecutionEnabled = Host().RunEnabled };
-        ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,displayName,calibrationPathError??(message=>Notify(message,true)));
+        ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,displayName,calibrationPathError??(message=>Notify(message,true)),keepAttemptedValueOnValidationError:true);
         var controls = new ToolConfigurationControlRegistry();
         ToolConfigurationStandardControls.Register(controls, text,
             () => new(execution.IsContinuous, Host().ProcedureBusy, Host().RunEnabled), Language, context.ConfigurationSubscriptions);

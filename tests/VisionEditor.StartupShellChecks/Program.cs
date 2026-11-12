@@ -4,6 +4,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using VisionEditor;
+using VisionEditor.Core;
+using VisionFramework;
 using WpfApplication = System.Windows.Application;
 using WpfListView = System.Windows.Controls.ListView;
 
@@ -40,6 +42,7 @@ internal static class Program
             VerifyStartupArgumentRouting();
             VerifyShutdownModeInvariant();
             StartupLaunchProbe();
+            VisionEditor.StartupShellChecks.StartupCrashRegression.VerifyDetachedExecutionPortDoesNotRequireCardLookup();
 
             welcome = new StartupWelcomeWindow { ShowInTaskbar = false, Left = -20000, Top = -20000 };
             welcome.Show();
@@ -60,6 +63,8 @@ internal static class Program
             main.Show();
             main.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
             VerifyMainWindowHost(main);
+            VerifySolutionEntityLifecycle(main);
+            VerifyCommandLineSolutionHydration();
             VerifyCloseChain(app, exit);
 
             var welcomeAsset = Path.Combine(AppContext.BaseDirectory, "ui-assets", "original-guide", "WelcomePage.GIF");
@@ -234,6 +239,87 @@ internal static class Program
         data.HideMask();
         main.Dispatcher.Invoke(() => { }, DispatcherPriority.DataBind);
         if (main.IsShowProgressMask || root.Children.Count != baseline) throw new Exception("The progress mask layer was not removed.");
+    }
+
+    /// <summary>
+    /// G2：启动载荷必须由同一个 GraphEditorDocument 实体贯穿新建、保存和重开。
+    /// 这里只验证当前独立格式的真实合同；原厂 .sol 字段与容器仍由原厂证据决定。
+    /// </summary>
+    static void VerifySolutionEntityLifecycle(MainWindow main)
+    {
+        var field = typeof(MainWindow).GetField("doc", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new Exception("MainWindow solution document field is missing.");
+        var document = field.GetValue(main) as GraphEditorDocument
+            ?? throw new Exception("MainWindow must own one GraphEditorDocument instance.");
+        var identity = document.SolutionId;
+        if (string.IsNullOrWhiteSpace(identity) || !document.HasCurrentProcedure)
+            throw new Exception("Startup must expose a non-empty solution identity and current procedure.");
+
+        var path = Path.Combine(Path.GetTempPath(), "VisionEditor-G2-" + Guid.NewGuid().ToString("N"), "roundtrip.vmx.json");
+        try
+        {
+            document.Save(path);
+            if (!string.Equals(document.FilePath, Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Save must bind the same solution entity to its canonical path.");
+            if (!string.Equals(document.SolutionId, identity, StringComparison.Ordinal))
+                throw new Exception("Save must not replace the solution identity.");
+
+            document.Load(path);
+            if (!string.Equals(document.SolutionId, identity, StringComparison.Ordinal))
+                throw new Exception("Reopen must restore the persisted solution identity.");
+            if (!string.Equals(document.CurrentProcedureId, "main", StringComparison.Ordinal))
+                throw new Exception("Reopen must restore the persisted main procedure selection.");
+            if (document.IsDirty)
+                throw new Exception("A successful reopen must clear the dirty state.");
+        }
+        finally
+        {
+            var root = Path.GetDirectoryName(path);
+            if (root is not null && Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// C01/S06：命令行方案必须在主窗口构造期间进入同一个真实文档实体，
+    /// 并保留其 ID、流程选择和规范化文件路径；不能只记住参数后回落默认方案。
+    /// </summary>
+    static void VerifyCommandLineSolutionHydration()
+    {
+        var previous = StartupSolutionStore.CommandLinePath;
+        var previousOriginal = StartupSolutionStore.UnsupportedOriginalSolutionPath;
+        var root = Path.Combine(Path.GetTempPath(), "VisionEditor-C01-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "command-line.vmx.json");
+        const string identity = "command-line-startup-identity";
+        try
+        {
+            Directory.CreateDirectory(root);
+            SolutionStore.Save(path, new SolutionDocument(
+                SolutionStore.CurrentVersion,
+                identity,
+                "命令行方案",
+                [new ProcedureDocument("main", "Main", [], [], [])], []));
+            StartupSolutionStore.CommandLinePath = path;
+            StartupSolutionStore.UnsupportedOriginalSolutionPath = null;
+
+            var shell = new MainWindow { ShowInTaskbar = false, ShowActivated = false, Left = -20000, Top = -20000 };
+            var field = typeof(MainWindow).GetField("doc", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                ?? throw new Exception("MainWindow solution document field is missing for command-line hydration.");
+            var document = field.GetValue(shell) as GraphEditorDocument
+                ?? throw new Exception("Command-line startup did not create a GraphEditorDocument.");
+            if (document.SolutionId != identity)
+                throw new Exception($"Command-line startup loaded {document.SolutionId}, expected {identity}.");
+            if (document.CurrentProcedureId != "main" || document.IsDirty)
+                throw new Exception("Command-line startup must select clean persisted main procedure.");
+            if (!string.Equals(document.FilePath, Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Command-line startup must bind the canonical solution path.");
+            Console.WriteLine("PASS: command-line solution hydrates the real document entity");
+        }
+        finally
+        {
+            StartupSolutionStore.CommandLinePath = previous;
+            StartupSolutionStore.UnsupportedOriginalSolutionPath = previousOriginal;
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
     }
 
     /// <summary>契约 S10：只有应用主窗口关闭才触发释放与退出；保存检查可取消关闭。</summary>

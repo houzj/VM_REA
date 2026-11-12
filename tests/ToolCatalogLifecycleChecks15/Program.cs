@@ -22,6 +22,8 @@ static class Program
    void Check(bool ok,string label){if(!ok)throw new Exception(label);checks++;Console.WriteLine("PASS "+label);}
    object Item(string id,object priority)=>new{Id=id,Name=id,Priority=priority,DisplayType="IMAGE",Icon=(string?)null,ModuleId=(string?)null};
    void Write(bool broken)=>File.WriteAllText(path,JsonSerializer.Serialize(new{Schema=1,Groups=new[]{new{Id="A",Name="A",Priority=1d,Icon=(string?)null,HoverIcon=(string?)null,Items=new[]{Item("a1",5d),Item("a2",1d),Item("a3",broken?(object)"invalid-number":3d)}},new{Id="B",Name="B",Priority=2d,Icon=(string?)null,HoverIcon=(string?)null,Items=new[]{Item("b1",2d),Item("b2",1d)}}}}));
+   void WriteStrategy()=>File.WriteAllText(path,JsonSerializer.Serialize(new{Schema=1,Groups=new[]{new{Id="A",Name="A",Priority=1d,PriorityStrategyInfo="General:20;Position:4",Icon=(string?)null,HoverIcon=(string?)null,Items=Array.Empty<object>()},new{Id="B",Name="B",Priority=2d,PriorityStrategyInfo="General:10;Position:30",Icon=(string?)null,HoverIcon=(string?)null,Items=Array.Empty<object>()}}}));
+   void SetToolBoxType(string value)=>typeof(MainWindow).Assembly.GetType("VisionEditor.StartupSettings")!.GetMethod("SetToolBoxType",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,new object[]{value});
    IDictionary States()=>(IDictionary)Field("toolCategoryLoads")!;
    object State(string id)=>States()[id]!;
    int Count(string id)=>((ICollection)State(id).GetType().GetProperty("Items")!.GetValue(State(id))!).Count;
@@ -52,6 +54,11 @@ static class Program
    Write(false);Call("RefreshToolCatalog");File.Delete(path);fresh=Rail().Children.OfType<Expander>().First();fresh.IsExpanded=true;
    Check(Attempts("A")==1&&Count("A")==0,"First-attempt file read failure is retained without inventing loaded tools");
    Write(false);fresh.IsExpanded=false;fresh.IsExpanded=true;Check(Attempts("A")==1&&Count("A")==0,"Restoring missing metadata still requires explicit refresh");
+   SetToolBoxType("General");Set("toolboxExpanded",false);WriteStrategy();Call("RefreshToolCatalog");
+   Check(Rail().Children.OfType<Button>().Select(b=>b.Tag as string).SequenceEqual(new[]{"B","A"}),"ToolBoxType=General applies source-shaped group priorities");
+   SetToolBoxType("Position");Call("RefreshToolCatalog");
+   Check(Rail().Children.OfType<Button>().Select(b=>b.Tag as string).SequenceEqual(new[]{"A","B"}),"ToolBoxType=Position applies the matching source-shaped priorities");
+   SetToolBoxType("General");
    if(Field("toolPopup") is System.Windows.Controls.Primitives.Popup popup)popup.IsOpen=false;
    window.Close();app.Shutdown();File.WriteAllText(Path.Combine(root,"summary.json"),JsonSerializer.Serialize(new{checks,root,scope="actual MainWindow routed control events and synthetic metadata; no original DLL runtime or desktop parity"}));Console.WriteLine($"PASS {checks}/{checks}; {root}");return 0;
   }

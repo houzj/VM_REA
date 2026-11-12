@@ -50,7 +50,7 @@ public sealed partial class CalibrationBoardPlugin {
    if(request.Kind==ConfigurationOperationKind.Close){session?.RequestClose();return new(true);}
    return adapter.Dispatch(request);
   });
-  state=new ToolConfigurationState(CalibrationBoardMetadata.Definition(),dispatcher){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,localize,"标定板");
+  state=new ToolConfigurationState(CalibrationBoardMetadata.Definition(),dispatcher){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,localize,"标定板",keepAttemptedValueOnValidationError:true);
   var controls=new ToolConfigurationControlRegistry();ToolConfigurationStandardControls.Register(controls,localize,()=>new(execution.IsContinuous,Host().ProcedureBusy,Host().RunEnabled),"Chinese",context.ConfigurationSubscriptions);ToolConfigurationSubscriptionControls.Register(controls,context.ConfigurationSubscriptions,localize,"Chinese");
     ToolConfigurationCalibrationPathControls.Register(controls,c=>{
    owner=c.Owner;var selected=files.Select(owner(),new(Id,c.Node.Value,".iwcal|*.iwcal",localize("Set Calibration File Path"),CheckFileExists:false,CheckPathExists:false));

@@ -53,7 +53,7 @@ public sealed class DistortionCalibrationConfigurationProvider(Action<ToolEditor
    if(request.Kind==ConfigurationOperationKind.ReadParameter&&!ConfigurationDescriptor.Parameters.Any(p=>p.Name==request.Source.Name))return new(true,request.Source.Value);
    return adapter.Dispatch(request);
   });
-  state=new(definition,dispatcher){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,"畸变标定");
+  state=new(definition,dispatcher){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,"畸变标定",keepAttemptedValueOnValidationError:true);
   var controls=new ToolConfigurationControlRegistry();ToolConfigurationStandardControls.Register(controls,text,()=>new(execution.IsContinuous,Host().ProcedureBusy,Host().RunEnabled),language:"Chinese",subscriptions:context.ConfigurationSubscriptions);ToolConfigurationSubscriptionControls.Register(controls,context.ConfigurationSubscriptions,text,"Chinese");
   var roiControls=ToolConfigurationRoiControls.Register(controls,context,ConfigurationDescriptor.RoiEditor!,"InputImage",text);
   // Source OpenFileForCalibDialog uses the common template.

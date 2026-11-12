@@ -47,7 +47,7 @@ public sealed class NImageConfigurationProvider(Action<ToolEditorContext> clear,
    if(request.Kind==ConfigurationOperationKind.ReadParameter&&!ConfigurationDescriptor.Parameters.Any(p=>p.Name==request.Source.Name))return new(true,request.Source.Value);
    return adapter.Dispatch(request);
   });
-  state=new(definition,dispatcher){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,"N图像标定");state.RegisterRule("HidePhysicInfoOperation",new NImagePhysicalVisibilityRule());state.RegisterRule("SetMutualExclusion",new CountMinimumRule());
+  state=new(definition,dispatcher){ExecutionEnabled=Host().RunEnabled};ToolConfigurationCalibrationPathPolicy.Attach(state,context,owner,text,"N图像标定",keepAttemptedValueOnValidationError:true);state.RegisterRule("HidePhysicInfoOperation",new NImagePhysicalVisibilityRule());state.RegisterRule("SetMutualExclusion",new CountMinimumRule());
   var controls=new ToolConfigurationControlRegistry();ToolConfigurationStandardControls.Register(controls,text,language:"Chinese",subscriptions:context.ConfigurationSubscriptions);ToolConfigurationSubscriptionControls.Register(controls,context.ConfigurationSubscriptions,text,"Chinese");
   // Same shipped OpenFileForCalibDialog type and source template as the N-point module.
   ToolConfigurationCalibrationPathControls.Register(controls,control=>{owner=control.Owner;var chosen=files.Select(owner(),new(ModuleId,control.Node.Value,".xml|*.xml",text("Set Calibration File Path"),CheckFileExists:false));if(chosen.Status==ConfigurationFileStatus.Selected){state.CommitUser(control.Node,chosen.Paths.Single(),true);files.Remember(ModuleId,chosen.Paths.Single());}},text,context.ConfigurationSubscriptions);

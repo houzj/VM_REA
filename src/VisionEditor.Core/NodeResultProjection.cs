@@ -188,14 +188,16 @@ public static class NodeProjectionBuilder
 
         if (value.Kind == DataKind.Point)
         {
-            var point = value.As<Point2>();
             var columns = new[]
             {
                 new ResultColumn("Number", NumberHeader),
                 new ResultColumn("X", "X"),
                 new ResultColumn("Y", "Y")
             };
-            var rows = new[] { new ResultRow(new[] { "1", F(point.X), F(point.Y) }) };
+            var rows = value.Cardinality == ValueCardinality.Array
+                ? value.As<IReadOnlyList<Point2>>().Select((point, index) =>
+                    new ResultRow(new[] { (index + 1).ToString(CultureInfo.InvariantCulture), F(point.X), F(point.Y) })).ToArray()
+                : new[] { new ResultRow(new[] { "1", F(value.As<Point2>().X), F(value.As<Point2>().Y) }) };
             return (columns, rows);
         }
 
@@ -262,6 +264,8 @@ public static class NodeProjectionBuilder
             DataKind.GrayImage => Describe(value.As<GrayImage>()),
             DataKind.Components => value.As<IReadOnlyList<Component>>().Count.ToString(CultureInfo.InvariantCulture) + " 个连通域",
             DataKind.Circle => F(value.As<CircleFit>().Radius),
+            DataKind.Point when value.Cardinality == ValueCardinality.Array =>
+                "[" + string.Join(", ", value.As<IReadOnlyList<Point2>>().Select(point => F(point.X) + ", " + F(point.Y))) + "]",
             DataKind.Point => F(value.As<Point2>().X) + ", " + F(value.As<Point2>().Y),
             DataKind.Boolean => value.As<bool>() ? "True" : "False",
             _ => Convert.ToString(value.Value, CultureInfo.InvariantCulture) ?? string.Empty
